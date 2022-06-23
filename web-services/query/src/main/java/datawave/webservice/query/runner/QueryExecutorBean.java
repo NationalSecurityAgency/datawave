@@ -20,6 +20,7 @@ import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.query.data.UUIDType;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
@@ -43,7 +44,6 @@ import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.cache.QueryExpirationConfiguration;
-import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
@@ -59,10 +59,10 @@ import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
-import datawave.webservice.query.metric.QueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
@@ -168,8 +168,8 @@ import static datawave.webservice.query.cache.QueryTraceCache.CacheListener;
 import static datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
 
 @Path("/Query")
-@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
-@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
+@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser"})
+@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser"})
 @Stateless
 @LocalBean
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
@@ -178,6 +178,7 @@ import static datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
 public class QueryExecutorBean implements QueryExecutor {
     
     private static final String PRIVILEGED_USER = "PrivilegedUser";
+    private static final String UNLIMITED_QUERY_RESULTS_USER = "UnlimitedQueryResultsUser";
     
     /**
      * Used when getting a plan prior to creating a query
@@ -260,7 +261,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private static class QueryData {
         QueryLogic<?> logic = null;
         Principal p = null;
-        Set<String> proxyServers = null;
+        Collection<String> proxyServers = null;
         String userDn = null;
         String userid = null;
         List<String> dnList = null;
@@ -512,9 +513,9 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         // validate the max results override relative to the max results on a query logic
-        // privileged users however can set whatever they want
+        // privileged users or unlimited max results users however, may ignore this limitation.
         if (qp.isMaxResultsOverridden() && qd.logic.getMaxResults() >= 0) {
-            if (!ctx.isCallerInRole(PRIVILEGED_USER)) {
+            if (!ctx.isCallerInRole(PRIVILEGED_USER) || !ctx.isCallerInRole(UNLIMITED_QUERY_RESULTS_USER)) {
                 if (qp.getMaxResultsOverride() < 0 || (qd.logic.getMaxResults() < qp.getMaxResultsOverride())) {
                     log.error("Invalid max results override: " + qp.getMaxResultsOverride() + " vs " + qd.logic.getMaxResults());
                     GenericResponse<String> response = new GenericResponse<>();
@@ -973,7 +974,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 Query q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
                 
                 BaseQueryMetric metric = metricFactory.createMetric();
-                q.populateMetric(metric);
+                metric.populate(q);
                 metric.setQueryType(RunningQuery.class.getSimpleName());
                 
                 Set<Prediction> predictions = predictor.predict(metric);

@@ -15,11 +15,11 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.StringType;
 import datawave.data.type.Type;
 import datawave.query.DocumentSerialization;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.attributes.UniqueGranularity;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.model.QueryModel;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.UniqueGranularity;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import org.junit.Assert;
@@ -153,7 +153,8 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(DocumentSerialization.DEFAULT_RETURN_TYPE, config.getReturnType());
         Assert.assertEquals(10000, config.getEventPerDayThreshold());
         Assert.assertEquals(10, config.getShardsPerDayThreshold());
-        Assert.assertEquals(2500, config.getMaxTermThreshold());
+        Assert.assertEquals(2500, config.getInitialMaxTermThreshold());
+        Assert.assertEquals(2500, config.getFinalMaxTermThreshold());
         Assert.assertEquals(2500, config.getMaxDepthThreshold());
         Assert.assertEquals(500, config.getMaxUnfieldedExpansionThreshold());
         Assert.assertEquals(5000, config.getMaxValueExpansionThreshold());
@@ -202,6 +203,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Maps.newHashMap(), config.getWhindexFieldMappings());
         Assert.assertEquals(Collections.emptySet(), config.getNoExpansionFields());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
+        Assert.assertEquals(5000000L, config.getVisitorFunctionMaxWeight());
     }
     
     /**
@@ -256,6 +258,7 @@ public class ShardQueryConfigurationTest {
         List<String> contentFieldNames = Lists.newArrayList("fieldA");
         Set<String> noExpansionFields = Sets.newHashSet("NoExpansionFieldA");
         Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
+        long visitorFunctionMaxWeight = 200L;
         
         // Set collections on 'other' ShardQueryConfiguration
         other.setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
@@ -289,6 +292,7 @@ public class ShardQueryConfigurationTest {
         other.setContentFieldNames(contentFieldNames);
         other.setNoExpansionFields(noExpansionFields);
         other.setDisallowedRegexPatterns(disallowedRegexPatterns);
+        other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
         
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
@@ -372,6 +376,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(expectedQueryModel.getReverseQueryMapping(), config.getQueryModel().getReverseQueryMapping());
         Assert.assertEquals(expectedQueryModel.getUnevaluatedFields(), config.getQueryModel().getUnevaluatedFields());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
+        Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
         
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
@@ -456,7 +461,8 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 182;
+        int expectedObjectCount = 186;
+        // int expectedObjectCount = 185;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

@@ -62,12 +62,14 @@ import datawave.query.jexl.functions.KeyAdjudicator;
 import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
+import datawave.query.transformer.ExcerptTransform;
 import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
@@ -199,6 +201,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     protected ActiveQueryLog activeQueryLog;
     
+    protected ExcerptTransform excerptTransform = null;
+    
     public QueryIterator() {}
     
     public QueryIterator(QueryIterator other, IteratorEnvironment env) {
@@ -209,7 +213,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         this.seekKeySource = other.seekKeySource;
         this.myEnvironment = other.myEnvironment;
         this.myEvaluationFunction = other.myEvaluationFunction;
-        this.script = other.script;
+        this.script = TreeFlatteningRebuildingVisitor.flatten(other.script);
         this.documentOptions = other.documentOptions;
         this.fieldIndexSatisfiesQuery = other.fieldIndexSatisfiesQuery;
         this.groupingContextAddedByMe = other.groupingContextAddedByMe;
@@ -245,8 +249,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         
         // Parse the query
         try {
-            this.script = JexlASTHelper.parseJexlQuery(this.getQuery());
-            this.myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
+            this.script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
+            this.myEvaluationFunction = getJexlEvaluation(this.getQuery(), arithmetic);
             
         } catch (Exception e) {
             throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
@@ -707,7 +711,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 try {
                     
                     myScript = JexlASTHelper.parseJexlQuery(queries.getValue());
-                    eval = new JexlEvaluation(queries.getValue(), myArithmetic);
+                    eval = getJexlEvaluation(queries.getValue(), myArithmetic);
                     
                 } catch (Exception e) {
                     throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
@@ -862,7 +866,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     
                     Entry<DocumentData,Document> entry = null;
                     if (input != null) {
-                        entry = Maps.immutableEntry(new DocumentData(input.getKey(), Collections.singleton(input.getKey()), Collections.EMPTY_LIST),
+                        entry = Maps.immutableEntry(new DocumentData(input.getKey(), Collections.singleton(input.getKey()), Collections.EMPTY_LIST, true),
                                         input.getValue());
                     }
                     return entry;
@@ -916,6 +920,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         } else {
             documents = getEvaluation(documentSpecificSource, deepSourceCopy, documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies,
                             inclusive);
+        }
+        
+        ExcerptTransform excerptTransform = getExcerptTransform();
+        if (excerptTransform != null) {
+            documents = excerptTransform.getIterator(documents);
         }
         
         // a hook to allow mapping the document such as with the TLD or Parent
@@ -1086,20 +1095,47 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected JexlEvaluation getJexlEvaluation(NestedQueryIterator<Key> documentSource) {
+        return getJexlEvaluation(query, documentSource, getArithmetic());
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query) {
+        return getJexlEvaluation(query, null, getArithmetic());
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query, JexlArithmetic arithmetic) {
+        return getJexlEvaluation(query, null, arithmetic);
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query, NestedQueryIterator<Key> documentSource) {
+        return getJexlEvaluation(query, documentSource, getArithmetic());
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query, NestedQueryIterator<Key> documentSource, JexlArithmetic arithmetic) {
+        JexlEvaluation jexlEvaluationFunction = null;
+        
+        if (arithmetic == null) {
+            arithmetic = getArithmetic();
+        }
         
         if (null == documentSource) {
-            return new JexlEvaluation(query, getArithmetic());
-        }
-        JexlEvaluation jexlEvaluationFunction = null;
-        NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
-        if (null == nestedQuery) {
-            jexlEvaluationFunction = new JexlEvaluation(query, getArithmetic());
+            jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
         } else {
-            jexlEvaluationFunction = nestedQuery.getEvaluation();
-            if (null == jexlEvaluationFunction) {
-                return new JexlEvaluation(query, getArithmetic());
+            NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
+            if (null == nestedQuery) {
+                jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+            } else {
+                jexlEvaluationFunction = nestedQuery.getEvaluation();
+                if (null == jexlEvaluationFunction) {
+                    jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+                }
             }
         }
+        
+        // update the jexl evaluation to gather phrase offsets if required for excerpts
+        if (getExcerptFields() != null && !getExcerptFields().isEmpty()) {
+            jexlEvaluationFunction.setGatherPhraseOffsets(true);
+        }
+        
         return jexlEvaluationFunction;
     }
     
@@ -1244,10 +1280,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         
         if (this.useWhiteListedFields) {
-            projection.initializeWhitelist(this.whiteListedFields);
+            projection.setIncludes(this.whiteListedFields);
             return projection;
         } else if (this.useBlackListedFields) {
-            projection.initializeBlacklist(this.blackListedFields);
+            projection.setExcludes(this.blackListedFields);
             return projection;
         } else {
             String msg = "Configured to use projection, but no whitelist or blacklist was provided";
@@ -1268,7 +1304,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             }
         }
-        projection.initializeBlacklist(composites);
+        projection.setExcludes(composites);
         return projection;
     }
     
@@ -1614,5 +1650,21 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.activeQueryLog = ActiveQueryLog.getInstance(getActiveQueryLogName());
         }
         return this.activeQueryLog;
+    }
+    
+    protected ExcerptTransform getExcerptTransform() {
+        if (excerptTransform == null && getExcerptFields() != null && !getExcerptFields().isEmpty()) {
+            synchronized (getExcerptFields()) {
+                if (excerptTransform == null) {
+                    try {
+                        excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
+                                        excerptIterator.newInstance());
+                    } catch (Exception e) {
+                        throw new RuntimeException("Could not create excerpt transform", e);
+                    }
+                }
+            }
+        }
+        return excerptTransform;
     }
 }

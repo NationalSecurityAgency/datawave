@@ -30,7 +30,9 @@ public class AuthorizationsUtilTest {
     private static final String ISSUER_DN = "issuerDN";
     private String methodAuths;
     private HashSet<Set<String>> userAuths;
-    private DatawavePrincipal principal;
+    private DatawavePrincipal proxiedUserPrincipal;
+    private DatawavePrincipal proxiedServerPrincipal1;
+    private DatawavePrincipal proxiedServerPrincipal2;
     
     @Before
     public void initialize() {
@@ -43,12 +45,16 @@ public class AuthorizationsUtilTest {
         SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of(USER_DN, ISSUER_DN);
         SubjectIssuerDNPair p1dn = SubjectIssuerDNPair.of("entity1UserDN", "entity1IssuerDN");
         SubjectIssuerDNPair p2dn = SubjectIssuerDNPair.of("entity2UserDN", "entity2IssuerDN");
+        SubjectIssuerDNPair p3dn = SubjectIssuerDNPair.of("entity3UserDN", "entity3IssuerDN");
         
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Sets.newHashSet("A", "C", "D"), null, null, System.currentTimeMillis());
         DatawaveUser p1 = new DatawaveUser(p1dn, UserType.SERVER, Sets.newHashSet("A", "B", "E"), null, null, System.currentTimeMillis());
         DatawaveUser p2 = new DatawaveUser(p2dn, UserType.SERVER, Sets.newHashSet("A", "F", "G"), null, null, System.currentTimeMillis());
+        DatawaveUser p3 = new DatawaveUser(p3dn, UserType.SERVER, Sets.newHashSet("A", "B", "G"), null, null, System.currentTimeMillis());
         
-        principal = new DatawavePrincipal(Lists.newArrayList(user, p1, p2));
+        proxiedUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user, p1, p2));
+        proxiedServerPrincipal1 = new DatawavePrincipal(Lists.newArrayList(p3, p1));
+        proxiedServerPrincipal2 = new DatawavePrincipal(Lists.newArrayList(p2, p3, p1));
     }
     
     @Test
@@ -60,12 +66,32 @@ public class AuthorizationsUtilTest {
     @Test
     public void testDowngradeAuthorizations() {
         HashSet<Authorizations> expected = Sets.newHashSet(new Authorizations("A", "C"), new Authorizations("A", "B", "E"), new Authorizations("A", "F", "G"));
-        assertEquals(expected, AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal));
+        assertEquals(expected, AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, proxiedUserPrincipal));
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testDowngradeAuthorizationsUserRequestsAuthTheyDontHave() {
+        AuthorizationsUtil.getDowngradedAuthorizations("A,C,E", proxiedUserPrincipal);
+        fail("Exception not thrown!");
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testDowngradeAuthorizationsServerRequestsAuthTheyDontHave1() {
+        // p1, p3 - call will succeed if p1 is primaryUser, throw exception if p3 is primaryUser
+        AuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal1);
+        fail("Exception not thrown!");
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testDowngradeAuthorizationsServerRequestsAuthTheyDontHave2() {
+        // p1, p2, p3 - call will succeed if p1 is primaryUser, throw exception if p2 is primaryUser
+        AuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal2);
+        fail("Exception not thrown!");
     }
     
     @Test
     public void testUserAuthsFirstInMergedSet() {
-        HashSet<Authorizations> mergedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal);
+        HashSet<Authorizations> mergedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, proxiedUserPrincipal);
         assertEquals(3, mergedAuths.size());
         assertEquals("Merged user authorizations were not first in the return set", new Authorizations("A", "C"), mergedAuths.iterator().next());
     }
@@ -176,6 +202,6 @@ public class AuthorizationsUtilTest {
     @Test
     public void testBuildUserAuthorizationsString() {
         String expected = new Authorizations("A", "C", "D").toString();
-        assertEquals(expected, AuthorizationsUtil.buildUserAuthorizationString(principal));
+        assertEquals(expected, AuthorizationsUtil.buildUserAuthorizationString(proxiedUserPrincipal));
     }
 }

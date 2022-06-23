@@ -1,11 +1,14 @@
 package datawave.query.language.parser.jexl;
 
 import com.google.common.collect.Sets;
+import datawave.ingest.data.tokenize.StandardAnalyzer;
+import datawave.ingest.data.tokenize.TokenSearch;
 import datawave.query.Constants;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.processor.lucene.QueryNodeProcessorFactory;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessorPipeline;
@@ -439,7 +442,7 @@ public class TestLuceneToJexlQueryParser {
     @Test
     public void testFunctions() throws ParseException {
         testFunction("filter:isNull(nullfield)", "#isnull(nullfield)");
-        testFunction("not(filter:isNull(field))", "#isnotnull(field)");
+        testFunction("filter:isNotNull(field)", "#isnotnull(field)");
         testFunction("filter:includeRegex(_ANYFIELD_, 'r1')", "#include(r1)");
         testFunction("(filter:includeRegex(f1, 'r1') && filter:includeRegex(f2, 'r2'))", "#include(f1, r1, f2, r2)");
         testFunction("(filter:includeRegex(f1, 'r1') && filter:includeRegex(f2, 'r2'))", "#include(AND, f1, r1, f2, r2)");
@@ -545,7 +548,7 @@ public class TestLuceneToJexlQueryParser {
     
     @Test
     public void testIsNotNull() throws ParseException {
-        assertEquals("F == 'S' && not(filter:isNull(FOO))", parser.parse("F:S #ISNOTNULL(FOO)").getOriginalQuery());
+        assertEquals("F == 'S' && filter:isNotNull(FOO)", parser.parse("F:S #ISNOTNULL(FOO)").getOriginalQuery());
     }
     
     @Test
@@ -627,5 +630,17 @@ public class TestLuceneToJexlQueryParser {
     public void testParseIncludeFunctionPartOfUnion() throws ParseException {
         testFunction("(filter:includeRegex(f1, 'r1') || filter:includeRegex(f2, 'r2'))", "#include(OR, f1, r1, f2, r2)");
         testFunction("filter:includeRegex(f1, 'r1')", "#include(f1, r1)");
+    }
+    
+    @Test
+    public void testSynonymTokenization() throws ParseException {
+        TokenSearch searchUtil = TokenSearch.Factory.newInstance();
+        Analyzer analyzer = new StandardAnalyzer(searchUtil);
+        parser.setAnalyzer(analyzer);
+        // this isn't the most realistic test, but it does verify that we don't lose the rest of the token stream
+        // when the first token emitted is the same as the input token.
+        Assert.assertEquals("(TOKFIELD == '/home/datawave/README.md' || "
+                        + "content:phrase(TOKFIELD, termOffsetMap, '/home/datawave/readme.md', 'home/datawave/readme.md', "
+                        + "'home', 'datawave/readme.md', 'datawave', 'readme.md', 'readme', 'md'))", parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
     }
 }

@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 public abstract class Attribute<T extends Comparable<T>> implements WritableComparable<T>, KryoSerializable {
+    
     private static final Logger log = Logger.getLogger(Attribute.class);
     private static final Text EMPTY_TEXT = new Text();
     
@@ -31,6 +32,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
      */
     protected Key metadata = null;
     protected boolean toKeep = true; // a flag denoting whether this attribute is to be kept in the returned results (transient or not)
+    protected boolean fromIndex = true; // Assume attributes are from the index unless specified otherwise.
     
     public Attribute() {}
     
@@ -155,64 +157,48 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     }
     
     protected void writeMetadata(DataOutput out, Boolean reducedResponse) throws IOException {
-        out.writeBoolean(reducedResponse);
-        
-        if (!reducedResponse) {
-            out.writeBoolean(isMetadataSet());
-            if (isMetadataSet()) {
-                byte[] cvBytes = getColumnVisibility().getExpression();
-                
-                WritableUtils.writeVInt(out, cvBytes.length);
-                
-                out.write(cvBytes);
-                out.writeLong(getTimestamp());
-            }
+        out.writeBoolean(isMetadataSet());
+        if (isMetadataSet()) {
+            byte[] cvBytes = getColumnVisibility().getExpression();
+            
+            WritableUtils.writeVInt(out, cvBytes.length);
+            
+            out.write(cvBytes);
+            out.writeLong(getTimestamp());
         }
     }
     
     protected void writeMetadata(Kryo kryo, Output output, Boolean reducedResponse) {
-        output.writeBoolean(reducedResponse);
-        
-        if (!reducedResponse) {
-            output.writeBoolean(isMetadataSet());
-            if (isMetadataSet()) {
-                byte[] cvBytes = getColumnVisibility().getExpression();
-                output.writeInt(cvBytes.length, true);
-                output.writeBytes(cvBytes);
-                output.writeLong(getTimestamp());
-            }
+        output.writeBoolean(isMetadataSet());
+        if (isMetadataSet()) {
+            byte[] cvBytes = getColumnVisibility().getExpression();
+            output.writeInt(cvBytes.length, true);
+            output.writeBytes(cvBytes);
+            output.writeLong(getTimestamp());
         }
     }
     
     protected void readMetadata(DataInput in) throws IOException {
-        boolean reducedResponse = in.readBoolean();
-        
-        if (!reducedResponse) {
-            if (in.readBoolean()) {
-                int cvBytesLength = WritableUtils.readVInt(in);
-                
-                byte[] cvBytes = new byte[cvBytesLength];
-                
-                in.readFully(cvBytes);
-                
-                this.setMetadata(new ColumnVisibility(cvBytes), in.readLong());
-            } else {
-                this.clearMetadata();
-            }
+        if (in.readBoolean()) {
+            int cvBytesLength = WritableUtils.readVInt(in);
+            
+            byte[] cvBytes = new byte[cvBytesLength];
+            
+            in.readFully(cvBytes);
+            
+            this.setMetadata(new ColumnVisibility(cvBytes), in.readLong());
+        } else {
+            this.clearMetadata();
         }
     }
     
     protected void readMetadata(Kryo kryo, Input input) {
-        boolean reducedResponse = input.readBoolean();
-        
-        if (!reducedResponse) {
-            if (input.readBoolean()) {
-                int size = input.readInt(true);
-                
-                this.setMetadata(new ColumnVisibility(input.readBytes(size)), input.readLong());
-            } else {
-                this.clearMetadata();
-            }
+        if (input.readBoolean()) {
+            int size = input.readInt(true);
+            
+            this.setMetadata(new ColumnVisibility(input.readBytes(size)), input.readLong());
+        } else {
+            this.clearMetadata();
         }
     }
     
@@ -228,6 +214,14 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         } else {
             return 0;
         }
+    }
+    
+    public void setFromIndex(boolean fromIndex) {
+        this.fromIndex = fromIndex;
+    }
+    
+    public boolean isFromIndex() {
+        return fromIndex;
     }
     
     public int hashCode() {
