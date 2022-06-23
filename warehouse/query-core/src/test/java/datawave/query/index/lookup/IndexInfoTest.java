@@ -277,7 +277,7 @@ public class IndexInfoTest {
      */
     @Test
     public void testUnion_OneTermIsDelayedPredicate() {
-        ASTDelayedPredicate delayedPredicate = ASTDelayedPredicate.create(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        ASTDelayedPredicate delayedPredicate = (ASTDelayedPredicate) ASTDelayedPredicate.create(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         
         IndexInfo left = new IndexInfo(50);
         left.applyNode(delayedPredicate);
