@@ -134,7 +134,6 @@ public class EvaluationPhaseFilterFunctions {
      * @return the {@link FunctionalSet} of hit terms found
      */
     public static FunctionalSet<ValueTuple> isNotNull(Object fieldValue) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null) {
             if (fieldValue instanceof Collection) {
                 Collection<?> values = (Collection<?>) fieldValue;
