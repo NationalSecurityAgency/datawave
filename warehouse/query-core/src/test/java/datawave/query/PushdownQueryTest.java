@@ -125,7 +125,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
     
     @Test
     public void testDelayedFilterIncludeRegex() throws Exception {
-        log.info("------  testErrorFilterIncludeRegex  ------");
+        log.info("------  testDelayedFilterIncludeRegex  ------");
         String state = "'ohio'";
         String code = "'itA'";
         for (final TestCities city : TestCities.values()) {
@@ -134,6 +134,21 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
                             + CityField.STATE.name() + RE_OP + state + ")";
             ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
+            runTest(query, expectQuery);
+        }
+    }
+    
+    @Test
+    public void testDelayedFilterIncludeRegexExpansion() throws Exception {
+        log.info("------  testDelayedFilterIncludeRegexExpansion  ------");
+        String state = "'ohio'";
+        String code = "'itA'";
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
+                            + "filter:includeRegex(" + CityField.STATE.name() + "," + state + "))";
+            String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
+                            + CityField.STATE.name() + RE_OP + state + ")";
+            ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(true);
             runTest(query, expectQuery);
         }
     }

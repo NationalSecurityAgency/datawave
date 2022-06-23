@@ -461,7 +461,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 188;
+        int expectedObjectCount = 186;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

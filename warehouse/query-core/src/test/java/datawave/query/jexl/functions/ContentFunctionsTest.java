@@ -67,6 +67,7 @@ public class ContentFunctionsTest {
     public void setup() {
         this.context = new MapContext();
         this.termOffSetMap = new TermOffsetMap();
+        this.termOffSetMap.setGatherPhraseOffsets(true);
     }
     
     /**
