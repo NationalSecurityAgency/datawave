@@ -2365,6 +2365,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
     }
     
+    public boolean isLazySetMechanismEnabled() {
+        return getConfig().isLazySetMechanismEnabled();
+    }
+    
+    public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
+        getConfig().setLazySetMechanismEnabled(lazySetMechanismEnabled);
+    }
+    
     public long getVisitorFunctionMaxWeight() {
         return getConfig().getVisitorFunctionMaxWeight();
     }
