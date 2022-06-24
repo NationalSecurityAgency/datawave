@@ -5,13 +5,11 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 public final class AttributeComparator {
     
@@ -78,7 +76,8 @@ public final class AttributeComparator {
      * @return
      */
     public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(final Attributes attrs1, final Attributes attrs2) {
-        Map<Attribute<? extends Comparable<?>>,Integer> combinedAttrMap = new HashMap<>();
+        Set<Attribute<? extends Comparable<?>>> combinedAttrSet = new HashSet<>();
+        Set<Attribute> previouslyMerged = new HashSet<Attribute>();
         List<Attribute> trueDuplicates = new ArrayList<Attribute>();
         
         attrs1.getAttributes().forEach(attr1 -> {
@@ -89,36 +88,46 @@ public final class AttributeComparator {
                         containsMatch.set(true);
                         trueDuplicates.add(attr1);
                         attr1.setToKeep(true);
-                        combinedAttrMap.put(attr1, 1); // found true match so return pre-existing Attribute
+                        combinedAttrSet.add(attr1); // found true match so return pre-existing Attribute
                         } else {
                             Attribute combinedAttr = combineSingleAttributes(attr1, attr2);
-                            if (combinedAttrMap.get(combinedAttr) == null) {
-                                combinedAttrMap.put(combinedAttr, 1);
-                            } else {
-                                combinedAttrMap.put(combinedAttr, combinedAttrMap.get(combinedAttr) + 1);
+                            if (!combinedAttrSet.contains(combinedAttr)) {
+                                combinedAttrSet.add(combinedAttr);
                             }
+                            previouslyMerged.add(attr1);
+                            previouslyMerged.add(attr2);
+                            
+                            // keep track of whether or not we merged an Attribute for later
+                            if (combinedAttrSet.contains(attr1)) {
+                                combinedAttrSet.remove(attr1);
+                            }
+                            if (combinedAttrSet.contains(attr2)) {
+                                combinedAttrSet.remove(attr2);
+                            }
+                            
                             containsMatch.set(true);
                         }
                     } else if (attrs2.getAttributes().size() > 1 && !trueDuplicates.contains(attr2)) {
-                        if (combinedAttrMap.get(attr2) == null) {
+                        if (!combinedAttrSet.contains(attr2)) {
                             attr2.setToKeep(true);
-                            combinedAttrMap.put(attr2, 1);
-                        } else {
-                            combinedAttrMap.put(attr2, combinedAttrMap.get(attr2) + 1);
+                            combinedAttrSet.add(attr2);
                         }
                     }
                 });
             if (!containsMatch.get() && attrs1.getAttributes().size() > 1 && !trueDuplicates.contains(attr1)) {
-                if (combinedAttrMap.get(attr1) == null) {
-                    combinedAttrMap.put(attr1, 1);
-                } else {
-                    combinedAttrMap.put(attr1, combinedAttrMap.get(attr1) + 1);
+                if (!combinedAttrSet.contains(attr1)) {
+                    combinedAttrSet.add(attr1);
                 }
             }
         });
         
-        // ensure we don't return any original Attributes that may have been merged together by filtering on the number of times they appear
-        return combinedAttrMap.entrySet().stream().filter(entry -> entry.getValue() == 1).map(Map.Entry::getKey).collect(Collectors.toSet());
+        // remove any previously "unique" attribute previously added but has now been merged
+        Iterator<Attribute> previousItr = previouslyMerged.iterator();
+        while (previousItr.hasNext()) {
+            combinedAttrSet.remove(previousItr.next());
+        }
+        
+        return combinedAttrSet;
     }
     
     public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(final Attribute attr, final Attributes attrs, final boolean trackSizes) {
