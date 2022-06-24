@@ -50,8 +50,25 @@ done
 [ "${START_WEB}" == true ] && datawaveWebStart
 
 if [ "${START_TEST}" == true ] ; then
-    datawaveWebStart && datawaveWebTest --blacklist-files QueryMetrics && allStop
-    exit $?
+    datawaveWebStart
+    status=$?
+
+    if [ "$status" != "0" ] ; then
+        echo "datawaveWebStart Failed"
+        cat ${WILDFLY_HOME}/standalong/log/server.log
+        exit $status
+    else
+        datawaveWebTest --blacklist-files QueryMetrics
+        status=$?
+
+        if [ "$status" != "0" ] ; then
+            echo "datawaveWebTest Failed"
+            cat ${WILDFLY_HOME}/standalone/log/server.log
+        fi
+
+        allStop
+        exit $status
+    fi
 fi
 
 if [ "${START_AS_DAEMON}" == true ] ; then
