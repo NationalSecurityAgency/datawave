@@ -303,9 +303,6 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      * 
      * @param script
      *            An ASTJexlScript
-     * @param sortDedupeChildren
-     *            Whether or not to sort the child nodes, and dedupe them. Note: Only siblings (children with the same parent node) will be deduped. Flatten
-     *            beforehand for maximum 'dedupeage'.
      * @return
      */
     public static String buildQueryWithHTML(JexlNode script) {
