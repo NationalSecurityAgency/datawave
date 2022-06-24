@@ -520,7 +520,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 }
             }
         }
-        return JexlFormattedStringBuildingVisitor.formatMetrics(queryMetrics);
+        return queryMetrics;
     }
 
     @Override
@@ -550,9 +550,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setId(UUID.randomUUID());
             query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
-
-            response.setResult(queryMetrics);
-
+            
+            response.setResult(JexlFormattedStringBuildingVisitor.formatMetrics(queryMetrics));
+            
             response.setGeoQuery(queryMetrics.stream().anyMatch(SimpleQueryGeometryHandler::isGeoQuery));
         } finally {
             enableLogs(true);
