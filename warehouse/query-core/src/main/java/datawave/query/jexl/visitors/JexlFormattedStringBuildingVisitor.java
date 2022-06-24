@@ -958,8 +958,8 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
         for (QueryMetric metric : metrics) {
             JexlNode queryNode = null, planNode = null;
             QueryMetric updatedMetric = new QueryMetric(metric);
-            String query = updatedMetric.getQuery(); // temp0;
-            String plan = updatedMetric.getPlan(); // temp0;
+            String query = updatedMetric.getQuery();
+            String plan = updatedMetric.getPlan();
             // If it is a JEXL query, set the query to be formatted
             if (query != null && isJexlQuery(metric.getParameters())) {
                 try {
