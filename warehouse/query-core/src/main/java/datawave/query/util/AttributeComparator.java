@@ -67,7 +67,7 @@ public final class AttributeComparator {
      * Performs a basic match on the content/data of two given Attributes. If such a match is found, combine the metadata from the two Attributes and create new
      * deduplicated Attributes to return to the Document. Preference is given to the Attribute found in the event, NOT the index. In the case that true
      * duplicates are discovered we keep the Attribute that already exists within the Document, set the Attribute's toKeep() flag to true (if not already), and
-     * ignore the potential new Attribute being checked.
+     * ignore the potential new Attribute being checked. All other things being equal, priority will be given to the first collection.
      *
      * @param attrs1
      *            The Attributes already in the Document against which we want to compare
