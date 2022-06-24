@@ -55,7 +55,7 @@ if [ "${START_TEST}" == true ] ; then
 
     if [ "$status" != "0" ] ; then
         echo "datawaveWebStart Failed"
-        cat ${WILDFLY_HOME}/standalong/log/server.log
+        cat ${WILDFLY_HOME}/standalone/log/server.log
         exit $status
     else
         datawaveWebTest --blacklist-files QueryMetrics
