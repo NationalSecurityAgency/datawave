@@ -22,6 +22,7 @@ import datawave.query.config.Profile;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.enrich.DataEnricher;
 import datawave.query.enrich.EnrichingMaster;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.index.lookup.CreateUidsIterator;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.UidIntersector;
@@ -1194,6 +1195,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setIncludeHierarchyFields(includeHierarchyFields);
     }
     
+    public boolean getEnforceUniqueConjunctionsWithinExpression() {
+        return getConfig().getEnforceUniqueConjunctionsWithinExpression();
+    }
+    
+    public void setEnforceUniqueConjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
+        getConfig().setEnforceUniqueConjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
+    }
+    
+    public boolean getEnforceUniqueDisjunctionsWithinExpression() {
+        return getConfig().getEnforceUniqueDisjunctionsWithinExpression();
+    }
+    
+    public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
+        getConfig().setEnforceUniqueDisjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
+    }
+    
     public List<String> getDocumentPermutations() {
         return getConfig().getDocumentPermutations();
     }
@@ -1272,6 +1289,18 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setExcerptFields(ExcerptFields excerptFields) {
         getConfig().setExcerptFields(excerptFields);
+    }
+    
+    public String getExcerptIterator() {
+        return getConfig().getExcerptIterator().getName();
+    }
+    
+    public void setExcerptIterator(String iteratorClass) {
+        try {
+            getConfig().setExcerptIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(iteratorClass));
+        } catch (Exception e) {
+            throw new DatawaveFatalQueryException("Illegal term frequency excerpt iterator class", e);
+        }
     }
     
     public String getBlacklistedFieldsString() {
@@ -2383,6 +2412,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
+    }
+    
+    public boolean isLazySetMechanismEnabled() {
+        return getConfig().isLazySetMechanismEnabled();
+    }
+    
+    public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
+        getConfig().setLazySetMechanismEnabled(lazySetMechanismEnabled);
     }
     
     public long getVisitorFunctionMaxWeight() {

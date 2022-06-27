@@ -11,6 +11,7 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -86,6 +87,11 @@ public class DataTypeAgeOffFilter extends AppliedRule {
      * Data type cut off times
      */
     protected Map<ByteSequence,Long> dataTypeTimes = null;
+    
+    /**
+     * When set, will only accept keys at scan-level for matching timestamps
+     */
+    protected Map<ByteSequence,Long> dataTypeScanTimes = null;
     
     /**
      * Required by the {@code FilterRule} interface. This method returns a {@code boolean} value indicating whether or not to allow the {@code (Key, Value)}
@@ -209,6 +215,12 @@ public class DataTypeAgeOffFilter extends AppliedRule {
             ruleApplied = true;
             accept = k.getTimestamp() > dataTypeCutoff;
         }
+        // after age-off is applied check, if we are accepting this KeyValue and this is a Scan on a dataType which only accepts on timestamp
+        // only continue to accept the KeyValue if the timestamp for the dataType matches what is configured
+        if (accept && iterEnv.getIteratorScope() == IteratorUtil.IteratorScope.scan && dataTypeScanTimes.containsKey(dataType)) {
+            final long timestamp = dataTypeScanTimes.get(dataType);
+            accept = timestamp == k.getTimestamp();
+        }
         return accept;
     }
     
@@ -268,6 +280,7 @@ public class DataTypeAgeOffFilter extends AppliedRule {
             ttlUnitsFactor = AgeOffPeriod.getTtlUnitsFactor(options.getTTLUnits());
             
             dataTypeTimes = new HashMap<>();
+            dataTypeScanTimes = new HashMap<>();
             
             long myCutOffDateMillis = 0;
             
@@ -278,6 +291,17 @@ public class DataTypeAgeOffFilter extends AppliedRule {
                     dataTypeTimes.put(dataType, myCutOffDateMillis);
                 } else {
                     dataTypeTimes.put(dataType, options.getAgeOffPeriod().getCutOffMilliseconds());
+                }
+                
+                final String dataTypeHasScanTime = options.getOption(dataType + ".hasScanTime");
+                if (Boolean.parseBoolean(dataTypeHasScanTime)) {
+                    final String scanTime = iterEnv.getConfig().get("table.custom.timestamp.current." + dataType);
+                    try {
+                        dataTypeScanTimes.put(dataType, Long.parseLong(scanTime, 10));
+                    } catch (final NumberFormatException e) {
+                        throw new NumberFormatException(dataType + " marked as hasScanTime but corresponding table.custom.timestamp.current." + dataType
+                                        + " is invalid: " + scanTime);
+                    }
                 }
             }
             
