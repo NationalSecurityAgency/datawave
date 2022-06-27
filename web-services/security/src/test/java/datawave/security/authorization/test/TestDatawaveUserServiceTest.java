@@ -25,7 +25,6 @@ import org.junit.runner.RunWith;
 import javax.annotation.Priority;
 import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -190,7 +189,8 @@ public class TestDatawaveUserServiceTest {
         
         @Override
         public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
-            return dns.stream().map(dn -> new DatawaveUser(dn, UserType.USER, null, Collections.singleton(getName()), null, -1L, -1L))
+            return dns.stream()
+                            .map(dn -> new DatawaveUser(dn, UserType.USER, null, Collections.singleton(getName()), Collections.singleton(getName()), null, -1L))
                             .collect(Collectors.toList());
         }
     }
