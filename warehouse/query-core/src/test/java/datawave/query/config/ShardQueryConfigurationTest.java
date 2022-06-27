@@ -20,6 +20,7 @@ import datawave.query.attributes.UniqueGranularity;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.model.QueryModel;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import org.junit.Assert;
@@ -407,6 +408,22 @@ public class ShardQueryConfigurationTest {
     }
     
     @Test
+    public void testGetSetConjunctionsWithinExpression() {
+        ShardQueryLogic logic = new ShardQueryLogic();
+        boolean expected = true; // Set ordering.
+        logic.setEnforceUniqueConjunctionsWithinExpression(true);
+        Assert.assertEquals(expected, logic.getEnforceUniqueConjunctionsWithinExpression());
+    }
+    
+    @Test
+    public void testGetSetDisjunctionsWithinExpression() {
+        ShardQueryLogic logic = new ShardQueryLogic();
+        boolean expected = true; // Set ordering.
+        logic.setEnforceUniqueDisjunctionsWithinExpression(true);
+        Assert.assertEquals(expected, logic.getEnforceUniqueDisjunctionsWithinExpression());
+    }
+    
+    @Test
     public void testGetSetBlacklistedFields() {
         String expected = "blacklistA,blacklistB";
         Set<String> blacklistedFields = Sets.newHashSet("blacklistA", "blacklistB");
@@ -461,8 +478,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 186;
-        // int expectedObjectCount = 185;
+        int expectedObjectCount = 187;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
