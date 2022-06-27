@@ -69,10 +69,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private transient RunningQueryTiming timing = null;
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
-    private BlockingQueue<Object> resultsThreadQueue = new ArrayBlockingQueue<>(1);
-    private AtomicInteger hasNext = new AtomicInteger(0);
-    private AtomicInteger gotNext = new AtomicInteger(0);
-    private AtomicBoolean running = new AtomicBoolean(false);
+    private final BlockingQueue<Object> resultsThreadQueue = new ArrayBlockingQueue<>(1);
+    private final AtomicInteger hasNext = new AtomicInteger(0);
+    private final AtomicInteger gotNext = new AtomicInteger(0);
+    private final AtomicBoolean running = new AtomicBoolean(false);
     private QueryPredictor predictor = null;
     private long maxResults = 0;
     private int currentTimeoutcount = 0;
@@ -212,13 +212,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      * the calls to hasNext and next on the underlying iterator. They will be decremented once a result is acknowledged in the RunningQuery.next() loop. The
      * running boolean will allow the graceful termination of this thread.
      * 
-     * @param queue
-     * @param running
-     * @param hasNext
-     * @param gotNext
      * @return running (with a value of false)
      */
-    private Object getResultsThread(BlockingQueue<Object> queue, AtomicBoolean running, AtomicInteger hasNext, AtomicInteger gotNext) {
+    private Object getResultsThread() {
         try {
             while (running.get() && !this.finished && !this.canceled && this.iter.hasNext()) {
                 synchronized (hasNext) {
@@ -226,7 +222,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     hasNext.notifyAll();
                 }
                 // wait until the queue is emptied
-                while (running.get() && !this.finished && !this.canceled && !queue.isEmpty()) {
+                while (running.get() && !this.finished && !this.canceled && !resultsThreadQueue.isEmpty()) {
                     try {
                         Thread.sleep(1);
                     } catch (InterruptedException e) {
@@ -234,10 +230,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     }
                 }
                 // if the queue is available and we are still running, then get the next result
-                if (running.get() && !this.finished && !this.canceled && queue.isEmpty()) {
+                if (running.get() && !this.finished && !this.canceled && resultsThreadQueue.isEmpty()) {
                     Object o = this.iter.next();
                     if (o != null) {
-                        queue.offer(o);
+                        resultsThreadQueue.offer(o);
                         synchronized (gotNext) {
                             gotNext.incrementAndGet();
                             gotNext.notifyAll();
@@ -397,7 +393,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             // start up the results thread if needed
             if (this.allowShortCircuitTimeouts && future == null && !this.canceled && !this.finished) {
                 running.set(true);
-                future = executor.submit(() -> getResultsThread(resultsThreadQueue, running, hasNext, gotNext));
+                future = executor.submit(() -> getResultsThread());
             }
             
             try {
