@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -245,8 +246,9 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         if (instance.isType(ASTDelayedPredicate.class)) {
             JexlNode source = ASTDelayedPredicate.unwrapFully(node, ASTDelayedPredicate.class);
+            source = JexlASTHelper.dereference(source);
             // when pulling up a delayed marker that is negated, a reference expression must be persisted
-            if (!(source instanceof ASTReferenceExpression) && JexlNodes.findNegatedParent(node)) {
+            if (source instanceof ASTOrNode || source instanceof ASTAndNode || JexlNodes.findNegatedParent(node)) {
                 source = JexlNodes.wrap(source);
             }
             JexlNodes.swap(node.jjtGetParent(), node, source);

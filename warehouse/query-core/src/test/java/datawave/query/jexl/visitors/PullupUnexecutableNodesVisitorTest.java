@@ -51,14 +51,14 @@ public class PullupUnexecutableNodesVisitorTest {
     @Test
     public void testDelayedUnion() {
         String query = "((_Delayed_ = true) && (FOO == 'bar' || FOO == 'baz'))";
-        String expected = "FOO == 'bar' || FOO == 'baz'";
+        String expected = "(FOO == 'bar' || FOO == 'baz')";
         test(query, expected);
     }
     
     @Test
     public void testDelayedIntersection() {
         String query = "((_Delayed_ = true) && (FOO == 'bar' && FOO == 'baz'))";
-        String expected = "FOO == 'bar' && FOO == 'baz'";
+        String expected = "(FOO == 'bar' && FOO == 'baz')";
         test(query, expected);
     }
     
@@ -74,14 +74,14 @@ public class PullupUnexecutableNodesVisitorTest {
     @Test
     public void testNegatedDelayedUnion() {
         String query = "!((_Delayed_ = true) && (FOO == 'bar' || FOO == 'baz'))";
-        String expected = "!(FOO == 'bar') && !(FOO == 'baz')"; // negations are pushed down prior to pull up
+        String expected = "(!(FOO == 'bar') && !(FOO == 'baz'))"; // negations are pushed down prior to pull up
         test(query, expected);
     }
     
     @Test
     public void testNegatedDelayedIntersection() {
         String query = "!((_Delayed_ = true) && (FOO == 'bar' && FOO == 'baz'))";
-        String expected = "!(FOO == 'bar') || !(FOO == 'baz')"; // negations are pushed down prior to pull up
+        String expected = "(!(FOO == 'bar') || !(FOO == 'baz'))"; // negations are pushed down prior to pull up
         test(query, expected);
     }
     
