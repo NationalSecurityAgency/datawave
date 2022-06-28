@@ -1,12 +1,13 @@
 package datawave.webservice.query.iterator;
 
+import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.Flushable;
-import java.util.Iterator;
-
+import datawave.webservice.query.result.event.DefaultEvent;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import datawave.webservice.query.exception.EmptyObjectException;
 import org.apache.log4j.Logger;
+
+import java.util.Iterator;
 
 public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
     
@@ -27,7 +28,6 @@ public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
     
     @Override
     public boolean hasNext() {
-        
         if (next == null) {
             next = getNext();
         }
