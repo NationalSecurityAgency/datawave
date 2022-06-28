@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 import javax.inject.Inject;
 import java.io.File;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -716,6 +717,64 @@ public abstract class CompositeFunctionsTest {
         // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+    }
+    
+    // filter functions cannot be run against index-only fields
+    // in some cases the filter function is rewritten into an appropriate term
+    // this tests the cases when a filter function cannot be rewritten
+    @Test
+    public void testFilterFunctionsInvalidatedByIndexOnlyFields() throws ParseException {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        
+        if (log.isDebugEnabled()) {
+            log.debug("testCompositeFunctions");
+        }
+        // @formatter:off
+        String[] queries = {
+                //  isNull
+                "UUID == 'SOPRANO' && filter:isNull(LOCATION)",
+                "UUID == 'SOPRANO' && filter:isNull(POSIZIONE)",
+                "UUID == 'SOPRANO' && filter:isNull(NAM||LOCATION)",
+                "UUID == 'SOPRANO' && filter:isNull((NAME||POSIZIONE))",
+
+                //  isNotNull
+                "UUID == 'SOPRANO' && filter:isNotNull(LOCATION)",  //  index-only field
+                "UUID == 'SOPRANO' && filter:isNotNull(POSIZIONE)", //  alternate index-only field
+                "UUID == 'SOPRANO' && filter:isNotNull(LOCATION||POSIZIONE)",   //  both index-only fields
+                "UUID == 'SOPRANO' && filter:isNotNull(NAM||LOCATION)", //  one index-only field still fails validation
+                "UUID == 'SOPRANO' && filter:isNotNull((NAME||POSIZIONE))",
+
+                //  matchesAtLeastCountOf
+                "UUID == 'SOPRANO' && filter:matchesAtLeastCountOf(2, LOCATION, 'chicago', 'newyork')",
+
+                //  compare
+                "UUID == 'SOPRANO' && filter:compare(LOCATION, '==', ANY, POSIZIONE)",
+                "UUID == 'SOPRANO' && filter:compare(LOCATION, '==', ANY, NAME)",
+                "UUID == 'SOPRANO' && filter:compare(NAME, '==', ANY, POSIZIONE)"
+
+                //  includeRegex and excludeRegex handled by RegexFunctionVisitor
+
+                //  includeText can handle index-only fields and should be a query function (see pr #1534)
+        };
+        //  @formatter:on
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        for (String query : queries) {
+            try {
+                runTestQuery(Collections.emptyList(), query, startDate, endDate, extraParameters);
+                Assert.fail("query should not have run without throwing an exception: " + query);
+            } catch (DatawaveFatalQueryException e) {
+                String correctErrMsg = "datawave.webservice.query.exception.BadRequestQueryException: Invalid arguments to function. Filter function cannot evaluate against index-only field";
+                Assert.assertTrue("Expected query to fail: " + query, e.getMessage().startsWith(correctErrMsg));
+            } catch (Exception e) {
+                Assert.fail("Expected filter function with index-only fields to fail validation: " + query);
+            }
+            
         }
     }
     
