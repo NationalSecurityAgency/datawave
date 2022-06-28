@@ -2,12 +2,18 @@ package datawave.query.jexl.nodes;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -142,6 +148,84 @@ public class QueryPropertyMarkerTest {
         assertFalse(QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, (List<JexlNode>) null).isIvarator());
         assertFalse(QueryPropertyMarker.Instance.of(ASTEvaluationOnly.class, (List<JexlNode>) null).isIvarator());
         assertFalse(QueryPropertyMarker.Instance.of(BoundedRange.class, (List<JexlNode>) null).isIvarator());
+    }
+    
+    @Test
+    public void testNoDoubleMarks_ExceededOr() {
+        JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
+        String expected = "((_List_ = true) && (FOO =~ 'ba.*'))";
+        testApplyMarkerMultipleTimes(source, expected, ExceededOrThresholdMarkerJexlNode.class);
+    }
+    
+    @Test
+    public void testNoDoubleMarks_ExceededTerm() {
+        JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
+        String expected = "((_Term_ = true) && (FOO =~ 'ba.*'))";
+        testApplyMarkerMultipleTimes(source, expected, ExceededTermThresholdMarkerJexlNode.class);
+    }
+    
+    @Test
+    public void testNoDoubleMarks_ExceededValue() {
+        JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
+        String expected = "((_Value_ = true) && (FOO =~ 'ba.*'))";
+        testApplyMarkerMultipleTimes(source, expected, ExceededValueThresholdMarkerJexlNode.class);
+    }
+    
+    @Test
+    public void testNoDoubleMarks_IndexHoleMarker() {
+        JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
+        String expected = "((_Hole_ = true) && (FOO =~ 'ba.*'))";
+        testApplyMarkerMultipleTimes(source, expected, IndexHoleMarkerJexlNode.class);
+    }
+    
+    @Test
+    public void testNoDoubleMarks_DelayedPredicate() {
+        JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
+        String expected = "((_Delayed_ = true) && (FOO =~ 'ba.*'))";
+        testApplyMarkerMultipleTimes(source, expected, ASTDelayedPredicate.class);
+    }
+    
+    @Test
+    public void testNoDoubleMarks_EvaluationOnly() {
+        JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
+        String expected = "((_Eval_ = true) && (FOO =~ 'ba.*'))";
+        testApplyMarkerMultipleTimes(source, expected, ASTEvaluationOnly.class);
+    }
+    
+    @Test
+    public void testNoDoubleMarks_BoundedRange() {
+        JexlNode left = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), "FOO", "3");
+        JexlNode right = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), "FOO", "7");
+        JexlNode source = JexlNodeFactory.createAndNode(Arrays.asList(left, right));
+        String expected = "((_Bounded_ = true) && (FOO >= '3' && FOO <= '7'))";
+        testApplyMarkerMultipleTimes(source, expected, BoundedRange.class);
+    }
+    
+    private void testApplyMarkerMultipleTimes(JexlNode source, String expected, Class<? extends QueryPropertyMarker> markerClass) {
+        
+        // assert first marker apply
+        JexlNode marked = QueryPropertyMarker.create(source, markerClass);
+        assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(marked));
+        
+        // apply marker several more times and assert nothing changes
+        for (int i = 0; i < 5; i++) {
+            marked = QueryPropertyMarker.create(marked, markerClass);
+        }
+        assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(marked));
+    }
+    
+    @Test
+    public void testApplyMultipleMarkers() {
+        // mark a regex as value exceeded
+        JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
+        String expected = "((_Value_ = true) && (FOO =~ 'ba.*'))";
+        JexlNode marked = QueryPropertyMarker.create(source, ExceededValueThresholdMarkerJexlNode.class);
+        assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(marked));
+        
+        // then delay it to skip global index lookup
+        expected = "((_Delayed_ = true) && ((_Value_ = true) && (FOO =~ 'ba.*')))";
+        JexlNode delayed = QueryPropertyMarker.create(marked, ASTDelayedPredicate.class);
+        assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(delayed));
     }
     
     private QueryPropertyMarker.Instance findInstance(String query) throws ParseException {

@@ -210,6 +210,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private QueryLogicFactory queryLogicFactory;
     
     @Inject
+    @SpringBean(refreshable = true)
     private QueryExpirationConfiguration queryExpirationConf;
     
     @Inject
@@ -584,7 +585,7 @@ public class QueryExecutorBean implements QueryExecutor {
             AccumuloConnectionFactory.Priority priority = qd.logic.getConnectionPriority();
             
             rq = new RunningQuery(metrics, null, priority, qd.logic, q, qp.getAuths(), qd.p, new RunningQueryTimingImpl(queryExpirationConf,
-                            qp.getPageTimeout()), this.executor, this.predictor, this.metricFactory);
+                            qp.getPageTimeout()), this.predictor, this.metricFactory);
             rq.setActiveCall(true);
             rq.getMetric().setProxyServers(qd.proxyServers);
             rq.setTraceInfo(traceInfo);
@@ -727,7 +728,7 @@ public class QueryExecutorBean implements QueryExecutor {
             // hold on to a reference of the query logic so we cancel it if need be.
             qlCache.add(q.getId().toString(), qd.userid, qd.logic, connection);
             rq = new RunningQuery(metrics, null, priority, qd.logic, q, qp.getAuths(), qd.p, new RunningQueryTimingImpl(queryExpirationConf,
-                            qp.getPageTimeout()), this.executor, this.predictor, this.metricFactory);
+                            qp.getPageTimeout()), this.predictor, this.metricFactory);
             rq.setActiveCall(true);
             rq.setTraceInfo(traceInfo);
             rq.getMetric().setProxyServers(qd.proxyServers);
@@ -1062,7 +1063,7 @@ public class QueryExecutorBean implements QueryExecutor {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), p);
             AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
             RunningQuery query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(
-                            queryExpirationConf, qp.getPageTimeout()), this.executor, this.predictor, this.metricFactory);
+                            queryExpirationConf, qp.getPageTimeout()), this.predictor, this.metricFactory);
             results.add(query);
             // Put in the cache by id if its not already in the cache.
             if (!queryCache.containsKey(q.getId().toString()))
@@ -1099,7 +1100,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), principal);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), principal, new RunningQueryTimingImpl(
-                                queryExpirationConf, qp.getPageTimeout()), this.executor, this.predictor, this.metricFactory);
+                                queryExpirationConf, qp.getPageTimeout()), this.predictor, this.metricFactory);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 queryCache.put(q.getId().toString(), query);
             }
@@ -1133,7 +1134,7 @@ public class QueryExecutorBean implements QueryExecutor {
             final QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), ctx.getCallerPrincipal());
             final AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
             query = RunningQuery.createQueryWithAuthorizations(metrics, null, priority, logic, q, auths,
-                            new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.executor, this.predictor, this.metricFactory);
+                            new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.metricFactory);
             
             // Put in the cache by id and name, we will have two copies that reference the same object
             queryCache.put(q.getId().toString(), query);
@@ -1368,9 +1369,9 @@ public class QueryExecutorBean implements QueryExecutor {
             span = Trace.trace(traceInfo, "query:next");
         }
         
-        ResultsPage resultList;
+        ResultsPage resultsPage;
         try {
-            resultList = query.next();
+            resultsPage = query.next();
         } catch (RejectedExecutionException e) {
             // - race condition, query expired while user called next
             throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_OR_SERVER_ERROR, e, MessageFormat.format("id = {0}", queryId));
@@ -1378,8 +1379,8 @@ public class QueryExecutorBean implements QueryExecutor {
         
         long pageNum = query.getLastPageNumber();
         
-        BaseQueryResponse response = query.getLogic().getTransformer(query.getSettings()).createResponse(resultList);
-        if (!resultList.getResults().isEmpty()) {
+        BaseQueryResponse response = query.getLogic().getTransformer(query.getSettings()).createResponse(resultsPage);
+        if (resultsPage.getStatus() != ResultsPage.Status.NONE) {
             response.setHasResults(true);
         } else {
             response.setHasResults(false);
@@ -1394,9 +1395,11 @@ public class QueryExecutorBean implements QueryExecutor {
         
         query.getMetric().setProxyServers(proxyServers);
         
-        testForUncaughtException(query.getSettings(), resultList);
+        testForUncaughtException(query.getSettings(), resultsPage);
         
-        if (resultList.getResults().isEmpty()) {
+        // This should NOT be an exception - revisit. Unfortunately, the jboss interceptor looks for a
+        // NoResultsQueryException in order to set the status code.
+        if (resultsPage.getStatus() == ResultsPage.Status.NONE) {
             NoResultsQueryException qe = new NoResultsQueryException(DatawaveErrorCode.NO_QUERY_RESULTS_FOUND, MessageFormat.format("{0}", queryId));
             response.addException(qe);
             throw new NoResultsException(qe);
