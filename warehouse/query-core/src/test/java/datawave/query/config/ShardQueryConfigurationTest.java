@@ -20,6 +20,7 @@ import datawave.query.attributes.UniqueGranularity;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.model.QueryModel;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import org.junit.Assert;
@@ -404,6 +405,22 @@ public class ShardQueryConfigurationTest {
         Set<String> projectFields = Sets.newHashSet("projectA", "projectB");
         config.setProjectFields(projectFields);
         Assert.assertEquals(expected, config.getProjectFieldsAsString());
+    }
+    
+    @Test
+    public void testGetSetConjunctionsWithinExpression() {
+        ShardQueryLogic logic = new ShardQueryLogic();
+        boolean expected = true; // Set ordering.
+        logic.setEnforceUniqueConjunctionsWithinExpression(true);
+        Assert.assertEquals(expected, logic.getEnforceUniqueConjunctionsWithinExpression());
+    }
+    
+    @Test
+    public void testGetSetDisjunctionsWithinExpression() {
+        ShardQueryLogic logic = new ShardQueryLogic();
+        boolean expected = true; // Set ordering.
+        logic.setEnforceUniqueDisjunctionsWithinExpression(true);
+        Assert.assertEquals(expected, logic.getEnforceUniqueDisjunctionsWithinExpression());
     }
     
     @Test
