@@ -386,7 +386,7 @@ public class QueryModelVisitorTest {
     
     @Test
     public void testModelExpansionWithNoExpansionFunction() {
-        // model contains expansions for both FIELD_A and FIELD_B, presence of filter:noExpansion(FIELD_B) prevents
+        // model contains expansions for both FIELD_A and FIELD_B, presence of f:noExpansion(FIELD_B) prevents
         // that portion of the model expansion.
         QueryModel model = new QueryModel();
         model.addTermToModel("FIELD_A", "FIELD_AA");
@@ -400,30 +400,30 @@ public class QueryModelVisitorTest {
         testNoExpansion(query, expected, model, Collections.emptySet());
         
         // only FIELD_B is expanded
-        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_A)";
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_A)";
         expected = "FIELD_A == 'bar' && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A"));
         
         // only FIELD_A is expanded
-        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_B)";
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_B)";
         expected = "(FIELD_AB == 'bar' || FIELD_AA == 'bar') && FIELD_B == 'baz'";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_B"));
         
         // neither field is expanded
-        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_A,FIELD_B)";
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_A,FIELD_B)";
         expected = "FIELD_A == 'bar' && FIELD_B == 'baz'";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_B"));
         
         // both fields are expanded, NoExpansion function specified a field that does not exist in the query
-        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_X,FIELD_Y)";
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_X,FIELD_Y)";
         expected = "(FIELD_AA == 'bar' || FIELD_AB == 'bar') && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_X", "FIELD_Y"));
         
-        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_X,FIELD_Y,FIELD_A)";
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_X,FIELD_Y,FIELD_A)";
         expected = "FIELD_A == 'bar' && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_X", "FIELD_Y"));
         
-        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_A,FIELD_X,FIELD_Y)";
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_A,FIELD_X,FIELD_Y)";
         expected = "FIELD_A == 'bar' && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_X", "FIELD_Y"));
     }
@@ -435,7 +435,7 @@ public class QueryModelVisitorTest {
         model.addTermToModel("FIELD_A", "FIELD_B");
         model.addTermToModel("FIELD_A", "FIELD_C");
         
-        String query = "FIELD_A == 'bar' && filter:noExpansion(FIELD_C)";
+        String query = "FIELD_A == 'bar' && f:noExpansion(FIELD_C)";
         String expected = "(FIELD_B == 'bar' || FIELD_C == 'bar')";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_C"));
     }

@@ -34,6 +34,7 @@ public class QueryFunctions {
     public static final String EXCERPT_FIELDS_FUNCTION = "excerpt_fields";
     public static final String MATCH_REGEX = "matchRegex";
     public static final String INCLUDE_TEXT = "includeText";
+    public static final String NO_EXPANSION = "noExpansion";
     
     protected static Logger log = Logger.getLogger(QueryFunctions.class);
     
