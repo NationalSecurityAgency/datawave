@@ -28,8 +28,11 @@ public final class AttributeComparator {
      * @return
      */
     public static boolean singleToSingle(final Attribute attr1, final Attribute attr2) {
-        return (attr1.getData().equals(attr2.getData()) && attr1.getColumnVisibility().equals(attr2.getColumnVisibility()) && attr1.getTimestamp() == attr2
-                        .getTimestamp());
+        //  @formatter:off
+        return attr1.getData().equals(attr2.getData()) &&
+                attr1.getColumnVisibility().equals(attr2.getColumnVisibility()) &&
+                attr1.getTimestamp() == attr2.getTimestamp();
+        //  @formatter:on
     }
     
     /**
