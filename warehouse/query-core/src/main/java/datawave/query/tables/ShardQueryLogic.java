@@ -608,7 +608,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public boolean isLongRunningQuery() {
-        return !getConfig().getUniqueFields().isEmpty() || !getConfig().getGroupFields().isEmpty();
+        return !getConfig().getGroupFields().isEmpty();
     }
     
     /**
@@ -1193,6 +1193,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setIncludeHierarchyFields(boolean includeHierarchyFields) {
         getConfig().setIncludeHierarchyFields(includeHierarchyFields);
+    }
+    
+    public boolean getEnforceUniqueConjunctionsWithinExpression() {
+        return getConfig().getEnforceUniqueConjunctionsWithinExpression();
+    }
+    
+    public void setEnforceUniqueConjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
+        getConfig().setEnforceUniqueConjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
+    }
+    
+    public boolean getEnforceUniqueDisjunctionsWithinExpression() {
+        return getConfig().getEnforceUniqueDisjunctionsWithinExpression();
+    }
+    
+    public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
+        getConfig().setEnforceUniqueDisjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
     }
     
     public List<String> getDocumentPermutations() {
@@ -2396,6 +2412,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
+    }
+    
+    public boolean isLazySetMechanismEnabled() {
+        return getConfig().isLazySetMechanismEnabled();
+    }
+    
+    public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
+        getConfig().setLazySetMechanismEnabled(lazySetMechanismEnabled);
     }
     
     public long getVisitorFunctionMaxWeight() {
