@@ -114,7 +114,7 @@ public class TermOffsetPopulator {
         // Handle case where there are no hits
         if (searchSpace.isEmpty()) {
             Map<String,Object> map = new HashMap<>();
-            map.put(TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new HashMap<>());
+            map.put(TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap());
             return map;
         }
         
