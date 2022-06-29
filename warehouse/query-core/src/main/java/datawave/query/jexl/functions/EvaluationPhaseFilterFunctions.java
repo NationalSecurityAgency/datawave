@@ -19,7 +19,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
@@ -135,7 +134,6 @@ public class EvaluationPhaseFilterFunctions {
      * @return the {@link FunctionalSet} of hit terms found
      */
     public static FunctionalSet<ValueTuple> isNotNull(Object fieldValue) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null) {
             if (fieldValue instanceof Collection) {
                 Collection<?> values = (Collection<?>) fieldValue;
