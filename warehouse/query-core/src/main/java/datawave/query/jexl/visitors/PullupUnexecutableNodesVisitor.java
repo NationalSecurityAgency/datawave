@@ -58,11 +58,15 @@ import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.ASTVar;
 import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
 import java.util.Set;
+
+import static org.apache.commons.jexl2.parser.JexlNodes.findNegatedParent;
+import static org.apache.commons.jexl2.parser.JexlNodes.makeRef;
+import static org.apache.commons.jexl2.parser.JexlNodes.swap;
+import static org.apache.commons.jexl2.parser.JexlNodes.wrap;
 
 /**
  * Visitor meant to 'pull up' delayed predicates for expressions that are not executable. Essentially if we have an OR of nodes in which some of the nodes are
@@ -248,10 +252,10 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
             JexlNode source = ASTDelayedPredicate.unwrapFully(node, ASTDelayedPredicate.class);
             source = JexlASTHelper.dereference(source);
             // when pulling up a delayed marker that is negated, a reference expression must be persisted
-            if (source instanceof ASTOrNode || source instanceof ASTAndNode || JexlNodes.findNegatedParent(node)) {
-                source = JexlNodes.wrap(source);
+            if (source instanceof ASTOrNode || source instanceof ASTAndNode || findNegatedParent(node)) {
+                source = makeRef(wrap(source));
             }
-            JexlNodes.swap(node.jjtGetParent(), node, source);
+            swap(node.jjtGetParent(), node, source);
             return source;
         } else if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, data);
