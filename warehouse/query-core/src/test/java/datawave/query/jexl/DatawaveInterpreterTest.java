@@ -20,6 +20,7 @@ import org.apache.commons.jexl2.JexlException;
 import org.apache.commons.jexl2.Script;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.easymock.EasyMock;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -223,7 +224,9 @@ public class DatawaveInterpreterTest {
                 {"FOO == 'bar' && filter:isNull(BOTH_NULL)", true},
                 {"FOO == 'bar' && filter:isNull(FOO||NULL1)", false},
                 {"FOO == 'bar' && filter:isNull(NULL1||FOO)", false},
-                {"FOO == 'bar' && filter:isNull(ONE_NULL)", true}};
+                {"FOO == 'bar' && filter:isNull(ONE_NULL)", true},
+                //  absent field evaluates to true
+                {"FOO == 'bar' && filter:isNull(ABSENT)", true}};
         //  @formatter:on
         
         test(array);
@@ -250,7 +253,10 @@ public class DatawaveInterpreterTest {
                 {"FOO == 'bar' && filter:isNotNull(NULL1||NULL2)", false},
                 {"FOO == 'bar' && filter:isNotNull(BOTH_NULL)", false},
                 {"FOO == 'bar' && filter:isNotNull(FOO||NULL1)", true},
-                {"FOO == 'bar' && filter:isNotNull(ONE_NULL)", false}};
+                {"FOO == 'bar' && filter:isNotNull(ONE_NULL)", false},
+                //  absent field, different kinds of isNotNull
+                {"FOO == 'bar' && filter:isNotNull(ABSENT)", false},
+                {"FOO == 'bar' && !(filter:isNull(ABSENT))", false}};
         //  @formatter:on
         
         test(array);
@@ -360,6 +366,47 @@ public class DatawaveInterpreterTest {
         for (Object[] o : inputs) {
             test((String) o[0], (Boolean) o[1]);
         }
+    }
+    
+    @Ignore
+    @Test
+    public void testFilterFunctionMultiFieldedIsNull_future() {
+        // Once #1604 is complete these tests will evaluate correctly
+        
+        //  @formatter:off
+        Object[][] array = {
+                {"FOO == 'bar' && filter:isNull(FOO || FOO)", false},
+                {"FOO == 'bar' && filter:isNull(ABSENT || FOO)", true},
+                {"FOO == 'bar' && filter:isNull(FOO || ABSENT)", true},
+                {"FOO == 'bar' && filter:isNull(ABSENT || ABSENT)", true}};
+        //  @formatter:on
+        
+        test(array);
+    }
+    
+    @Ignore
+    @Test
+    public void testFilterFunctionsMultiFieldedIsNotNull() {
+        // Once #1604 is complete these tests will evaluate correctly
+        
+        //  @formatter:off
+        Object[][] array = {
+                // multi field, all present
+                {"FOO == 'bar' && filter:isNotNull(FOO || FOO)", true},
+                {"FOO == 'bar' && !(filter:isNull(FOO || FOO))", true},
+                // multi field, (present || absent)
+                {"FOO == 'bar' && filter:isNotNull(FOO || ABSENT)", true},
+                {"FOO == 'bar' && !(filter:isNull(FOO || ABSENT))", true},
+                {"FOO == 'bar' && ( !(filter:isNull(FOO)) || !(filter:isNull(ABSENT)) )", true},
+                // this is wrong. isNotNull expands into an AND so both values must be null.
+                {"FOO == 'bar' && filter:isNotNull(ABSENT || FOO)", false},
+                // this is wrong. isNotNull expands into an AND so both values must be null.
+                {"FOO == 'bar' && !(filter:isNull(ABSENT || FOO))", false},
+                {"FOO == 'bar' && filter:isNotNull(ABSENT || ABSENT)", false},
+                {"FOO == 'bar' && !(filter:isNull(ABSENT || ABSENT))", false}};
+        //  @formatter:on
+        
+        test(array);
     }
     
     /**

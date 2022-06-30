@@ -19,6 +19,7 @@ import datawave.query.attributes.UniqueFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
@@ -34,6 +35,9 @@ import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -387,13 +391,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private long queryExecutionForPageTimeout = 3000000L;
     
-    public ExcerptFields excerptFields = new ExcerptFields();
+    private ExcerptFields excerptFields = new ExcerptFields();
+    
+    // The class for the excerpt iterator
+    private Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
     
     /**
      * The maximum weight for entries in the visitor function cache. The weight is calculated as the total number of characters for each key and value in the
      * cache. Default is 5m characters, which is roughly 10MB
      */
     private long visitorFunctionMaxWeight = 5000000L;
+    
+    /**
+     * If true, the LAZY_SET mechanism will be enabled for non-event and index-only fields.
+     */
+    private boolean lazySetMechanismEnabled = false;
     
     /**
      * Default constructor
@@ -582,8 +594,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
+        this.setExcerptIterator(other.getExcerptIterator());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
+        this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
     }
     
     /**
@@ -2292,6 +2306,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.evaluationFunction = evaluationFunction;
     }
     
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {
+        return excerptIterator;
+    }
+    
+    public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator) {
+        this.excerptIterator = excerptIterator;
+    }
+    
     public long getVisitorFunctionMaxWeight() {
         return visitorFunctionMaxWeight;
     }
@@ -2306,5 +2328,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public long getQueryExecutionForPageTimeout() {
         return this.queryExecutionForPageTimeout;
+    }
+    
+    public boolean isLazySetMechanismEnabled() {
+        return lazySetMechanismEnabled;
+    }
+    
+    public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
+        this.lazySetMechanismEnabled = lazySetMechanismEnabled;
     }
 }

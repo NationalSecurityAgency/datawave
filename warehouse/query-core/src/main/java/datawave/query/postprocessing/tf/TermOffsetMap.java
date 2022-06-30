@@ -17,6 +17,9 @@ import java.util.StringJoiner;
  */
 public class TermOffsetMap implements Serializable {
     
+    // should we gather phrase offsets
+    boolean gatherPhraseOffsets = false;
+    
     /**
      * The term frequencies, with their corresponding fields.
      */
@@ -25,7 +28,7 @@ public class TermOffsetMap implements Serializable {
     /**
      * The phrase indexes found for hits.
      */
-    private final PhraseIndexes phraseIndexes = new PhraseIndexes();
+    private PhraseIndexes phraseIndexes = null;
     
     public TermOffsetMap() {}
     
@@ -100,7 +103,9 @@ public class TermOffsetMap implements Serializable {
      *            the phrase ending index
      */
     public void addPhraseIndexTriplet(String field, String eventId, int start, int end) {
-        phraseIndexes.addIndexTriplet(field, eventId, start, end);
+        if (phraseIndexes != null) {
+            phraseIndexes.addIndexTriplet(field, eventId, start, end);
+        }
     }
     
     /**
@@ -111,7 +116,10 @@ public class TermOffsetMap implements Serializable {
      * @return the phrase indexes
      */
     public Collection<Triplet<String,Integer,Integer>> getPhraseIndexes(String field) {
-        return phraseIndexes.getIndices(field);
+        if (phraseIndexes != null) {
+            return phraseIndexes.getIndices(field);
+        }
+        return null;
     }
     
     /**
@@ -121,6 +129,21 @@ public class TermOffsetMap implements Serializable {
      */
     public PhraseIndexes getPhraseIndexes() {
         return phraseIndexes;
+    }
+    
+    public boolean isGatherPhraseOffsets() {
+        return gatherPhraseOffsets;
+    }
+    
+    public void setGatherPhraseOffsets(boolean gatherPhraseOffsets) {
+        this.gatherPhraseOffsets = gatherPhraseOffsets;
+        if (gatherPhraseOffsets) {
+            if (this.phraseIndexes == null) {
+                this.phraseIndexes = new PhraseIndexes();
+            }
+        } else {
+            this.phraseIndexes = null;
+        }
     }
     
     @Override
@@ -145,4 +168,5 @@ public class TermOffsetMap implements Serializable {
         return new StringJoiner(", ", TermOffsetMap.class.getSimpleName() + "[", "]").add("termFrequencies=" + termFrequencies)
                         .add("phraseIndexes=" + phraseIndexes).toString();
     }
+    
 }

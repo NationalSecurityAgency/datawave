@@ -93,6 +93,7 @@ import datawave.query.jexl.visitors.UniqueExpressionTermsVisitor;
 import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
+import datawave.query.jexl.visitors.ValidateFilterFunctionVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
@@ -544,6 +545,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
         addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
+        addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), true);
@@ -755,8 +757,21 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // | Post Query Model Expansion Clean Up |
         // +-------------------------------------+
         
+        Set<String> indexOnlyFields = loadIndexedFields(config);
+        
+        if (!indexOnlyFields.isEmpty()) {
+            // filter:includeRegex and filter:excludeRegex functions cannot be run against index-only fields, clean that up
+            config.setQueryTree(expandRegexFunctionNodes(config.getQueryTree(), config, metadataHelper, indexOnlyFields));
+        }
+        
+        // validate filter functions are not running against index-only fields
+        config.setQueryTree(timedValidateFilterFunctions(timers, config.getQueryTree(), indexOnlyFields));
+        
         // rewrite filter:isNull and filter:isNotNull functions into their EQ and !(EQ) equivalents
         config.setQueryTree(timedRewriteNullFunctions(timers, config.getQueryTree()));
+        
+        // might be possible to completely eliminate rewritten isNotNull terms...
+        config.setQueryTree(timedPruneIsNotNullNodes(timers, config.getQueryTree()));
         
         // Enforce unique terms within an AND or OR expression.
         if (config.getEnforceUniqueTermsWithinExpressions()) {
@@ -773,8 +788,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedEnforceUniqueDisjunctionsWithinExpressions(timers, config.getQueryTree()));
         }
         
-        Set<String> indexOnlyFields = loadIndexedFields(config);
-        
         if (disableBoundedLookup) {
             // protection mechanism. If we disable bounded ranges and have a
             // LT,GT or ER node, we should expand it
@@ -782,34 +795,26 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 disableBoundedLookup = false;
             }
         }
-        if (!indexOnlyFields.isEmpty()) {
-            config.setQueryTree(expandRegexFunctionNodes(config.getQueryTree(), config, metadataHelper, indexOnlyFields));
-        }
-        
-        config.setQueryTree(timedPruneIsNotNullNodes(timers, config.getQueryTree()));
         
         config.setQueryTree(processTree(config.getQueryTree(), config, settings, metadataHelper, scannerFactory, queryData, timers, queryModel));
         
         // ExpandCompositeTerms was here
         
-        boolean containsIndexOnlyFields = false;
         if (!indexOnlyFields.isEmpty() && !disableBoundedLookup) {
             
             // Figure out if the query contained any index only terms so we know
             // if we have to force it down the field-index path with event-specific
             // ranges
-            containsIndexOnlyFields = timedCheckForIndexOnlyFieldsInQuery(timers, "Check for Index-Only Fields", config.getQueryTree(), config, metadataHelper,
-                            dateIndexHelper, indexOnlyFields);
+            timedCheckForIndexOnlyFieldsInQuery(timers, "Check for Index-Only Fields", config.getQueryTree(), config, indexOnlyFields);
         }
         
-        boolean containsComposites = timedCheckForCompositeFields(timers, "Check for Composite Fields", config.getQueryTree(), config, metadataHelper,
-                        dateIndexHelper);
+        timedCheckForCompositeFields(timers, "Check for Composite Fields", config, metadataHelper);
         
-        boolean sortedUIDS = timedCheckForSortedUids(timers, "Check for Sorted UIDs", config.getQueryTree(), config);
+        timedCheckForSortedUids(timers, "Check for Sorted UIDs", config);
         
         // check the query for any fields that are term frequencies
         // if any exist, populate the shard query config with these fields
-        timedCheckForTokenizedFields(timers, "Check for term frequency (tokenized) fields", config.getQueryTree(), config, metadataHelper, dateIndexHelper);
+        timedCheckForTokenizedFields(timers, "Check for term frequency (tokenized) fields", config, metadataHelper);
         
         if (reduceQuery) {
             config.setQueryTree(timedReduce(timers, "Reduce Query Final", config.getQueryTree()));
@@ -1027,8 +1032,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
     
-    protected boolean timedCheckForCompositeFields(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config,
-                    MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper) {
+    protected boolean timedCheckForCompositeFields(QueryStopwatch timers, String stage, ShardQueryConfiguration config, MetadataHelper metadataHelper) {
         boolean containsComposites = false;
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
         
@@ -1046,8 +1050,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // ranges
         if (!compositeFields.isEmpty()) {
             boolean functionsEnabled = config.isCompositeFilterFunctionsEnabled();
-            containsComposites = !SetMembershipVisitor.getMembers(compositeFields.keySet(), config, metadataHelper, dateIndexHelper, config.getQueryTree(),
-                            functionsEnabled).isEmpty();
+            containsComposites = !SetMembershipVisitor.getMembers(compositeFields.keySet(), config, config.getQueryTree(), functionsEnabled).isEmpty();
         }
         
         // Print the nice log message
@@ -1061,7 +1064,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return containsComposites;
     }
     
-    protected boolean timedCheckForSortedUids(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config) {
+    protected boolean timedCheckForSortedUids(QueryStopwatch timers, String stage, ShardQueryConfiguration config) {
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
         
         // determine whether sortedUIDs are required. Normally they are, however if the query contains
@@ -1080,8 +1083,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return sortedUIDs;
     }
     
-    protected void timedCheckForTokenizedFields(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config,
-                    MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper) {
+    protected void timedCheckForTokenizedFields(QueryStopwatch timers, String stage, ShardQueryConfiguration config, MetadataHelper metadataHelper) {
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
         
         // Figure out if the query contained any term frequency terms so we know
@@ -1096,7 +1098,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException(qe);
         }
         if (!termFrequencyFields.isEmpty()) {
-            queryTfFields = SetMembershipVisitor.getMembers(termFrequencyFields, config, metadataHelper, dateIndexHelper, config.getQueryTree());
+            queryTfFields = SetMembershipVisitor.getMembers(termFrequencyFields, config, config.getQueryTree());
             
             // Print the nice log message
             if (log.isDebugEnabled()) {
@@ -1253,8 +1255,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
     
+    protected ASTJexlScript timedValidateFilterFunctions(QueryStopwatch timers, ASTJexlScript queryTree, Set<String> indexOnlyFields)
+                    throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Rewrite Null Functions",
+                        () -> (ASTJexlScript) ValidateFilterFunctionVisitor.validate(queryTree, indexOnlyFields));
+    }
+    
     protected ASTJexlScript timedRewriteNullFunctions(QueryStopwatch timers, ASTJexlScript queryTree) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Rewrite Null Functions", () -> (ASTJexlScript) RewriteNullFunctionsVisitor.rewriteNullFunctions(queryTree));
+        return visitorManager.timedVisit(timers, "Rewrite Null Functions", () -> RewriteNullFunctionsVisitor.rewriteNullFunctions(queryTree));
     }
     
     protected ASTJexlScript timedEnforceUniqueTermsWithinExpressions(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
@@ -1465,13 +1473,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     protected boolean timedCheckForIndexOnlyFieldsInQuery(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config,
-                    MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> indexOnlyFields) {
-        boolean containsIndexOnlyFields = false;
+                    Set<String> indexOnlyFields) {
+        boolean containsIndexOnlyFields;
         TraceStopwatch stopwatch = timers.newStartedStopwatch(stage);
         try {
             boolean functionsEnabled = config.isIndexOnlyFilterFunctionsEnabled();
-            containsIndexOnlyFields = !SetMembershipVisitor.getMembers(indexOnlyFields, config, metadataHelper, dateIndexHelper, script, functionsEnabled)
-                            .isEmpty();
+            containsIndexOnlyFields = !SetMembershipVisitor.getMembers(indexOnlyFields, config, script, functionsEnabled).isEmpty();
             
             // Print the nice log message
             if (log.isDebugEnabled()) {

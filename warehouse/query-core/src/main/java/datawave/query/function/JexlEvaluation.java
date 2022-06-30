@@ -44,6 +44,9 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     private JexlArithmetic arithmetic;
     private DatawaveJexlEngine engine;
     
+    // do we need to gather phrase offsets
+    private boolean gatherPhraseOffsets = false;
+    
     /**
      * Compiled and flattened jexl script
      */
@@ -95,8 +98,14 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     @Override
     public boolean apply(Tuple3<Key,Document,DatawaveJexlContext> input) {
         
-        Object o = script.execute(input.third());
+        // setup the term offset map to gather phrase indexes if requested.
+        TermOffsetMap termOffsetMap = (TermOffsetMap) input.third().get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
+        if (termOffsetMap != null && isGatherPhraseOffsets() && arithmetic instanceof HitListArithmetic) {
+            termOffsetMap.setGatherPhraseOffsets(true);
+        }
         
+        // now evaluate
+        Object o = script.execute(input.third());
         if (log.isTraceEnabled()) {
             log.trace("Evaluation of " + query + " against " + input.third() + " returned " + o);
         }
@@ -152,20 +161,29 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                 }
                 
                 // Put the phrase indexes into the document so that we can add phrase excerpts if desired later.
-                TermOffsetMap termOffsetMap = (TermOffsetMap) input.third().get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
                 if (termOffsetMap != null) {
                     PhraseIndexes phraseIndexes = termOffsetMap.getPhraseIndexes();
-                    Content phraseIndexesAttribute = new Content(phraseIndexes.toString(), document.getMetadata(), false);
-                    document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, phraseIndexesAttribute);
-                    if (log.isTraceEnabled()) {
-                        log.trace("Added phrase-indexes " + phraseIndexes + " as attribute " + ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE + " to document "
-                                        + document.getMetadata());
+                    if (phraseIndexes != null) {
+                        Content phraseIndexesAttribute = new Content(phraseIndexes.toString(), document.getMetadata(), false);
+                        document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, phraseIndexesAttribute);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Added phrase-indexes " + phraseIndexes + " as attribute " + ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE + " to document "
+                                            + document.getMetadata());
+                        }
                     }
                 }
             }
             hitListArithmetic.clear();
         }
         return matched;
+    }
+    
+    public boolean isGatherPhraseOffsets() {
+        return gatherPhraseOffsets;
+    }
+    
+    public void setGatherPhraseOffsets(boolean gatherPhraseOffsets) {
+        this.gatherPhraseOffsets = gatherPhraseOffsets;
     }
     
 }

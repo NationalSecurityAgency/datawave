@@ -37,6 +37,7 @@ import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
 import datawave.query.iterator.filter.KeyIdentity;
 import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
@@ -56,7 +57,9 @@ import datawave.util.UniversalSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.OptionDescriber;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.hadoop.fs.FileSystem;
@@ -208,6 +211,8 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String IVARATOR_SCAN_TIMEOUT = "ivarator.scan.timeout";
     
+    public static final String RESULT_TIMEOUT = "result.timeout";
+    
     public static final String QUERY_MAPPING_COMPRESS = "query.mapping.compress";
     
     public static final String MAX_INDEX_RANGE_SPLIT = "max.index.range.split";
@@ -251,6 +256,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String ACTIVE_QUERY_LOG_NAME = "active.query.log.name";
     
     public static final String EXCERPT_FIELDS = "excerpt.fields";
+    
+    public static final String EXCERPT_ITERATOR = "excerpt.iterator.class";
     
     protected Map<String,String> options;
     
@@ -337,6 +344,7 @@ public class QueryOptions implements OptionDescriber {
     protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
     protected int ivaratorCacheBufferSize = 10000;
     
+    protected long resultTimeout = 1000L * 60 * 60;
     protected int maxIndexRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
     protected int ivaratorNumRetries = 2;
@@ -399,6 +407,8 @@ public class QueryOptions implements OptionDescriber {
     protected String activeQueryLogName;
     
     protected ExcerptFields excerptFields;
+    
+    protected Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
     
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
@@ -498,6 +508,7 @@ public class QueryOptions implements OptionDescriber {
         this.trackSizes = other.trackSizes;
         this.activeQueryLogName = other.activeQueryLogName;
         this.excerptFields = other.excerptFields;
+        this.excerptIterator = other.excerptIterator;
         
     }
     
@@ -850,6 +861,14 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
     }
     
+    public long getResultTimeout() {
+        return resultTimeout;
+    }
+    
+    public void setResultTimeout(long resultTimeout) {
+        this.resultTimeout = resultTimeout;
+    }
+    
     public int getMaxIndexRangeSplit() {
         return maxIndexRangeSplit;
     }
@@ -1018,6 +1037,14 @@ public class QueryOptions implements OptionDescriber {
         this.excerptFields = excerptFields;
     }
     
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {
+        return excerptIterator;
+    }
+    
+    public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator) {
+        this.excerptIterator = excerptIterator;
+    }
+    
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -1081,6 +1108,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(IVARATOR_SCAN_PERSIST_THRESHOLD,
                         "The number of underlying field index keys scanned before the hdfs cache buffer is forced to persist).  Default is 100000.");
         options.put(IVARATOR_SCAN_TIMEOUT, "The time after which the hdfs cache buffer is forced to persist.  Default is 60 minutes.");
+        options.put(RESULT_TIMEOUT, "The time out after which an intermediate result is returned for a groupby or unique query.  Default is 60 minutes.");
         options.put(MAX_INDEX_RANGE_SPLIT,
                         "The maximum number of ranges to split a field index scan (ivarator) range into for multithreading.  Note the thread pool size is controlled via an accumulo property.");
         options.put(MAX_IVARATOR_OPEN_FILES,
@@ -1113,6 +1141,7 @@ public class QueryOptions implements OptionDescriber {
                                         + ActiveQueryLog.DEFAULT_NAME
                                         + "', will use the default shared Active Query Log instance. If provided otherwise, uses a separate distinct Active Query Log that will include the unique name in log messages.");
         options.put(EXCERPT_FIELDS, "excerpt fields");
+        options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
     
@@ -1473,6 +1502,10 @@ public class QueryOptions implements OptionDescriber {
             this.setIvaratorCacheScanTimeout(Long.parseLong(options.get(IVARATOR_SCAN_TIMEOUT)));
         }
         
+        if (options.containsKey(RESULT_TIMEOUT)) {
+            this.setResultTimeout(Long.parseLong(options.get(RESULT_TIMEOUT)));
+        }
+        
         if (options.containsKey(MAX_INDEX_RANGE_SPLIT)) {
             this.setMaxIndexRangeSplit(Integer.parseInt(options.get(MAX_INDEX_RANGE_SPLIT)));
         }
@@ -1579,6 +1612,14 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(EXCERPT_FIELDS)) {
             setExcerptFields(ExcerptFields.from(options.get(EXCERPT_FIELDS)));
+        }
+        
+        if (options.containsKey(EXCERPT_ITERATOR)) {
+            try {
+                setExcerptIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(options.get(EXCERPT_ITERATOR)));
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("Could not get class for " + options.get(EXCERPT_ITERATOR), e);
+            }
         }
         
         return true;
