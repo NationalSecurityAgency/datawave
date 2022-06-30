@@ -45,6 +45,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 
 import datawave.microservice.querymetric.QueryMetric;
+import datawave.query.collections.FunctionalSet;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.BoundedRange;
@@ -63,10 +64,6 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     protected static final String NEWLINE = System.getProperty("line.separator");
     protected static final String DOUBLE_QUOTE = "\"";
     
-    // allowed methods for composition. Nothing that mutates the collection is allowed, thus we have:
-    private Set<String> allowedMethods = Sets.newHashSet("contains", "retainAll", "containsAll", "isEmpty", "size", "equals", "hashCode", "getValueForGroup",
-                    "getGroupsForValue", "getValuesForGroups", "toString", "values", "min", "max", "lessThan", "greaterThan", "compareWith");
-    
     private JexlQueryDecorator decorator;
     
     public JexlFormattedStringBuildingVisitor() {
@@ -84,42 +81,50 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     }
 
     /**
-     * Given a query String separated into lines consisting of expressions, open parenthesis, and closing parenthesis, format the string to be indented properly
-     * (add necessary number of tab characters to each line). This is called after all the nodes have been visited to finalize the formatting of the query.
-     *
-     * @param query
-     *            a query
-     * @return the final formatted String
+     * Given two query strings (a decorated version and a plain version) separated into lines consisting of expressions, open parenthesis, and closing
+     * parenthesis, format the decorated string to be indented properly (add necessary number of tab characters (4 spaces) to each line). This is called after
+     * all the nodes have been visited to finalize the formatting of the query.
+     * 
+     * @param decoratedQueryStr
+     * @param plainQueryStr
+     * @return the final formatted version of the decoratedQueryStr.
      */
-    private static String formatBuiltQuery(String query) {
+    private static String formatBuiltQuery(String decoratedQueryStr, String plainQueryStr) {
         String res = "";
         int numTabs = 0;
-
-        String[] lines = query.split(NEWLINE);
-        // Go through all the lines
-        for (String line : lines) {
-            if (containsOnly(line, '(')) {
+        
+        String[] decoratedLines = decoratedQueryStr.split(NEWLINE);
+        String[] plainLines = plainQueryStr.split(NEWLINE);
+        String decoratedLine = null;
+        String plainLine = null;
+        // Go through all the lines of the undecorated query string, but update the decoratedQueryString.
+        // This is done to keep methods like containsOnly() as simple as possible.
+        for (int i = 0; i < plainLines.length; i++) {
+            decoratedLine = decoratedLines[i];
+            plainLine = plainLines[i];
+            
+            if (containsOnly(plainLine, '(')) {
                 // Add tabs to result then increase the number of tabs
-                for (int i = 0; i < numTabs; i++) {
+                for (int j = 0; j < numTabs; j++) {
                     res += "    ";
                 }
                 numTabs++;
-            } else if (containsOnly(line, ')') || closeParensFollowedByAndOr(line)) {
+            } else if (containsOnly(plainLine, ')') || closeParensFollowedByAndOr(plainLine)) {
                 // Decrease number of tabs then add tabs to result
                 numTabs--;
-                for (int i = 0; i < numTabs; i++) {
+                for (int j = 0; j < numTabs; j++) {
                     res += "    ";
                 }
             } else {
                 // Add tabs to result
-                for (int i = 0; i < numTabs; i++) {
+                for (int j = 0; j < numTabs; j++) {
                     res += "    ";
                 }
             }
-            if (line != lines[lines.length - 1]) {
-                res += line + NEWLINE;
+            if (i != plainLines.length - 1) {
+                res += decoratedLine + NEWLINE;
             } else {
-                res += line;
+                res += decoratedLine;
             }
         }
 
@@ -136,9 +141,6 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      * @return boolean
      */
     private static boolean containsOnly(String str, char ch) {
-        str = str.replaceAll("<[^>]*>", ""); // remove all existing html from the string (if present)
-        str = removeAllBashColoring(str);
-        
         return str.matches("^[" + ch + "]+$");
     }
 
@@ -150,29 +152,9 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      * @return boolean
      */
     private static boolean closeParensFollowedByAndOr(String str) {
-        str = str.replaceAll("<[^>]*>", ""); // remove all existing html from the string (if present)
-        str = removeAllBashColoring(str);
-        
         return str.matches("^([)]+ (&&|\\|\\|) )$");
     }
 
-    /**
-     * Removes all bash coloring from the given string and returns it
-     * 
-     * @param str
-     * @return
-     */
-    private static String removeAllBashColoring(String str) {
-        int indexStartOfColor = str.indexOf("\\e");
-        while (indexStartOfColor != -1) {
-            int indexEndOfColor = str.indexOf("m", indexStartOfColor);
-            str = str.replace(str.substring(indexStartOfColor, indexEndOfColor + 1), ""); // remove the existing bash color formatting from the string (if
-                                                                                          // present)
-            indexStartOfColor = str.indexOf("\\e");
-        }
-        return str;
-    }
-    
     /**
      * Determines whether a JexlNode should be formatted on multiple lines or not. If this node is a bounded marker node OR if this node is a marker node which
      * has a child bounded marker node OR if this node is a marker node with a single term as a child, then return false (should all be one line). Otherwise,
@@ -253,7 +235,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
 
             throw e;
         }
-        return formatBuiltQuery(s);
+        return formatBuiltQuery(s, s);
     }
 
     /**
@@ -278,18 +260,21 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      * @return query string
      */
     public static String buildQueryWithHtmlFormatting(JexlNode script, boolean sortDedupeChildren) {
-        JexlFormattedStringBuildingVisitor visitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren, new HtmlDecorator());
+        JexlFormattedStringBuildingVisitor decoratedVisitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren, new HtmlDecorator());
+        JexlFormattedStringBuildingVisitor plainVisitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren, new EmptyDecorator());
         
-        String s = null;
+        String decoratedQueryStr = null, plainQueryStr = null;
         try {
-            StringBuilder sb = (StringBuilder) script.jjtAccept(visitor, new StringBuilder());
-
-            s = sb.toString();
+            StringBuilder decoratedStringBuilder = (StringBuilder) script.jjtAccept(decoratedVisitor, new StringBuilder());
+            StringBuilder plainStringBuilder = (StringBuilder) script.jjtAccept(plainVisitor, new StringBuilder());
+            
+            decoratedQueryStr = decoratedStringBuilder.toString();
+            plainQueryStr = plainStringBuilder.toString();
         } catch (StackOverflowError e) {
 
             throw e;
         }
-        return formatBuiltQuery(s);
+        return formatBuiltQuery(decoratedQueryStr, plainQueryStr);
     }
 
     /**
@@ -314,18 +299,21 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      * @return
      */
     public static String buildQueryWithBashFormatting(JexlNode script, boolean sortDedupeChildren) {
-        JexlFormattedStringBuildingVisitor visitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren, new BashDecorator());
+        JexlFormattedStringBuildingVisitor decoratedVisitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren, new BashDecorator());
+        JexlFormattedStringBuildingVisitor plainVisitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren, new EmptyDecorator());
         
-        String s = null;
+        String decoratedQueryStr = null, plainQueryStr = null;
         try {
-            StringBuilder sb = (StringBuilder) script.jjtAccept(visitor, new StringBuilder());
+            StringBuilder decoratedStringBuilder = (StringBuilder) script.jjtAccept(decoratedVisitor, new StringBuilder());
+            StringBuilder plainStringBuilder = (StringBuilder) script.jjtAccept(plainVisitor, new StringBuilder());
             
-            s = sb.toString();
+            decoratedQueryStr = decoratedStringBuilder.toString();
+            plainQueryStr = plainStringBuilder.toString();
         } catch (StackOverflowError e) {
             
             throw e;
         }
-        return formatBuiltQuery(s);
+        return formatBuiltQuery(decoratedQueryStr, plainQueryStr);
     }
     
     /**
@@ -667,21 +655,8 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             node.jjtGetChild(i).jjtAccept(this, sb);
             
             if (i == 0 || i == 1) {
-                if (decorator instanceof HtmlDecorator) {
-                    // Remove the child <span> element if present (don't remove </span>)
-                    String strToRem = "<span class=\"field\">";
-                    
-                    int indexOfStr = sb.indexOf(strToRem);
-                    if (indexOfStr != -1) {
-                        sb.delete(indexOfStr, indexOfStr + strToRem.length());
-                    }
-                } else if (decorator instanceof BashDecorator) {
-                    // Remove the field coloring given to the function namespace (if i = 0) and remove the field coloring given to the function (if i = 1)
-                    int indexOfStr = sb.indexOf(BashDecorator.FIELD_COLOR);
-                    if (indexOfStr != -1) {
-                        sb.delete(indexOfStr, sb.indexOf("m", indexOfStr) + 1);
-                    }
-                }
+                // Remove the field coloring given to the function namespace (i = 0) and the function (i = 1)
+                decorator.removeFieldColoring(sb);
             }
         }
         
@@ -700,7 +675,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             if (i == 0) {
                 JexlNode methodNode = node.jjtGetChild(i);
                 methodStringBuilder.append(".");
-                if (allowedMethods.contains(methodNode.image) == false) {
+                if (FunctionalSet.allowedMethods.contains(methodNode.image) == false) {
                     QueryException qe = new QueryException(DatawaveErrorCode.METHOD_COMPOSITION_ERROR, MessageFormat.format("{0}", methodNode.image));
                     throw new DatawaveFatalQueryException(qe);
                 }

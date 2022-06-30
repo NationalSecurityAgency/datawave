@@ -42,6 +42,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
+import datawave.query.collections.FunctionalSet;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -470,7 +471,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
             if (i == 0) {
                 JexlNode methodNode = node.jjtGetChild(i);
                 methodStringBuilder.append(".");
-                if (allowedMethods.contains(methodNode.image) == false) {
+                if (FunctionalSet.allowedMethods.contains(methodNode.image) == false) {
                     QueryException qe = new QueryException(DatawaveErrorCode.METHOD_COMPOSITION_ERROR, MessageFormat.format("{0}", methodNode.image));
                     throw new DatawaveFatalQueryException(qe);
                 }

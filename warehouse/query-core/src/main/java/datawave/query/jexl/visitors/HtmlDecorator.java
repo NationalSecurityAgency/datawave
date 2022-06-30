@@ -184,4 +184,14 @@ public class HtmlDecorator implements JexlQueryDecorator {
     public void apply(StringBuilder sb, ASTUnaryMinusNode node) {
         sb.append("<span class=\"unary-minus\">-</span>");
     }
+    
+    @Override
+    public void removeFieldColoring(StringBuilder sb) {
+        String strToRem = "<span class=\"field\">";
+        
+        int indexOfStr = sb.indexOf(strToRem);
+        if (indexOfStr != -1) {
+            sb.delete(indexOfStr, indexOfStr + strToRem.length());
+        }
+    }
 }

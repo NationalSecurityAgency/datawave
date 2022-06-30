@@ -86,4 +86,12 @@ public interface JexlQueryDecorator {
     public void apply(StringBuilder sb, ASTAssignment node, int i);
     
     public void apply(StringBuilder sb, ASTUnaryMinusNode node);
+    
+    /**
+     * Removes the coloring given to a field element. Used to override coloring of the function namespace and function which are considered fields
+     * (ASTIdentifiers) by default.
+     * 
+     * @param sb
+     */
+    public void removeFieldColoring(StringBuilder sb);
 }

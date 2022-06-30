@@ -169,4 +169,9 @@ public class EmptyDecorator implements JexlQueryDecorator {
     public void apply(StringBuilder sb, ASTUnaryMinusNode node) {
         sb.append("-");
     }
+    
+    @Override
+    public void removeFieldColoring(StringBuilder sb) {
+        ; // Nothing to do
+    }
 }

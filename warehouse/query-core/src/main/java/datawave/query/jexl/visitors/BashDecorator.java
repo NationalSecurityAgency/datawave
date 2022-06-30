@@ -210,4 +210,12 @@ public class BashDecorator implements JexlQueryDecorator {
         sb.append(ARITHMETIC_OP_COLOR + "-" + NC);
     }
     
+    @Override
+    public void removeFieldColoring(StringBuilder sb) {
+        int indexOfStr = sb.indexOf(BashDecorator.FIELD_COLOR);
+        if (indexOfStr != -1) {
+            sb.delete(indexOfStr, sb.indexOf("m", indexOfStr) + 1);
+        }
+    }
+    
 }
