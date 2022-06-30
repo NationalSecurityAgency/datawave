@@ -1,8 +1,8 @@
 package datawave.webservice.query.interceptor;
 
 import com.google.common.io.CountingOutputStream;
-import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.query.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.cache.QueryCache;
@@ -13,13 +13,13 @@ import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.BaseQueryResponse;
 import org.easymock.Capture;
 import org.easymock.IAnswer;
-import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
-import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
+import org.jboss.resteasy.core.interception.jaxrs.ContainerResponseContextImpl;
+import org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext;
 import org.jboss.resteasy.specimpl.BuiltResponse;
+import org.jboss.resteasy.specimpl.ResteasyUriInfo;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.ResteasyUriInfo;
-import org.jboss.resteasy.util.FindAnnotation;
-import org.jboss.resteasy.util.HttpResponseCodes;
+import org.jboss.resteasy.spi.HttpResponseCodes;
+import org.jboss.resteasy.spi.util.FindAnnotation;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

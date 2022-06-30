@@ -26,7 +26,6 @@ import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
-import org.jboss.resteasy.util.Base64;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -56,6 +55,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.Principal;
 import java.text.MessageFormat;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -332,7 +332,7 @@ public class AtomServiceBean {
     
     private Key deserializeKey(String k) throws Exception {
         String key64 = URLDecoder.decode(k, "UTF-8");
-        byte[] bKey = Base64.decode(key64);
+        byte[] bKey = Base64.getDecoder().decode(key64);
         ByteArrayInputStream bais = new ByteArrayInputStream(bKey);
         DataInputStream in = new DataInputStream(bais);
         Key key = new Key();
@@ -345,7 +345,7 @@ public class AtomServiceBean {
         DataOutputStream out = new DataOutputStream(baos);
         key.write(out);
         out.close();
-        String key64 = Base64.encodeBytes(baos.toByteArray());
+        String key64 = Base64.getEncoder().encodeToString(baos.toByteArray());
         return URLEncoder.encode(key64, "UTF-8");
     }
     

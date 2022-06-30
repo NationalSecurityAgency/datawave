@@ -1,7 +1,7 @@
 package datawave.resteasy.interceptor;
 
 import org.apache.log4j.Logger;
-import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
+import org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext;
 
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
