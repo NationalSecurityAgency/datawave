@@ -88,13 +88,6 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
-            <scope>provided</scope>
-        </dependency>
-	-->
         <dependency>
             <groupId>org.jboss.spec.javax.annotation</groupId>
             <artifactId>jboss-annotations-api_1.3_spec</artifactId>
@@ -118,6 +111,11 @@
         <dependency>
             <groupId>org.jboss.spec.javax.jms</groupId>
             <artifactId>jboss-jms-api_2.0_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.ws.rs</groupId>
+            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
