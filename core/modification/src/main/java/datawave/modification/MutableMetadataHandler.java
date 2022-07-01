@@ -1,4 +1,4 @@
-package datawave.webservice.modification;
+package datawave.modification;
 
 import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
@@ -12,6 +12,8 @@ import datawave.ingest.protobuf.Uid.List.Builder;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryPersistence;
+import datawave.modification.configuration.ModificationServiceConfiguration;
+import datawave.modification.query.ModificationQueryService;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.data.parsers.DatawaveKey.KeyType;
 import datawave.query.util.MetadataHelper;
@@ -20,12 +22,13 @@ import datawave.security.util.ScannerHelper;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
+import datawave.webservice.modification.DefaultModificationRequest;
+import datawave.webservice.modification.EventIdentifier;
+import datawave.webservice.modification.ModificationOperation;
+import datawave.webservice.modification.ModificationRequestBase;
 import datawave.webservice.modification.ModificationRequestBase.MODE;
-import datawave.webservice.modification.configuration.ModificationServiceConfiguration;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.runner.QueryExecutorBean;
-import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.GenericResponse;
@@ -901,7 +904,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         String logicName = "LuceneUUIDEventQuery";
         
         DefaultEvent e = null;
-        QueryExecutorBean queryService = this.getQueryService();
+        ModificationQueryService queryService = this.getQueryService();
         
         String id = null;
         HashSet<String> auths = new HashSet<>();
@@ -912,9 +915,10 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         expiration = new Date(expiration.getTime() + (1000 * 60 * 60 * 24));
         
         try {
-            GenericResponse<String> createResponse = queryService.createQuery(logicName, MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(logicName,
-                            query.toString(), "Query to find matching records for metadata modification", columnVisibility, new Date(0), new Date(),
-                            StringUtils.join(auths, ','), expiration, 2, -1, null, QueryPersistence.TRANSIENT, queryOptions.toString(), false)));
+            GenericResponse<String> createResponse = queryService.createQuery(logicName,
+                            DefaultQueryParameters.paramsToMap(logicName, query.toString(), "Query to find matching records for metadata modification",
+                                            columnVisibility, new Date(0), new Date(), StringUtils.join(auths, ','), expiration, 2, -1, null,
+                                            QueryPersistence.TRANSIENT, queryOptions.toString(), false));
             
             id = createResponse.getResult();
             BaseQueryResponse response = queryService.next(id);
@@ -999,29 +1003,38 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         
         public FieldIndexIterable(Connector con, String shardTable, String eventUid, String datatype, Set<Authorizations> userAuths, List<Range> ranges)
                         throws TableNotFoundException {
-            scanner = ScannerHelper.createBatchScanner(con, shardTable, userAuths, ranges.size());
-            scanner.setRanges(ranges);
-            Map<String,String> options = new HashMap();
-            options.put(FieldIndexDocumentFilter.DATA_TYPE_OPT, datatype);
-            options.put(FieldIndexDocumentFilter.EVENT_UID_OPT, eventUid);
-            IteratorSetting settings = new IteratorSetting(100, FieldIndexDocumentFilter.class, options);
-            scanner.addScanIterator(settings);
+            if (!ranges.isEmpty()) {
+                scanner = ScannerHelper.createBatchScanner(con, shardTable, userAuths, ranges.size());
+                scanner.setRanges(ranges);
+                Map<String,String> options = new HashMap();
+                options.put(FieldIndexDocumentFilter.DATA_TYPE_OPT, datatype);
+                options.put(FieldIndexDocumentFilter.EVENT_UID_OPT, eventUid);
+                IteratorSetting settings = new IteratorSetting(100, FieldIndexDocumentFilter.class, options);
+                scanner.addScanIterator(settings);
+            }
         }
         
         @Override
         public Iterator<Key> iterator() {
-            return Iterators.transform(scanner.iterator(), new Function<Entry<Key,Value>,Key>() {
-                @Nullable
-                @Override
-                public Key apply(@Nullable Entry<Key,Value> keyValueEntry) {
-                    return keyValueEntry.getKey();
-                }
-            });
+            if (scanner != null) {
+                return Iterators.transform(scanner.iterator(), new Function<Entry<Key,Value>,Key>() {
+                    @Nullable
+                    @Override
+                    public Key apply(@Nullable Entry<Key,Value> keyValueEntry) {
+                        return keyValueEntry.getKey();
+                    }
+                });
+            } else {
+                List<Key> list = Collections.emptyList();
+                return list.iterator();
+            }
         }
         
         @Override
         public void close() throws Exception {
-            scanner.close();
+            if (scanner != null) {
+                scanner.close();
+            }
         }
     }
     

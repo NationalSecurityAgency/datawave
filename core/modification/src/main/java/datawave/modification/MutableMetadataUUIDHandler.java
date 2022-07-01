@@ -1,4 +1,25 @@
-package datawave.webservice.modification;
+package datawave.modification;
+
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.modification.DefaultModificationRequest;
+import datawave.webservice.modification.DefaultUUIDModificationRequest;
+import datawave.webservice.modification.EventIdentifier;
+import datawave.webservice.modification.ModificationEvent;
+import datawave.webservice.modification.ModificationOperation;
+import datawave.webservice.modification.ModificationOperation.OPERATIONMODE;
+import datawave.webservice.modification.ModificationOperationImpl;
+import datawave.webservice.modification.ModificationRequestBase;
+import datawave.webservice.modification.ModificationRequestBase.MODE;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,23 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.exception.BadRequestException;
-import datawave.webservice.modification.ModificationOperation.OPERATIONMODE;
-import datawave.webservice.modification.ModificationRequestBase.MODE;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.result.VoidResponse;
-
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 
 /**
  * Class that handles requests for modification requests (INSERT, UPDATE, DELETE, REPLACE) for metadata. From a DefaultUUIDModificationRequest it performs <br>
@@ -207,8 +211,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
     
     @Override
     public void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths, String user)
-                    throws BadRequestException, AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
-        VoidResponse response = new VoidResponse();
+                    throws DatawaveModificationException, AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
         ArrayList<Exception> exceptions = new ArrayList<>();
         MetadataHelper mHelper = getMetadataHelper(con);
         
@@ -353,12 +356,16 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
         
         // If any errors occurred, return them in the response to the user
         if (!exceptions.isEmpty()) {
-            for (Exception e : exceptions) {
-                QueryException qe = new QueryException(DatawaveErrorCode.MODIFICATION_ERROR, e);
-                response.addException(qe.getBottomQueryException());
+            if (exceptions.size() == 1) {
+                throw new DatawaveModificationException(new QueryException(DatawaveErrorCode.MODIFICATION_ERROR, exceptions.get(0)));
+            } else {
+                DatawaveModificationException exception = new DatawaveModificationException(new QueryException(DatawaveErrorCode.MODIFICATION_ERROR));
+                for (Exception e : exceptions) {
+                    QueryException qe = new QueryException(DatawaveErrorCode.MODIFICATION_ERROR, e);
+                    exception.addException(qe);
+                }
+                throw exception;
             }
-            QueryException e = new QueryException(DatawaveErrorCode.MODIFICATION_ERROR);
-            throw new BadRequestException(e, response);
         }
     }
     

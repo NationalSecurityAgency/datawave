@@ -1,4 +1,4 @@
-package datawave.webservice.modification.configuration;
+package datawave.modification.configuration;
 
 import java.util.Map;
 

@@ -1,8 +1,8 @@
-package datawave.webservice.modification.configuration;
+package datawave.modification.configuration;
 
+import datawave.modification.query.ModificationQueryService;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.ModificationRequestBase;
-import datawave.webservice.query.runner.QueryExecutorBean;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 
@@ -16,7 +16,7 @@ public abstract class ModificationServiceConfiguration {
     
     protected String description = null;
     protected List<String> authorizedRoles = null;
-    protected QueryExecutorBean queryService = null;
+    protected ModificationQueryService queryService = null;
     protected List<String> securityMarkingExemptFields = null;
     
     public String getDescription() {
@@ -48,11 +48,11 @@ public abstract class ModificationServiceConfiguration {
      * 
      * @return RemoteQueryExecutor
      */
-    public QueryExecutorBean getQueryService() {
+    public ModificationQueryService getQueryService() {
         return queryService;
     }
     
-    public void setQueryService(QueryExecutorBean queryService) {
+    public void setQueryService(ModificationQueryService queryService) {
         this.queryService = queryService;
     }
     

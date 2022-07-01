@@ -19,6 +19,7 @@
         <module>metrics-reporter</module>
         <module>query</module>
         <module>utils</module>
+        <module>modification</module>
     </modules>
     <scm>
         <connection>scm:git:https://fixme/git/core/</connection>

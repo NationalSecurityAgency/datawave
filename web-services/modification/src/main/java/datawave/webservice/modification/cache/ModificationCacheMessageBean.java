@@ -1,9 +1,9 @@
 package datawave.webservice.modification.cache;
 
 import datawave.configuration.spring.SpringBean;
-import datawave.webservice.modification.MutableMetadataHandler;
-import datawave.webservice.modification.configuration.ModificationConfiguration;
-import datawave.webservice.modification.configuration.ModificationServiceConfiguration;
+import datawave.modification.MutableMetadataHandler;
+import datawave.modification.configuration.ModificationConfiguration;
+import datawave.modification.configuration.ModificationServiceConfiguration;
 import org.apache.log4j.Logger;
 
 import javax.annotation.security.RunAs;
