@@ -250,15 +250,29 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         if (instance.isType(ASTDelayedPredicate.class)) {
             JexlNode source = ASTDelayedPredicate.unwrapFully(node, ASTDelayedPredicate.class);
-            source = JexlASTHelper.dereference(source);
+            
             // when pulling up a delayed marker that is negated, a reference expression must be persisted
-            if (source instanceof ASTOrNode || source instanceof ASTAndNode || findNegatedParent(node)) {
-                source = makeRef(wrap(source));
-            }
+            source = wrapIfNeeded(source);
+            
             swap(node.jjtGetParent(), node, source);
             return source;
         } else if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, data);
+        }
+        return node;
+    }
+    
+    /**
+     * When pulling up a delayed marker that is negated a reference expression must be persisted for correct query evaluation
+     *
+     * @param node
+     *            a JexlNode
+     * @return the node, possible wrapped in a reference expression
+     */
+    private JexlNode wrapIfNeeded(JexlNode node) {
+        node = JexlASTHelper.dereference(node);
+        if (node instanceof ASTOrNode || node instanceof ASTAndNode || findNegatedParent(node)) {
+            node = makeRef(wrap(node));
         }
         return node;
     }
