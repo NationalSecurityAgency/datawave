@@ -823,7 +823,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     
     /**
      * Returns a new list of QueryMetrics which is identical to the given list except the query and query plan for each metric are formatted according to
-     * {@link #buildQueryWithHtmlFormatting(JexlNode) buildQueryWithHtmlFormatting}
+     * {@link #buildDecoratedQuery(JexlNode, boolean, JexlQueryDecorator) buildDecoratedQuery} with an {@link HtmlDecorator}
      * 
      * @param metrics
      * @return
