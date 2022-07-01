@@ -116,6 +116,18 @@
 	    <version>1.6.0.Final</version>
             <scope>test</scope>
         </dependency>
+ 	 <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-container-spi</artifactId>
+            <version>1.6.0.Final</version>
+            <scope>test</scope>
+        </dependency>
+	<dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-container-test-spi</artifactId>
+            <version>1.6.0.Final</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
 	    <groupId>org.jboss.spec.javax.ws.rs</groupId>
             <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
