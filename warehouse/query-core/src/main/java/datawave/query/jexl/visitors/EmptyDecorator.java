@@ -36,8 +36,8 @@ import datawave.query.jexl.JexlASTHelper;
  */
 public class EmptyDecorator implements JexlQueryDecorator {
     @Override
-    public void apply(StringBuilder sb, ASTOrNode node, Collection<String> childStrings) {
-        sb.append(String.join(" || " + NEWLINE, childStrings));
+    public void apply(StringBuilder sb, ASTAdditiveOperator node) {
+        sb.append(node.image);
     }
     
     @Override
@@ -46,33 +46,20 @@ public class EmptyDecorator implements JexlQueryDecorator {
     }
     
     @Override
+    public void apply(StringBuilder sb, ASTAssignment node, int i) {
+        sb.append(" = ");
+        if (i + 1 == node.jjtGetNumChildren())
+            sb.setLength(sb.length() - " = ".length());
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTDivNode node) {
+        sb.append(" / ");
+    }
+    
+    @Override
     public void apply(StringBuilder sb, ASTEQNode node) {
         sb.append(" == ");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTNENode node) {
-        sb.append(" != ");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTLTNode node) {
-        sb.append(" < ");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTGTNode node) {
-        sb.append(" > ");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTLENode node) {
-        sb.append(" <= ");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTGENode node) {
-        sb.append(" >= ");
     }
     
     @Override
@@ -81,13 +68,23 @@ public class EmptyDecorator implements JexlQueryDecorator {
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTNRNode node) {
-        sb.append(" !~ ");
+    public void apply(StringBuilder sb, ASTFalseNode node) {
+        sb.append("false");
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTNotNode node) {
-        sb.append("!");
+    public void apply(StringBuilder sb, ASTFunctionNode node, int i) {
+        ; // Nothing to do
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTGENode node) {
+        sb.append(" >= ");
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTGTNode node) {
+        sb.append(" > ");
     }
     
     @Override
@@ -99,28 +96,13 @@ public class EmptyDecorator implements JexlQueryDecorator {
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTNullLiteral node) {
-        sb.append("null");
+    public void apply(StringBuilder sb, ASTLENode node) {
+        sb.append(" <= ");
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTTrueNode node) {
-        sb.append("true");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTFalseNode node) {
-        sb.append("false");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTStringLiteral node, String literal) {
-        sb.append('\'').append(literal).append('\'');
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTFunctionNode node, int i) {
-        ; // Nothing to do
+    public void apply(StringBuilder sb, ASTLTNode node) {
+        sb.append(" < ");
     }
     
     @Override
@@ -129,18 +111,8 @@ public class EmptyDecorator implements JexlQueryDecorator {
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTNumberLiteral node) {
-        sb.append(node.image);
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTAdditiveOperator node) {
-        sb.append(node.image);
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTSizeMethod node) {
-        sb.append(".size() ");
+    public void apply(StringBuilder sb, ASTModNode node) {
+        sb.append(" % ");
     }
     
     @Override
@@ -149,20 +121,48 @@ public class EmptyDecorator implements JexlQueryDecorator {
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTDivNode node) {
-        sb.append(" / ");
+    public void apply(StringBuilder sb, ASTNENode node) {
+        sb.append(" != ");
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTModNode node) {
-        sb.append(" % ");
+    public void apply(StringBuilder sb, ASTNotNode node) {
+        sb.append("!");
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTAssignment node, int i) {
-        sb.append(" = ");
-        if (i + 1 == node.jjtGetNumChildren())
-            sb.setLength(sb.length() - " = ".length());
+    public void apply(StringBuilder sb, ASTNRNode node) {
+        sb.append(" !~ ");
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTNullLiteral node) {
+        sb.append("null");
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTNumberLiteral node) {
+        sb.append(node.image);
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTOrNode node, Collection<String> childStrings) {
+        sb.append(String.join(" || " + NEWLINE, childStrings));
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTSizeMethod node) {
+        sb.append(".size() ");
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTStringLiteral node, String literal) {
+        sb.append('\'').append(literal).append('\'');
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTTrueNode node) {
+        sb.append("true");
     }
     
     @Override

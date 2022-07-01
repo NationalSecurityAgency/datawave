@@ -39,8 +39,8 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 public class HtmlDecorator implements JexlQueryDecorator {
     
     @Override
-    public void apply(StringBuilder sb, ASTOrNode node, Collection<String> childStrings) {
-        sb.append(String.join("<span class=\"or-op\"> || </span>" + NEWLINE, childStrings));
+    public void apply(StringBuilder sb, ASTAdditiveOperator node) {
+        sb.append(String.format("<span class=\"add-op\">%s</span>", node.image));
     }
     
     @Override
@@ -49,33 +49,20 @@ public class HtmlDecorator implements JexlQueryDecorator {
     }
     
     @Override
+    public void apply(StringBuilder sb, ASTAssignment node, int i) {
+        sb.append("<span class=\"assign-op\"> = </span>");
+        if (i + 1 == node.jjtGetNumChildren())
+            sb.setLength(sb.length() - "<span class=\"assign-op\"> = </span>".length());
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTDivNode node) {
+        sb.append("<span class=\"div-op\"> / </span>");
+    }
+    
+    @Override
     public void apply(StringBuilder sb, ASTEQNode node) {
         sb.append("<span class=\"equal-op\"> == </span>");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTNENode node) {
-        sb.append("<span class=\"not-equal-op\"> != </span>");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTLTNode node) {
-        sb.append("<span class=\"less-than-op\"> < </span>");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTGTNode node) {
-        sb.append("<span class=\"greater-than-op\"> > </span>");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTLENode node) {
-        sb.append("<span class=\"less-than-equal-op\"> <= </span>");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTGENode node) {
-        sb.append("<span class=\"greater-than-equal-op\"> >= </span>");
     }
     
     @Override
@@ -84,13 +71,27 @@ public class HtmlDecorator implements JexlQueryDecorator {
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTNRNode node) {
-        sb.append("<span class=\"NR-op\"> !~ </span>");
+    public void apply(StringBuilder sb, ASTFalseNode node) {
+        sb.append("<span class=\"boolean-value\">false</span>");
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTNotNode node) {
-        sb.append("<span class=\"not-op\">!</span>");
+    public void apply(StringBuilder sb, ASTFunctionNode node, int i) {
+        if (i == 0)
+            sb.append("<span class=\"function-namespace\">");
+        else if (i == 1)
+            sb.append("<span class=\"function\">");
+        // the span elements are closed on visiting the ASTIdentifier children
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTGENode node) {
+        sb.append("<span class=\"greater-than-equal-op\"> >= </span>");
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTGTNode node) {
+        sb.append("<span class=\"greater-than-op\"> > </span>");
     }
     
     @Override
@@ -110,32 +111,13 @@ public class HtmlDecorator implements JexlQueryDecorator {
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTNullLiteral node) {
-        sb.append("<span class=\"null-value\">null</span>");
+    public void apply(StringBuilder sb, ASTLENode node) {
+        sb.append("<span class=\"less-than-equal-op\"> <= </span>");
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTTrueNode node) {
-        sb.append("<span class=\"boolean-value\">true</span>");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTFalseNode node) {
-        sb.append("<span class=\"boolean-value\">false</span>");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTStringLiteral node, String literal) {
-        sb.append("<span class=\"string-value\">").append('\'').append(literal).append('\'').append("</span>");
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTFunctionNode node, int i) {
-        if (i == 0)
-            sb.append("<span class=\"function-namespace\">");
-        else if (i == 1)
-            sb.append("<span class=\"function\">");
-        // the span elements are closed on visiting the ASTIdentifier children
+    public void apply(StringBuilder sb, ASTLTNode node) {
+        sb.append("<span class=\"less-than-op\"> < </span>");
     }
     
     @Override
@@ -144,18 +126,8 @@ public class HtmlDecorator implements JexlQueryDecorator {
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTNumberLiteral node) {
-        sb.append(String.format("<span class=\"numeric-value\">%s</span>", node.image));
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTAdditiveOperator node) {
-        sb.append(String.format("<span class=\"add-op\">%s</span>", node.image));
-    }
-    
-    @Override
-    public void apply(StringBuilder sb, ASTSizeMethod node) {
-        sb.append("<span class=\"method\">.size() </span>");
+    public void apply(StringBuilder sb, ASTModNode node) {
+        sb.append("<span class=\"mod-op\"> % </span>");
     }
     
     @Override
@@ -164,20 +136,48 @@ public class HtmlDecorator implements JexlQueryDecorator {
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTDivNode node) {
-        sb.append("<span class=\"div-op\"> / </span>");
+    public void apply(StringBuilder sb, ASTNENode node) {
+        sb.append("<span class=\"not-equal-op\"> != </span>");
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTModNode node) {
-        sb.append("<span class=\"mod-op\"> % </span>");
+    public void apply(StringBuilder sb, ASTNotNode node) {
+        sb.append("<span class=\"not-op\">!</span>");
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTAssignment node, int i) {
-        sb.append("<span class=\"assign-op\"> = </span>");
-        if (i + 1 == node.jjtGetNumChildren())
-            sb.setLength(sb.length() - "<span class=\"assign-op\"> = </span>".length());
+    public void apply(StringBuilder sb, ASTNRNode node) {
+        sb.append("<span class=\"NR-op\"> !~ </span>");
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTNullLiteral node) {
+        sb.append("<span class=\"null-value\">null</span>");
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTNumberLiteral node) {
+        sb.append(String.format("<span class=\"numeric-value\">%s</span>", node.image));
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTOrNode node, Collection<String> childStrings) {
+        sb.append(String.join("<span class=\"or-op\"> || </span>" + NEWLINE, childStrings));
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTSizeMethod node) {
+        sb.append("<span class=\"method\">.size() </span>");
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTStringLiteral node, String literal) {
+        sb.append("<span class=\"string-value\">").append('\'').append(literal).append('\'').append("</span>");
+    }
+    
+    @Override
+    public void apply(StringBuilder sb, ASTTrueNode node) {
+        sb.append("<span class=\"boolean-value\">true</span>");
     }
     
     @Override

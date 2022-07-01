@@ -65,6 +65,8 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     protected static final String DOUBLE_QUOTE = "\"";
     
     private JexlQueryDecorator decorator;
+    // List of existing decorators for JEXL Queries (those which implement JexlQueryDecorator)
+    private static final List<String> existingDecorators = Arrays.asList("EmptyDecorator", "BashDecorator", "HtmlDecorator");
     
     public JexlFormattedStringBuildingVisitor() {
         this(false);
@@ -250,17 +252,19 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     }
 
     /**
-     * Build a String that is the equivalent JEXL query with HTML color styling and formatted on multiple lines.
+     * Build a String that is the equivalent JEXL query with color styling and formatted on multiple lines.
      * 
      * @param script
      *            An ASTJexlScript
      * @param sortDedupeChildren
      *            Whether or not to sort the child nodes, and dedupe them. Note: Only siblings (children with the same parent node) will be deduped. Flatten
      *            beforehand for maximum 'dedupeage'.
-     * @return query string
+     * @param decorator
+     *            How the query will be decorated (e.g., decoration for Bash or HTML)
+     * @return
      */
-    public static String buildQueryWithHtmlFormatting(JexlNode script, boolean sortDedupeChildren) {
-        JexlFormattedStringBuildingVisitor decoratedVisitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren, new HtmlDecorator());
+    public static String buildDecoratedQuery(JexlNode script, boolean sortDedupeChildren, JexlQueryDecorator decorator) {
+        JexlFormattedStringBuildingVisitor decoratedVisitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren, decorator);
         JexlFormattedStringBuildingVisitor plainVisitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren, new EmptyDecorator());
         
         String decoratedQueryStr = null, plainQueryStr = null;
@@ -275,56 +279,6 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             throw e;
         }
         return formatBuiltQuery(decoratedQueryStr, plainQueryStr);
-    }
-
-    /**
-     * Build a String that is the equivalent JEXL query with HTML color styling and formatted on multiple lines.
-     *
-     * @param script
-     *            An ASTJexlScript
-     * @return query string
-     */
-    public static String buildQueryWithHtmlFormatting(JexlNode script) {
-        return buildQueryWithHtmlFormatting(script, false);
-    }
-    
-    /**
-     * Build a String that is the equivalent JEXL query with Bash color styling and formatted on multiple lines.
-     * 
-     * @param script
-     *            An ASTJexlScript
-     * @param sortDedupeChildren
-     *            Whether or not to sort the child nodes, and dedupe them. Note: Only siblings (children with the same parent node) will be deduped. Flatten
-     *            beforehand for maximum 'dedupeage'.
-     * @return
-     */
-    public static String buildQueryWithBashFormatting(JexlNode script, boolean sortDedupeChildren) {
-        JexlFormattedStringBuildingVisitor decoratedVisitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren, new BashDecorator());
-        JexlFormattedStringBuildingVisitor plainVisitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren, new EmptyDecorator());
-        
-        String decoratedQueryStr = null, plainQueryStr = null;
-        try {
-            StringBuilder decoratedStringBuilder = (StringBuilder) script.jjtAccept(decoratedVisitor, new StringBuilder());
-            StringBuilder plainStringBuilder = (StringBuilder) script.jjtAccept(plainVisitor, new StringBuilder());
-            
-            decoratedQueryStr = decoratedStringBuilder.toString();
-            plainQueryStr = plainStringBuilder.toString();
-        } catch (StackOverflowError e) {
-            
-            throw e;
-        }
-        return formatBuiltQuery(decoratedQueryStr, plainQueryStr);
-    }
-    
-    /**
-     * Build a String that is the equivalent JEXL query with Bash color styling and formatted on multiple lines.
-     *
-     * @param script
-     *            An ASTJexlScript
-     * @return
-     */
-    public static String buildQueryWithBashFormatting(JexlNode script) {
-        return buildQueryWithBashFormatting(script, false);
     }
     
     @Override
@@ -888,7 +842,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             if (query != null && isJexlQuery(metric.getParameters())) {
                 try {
                     queryNode = JexlASTHelper.parseJexlQuery(query);
-                    updatedMetric.setQuery(buildQueryWithHtmlFormatting(queryNode));
+                    updatedMetric.setQuery(buildDecoratedQuery(queryNode, false, new HtmlDecorator()));
                 } catch (ParseException e) {
                     log.error("Could not parse JEXL AST after performing transformations to run the query", e);
 
@@ -901,7 +855,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             if (plan != null) {
                 try {
                     planNode = JexlASTHelper.parseJexlQuery(plan);
-                    updatedMetric.setPlan(buildQueryWithHtmlFormatting(planNode));
+                    updatedMetric.setPlan(buildDecoratedQuery(queryNode, false, new HtmlDecorator()));
                 } catch (ParseException e) {
                     log.error("Could not parse JEXL AST after performing transformations to run the query", e);
 
@@ -919,19 +873,58 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     private static boolean isJexlQuery(Set<Parameter> params) {
         return params.stream().anyMatch(p -> p.getParameterName().equals("query.syntax") && p.getParameterValue().equals("JEXL"));
     }
-
+    
+    private static JexlQueryDecorator getDecoratorFromStr(String str) {
+        JexlQueryDecorator decorator = null;
+        
+        if (existingDecorators.contains(str)) {
+            if (str.equals(existingDecorators.get(0))) {
+                decorator = new EmptyDecorator();
+            } else if (str.equals(existingDecorators.get(1))) {
+                decorator = new BashDecorator();
+            } else if (str.equals(existingDecorators.get(2))) {
+                decorator = new HtmlDecorator();
+            }
+        }
+        
+        return decorator;
+    }
+    
     public static void main(String args[]) {
-        String query;
-
-        if (args.length != 1) {
+        /**
+         * Usage: "JexlFormattedStringBuildingVisitor <query> <decorator class name>" or "JexlFormattedStringBuildingVisitor <query>" or
+         * "JexlFormattedStringBuildingVisitor"
+         */
+        String query = null;
+        JexlQueryDecorator decorator = null;
+        
+        if (args.length == 2) { // Provided query and decorator
+            query = args[0];
+            decorator = getDecoratorFromStr(args[1]);
+            if (decorator == null) {
+                System.out.println("Invalid decorator provided. Valid decorators are: " + existingDecorators.toString());
+                System.exit(1);
+            }
+        } else if (args.length == 1) { // Provided query only
+            query = args[0];
+            decorator = new EmptyDecorator();
+        } else if (args.length == 0) { // Nothing provided, prompt user to enter
             Scanner scanner = new Scanner(System.in);
             query = scanner.nextLine();
+            decorator = getDecoratorFromStr(scanner.nextLine());
+            if (decorator == null) {
+                System.out.println("Invalid decorator provided. Valid decorators are: " + existingDecorators.toString());
+                System.exit(1);
+            }
             scanner.close();
         } else {
-            query = args[0];
+            System.out.println("Invalid number of arguments. Valid arguments: \n<query> <decorator class name>\n<query>\nNo arguments");
+            System.exit(1);
         }
+        
         try {
-            String echoCommand = "echo " + DOUBLE_QUOTE + buildQueryWithBashFormatting(JexlASTHelper.parseJexlQuery(query)) + DOUBLE_QUOTE;
+            JexlNode node = JexlASTHelper.parseJexlQuery(query);
+            String echoCommand = "echo " + DOUBLE_QUOTE + buildDecoratedQuery(node, false, decorator) + DOUBLE_QUOTE;
             String[] commands = {"sh", "-c", echoCommand};
             Process process = Runtime.getRuntime().exec(commands);
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
