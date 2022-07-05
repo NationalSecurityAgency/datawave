@@ -152,8 +152,8 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
                 HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
                 if (options.containsKey(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)) {
-                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, Integer.parseInt(options
-                                    .get(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)));
+                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed,
+                                    Integer.parseInt(options.get(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)));
                 } else {
                     this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed);
                 }
@@ -243,8 +243,8 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         
     }
     
-    protected void createAndSeekIndexIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException, ConfigException,
-                    IllegalAccessException, InstantiationException {
+    protected void createAndSeekIndexIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
+                    throws IOException, ConfigException, IllegalAccessException, InstantiationException {
         boolean isQueryFullySatisfiedInitialState = true;
         String hitListOptionString = documentOptions.get("hit.list");
         
@@ -301,8 +301,8 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         this.fieldIndexResults.seek(range, columnFamilies, inclusive);
     }
     
-    public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException,
-                    ConfigException, InstantiationException, IllegalAccessException {
+    public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException {
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
         
         // Take the document Keys and transform it into Entry<Key,Document>, removing Attributes for this Document
@@ -333,8 +333,8 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         // Inject the data type as a field if the user requested it
         if (this.includeDatatype) {
             if (collectTimingDetails) {
-                fieldIndexDocuments = Iterators.transform(fieldIndexDocuments, new EvaluationTrackingFunction<>(QuerySpan.Stage.DataTypeAsField, trackingSpan,
-                                new DataTypeAsField(this.datatypeKey)));
+                fieldIndexDocuments = Iterators.transform(fieldIndexDocuments,
+                                new EvaluationTrackingFunction<>(QuerySpan.Stage.DataTypeAsField, trackingSpan, new DataTypeAsField(this.datatypeKey)));
             } else {
                 fieldIndexDocuments = Iterators.transform(fieldIndexDocuments, new DataTypeAsField(this.datatypeKey));
             }

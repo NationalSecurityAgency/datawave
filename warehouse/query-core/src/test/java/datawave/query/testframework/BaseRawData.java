@@ -71,7 +71,7 @@ public abstract class BaseRawData implements RawData {
      *            ordered list of field names
      * @param metadata
      *            field metadata
-     * */
+     */
     public BaseRawData(final String datatype, final String[] fields, final List<String> fieldHeaders, final Map<String,RawMetaData> metadata) {
         this(datatype, fieldHeaders, metadata);
         processFields(datatype, fields);

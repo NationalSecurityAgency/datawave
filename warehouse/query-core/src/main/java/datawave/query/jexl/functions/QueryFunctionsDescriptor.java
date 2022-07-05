@@ -57,8 +57,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             } else if (name.equals("length")) {
                 // create a regex node with the appropriate number of matching characters
                 
-                returnNode = JexlNodeFactory.buildNode(new ASTERNode(ParserTreeConstants.JJTERNODE), args.get(0), ".{" + args.get(1).image + ','
-                                + args.get(2).image + '}');
+                returnNode = JexlNodeFactory.buildNode(new ASTERNode(ParserTreeConstants.JJTERNODE), args.get(0),
+                                ".{" + args.get(1).image + ',' + args.get(2).image + '}');
             }
             return returnNode;
         }
@@ -114,8 +114,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of "
                             + node.jjtGetChild(0).image);
         if (!functionClass.equals(QueryFunctions.class))
-            throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in "
-                            + functionClass);
+            throw new IllegalArgumentException(
+                            "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
         
         verify(fvis.name(), fvis.args().size());
         

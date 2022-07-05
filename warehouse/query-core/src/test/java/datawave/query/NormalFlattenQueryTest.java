@@ -51,7 +51,8 @@ public class NormalFlattenQueryTest extends AbstractFunctionalQuery {
     
     static {
         FieldConfig indexes = new NormalIndexing();
-        FlattenData data = new FlattenData(NormalField.STARTDATE.name(), NormalField.EVENTID.name(), flatMode, NormalField.headers, NormalField.metadataMapping);
+        FlattenData data = new FlattenData(NormalField.STARTDATE.name(), NormalField.EVENTID.name(), flatMode, NormalField.headers,
+                        NormalField.metadataMapping);
         manager = FlattenDataType.getManager(data);
         try {
             flatten = new FlattenDataType(FlattenDataType.FlattenEntry.cityFlatten, indexes, data);

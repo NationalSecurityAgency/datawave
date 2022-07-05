@@ -179,8 +179,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 }
                 
             } else {
-                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JEXL_NODES_MISSING, MessageFormat.format(
-                                "Class: {0}, Namespace: {1}, Function: {2}", this.getClass().getSimpleName(), namespace, funcName));
+                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JEXL_NODES_MISSING,
+                                MessageFormat.format("Class: {0}, Namespace: {1}, Function: {2}", this.getClass().getSimpleName(), namespace, funcName));
                 throw new IllegalArgumentException(qe);
             }
             
@@ -389,8 +389,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 }
                 
             } else {
-                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JEXL_NODES_MISSING, MessageFormat.format(
-                                "Class: {0}, Namespace: {1}, Function: {2}", this.getClass().getSimpleName(), namespace, funcName));
+                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JEXL_NODES_MISSING,
+                                MessageFormat.format("Class: {0}, Namespace: {1}, Function: {2}", this.getClass().getSimpleName(), namespace, funcName));
                 throw new IllegalArgumentException(qe);
             }
             
@@ -436,8 +436,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     components.add(JexlASTHelper.dereference(child));
                 }
             } else {
-                throw new IllegalStateException("Expected a dereferenced IndexQuery node to be an AND, OR, or EQ node, but was "
-                                + deref.getClass().getSimpleName());
+                throw new IllegalStateException(
+                                "Expected a dereferenced IndexQuery node to be an AND, OR, or EQ node, but was " + deref.getClass().getSimpleName());
             }
             
             // distribute functions into components
@@ -627,13 +627,13 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         Class<?> functionClass = (Class<?>) ArithmeticJexlEngines.functions().get(fvis.namespace());
         
         if (!CONTENT_FUNCTION_NAMESPACE.equals(node.jjtGetChild(0).image)) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NAMESPACE_UNEXPECTED, MessageFormat.format(
-                            "Class: {0}, Namespace: {1}", this.getClass().getSimpleName(), node.jjtGetChild(0).image));
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NAMESPACE_UNEXPECTED,
+                            MessageFormat.format("Class: {0}, Namespace: {1}", this.getClass().getSimpleName(), node.jjtGetChild(0).image));
             throw new IllegalArgumentException(qe);
         }
         if (!functionClass.equals(ContentFunctions.class)) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NODE_FOR_FUNCTION, MessageFormat.format(
-                            "Class: {0}, Function: {1}", this.getClass().getSimpleName(), functionClass));
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NODE_FOR_FUNCTION,
+                            MessageFormat.format("Class: {0}, Function: {1}", this.getClass().getSimpleName(), functionClass));
             throw new IllegalArgumentException(qe);
         }
         

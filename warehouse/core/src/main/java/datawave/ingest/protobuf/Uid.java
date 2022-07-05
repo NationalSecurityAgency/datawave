@@ -174,8 +174,8 @@ public final class Uid {
         }
         
         protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
-            return datawave.ingest.protobuf.Uid.internal_static_datawave_ingest_protobuf_List_fieldAccessorTable.ensureFieldAccessorsInitialized(
-                            datawave.ingest.protobuf.Uid.List.class, datawave.ingest.protobuf.Uid.List.Builder.class);
+            return datawave.ingest.protobuf.Uid.internal_static_datawave_ingest_protobuf_List_fieldAccessorTable
+                            .ensureFieldAccessorsInitialized(datawave.ingest.protobuf.Uid.List.class, datawave.ingest.protobuf.Uid.List.Builder.class);
         }
         
         public static com.google.protobuf.Parser<List> PARSER = new com.google.protobuf.AbstractParser<List>() {
@@ -453,8 +453,8 @@ public final class Uid {
             }
             
             protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
-                return datawave.ingest.protobuf.Uid.internal_static_datawave_ingest_protobuf_List_fieldAccessorTable.ensureFieldAccessorsInitialized(
-                                datawave.ingest.protobuf.Uid.List.class, datawave.ingest.protobuf.Uid.List.Builder.class);
+                return datawave.ingest.protobuf.Uid.internal_static_datawave_ingest_protobuf_List_fieldAccessorTable
+                                .ensureFieldAccessorsInitialized(datawave.ingest.protobuf.Uid.List.class, datawave.ingest.protobuf.Uid.List.Builder.class);
             }
             
             // Construct using datawave.ingest.protobuf.Uid.List.newBuilder()

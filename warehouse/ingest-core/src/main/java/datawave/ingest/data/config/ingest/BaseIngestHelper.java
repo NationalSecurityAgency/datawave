@@ -205,8 +205,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         deleteMode = config.getBoolean(INGEST_MODE_DELETE, false);
         replaceMalformedUTF8 = config.getBoolean(this.getType().typeName() + REPLACE_MALFORMED_CHAR, false);
         
-        defaultFailedFieldPolicy = FailurePolicy.valueOf(config.get(this.getType().typeName() + DEFAULT_FAILED_NORMALIZATION_POLICY,
-                        defaultFailedFieldPolicy.name()));
+        defaultFailedFieldPolicy = FailurePolicy
+                        .valueOf(config.get(this.getType().typeName() + DEFAULT_FAILED_NORMALIZATION_POLICY, defaultFailedFieldPolicy.name()));
         failedNormalizationField = config.get(this.getType().typeName() + FAILED_NORMALIZATION_FIELD, failedNormalizationField);
         
         // Ensure that we have only a whitelist or a blacklist of fields to

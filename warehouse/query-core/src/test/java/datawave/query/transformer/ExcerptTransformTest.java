@@ -171,7 +171,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         
         // setup a matching term for BODY:quick brown overlapping the phrase match
         givenMockDocumentWithHitTerm("BODY", "quick brown");
-        givenMatchingTermFrequencies("BODY", new int[][] { {1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
+        givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
         // note that the start is relative to index 9 (i.e. 9-2=7) because the overlapping term starts at 9
         // end offset is inclusive
         givenMatchingPhrase("BODY", 7, 16, "and the quick brown fox jumped over the lazy dog");
@@ -208,7 +208,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         
         // setup a matching term for BODY:quick brown overlapping the phrase match
         givenMockDocumentWithHitTerm("BODY", "quick brown");
-        givenMatchingTermFrequencies("BODY", new int[][] { {1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
+        givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
         // end offset is inclusive
         givenMatchingPhrase("BODY", 23, 28, "Jack and Jill jumped over the");
         // note that the start is relative to overlapping term index 9 (i.e. 9-2=7) because the overlapping term starts at 9

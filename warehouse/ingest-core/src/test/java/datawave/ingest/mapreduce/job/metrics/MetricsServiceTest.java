@@ -65,8 +65,8 @@ public class MetricsServiceTest {
         Multimap<BulkIngestKey,Value> pairs = contextWriter.getWritten();
         
         assertEquals(2, pairs.size());
-        assertTrue(pairs.containsEntry(new BulkIngestKey(new Text(metricsTable), new Key(expectedRow, metricName, "table\u0000shard\u0000shard")), new Value(
-                        "1".getBytes())));
+        assertTrue(pairs.containsEntry(new BulkIngestKey(new Text(metricsTable), new Key(expectedRow, metricName, "table\u0000shard\u0000shard")),
+                        new Value("1".getBytes())));
         assertTrue(pairs.containsEntry(new BulkIngestKey(new Text(metricsTable), new Key(expectedRow, metricName, "fileExtension\u0000gz\u0000shard")),
                         new Value("1".getBytes())));
     }
@@ -96,8 +96,8 @@ public class MetricsServiceTest {
         Multimap<BulkIngestKey,Value> pairs = contextWriter.getWritten();
         
         assertEquals(1, pairs.size());
-        assertTrue(pairs.containsEntry(new BulkIngestKey(new Text(metricsTable), new Key(expectedRow, metricName, "table\u0000shard\u0000shard")), new Value(
-                        "1".getBytes())));
+        assertTrue(pairs.containsEntry(new BulkIngestKey(new Text(metricsTable), new Key(expectedRow, metricName, "table\u0000shard\u0000shard")),
+                        new Value("1".getBytes())));
     }
     
     @Test
@@ -125,8 +125,8 @@ public class MetricsServiceTest {
         Multimap<BulkIngestKey,Value> pairs = contextWriter.getWritten();
         
         assertEquals(2, pairs.size());
-        assertTrue(pairs.containsEntry(new BulkIngestKey(new Text(metricsTable), new Key(expectedRow, metricName, "table\u0000shard\u0000shard")), new Value(
-                        "1".getBytes())));
+        assertTrue(pairs.containsEntry(new BulkIngestKey(new Text(metricsTable), new Key(expectedRow, metricName, "table\u0000shard\u0000shard")),
+                        new Value("1".getBytes())));
         assertTrue(pairs.containsEntry(new BulkIngestKey(new Text(metricsTable), new Key(expectedRow, metricName, "fileExtension\u0000gz\u0000shard")),
                         new Value("1".getBytes())));
     }

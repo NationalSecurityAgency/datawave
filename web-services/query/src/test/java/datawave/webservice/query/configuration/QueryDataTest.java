@@ -155,8 +155,8 @@ public class QueryDataTest {
         
         for (int i = 0; i < settings1.size(); i++) {
             IteratorSetting s1 = settings1.get(i), s2 = settings2.get(i);
-            if (!(s1.getIteratorClass().equals(s2.getIteratorClass()) && s1.getName().equals(s2.getName()) && s1.getPriority() == s2.getPriority() && s1
-                            .getOptions().equals(s2.getOptions()))) {
+            if (!(s1.getIteratorClass().equals(s2.getIteratorClass()) && s1.getName().equals(s2.getName()) && s1.getPriority() == s2.getPriority()
+                            && s1.getOptions().equals(s2.getOptions()))) {
                 return false;
             }
         }

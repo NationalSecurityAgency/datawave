@@ -631,9 +631,9 @@ public final class QueryMessages {
             /**
              * Protobuf type {@code datawave.webservice.query.QueryImpl.Parameter}
              */
-            public static final class Builder extends
-                            com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.query.QueryMessages.QueryImpl.Parameter,Builder> implements
-                            datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder {
+            public static final class Builder
+                            extends com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.query.QueryMessages.QueryImpl.Parameter,Builder>
+                            implements datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder {
                 // Construct using datawave.webservice.query.QueryMessages.QueryImpl.Parameter.newBuilder()
                 private Builder() {
                     maybeForceBuilderInitialization();

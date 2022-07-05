@@ -55,8 +55,8 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     // Whether the value is from the index
     private final boolean fromIndex;
     
-    public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter,
-                    MarkingFunctions markingFunctions, boolean fromIndex) {
+    public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter, MarkingFunctions markingFunctions,
+                    boolean fromIndex) {
         this.attrFactory = new AttributeFactory(typeMetadata);
         this.markingFunctions = markingFunctions;
         this.attrFilter = attrFilter;
@@ -275,8 +275,8 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     private List<String> attributeValues(Attribute<?> attr) {
         if (attr instanceof TypeAttribute) {
             Type<?> type = ((TypeAttribute<?>) attr).getType();
-            return (type instanceof OneToManyNormalizerType) ? ((OneToManyNormalizerType<?>) type).getNormalizedValues() : Arrays.asList(type
-                            .getNormalizedValue());
+            return (type instanceof OneToManyNormalizerType) ? ((OneToManyNormalizerType<?>) type).getNormalizedValues()
+                            : Arrays.asList(type.getNormalizedValue());
         } else {
             new Exception().printStackTrace(System.err);
             return Arrays.asList(String.valueOf(attr.getData()));

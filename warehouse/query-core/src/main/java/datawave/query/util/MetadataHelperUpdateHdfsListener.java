@@ -120,8 +120,8 @@ public class MetadataHelperUpdateHdfsListener {
                             log.debug("table:" + metadataTableName + " " + this + " setTriState to UPDATING");
                         }
                         // get a connection for my MetadataHelper, and get the TypeMetadata map
-                        ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(this.instance)
-                                        .withZkHosts(this.zookeepers));
+                        ZooKeeperInstance instance = new ZooKeeperInstance(
+                                        ClientConfiguration.loadDefault().withInstance(this.instance).withZkHosts(this.zookeepers));
                         Connector connector = instance.getConnector(this.username, new PasswordToken(this.password));
                         TypeMetadataHelper typeMetadataHelper = this.typeMetadataHelperFactory.createTypeMetadataHelper(connector, metadataTableName,
                                         allMetadataAuths, false);
@@ -131,10 +131,7 @@ public class MetadataHelperUpdateHdfsListener {
                         watcher.setTriState(triStateName, SharedTriState.STATE.UPDATED);
                     } else {
                         if (log.isDebugEnabled()) {
-                            log.debug("table:"
-                                            + metadataTableName
-                                            + " "
-                                            + this
+                            log.debug("table:" + metadataTableName + " " + this
                                             + "  STATE is not NEEDS_UPDATE! Someone else may be writing or has already written the TypeMetadata map, just release the lock");
                         }
                     }

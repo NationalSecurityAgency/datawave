@@ -104,7 +104,8 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
         }
     }
     
-    private void manageColumnInsert(Type<?> datawaveType, String columnName, TypedValue columnTypedValue, Map<String,String> markings, String columnVisibility) {
+    private void manageColumnInsert(Type<?> datawaveType, String columnName, TypedValue columnTypedValue, Map<String,String> markings,
+                    String columnVisibility) {
         if (this.columnValues.containsKey(columnName) == false) {
             
             Set<String> valuesSet = Sets.newLinkedHashSet();

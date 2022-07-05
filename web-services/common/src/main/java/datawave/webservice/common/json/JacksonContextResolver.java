@@ -25,8 +25,8 @@ public class JacksonContextResolver implements ContextResolver<ObjectMapper> {
     public JacksonContextResolver() {
         mapper = new ObjectMapper();
         mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-        mapper.setAnnotationIntrospector(AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(),
-                        new JaxbAnnotationIntrospector(mapper.getTypeFactory())));
+        mapper.setAnnotationIntrospector(
+                        AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(), new JaxbAnnotationIntrospector(mapper.getTypeFactory())));
         mapper.setSerializationInclusion(Include.NON_NULL);
     }
     

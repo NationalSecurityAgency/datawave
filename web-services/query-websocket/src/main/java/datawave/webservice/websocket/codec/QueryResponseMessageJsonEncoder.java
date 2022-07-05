@@ -34,8 +34,8 @@ public class QueryResponseMessageJsonEncoder implements Encoder.TextStream<Query
     public void init(EndpointConfig config) {
         mapper = new ObjectMapper();
         mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-        mapper.setAnnotationIntrospector(AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(),
-                        new JaxbAnnotationIntrospector(mapper.getTypeFactory())));
+        mapper.setAnnotationIntrospector(
+                        AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(), new JaxbAnnotationIntrospector(mapper.getTypeFactory())));
         // Don't close the output stream
         mapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
         // Don't include NULL properties.

@@ -50,7 +50,8 @@ public class SimpleFlattenQueryTest extends AbstractFunctionalQuery {
     
     static {
         FieldConfig indexes = new SimpleIndexing();
-        FlattenData data = new FlattenData(SimpleField.STARTDATE.name(), SimpleField.EVENTID.name(), flatMode, SimpleField.headers, SimpleField.metadataMapping);
+        FlattenData data = new FlattenData(SimpleField.STARTDATE.name(), SimpleField.EVENTID.name(), flatMode, SimpleField.headers,
+                        SimpleField.metadataMapping);
         manager = FlattenDataType.getManager(data);
         try {
             flatten = new FlattenDataType(FlattenDataType.FlattenEntry.cityFlatten, indexes, data);

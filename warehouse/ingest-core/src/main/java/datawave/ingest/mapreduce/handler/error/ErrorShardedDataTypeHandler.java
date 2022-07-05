@@ -96,8 +96,8 @@ import java.util.List;
  *
  * @param <KEYIN>
  */
-public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN> implements
-                ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
+public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN>
+                implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
     
     private static final Logger log = Logger.getLogger(ErrorShardedDataTypeHandler.class);
     
@@ -145,8 +145,8 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
             setMetadata(null);
         } else {
             setMetadataTableName(new Text(tableName));
-            setMetadata(ingestConfiguration.createMetadata(getShardTableName(), getMetadataTableName(), null /* no load date table */,
-                            getShardIndexTableName(), getShardReverseIndexTableName(), conf.getBoolean(ERROR_PROP_PREFIX + METADATA_TERM_FREQUENCY, false)));
+            setMetadata(ingestConfiguration.createMetadata(getShardTableName(), getMetadataTableName(), null /* no load date table */, getShardIndexTableName(),
+                            getShardReverseIndexTableName(), conf.getBoolean(ERROR_PROP_PREFIX + METADATA_TERM_FREQUENCY, false)));
         }
         tableName = conf.get(ERROR_PROP_PREFIX + SHARD_DINDX_NAME);
         setShardDictionaryIndexTableName(tableName == null ? null : new Text(tableName));

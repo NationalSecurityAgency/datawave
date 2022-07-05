@@ -64,8 +64,8 @@ public class RangeStreamTest {
         connector = instance.getConnector("", new PasswordToken(new byte[0]));
         connector.tableOperations().create(SHARD_INDEX);
         
-        BatchWriter bw = connector.createBatchWriter(SHARD_INDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
-                        .setMaxWriteThreads(1));
+        BatchWriter bw = connector.createBatchWriter(SHARD_INDEX,
+                        new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L).setMaxWriteThreads(1));
         
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.addUID("123");
@@ -568,8 +568,8 @@ public class RangeStreamTest {
         for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getConnector()), helper).streamPlans(script)) {
             // verify the query plan dropped no terms
             JexlNode queryTree = JexlASTHelper.parseJexlQuery(queryPlan.getQueryString());
-            JexlNode expectedTree = JexlASTHelper
-                            .parseJexlQuery("(((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'tardy')) || ((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'bardy'))) && FOO == 'oreo'");
+            JexlNode expectedTree = JexlASTHelper.parseJexlQuery(
+                            "(((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'tardy')) || ((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'bardy'))) && FOO == 'oreo'");
             JexlNodeAssert.assertThat(queryTree).isEqualTo(expectedTree);
             
             // verify the range

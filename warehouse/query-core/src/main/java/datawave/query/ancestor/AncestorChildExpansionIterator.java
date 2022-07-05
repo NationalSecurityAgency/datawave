@@ -192,8 +192,9 @@ public class AncestorChildExpansionIterator implements SortedKeyValueIterator<Ke
                 final Key childTestKey = getPartOfKey(topKey, dataType, child, field, value);
                 if (equality.partOf(childTestKey, iteratorTestKey)) {
                     // generate an fi matching the previous key but with the new uid
-                    next = new Key(topKey.getRow().toString(), topKey.getColumnFamily().toString(), value + Constants.NULL_BYTE_STRING + dataType
-                                    + Constants.NULL_BYTE_STRING + child, topKey.getColumnVisibilityParsed(), topKey.getTimestamp());
+                    next = new Key(topKey.getRow().toString(), topKey.getColumnFamily().toString(),
+                                    value + Constants.NULL_BYTE_STRING + dataType + Constants.NULL_BYTE_STRING + child, topKey.getColumnVisibilityParsed(),
+                                    topKey.getTimestamp());
                 } else {
                     // since the child came after the current topKey but was not a child, the next top will have to come off
                     // of the iterator

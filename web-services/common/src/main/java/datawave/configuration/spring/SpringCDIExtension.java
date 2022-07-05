@@ -157,7 +157,8 @@ public class SpringCDIExtension implements Extension {
             }
             
             @Override
-            public void destroy(ThreadSafeClassPathXmlApplicationContext instance, CreationalContext<ThreadSafeClassPathXmlApplicationContext> creationalContext) {
+            public void destroy(ThreadSafeClassPathXmlApplicationContext instance,
+                            CreationalContext<ThreadSafeClassPathXmlApplicationContext> creationalContext) {
                 it.preDestroy(instance);
                 creationalContext.release();
             }

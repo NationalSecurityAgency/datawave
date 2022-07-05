@@ -247,8 +247,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                     throw new DatawaveFatalQueryException(ioe);
                 }
             } else {
-                QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}",
-                                "Limited ExceededOrThresholdMarkerJexlNode"));
+                QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
+                                MessageFormat.format("{0}", "Limited ExceededOrThresholdMarkerJexlNode"));
                 throw new DatawaveFatalQueryException(qe);
             }
         } else if (data instanceof IndexRangeIteratorBuilder) {
@@ -309,8 +309,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         throw new DatawaveFatalQueryException("Unable to ivarate", ioe);
                     }
                 } else {
-                    QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}",
-                                    "ExceededValueThresholdMarkerJexlNode"));
+                    QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
+                                    MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
                     throw new DatawaveFatalQueryException(qe);
                 }
             } else {
@@ -432,8 +432,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, JexlNode rootNode, JexlNode sourceNode, LiteralRange<?> range, Object data) {
         if (limitLookup) {
             ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(identifier, sourceNode, attrFilter);
-            NestedIterator<Key> eventFieldIterator = new EventFieldIterator(rangeLimiter, source.deepCopy(env), identifier, new AttributeFactory(
-                            this.typeMetadata), getEventFieldAggregator(identifier, wrapped));
+            NestedIterator<Key> eventFieldIterator = new EventFieldIterator(rangeLimiter, source.deepCopy(env), identifier,
+                            new AttributeFactory(this.typeMetadata), getEventFieldAggregator(identifier, wrapped));
             TermFrequencyIndexBuilder builder = new TermFrequencyIndexBuilder();
             builder.setSource(source.deepCopy(env));
             builder.setTypeMetadata(typeMetadata);
@@ -442,8 +442,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setAttrFilter(attrFilter);
             builder.setDatatypeFilter(datatypeFilter);
             builder.setEnv(env);
-            builder.setTermFrequencyAggregator(getTermFrequencyAggregator(identifier, sourceNode, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount()
-                            : -1));
+            builder.setTermFrequencyAggregator(
+                            getTermFrequencyAggregator(identifier, sourceNode, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1));
             builder.setNode(rootNode);
             Range fiRange = getFiRangeForTF(range);
             
@@ -595,8 +595,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // handle this, so we should just not build an IndexIterator for it.
         if (null == builder.getValue()) {
             if (this.indexOnlyFields.contains(builder.getField())) {
-                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, MessageFormat.format("{0} {1} {2}",
-                                "Unable to compare index only field", builder.getField(), "against null"));
+                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
+                                MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
                 throw new DatawaveFatalQueryException(qe);
             }
             
@@ -675,8 +675,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // handle this, so we should just not build an IndexIterator for it.
         if (null == builder.getValue()) {
             if (this.indexOnlyFields.contains(builder.getField())) {
-                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, MessageFormat.format("{0} {1} {2}",
-                                "Unable to compare index only field", builder.getField(), "against null"));
+                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
+                                MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
                 throw new DatawaveFatalQueryException(qe);
             }
             return null;
@@ -1160,8 +1160,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             
             builder.setField(field);
         } catch (IOException | URISyntaxException | NullPointerException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, e, MessageFormat.format("Class: {0}",
-                            ExceededOrThresholdMarkerJexlNode.class.getSimpleName()));
+            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, e,
+                            MessageFormat.format("Class: {0}", ExceededOrThresholdMarkerJexlNode.class.getSimpleName()));
             throw new DatawaveFatalQueryException(qe);
         }
         

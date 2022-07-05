@@ -46,8 +46,8 @@ public class MetricsTableConfigHelperTest {
         
         // Using mocks to force error during tops.getIteratorSetting()
         TableOperations tops = EasyMock.createMock(TableOperations.class);
-        EasyMock.expect(tops.getIteratorSetting(EasyMock.anyString(), EasyMock.anyString(), EasyMock.anyObject(IteratorScope.class))).andThrow(
-                        new AccumuloException(""));
+        EasyMock.expect(tops.getIteratorSetting(EasyMock.anyString(), EasyMock.anyString(), EasyMock.anyObject(IteratorScope.class)))
+                        .andThrow(new AccumuloException(""));
         EasyMock.replay(tops);
         
         // run test

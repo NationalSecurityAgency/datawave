@@ -433,7 +433,8 @@ public class IndexInfo implements Writable, UidIntersector {
     }
     
     /**
-     * Intersection is where the logic becomes a bit more interesting. We will handle this in stages. So let's evaluate this in terms of three types of nodes <br>
+     * Intersection is where the logic becomes a bit more interesting. We will handle this in stages. So let's evaluate this in terms of three types of nodes
+     * <br>
      * 1) {@code UNKNOWN -- COUNT likely > 20, but we can't be certain}<br>
      * 2) {@code LARGE -- COUNT > 20 AT SOME POINT}<br>
      * 3) {@code small < 20}

@@ -84,8 +84,8 @@ public class MultiRfileInputformat extends RFileInputFormat {
         
         String tableName = BulkInputFormat.getTablename(job.getConfiguration());
         boolean autoAdjust = BulkInputFormat.getAutoAdjustRanges(job.getConfiguration());
-        List<Range> ranges = autoAdjust ? Range.mergeOverlapping(BulkInputFormat.getRanges(job.getConfiguration())) : BulkInputFormat.getRanges(job
-                        .getConfiguration());
+        List<Range> ranges = autoAdjust ? Range.mergeOverlapping(BulkInputFormat.getRanges(job.getConfiguration()))
+                        : BulkInputFormat.getRanges(job.getConfiguration());
         
         if (ranges.isEmpty()) {
             ranges = Lists.newArrayListWithCapacity(1);
@@ -102,8 +102,8 @@ public class MultiRfileInputformat extends RFileInputFormat {
         return inputSplits;
     }
     
-    List<InputSplit> computeSplitPoints(JobContext job, String tableName, List<Range> ranges) throws TableNotFoundException, AccumuloException,
-                    AccumuloSecurityException, IOException, InterruptedException {
+    List<InputSplit> computeSplitPoints(JobContext job, String tableName, List<Range> ranges)
+                    throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException, InterruptedException {
         return computeSplitPoints(job.getConfiguration(), tableName, ranges);
     }
     
@@ -128,15 +128,15 @@ public class MultiRfileInputformat extends RFileInputFormat {
         locationMap.refresh(range);
     }
     
-    public static List<InputSplit> computeSplitPoints(Configuration conf, String tableName, List<Range> ranges) throws TableNotFoundException,
-                    AccumuloException, AccumuloSecurityException, IOException, InterruptedException {
+    public static List<InputSplit> computeSplitPoints(Configuration conf, String tableName, List<Range> ranges)
+                    throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException, InterruptedException {
         final Instance instance = BulkInputFormat.getInstance(conf);
         final PasswordToken token = new PasswordToken(BulkInputFormat.getPassword(conf));
         return computeSplitPoints(instance.getConnector(BulkInputFormat.getUsername(conf), token), conf, tableName, ranges);
     }
     
-    public static List<InputSplit> computeSplitPoints(Connector conn, Configuration conf, String tableName, List<Range> ranges) throws TableNotFoundException,
-                    AccumuloException, AccumuloSecurityException, IOException, InterruptedException {
+    public static List<InputSplit> computeSplitPoints(Connector conn, Configuration conf, String tableName, List<Range> ranges)
+                    throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException, InterruptedException {
         
         final Multimap<Range,RfileSplit> binnedRanges = ArrayListMultimap.create();
         

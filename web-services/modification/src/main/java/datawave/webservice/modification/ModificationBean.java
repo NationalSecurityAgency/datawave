@@ -164,8 +164,8 @@ public class ModificationBean {
             // Get the Modification Service from the configuration
             ModificationServiceConfiguration service = modificationConfiguration.getConfiguration(modificationServiceName);
             if (!request.getClass().equals(service.getRequestClass())) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_REQUEST_CLASS, MessageFormat.format("Requires: {0}",
-                                service.getRequestClass().getName()));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_REQUEST_CLASS,
+                                MessageFormat.format("Requires: {0}", service.getRequestClass().getName()));
                 response.addException(qe);
                 throw new BadRequestException(qe, response);
             }
@@ -177,8 +177,8 @@ public class ModificationBean {
                 boolean authorized = !Collections.disjoint(userRoles, service.getAuthorizedRoles());
                 if (!authorized) {
                     // Then the user does not have any of the authorized roles
-                    UnauthorizedQueryException qe = new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED, MessageFormat.format(
-                                    "Requires one of: {0}", service.getAuthorizedRoles()));
+                    UnauthorizedQueryException qe = new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED,
+                                    MessageFormat.format("Requires one of: {0}", service.getAuthorizedRoles()));
                     response.addException(qe);
                     throw new UnauthorizedException(qe, response);
                 }

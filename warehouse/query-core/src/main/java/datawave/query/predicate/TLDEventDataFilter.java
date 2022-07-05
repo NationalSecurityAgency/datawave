@@ -504,8 +504,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         // ensure this new key won't be beyond the end
         // new CF = current dataType\0uid\0 to ensure the next hit will be in another uid
         // new CQ = first whitelist field\0 to ensure the next hit will be the first whitelisted field or later
-        Key startKey = new Key(current.getRow(), new Text(current.getColumnFamily() + Constants.NULL_BYTE_STRING), new Text(sortedWhitelist.get(0)
-                        + Constants.NULL_BYTE_STRING));
+        Key startKey = new Key(current.getRow(), new Text(current.getColumnFamily() + Constants.NULL_BYTE_STRING),
+                        new Text(sortedWhitelist.get(0) + Constants.NULL_BYTE_STRING));
         
         if (startKey.compareTo(end) < 0) {
             // last one, roll over to the first

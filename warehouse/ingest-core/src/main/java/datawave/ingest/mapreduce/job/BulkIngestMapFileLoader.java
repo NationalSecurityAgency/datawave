@@ -364,8 +364,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
     
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, Credentials credentials, URI seqFileHdfs,
                     URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf) {
-        this(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT,
-                        1, Collections.emptyList());
+        this(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, 1,
+                        Collections.emptyList());
     }
     
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, Credentials credentials, URI seqFileHdfs,
@@ -375,8 +375,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
     }
     
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, Credentials credentials, URI seqFileHdfs,
-                    URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort,
-                    int numHdfsThreads, List<Observer> jobObservers) {
+                    URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort, int numHdfsThreads,
+                    List<Observer> jobObservers) {
         this.conf = conf;
         this.tablePriorities = tablePriorities;
         this.workDir = new Path(workDir);
@@ -1138,8 +1138,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
                             boolean flaggedExists = sourceFs.exists(new Path(file));
                             boolean loadedExists = sourceFs.exists(dst);
                             if (flaggedExists || !loadedExists) {
-                                throw new IOException("Unable to rename " + file + " (exists=" + flaggedExists + ") to " + dst + " (exists=" + loadedExists
-                                                + ")");
+                                throw new IOException(
+                                                "Unable to rename " + file + " (exists=" + flaggedExists + ") to " + dst + " (exists=" + loadedExists + ")");
                             } else {
                                 log.warn("File was already moved to loaded: " + dst);
                                 renamed = true;

@@ -30,7 +30,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
         <version.accumulo>1.10.2</version.accumulo>
-        <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
+        <version.arquillian>1.6.0.Final</version.arquillian>
+        <version.arquillian-weld-embedded>2.1.0.Final</version.arquillian-weld-embedded>
         <version.assertj>3.20.2</version.assertj>
         <version.avro>1.8.2</version.avro>
         <version.caffeine>2.7.0</version.caffeine>
@@ -102,8 +103,7 @@
         <version.stream>2.9.6</version.stream>
         <version.surefire.plugin>3.0.0-M5</version.surefire.plugin>
         <version.thrift>0.9.3</version.thrift>
-        <version.weld>3.1.1.Final</version.weld>
-        <version.weld-se>3.1.1.Final</version.weld-se>
+        <version.weld>3.1.9.Final</version.weld>
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
         <version.weld-test>2.3.5.Final</version.weld-test>
         <version.wildfly>26.1.1.Final</version.wildfly>
@@ -860,7 +860,7 @@
             <dependency>
                 <groupId>org.jboss.weld.se</groupId>
                 <artifactId>weld-se-core</artifactId>
-                <version>${version.weld-se}</version>
+                <version>${version.weld}</version>
             </dependency>
             <dependency>
                 <groupId>org.jgroups</groupId>
@@ -1027,8 +1027,32 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
-                <version>${version.arquillian-weld-ee-embedded}</version>
+                <artifactId>arquillian-container-spi</artifactId>
+                <version>${version.arquillian}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-container-test-impl-base</artifactId>
+                <version>${version.arquillian}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-container-test-spi</artifactId>
+                <version>${version.arquillian}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-weld-embedded</artifactId>
+                <version>${version.arquillian-weld-embedded}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.junit</groupId>
+                <artifactId>arquillian-junit-container</artifactId>
+                <version>${version.arquillian}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1210,9 +1234,9 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>net.revelc.code</groupId>
+                    <groupId>net.revelc.code.formatter</groupId>
                     <artifactId>formatter-maven-plugin</artifactId>
-                    <version>0.5.2</version>
+                    <version>2.11.0</version>
                     <configuration>
                         <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
                         <lineEnding>LF</lineEnding>
@@ -1590,7 +1614,7 @@
                         <artifactId>sortpom-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <groupId>net.revelc.code</groupId>
+                        <groupId>net.revelc.code.formatter</groupId>
                         <artifactId>formatter-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
@@ -1826,7 +1850,7 @@
                                         </pluginExecution>
                                         <pluginExecution>
                                             <pluginExecutionFilter>
-                                                <groupId>net.revelc.code</groupId>
+                                                <groupId>net.revelc.code.formatter</groupId>
                                                 <artifactId>formatter-maven-plugin</artifactId>
                                                 <versionRange>[0.5.0,)</versionRange>
                                                 <goals>

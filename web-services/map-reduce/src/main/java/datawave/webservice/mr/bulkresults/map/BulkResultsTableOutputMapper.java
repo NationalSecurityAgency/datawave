@@ -38,8 +38,8 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
         Query query;
         try {
             String base64EncodedQuery = context.getConfiguration().get(BulkResultsFileOutputMapper.QUERY_LOGIC_SETTINGS);
-            Class<? extends Query> queryImplClass = Class.forName(context.getConfiguration().get(BulkResultsFileOutputMapper.QUERY_IMPL_CLASS)).asSubclass(
-                            Query.class);
+            Class<? extends Query> queryImplClass = Class.forName(context.getConfiguration().get(BulkResultsFileOutputMapper.QUERY_IMPL_CLASS))
+                            .asSubclass(Query.class);
             query = BulkResultsFileOutputMapper.deserializeQuery(base64EncodedQuery, queryImplClass);
         } catch (JAXBException e) {
             throw new RuntimeException("Error deserializing Query", e);
@@ -56,8 +56,8 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
     }
     
     @Override
-    protected void map(Key key, Value value, org.apache.hadoop.mapreduce.Mapper<Key,Value,Text,Mutation>.Context context) throws IOException,
-                    InterruptedException {
+    protected void map(Key key, Value value, org.apache.hadoop.mapreduce.Mapper<Key,Value,Text,Mutation>.Context context)
+                    throws IOException, InterruptedException {
         entries.clear();
         entries.put(key, value);
         for (Entry<Key,Value> entry : entries.entrySet()) {

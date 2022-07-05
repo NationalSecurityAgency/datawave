@@ -9,7 +9,7 @@ public final class EdgeData {
     public static void registerAllExtensions(com.google.protobuf.ExtensionRegistry registry) {}
     
     public interface EdgeValueOrBuilder extends
-    // @@protoc_insertion_point(interface_extends:datawave.edge.protobuf.EdgeValue)
+                    // @@protoc_insertion_point(interface_extends:datawave.edge.protobuf.EdgeValue)
                     com.google.protobuf.MessageOrBuilder {
         
         /**
@@ -226,7 +226,7 @@ public final class EdgeData {
      * </pre>
      */
     public static final class EdgeValue extends com.google.protobuf.GeneratedMessage implements
-    // @@protoc_insertion_point(message_implements:datawave.edge.protobuf.EdgeValue)
+                    // @@protoc_insertion_point(message_implements:datawave.edge.protobuf.EdgeValue)
                     EdgeValueOrBuilder {
         // Use EdgeValue.newBuilder() to construct.
         private EdgeValue(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
@@ -408,7 +408,7 @@ public final class EdgeData {
         }
         
         public interface UUIDOrBuilder extends
-        // @@protoc_insertion_point(interface_extends:datawave.edge.protobuf.EdgeValue.UUID)
+                        // @@protoc_insertion_point(interface_extends:datawave.edge.protobuf.EdgeValue.UUID)
                         com.google.protobuf.MessageOrBuilder {
             
             /**
@@ -436,7 +436,7 @@ public final class EdgeData {
          * Protobuf type {@code datawave.edge.protobuf.EdgeValue.UUID}
          */
         public static final class UUID extends com.google.protobuf.GeneratedMessage implements
-        // @@protoc_insertion_point(message_implements:datawave.edge.protobuf.EdgeValue.UUID)
+                        // @@protoc_insertion_point(message_implements:datawave.edge.protobuf.EdgeValue.UUID)
                         UUIDOrBuilder {
             // Use UUID.newBuilder() to construct.
             private UUID(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
@@ -511,9 +511,8 @@ public final class EdgeData {
             }
             
             protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
-                return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_EdgeValue_UUID_fieldAccessorTable
-                                .ensureFieldAccessorsInitialized(datawave.edge.protobuf.EdgeData.EdgeValue.UUID.class,
-                                                datawave.edge.protobuf.EdgeData.EdgeValue.UUID.Builder.class);
+                return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_EdgeValue_UUID_fieldAccessorTable.ensureFieldAccessorsInitialized(
+                                datawave.edge.protobuf.EdgeData.EdgeValue.UUID.class, datawave.edge.protobuf.EdgeData.EdgeValue.UUID.Builder.class);
             }
             
             public static com.google.protobuf.Parser<UUID> PARSER = new com.google.protobuf.AbstractParser<UUID>() {
@@ -698,7 +697,7 @@ public final class EdgeData {
              * Protobuf type {@code datawave.edge.protobuf.EdgeValue.UUID}
              */
             public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-            // @@protoc_insertion_point(builder_implements:datawave.edge.protobuf.EdgeValue.UUID)
+                            // @@protoc_insertion_point(builder_implements:datawave.edge.protobuf.EdgeValue.UUID)
                             datawave.edge.protobuf.EdgeData.EdgeValue.UUIDOrBuilder {
                 public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
                     return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_EdgeValue_UUID_descriptor;
@@ -1437,8 +1436,8 @@ public final class EdgeData {
             return PARSER.parseFrom(input);
         }
         
-        public static datawave.edge.protobuf.EdgeData.EdgeValue parseFrom(java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                        throws java.io.IOException {
+        public static datawave.edge.protobuf.EdgeData.EdgeValue parseFrom(java.io.InputStream input,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
             return PARSER.parseFrom(input, extensionRegistry);
         }
         
@@ -1490,7 +1489,7 @@ public final class EdgeData {
          * </pre>
          */
         public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:datawave.edge.protobuf.EdgeValue)
+                        // @@protoc_insertion_point(builder_implements:datawave.edge.protobuf.EdgeValue)
                         datawave.edge.protobuf.EdgeData.EdgeValueOrBuilder {
             public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
                 return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_EdgeValue_descriptor;
@@ -2573,14 +2572,14 @@ public final class EdgeData {
     
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
-        java.lang.String[] descriptorData = {"\n\016EdgeData.proto\022\026datawave.edge.protobuf"
-                        + "\"\271\002\n\tEdgeValue\022\r\n\005count\030\001 \001(\003\022\021\n\005hours\030\002"
-                        + " \003(\003B\002\020\001\022\024\n\010duration\030\003 \003(\003B\002\020\001\022\023\n\013hourBi"
-                        + "tmask\030\004 \001(\005\022\023\n\013sourceValue\030\005 \001(\t\022\021\n\tsink"
-                        + "Value\030\006 \001(\t\022\020\n\010loadDate\030\007 \001(\t\022\023\n\013badActi"
-                        + "vity\030\010 \001(\010\0224\n\004uuid\030\t \001(\0132&.datawave.edge" + ".protobuf.EdgeValue.UUID\022\023\n\013uuid_string\030"
-                        + "\n \001(\t\032E\n\004UUID\022\036\n\026least_significant_bits\030"
-                        + "\001 \002(\022\022\035\n\025most_significant_bits\030\002 \002(\022B\032\n\026" + "datawave.edge.protobufH\001"};
+        java.lang.String[] descriptorData = {
+                "\n\016EdgeData.proto\022\026datawave.edge.protobuf" + "\"\271\002\n\tEdgeValue\022\r\n\005count\030\001 \001(\003\022\021\n\005hours\030\002"
+                                + " \003(\003B\002\020\001\022\024\n\010duration\030\003 \003(\003B\002\020\001\022\023\n\013hourBi"
+                                + "tmask\030\004 \001(\005\022\023\n\013sourceValue\030\005 \001(\t\022\021\n\tsink"
+                                + "Value\030\006 \001(\t\022\020\n\010loadDate\030\007 \001(\t\022\023\n\013badActi"
+                                + "vity\030\010 \001(\010\0224\n\004uuid\030\t \001(\0132&.datawave.edge"
+                                + ".protobuf.EdgeValue.UUID\022\023\n\013uuid_string\030" + "\n \001(\t\032E\n\004UUID\022\036\n\026least_significant_bits\030"
+                                + "\001 \002(\022\022\035\n\025most_significant_bits\030\002 \002(\022B\032\n\026" + "datawave.edge.protobufH\001"};
         com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner = new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
             public com.google.protobuf.ExtensionRegistry assignDescriptors(com.google.protobuf.Descriptors.FileDescriptor root) {
                 descriptor = root;
@@ -2595,8 +2594,8 @@ public final class EdgeData {
                                 "SourceValue", "SinkValue", "LoadDate", "BadActivity", "Uuid", "UuidString",});
         internal_static_datawave_edge_protobuf_EdgeValue_UUID_descriptor = internal_static_datawave_edge_protobuf_EdgeValue_descriptor.getNestedTypes().get(0);
         internal_static_datawave_edge_protobuf_EdgeValue_UUID_fieldAccessorTable = new com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-                        internal_static_datawave_edge_protobuf_EdgeValue_UUID_descriptor, new java.lang.String[] {"LeastSignificantBits",
-                                "MostSignificantBits",});
+                        internal_static_datawave_edge_protobuf_EdgeValue_UUID_descriptor,
+                        new java.lang.String[] {"LeastSignificantBits", "MostSignificantBits",});
     }
     
     // @@protoc_insertion_point(outer_class_scope)

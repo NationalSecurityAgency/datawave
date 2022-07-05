@@ -60,8 +60,8 @@ public class UpgradeCounterValues {
         Connector connector = instance.getConnector(username, new PasswordToken(password));
         Authorizations auths = connector.securityOperations().getUserAuthorizations(connector.whoami());
         
-        try (BatchWriter writer = connector.createBatchWriter(tableName, new BatchWriterConfig().setMaxWriteThreads(bwThreads).setMaxMemory(bwMemory)
-                        .setMaxLatency(60, TimeUnit.SECONDS));
+        try (BatchWriter writer = connector.createBatchWriter(tableName,
+                        new BatchWriterConfig().setMaxWriteThreads(bwThreads).setMaxMemory(bwMemory).setMaxLatency(60, TimeUnit.SECONDS));
                         BatchScanner scanner = connector.createBatchScanner(tableName, auths, bsThreads)) {
             scanner.setRanges(ranges);
             

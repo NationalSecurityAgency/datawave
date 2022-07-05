@@ -113,17 +113,14 @@ public abstract class FunctionalSetTest {
     
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class)
-                        .deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
+                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
         
     }
     
@@ -175,8 +172,8 @@ public abstract class FunctionalSetTest {
             Attribute<?> attr = d.get("UUID.0");
             
             Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(), attr instanceof TypeAttribute
-                            || attr instanceof PreNormalizedAttribute);
+            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
+                            attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
             
             TypeAttribute<?> UUIDAttr = (TypeAttribute<?>) attr;
             

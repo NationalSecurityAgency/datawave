@@ -469,8 +469,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setFstCount(other.getFstCount());
         this.setCollapseDatePercentThreshold(other.getCollapseDatePercentThreshold());
         this.setFullTableScanEnabled(other.getFullTableScanEnabled());
-        this.setRealmSuffixExclusionPatterns(null == other.getRealmSuffixExclusionPatterns() ? null : Lists.newArrayList(other
-                        .getRealmSuffixExclusionPatterns()));
+        this.setRealmSuffixExclusionPatterns(
+                        null == other.getRealmSuffixExclusionPatterns() ? null : Lists.newArrayList(other.getRealmSuffixExclusionPatterns()));
         this.setDefaultType(other.getDefaultType());
         this.setShardDateFormatter(null == other.getShardDateFormatter() ? null : new SimpleDateFormat(other.getShardDateFormatter().toPattern())); // TODO --
         // deep copy

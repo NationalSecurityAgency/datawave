@@ -91,15 +91,15 @@ public class Connections {
     }
     
     public static Connector metricsConnection(Configuration c) throws AccumuloException, AccumuloSecurityException {
-        final String mtxZk = c.get(MetricsConfig.ZOOKEEPERS), mtxInst = c.get(MetricsConfig.INSTANCE), mtxUser = c.get(MetricsConfig.USER), mtxPass = c
-                        .get(MetricsConfig.PASS);
-        return new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(mtxInst).withZkHosts(mtxZk)).getConnector(mtxUser, new PasswordToken(
-                        mtxPass));
+        final String mtxZk = c.get(MetricsConfig.ZOOKEEPERS), mtxInst = c.get(MetricsConfig.INSTANCE), mtxUser = c.get(MetricsConfig.USER),
+                        mtxPass = c.get(MetricsConfig.PASS);
+        return new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(mtxInst).withZkHosts(mtxZk)).getConnector(mtxUser,
+                        new PasswordToken(mtxPass));
     }
     
     public static Connector warehouseConnection(Configuration c) throws AccumuloException, AccumuloSecurityException {
-        final String whZk = c.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS), whInst = c.get(MetricsConfig.WAREHOUSE_INSTANCE), whUser = c
-                        .get(MetricsConfig.WAREHOUSE_USERNAME), whPass = c.get(MetricsConfig.WAREHOUSE_PASSWORD);
+        final String whZk = c.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS), whInst = c.get(MetricsConfig.WAREHOUSE_INSTANCE),
+                        whUser = c.get(MetricsConfig.WAREHOUSE_USERNAME), whPass = c.get(MetricsConfig.WAREHOUSE_PASSWORD);
         return new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(whInst).withZkHosts(whZk)).getConnector(whUser, new PasswordToken(whPass));
     }
 }
