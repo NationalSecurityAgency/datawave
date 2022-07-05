@@ -4,12 +4,16 @@ echo "<query>"
 echo "<decorator>"
 echo "Decorator can be EmptyDecorator, HtmlDecorator, or BashDecorator"
 
-cd ../../../../../../../contrib/datawave-quickstart/bin/services/datawave/datawave-ingest-install/bin/ingest
+DW_QUICKSTART_DIR="$HADOOP_HOME/.."
 
-findJars () {
-    ls -1 ../../lib/$1-*.jar | sort | paste -sd ':' -
+cd $DW_QUICKSTART_DIR/bin/services/datawave/datawave-ingest-install/bin/ingest
+
+findJacksonJars () {
+    ls -1 ../../lib/jackson-*.jar | sort | paste -sd ':' -
 }
 
 . ./ingest-libs.sh
 
-java -cp $CLASSPATH:$(findJars jackson) datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor
+JACKSON_JARS=$(findJacksonJars)
+
+java -cp $CLASSPATH:$JACKSON_JARS datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor
