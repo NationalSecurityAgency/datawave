@@ -1,11 +1,3 @@
-[submodule "query-microservices/query-metric"]
-	path = microservices/services/query-metric
-	url = git@github.com:NationalSecurityAgency/datawave-query-metric-service.git
-	branch = feature/queryMicroservices
-[submodule "query-microservices/dictionary-service"]
-	path = microservices/services/dictionary
-	url = git@github.com:NationalSecurityAgency/datawave-dictionary-service.git
-	branch = feature/queryMicroservices
 [submodule "core/base-rest-responses"]
 	path = core/base-rest-responses
 	url = git@github.com:NationalSecurityAgency/datawave-base-rest-responses.git
@@ -54,9 +46,17 @@
 	path = microservices/services/config
 	url = git@github.com:NationalSecurityAgency/datawave-config-service.git
 	branch = feature/queryMicroservices
+[submodule "microservices/services/dictionary"]
+	path = microservices/services/dictionary
+	url = git@github.com:NationalSecurityAgency/datawave-dictionary-service.git
+	branch = feature/queryMicroservices
 [submodule "microservices/services/hazelcast"]
 	path = microservices/services/hazelcast
 	url = git@github.com:NationalSecurityAgency/datawave-hazelcast-service.git
+	branch = feature/queryMicroservices
+[submodule "microservices/services/query-metric"]
+	path = microservices/services/query-metric
+	url = git@github.com:NationalSecurityAgency/datawave-query-metric-service.git
 	branch = feature/queryMicroservices
 [submodule "microservices/starters/audit"]
 	path = microservices/starters/audit
