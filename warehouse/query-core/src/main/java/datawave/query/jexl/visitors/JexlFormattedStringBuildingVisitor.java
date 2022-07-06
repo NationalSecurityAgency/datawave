@@ -44,6 +44,7 @@ import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -826,23 +827,21 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      * {@link #buildDecoratedQuery(JexlNode, boolean, JexlQueryDecorator) buildDecoratedQuery} with an {@link HtmlDecorator}
      * 
      * @param metrics
-     * @return
      */
-    public static List<QueryMetric> formatMetrics(List<QueryMetric> metrics) {
+    public static void formatMetrics(List<? extends BaseQueryMetric> metrics) {
         List<QueryMetric> updatedMetrics = new ArrayList<QueryMetric>();
 
         // For each metric, update the query to be formatted (if applicable) and update
         // the plan to be formatted
-        for (QueryMetric metric : metrics) {
+        for (BaseQueryMetric metric : metrics) {
             JexlNode queryNode = null, planNode = null;
-            QueryMetric updatedMetric = new QueryMetric(metric);
-            String query = updatedMetric.getQuery();
-            String plan = updatedMetric.getPlan();
+            String query = metric.getQuery();
+            String plan = metric.getPlan();
             // If it is a JEXL query, set the query to be formatted
             if (query != null && isJexlQuery(metric.getParameters())) {
                 try {
                     queryNode = JexlASTHelper.parseJexlQuery(query);
-                    updatedMetric.setQuery(buildDecoratedQuery(queryNode, false, new HtmlDecorator()));
+                    metric.setQuery(buildDecoratedQuery(queryNode, false, new HtmlDecorator()));
                 } catch (ParseException e) {
                     log.error("Could not parse JEXL AST after performing transformations to run the query", e);
 
@@ -855,7 +854,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             if (plan != null) {
                 try {
                     planNode = JexlASTHelper.parseJexlQuery(plan);
-                    updatedMetric.setPlan(buildDecoratedQuery(queryNode, false, new HtmlDecorator()));
+                    metric.setPlan(buildDecoratedQuery(queryNode, false, new HtmlDecorator()));
                 } catch (ParseException e) {
                     log.error("Could not parse JEXL AST after performing transformations to run the query", e);
 
@@ -864,10 +863,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
                     }
                 }
             }
-            updatedMetrics.add(updatedMetric);
         }
-
-        return updatedMetrics;
     }
 
     private static boolean isJexlQuery(Set<Parameter> params) {

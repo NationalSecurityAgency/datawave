@@ -551,7 +551,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
             
-            response.setResult(JexlFormattedStringBuildingVisitor.formatMetrics(queryMetrics));
+            JexlFormattedStringBuildingVisitor.formatMetrics(queryMetrics);
+            
+            response.setResult(queryMetrics);
             
             response.setGeoQuery(queryMetrics.stream().anyMatch(SimpleQueryGeometryHandler::isGeoQuery));
         } finally {
