@@ -27,7 +27,6 @@ import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
-import datawave.query.attributes.UniqueFields;
 import datawave.query.function.ws.EvaluationFunction;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.TableName;
@@ -526,7 +525,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setAllowShortcutEvaluation(other.getAllowShortcutEvaluation());
         this.setSpeculativeScanning(other.getSpeculativeScanning());
         this.setDisableEvaluation(other.isDisableEvaluation());
-        this.setUsePartialInterpreter(other.isUsePartialInterpreter());
+        this.setUsePartialInterpreter(other.getUsePartialInterpreter());
         this.setIncompleteFields(other.getIncompleteFields());
         this.setEvaluationFunction(other.getEvaluationFunction());
         this.setContainsIndexOnlyTerms(other.isContainsIndexOnlyTerms());
@@ -2282,7 +2281,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.excerptFields = excerptFields;
     }
     
-    public boolean isUsePartialInterpreter() {
+    public boolean getUsePartialInterpreter() {
         return usePartialInterpreter;
     }
     

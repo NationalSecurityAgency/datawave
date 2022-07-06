@@ -198,6 +198,24 @@
         <property name="rangeBufferTimeoutMillis" value="15000" />
         <property name="rangeBufferPollMillis" value="100" />
         <property name="evaluationOnlyFields" value="_ANYFIELD_" />
+
+        <!-- uncomment to test partial document evaluation -->
+        <property name="usePartialInterpreter" value="true" />
+        <property name="incompleteFields">
+            <set value-type="java.lang.String">
+                <value>CONTENT</value>
+                <value>BODY</value>
+                <value>AGE</value>
+                <value>CITY</value>
+            </set>
+        </property>
+
+        <!-- uncomment to collect timing details -->
+        <property name="collectTimingDetails" value="true" />
+        <property name="collectQueryMetrics" value="true" />
+
+        <property name="eventQueryDataDecoratorTransformer" ref="EventQueryDataDecoratorTransformer" />
+
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
@@ -275,5 +293,9 @@
     <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
     
     <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
+
+    <bean id="EventQueryDataDecoratorTransformer" scope="prototype" class="datawave.query.transformer.EventQueryDataDecoratorTransformer">
+
+    </bean>
     
 </beans>

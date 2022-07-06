@@ -6,8 +6,10 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
+import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.function.LogTiming;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
@@ -222,6 +224,11 @@ public abstract class CompositeFunctionsTest {
             Attribute<?> attr = d.get("UUID");
             if (attr == null) {
                 attr = d.get("UUID.0");
+            }
+            
+            if (d.containsKey(LogTiming.TIMING_METADATA) && d.getAttributes().size() == 1) {
+                // skip any timing metadata keys produced as a result of testing with timing enabled
+                continue;
             }
             
             Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
@@ -622,6 +629,7 @@ public abstract class CompositeFunctionsTest {
                 Arrays.asList("CORLEONE", "CAPONE"), // family has child MICHAEL
                 Collections.singletonList("CORLEONE"), Collections.singletonList("CORLEONE")};
         for (int i = 0; i < queryStrings.length; i++) {
+            System.out.println("Running query for index: " + i);
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }

@@ -2102,8 +2102,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                             addOption(cfg, QueryOptions.LIMIT_FIELDS_FIELD, config.getLimitFieldsField(), false);
                         }
                         
-                        if (config.isUsePartialInterpreter()) {
-                            addOption(cfg, QueryOptions.USE_PARTIAL_INTERPRETER, Boolean.toString(config.isUsePartialInterpreter()), false);
+                        if (config.getUsePartialInterpreter()) {
+                            addOption(cfg, QueryOptions.USE_PARTIAL_INTERPRETER, Boolean.toString(config.getUsePartialInterpreter()), false);
                             // incomplete fields only required when using a partial interpreter
                         addOption(cfg, QueryOptions.INCOMPLETE_FIELDS, Joiner.on(',').join(config.getIncompleteFields()), false);
                     }

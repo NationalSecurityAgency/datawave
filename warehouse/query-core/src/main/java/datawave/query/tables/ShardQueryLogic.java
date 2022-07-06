@@ -23,7 +23,6 @@ import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
-import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.config.IndexHole;
@@ -2512,11 +2511,19 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public boolean getUsePartialInterpreter() {
-        return getConfig().isUsePartialInterpreter();
+        return getConfig().getUsePartialInterpreter();
     }
     
     public void setUsePartialInterpreter(boolean usePartialInterpreter) {
         getConfig().setUsePartialInterpreter(usePartialInterpreter);
+    }
+    
+    public Set<String> getIncompleteFields() {
+        return getConfig().getIncompleteFields();
+    }
+    
+    public void setIncompleteFields(Set<String> incompleteFields) {
+        getConfig().setIncompleteFields(incompleteFields);
     }
     
     public boolean isLazySetMechanismEnabled() {

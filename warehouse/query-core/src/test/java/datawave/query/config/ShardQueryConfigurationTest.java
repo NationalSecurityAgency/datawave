@@ -148,7 +148,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.getBypassAccumulo());
         Assert.assertFalse(config.getSpeculativeScanning());
         Assert.assertFalse(config.isDisableEvaluation());
-        Assert.assertFalse(config.isUsePartialInterpreter());
+        Assert.assertFalse(config.getUsePartialInterpreter());
         Assert.assertEquals(Collections.emptySet(), config.getIncompleteFields());
         Assert.assertNull(config.getEvaluationFunction());
         Assert.assertFalse(config.isContainsIndexOnlyTerms());
@@ -387,7 +387,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(expectedQueryModel.getReverseQueryMapping(), config.getQueryModel().getReverseQueryMapping());
         Assert.assertEquals(expectedQueryModel.getUnevaluatedFields(), config.getQueryModel().getUnevaluatedFields());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
-        Assert.assertEquals(usePartialInterpreter, config.isUsePartialInterpreter());
+        Assert.assertEquals(usePartialInterpreter, config.getUsePartialInterpreter());
         Assert.assertEquals(incompleteFields, config.getIncompleteFields());
         Assert.assertEquals(evaluationFunction, config.getEvaluationFunction());
         Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());

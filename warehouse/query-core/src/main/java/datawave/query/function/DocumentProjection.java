@@ -96,6 +96,11 @@ public class DocumentProjection implements DocumentPermutation {
             String fieldName = entry.getKey();
             Attribute<?> attr = entry.getValue();
             
+            if (fieldName.equals(LogTiming.TIMING_METADATA)) {
+                newDoc.put(fieldName, attr);
+                continue;
+            }
+            
             if (projection.apply(fieldName)) {
                 
                 // If the projection is configured to exclude, we must fully traverse the subtree

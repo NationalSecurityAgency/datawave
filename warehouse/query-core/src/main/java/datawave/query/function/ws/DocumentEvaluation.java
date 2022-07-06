@@ -33,7 +33,7 @@ public class DocumentEvaluation implements Function<Entry<Key,Value>,Entry<Key,V
     @Nullable
     @Override
     public Entry<Key,Value> apply(@Nullable Entry<Key,Value> input) {
-        if (input.getValue() == null) {
+        if (input == null || input.getValue() == null) {
             return input;
         }
         Entry<Key,Document> entry = de.apply(input);
