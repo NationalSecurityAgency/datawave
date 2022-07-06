@@ -7,6 +7,19 @@ import datawave.query.attributes.Attributes;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * This is a utility class used to ensure we are not overloading the JexlContext with unnecessary Attribute instances. In some cases, we will end up with a set
+ * of Attributes that have identical data, visibilities, and timestamps, but differing class types and/or column family information. This can include but is not
+ * limited to: datatype, uid. Attributes are considered equivalent when we find matching data, visibilities, timestamps, and where one has a populated column
+ * family, but the other does not. In these cases we can safely combine datatype and uids into a single Attribute instance. If there are non-null deltas found
+ * within column families, we do NOT consider these identical as they may be parent/child or multiple child relationships within Attributes.
+ * <p>
+ * Key k1 = new Key(row, new Text("datatype%00;d8zay2.-3pnndm.-anolok"), cq, cv, ts); Key k2 = new Key(row, new Text(""), cq, cv, ts);
+ * <p>
+ * PreNormalizedAttribute content1 = new PreNormalizedAttribute ("foo", k1, true); Content content2 = new Content("foo", k2, true);
+ * <p>
+ * We will end up with a single merged Attribute of type Content containing "datatype%00;d8zay2.-3pnndm.-anolok" in the Column Family.
+ */
 public final class AttributeComparator {
     
     // this is a utility and should never be instantiated
