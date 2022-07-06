@@ -318,9 +318,8 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         
         Preconditions.checkNotNull(options, "Configuration filename and " + "the default ttl must be set for the ConfigurableAgeOffFilter");
         
-        long sessionScanStart = options.containsKey(AgeOffConfigParams.SCAN_START_TIMESTAMP)
-                        ? Long.parseLong(options.get(AgeOffConfigParams.SCAN_START_TIMESTAMP))
-                        : System.currentTimeMillis();
+        long sessionScanStart = options.containsKey(AgeOffConfigParams.SCAN_START_TIMESTAMP) ? Long.parseLong(options
+                        .get(AgeOffConfigParams.SCAN_START_TIMESTAMP)) : System.currentTimeMillis();
         
         initialize(options.get(AgeOffConfigParams.TTL), options.get(AgeOffConfigParams.TTL_UNITS), options.get(AgeOffConfigParams.TTL_SHORT_CIRCUIT),
                         sessionScanStart, options.get(AgeOffConfigParams.FILTER_CONFIG));
@@ -346,22 +345,24 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                                     .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new ReloadableCacheBuilder());
                     // this will schedule a check to see if the update or expiration intervals have changed
                     // if so the ruleCache will be rebuilt with these new intervals
-                    SimpleTimer.getInstance(1).schedule(() -> {
-                        try {
-                            long interval = getLongProperty(UPDATE_INTERVAL_MS_PROP, DEFAULT_UPDATE_INTERVAL_MS);
-                            long expiration = getLongProperty(EXPIRATION_INTERVAL_MS_PROP, DEFAULT_EXPIRATION_INTERVAL_MS);
-                            if (UPDATE_INTERVAL_MS != interval || EXPIRATION_INTERVAL_MS != expiration) {
-                                log.info("Changing " + UPDATE_INTERVAL_MS_PROP + " to " + interval);
-                                UPDATE_INTERVAL_MS = interval;
-                                log.info("Changing " + EXPIRATION_INTERVAL_MS_PROP + " to " + expiration);
-                                EXPIRATION_INTERVAL_MS = expiration;
-                                ruleCache = CacheBuilder.newBuilder().refreshAfterWrite(UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS)
-                                                .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new ReloadableCacheBuilder());
-                            }
-                        } catch (Throwable t) {
-                            log.error(t, t);
-                        }
-                    }, 1000, 10 * 1000);
+                    SimpleTimer.getInstance(1).schedule(
+                                    () -> {
+                                        try {
+                                            long interval = getLongProperty(UPDATE_INTERVAL_MS_PROP, DEFAULT_UPDATE_INTERVAL_MS);
+                                            long expiration = getLongProperty(EXPIRATION_INTERVAL_MS_PROP, DEFAULT_EXPIRATION_INTERVAL_MS);
+                                            if (UPDATE_INTERVAL_MS != interval || EXPIRATION_INTERVAL_MS != expiration) {
+                                                log.info("Changing " + UPDATE_INTERVAL_MS_PROP + " to " + interval);
+                                                UPDATE_INTERVAL_MS = interval;
+                                                log.info("Changing " + EXPIRATION_INTERVAL_MS_PROP + " to " + expiration);
+                                                EXPIRATION_INTERVAL_MS = expiration;
+                                                ruleCache = CacheBuilder.newBuilder().refreshAfterWrite(UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS)
+                                                                .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS)
+                                                                .build(new ReloadableCacheBuilder());
+                                            }
+                                        } catch (Throwable t) {
+                                            log.error(t, t);
+                                        }
+                                    }, 1000, 10 * 1000);
                 }
             }
         }

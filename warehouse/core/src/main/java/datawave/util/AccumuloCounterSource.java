@@ -40,8 +40,8 @@ public class AccumuloCounterSource extends CounterSource {
     
     protected Value topValue = null;
     
-    public AccumuloCounterSource(String instanceStr, String zookeepers, String username, String password, String table)
-                    throws AccumuloException, AccumuloSecurityException {
+    public AccumuloCounterSource(String instanceStr, String zookeepers, String username, String password, String table) throws AccumuloException,
+                    AccumuloSecurityException {
         ZooKeeperInstance instance = new ZooKeeperInstance(instanceStr, zookeepers);
         connector = instance.getConnector(username, new PasswordToken(password));
         queryTable = table;

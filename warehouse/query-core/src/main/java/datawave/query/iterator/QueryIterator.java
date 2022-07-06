@@ -158,8 +158,8 @@ import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOC
  * </ol>
  *
  */
-public class QueryIterator extends QueryOptions
-                implements YieldingKeyValueIterator<Key,Value>, JexlContextCreator.JexlContextValueComparator, SourceFactory<Key,Value> {
+public class QueryIterator extends QueryOptions implements YieldingKeyValueIterator<Key,Value>, JexlContextCreator.JexlContextValueComparator,
+                SourceFactory<Key,Value> {
     
     private static final Logger log = Logger.getLogger(QueryIterator.class);
     
@@ -264,8 +264,8 @@ public class QueryIterator extends QueryOptions
             this.source = source;
         }
         
-        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(),
-                        getEvaluationFilter() != null ? getEvaluationFilter().getMaxNextCount() : -1);
+        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
+                        .getMaxNextCount() : -1);
         
         if (isDebugMultithreadedSources()) {
             this.source = new SourceThreadTrackingIterator(this.source);
@@ -393,8 +393,9 @@ public class QueryIterator extends QueryOptions
         getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         Span span = Trace.start("QueryIterator.seek");
         
-        if (!this.isIncludeGroupingContext() && (this.query.contains("grouping:") || this.query.contains("matchesInGroup")
-                        || this.query.contains("MatchesInGroup") || this.query.contains("atomValuesMatch"))) {
+        if (!this.isIncludeGroupingContext()
+                        && (this.query.contains("grouping:") || this.query.contains("matchesInGroup") || this.query.contains("MatchesInGroup") || this.query
+                                        .contains("atomValuesMatch"))) {
             this.setIncludeGroupingContext(true);
             this.groupingContextAddedByMe = true;
         } else {
@@ -516,10 +517,10 @@ public class QueryIterator extends QueryOptions
             
             pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
                 // last chance before the documents are serialized
-                getActiveQueryLog().get(getQueryId()).recordStats(keyDocumentEntry.getValue(), querySpanCollector.getCombinedQuerySpan(null));
-                // Always return true since we just want to record data in the ActiveQueryLog
-                return true;
-            });
+                            getActiveQueryLog().get(getQueryId()).recordStats(keyDocumentEntry.getValue(), querySpanCollector.getCombinedQuerySpan(null));
+                            // Always return true since we just want to record data in the ActiveQueryLog
+                            return true;
+                        });
             
             if (this.getReturnType() == ReturnType.kryo) {
                 // Serialize the Document using Kryo
@@ -896,8 +897,8 @@ public class QueryIterator extends QueryOptions
         // Inject the data type as a field if the user requested it
         if (this.includeDatatype) {
             if (gatherTimingDetails()) {
-                documents = Iterators.transform(documents,
-                                new EvaluationTrackingFunction<>(QuerySpan.Stage.DataTypeAsField, trackingSpan, new DataTypeAsField(this.datatypeKey)));
+                documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.DataTypeAsField, trackingSpan, new DataTypeAsField(
+                                this.datatypeKey)));
             } else {
                 documents = Iterators.transform(documents, new DataTypeAsField(this.datatypeKey));
             }
@@ -950,8 +951,8 @@ public class QueryIterator extends QueryOptions
         
         // now filter the attributes to those with the keep flag set true
         if (gatherTimingDetails()) {
-            documents = Iterators.transform(documents,
-                            new EvaluationTrackingFunction<>(QuerySpan.Stage.AttributeKeepFilter, trackingSpan, new AttributeKeepFilter<>()));
+            documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.AttributeKeepFilter, trackingSpan,
+                            new AttributeKeepFilter<>()));
         } else {
             documents = Iterators.transform(documents, new AttributeKeepFilter<>());
         }
@@ -971,10 +972,10 @@ public class QueryIterator extends QueryOptions
         // Filter out any Documents which are empty (e.g. due to attribute
         // projection or visibility filtering)
         if (gatherTimingDetails()) {
-            documents = statelessFilter(documents,
-                            new EvaluationTrackingPredicate<>(QuerySpan.Stage.EmptyDocumentFilter, trackingSpan, new EmptyDocumentFilter()));
-            documents = Iterators.transform(documents,
-                            new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentMetadata, trackingSpan, new DocumentMetadata()));
+            documents = statelessFilter(documents, new EvaluationTrackingPredicate<>(QuerySpan.Stage.EmptyDocumentFilter, trackingSpan,
+                            new EmptyDocumentFilter()));
+            documents = Iterators
+                            .transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentMetadata, trackingSpan, new DocumentMetadata()));
         } else {
             documents = statelessFilter(documents, new EmptyDocumentFilter());
             documents = Iterators.transform(documents, new DocumentMetadata());
@@ -992,8 +993,8 @@ public class QueryIterator extends QueryOptions
         // do I need to remove the grouping context I added above?
         if (groupingContextAddedByMe) {
             if (gatherTimingDetails()) {
-                documents = Iterators.transform(documents,
-                                new EvaluationTrackingFunction<>(QuerySpan.Stage.RemoveGroupingContext, trackingSpan, new RemoveGroupingContext()));
+                documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.RemoveGroupingContext, trackingSpan,
+                                new RemoveGroupingContext()));
             } else {
                 documents = Iterators.transform(documents, new RemoveGroupingContext());
             }
@@ -1172,11 +1173,11 @@ public class QueryIterator extends QueryOptions
         if (fieldIndexSatisfiesQuery) {
             final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, super.equality,
                             getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields);
-            Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(documents,
-                            new GetDocument(docMapper,
-                                            new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata,
-                                                            this.isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(),
-                                                            getEvaluationFilter(), isTrackSizes())));
+            Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(
+                            documents,
+                            new GetDocument(docMapper, new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata, this
+                                            .isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(), getEvaluationFilter(),
+                                            isTrackSizes())));
             
             Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(mappedDocuments, new TupleToEntry<>());
             
@@ -1382,8 +1383,8 @@ public class QueryIterator extends QueryOptions
         return sb.toString();
     }
     
-    protected NestedIterator<Key> getOrSetKeySource(final Range documentRange, ASTJexlScript rangeScript)
-                    throws IOException, ConfigException, IllegalAccessException, InstantiationException {
+    protected NestedIterator<Key> getOrSetKeySource(final Range documentRange, ASTJexlScript rangeScript) throws IOException, ConfigException,
+                    IllegalAccessException, InstantiationException {
         NestedIterator<Key> sourceIter = null;
         // If we're doing field index or a non-fulltable (aka a normal
         // query)
@@ -1465,8 +1466,8 @@ public class QueryIterator extends QueryOptions
     }
     
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(Class<? extends IteratorBuildingVisitor> c, final Range documentRange,
-                    boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException {
+                    boolean isQueryFullySatisfied, boolean sortedUIDs) throws MalformedURLException, ConfigException, IllegalAccessException,
+                    InstantiationException {
         if (log.isTraceEnabled()) {
             log.trace(documentRange);
         }

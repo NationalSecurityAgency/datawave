@@ -171,8 +171,8 @@ public class ScannerFactory {
         if (wrapper == ScannerSession.class) {
             session = (T) new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats);
         } else {
-            session = wrapper.getConstructor(ScannerSession.class)
-                            .newInstance(new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats));
+            session = wrapper.getConstructor(ScannerSession.class).newInstance(
+                            new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats));
         }
         
         log.debug("Created session " + System.identityHashCode(session));

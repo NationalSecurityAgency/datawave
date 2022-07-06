@@ -35,7 +35,8 @@ public class CarsDataType extends AbstractDataTypeConfig {
      */
     public enum CarEntry {
         // default provided cars with datatype name
-        tesla("input/tesla-cars.csv", "tesla"), ford("input/ford-cars.csv", "tesla");
+        tesla("input/tesla-cars.csv", "tesla"),
+        ford("input/ford-cars.csv", "tesla");
         
         private final String ingestFile;
         private final String carName;

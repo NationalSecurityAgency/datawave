@@ -3,3 +3,4 @@
  * the raw data and output a normalized form of the IP address for use in the index.
  */
 package datawave.ingest.data.normalizer;
+

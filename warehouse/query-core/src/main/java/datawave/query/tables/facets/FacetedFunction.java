@@ -26,8 +26,7 @@ public class FacetedFunction implements Function<Entry<Key,Value>,Entry<Key,Valu
     protected Document mergedDocment = new Document();
     private MergeSummarization summarizer;
     
-    public FacetedFunction(DocumentDeserializer deserializer, DocumentSerializer serializer,
-                    List<Function<Entry<Key,Document>,Entry<Key,Document>>> transforms) {
+    public FacetedFunction(DocumentDeserializer deserializer, DocumentSerializer serializer, List<Function<Entry<Key,Document>,Entry<Key,Document>>> transforms) {
         this.deserializer = deserializer;
         this.serializer = serializer;
         this.transforms = transforms;

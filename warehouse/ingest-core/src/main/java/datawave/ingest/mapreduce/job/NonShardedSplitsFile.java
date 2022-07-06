@@ -62,8 +62,8 @@ public class NonShardedSplitsFile {
          * @throws TableNotFoundException
          * @throws URISyntaxException
          */
-        public Writer(Configuration conf, int reduceTasks, Path workDirPath, FileSystem outputFs, String[] tableNames)
-                        throws TableNotFoundException, IOException, TableExistsException, URISyntaxException {
+        public Writer(Configuration conf, int reduceTasks, Path workDirPath, FileSystem outputFs, String[] tableNames) throws TableNotFoundException,
+                        IOException, TableExistsException, URISyntaxException {
             this(conf, reduceTasks, workDirPath, outputFs, tableNames, true);
         }
         

@@ -42,8 +42,7 @@ public class EvaluationOnly extends JexlQueryFunction {
             try {
                 sb.append(parser.parse(params.get(0)).getOriginalQuery());
             } catch (ParseException e) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
-                                MessageFormat.format("{0}", this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
                 throw new IllegalArgumentException(qe);
             }
         }

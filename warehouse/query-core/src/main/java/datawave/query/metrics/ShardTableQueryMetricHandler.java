@@ -724,8 +724,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         }
     }
     
-    protected void createAndConfigureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf)
-                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+    protected void createAndConfigureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf) throws AccumuloSecurityException,
+                    AccumuloException, TableNotFoundException {
         for (String table : tableNames) {
             // If the tables don't exist, then create them.
             try {

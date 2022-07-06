@@ -105,8 +105,8 @@ public class RfileResource extends BatchResource {
                 log.debug("Setting and configuration");
             }
             AccumuloHelper.setPassword(conf, options.getConfiguration().getAccumuloPassword().getBytes());
-            BulkInputFormat.setMemoryInput(conf, getConnector().whoami(), options.getConfiguration().getAccumuloPassword().getBytes(), tableName,
-                            auths.iterator().next());
+            BulkInputFormat.setMemoryInput(conf, getConnector().whoami(), options.getConfiguration().getAccumuloPassword().getBytes(), tableName, auths
+                            .iterator().next());
             ((RfileScanner) baseScanner).setConfiguration(conf);
         }
         return this;

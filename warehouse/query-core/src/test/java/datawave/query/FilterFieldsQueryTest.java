@@ -355,8 +355,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
      * @throws Exception
      *             something failed - go figure it out
      */
-    private void runTest(final String query, final String expectQuery, final Date startDate, final Date endDate, final boolean whiteList, final boolean hitList,
-                    final Set<String> fields) throws Exception {
+    private void runTest(final String query, final String expectQuery, final Date startDate, final Date endDate, final boolean whiteList,
+                    final boolean hitList, final Set<String> fields) throws Exception {
         
         QueryJexl jexl = new QueryJexl(expectQuery, this.dataManager, startDate, endDate);
         final Set<Map<String,String>> allData = jexl.evaluate();

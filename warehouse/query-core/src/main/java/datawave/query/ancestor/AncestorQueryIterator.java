@@ -101,8 +101,8 @@ public class AncestorQueryIterator extends QueryIterator {
         // document specific range but not being inclusive start
         if (!range.isStartKeyInclusive()) {
             Key oldStartKey = range.getStartKey();
-            Key startKey = new Key(oldStartKey.getRow().toString(), oldStartKey.getColumnFamily() + Constants.NULL_BYTE_STRING,
-                            oldStartKey.getColumnQualifier().toString());
+            Key startKey = new Key(oldStartKey.getRow().toString(), oldStartKey.getColumnFamily() + Constants.NULL_BYTE_STRING, oldStartKey
+                            .getColumnQualifier().toString());
             if (!startKey.equals(range.getStartKey())) {
                 Key endKey = range.getEndKey();
                 boolean endKeyInclusive = range.isEndKeyInclusive();

@@ -821,8 +821,9 @@ public class BulkIngestMapFileLoaderTest {
             
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
             
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
-                            "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
+            Assert.assertTrue(
+                            "BulkIngestMapLoader#main failed to generate the expected error message",
+                            processOutputContains(stdOut, "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
             
         } finally {
             
@@ -861,8 +862,9 @@ public class BulkIngestMapFileLoaderTest {
             
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
             
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
-                            "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
+            Assert.assertTrue(
+                            "BulkIngestMapLoader#main failed to generate the expected error message",
+                            processOutputContains(stdOut, "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
             
         } finally {
             

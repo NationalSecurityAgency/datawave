@@ -1163,8 +1163,8 @@ public class QueryIteratorIT extends EasyMockSupport {
                             docSize);
             
             // validate the hitlist
-            assertEquals("HIT_TERM presence expected: " + isExpectHitTerm() + " actual: " + (d.getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null),
-                            (d.getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null), isExpectHitTerm());
+            assertEquals("HIT_TERM presence expected: " + isExpectHitTerm() + " actual: " + (d.getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null), (d
+                            .getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null), isExpectHitTerm());
             
             // verify hits for each specified field
             for (String field : docKeys.keySet()) {
@@ -1235,8 +1235,8 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
     
     protected Key getFI(String row, String field, String value, String dataType, String uid, long timestamp) {
-        return new Key(row, "fi" + Constants.NULL_BYTE_STRING + field.toUpperCase(),
-                        value + Constants.NULL_BYTE_STRING + dataType + Constants.NULL_BYTE_STRING + uid, timestamp);
+        return new Key(row, "fi" + Constants.NULL_BYTE_STRING + field.toUpperCase(), value + Constants.NULL_BYTE_STRING + dataType + Constants.NULL_BYTE_STRING
+                        + uid, timestamp);
     }
     
     protected Key getEvent(String field, String value, String uid, long timestamp) {

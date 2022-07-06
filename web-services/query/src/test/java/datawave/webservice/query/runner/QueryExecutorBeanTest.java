@@ -634,9 +634,9 @@ public class QueryExecutorBeanTest {
                 bean.createQuery("EventQueryLogic", queryParameters);
             } catch (Exception e) {
                 // ok if we fail the call
-                log.debug("createQuery terminated with " + e);
-            }
-        });
+                        log.debug("createQuery terminated with " + e);
+                    }
+                });
         
         final Throwable[] createQueryException = {null};
         createQuery.setUncaughtExceptionHandler((t, e) -> createQueryException[0] = e);

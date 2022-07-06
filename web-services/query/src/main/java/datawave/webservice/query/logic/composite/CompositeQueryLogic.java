@@ -144,18 +144,20 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         
         for (BaseQueryLogic<?> logic : queryLogics) {
             final BaseQueryLogic<?> queryLogic = logic;
-            int count = CollectionUtils.countMatches(queryLogics, object -> {
-                if (object instanceof BaseQueryLogic<?>) {
-                    if (queryLogic.getClass().equals(((BaseQueryLogic<?>) object).getClass())
-                                    && queryLogic.getTableName().equals(((BaseQueryLogic<?>) object).getTableName())) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            });
+            int count = CollectionUtils.countMatches(
+                            queryLogics,
+                            object -> {
+                                if (object instanceof BaseQueryLogic<?>) {
+                                    if (queryLogic.getClass().equals(((BaseQueryLogic<?>) object).getClass())
+                                                    && queryLogic.getTableName().equals(((BaseQueryLogic<?>) object).getTableName())) {
+                                        return true;
+                                    } else {
+                                        return false;
+                                    }
+                                } else {
+                                    return false;
+                                }
+                            });
             
             if (count > 1) {
                 throw new RuntimeException("More than one instance of query logic class configured with the same table: " + logic.getClass().getName());

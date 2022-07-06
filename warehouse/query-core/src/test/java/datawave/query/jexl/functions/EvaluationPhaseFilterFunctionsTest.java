@@ -1150,8 +1150,8 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testInvalidPosition() {
             givenPosition(2);
             
-            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter"))
-                            .withMessage("Input second.third.fourth does not have a '.' at position " + position + " from the left.");
+            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter")).withMessage(
+                            "Input second.third.fourth does not have a '.' at position " + position + " from the left.");
         }
         
         private void givenPosition(int position) {
@@ -1189,8 +1189,8 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testInvalidPosition() {
             givenPosition(3);
             
-            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter"))
-                            .withMessage("Input " + input + " does not have a '.' at position " + position + " from the right.");
+            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter")).withMessage(
+                            "Input " + input + " does not have a '.' at position " + position + " from the right.");
         }
         
         private void givenPosition(int position) {
@@ -1359,8 +1359,8 @@ public class EvaluationPhaseFilterFunctionsTest {
         
         @Test
         public void testInvalidDate() {
-            assertThatExceptionOfType(ParseException.class).isThrownBy(() -> nextTime("notavaliddate"))
-                            .withMessage("Unable to parse value using known date formats: notavaliddate");
+            assertThatExceptionOfType(ParseException.class).isThrownBy(() -> nextTime("notavaliddate")).withMessage(
+                            "Unable to parse value using known date formats: notavaliddate");
         }
         
         private void givenExpectedTime(long expectedTime) {

@@ -160,8 +160,7 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
                                     context.write(makeKey(outRow, QueryMetricsColumns.QUERIES_EXECUTED_CF, QueryMetricsColumns.PRODUCTIVE_CQ), makeValue(1));
                                     
                                 } else {
-                                    context.write(makeKey(outRow, QueryMetricsColumns.QUERIES_EXECUTED_CF, QueryMetricsColumns.NON_PRODUCTIVE_CQ),
-                                                    makeValue(1));
+                                    context.write(makeKey(outRow, QueryMetricsColumns.QUERIES_EXECUTED_CF, QueryMetricsColumns.NON_PRODUCTIVE_CQ), makeValue(1));
                                 }
                                 context.write(makeKey(outRow, QueryMetricsColumns.QUERIES_EXECUTED_CF, QueryMetricsColumns.TOTAL_CQ), makeValue(1));
                             } catch (NumberFormatException nfe) {

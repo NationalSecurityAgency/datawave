@@ -121,8 +121,8 @@ public class QueryPruningVisitorTest {
         
         Assert.assertTrue(logAppender.getMessages().size() == 2);
         Assert.assertEquals("Pruning FIELD1 == 'x' && _NOFIELD_ == 'y' && FIELD2 == 'y' to false", logAppender.getMessages().get(0));
-        Assert.assertEquals("Query before prune: FIELD1 == 'x' && _NOFIELD_ == 'y' && FIELD2 == 'y'\nQuery after prune: false",
-                        logAppender.getMessages().get(1));
+        Assert.assertEquals("Query before prune: FIELD1 == 'x' && _NOFIELD_ == 'y' && FIELD2 == 'y'\nQuery after prune: false", logAppender.getMessages()
+                        .get(1));
     }
     
     @Test
@@ -165,10 +165,10 @@ public class QueryPruningVisitorTest {
         
         Assert.assertTrue(logAppender.getMessages().size() == 3);
         Assert.assertEquals("Pruning _NOFIELD_ == 'y' && FIELD2 == 'z' to false", logAppender.getMessages().get(0));
-        Assert.assertEquals("Pruning (_NOFIELD_ == 'y' && FIELD2 == 'z') from FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')",
-                        logAppender.getMessages().get(1));
-        Assert.assertEquals("Query before prune: FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')\nQuery after prune: FIELD1 == 'x'",
-                        logAppender.getMessages().get(2));
+        Assert.assertEquals("Pruning (_NOFIELD_ == 'y' && FIELD2 == 'z') from FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')", logAppender.getMessages()
+                        .get(1));
+        Assert.assertEquals("Query before prune: FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')\nQuery after prune: FIELD1 == 'x'", logAppender
+                        .getMessages().get(2));
     }
     
     @Test

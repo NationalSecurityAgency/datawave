@@ -121,12 +121,12 @@ public class CreatedQueryLogicCacheBean {
             Long timeInserted = input.getKey().getSecond();
             
             // If this entry was inserted more than the TTL 'time' ago, do not return it
-            if ((now - expiration) > timeInserted) {
-                return true;
-            }
-            
-            return false;
-        });
+                        if ((now - expiration) > timeInserted) {
+                            return true;
+                        }
+                        
+                        return false;
+                    });
         
         Map<String,Pair<QueryLogic<?>,Connector>> result = Maps.newHashMapWithExpectedSize(32);
         for (Entry<Pair<String,Long>,Triple> entry : iter) {

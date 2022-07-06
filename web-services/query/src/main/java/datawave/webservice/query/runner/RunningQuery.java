@@ -527,9 +527,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         if (!resultList.isEmpty()) {
             log.info("Returning page of results");
             // we have results!
-            return new ResultsPage(resultList,
-                            ((hitPageByteTrigger || hitPageTimeTrigger || hitIntermediateResult || hitShortCircuitForLongRunningQuery)
-                                            ? ResultsPage.Status.PARTIAL
+            return new ResultsPage(
+                            resultList,
+                            ((hitPageByteTrigger || hitPageTimeTrigger || hitIntermediateResult || hitShortCircuitForLongRunningQuery) ? ResultsPage.Status.PARTIAL
                                             : ResultsPage.Status.COMPLETE));
         } else {
             // we have no results. Let us determine whether we are done or not.
@@ -542,8 +542,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     terminateResultsThread();
                     // this means that we have timed out waiting for a result too many times over the course of this query.
                     // In this case we need to fail the next call with a timeout
-                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT,
-                                    "Query timed out waiting for results for too many (" + currentTimeoutcount + ") cycles.");
+                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Query timed out waiting for results for too many (" + currentTimeoutcount
+                                    + ") cycles.");
                 } else {
                     log.info("Returning an empty partial results page");
                     // We are returning an empty page with a PARTIAL status to allow the query to continue running

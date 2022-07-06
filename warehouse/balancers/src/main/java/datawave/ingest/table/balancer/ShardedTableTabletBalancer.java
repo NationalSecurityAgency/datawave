@@ -99,8 +99,7 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
                 try {
                     maxMigrations = Integer.parseInt(maxMigrationsProp);
                 } catch (Exception e) {
-                    log.error("Unable to parse " + SHARDED_MAX_MIGRATIONS + " value (" + maxMigrationsProp + ") as an integer.  Defaulting to "
-                                    + maxMigrations);
+                    log.error("Unable to parse " + SHARDED_MAX_MIGRATIONS + " value (" + maxMigrationsProp + ") as an integer.  Defaulting to " + maxMigrations);
                 }
             }
         } catch (Exception e) {

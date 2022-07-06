@@ -88,8 +88,7 @@ public class ProtobufEdgeDeleteModeTest {
         fields.put("LANGUAGE", new BaseNormalizedContent("LANGUAGE", "NONE"));
         fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2016-04-26T01:31:53Z"));
         fields.put("SHA1", new BaseNormalizedContent("SHA1", "b7472ce04163d18089f05b6a0dc5dffe65f2c9a6"));
-        fields.put("FIELDNAME1_WE_DONT_WANT_INDEXED",
-                        new BaseNormalizedContent("FIELDNAME1_WE_DONT_WANT_INDEXED", "VALUE1_OF_FIELDNAME1_WE_DONT_WANT_INDEXED"));
+        fields.put("FIELDNAME1_WE_DONT_WANT_INDEXED", new BaseNormalizedContent("FIELDNAME1_WE_DONT_WANT_INDEXED", "VALUE1_OF_FIELDNAME1_WE_DONT_WANT_INDEXED"));
         fields.put("BAR_FIELD", new BaseNormalizedContent("BAR_FIELD", "MYBAR"));
         fields.put("SECURITY_MARKING", new BaseNormalizedContent("SECURITY_MARKING", "PUBLIC"));
         fields.put("EDGE_VERTEX_TO", new BaseNormalizedContent("EDGE_VERTEX_TO", "VERTEX3"));
@@ -470,8 +469,8 @@ public class ProtobufEdgeDeleteModeTest {
             private Multimap<BulkIngestKey,Value> cache = HashMultimap.create();
             
             @Override
-            protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
-                            throws IOException, InterruptedException {
+            protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException,
+                            InterruptedException {
                 for (Map.Entry<BulkIngestKey,Value> entry : entries.entries()) {
                     cache.put(entry.getKey(), entry.getValue());
                 }

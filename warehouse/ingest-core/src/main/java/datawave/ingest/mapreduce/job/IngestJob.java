@@ -1430,8 +1430,8 @@ public class IngestJob implements Tool {
     @SuppressWarnings("rawtypes")
     public static void verboseCounters(TaskInputOutputContext context, String location, Text tableName, Mutation mutation) {
         for (KeyValue keyValue : getKeyValues(mutation)) {
-            verboseCounter(context, location, tableName, keyValue.getKey().getRow().getBytes(), keyValue.getKey().getColumnFamily().getBytes(),
-                            keyValue.getKey().getColumnQualifier().getBytes(), keyValue.getKey().getColumnVisibility(), keyValue.getValue().get());
+            verboseCounter(context, location, tableName, keyValue.getKey().getRow().getBytes(), keyValue.getKey().getColumnFamily().getBytes(), keyValue
+                            .getKey().getColumnQualifier().getBytes(), keyValue.getKey().getColumnVisibility(), keyValue.getValue().get());
         }
     }
     
@@ -1464,8 +1464,8 @@ public class IngestJob implements Tool {
      */
     @SuppressWarnings("rawtypes")
     public static void verboseCounters(TaskInputOutputContext context, String location, BulkIngestKey key, Value value) {
-        verboseCounter(context, location, key.getTableName(), key.getKey().getRow().getBytes(), key.getKey().getColumnFamily().getBytes(),
-                        key.getKey().getColumnQualifier().getBytes(), key.getKey().getColumnVisibility(), value.get());
+        verboseCounter(context, location, key.getTableName(), key.getKey().getRow().getBytes(), key.getKey().getColumnFamily().getBytes(), key.getKey()
+                        .getColumnQualifier().getBytes(), key.getKey().getColumnVisibility(), value.get());
     }
     
     /**
@@ -1510,8 +1510,8 @@ public class IngestJob implements Tool {
     public static List<KeyValue> getKeyValues(Mutation m) {
         List<KeyValue> values = new ArrayList<>();
         for (ColumnUpdate update : m.getUpdates()) {
-            values.add(new KeyValue(new Key(m.getRow(), update.getColumnFamily(), update.getColumnQualifier(), update.getColumnVisibility(),
-                            (update.hasTimestamp() ? update.getTimestamp() : -1), update.isDeleted()), update.getValue()));
+            values.add(new KeyValue(new Key(m.getRow(), update.getColumnFamily(), update.getColumnQualifier(), update.getColumnVisibility(), (update
+                            .hasTimestamp() ? update.getTimestamp() : -1), update.isDeleted()), update.getValue()));
         }
         return values;
     }
