@@ -4,12 +4,8 @@ import com.google.common.collect.Sets;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class AttributeComparator {
     
@@ -19,7 +15,7 @@ public final class AttributeComparator {
     }
     
     /**
-     * Performs a simple comparison on a set of Attribute's data and some parts of their metadata
+     * Performs a simple comparison on a set of Attribute's data, Column Visibility, and Timestamp
      *
      * @param attr1
      *            An Attribute against which we want to compare
@@ -36,7 +32,7 @@ public final class AttributeComparator {
     }
     
     /**
-     * Performs a simple comparison on a set of Attribute's data and some parts of their metadata
+     * Performs a simple comparison on a set of Attribute's data, Column Visibility, and Timestamp
      *
      * @param attr
      *            An Attribute against which we want to compare
@@ -49,7 +45,7 @@ public final class AttributeComparator {
     }
     
     /**
-     * Performs a simple comparison on a set of Attribute's data and some parts of their metadata
+     * Performs a simple comparison on a set of Attribute's data, Column Visibility, and Timestamp
      *
      * @param attrs1
      *            An Attributes against which we want to compare
@@ -67,10 +63,10 @@ public final class AttributeComparator {
     }
     
     /**
-     * Performs a basic match on the content/data of two given Attributes. If such a match is found, combine the metadata from the two Attributes and create new
-     * deduplicated Attributes to return to the Document. Preference is given to the Attribute found in the event, NOT the index. In the case that true
-     * duplicates are discovered we keep the Attribute that already exists within the Document, set the Attribute's toKeep() flag to true (if not already), and
-     * ignore the potential new Attribute being checked. All other things being equal, priority will be given to the first collection.
+     * Performs a matching check on the data, visibilities, and timestamps of two given Attributes. If such a match is found, further check the data contained
+     * within each Column Family and combine the two Attributes if one is empty. If a delta is discovered, we return both Attribute instances as these should
+     * not be considered equal. In the case that true duplicates are discovered we keep the Attribute that already exists within the Document and ignore the
+     * potential new Attribute being checked. All other things being equal, priority will be given to the Attribute in the first collection.
      *
      * @param attrs1
      *            The Attributes already in the Document against which we want to compare
@@ -80,55 +76,30 @@ public final class AttributeComparator {
      */
     public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(final Attributes attrs1, final Attributes attrs2) {
         Set<Attribute<? extends Comparable<?>>> combinedAttrSet = new HashSet<>();
-        Set<Attribute> previouslyMerged = new HashSet<Attribute>();
-        List<Attribute> trueDuplicates = new ArrayList<Attribute>();
         
+        //  @formatter:off
         attrs1.getAttributes().forEach(attr1 -> {
-            AtomicBoolean containsMatch = new AtomicBoolean(false);
             attrs2.getAttributes().forEach(attr2 -> {
-                if (singleToSingle(attr1, attr2) && (attr1.isToKeep() || attr2.isToKeep())) {
-                    if (attr1.getMetadata().getSize() == attr2.getMetadata().getSize()) {
-                        containsMatch.set(true);
-                        trueDuplicates.add(attr1);
-                        attr1.setToKeep(true);
-                        combinedAttrSet.add(attr1); // found true match so return pre-existing Attribute
-                        } else {
-                            Attribute combinedAttr = combineSingleAttributes(attr1, attr2);
-                            if (!combinedAttrSet.contains(combinedAttr)) {
-                                combinedAttrSet.add(combinedAttr);
-                            }
-                            previouslyMerged.add(attr1);
-                            previouslyMerged.add(attr2);
-                            
-                            // keep track of whether or not we merged an Attribute for later
-                            if (combinedAttrSet.contains(attr1)) {
-                                combinedAttrSet.remove(attr1);
-                            }
-                            if (combinedAttrSet.contains(attr2)) {
-                                combinedAttrSet.remove(attr2);
-                            }
-                            
-                            containsMatch.set(true);
-                        }
-                    } else if (attrs2.getAttributes().size() > 1 && !trueDuplicates.contains(attr2)) {
-                        if (!combinedAttrSet.contains(attr2)) {
-                            attr2.setToKeep(true);
-                            combinedAttrSet.add(attr2);
-                        }
+                if (singleToSingle(attr1, attr2)) {
+                    if ((attr1.getMetadata().getColumnFamily() == null || attr1.getMetadata().getColumnFamily().getLength() == 0)
+                            && (attr2.getMetadata().getColumnFamily() != null || attr2.getMetadata().getColumnFamily().getLength() > 0)) {
+                        combinedAttrSet.add(combineSingleAttributes(attr2, attr1)); // discard the Attribute without a populated Column Family
+                    } else if ((attr2.getMetadata().getColumnFamily() == null || attr2.getMetadata().getColumnFamily().getLength() == 0)
+                            && (attr1.getMetadata().getColumnFamily() != null || attr1.getMetadata().getColumnFamily().getLength() > 0)) {
+                        combinedAttrSet.add(combineSingleAttributes(attr1, attr2)); // discard the Attribute without a populated Column Family
+                    } else if (attr1.getMetadata().compareTo(attr2.getMetadata()) == 0) { // true match, keep only one
+                        combinedAttrSet.add(attr1);
+                    } else { // non-matching metadata, keep both as these are unique
+                        combinedAttrSet.add(attr1);
+                        combinedAttrSet.add(attr2);
                     }
-                });
-            if (!containsMatch.get() && attrs1.getAttributes().size() > 1 && !trueDuplicates.contains(attr1)) {
-                if (!combinedAttrSet.contains(attr1)) {
+                } else { // no match, assume unique
                     combinedAttrSet.add(attr1);
+                    combinedAttrSet.add(attr2);
                 }
-            }
+            });
         });
-        
-        // remove any previously "unique" attribute previously added but has now been merged
-        Iterator<Attribute> previousItr = previouslyMerged.iterator();
-        while (previousItr.hasNext()) {
-            combinedAttrSet.remove(previousItr.next());
-        }
+        // @formatter:on
         
         return combinedAttrSet;
     }
@@ -148,57 +119,21 @@ public final class AttributeComparator {
     }
     
     /**
-     * Compares two individual Attribute's flags and metadata, preferring to keep the Attribute from the event rather than the index. If the origin of the
-     * Attributes being compared is identical, prefer to keep the one with the toKeep() flag set.
+     * Combines two Attributes' with identical data, Visibilities, and timestamps into a single Attribute. This method assumes one Attribute has a populated
+     * Column Family, the other does not, and that we want to transfer the information located within the populated Column Family's Attribute to the other
+     * Attribute due to class type differences.
      *
-     * @param attr1
-     *            An Attribute against which we want to compare
-     * @param attr2
-     *            Another Attribute against which we want to check for likeness
+     * @param attrWithCF
+     *            An Attribute with populated datatype and uid in the Column Family
+     * @param attrWithoutCF
+     *            An Attribute without a populated datatype and uid in the Column Family
      * @return
      */
-    public static Attribute combineSingleAttributes(final Attribute attr1, final Attribute attr2) {
-        int attr1mdSize = attr1.getMetadata().getSize();
-        int attr2mdSize = attr2.getMetadata().getSize();
-        
+    public static Attribute combineSingleAttributes(final Attribute attrWithCF, final Attribute attrWithoutCF) {
         Attribute mergedAttr = null;
         
-        if (!attr1.isFromIndex() && attr2.isFromIndex()) {
-            // prefer attr1 since from event
-            if (attr1mdSize > attr2mdSize) {
-                mergedAttr = attr1;
-            } else {
-                mergedAttr = (Attribute) attr1.copy();
-                mergedAttr.setMetadata(attr2.getMetadata());
-                mergedAttr.setFromIndex(false);
-            }
-        } else if (!attr2.isFromIndex() && attr1.isFromIndex()) {
-            // prefer attr2 since from event
-            if (attr2mdSize > attr1mdSize) {
-                mergedAttr = attr2;
-            } else {
-                mergedAttr = (Attribute) attr2.copy();
-                mergedAttr.setMetadata(attr1.getMetadata());
-                mergedAttr.setFromIndex(false);
-            }
-        } else if ((!attr1.isFromIndex() && !attr2.isFromIndex()) || (attr1.isFromIndex()) && attr2.isFromIndex()) {
-            // prefer neither since both have identical origins
-            if (attr1.isToKeep()) {
-                if (attr1mdSize > attr2mdSize) {
-                    mergedAttr = attr1;
-                } else {
-                    mergedAttr = (Attribute) attr1.copy();
-                    mergedAttr.setMetadata(attr2.getMetadata());
-                }
-            } else {
-                if (attr2mdSize > attr1mdSize) {
-                    mergedAttr = attr2;
-                } else {
-                    mergedAttr = (Attribute) attr2.copy();
-                    mergedAttr.setMetadata(attr1.getMetadata());
-                }
-            }
-        }
+        mergedAttr = (Attribute) attrWithoutCF.copy();
+        mergedAttr.setColumnFamily(attrWithCF.getMetadata().getColumnFamily());
         
         return mergedAttr;
     }
