@@ -3,10 +3,8 @@ package datawave.ingest.json.util;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.google.gson.*;
+import org.apache.hadoop.conf.Configuration;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,6 +37,8 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
     protected final Set<String> mapKeyBlacklist;
     protected final String occurrenceDelimiter;
     protected final boolean addArrayIndexToFieldName;
+    private String defaultNULLValue;
+    private Configuration conf = new Configuration();
     
     protected JsonObjectFlattenerImpl(Builder builder) {
         this.pathDelimiter = builder.pathDelimiter;
@@ -81,6 +81,9 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
             this.keyValueNormalizer = builder.keyValueNormalizer;
         }
         
+        conf.addResource(ClassLoader.getSystemResource("config/ingest/all-config.xml"));
+        defaultNULLValue = conf.get("all.ingest.json.default.nulls");
+        
     }
     
     @Override
@@ -108,8 +111,7 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
     protected void addKeysToMap(String currentPath, JsonElement element, Multimap<String,String> map, Map<String,Integer> occurrenceCounts) {
         
         if (null == element || element.isJsonNull()) {
-            // Don't add nulls
-            return;
+            mapPut(currentPath, defaultNULLValue, map, occurrenceCounts);
             
         } else if (element.isJsonObject()) {
             
