@@ -195,21 +195,11 @@ function buildDockerImage() {
          ${DATAWAVE_SOURCE_DIR} || fatal "Docker image creation for DataWave Quickstart failed"
 }
 
-function testDockerImage() {
-
-    info "Testing Docker image: ${IMAGE_NAME}"
-
-    docker run -m 8g ${IMAGE_NAME} datawave-bootstrap.sh --test \
-         || fatal "Docker image test for DataWave Quickstart failed"
-}
-
 validateArgs "$@"
 
 prepareBuildContext
 
 buildDockerImage
-
-testDockerImage
 
 cleanBuildContext
 

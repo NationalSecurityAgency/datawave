@@ -259,6 +259,7 @@
                                             <DATAWAVE_BRANCH_NAME>${git.branch}</DATAWAVE_BRANCH_NAME>
                                             <DATAWAVE_BUILD_PROFILE>${build.env}</DATAWAVE_BUILD_PROFILE>
                                             <DATAWAVE_SKIP_INGEST>${skipIngest}</DATAWAVE_SKIP_INGEST>
+                                            <DATAWAVE_SKIP_TESTS>true</DATAWAVE_SKIP_TESTS>
                                         </args>
                                     </build>
                                 </image>

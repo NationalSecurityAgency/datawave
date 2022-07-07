@@ -5,6 +5,7 @@ ARG DATAWAVE_BRANCH_NAME
 ARG DATAWAVE_JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
 ARG DATAWAVE_BUILD_PROFILE
 ARG DATAWAVE_SKIP_INGEST=false
+ARG DATAWAVE_SKIP_TESTS=false
 
 USER root
 
@@ -58,7 +59,7 @@ RUN rm -f .dockerignore .maven-dockerignore && \
 # stopped gracefully, and any cruft is purged.
 
 RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
-    /bin/bash -c "source ~/.bashrc && allInstall" && \
+    /bin/bash -c "source ~/.bashrc && allInstall && [ $DATAWAVE_SKIP_TESTS == true ] || (datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop)" && \
     echo "0.0.0.0" > contrib/datawave-quickstart/accumulo/conf/monitor && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \
