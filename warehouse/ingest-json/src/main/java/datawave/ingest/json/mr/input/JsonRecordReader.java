@@ -1,8 +1,6 @@
 package datawave.ingest.json.mr.input;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.Map;
@@ -154,7 +152,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
         reader.setLenient(true);
         setupIterator(reader);
     }
-    
+
     protected void setupIterator(JsonReader reader) {
         JsonParser parser = new JsonParser();
         JsonElement root = parser.parse(reader);
@@ -217,13 +215,11 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
         if (StringUtils.isEmpty(eventDateFieldName)) {
             event.setDate(this.inputDate);
         }
-        
+
         for (Map.Entry<String,String> entry : ((Multimap<String,String>) currentValue).entries()) {
             String fieldName = entry.getKey();
             String fieldValue = entry.getValue();
-            if (fieldValue != null) {
-                checkField(fieldName, fieldValue);
-            }
+            checkField(fieldName, fieldValue);
         }
         
         decorateEvent();
