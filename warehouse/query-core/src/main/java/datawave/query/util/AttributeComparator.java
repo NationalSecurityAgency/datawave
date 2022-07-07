@@ -80,7 +80,8 @@ public final class AttributeComparator {
      * Performs a matching check on the data, visibilities, and timestamps of two given Attributes. If such a match is found, further check the data contained
      * within each Column Family and combine the two Attributes if one is empty. If a delta is discovered, we return both Attribute instances as these should
      * not be considered equal. In the case that true duplicates are discovered we keep the Attribute that already exists within the Document and ignore the
-     * potential new Attribute being checked. All other things being equal, priority will be given to the Attribute in the first collection.
+     * potential new Attribute being checked. Preference is given to Attributes found in events, rather than the index. All other things being equal, priority
+     * will be given to the Attribute in the first collection.
      *
      * @param attrs1
      *            The Attributes already in the Document against which we want to compare
@@ -96,16 +97,28 @@ public final class AttributeComparator {
         attrs1.getAttributes().forEach(attr1 -> {
             attrs2.getAttributes().forEach(attr2 -> {
                 if (singleToSingle(attr1, attr2)) {
-                    if ((attr1.getMetadata().getColumnFamily() == null || attr1.getMetadata().getColumnFamily().getLength() == 0)
-                            && (attr2.getMetadata().getColumnFamily() != null || attr2.getMetadata().getColumnFamily().getLength() > 0)) {
-                        combinedAttrSet.add(mergeAttributes(attr2, attr1)); // discard the Attribute without a populated Column Family
-                        previouslyMerged.add(attr1);
-                        previouslyMerged.add(attr2);
-                    } else if ((attr2.getMetadata().getColumnFamily() == null || attr2.getMetadata().getColumnFamily().getLength() == 0)
-                            && (attr1.getMetadata().getColumnFamily() != null || attr1.getMetadata().getColumnFamily().getLength() > 0)) {
-                        combinedAttrSet.add(mergeAttributes(attr1, attr2)); // discard the Attribute without a populated Column Family
-                        previouslyMerged.add(attr1);
-                        previouslyMerged.add(attr2);
+                    if (attr1.getMetadata().getColumnFamily().getLength() == 0
+                            && attr2.getMetadata().getColumnFamily().getLength() > 0) {
+                        if (attr1.isFromIndex() && !attr2.isFromIndex()) {
+                            combinedAttrSet.add(attr2);
+                        } else if (!attr1.isFromIndex() && attr2.isFromIndex()) {
+                            combinedAttrSet.add(attr1);
+                        } else { // discard the Attribute without a populated Column Family
+                            combinedAttrSet.add(mergeAttributes(attr2, attr1));
+                            previouslyMerged.add(attr1);
+                            previouslyMerged.add(attr2);
+                        }
+                    } else if ((attr2.getMetadata().getColumnFamily().getLength() == 0
+                            && attr1.getMetadata().getColumnFamily().getLength() > 0)) {
+                        if (attr1.isFromIndex() && !attr2.isFromIndex()) {
+                            combinedAttrSet.add(attr2);
+                        } else if (!attr1.isFromIndex() && attr2.isFromIndex()) {
+                            combinedAttrSet.add(attr1);
+                        } else { // discard the Attribute without a populated Column Family
+                            combinedAttrSet.add(mergeAttributes(attr1, attr2));
+                            previouslyMerged.add(attr1);
+                            previouslyMerged.add(attr2);
+                        }
                     } else if (attr1.getMetadata().compareTo(attr2.getMetadata()) == 0) { // true match, keep only one
                         combinedAttrSet.add(attr1);
                     } else { // non-matching metadata, keep both as these are possibly unique
