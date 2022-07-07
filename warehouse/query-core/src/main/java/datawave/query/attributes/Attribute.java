@@ -101,7 +101,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
      * Given a key, set the metadata. Expected input keys can be an event key, an fi key, or a tf key. Expected metadata is row=shardid, cf = type\0uid; cq =
      * empty; cv, ts left as is.
      */
-    public void setMetadata(Key key) {
+    protected void setMetadata(Key key) {
         if (key == null) {
             this.metadata = null;
         } else {
