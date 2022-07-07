@@ -239,7 +239,7 @@ public abstract class ExecutableExpansionVisitorTest {
         List<String>[] expectedLists = new List[] {Arrays.asList(), Arrays.asList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
-            Assert.assertTrue("should not have gotten here", 1 == 2);
+            Assert.fail("should not have gotten here");
         }
     }
     

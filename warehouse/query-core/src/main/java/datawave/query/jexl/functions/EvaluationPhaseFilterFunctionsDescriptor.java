@@ -29,7 +29,11 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
+/**
+ * Evaluation phase filter functions cannot be evaluated against index-only fields
+ */
 public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
+    
     public static final String EXCLUDE_REGEX = "excludeRegex";
     public static final String INCLUDE_REGEX = "includeRegex";
     public static final String IS_NULL = "isNull";

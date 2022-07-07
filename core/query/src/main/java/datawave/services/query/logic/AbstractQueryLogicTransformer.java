@@ -10,6 +10,8 @@ public abstract class AbstractQueryLogicTransformer<I,O> implements QueryLogicTr
     
     public abstract BaseQueryResponse createResponse(List<Object> resultList);
     
+    protected long queryExecutionForCurrentPageStartTime;
+    
     @Override
     public BaseQueryResponse createResponse(ResultsPage page) {
         BaseQueryResponse response = createResponse(page.getResults());
@@ -18,5 +20,10 @@ public abstract class AbstractQueryLogicTransformer<I,O> implements QueryLogicTr
             response.setPartialResults(true);
         }
         return response;
+    }
+    
+    @Override
+    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
 }

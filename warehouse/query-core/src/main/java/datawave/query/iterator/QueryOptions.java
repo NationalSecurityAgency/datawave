@@ -209,6 +209,8 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String IVARATOR_SCAN_TIMEOUT = "ivarator.scan.timeout";
     
+    public static final String RESULT_TIMEOUT = "result.timeout";
+    
     public static final String QUERY_MAPPING_COMPRESS = "query.mapping.compress";
     
     public static final String MAX_INDEX_RANGE_SPLIT = "max.index.range.split";
@@ -338,6 +340,7 @@ public class QueryOptions implements OptionDescriber {
     protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
     protected int ivaratorCacheBufferSize = 10000;
     
+    protected long resultTimeout = 1000L * 60 * 60;
     protected int maxIndexRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
     protected int ivaratorNumRetries = 2;
@@ -854,6 +857,14 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
     }
     
+    public long getResultTimeout() {
+        return resultTimeout;
+    }
+    
+    public void setResultTimeout(long resultTimeout) {
+        this.resultTimeout = resultTimeout;
+    }
+    
     public int getMaxIndexRangeSplit() {
         return maxIndexRangeSplit;
     }
@@ -1074,6 +1085,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(IVARATOR_SCAN_PERSIST_THRESHOLD,
                         "The number of underlying field index keys scanned before the hdfs cache buffer is forced to persist).  Default is 100000.");
         options.put(IVARATOR_SCAN_TIMEOUT, "The time after which the hdfs cache buffer is forced to persist.  Default is 60 minutes.");
+        options.put(RESULT_TIMEOUT, "The time out after which an intermediate result is returned for a groupby or unique query.  Default is 60 minutes.");
         options.put(MAX_INDEX_RANGE_SPLIT,
                         "The maximum number of ranges to split a field index scan (ivarator) range into for multithreading.  Note the thread pool size is controlled via an accumulo property.");
         options.put(MAX_IVARATOR_OPEN_FILES,
@@ -1455,6 +1467,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(IVARATOR_SCAN_TIMEOUT)) {
             this.setIvaratorCacheScanTimeout(Long.parseLong(options.get(IVARATOR_SCAN_TIMEOUT)));
+        }
+        
+        if (options.containsKey(RESULT_TIMEOUT)) {
+            this.setResultTimeout(Long.parseLong(options.get(RESULT_TIMEOUT)));
         }
         
         if (options.containsKey(MAX_INDEX_RANGE_SPLIT)) {

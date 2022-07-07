@@ -110,6 +110,7 @@ public class RunningQueryTest {
         TransformIterator iter = new TransformIterator();
         expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
         expect(logic.getTransformIterator(settings)).andReturn(iter);
+        expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
         replay(logic);
@@ -130,6 +131,7 @@ public class RunningQueryTest {
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         
         expect(logic.getCollectQueryMetrics()).andReturn(false);
+        expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
         replay(logic);

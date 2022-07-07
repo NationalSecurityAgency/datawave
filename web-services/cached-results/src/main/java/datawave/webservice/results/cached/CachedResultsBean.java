@@ -89,7 +89,6 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
-import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 import javax.sql.DataSource;
@@ -198,10 +197,7 @@ public class CachedResultsBean {
     
     @Inject
     private CreatedQueryLogicCacheBean qlCache;
-    
-    @Resource
-    private ManagedExecutorService executor;
-    
+
     @Inject
     private QueryPredictor predictor;
     
@@ -481,7 +477,7 @@ public class CachedResultsBean {
                 
                 try {
                     query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p,
-                                    new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), executor, predictor, metricFactory);
+                                    new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, metricFactory);
                     query.setActiveCall(true);
                     // queryMetric was duplicated from the original earlier
                     query.setMetric(queryMetric);
@@ -2191,7 +2187,7 @@ public class CachedResultsBean {
                 QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), userRoles);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
-                                new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), executor, predictor, metricFactory);
+                                new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, metricFactory);
                 query.setActiveCall(true);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 runningQueryCache.put(q.getId().toString(), query);
