@@ -104,6 +104,12 @@
                 <configuration>
                     <filesets>
                         <fileset>
+                            <directory>${project.basedir}/../../../</directory>
+                            <includes>
+                                <include>.maven-dockerignore</include>
+                            </includes>
+                        </fileset>
+                        <fileset>
                             <directory>../bin/services/accumulo</directory>
                             <includes>
                                 <include>**/apache-zookeeper-*-bin.tar.gz</include>
@@ -281,20 +287,6 @@
                                 <phase>deploy</phase>
                             </execution>
                         </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-clean-plugin</artifactId>
-                        <version>3.2.0</version>
-                        <configuration>
-                            <filesets>
-                                <fileset>
-                                    <directory>${project.basedir}/../../../</directory>
-                                    <includes>
-                                        <include>.maven-dockerignore</include>
-                                    </includes>
-                                </fileset>
-                            </filesets>
-                        </configuration>
                     </plugin>
                     <plugin>
                         <artifactId>maven-resources-plugin</artifactId>

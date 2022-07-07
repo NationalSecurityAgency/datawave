@@ -197,7 +197,7 @@ public class CachedResultsBean {
     
     @Inject
     private CreatedQueryLogicCacheBean qlCache;
-
+    
     @Inject
     private QueryPredictor predictor;
     
