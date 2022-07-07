@@ -133,8 +133,8 @@ function datawaveWebStart() {
        fi
     fi
 
-    local pollInterval=15
-    local maxAttempts=30
+    local pollInterval=4
+    local maxAttempts=15
 
     info "Polling for EAR deployment status every ${pollInterval} seconds (${maxAttempts} attempts max)"
 
