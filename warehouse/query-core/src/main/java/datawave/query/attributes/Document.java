@@ -392,7 +392,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         }
                     } else {
                         // fuzzy matches found, attempt to combine attributes
-                        Attribute mergedAttribute = (Attribute) AttributeComparator.combineSingleAttributes(existingAttr, value, trackSizes);
+                        Attribute mergedAttribute = (Attribute) AttributeComparator.combineSingleAttributes(existingAttr, value, trackSizes).iterator().next();
                         dict.put(key, mergedAttribute);
                         
                         _count += mergedAttribute.size();

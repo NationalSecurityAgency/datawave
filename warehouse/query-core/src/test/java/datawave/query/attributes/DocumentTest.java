@@ -14,43 +14,42 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class DocumentTest {
-    private final Key testKey1 = new Key(new Text("20000101_69"), new Text("foo%00;d8zay2.-3pnndm.-anolok"), new Text(), new ColumnVisibility("ALL"),
-                    946684800000L);
-    private final Key testKey2 = new Key(new Text("20000101_69"), new Text("bar%00;d8zay2.-3pnndm.-anolok"), new Text(), new ColumnVisibility("ALL"),
-                    946684800000L);
-    private final Key testKey3 = new Key(new Text("20000101_69"), new Text("baz%00;d8zay2.-3pnndm.-anolok"), new Text(), new ColumnVisibility("ALL"),
-                    946684800000L);
-    private final Key testKey4 = new Key(new Text("20000101_69"), new Text("foo"), new Text(), new ColumnVisibility("ALL"), 946684800000L);
-    private final Key testKey5 = new Key(new Text("20000101_69"), new Text("bar"), new Text(), new ColumnVisibility("ALL"), 946684800000L);
-    private final Key testKey6 = new Key(new Text("20000101_69"), new Text("baz"), new Text(), new ColumnVisibility("ALL"), 946684800000L);
-    private final Key testKey7 = new Key(new Text("192.168.1.1"), new Text("barf"), new Text(), new ColumnVisibility("ALL"), 946684800000L);
+    private final Text row = new Text("20000101_69");
+    private final Text cf = new Text(); // empty column family
+    private final Text cq = new Text(); // empty column qualifier
+    private final ColumnVisibility cv = new ColumnVisibility("ALL");
+    private final long ts = 946684800000L;
+    
+    private final Key testKeyFoo = new Key(row, new Text("foo%00;d8zay2.-3pnndm.-anolok"), cq, cq, ts);
+    private final Key testKeyBar = new Key(row, new Text("bar%00;d8zay2.-3pnndm.-anolok"), cq, cq, ts);
+    private final Key testKeyBaz = new Key(row, new Text("baz%00;d8zay2.-3pnndm.-anolok"), cq, cq, ts);
+    private final Key testKeyIp = new Key(new Text("192.168.1.1"), new Text("barf"), cq, cq, ts);
+    private final Key testKeyEmpty = new Key(row, cf, cq, cq, ts);
     private final Key testKey8 = new Key(new Text("foo"));
     private final Key testKey9 = new Key(new Text("lulz"));
     private final Key testKey10 = new Key(new Text("9001"));
-    private final Key testKey11 = new Key(new Text("192.168.1.1"), new Text("barf"), new Text(), new ColumnVisibility("A&E"), 946684800000L);
+    private final Key testKeyIpDifferentAuths = new Key(new Text("192.168.1.1"), new Text("barf"), cq, new ColumnVisibility("A&E"), ts);
     
-    private final Content content1 = new Content("foo", testKey4, true);
-    private final Content content2 = new Content("bar", testKey5, true);
-    private final Content content3 = new Content("baz", testKey6, true);
-    private final Content content4 = new Content("foo", testKey4, true);
+    private final Content content1 = new Content("foo", testKeyEmpty, true);
+    private final Content content2 = new Content("bar", testKeyEmpty, true);
+    private final Content content3 = new Content("baz", testKeyEmpty, true);
+    private final Content content4 = new Content("foo", testKeyEmpty, true);
     private final Content content5 = new Content("bat", testKey9, true);
-    private final Content content6 = new Content("bar", testKey5, true);
-    private final Content content7 = new Content("baz", testKey3, false);
-    private final Content content8 = new Content("bar", testKey2, false);
+    private final Content content6 = new Content("bar", testKeyEmpty, true);
     
-    private final Content combinedContent1 = new Content("foo", testKey1, true);
-    private final Content combinedContent2 = new Content("bar", testKey2, true);
-    private final Content combinedContent3 = new Content("baz", testKey3, true);
+    private final Content combinedContent1 = new Content("foo", testKeyFoo, true);
+    private final Content combinedContent2 = new Content("bar", testKeyBar, true);
+    private final Content combinedContent3 = new Content("baz", testKeyBaz, true);
     
     private final TypeMetadata typeMetadata = new TypeMetadata();
     private final PreNormalizedAttributeFactory preNormFactory = new PreNormalizedAttributeFactory(typeMetadata);
     
-    private final PreNormalizedAttribute preNorm1 = (PreNormalizedAttribute) preNormFactory.create("", "foo", testKey1, false);
-    private final PreNormalizedAttribute preNorm2 = (PreNormalizedAttribute) preNormFactory.create("", "bar", testKey2, false);
-    private final PreNormalizedAttribute preNorm3 = (PreNormalizedAttribute) preNormFactory.create("", "baz", testKey3, false);
+    private final PreNormalizedAttribute preNorm1 = (PreNormalizedAttribute) preNormFactory.create("", "foo", testKeyFoo, false);
+    private final PreNormalizedAttribute preNorm2 = (PreNormalizedAttribute) preNormFactory.create("", "bar", testKeyBar, false);
+    private final PreNormalizedAttribute preNorm3 = (PreNormalizedAttribute) preNormFactory.create("", "baz", testKeyBaz, false);
     
-    private final IpAddress ipAddr1 = new IpAddress("192.168.1.1", testKey7, true);
-    private final IpAddress ipAddr2 = new IpAddress("192.168.1.1", testKey11, true);
+    private final IpAddress ipAddr1 = new IpAddress("192.168.1.1", testKeyIp, true);
+    private final IpAddress ipAddr2 = new IpAddress("192.168.1.1", testKeyIpDifferentAuths, true);
     
     private final Numeric num = new Numeric("9001", testKey10, true);
     
@@ -254,28 +253,6 @@ public class DocumentTest {
         
         assertEquals(1, testDoc.get("key2").size());
         assertEquals(content1, (testDoc.get("key2")));
-    }
-    
-    @Test
-    public void testMergeWithMixedToKeep1() {
-        Document testDoc = new Document(testKey8, true, true);
-        
-        testDoc.put("key1", content3);
-        testDoc.put("key1", content7);
-        
-        assertEquals(1, testDoc.get("key1").size());
-        assertEquals(combinedContent3, (testDoc.get("key1")));
-    }
-    
-    @Test
-    public void testMergeWithMixedToKeep2() {
-        Document testDoc = new Document(testKey8, true, true);
-        
-        testDoc.put("key1", content8);
-        testDoc.put("key1", content2);
-        
-        assertEquals(1, testDoc.get("key1").size());
-        assertEquals(combinedContent2, (testDoc.get("key1")));
     }
     
     @Test
