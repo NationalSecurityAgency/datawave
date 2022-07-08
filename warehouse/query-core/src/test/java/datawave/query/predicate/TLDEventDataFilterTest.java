@@ -518,7 +518,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
     }
     
     @Test
-    public void functionalOccuranceExpansionTest() throws ParseException {
+    public void functionalOccurrenceExpansionTest() throws ParseException {
         Set<String> contentFields = new HashSet<>();
         contentFields.add("FOO");
         contentFields.add("BAR");
@@ -526,7 +526,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         helper.addTermFrequencyFields(contentFields);
         helper.setIndexedFields(contentFields);
         
-        String originalQuery = "filter:occurence(FOO, '.*23ab.*') && BAR == '123'";
+        String originalQuery = "filter:occurrence(FOO, '.*23ab.*') && BAR == '123'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
         
