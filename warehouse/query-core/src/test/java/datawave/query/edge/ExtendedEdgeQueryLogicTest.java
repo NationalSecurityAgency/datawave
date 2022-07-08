@@ -1,10 +1,10 @@
 package datawave.query.edge;
 
 import datawave.core.iterators.ColumnRangeIterator;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.QueryLogic;
 import datawave.query.tables.edge.EdgeQueryFunctionalTest;
 import datawave.query.tables.edge.EdgeQueryLogic;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.logic.QueryLogic;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;

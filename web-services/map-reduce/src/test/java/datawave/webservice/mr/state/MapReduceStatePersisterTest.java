@@ -1,12 +1,12 @@
 package datawave.webservice.mr.state;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
-import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.mr.state.MapReduceStatePersisterBean.MapReduceState;
 import datawave.webservice.results.mr.MapReduceInfoResponse;
 import datawave.webservice.results.mr.MapReduceInfoResponseList;

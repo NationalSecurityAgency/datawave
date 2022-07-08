@@ -1,8 +1,8 @@
 package datawave.query.tables.edge;
 
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.logic.QueryLogic;
-import datawave.services.query.logic.QueryLogicFactory;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -59,7 +59,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     public static JavaArchive createDeployment() throws Exception {
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event",
-                                        "datawave.services.query.result.event")
+                                        "datawave.core.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(

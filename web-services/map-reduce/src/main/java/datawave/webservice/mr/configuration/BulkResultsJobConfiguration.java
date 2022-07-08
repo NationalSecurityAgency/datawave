@@ -1,14 +1,14 @@
 package datawave.webservice.mr.configuration;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
 import datawave.mr.bulk.BulkInputFormat;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.iterator.ConfigurableVisibilityFilter;
 import datawave.security.util.AuthorizationsUtil;
-import datawave.services.common.connection.AccumuloConnectionFactory;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.configuration.QueryData;
-import datawave.services.query.logic.QueryLogic;
-import datawave.services.query.logic.QueryLogicFactory;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.mr.bulkresults.map.BulkResultsFileOutputMapper;
 import datawave.webservice.mr.bulkresults.map.BulkResultsTableOutputMapper;

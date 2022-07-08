@@ -1,14 +1,14 @@
 package datawave.webservice.query.model;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.common.cache.AccumuloTableCache;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.security.util.ScannerHelper;
-import datawave.services.common.cache.AccumuloTableCache;
-import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.model.ModelList;
 import org.apache.accumulo.core.client.Connector;

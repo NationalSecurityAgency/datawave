@@ -1,10 +1,10 @@
 package datawave.webservice.atom;
 
 import datawave.annotation.Required;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
-import datawave.services.common.connection.AccumuloConnectionFactory;
-import datawave.services.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.accumulo.iterator.MatchingKeySkippingIterator;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;

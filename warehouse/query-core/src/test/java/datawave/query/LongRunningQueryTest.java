@@ -1,6 +1,10 @@
 package datawave.query;
 
 import com.google.common.collect.Sets;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.helpers.PrintUtility;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -11,10 +15,6 @@ import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.services.common.connection.AccumuloConnectionFactory;
-import datawave.services.query.cache.ResultsPage;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.result.event.DefaultResponseObjectFactory;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.runner.RunningQuery;

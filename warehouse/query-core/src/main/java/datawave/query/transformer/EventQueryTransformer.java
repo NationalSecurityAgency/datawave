@@ -1,13 +1,13 @@
 package datawave.query.transformer;
 
 import com.esotericsoftware.kryo.io.Input;
+import datawave.core.query.cachedresults.CacheableLogic;
+import datawave.core.query.logic.BaseQueryLogic;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
 import datawave.query.Constants;
 import datawave.query.parser.EventFields;
 import datawave.query.parser.EventFields.FieldValue;
-import datawave.services.query.cachedresults.CacheableLogic;
-import datawave.services.query.logic.BaseQueryLogic;
 import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.EventBase;

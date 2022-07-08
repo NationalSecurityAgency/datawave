@@ -2,12 +2,12 @@ package datawave.webservice.query.model;
 
 import com.google.common.collect.Sets;
 import datawave.annotation.Required;
+import datawave.core.common.cache.AccumuloTableCache;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
-import datawave.services.common.cache.AccumuloTableCache;
-import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NotFoundException;
 import datawave.webservice.common.exception.PreConditionFailedException;

@@ -1,13 +1,13 @@
 package datawave.query.discovery;
 
 import com.google.common.base.Preconditions;
+import datawave.core.query.cachedresults.CacheableLogic;
+import datawave.core.query.cachedresults.CacheableQueryRowImpl;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
 import datawave.query.model.QueryModel;
-import datawave.services.query.cachedresults.CacheableLogic;
-import datawave.services.query.cachedresults.CacheableQueryRowImpl;
-import datawave.services.query.logic.BaseQueryLogic;
-import datawave.services.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;

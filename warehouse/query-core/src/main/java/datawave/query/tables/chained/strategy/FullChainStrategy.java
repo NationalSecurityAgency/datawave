@@ -1,7 +1,7 @@
 package datawave.query.tables.chained.strategy;
 
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.logic.QueryLogic;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.QueryLogic;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
@@ -16,9 +16,9 @@ import java.util.Set;
  * 
  * 
  * @param <T1>
- *            Type of former {@link datawave.services.query.logic.QueryLogic}
+ *            Type of former {@link QueryLogic}
  * @param <T2>
- *            Type of latter {@link datawave.services.query.logic.QueryLogic}
+ *            Type of latter {@link QueryLogic}
  */
 public abstract class FullChainStrategy<T1,T2> implements ChainStrategy<T1,T2> {
     protected final Logger log = Logger.getLogger(FullChainStrategy.class);

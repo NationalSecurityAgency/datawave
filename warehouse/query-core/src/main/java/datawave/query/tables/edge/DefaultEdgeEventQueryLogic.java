@@ -1,5 +1,7 @@
 package datawave.query.tables.edge;
 
+import datawave.core.common.edgedictionary.EdgeDictionaryProvider;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.edge.model.DefaultEdgeModelFieldsFactory;
 import datawave.edge.model.EdgeModelFields;
 import datawave.edge.model.EdgeModelFieldsFactory;
@@ -9,11 +11,9 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.services.common.edgedictionary.EdgeDictionaryProvider;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.Query;
 import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
 import datawave.webservice.dictionary.edge.MetadataBase;
+import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;

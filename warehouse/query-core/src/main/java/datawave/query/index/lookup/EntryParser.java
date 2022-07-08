@@ -1,6 +1,7 @@
 package datawave.query.index.lookup;
 
 import com.google.common.base.Function;
+import datawave.core.query.configuration.Result;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
@@ -10,7 +11,6 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
-import datawave.services.query.configuration.Result;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.JexlNode;

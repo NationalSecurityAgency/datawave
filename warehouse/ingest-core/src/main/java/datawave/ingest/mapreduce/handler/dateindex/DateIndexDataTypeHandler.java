@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.handler.dateindex;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -14,7 +15,6 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.ingest.table.aggregator.DateIndexDateAggregator;
 import datawave.marking.MarkingFunctions;
-import datawave.services.common.logging.ThreadConfigurableLogger;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;

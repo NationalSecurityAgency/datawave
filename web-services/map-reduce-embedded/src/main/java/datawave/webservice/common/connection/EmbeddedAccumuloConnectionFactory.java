@@ -1,9 +1,9 @@
 package datawave.webservice.common.connection;
 
-import datawave.services.common.connection.AccumuloConnectionFactory;
-import datawave.services.common.connection.AccumuloConnectionPool;
-import datawave.services.common.connection.AccumuloConnectionPoolFactory;
-import datawave.services.common.result.ConnectionPool;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.connection.AccumuloConnectionPool;
+import datawave.core.common.connection.AccumuloConnectionPoolFactory;
+import datawave.core.common.result.ConnectionPool;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.log4j.Logger;

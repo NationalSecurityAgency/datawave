@@ -1,5 +1,6 @@
 package datawave.query.tables.async.event;
 
+import datawave.core.query.configuration.QueryData;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.QueryIterator;
@@ -8,7 +9,6 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
-import datawave.services.query.configuration.QueryData;
 import datawave.util.TableName;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.IteratorSetting;

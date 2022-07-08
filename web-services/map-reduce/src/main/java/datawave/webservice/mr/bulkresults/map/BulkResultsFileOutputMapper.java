@@ -1,9 +1,9 @@
 package datawave.webservice.mr.bulkresults.map;
 
-import datawave.services.query.cache.ResultsPage;
-import datawave.services.query.exception.EmptyObjectException;
-import datawave.services.query.logic.QueryLogic;
-import datawave.services.query.logic.QueryLogicTransformer;
+import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.util.ProtostuffMessageBodyWriter;

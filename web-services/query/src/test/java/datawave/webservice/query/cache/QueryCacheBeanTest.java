@@ -1,7 +1,7 @@
 package datawave.webservice.query.cache;
 
-import datawave.services.common.connection.AccumuloConnectionFactory;
-import datawave.services.query.logic.QueryLogic;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.logic.QueryLogic;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.runner.RunningQuery;

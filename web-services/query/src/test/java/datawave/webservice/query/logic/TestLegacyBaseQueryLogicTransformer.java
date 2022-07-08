@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 import datawave.marking.MarkingFunctions;
-import datawave.services.query.cache.ResultsPage;
-import datawave.services.query.logic.BaseQueryLogicTransformer;
+import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 

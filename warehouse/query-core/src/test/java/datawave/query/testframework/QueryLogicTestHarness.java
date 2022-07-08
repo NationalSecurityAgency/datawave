@@ -1,5 +1,12 @@
 package datawave.query.testframework;
 
+import datawave.core.query.configuration.CheckpointableQueryConfiguration;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.CheckpointableQueryLogic;
+import datawave.core.query.logic.QueryCheckpoint;
+import datawave.core.query.logic.QueryKey;
+import datawave.core.query.logic.QueryLogicFactory;
 import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
@@ -9,13 +16,6 @@ import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import datawave.services.query.configuration.CheckpointableQueryConfiguration;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.logic.BaseQueryLogic;
-import datawave.services.query.logic.CheckpointableQueryLogic;
-import datawave.services.query.logic.QueryCheckpoint;
-import datawave.services.query.logic.QueryKey;
-import datawave.services.query.logic.QueryLogicFactory;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
@@ -23,11 +23,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;

@@ -1,6 +1,8 @@
 package datawave.query.transformer;
 
 import com.google.common.base.Preconditions;
+import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.logic.BaseQueryLogic;
 import datawave.data.type.StringType;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Attribute;
@@ -8,8 +10,6 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Cardinality;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.FieldValueCardinality;
-import datawave.services.query.exception.EmptyObjectException;
-import datawave.services.query.logic.BaseQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.FacetsBase;
 import datawave.webservice.query.result.event.FieldCardinalityBase;

@@ -2,12 +2,12 @@ package datawave.ingest.data;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.filter.KeyValueFilter;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.marking.MarkingFunctions;
-import datawave.services.common.logging.ThreadConfigurableLogger;
 import datawave.util.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.RecordReader;

@@ -1,6 +1,6 @@
 package datawave.webservice.common.connection.config;
 
-import datawave.services.common.result.ConnectionPoolsProperties;
+import datawave.core.common.result.ConnectionPoolsProperties;
 
 import java.util.List;
 

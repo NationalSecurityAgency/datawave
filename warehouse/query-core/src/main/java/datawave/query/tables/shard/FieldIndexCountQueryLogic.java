@@ -1,5 +1,7 @@
 package datawave.query.tables.shard;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
@@ -10,8 +12,6 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.FieldIndexCountQueryTransformer;
 import datawave.query.util.MetadataHelper;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;

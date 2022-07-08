@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.handler.summary;
 
 import com.google.common.collect.Multimap;
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
@@ -9,7 +10,6 @@ import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.metadata.RawRecordMetadata;
-import datawave.services.common.logging.ThreadConfigurableLogger;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;

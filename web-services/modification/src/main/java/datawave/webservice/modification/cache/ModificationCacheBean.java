@@ -1,11 +1,11 @@
 package datawave.webservice.modification.cache;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.modification.cache.ModificationCache;
 import datawave.modification.configuration.ModificationConfiguration;
-import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.results.modification.MutableFieldListResponse;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;

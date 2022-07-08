@@ -1,6 +1,7 @@
 package datawave.query.predicate;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.marking.MarkingFunctions;
@@ -17,7 +18,6 @@ import datawave.query.tables.edge.BaseEdgeQueryTest;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.CompositeTestingIngest;
 import datawave.query.util.TypeMetadata;
-import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
@@ -123,7 +123,7 @@ public abstract class ValueToAttributesTest {
         
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event", "datawave.services.query.result.event")
+                                        "datawave.webservice.query.result.event", "datawave.core.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(

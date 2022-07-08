@@ -1,7 +1,7 @@
 package datawave.modification.configuration;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.modification.query.ModificationQueryService;
-import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.ModificationRequestBase;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;

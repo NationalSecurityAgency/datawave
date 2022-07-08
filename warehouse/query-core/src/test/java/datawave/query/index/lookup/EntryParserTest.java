@@ -1,10 +1,10 @@
 package datawave.query.index.lookup;
 
+import datawave.core.query.configuration.Result;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
-import datawave.services.query.configuration.Result;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;

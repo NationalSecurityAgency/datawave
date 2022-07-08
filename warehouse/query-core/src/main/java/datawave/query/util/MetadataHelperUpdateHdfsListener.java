@@ -1,9 +1,9 @@
 package datawave.query.util;
 
-import datawave.services.common.cache.SharedCacheCoordinator;
-import datawave.services.common.cache.SharedTriState;
-import datawave.services.common.cache.SharedTriStateListener;
-import datawave.services.common.cache.SharedTriStateReader;
+import datawave.core.common.cache.SharedCacheCoordinator;
+import datawave.core.common.cache.SharedTriState;
+import datawave.core.common.cache.SharedTriStateListener;
+import datawave.core.common.cache.SharedTriStateReader;
 import org.apache.accumulo.core.client.ClientConfiguration;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.ZooKeeperInstance;

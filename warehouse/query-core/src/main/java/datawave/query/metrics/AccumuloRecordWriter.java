@@ -2,8 +2,8 @@ package datawave.query.metrics;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.common.util.ArgumentChecker;
-import datawave.services.common.connection.AccumuloConnectionFactory;
-import datawave.services.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;

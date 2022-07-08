@@ -1,8 +1,8 @@
 package datawave.modification.cache;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.modification.configuration.ModificationConfiguration;
 import datawave.security.util.ScannerHelper;
-import datawave.services.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static datawave.services.common.connection.AccumuloConnectionFactory.Priority;
+import static datawave.core.common.connection.AccumuloConnectionFactory.Priority;
 
 public class ModificationCache {
     private static Logger log = Logger.getLogger(ModificationCache.class);

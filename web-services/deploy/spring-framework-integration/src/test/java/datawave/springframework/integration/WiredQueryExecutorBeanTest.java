@@ -1,5 +1,8 @@
 package datawave.springframework.integration;
 
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.composite.CompositeQueryLogic;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.query.discovery.DiscoveryLogic;
 import datawave.query.metrics.QueryMetricQueryLogic;
@@ -17,15 +20,10 @@ import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
-import datawave.services.query.logic.QueryLogic;
-import datawave.services.query.logic.composite.CompositeQueryLogic;
-import datawave.services.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.edgedictionary.EdgeDictionaryResponseTypeProducer;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
-import datawave.services.query.logic.composite.CompositeQueryLogic;
-import datawave.services.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.results.cached.CachedResultsConfiguration;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;

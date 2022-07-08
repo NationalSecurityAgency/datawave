@@ -1,6 +1,6 @@
 package datawave.query.transformer;
 
-import datawave.services.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.result.BaseQueryResponse;
 

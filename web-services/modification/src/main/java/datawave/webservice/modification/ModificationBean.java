@@ -2,13 +2,13 @@ package datawave.webservice.modification;
 
 import datawave.annotation.Required;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.modification.DatawaveModificationException;
 import datawave.modification.ModificationService;
 import datawave.modification.configuration.ModificationConfiguration;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.modification.cache.ModificationCacheBean;
 import datawave.webservice.query.exception.QueryException;

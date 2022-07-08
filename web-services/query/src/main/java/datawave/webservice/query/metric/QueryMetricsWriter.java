@@ -3,16 +3,13 @@ package datawave.webservice.query.metric;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.RefreshEvent;
 import datawave.configuration.spring.SpringBean;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.services.common.connection.AccumuloConnectionFactory;
-import datawave.services.query.metric.QueryMetricHandler;
-import datawave.util.timely.UdpClient;
-
+import datawave.core.query.metric.QueryMetricHandler;
 import datawave.metrics.remote.RemoteQueryMetricService;
-
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.util.timely.UdpClient;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.result.VoidResponse;
 import org.apache.commons.collections4.map.LRUMap;

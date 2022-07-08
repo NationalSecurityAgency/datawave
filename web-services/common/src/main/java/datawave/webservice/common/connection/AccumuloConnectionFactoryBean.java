@@ -1,12 +1,12 @@
 package datawave.webservice.common.connection;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.core.common.cache.AccumuloTableCache;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.connection.AccumuloConnectionFactoryImpl;
+import datawave.core.common.result.ConnectionFactoryResponse;
+import datawave.core.common.result.ConnectionPool;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.services.common.cache.AccumuloTableCache;
-import datawave.services.common.connection.AccumuloConnectionFactory;
-import datawave.services.common.connection.AccumuloConnectionFactoryImpl;
-import datawave.services.common.result.ConnectionFactoryResponse;
-import datawave.services.common.result.ConnectionPool;
 import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
@@ -41,7 +41,6 @@ import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Path("/Common/AccumuloConnectionFactory")
 @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})

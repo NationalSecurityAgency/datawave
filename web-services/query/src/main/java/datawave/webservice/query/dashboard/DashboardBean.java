@@ -1,13 +1,13 @@
 package datawave.webservice.query.dashboard;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.extjs.ExtJsResponse;
+import datawave.core.query.dashboard.DashboardSummary;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.security.util.ScannerHelper;
-import datawave.services.common.connection.AccumuloConnectionFactory;
-import datawave.services.common.extjs.ExtJsResponse;
-import datawave.services.query.dashboard.DashboardSummary;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;

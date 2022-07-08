@@ -1,10 +1,10 @@
 package datawave.webservice.query.dashboard;
 
+import datawave.core.common.extjs.ExtJsResponse;
+import datawave.core.query.dashboard.DashboardFields;
+import datawave.core.query.dashboard.DashboardSummary;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryPersistence;
-import datawave.services.common.extjs.ExtJsResponse;
-import datawave.services.query.dashboard.DashboardFields;
-import datawave.services.query.dashboard.DashboardSummary;
 import datawave.webservice.query.runner.QueryExecutor;
 import datawave.webservice.query.util.MapUtils;
 import org.apache.commons.lang.time.DateUtils;

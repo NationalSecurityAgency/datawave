@@ -1,8 +1,8 @@
 package datawave.webservice.query.logic;
 
 import datawave.configuration.spring.SpringBean;
-import datawave.services.query.logic.QueryLogic;
-import datawave.services.query.logic.QueryLogicFactory;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
 import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.result.VoidResponse;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;

@@ -1,7 +1,7 @@
 package datawave.webservice.query.cache;
 
 import com.google.common.collect.Sets;
-import datawave.services.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogic;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.util.Pair;

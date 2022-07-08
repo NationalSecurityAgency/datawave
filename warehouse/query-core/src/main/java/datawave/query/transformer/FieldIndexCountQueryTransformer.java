@@ -1,12 +1,12 @@
 package datawave.query.transformer;
 
+import datawave.core.query.cachedresults.CacheableLogic;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.data.hash.UID;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.tables.shard.FieldIndexCountQueryLogic.Tuple;
-import datawave.services.query.cachedresults.CacheableLogic;
-import datawave.services.query.logic.BaseQueryLogic;
-import datawave.services.query.logic.BaseQueryLogicTransformer;
 import datawave.util.TextUtil;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;

@@ -2,14 +2,14 @@ package datawave.query.discovery;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.util.MetadataHelperFactory;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.result.event.DefaultResponseObjectFactory;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.client.BatchWriter;

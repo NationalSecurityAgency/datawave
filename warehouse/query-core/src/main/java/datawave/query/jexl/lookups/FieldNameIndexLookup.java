@@ -2,11 +2,11 @@ package datawave.query.jexl.lookups;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
+import datawave.core.query.configuration.Result;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
-import datawave.services.query.configuration.Result;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;

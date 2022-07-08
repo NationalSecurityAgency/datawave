@@ -1,5 +1,33 @@
 package datawave.webservice.query.logic.composite;
 
+import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.cache.ResultsPage.Status;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.BaseQueryLogicTransformer;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.composite.CompositeQueryLogic;
+import datawave.core.query.logic.composite.CompositeQueryLogicResults;
+import datawave.core.query.logic.composite.CompositeQueryLogicTransformer;
+import datawave.marking.MarkingFunctions;
+import datawave.security.util.DnUtils.NpeUtils;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.result.EdgeQueryResponseBase;
+import datawave.webservice.query.result.edge.EdgeBase;
+import datawave.webservice.result.BaseQueryResponse;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,35 +39,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
-import datawave.marking.MarkingFunctions;
-import datawave.security.util.DnUtils.NpeUtils;
-import datawave.services.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.services.query.cache.ResultsPage;
-import datawave.services.query.cache.ResultsPage.Status;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.logic.BaseQueryLogic;
-import datawave.services.query.logic.BaseQueryLogicTransformer;
-import datawave.services.query.logic.QueryLogicTransformer;
-import datawave.services.query.logic.composite.CompositeQueryLogic;
-import datawave.services.query.logic.composite.CompositeQueryLogicResults;
-import datawave.services.query.logic.composite.CompositeQueryLogicTransformer;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.result.EdgeQueryResponseBase;
-import datawave.webservice.query.result.edge.EdgeBase;
-import datawave.webservice.result.BaseQueryResponse;
-
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 public class CompositeQueryLogicTest {
     

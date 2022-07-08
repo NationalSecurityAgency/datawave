@@ -2,12 +2,12 @@ package datawave.query.transformer;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.google.common.collect.Lists;
+import datawave.core.query.cachedresults.CacheableLogic;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
 import datawave.query.model.QueryModel;
 import datawave.query.parser.EventFields;
-import datawave.services.query.cachedresults.CacheableLogic;
-import datawave.services.query.logic.BaseQueryLogic;
-import datawave.services.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;

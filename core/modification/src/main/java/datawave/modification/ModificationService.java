@@ -7,7 +7,7 @@ import datawave.modification.query.ModificationQueryService;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.util.ProxiedEntityUtils;
-import datawave.services.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.ModificationRequestBase;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;

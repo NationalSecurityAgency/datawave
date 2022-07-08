@@ -2,12 +2,12 @@ package datawave.query.transformer;
 
 import com.google.common.collect.Sets;
 import com.google.protobuf.InvalidProtocolBufferException;
+import datawave.core.query.cachedresults.CacheableLogic;
+import datawave.core.query.cachedresults.CacheableQueryRowImpl;
+import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.edge.model.EdgeModelFields;
 import datawave.edge.util.EdgeValue;
 import datawave.marking.MarkingFunctions;
-import datawave.services.query.cachedresults.CacheableLogic;
-import datawave.services.query.cachedresults.CacheableQueryRowImpl;
-import datawave.services.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;

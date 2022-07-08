@@ -1,6 +1,6 @@
 package datawave.query.util;
 
-import datawave.services.common.cache.SharedCacheCoordinator;
+import datawave.core.common.cache.SharedCacheCoordinator;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
 import org.apache.curator.framework.recipes.shared.SharedCountReader;

@@ -1,11 +1,11 @@
 package datawave.query.config;
 
+import datawave.core.query.configuration.CheckpointableQueryConfiguration;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
 import datawave.data.type.Type;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.edge.EdgeQueryLogic;
-import datawave.services.query.configuration.CheckpointableQueryConfiguration;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.configuration.QueryData;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 

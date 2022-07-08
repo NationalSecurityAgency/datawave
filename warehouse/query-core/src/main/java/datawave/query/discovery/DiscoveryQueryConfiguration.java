@@ -1,14 +1,13 @@
 package datawave.query.discovery;
 
 import com.google.common.collect.Multimap;
+import datawave.core.query.configuration.QueryData;
 import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.jexl.LiteralRange;
-import datawave.services.query.configuration.QueryData;
 import datawave.webservice.query.Query;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 
 /**

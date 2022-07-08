@@ -1,18 +1,18 @@
 package datawave.webservice.query.runner;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.WritesQueryMetrics;
+import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.util.AuthorizationsUtil;
-import datawave.services.common.connection.AccumuloConnectionFactory;
-import datawave.services.query.cache.ResultsPage;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.logic.BaseQueryLogic;
-import datawave.services.query.logic.QueryLogic;
-import datawave.services.query.logic.WritesQueryMetrics;
-import datawave.services.query.logic.WritesResultCardinalities;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.data.ObjectSizeOf;

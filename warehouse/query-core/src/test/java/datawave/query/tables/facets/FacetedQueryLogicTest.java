@@ -1,6 +1,7 @@
 package datawave.query.tables.facets;
 
 import com.google.common.collect.Sets;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.helpers.PrintUtility;
 import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
@@ -19,13 +20,11 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.QueryLogicTestHarness.DocumentChecker;
-import datawave.query.testframework.cardata.CarsDataType;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.services.query.result.event.DefaultResponseObjectFactory;
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;

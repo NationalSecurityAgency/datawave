@@ -1,6 +1,6 @@
 package datawave.query.tables.chained.iterators;
 
-import datawave.services.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogic;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;

@@ -1,8 +1,8 @@
 package datawave.query.tables;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.query.QueryParameters;
 import datawave.query.tables.chunk.Chunker;
-import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
 import org.apache.accumulo.core.client.Connector;

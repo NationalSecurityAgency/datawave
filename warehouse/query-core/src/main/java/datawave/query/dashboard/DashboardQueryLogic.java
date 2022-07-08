@@ -1,11 +1,11 @@
 package datawave.query.dashboard;
 
+import datawave.core.common.extjs.ExtJsResponse;
+import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.dashboard.DashboardFields;
+import datawave.core.query.dashboard.DashboardSummary;
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.services.common.extjs.ExtJsResponse;
-import datawave.services.query.cache.ResultsPage;
-import datawave.services.query.dashboard.DashboardFields;
-import datawave.services.query.dashboard.DashboardSummary;
-import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;

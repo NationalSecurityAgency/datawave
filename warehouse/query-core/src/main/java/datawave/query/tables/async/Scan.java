@@ -2,6 +2,7 @@ package datawave.query.tables.async;
 
 import com.google.common.base.Function;
 import com.google.common.eventbus.Subscribe;
+import datawave.core.query.configuration.Result;
 import datawave.mr.bulk.RfileResource;
 import datawave.query.tables.AccumuloResource;
 import datawave.query.tables.AccumuloResource.ResourceFactory;
@@ -9,7 +10,6 @@ import datawave.query.tables.BatchResource;
 import datawave.query.tables.ResourceQueue;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
-import datawave.services.query.configuration.Result;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.impl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.core.data.Key;

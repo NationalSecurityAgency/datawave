@@ -1,7 +1,7 @@
 package datawave.query.tables.content;
 
-import datawave.services.query.logic.QueryCheckpoint;
-import datawave.services.query.logic.QueryKey;
+import datawave.core.query.logic.QueryCheckpoint;
+import datawave.core.query.logic.QueryKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;

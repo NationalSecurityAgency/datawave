@@ -1,16 +1,16 @@
 package datawave.query.tables.term;
 
 import com.google.common.collect.ImmutableSet;
+import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.query.QueryParameters;
 import datawave.query.config.TermFrequencyQueryConfiguration;
 import datawave.query.transformer.TermFrequencyQueryTransformer;
 import datawave.query.util.QueryScannerHelper;
-import datawave.services.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.services.common.logging.ThreadConfigurableLogger;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.logic.BaseQueryLogic;
-import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.QueryException;

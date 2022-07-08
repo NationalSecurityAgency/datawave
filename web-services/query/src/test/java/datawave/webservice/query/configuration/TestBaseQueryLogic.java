@@ -1,10 +1,10 @@
 package datawave.webservice.query.configuration;
 
 import com.google.common.collect.Sets;
-import datawave.services.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.logic.BaseQueryLogic;
-import datawave.services.query.logic.QueryLogicTransformer;
+import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.Connector;

@@ -1,14 +1,14 @@
 package datawave.query.tables.edge;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.CheckpointableQueryLogic;
+import datawave.core.query.logic.QueryCheckpoint;
+import datawave.core.query.logic.QueryKey;
+import datawave.core.query.logic.QueryLogicFactory;
 import datawave.data.normalizer.Normalizer;
 import datawave.query.MockAccumuloRecordWriter;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.logic.BaseQueryLogic;
-import datawave.services.query.logic.CheckpointableQueryLogic;
-import datawave.services.query.logic.QueryCheckpoint;
-import datawave.services.query.logic.QueryKey;
-import datawave.services.query.logic.QueryLogicFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.BatchWriterConfig;

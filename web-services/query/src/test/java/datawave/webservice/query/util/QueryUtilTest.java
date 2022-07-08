@@ -1,7 +1,7 @@
 package datawave.webservice.query.util;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import datawave.services.query.util.QueryUtil;
+import datawave.core.query.util.QueryUtil;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryImpl.Parameter;

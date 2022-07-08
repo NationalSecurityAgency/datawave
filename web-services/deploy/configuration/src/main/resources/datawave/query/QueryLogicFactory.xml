@@ -123,7 +123,7 @@
     </bean>
 
     <!-- End SelectorExtractors -->
-    <bean id="responseObjectFactory" class="datawave.services.query.result.event.DefaultResponseObjectFactory" />
+    <bean id="responseObjectFactory" class="datawave.core.query.result.event.DefaultResponseObjectFactory" />
 
     <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
         <property name="markingFunctions" ref="markingFunctions" />
@@ -381,7 +381,7 @@
         <property name="includeHierarchyFields" value="false" />
     </bean>
 
-    <bean id="LuceneUUIDEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.services.query.logic.composite.CompositeQueryLogic">
+    <bean id="LuceneUUIDEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.core.query.logic.composite.CompositeQueryLogic">
       <property name="logicDescription" value="Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml" />
       <property name="auditType" value="NONE" />
       <property name="queryLogics">

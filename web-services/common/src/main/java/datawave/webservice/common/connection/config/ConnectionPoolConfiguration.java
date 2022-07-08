@@ -1,6 +1,6 @@
 package datawave.webservice.common.connection.config;
 
-import datawave.services.common.result.ConnectionPoolProperties;
+import datawave.core.common.result.ConnectionPoolProperties;
 import org.apache.deltaspike.core.api.config.ConfigResolver;
 
 public class ConnectionPoolConfiguration extends ConnectionPoolProperties {

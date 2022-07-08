@@ -1,8 +1,8 @@
 package datawave.query.jexl.lookups;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
-import datawave.services.common.logging.ThreadConfigurableLogger;
 import org.apache.log4j.Logger;
 
 import java.util.concurrent.CountDownLatch;

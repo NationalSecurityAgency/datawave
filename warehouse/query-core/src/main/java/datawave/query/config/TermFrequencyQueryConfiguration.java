@@ -1,14 +1,13 @@
 package datawave.query.config;
 
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.logic.BaseQueryLogic;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.data.Range;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.TreeSet;
 
 public class TermFrequencyQueryConfiguration extends GenericQueryConfiguration implements Serializable {
     

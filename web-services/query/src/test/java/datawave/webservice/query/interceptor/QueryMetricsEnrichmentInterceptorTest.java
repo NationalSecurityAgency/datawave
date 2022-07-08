@@ -4,7 +4,7 @@ import com.google.common.io.CountingOutputStream;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.security.util.DnUtils.NpeUtils;
-import datawave.services.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.BaseQueryLogic;
 import datawave.webservice.query.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.interceptor.QueryMetricsEnrichmentInterceptor.QueryCall;

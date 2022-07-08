@@ -1,19 +1,19 @@
 package datawave.query.tables.content;
 
 import com.google.common.collect.Lists;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.CheckpointableQueryLogic;
+import datawave.core.query.logic.QueryCheckpoint;
+import datawave.core.query.logic.QueryKey;
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.ContentQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.transformer.ContentQueryTransformer;
-import datawave.services.common.connection.AccumuloConnectionFactory;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.logic.BaseQueryLogic;
-import datawave.services.query.logic.CheckpointableQueryLogic;
-import datawave.services.query.logic.QueryCheckpoint;
-import datawave.services.query.logic.QueryKey;
-import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.QueryException;

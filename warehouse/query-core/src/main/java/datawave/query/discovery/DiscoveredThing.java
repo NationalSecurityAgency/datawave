@@ -1,17 +1,15 @@
 package datawave.query.discovery;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
 import com.google.common.base.Objects;
-import datawave.services.query.configuration.QueryData;
-import datawave.services.query.configuration.Result;
-import datawave.services.query.configuration.ResultContext;
+import datawave.core.query.configuration.ResultContext;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.WritableComparable;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
     private ResultContext context;

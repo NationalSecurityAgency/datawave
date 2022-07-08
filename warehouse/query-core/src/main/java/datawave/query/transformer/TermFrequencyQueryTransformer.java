@@ -1,10 +1,10 @@
 package datawave.query.transformer;
 
+import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
 import datawave.query.table.parser.TermFrequencyKeyValueFactory;
 import datawave.query.table.parser.TermFrequencyKeyValueFactory.TermFrequencyKeyValue;
-import datawave.services.query.exception.EmptyObjectException;
-import datawave.services.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;

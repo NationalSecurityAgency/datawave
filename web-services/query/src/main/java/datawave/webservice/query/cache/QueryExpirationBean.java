@@ -2,11 +2,11 @@ package datawave.webservice.query.cache;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.config.QueryExpirationProperties;
-import datawave.services.common.connection.AccumuloConnectionFactory;
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;

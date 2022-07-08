@@ -1,13 +1,12 @@
 package datawave.query.config;
 
+import datawave.core.query.configuration.QueryData;
 import datawave.query.edge.DefaultExtendedEdgeQueryLogic;
-import datawave.services.query.configuration.QueryData;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 
 public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration implements Serializable {

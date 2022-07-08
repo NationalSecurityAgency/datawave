@@ -1,25 +1,18 @@
 package datawave.query.metrics;
 
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import datawave.core.query.util.QueryUtil;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.language.tree.QueryNode;
-import datawave.services.query.util.QueryUtil;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.webservice.query.QueryImpl.Parameter;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 import java.text.SimpleDateFormat;
 import java.util.HashMap;

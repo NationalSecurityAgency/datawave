@@ -1,6 +1,6 @@
 package datawave.webservice.mr.configuration;
 
-import datawave.services.query.logic.QueryLogicFactory;
+import datawave.core.query.logic.QueryLogicFactory;
 
 public interface NeedQueryLogicFactory {
     

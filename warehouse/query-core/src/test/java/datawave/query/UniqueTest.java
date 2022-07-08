@@ -2,6 +2,8 @@ package datawave.query;
 
 import com.google.common.collect.Sets;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.exceptions.InvalidQueryException;
@@ -10,8 +12,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.WiseGuysIngest;
-import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.services.query.iterator.DatawaveTransformIterator;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
@@ -131,7 +131,7 @@ public abstract class UniqueTest {
         
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event", "datawave.services.query.result.event")
+                                        "datawave.webservice.query.result.event", "datawave.core.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(

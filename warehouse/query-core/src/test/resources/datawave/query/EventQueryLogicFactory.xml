@@ -44,7 +44,7 @@
         <property name="logicDescription" value="Event query" />
     </bean>
 
-    <bean id="responseObjectFactory" class="datawave.services.query.result.event.DefaultResponseObjectFactory" />
+    <bean id="responseObjectFactory" class="datawave.core.query.result.event.DefaultResponseObjectFactory" />
 
     <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
         <property name="markingFunctions" ref="markingFunctions" />
