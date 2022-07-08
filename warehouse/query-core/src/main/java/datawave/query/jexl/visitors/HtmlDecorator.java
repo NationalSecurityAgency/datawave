@@ -40,39 +40,40 @@ public class HtmlDecorator implements JexlQueryDecorator {
     
     @Override
     public void apply(StringBuilder sb, ASTAdditiveOperator node) {
-        sb.append(String.format("<span class=\"add-op\">%s</span>", node.image));
+        sb.append(createSpan("add-op", node.image));
     }
     
     @Override
     public void apply(StringBuilder sb, ASTAndNode node, Collection<String> childStrings, boolean needNewLines) {
-        sb.append(String.join("<span class=\"and-op\"> && </span>" + (needNewLines ? NEWLINE : ""), childStrings));
+        sb.append(String.join(SPACE + createSpan("and-op", "&&") + SPACE + (needNewLines ? NEWLINE : ""), childStrings));
     }
     
     @Override
     public void apply(StringBuilder sb, ASTAssignment node, int i) {
-        sb.append("<span class=\"assign-op\"> = </span>");
+        String str = SPACE + createSpan("assign-op", "=") + SPACE;
+        sb.append(str);
         if (i + 1 == node.jjtGetNumChildren())
-            sb.setLength(sb.length() - "<span class=\"assign-op\"> = </span>".length());
+            sb.setLength(sb.length() - str.length());
     }
     
     @Override
     public void apply(StringBuilder sb, ASTDivNode node) {
-        sb.append("<span class=\"div-op\"> / </span>");
+        sb.append(SPACE + createSpan("div-op", "/") + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTEQNode node) {
-        sb.append("<span class=\"equal-op\"> == </span>");
+        sb.append(SPACE + createSpan("equal-op", "==") + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTERNode node) {
-        sb.append("<span class=\"ER-op\"> =~ </span>");
+        sb.append(SPACE + createSpan("ER-op", "=~") + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTFalseNode node) {
-        sb.append("<span class=\"boolean-value\">false</span>");
+        sb.append(createSpan("boolean-value", "false"));
     }
     
     @Override
@@ -86,12 +87,12 @@ public class HtmlDecorator implements JexlQueryDecorator {
     
     @Override
     public void apply(StringBuilder sb, ASTGENode node) {
-        sb.append("<span class=\"greater-than-equal-op\"> >= </span>");
+        sb.append(SPACE + createSpan("greater-than-equal-op", ">=") + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTGTNode node) {
-        sb.append("<span class=\"greater-than-op\"> > </span>");
+        sb.append(SPACE + createSpan("greater-than-op", ">") + SPACE);
     }
     
     @Override
@@ -105,84 +106,88 @@ public class HtmlDecorator implements JexlQueryDecorator {
         }
         
         if (QueryPropertyMarker.findInstance(parent).isAnyType())
-            sb.append(String.format("<span class=\"query-property-marker\">%s</span>", fieldName));
+            sb.append(createSpan("query-property-marker", fieldName));
         else
-            sb.append(String.format("<span class=\"field\">%s</span>", fieldName));
+            sb.append(createSpan("field", fieldName));
     }
     
     @Override
     public void apply(StringBuilder sb, ASTLENode node) {
-        sb.append("<span class=\"less-than-equal-op\"> <= </span>");
+        sb.append(SPACE + createSpan("less-than-equal-op", "<=") + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTLTNode node) {
-        sb.append("<span class=\"less-than-op\"> < </span>");
+        sb.append(SPACE + createSpan("less-than-op", "<") + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTMethodNode node, StringBuilder methodStringBuilder) {
-        sb.append(String.format("<span class=\"method\">%s</span>", methodStringBuilder));
+        sb.append(createSpan("method", methodStringBuilder.toString()));
     }
     
     @Override
     public void apply(StringBuilder sb, ASTModNode node) {
-        sb.append("<span class=\"mod-op\"> % </span>");
+        sb.append(SPACE + createSpan("mod-op", "%") + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTMulNode node) {
-        sb.append("<span class=\"mul-op\"> * </span>");
+        sb.append(SPACE + createSpan("mul-op", "*") + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTNENode node) {
-        sb.append("<span class=\"not-equal-op\"> != </span>");
+        sb.append(SPACE + createSpan("not-equal-op", "!=") + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTNotNode node) {
-        sb.append("<span class=\"not-op\">!</span>");
+        sb.append(createSpan("not-op", "!"));
     }
     
     @Override
     public void apply(StringBuilder sb, ASTNRNode node) {
-        sb.append("<span class=\"NR-op\"> !~ </span>");
+        sb.append(SPACE + createSpan("NR-op", "!~") + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTNullLiteral node) {
-        sb.append("<span class=\"null-value\">null</span>");
+        sb.append(createSpan("null-value", "null"));
     }
     
     @Override
     public void apply(StringBuilder sb, ASTNumberLiteral node) {
-        sb.append(String.format("<span class=\"numeric-value\">%s</span>", node.image));
+        sb.append(createSpan("numeric-value", node.image));
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTOrNode node, Collection<String> childStrings) {
-        sb.append(String.join("<span class=\"or-op\"> || </span>" + NEWLINE, childStrings));
+    public void apply(StringBuilder sb, ASTOrNode node, Collection<String> childStrings, boolean needNewLines) {
+        sb.append(String.join(SPACE + createSpan("or-op", "||") + SPACE + (needNewLines ? NEWLINE : ""), childStrings));
     }
     
     @Override
     public void apply(StringBuilder sb, ASTSizeMethod node) {
-        sb.append("<span class=\"method\">.size() </span>");
+        sb.append(createSpan("method", ".size()"));
     }
     
     @Override
     public void apply(StringBuilder sb, ASTStringLiteral node, String literal) {
-        sb.append("<span class=\"string-value\">").append('\'').append(literal).append('\'').append("</span>");
+        sb.append(createSpan("string-value", SINGLE_QUOTE + literal + SINGLE_QUOTE));
     }
     
     @Override
     public void apply(StringBuilder sb, ASTTrueNode node) {
-        sb.append("<span class=\"boolean-value\">true</span>");
+        sb.append(createSpan("boolean-value", "true"));
     }
     
     @Override
     public void apply(StringBuilder sb, ASTUnaryMinusNode node) {
-        sb.append("<span class=\"unary-minus\">-</span>");
+        sb.append(createSpan("unary-minus", "-"));
+    }
+    
+    private String createSpan(String cssClass, String content) {
+        return String.format("<span class=\"%s\">%s</span>", cssClass, content);
     }
     
     @Override

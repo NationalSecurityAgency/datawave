@@ -30,10 +30,13 @@ import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 
 /**
- * For use in JexlFormattedStringBuildingVisitor. Used to decorate a Jexl Query with color.
+ * For use in {@link JexlStringBuildingVisitor}. Used to decorate a Jexl Query with color.
  */
 public interface JexlQueryDecorator {
-    public static final String NEWLINE = System.getProperty("line.separator");
+    
+    static final String NEWLINE = System.getProperty("line.separator");
+    static final char SPACE = ' ';
+    static final char SINGLE_QUOTE = '\'';
     
     public void apply(StringBuilder sb, ASTAdditiveOperator node);
     
@@ -77,7 +80,7 @@ public interface JexlQueryDecorator {
     
     public void apply(StringBuilder sb, ASTNumberLiteral node);
     
-    public void apply(StringBuilder sb, ASTOrNode node, Collection<String> childStrings);
+    public void apply(StringBuilder sb, ASTOrNode node, Collection<String> childStrings, boolean needNewLines);
     
     public void apply(StringBuilder sb, ASTSizeMethod node);
     

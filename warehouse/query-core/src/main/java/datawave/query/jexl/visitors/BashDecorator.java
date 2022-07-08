@@ -69,12 +69,12 @@ public class BashDecorator implements JexlQueryDecorator {
     
     @Override
     public void apply(StringBuilder sb, ASTAndNode node, Collection<String> childStrings, boolean needNewLines) {
-        sb.append(String.join(AND_COLOR + " && " + NC + (needNewLines ? NEWLINE : ""), childStrings));
+        sb.append(String.join(SPACE + AND_COLOR + "&&" + NC + SPACE + (needNewLines ? NEWLINE : ""), childStrings));
     }
     
     @Override
     public void apply(StringBuilder sb, ASTAssignment node, int i) {
-        String str = ASSIGN_COLOR + " = " + NC;
+        String str = SPACE + ASSIGN_COLOR + "=" + NC + SPACE;
         sb.append(str);
         if (i + 1 == node.jjtGetNumChildren())
             sb.setLength(sb.length() - str.length());
@@ -82,17 +82,17 @@ public class BashDecorator implements JexlQueryDecorator {
     
     @Override
     public void apply(StringBuilder sb, ASTDivNode node) {
-        sb.append(ARITHMETIC_OP_COLOR + " / " + NC);
+        sb.append(SPACE + ARITHMETIC_OP_COLOR + "/" + NC + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTEQNode node) {
-        sb.append(EQUAL_COLOR + " == " + NC);
+        sb.append(SPACE + EQUAL_COLOR + "==" + NC + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTERNode node) {
-        sb.append(ER_COLOR + " =~ " + NC);
+        sb.append(SPACE + ER_COLOR + "=~" + NC + SPACE);
         
     }
     
@@ -112,12 +112,12 @@ public class BashDecorator implements JexlQueryDecorator {
     
     @Override
     public void apply(StringBuilder sb, ASTGENode node) {
-        sb.append(GREATER_EQUAL_COLOR + " >= " + NC);
+        sb.append(SPACE + GREATER_EQUAL_COLOR + ">=" + NC + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTGTNode node) {
-        sb.append(GREATER_THAN_COLOR + " > " + NC);
+        sb.append(SPACE + GREATER_THAN_COLOR + ">" + NC + SPACE);
     }
     
     @Override
@@ -137,12 +137,12 @@ public class BashDecorator implements JexlQueryDecorator {
     
     @Override
     public void apply(StringBuilder sb, ASTLENode node) {
-        sb.append(LESS_EQUAL_COLOR + " <= " + NC);
+        sb.append(SPACE + LESS_EQUAL_COLOR + "<=" + NC + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTLTNode node) {
-        sb.append(LESS_THAN_COLOR + " < " + NC);
+        sb.append(SPACE + LESS_THAN_COLOR + "<" + NC + SPACE);
     }
     
     @Override
@@ -152,17 +152,17 @@ public class BashDecorator implements JexlQueryDecorator {
     
     @Override
     public void apply(StringBuilder sb, ASTModNode node) {
-        sb.append(ARITHMETIC_OP_COLOR + " % " + NC);
+        sb.append(SPACE + ARITHMETIC_OP_COLOR + "%" + NC + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTMulNode node) {
-        sb.append(ARITHMETIC_OP_COLOR + " * " + NC);
+        sb.append(SPACE + ARITHMETIC_OP_COLOR + "*" + NC + SPACE);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTNENode node) {
-        sb.append(NOT_EQUAL_COLOR + " != " + NC);
+        sb.append(SPACE + NOT_EQUAL_COLOR + "!=" + NC + SPACE);
     }
     
     @Override
@@ -172,7 +172,7 @@ public class BashDecorator implements JexlQueryDecorator {
     
     @Override
     public void apply(StringBuilder sb, ASTNRNode node) {
-        sb.append(NR_COLOR + " !~ " + NC);
+        sb.append(SPACE + NR_COLOR + "!~" + NC + SPACE);
     }
     
     @Override
@@ -186,18 +186,18 @@ public class BashDecorator implements JexlQueryDecorator {
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTOrNode node, Collection<String> childStrings) {
-        sb.append(String.join(OR_COLOR + " || " + NC + NEWLINE, childStrings));
+    public void apply(StringBuilder sb, ASTOrNode node, Collection<String> childStrings, boolean needNewLines) {
+        sb.append(String.join(SPACE + OR_COLOR + "||" + NC + SPACE + (needNewLines ? NEWLINE : ""), childStrings));
     }
     
     @Override
     public void apply(StringBuilder sb, ASTSizeMethod node) {
-        sb.append(METHOD_COLOR + ".size() " + NC);
+        sb.append(METHOD_COLOR + ".size()" + NC);
     }
     
     @Override
     public void apply(StringBuilder sb, ASTStringLiteral node, String literal) {
-        sb.append(STRING_COLOR).append('\'').append(literal).append('\'').append(NC);
+        sb.append(STRING_COLOR).append(SINGLE_QUOTE).append(literal).append(SINGLE_QUOTE).append(NC);
     }
     
     @Override

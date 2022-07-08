@@ -16,4 +16,4 @@ findJacksonJars () {
 
 JACKSON_JARS=$(findJacksonJars)
 
-java -cp $CLASSPATH:$JACKSON_JARS datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor
+java -cp $CLASSPATH:$JACKSON_JARS datawave.query.jexl.visitors.JexlStringBuildingVisitor

@@ -146,18 +146,18 @@ public class EmptyDecorator implements JexlQueryDecorator {
     }
     
     @Override
-    public void apply(StringBuilder sb, ASTOrNode node, Collection<String> childStrings) {
-        sb.append(String.join(" || " + NEWLINE, childStrings));
+    public void apply(StringBuilder sb, ASTOrNode node, Collection<String> childStrings, boolean needNewLines) {
+        sb.append(String.join(" || " + (needNewLines ? NEWLINE : ""), childStrings));
     }
     
     @Override
     public void apply(StringBuilder sb, ASTSizeMethod node) {
-        sb.append(".size() ");
+        sb.append(".size()");
     }
     
     @Override
     public void apply(StringBuilder sb, ASTStringLiteral node, String literal) {
-        sb.append('\'').append(literal).append('\'');
+        sb.append(SINGLE_QUOTE).append(literal).append(SINGLE_QUOTE);
     }
     
     @Override
