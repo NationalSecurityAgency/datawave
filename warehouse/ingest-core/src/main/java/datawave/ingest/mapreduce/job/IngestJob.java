@@ -295,8 +295,8 @@ public class IngestJob implements Tool {
         }
         
         TableConfigurationUtil tableConfigUtil = new TableConfigurationUtil(conf);
-        tableNames = tableConfigUtil.getTableNamesFromConf();
-        tableConfigUtil.serializeTableConfgurationIntoConf(conf);
+        tableConfigUtil.registerTableNamesFromConfigFiles(conf);
+        tableNames = tableConfigUtil.getJobOutputTableNames(conf);
         
         if (createTables) {
             boolean wasConfigureTablesSuccessful = tableConfigUtil.configureTables(conf);
@@ -305,6 +305,8 @@ public class IngestJob implements Tool {
             } else
                 log.info("Created tables: " + tableNames + " successfully!");
         }
+        
+        tableConfigUtil.serializeTableConfgurationIntoConf(conf);
         
         // get the source and output hadoop file systems
         FileSystem inputFs = getFileSystem(conf, srcHdfs);

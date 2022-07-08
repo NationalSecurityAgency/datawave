@@ -58,7 +58,6 @@ public class TableConfigurationUtil {
     public static final String TABLE_CONFIGURATION_PROPERTY = ".table.accumulo.configuration";
     public static final String JOB_INPUT_TABLE_NAMES = "job.input.table.names";
     public static final String JOB_OUTPUT_TABLE_NAMES = "job.output.table.names";
-    private Set<String> tableNames = new HashSet<>();
     private AccumuloHelper accumuloHelper;
     private TreeMap<String,Map<Integer,Map<String,String>>> combiners = new TreeMap<>();
     private TreeMap<String,Map<Integer,Map<String,String>>> aggregators = new TreeMap<>();
@@ -66,16 +65,11 @@ public class TableConfigurationUtil {
     private TableConfigCache tableConfigCache;
     
     public TableConfigurationUtil(Configuration conf) {
-        registerTableNames(conf);
         accumuloHelper = new AccumuloHelper();
         accumuloHelper.setup(conf);
         this.conf = conf;
         tableConfigCache = TableConfigCache.getCurrentCache(conf);
         
-    }
-    
-    public Set<String> getTableNamesFromConf() {
-        return tableNames;
     }
     
     public static Set<String> getJobOutputTableNames(Configuration conf) {
@@ -91,19 +85,34 @@ public class TableConfigurationUtil {
     }
     
     /**
+     *
+     * @param tableNames
+     *            - a comma separated string of table names
+     * @param conf
+     */
+    public static void addOutputTables(String tableNames, Configuration conf) {
+        String outputTables = conf.get(JOB_OUTPUT_TABLE_NAMES);
+        if (null != outputTables) {
+            outputTables = outputTables + "," + tableNames;
+        } else {
+            outputTables = tableNames;
+        }
+        conf.set(JOB_OUTPUT_TABLE_NAMES, outputTables);
+    }
+    
+    /**
      * @param conf
      *            configuration file that contains data handler types and other information necessary for determining the set of tables required
      * @return true if a non-empty comma separated list of table names was properly set to conf's job table.names property
      */
-    private boolean registerTableNames(Configuration conf) {
+    public static boolean registerTableNamesFromConfigFiles(Configuration conf) {
         Set<String> tables = extractTableNames(conf);
         
         if (tables.isEmpty()) {
             log.error("Configured tables for configured data types is empty");
             return false;
         }
-        tableNames = tables;
-        conf.set(JOB_OUTPUT_TABLE_NAMES, org.apache.hadoop.util.StringUtils.join(",", tableNames));
+        addOutputTables(org.apache.hadoop.util.StringUtils.join(",", tables), conf);
         return true;
     }
     
@@ -204,7 +213,7 @@ public class TableConfigurationUtil {
         // Check to see if the tables exist
         TableOperations tops = accumuloHelper.getConnector().tableOperations();
         NamespaceOperations namespaceOperations = accumuloHelper.getConnector().namespaceOperations();
-        createAndConfigureTablesIfNecessary(tableNames, tops, namespaceOperations, conf, log, false);
+        createAndConfigureTablesIfNecessary(getJobOutputTableNames(conf), tops, namespaceOperations, conf, log, false);
         
         return true;
     }
@@ -642,10 +651,10 @@ public class TableConfigurationUtil {
     
     public void serializeTableConfgurationIntoConf(Configuration conf) throws IOException {
         
-        String[] tables = conf.getStrings(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES);
+        Set<String> tables = getJobOutputTableNames(conf);
         setupTableConfigurationsCache(conf);
         
-        if (null == tables) {
+        if (null == tables || tables.isEmpty()) {
             log.warn("No output tables configured for job");
         } else {
             for (String table : tables) {
@@ -662,9 +671,9 @@ public class TableConfigurationUtil {
     
     public static Map<String,Map<String,String>> deserializeTableConfigs(Configuration conf) throws IOException {
         Long start = System.currentTimeMillis();
-        String[] tables = conf.getStrings(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES);
+        Set<String> tables = getJobOutputTableNames(conf);
         Map<String,Map<String,String>> tableConfigMap = new HashMap<>();
-        if (null == tables) {
+        if (null == tables || tables.isEmpty()) {
             log.warn("No output tables configured for job");
         } else {
             for (String tableName : tables) {

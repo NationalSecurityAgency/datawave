@@ -55,6 +55,8 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     public static Text ALL_COLUMN_FAMILIES = new Text("*");
     
+    public static boolean alreadySetup = false;
+    
     public static final long MILLISPERDAY = 1000l * 60l * 60l * 24l;
     
     // Map of table names to aggregator map. The embedded map is a map of column families to aggregator instances
@@ -82,32 +84,36 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      */
     public void setup(Configuration conf) throws IOException, InterruptedException {
         
-        /**
-         * Grab the tables that do not require timestamp deduping, but require aggregating
-         */
-        tcu = new TableConfigurationUtil(conf);
-        tcu.setTableItersPrioritiesAndOpts();
-        String[] tables = conf.getStrings(INGEST_VALUE_DEDUP_AGGREGATION_KEY);
-        if (tables != null) {
-            for (String table : tables) {
-                noTSDedupTables.add(new Text(table));
+        if (!alreadySetup) {
+            
+            /**
+             * Grab the tables that do not require timestamp deduping, but require aggregating
+             */
+            tcu = new TableConfigurationUtil(conf);
+            tcu.setTableItersPrioritiesAndOpts();
+            String[] tables = conf.getStrings(INGEST_VALUE_DEDUP_AGGREGATION_KEY);
+            if (tables != null) {
+                for (String table : tables) {
+                    noTSDedupTables.add(new Text(table));
+                }
+            }
+            /**
+             * Grab tables that will be deduped by timestamp
+             */
+            tables = conf.getStrings(INGEST_VALUE_DEDUP_BY_TIMESTAMP_KEY);
+            if (tables != null) {
+                for (String table : tables) {
+                    TSDedupTables.add(new Text(table));
+                }
+            }
+            configureReductionInterface(conf);
+            
+            // turn off aggregation for tables so configured
+            for (String table : TableConfigurationUtil.getJobOutputTableNames(conf)) {
+                useAggregators.put(new Text(table), conf.getBoolean(table + USE_AGGREGATOR_PROPERTY, true));
             }
         }
-        /**
-         * Grab tables that will be deduped by timestamp
-         */
-        tables = conf.getStrings(INGEST_VALUE_DEDUP_BY_TIMESTAMP_KEY);
-        if (tables != null) {
-            for (String table : tables) {
-                TSDedupTables.add(new Text(table));
-            }
-        }
-        configureReductionInterface(conf);
-        
-        // turn off aggregation for tables so configured
-        for (String table : TableConfigurationUtil.getJobOutputTableNames(conf)) {
-            useAggregators.put(new Text(table), conf.getBoolean(table + USE_AGGREGATOR_PROPERTY, true));
-        }
+        alreadySetup = true;
         
     }
     
@@ -146,7 +152,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                         throw new RuntimeException("Unable to instantiate combiner class. Config item 'iterclass' not present " + priority + " "
                                         + options.entrySet());
                     }
-                    log.info("configuring iterator " + clazz);
+                    log.info("configuring iterator (combiner) " + clazz + " for table " + table);
                     
                     options.remove(TableConfigurationUtil.ITERATOR_CLASS_MARKER);
                     
@@ -224,7 +230,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * A cleanup method that can be executed manually. Default implementation does nothing.
-     * 
+     *
      * @param context
      * @throws IOException
      * @throws InterruptedException
@@ -254,7 +260,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * Can be used to execute this process manually
-     * 
+     *
      * @param entries
      * @param ctx
      * @throws IOException
@@ -269,7 +275,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * Write the output to the context
-     * 
+     *
      * @param key
      * @param value
      * @param ctx
@@ -282,7 +288,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * Determines whether aggregation should be performed, regardless whether any aggregators are configured.
-     * 
+     *
      * @param table
      * @return true if aggregation should be performed, false otherwise
      */
@@ -292,7 +298,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * Gets the aggregators that should be applied to the value(s) associated with {@code key}. The aggregators in the list should be applied in order.
-     * 
+     *
      * @param table
      *            the table name from which {@code key} was retrieved
      * @param key
@@ -341,7 +347,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 
                 try {
                     Class<? extends Combiner> clazz = Class.forName(className).asSubclass(Combiner.class);
-                    log.info("configuring iterator " + clazz);
+                    log.info("configuring iterator (aggregator) " + clazz);
                     
                     agg = clazz.newInstance();
                     
