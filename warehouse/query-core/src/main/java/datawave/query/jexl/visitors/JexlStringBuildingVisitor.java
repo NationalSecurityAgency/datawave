@@ -905,7 +905,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     }
     
     /**
-     * Usage: "JexlStringBuildingVisitor <query> <decorator class name>" or "JexlStringBuildingVisitor <query>" or "JexlStringBuildingVisitor"
+     * Usage: "JexlStringBuildingVisitor query decorator-class-name" or "JexlStringBuildingVisitor query" or "JexlStringBuildingVisitor"
      * 
      * @param args
      */
