@@ -4,6 +4,7 @@ import datawave.audit.SelectorExtractor;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -14,6 +15,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -38,6 +40,13 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private boolean collectQueryMetrics = true;
     private String _connPoolName;
     private Set<String> authorizedDNs;
+    
+    // This will only be set when deployed via Wildfly
+    protected Principal principal;
+    
+    // This will only be set when deployed as a microservice
+    protected ProxiedUserDetails currentUser;
+    
     protected Set<String> requiredRoles;
     protected MarkingFunctions markingFunctions;
     protected ResponseObjectFactory responseObjectFactory;
@@ -103,6 +112,22 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     public void setResponseObjectFactory(ResponseObjectFactory responseObjectFactory) {
         this.responseObjectFactory = responseObjectFactory;
+    }
+    
+    public Principal getPrincipal() {
+        return principal;
+    }
+    
+    public void setPrincipal(Principal principal) {
+        this.principal = principal;
+    }
+    
+    public ProxiedUserDetails getCurrentUser() {
+        return currentUser;
+    }
+    
+    public void setCurrentUser(ProxiedUserDetails currentUser) {
+        this.currentUser = currentUser;
     }
     
     public Set<String> getRequiredRoles() {

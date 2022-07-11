@@ -10,6 +10,7 @@ import datawave.core.query.logic.QueryLogicFactory;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions.Default;
+import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -71,6 +72,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -205,13 +207,13 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         /**
          * @param name
          *            name of query logic
-         * @param userRoles
+         * @param principal
          * @return new instance of QueryLogic class
          * @throws IllegalArgumentException
          *             if query logic name does not exist
          */
         @Override
-        public QueryLogic<?> getQueryLogic(String name, Collection<String> userRoles) throws IllegalArgumentException, CloneNotSupportedException {
+        public QueryLogic<?> getQueryLogic(String name, Principal principal) throws IllegalArgumentException, CloneNotSupportedException {
             QueryLogic<?> logic = null;
             if (name.equals("EventQuery")) {
                 logic = createQueryLogic();
@@ -224,6 +226,10 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             return logic;
         }
         
+        public QueryLogic<?> getQueryLogic(String name, ProxiedUserDetails currentUser) throws IllegalArgumentException, CloneNotSupportedException {
+            return getQueryLogic(name, (Principal) null);
+        }
+        
         /**
          * @param name
          *            name of query logic
@@ -233,15 +239,15 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
          */
         @Override
         public QueryLogic<?> getQueryLogic(String name) throws IllegalArgumentException, CloneNotSupportedException {
-            return getQueryLogic(name, null);
+            return getQueryLogic(name, (Principal) null);
         }
         
         @Override
         public List<QueryLogic<?>> getQueryLogicList() {
             try {
                 List<QueryLogic<?>> list = new ArrayList<>();
-                list.add(getQueryLogic("EventQuery", null));
-                list.add(getQueryLogic("CountQuery", null));
+                list.add(getQueryLogic("EventQuery", (Principal) null));
+                list.add(getQueryLogic("CountQuery", (Principal) null));
                 return list;
             } catch (Exception e) {
                 throw new RuntimeException("Failed to create query logic list");
@@ -268,8 +274,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         
         this.logicFactory = new TestQueryLogicFactory();
         try {
-            this.logic = (ShardQueryLogic) (logicFactory.getQueryLogic("EventQuery", principal.getPrimaryUser().getRoles()));
-            this.countLogic = (CountingShardQueryLogic) (logicFactory.getQueryLogic("CountQuery", principal.getPrimaryUser().getRoles()));
+            this.logic = (ShardQueryLogic) (logicFactory.getQueryLogic("EventQuery", principal));
+            this.countLogic = (CountingShardQueryLogic) (logicFactory.getQueryLogic("CountQuery", principal));
         } catch (CloneNotSupportedException | QueryException e) {
             throw new RuntimeException("Unable to create query logics", e);
         }

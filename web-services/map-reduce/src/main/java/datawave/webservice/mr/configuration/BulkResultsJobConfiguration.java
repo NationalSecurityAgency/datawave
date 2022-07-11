@@ -55,7 +55,6 @@ import java.io.ObjectOutputStream;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -326,18 +325,16 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
                 throw new QueryException("This query does not belong to you. expected: " + q.getOwner() + ", value: " + sid,
                                 Response.Status.UNAUTHORIZED.getStatusCode());
             
-            Collection<String> userRoles = Collections.EMPTY_LIST;
             String userDN = null;
             Collection<String> proxyServers = null;
             if (principal instanceof DatawavePrincipal) {
                 DatawavePrincipal dp = (DatawavePrincipal) principal;
-                userRoles = dp.getPrimaryUser().getRoles();
                 userDN = dp.getUserDN().subjectDN();
                 proxyServers = dp.getProxyServers();
             }
             
             // will throw IllegalArgumentException if not defined
-            logic = queryFactory.getQueryLogic(q.getQueryLogicName(), userRoles);
+            logic = queryFactory.getQueryLogic(q.getQueryLogicName(), principal);
             
             // Get an accumulo connection
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());

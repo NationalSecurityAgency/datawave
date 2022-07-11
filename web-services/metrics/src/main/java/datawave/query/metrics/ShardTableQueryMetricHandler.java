@@ -449,7 +449,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         try {
             Map<String,String> trackingMap = this.connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             connector = this.connectionFactory.getConnection(null, null, Priority.ADMIN, trackingMap);
-            QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(query.getQueryLogicName(), datawavePrincipal.getPrimaryUser().getRoles());
+            QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(query.getQueryLogicName(), datawavePrincipal);
             runningQuery = new RunningQuery(null, connector, Priority.ADMIN, queryLogic, query, query.getQueryAuthorizations(), datawavePrincipal,
                             metricFactory);
             

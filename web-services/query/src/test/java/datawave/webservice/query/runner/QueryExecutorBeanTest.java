@@ -86,6 +86,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URISyntaxException;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -278,7 +279,7 @@ public class QueryExecutorBeanTest {
         suppress(constructor(DefaultQueryParameters.class));
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean),
                         queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
-        EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal.getPrimaryUser().getRoles())).andReturn(logic);
+        EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
         EasyMock.expect(logic.getConnectionPriority()).andReturn(AccumuloConnectionFactory.Priority.NORMAL);
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
@@ -362,7 +363,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(persister.create(userDN, dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean), queryLogicName,
                         (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
         
-        EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal.getPrimaryUser().getRoles())).andReturn(logic);
+        EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
@@ -420,7 +421,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean),
                         queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
         
-        EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal.getPrimaryUser().getRoles())).andReturn(logic);
+        EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
@@ -520,7 +521,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         EasyMock.replay(logic);
         
-        EasyMock.expect(queryLogicFactory.getQueryLogic(logicName, null)).andReturn(logic).times(2);
+        EasyMock.expect(queryLogicFactory.getQueryLogic(logicName, (Principal) null)).andReturn(logic).times(2);
         EasyMock.replay(queryLogicFactory);
         
         // setup test
@@ -680,7 +681,7 @@ public class QueryExecutorBeanTest {
         connectionFactory.returnConnection(c);
         EasyMock.expectLastCall();
         
-        EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal.getPrimaryUser().getRoles())).andReturn(logic);
+        EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.emptySet());
         EasyMock.expect(logic.getConnectionPriority()).andReturn(AccumuloConnectionFactory.Priority.NORMAL).atLeastOnce();
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);

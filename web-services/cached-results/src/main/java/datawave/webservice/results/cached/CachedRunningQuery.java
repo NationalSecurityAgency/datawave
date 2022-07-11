@@ -1217,10 +1217,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                     }
                     if (crq.queryLogicName != null) {
                         try {
-                            Collection<String> userRoles = (principal instanceof DatawavePrincipal)
-                                            ? ((DatawavePrincipal) principal).getPrimaryUser().getRoles()
-                                            : Collections.emptyList();
-                            crq.queryLogic = queryFactory.getQueryLogic(crq.queryLogicName, userRoles);
+                            crq.queryLogic = queryFactory.getQueryLogic(crq.queryLogicName, principal);
                         } catch (IllegalArgumentException | CloneNotSupportedException e) {
                             log.error(e.getMessage(), e);
                         }

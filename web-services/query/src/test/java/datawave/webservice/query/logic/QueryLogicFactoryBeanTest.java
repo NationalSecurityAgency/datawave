@@ -44,6 +44,9 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
     QueryLogicFactoryConfiguration altFactoryConfig;
     
     @Mock
+    DatawavePrincipal altPrincipal;
+    
+    @Mock
     ClassPathXmlApplicationContext applicationContext;
     
     BaseQueryLogic<?> logic;
@@ -77,13 +80,13 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
     @Test(expected = IllegalArgumentException.class)
     public void testGetQueryLogicWrongName() throws IllegalArgumentException, CloneNotSupportedException {
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
-        bean.getQueryLogic("MyQuery", principal.getPrimaryUser().getRoles());
+        bean.getQueryLogic("MyQuery", principal);
     }
     
     @Test
     public void testGetQueryLogic() throws IllegalArgumentException, CloneNotSupportedException {
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
-        TestQueryLogic<?> logic = (TestQueryLogic<?>) bean.getQueryLogic("TestQuery", principal.getPrimaryUser().getRoles());
+        TestQueryLogic<?> logic = (TestQueryLogic<?>) bean.getQueryLogic("TestQuery", principal);
         assertEquals("MyMetadataTable", logic.getTableName());
         assertEquals(12345, logic.getMaxResults());
         assertEquals(98765, logic.getMaxWork());
@@ -99,7 +102,10 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         QueryLogicFactoryConfiguration qlfc = new QueryLogicFactoryConfiguration();
         qlfc.setMaxPageSize(25);
         qlfc.setPageByteTrigger(1024L);
+        this.logic.setPrincipal(altPrincipal);
         this.logic.setLogicName(queryName);
+        expect(altPrincipal.getPrimaryUser()).andReturn(
+                        new DatawaveUser(SubjectIssuerDNPair.of("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>"), UserType.USER, null, null, null, 0L));
         expect(this.logic.getMaxPageSize()).andReturn(25);
         expect(this.logic.getPageByteTrigger()).andReturn(1024L);
         expect(this.applicationContext.getBean(queryName)).andReturn(this.logic);
@@ -109,7 +115,7 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         QueryLogicFactoryImpl subject = new QueryLogicFactoryImpl();
         Whitebox.getField(QueryLogicFactoryImpl.class, "queryLogicFactoryConfiguration").set(subject, factoryConfig);
         Whitebox.getField(QueryLogicFactoryImpl.class, "applicationContext").set(subject, this.applicationContext);
-        QueryLogic<?> result1 = subject.getQueryLogic(queryName, roles);
+        QueryLogic<?> result1 = subject.getQueryLogic(queryName, this.altPrincipal);
         verifyAll();
         
         // Verify results
@@ -130,7 +136,10 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         Map<String,Collection<String>> rolesMap = new HashMap<>();
         rolesMap.put(queryName, roles);
         
+        this.logic.setPrincipal(altPrincipal);
         this.logic.setLogicName(queryName);
+        expect(altPrincipal.getPrimaryUser()).andReturn(
+                        new DatawaveUser(SubjectIssuerDNPair.of("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>"), UserType.USER, null, null, null, 0L));
         expect(this.logic.getMaxPageSize()).andReturn(0);
         expect(this.logic.getPageByteTrigger()).andReturn(0L);
         this.logic.setMaxPageSize(25);
@@ -142,7 +151,7 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         QueryLogicFactoryImpl subject = new QueryLogicFactoryImpl();
         Whitebox.getField(QueryLogicFactoryImpl.class, "queryLogicFactoryConfiguration").set(subject, qlfc);
         Whitebox.getField(QueryLogicFactoryImpl.class, "applicationContext").set(subject, this.applicationContext);
-        QueryLogic<?> result1 = subject.getQueryLogic(queryName, roles);
+        QueryLogic<?> result1 = subject.getQueryLogic(queryName, this.altPrincipal);
         verifyAll();
         
         // Verify results
