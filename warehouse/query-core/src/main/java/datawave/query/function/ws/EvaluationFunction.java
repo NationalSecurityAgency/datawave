@@ -123,14 +123,15 @@ public class EvaluationFunction implements Function<Map.Entry<Key,Document>,Map.
     }
     
     /**
-     * Extract all fields into a set. If an '_ANYFIELD_' identifier is present, create an empty set
+     * Extract all fields into a set.
      *
-     * @return a set of fields in the query tree, or an empty set if an '_ANYFIELD_' identifier exists
      * @param query
+     *            the raw query string
+     * @return all fields from the query
      */
     protected Set<String> populateQueryFields(String query) {
         try {
-            ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+            ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
             
             // it might be worth filtering out any constants that slip through...
             return JexlASTHelper.getIdentifierNames(script);

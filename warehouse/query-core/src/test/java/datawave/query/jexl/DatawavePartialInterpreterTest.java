@@ -56,6 +56,22 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
     }
     
     @Test
+    public void testEdgeCase() {
+        //  @formatter:off
+        Object[][] array = {
+                {"(!(FOO == null) || !(FOO == null))", true, false},
+                {"(!(FOO == null) && !(FOO == null))", true, false},
+                {"(!(FOO == null) || !(FOO == null)) && (!(FOO == null) || !(FOO == null))", true, false},
+                {"(!(FOO == null) && !(FOO == null)) || (!(FOO == null) && !(FOO == null))", true, false},
+        };
+        //  @formatter:on
+        
+        for (int i = 0; i < array.length; i++) {
+            test((String) array[i][0], (Boolean) array[i][1], (Boolean) array[i][2]);
+        }
+    }
+    
+    @Test
     public void testUnionsWithIncompleteFields() {
         //  @formatter:off
         Object[][] array = {

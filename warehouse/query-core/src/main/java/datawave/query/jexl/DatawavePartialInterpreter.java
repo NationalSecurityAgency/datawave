@@ -215,9 +215,10 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     public Object visit(ASTEQNode node, Object data) {
         String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
         Object result = resultMap.get(nodeString);
-        if (null != result)
-            return new State(true); // TODO -- this might be from an unknown field
-            
+        if (result instanceof Boolean) {
+            return new State((Boolean) result);
+        }
+        
         Object left = node.jjtGetChild(0).jjtAccept(this, data);
         Object right = node.jjtGetChild(1).jjtAccept(this, data);
         try {
@@ -336,8 +337,8 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             return rightState;
         } else {
             // if we got here then we are likely dealing with a function that takes a union of null fields as arguments
-            // for example, filter:notNull(NULL1 || NULL2). return false with an initialized empty functional set
-            return new State(true);
+            // for example, filter:notNull(NULL1 || NULL2).
+            return new State(false);
         }
     }
     
