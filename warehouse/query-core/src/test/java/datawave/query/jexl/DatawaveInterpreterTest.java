@@ -237,7 +237,7 @@ public class DatawaveInterpreterTest {
         
         test(array);
     }
-
+    
     @Test
     public void testBoundedRange() {
         String query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150'))";
