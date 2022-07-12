@@ -152,7 +152,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
         reader.setLenient(true);
         setupIterator(reader);
     }
-
+    
     protected void setupIterator(JsonReader reader) {
         JsonParser parser = new JsonParser();
         JsonElement root = parser.parse(reader);
@@ -215,7 +215,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
         if (StringUtils.isEmpty(eventDateFieldName)) {
             event.setDate(this.inputDate);
         }
-
+        
         for (Map.Entry<String,String> entry : ((Multimap<String,String>) currentValue).entries()) {
             String fieldName = entry.getKey();
             String fieldValue = entry.getValue();
