@@ -60,6 +60,7 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.attributes.AttributeKeepFilter;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.Aggregation;
@@ -1058,8 +1059,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         // update the jexl evaluation to gather phrase offsets if required for excerpts
-        if (getExcerptFields() != null && !getExcerptFields().isEmpty()) {
+        ExcerptFields excerptFields = getExcerptFields();
+        if (excerptFields != null && !excerptFields.isEmpty()) {
             jexlEvaluationFunction.setGatherPhraseOffsets(true);
+            jexlEvaluationFunction.setPhraseOffsetFields(excerptFields.getFields());
         }
 
         return jexlEvaluationFunction;
