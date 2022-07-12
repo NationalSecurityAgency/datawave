@@ -14,7 +14,7 @@ public class TableCreator {
         Configuration conf = OptionsParser.parseArguments(args, config);
         try {
             TableConfigurationUtil tableConfigUtil = new TableConfigurationUtil(conf);
-            
+            tableConfigUtil.registerTableNamesFromConfigFiles(conf);
             tableConfigUtil.configureTables(conf);
         } catch (Exception e) {
             log.error("Unable to create tables");
