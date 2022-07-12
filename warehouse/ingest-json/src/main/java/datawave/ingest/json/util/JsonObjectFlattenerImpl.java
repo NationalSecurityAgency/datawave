@@ -43,7 +43,7 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
     private String defaultNULLValue;
     private Configuration conf = new Configuration();
     private static final Logger logger = Logger.getLogger(JsonObjectFlattenerImpl.class);
-
+    
     protected JsonObjectFlattenerImpl(Builder builder) {
         this.pathDelimiter = builder.pathDelimiter;
         this.mapKeyWhitelist = builder.fieldNameWhitelist != null ? new HashSet<>(builder.fieldNameWhitelist) : null;
@@ -87,7 +87,7 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
         try {
             conf.addResource(ClassLoader.getSystemResource("config/ingest/all-config.xml"));
             defaultNULLValue = conf.get("all.ingest.json.default.nulls");
-        }catch(NullPointerException ex){
+        } catch (NullPointerException ex) {
             logger.debug("Unable to set default Null value - setting to EMPTY");
             defaultNULLValue = "EMPTY";
         }

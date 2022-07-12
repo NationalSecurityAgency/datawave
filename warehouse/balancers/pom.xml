@@ -18,6 +18,10 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-common-test</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
         </dependency>
@@ -48,10 +52,6 @@
             <groupId>org.jmock</groupId>
             <artifactId>jmock-junit4</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-common-test</artifactId>
         </dependency>
     </dependencies>
     <profiles>
