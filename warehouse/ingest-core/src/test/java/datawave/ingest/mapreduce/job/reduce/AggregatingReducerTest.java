@@ -77,7 +77,7 @@ public class AggregatingReducerTest {
         PowerMockito.when(conf.iterator()).thenReturn(confMap.entrySet().iterator());
         
         PowerMockito.mockStatic(TableConfigurationUtil.class, new Class[0]);
-        PowerMockito.when(TableConfigurationUtil.getTables((Configuration) Mockito.any(Configuration.class))).thenReturn(tables);
+        PowerMockito.when(TableConfigurationUtil.getJobOutputTableNames((Configuration) Mockito.any(Configuration.class))).thenReturn(tables);
         
         tcu = PowerMockito.mock(TableConfigurationUtil.class);
         PowerMockito.whenNew(TableConfigurationUtil.class).withAnyArguments().thenReturn(tcu);

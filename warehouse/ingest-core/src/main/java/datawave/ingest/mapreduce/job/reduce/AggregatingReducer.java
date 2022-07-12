@@ -84,36 +84,32 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      */
     public void setup(Configuration conf) throws IOException, InterruptedException {
         
-        if (!alreadySetup) {
-            
-            /**
-             * Grab the tables that do not require timestamp deduping, but require aggregating
-             */
-            tcu = new TableConfigurationUtil(conf);
-            tcu.setTableItersPrioritiesAndOpts();
-            String[] tables = conf.getStrings(INGEST_VALUE_DEDUP_AGGREGATION_KEY);
-            if (tables != null) {
-                for (String table : tables) {
-                    noTSDedupTables.add(new Text(table));
-                }
-            }
-            /**
-             * Grab tables that will be deduped by timestamp
-             */
-            tables = conf.getStrings(INGEST_VALUE_DEDUP_BY_TIMESTAMP_KEY);
-            if (tables != null) {
-                for (String table : tables) {
-                    TSDedupTables.add(new Text(table));
-                }
-            }
-            configureReductionInterface(conf);
-            
-            // turn off aggregation for tables so configured
-            for (String table : TableConfigurationUtil.getJobOutputTableNames(conf)) {
-                useAggregators.put(new Text(table), conf.getBoolean(table + USE_AGGREGATOR_PROPERTY, true));
+        /**
+         * Grab the tables that do not require timestamp deduping, but require aggregating
+         */
+        tcu = new TableConfigurationUtil(conf);
+        tcu.setTableItersPrioritiesAndOpts();
+        String[] tables = conf.getStrings(INGEST_VALUE_DEDUP_AGGREGATION_KEY);
+        if (tables != null) {
+            for (String table : tables) {
+                noTSDedupTables.add(new Text(table));
             }
         }
-        alreadySetup = true;
+        /**
+         * Grab tables that will be deduped by timestamp
+         */
+        tables = conf.getStrings(INGEST_VALUE_DEDUP_BY_TIMESTAMP_KEY);
+        if (tables != null) {
+            for (String table : tables) {
+                TSDedupTables.add(new Text(table));
+            }
+        }
+        configureReductionInterface(conf);
+        
+        // turn off aggregation for tables so configured
+        for (String table : TableConfigurationUtil.getJobOutputTableNames(conf)) {
+            useAggregators.put(new Text(table), conf.getBoolean(table + USE_AGGREGATOR_PROPERTY, true));
+        }
         
     }
     

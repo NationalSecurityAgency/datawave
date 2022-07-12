@@ -142,9 +142,12 @@ public class BulkIngestKeyAggregatingReducerTest {
         PowerMockito.doNothing().when(tcu).setTableItersPrioritiesAndOpts();
         
         PowerMockito.mockStatic(TableConfigurationUtil.class, new Class[0]);
-        PowerMockito.when(TableConfigurationUtil.getTables((Configuration) Mockito.any(Configuration.class))).thenReturn(tables);
+        PowerMockito.when(TableConfigurationUtil.getJobOutputTableNames((Configuration) Mockito.any(Configuration.class))).thenReturn(tables);
         
         context = (TaskInputOutputContext<BulkIngestKey,Value,BulkIngestKey,Value>) PowerMockito.mock(TaskInputOutputContext.class);
+        if (null != context.getCounter(IngestOutput.DUPLICATE_KEY)) {
+            context.getCounter(IngestOutput.DUPLICATE_KEY).setValue(0L);
+        }
         PowerMockito.doAnswer(invocation -> {
             BulkIngestKey k = invocation.getArgument(0);
             Value v = invocation.getArgument(1);
