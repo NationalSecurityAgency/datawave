@@ -49,6 +49,10 @@
             <artifactId>jmock-junit4</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-common-test</artifactId>
+        </dependency>
     </dependencies>
     <profiles>
         <profile>

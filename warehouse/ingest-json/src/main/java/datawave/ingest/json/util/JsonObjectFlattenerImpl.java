@@ -4,7 +4,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.gson.*;
+import datawave.ingest.json.mr.input.JsonRecordReader;
+import org.apache.avro.JsonProperties;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,7 +42,8 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
     protected final boolean addArrayIndexToFieldName;
     private String defaultNULLValue;
     private Configuration conf = new Configuration();
-    
+    private static final Logger logger = Logger.getLogger(JsonObjectFlattenerImpl.class);
+
     protected JsonObjectFlattenerImpl(Builder builder) {
         this.pathDelimiter = builder.pathDelimiter;
         this.mapKeyWhitelist = builder.fieldNameWhitelist != null ? new HashSet<>(builder.fieldNameWhitelist) : null;
@@ -80,9 +84,13 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
         } else {
             this.keyValueNormalizer = builder.keyValueNormalizer;
         }
-        
-        conf.addResource(ClassLoader.getSystemResource("config/ingest/all-config.xml"));
-        defaultNULLValue = conf.get("all.ingest.json.default.nulls");
+        try {
+            conf.addResource(ClassLoader.getSystemResource("config/ingest/all-config.xml"));
+            defaultNULLValue = conf.get("all.ingest.json.default.nulls");
+        }catch(NullPointerException ex){
+            logger.debug("Unable to set default Null value - setting to EMPTY");
+            defaultNULLValue = "EMPTY";
+        }
         
     }
     
