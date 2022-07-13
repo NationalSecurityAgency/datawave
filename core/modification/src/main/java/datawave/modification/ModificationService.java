@@ -1,14 +1,12 @@
 package datawave.modification;
 
-import datawave.microservice.authorization.user.ProxiedUserDetails;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.modification.cache.ModificationCache;
 import datawave.modification.configuration.ModificationConfiguration;
 import datawave.modification.configuration.ModificationServiceConfiguration;
 import datawave.modification.query.ModificationQueryService;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
-import datawave.security.util.ProxiedEntityUtils;
-import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.ModificationRequestBase;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -32,7 +30,7 @@ import java.util.stream.Collectors;
 import static java.util.Map.Entry;
 
 public class ModificationService {
-    
+
     private static final Logger log = Logger.getLogger(ModificationService.class);
     
     private final AccumuloConnectionFactory connectionFactory;

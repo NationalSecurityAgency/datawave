@@ -491,6 +491,7 @@ services:
         condition: service_healthy
 
   modification:
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5010","-jar","app.jar"]
     profiles:
       - modification
       - full
@@ -511,6 +512,7 @@ services:
     ports:
       - "8680:8080"
       - "9343:8443"
+      - "5010:5010"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs

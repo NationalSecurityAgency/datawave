@@ -21,3 +21,4 @@ rm -r -f termFrequency_*
 rm -r -f edgeEvent_*
 rm -r -f hitHighlights_*
 rm -r -f metrics_*
+rm -r -f modification_*
