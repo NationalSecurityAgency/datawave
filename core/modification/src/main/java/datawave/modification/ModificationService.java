@@ -1,5 +1,6 @@
 package datawave.modification;
 
+import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.modification.cache.ModificationCache;
 import datawave.modification.configuration.ModificationConfiguration;
 import datawave.modification.configuration.ModificationServiceConfiguration;
@@ -38,16 +39,16 @@ public class ModificationService {
     
     private final ModificationCache cache;
     
-    private final ModificationQueryService queryService;
+    private final ModificationQueryService.ModificationQueryServiceFactory queryServiceFactory;
     
     private final ModificationConfiguration modificationConfiguration;
     
     public ModificationService(ModificationConfiguration modificationConfiguration, ModificationCache cache, AccumuloConnectionFactory connectionFactory,
-                    ModificationQueryService queryService) {
+                    ModificationQueryService.ModificationQueryServiceFactory queryServiceFactory) {
         this.modificationConfiguration = modificationConfiguration;
         this.cache = cache;
         this.connectionFactory = connectionFactory;
-        this.queryService = queryService;
+        this.queryServiceFactory = queryServiceFactory;
     }
     
     /**
@@ -85,7 +86,6 @@ public class ModificationService {
         // Find out who/what called this method
         DatawavePrincipal dp = new DatawavePrincipal(proxiedUsers);
         DatawaveUser primaryUser = dp.getPrimaryUser();
-        String user = ProxiedEntityUtils.getShortName(primaryUser.getName());
         String userDn = primaryUser.getDn().subjectDN();
         Collection<String> proxyServers = proxiedUsers.stream().map(u -> u.getDn().subjectDN()).collect(Collectors.toList());
         Collection<String> userRoles = primaryUser.getRoles();
@@ -118,9 +118,9 @@ public class ModificationService {
             // Process the modification
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             con = connectionFactory.getConnection(userDn, proxyServers, modificationConfiguration.getPoolName(), priority, trackingMap);
-            service.setQueryService(queryService);
-            log.info("Processing modification request from user=" + user + ": \n" + request);
-            service.process(con, request, cache.getCachedMutableFieldList(), cbAuths, user);
+            service.setQueryServiceFactory(queryServiceFactory);
+            log.info("Processing modification request from user=" + dp.getShortName() + ": \n" + request);
+            service.process(con, request, cache.getCachedMutableFieldList(), cbAuths, proxiedUsers);
         } catch (DatawaveModificationException e) {
             throw e;
         } catch (Exception e) {

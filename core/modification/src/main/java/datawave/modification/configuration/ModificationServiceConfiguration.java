@@ -1,11 +1,13 @@
 package datawave.modification.configuration;
 
-import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.modification.query.ModificationQueryService;
+import datawave.security.authorization.DatawaveUser;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.ModificationRequestBase;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,7 +18,7 @@ public abstract class ModificationServiceConfiguration {
     
     protected String description = null;
     protected List<String> authorizedRoles = null;
-    protected ModificationQueryService queryService = null;
+    protected ModificationQueryService.ModificationQueryServiceFactory queryServiceFactory = null;
     protected List<String> securityMarkingExemptFields = null;
     
     public String getDescription() {
@@ -46,14 +48,18 @@ public abstract class ModificationServiceConfiguration {
     /**
      * Handle to query service in case the modification service needs to run queries.
      * 
-     * @return RemoteQueryExecutor
+     * @return ModificationQueryService
      */
-    public ModificationQueryService getQueryService() {
-        return queryService;
+    public ModificationQueryService getQueryService(Collection<? extends DatawaveUser> proxiedUsers) {
+        return queryServiceFactory.createService(proxiedUsers);
     }
     
-    public void setQueryService(ModificationQueryService queryService) {
-        this.queryService = queryService;
+    public ModificationQueryService.ModificationQueryServiceFactory getQueryServiceFactory() {
+        return queryServiceFactory;
+    }
+    
+    public void setQueryServiceFactory(ModificationQueryService.ModificationQueryServiceFactory queryServiceFactory) {
+        this.queryServiceFactory = queryServiceFactory;
     }
     
     /**
@@ -73,12 +79,12 @@ public abstract class ModificationServiceConfiguration {
      *            map of datatype to set of fields that are mutable
      * @param userAuths
      *            authorizations of user making the call
-     * @param user
-     *            user identifier
+     * @param proxiedUsers
+     *            user proxy chain
      * @throws Exception
      */
     public abstract void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
-                    String user) throws Exception;
+                    Collection<? extends DatawaveUser> proxiedUsers) throws Exception;
     
     /**
      * 

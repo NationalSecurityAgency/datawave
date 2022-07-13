@@ -440,7 +440,7 @@ services:
       - "${DW_HOST_FQDN}:${DW_HOST_IP}"
     ports:
       - "8480:8080"
-      - "8843:8443"
+      - "8243:8443"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs/pool2:/logs
@@ -490,8 +490,40 @@ services:
       authorization:
         condition: service_healthy
 
+  modification:
+    profiles:
+      - modification
+      - full
+    image: datawave/modification-service:1.0-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth,query
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+    # This mapping is required to enable the metrics service to communicate
+    # with host-deployed services like hadoop, zookeeper, and accumulo.
+    # These values are set locally in .env via bootstrap.sh
+    extra_hosts:
+      - "${DW_HOSTNAME}:${DW_HOST_IP}"
+      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
+    ports:
+      - "8680:8080"
+      - "9343:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/dictionary/mgmt/health
+    depends_on:
+      authorization:
+        condition: service_healthy
+
   # If you use the management center, you can connect to the hazelcast cache as follows:
-  # In your browser connect to https://localhost:9043/
+  # In your browser connect to https://localhost:9243/
   # Enable 'dev' mode
   # Click 'Add Cluster Config'
   # Enter the following for the cache service:
@@ -524,7 +556,7 @@ services:
         -Dhazelcast.mc.tls.trustStorePassword=ChangeIt
     ports:
       - "8081"
-      - "9043:8443"
+      - "9243:8443"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
     networks:

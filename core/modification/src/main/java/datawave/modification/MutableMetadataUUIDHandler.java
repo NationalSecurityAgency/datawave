@@ -1,6 +1,8 @@
 package datawave.modification;
 
 import datawave.query.util.MetadataHelper;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
 import datawave.webservice.modification.DefaultModificationRequest;
 import datawave.webservice.modification.DefaultUUIDModificationRequest;
 import datawave.webservice.modification.EventIdentifier;
@@ -22,6 +24,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -210,8 +213,12 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
     }
     
     @Override
-    public void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths, String user)
+    public void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
+                    Collection<? extends DatawaveUser> proxiedUsers)
                     throws DatawaveModificationException, AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
+        DatawavePrincipal principal = new DatawavePrincipal(proxiedUsers, System.currentTimeMillis());
+        String user = principal.getShortName();
+        
         ArrayList<Exception> exceptions = new ArrayList<>();
         MetadataHelper mHelper = getMetadataHelper(con);
         
@@ -249,7 +256,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                     }
                     
                     // perform the lookupUUID
-                    EventBase<?,? extends FieldBase<?>> idEvent = findMatchingEventUuid(event.getId(), event.getIdType(), userAuths, operation);
+                    EventBase<?,? extends FieldBase<?>> idEvent = findMatchingEventUuid(event.getId(), event.getIdType(), userAuths, operation, proxiedUsers);
                     
                     // extract contents from lookupUUID necessary for modification
                     List<? extends FieldBase<?>> fields = idEvent.getFields();
@@ -325,13 +332,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                                         log.trace("Submitting request to MutableMetadataHandler from MutableMetadataUUIDHandler: " + modReq);
                                     
                                     // make sure user isn't null or empty
-                                    if (eventUser == null || eventUser.equals("")) {
-                                        if (log != null)
-                                            log.trace("No user provided for event. Using caller: " + user);
-                                        super.process(con, modReq, mutableFieldList, userAuths, user);
-                                    } else {
-                                        super.process(con, modReq, mutableFieldList, userAuths, event.getUser());
-                                    }
+                                    super.process(con, modReq, mutableFieldList, userAuths, proxiedUsers);
                                 }
                             }
                             // log exceptions that occur for each modification request. Let as many requests work as possible before returning

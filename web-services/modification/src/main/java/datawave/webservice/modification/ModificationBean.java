@@ -5,6 +5,7 @@ import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
+import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.modification.DatawaveModificationException;
 import datawave.modification.ModificationService;
 import datawave.modification.configuration.ModificationConfiguration;
@@ -69,7 +70,8 @@ public class ModificationBean {
     
     private ModificationService getService() {
         if (service == null) {
-            service = new ModificationService(modificationConfiguration, cache.getCache(), connectionFactory, new QueryExecutorBeanService(queryService));
+            service = new ModificationService(modificationConfiguration, cache.getCache(), connectionFactory,
+                            new QueryExecutorBeanService(queryService).getFactory());
         }
         return service;
     }
