@@ -131,10 +131,6 @@ public class ModificationCacheBean {
         return modificationConfiguration;
     }
     
-    protected void clearCache() {
-        cache.clearCache();
-    }
-    
     public ModificationCache getCache() {
         return cache;
     }

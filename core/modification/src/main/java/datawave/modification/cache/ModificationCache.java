@@ -25,7 +25,7 @@ public class ModificationCache {
     
     private static final Text MODIFICATION_COLUMN = new Text("m");
     
-    private final Map<String,Set<String>> cache = new HashMap<>();
+    private Map<String,Set<String>> cache = new HashMap<>();
     
     private final AccumuloConnectionFactory connectionFactory;
     
@@ -45,8 +45,7 @@ public class ModificationCache {
      * Reload the cache
      */
     public void reloadMutableFieldCache() {
-        this.clearCache();
-        log.trace("cleared cache");
+        Map<String,Set<String>> cache = new HashMap<>();
         Connector con = null;
         BatchScanner s = null;
         try {
@@ -73,6 +72,8 @@ public class ModificationCache {
             for (Entry<String,Set<String>> e : cache.entrySet()) {
                 log.trace("datatype = " + e.getKey() + ", fieldcount = " + e.getValue().size());
             }
+            // now atomically replace the cache
+            this.cache = cache;
         } catch (Exception e) {
             log.error("Error during initialization of ModificationCacheBean", e);
             throw new RuntimeException("Error during initialization of ModificationCacheBean", e);
@@ -115,10 +116,4 @@ public class ModificationCache {
     public ModificationConfiguration getModificationConfiguration() {
         return modificationConfiguration;
     }
-    
-    public void clearCache() {
-        log.trace("cleared the cache");
-        this.cache.clear();
-    }
-    
 }

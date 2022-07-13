@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 import static java.util.Map.Entry;
 
 public class ModificationService {
-
+    
     private static final Logger log = Logger.getLogger(ModificationService.class);
     
     private final AccumuloConnectionFactory connectionFactory;
