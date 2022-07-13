@@ -565,10 +565,12 @@
                                         <artifactItem>
                                             <groupId>org.apache.hadoop</groupId>
                                             <artifactId>hadoop-auth</artifactId>
+                                            <version>${version.hadoop}</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.apache.hadoop</groupId>
                                             <artifactId>hadoop-common</artifactId>
+                                            <version>${version.hadoop}</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.apache.htrace</groupId>
@@ -588,10 +590,12 @@
                                         <artifactItem>
                                             <groupId>com.google.protobuf</groupId>
                                             <artifactId>protobuf-java</artifactId>
+                                            <version>${version.protobuf}</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.apache.commons</groupId>
                                             <artifactId>commons-configuration2</artifactId>
+                                            <version>${version.commons-configuration2}</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>javax.servlet</groupId>
@@ -617,6 +621,11 @@
                                 <configuration>
                                     <outputDirectory>${project.build.directory}/wildfly/overlay/tools/mapreduce/lib</outputDirectory>
                                     <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.apache.hadoop</groupId>
+                                            <artifactId>hadoop-common</artifactId>
+                                            <version>${version.hadoop}</version>
+                                        </artifactItem>
                                         <artifactItem>
                                             <groupId>javax.inject</groupId>
                                             <artifactId>javax.inject</artifactId>
