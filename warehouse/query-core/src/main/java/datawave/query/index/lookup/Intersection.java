@@ -11,6 +11,7 @@ import com.google.common.collect.TreeMultimap;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -149,7 +150,6 @@ public class Intersection extends BaseIndexStream {
                         if (StreamContext.DELAYED_FIELD == stream.context())
                             delayedField = true;
                         this.delayedNodes.add(stream.currentNode());
-                        this.nodeSet.add(stream.currentNode());
                     } else {
                         QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_RANGE_STREAM, MessageFormat.format("{0}", stream.context()));
                         throw new DatawaveFatalQueryException(qe);
@@ -162,7 +162,11 @@ public class Intersection extends BaseIndexStream {
             if (log.isTraceEnabled())
                 log.trace("size is " + this.children.size());
             
-            currNode = JexlNodeFactory.createAndNode(nodeSet.getNodes());
+            JexlNodeSet allNodes = new JexlNodeSet();
+            allNodes.addAll(nodeSet);
+            allNodes.addAll(delayedNodes);
+            
+            currNode = JexlNodeFactory.createAndNode(allNodes);
             
             Preconditions.checkNotNull(currNode);
             
@@ -282,25 +286,26 @@ public class Intersection extends BaseIndexStream {
             IndexInfo next = infos.next();
             
             nodeSet.add(next.getNode());
-            merged = merged.intersect(next, Lists.newArrayList(delayedNodes.getNodes()), uidIntersector);
+            merged = merged.intersect(next, Collections.emptyList(), uidIntersector);
             childrenAdded = true;
+        }
+        
+        // add in delayed nodes after we're done intersecting the viable index streams
+        if (!childrenAdded || !delayedNodes.isEmpty()) {
+            childrenAdded = merged.intersect(Lists.newArrayList(delayedNodes.getNodes()));
         }
         
         if (log.isTraceEnabled())
             log.trace("intersect " + childrenAdded);
         
-        // Add all delayed nodes.
+        // Add all delayed nodes back into the nodeSet
         nodeSet.addAll(delayedNodes);
-        
         currNode = JexlNodeFactory.createAndNode(nodeSet.getNodes());
         
         if (!childrenAdded) {
-            if (!delayedNodes.isEmpty())
-                childrenAdded = merged.intersect(Lists.newArrayList(delayedNodes.getNodes()));
-        }
-        
-        if (!childrenAdded) {
-            log.trace("can't add children");
+            if (log.isTraceEnabled()) {
+                log.trace("can't add children");
+            }
             merged.setNode(currNode);
         }
         return merged;
