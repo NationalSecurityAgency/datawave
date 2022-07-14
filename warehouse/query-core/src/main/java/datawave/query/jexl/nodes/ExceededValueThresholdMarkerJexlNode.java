@@ -1,9 +1,6 @@
 package datawave.query.jexl.nodes;
 
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-
-import java.util.function.Function;
 
 /**
  * This is a node that can be put in place of an ASTERNode to denote that the value threshold was exceeded preventing expansion into a conjunction of terms
@@ -27,10 +24,10 @@ public class ExceededValueThresholdMarkerJexlNode extends QueryPropertyMarker {
      * @param node
      *            the source node
      * @return the new marker node
-     * @see QueryPropertyMarker#create(JexlNode, Function)
+     * @see QueryPropertyMarker#create(JexlNode, Class)
      */
-    public static ExceededValueThresholdMarkerJexlNode create(JexlNode node) {
-        return create(node, ExceededValueThresholdMarkerJexlNode::new);
+    public static JexlNode create(JexlNode node) {
+        return create(node, ExceededValueThresholdMarkerJexlNode.class);
     }
     
     public ExceededValueThresholdMarkerJexlNode() {
