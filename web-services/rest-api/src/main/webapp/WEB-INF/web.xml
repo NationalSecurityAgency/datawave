@@ -164,7 +164,7 @@
          time, but instead will be substituted at runtime by the container.
         -->
         <user-data-constraint>
-            <transport-guarantee>${webapp.transport.guarantee}</transport-guarantee>
+            <transport-guarantee>${dw.transport.guarantee}</transport-guarantee>
         </user-data-constraint>
     </security-constraint>
 
@@ -184,7 +184,7 @@
          time, but instead will be substituted at runtime by the container.
         -->
         <user-data-constraint>
-            <transport-guarantee>${webapp.transport.guarantee}</transport-guarantee>
+            <transport-guarantee>${dw.transport.guarantee}</transport-guarantee>
         </user-data-constraint>
     </security-constraint>
 
@@ -219,7 +219,7 @@
          time, but instead will be substituted at runtime by the container.
         -->
         <user-data-constraint>
-            <transport-guarantee>${webapp.transport.guarantee}</transport-guarantee>
+            <transport-guarantee>${dw.transport.guarantee}</transport-guarantee>
         </user-data-constraint>
     </security-constraint>
 
@@ -239,7 +239,7 @@
          time, but instead will be substituted at runtime by the container.
         -->
         <user-data-constraint>
-            <transport-guarantee>${webapp.transport.guarantee}</transport-guarantee>
+            <transport-guarantee>${dw.transport.guarantee}</transport-guarantee>
         </user-data-constraint>
     </security-constraint>
 
@@ -282,7 +282,7 @@
          time, but instead will be substituted at runtime by the container.
         -->
         <user-data-constraint>
-            <transport-guarantee>${webapp.transport.guarantee}</transport-guarantee>
+            <transport-guarantee>${dw.transport.guarantee}</transport-guarantee>
         </user-data-constraint>
     </security-constraint>
 
