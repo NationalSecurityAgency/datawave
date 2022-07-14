@@ -157,7 +157,7 @@ public class StatsJob extends IngestJob {
             JobArg arg = JobArg.getOption(args[0]);
             if (null != arg) {
                 switch (arg) {
-                    // job args
+                // job args
                     case JOB_LOG_LEVEL:
                         Level level = Level.toLevel(args[1], DEFAULT_LOG_LEVEL);
                         log.setLevel(level);
@@ -203,8 +203,8 @@ public class StatsJob extends IngestJob {
                 // shard should be a day
                 int numShards = conf.getInt(ShardedDataTypeHandler.NUM_SHARDS, -1);
                 if (numShards < 0) {
-                    throw new IllegalArgumentException(
-                                    "Cannot determine the number of shards from the configuration.get(" + ShardedDataTypeHandler.NUM_SHARDS + ")");
+                    throw new IllegalArgumentException("Cannot determine the number of shards from the configuration.get(" + ShardedDataTypeHandler.NUM_SHARDS
+                                    + ")");
                 }
                 
                 // create a range for each shard
@@ -251,7 +251,7 @@ public class StatsJob extends IngestJob {
         MIN_COUNT(StatsHyperLogReducer.STATS_MIN_COUNT, StatsHyperLogReducer.DEFAULT_MIN_COUNT),
         REDUCER_COUNTS(StatsHyperLogReducer.STATS_REDUCER_COUNTS, false),
         REDUCER_VALUE_INTERVAL(StatsHyperLogReducer.STATS_REDUCER_VALUE_INTERVAL, StatsHyperLogReducer.DEFAULT_VALUE_INTERVAL),
-        REDUCER_LOG_LEVEL(StatsHyperLogReducer.STATS_REDUCER_LOG_LEVEL, DEFAULT_LOG_LEVEL),;
+        REDUCER_LOG_LEVEL(StatsHyperLogReducer.STATS_REDUCER_LOG_LEVEL, DEFAULT_LOG_LEVEL), ;
         
         static JobArg getOption(String option) {
             while (option.startsWith("-")) {

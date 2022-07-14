@@ -52,8 +52,8 @@ public class TFFactory {
      * @return
      */
     public static com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> getFunction(ASTJexlScript query,
-                    Set<String> contentExpansionFields, Set<String> termFrequencyFields, Multimap<String,Class<? extends Type<?>>> dataTypes, Equality equality,
-                    EventDataQueryFilter evaluationFilter, SortedKeyValueIterator<Key,Value> sourceDeepCopy, Set<String> tfIndexOnlyFields) {
+                    Set<String> contentExpansionFields, Set<String> termFrequencyFields, Multimap<String,Class<? extends Type<?>>> dataTypes,
+                    Equality equality, EventDataQueryFilter evaluationFilter, SortedKeyValueIterator<Key,Value> sourceDeepCopy, Set<String> tfIndexOnlyFields) {
         
         Multimap<String,String> termFrequencyFieldValues = TermOffsetPopulator.getTermFrequencyFieldValues(query, contentExpansionFields, termFrequencyFields,
                         dataTypes);

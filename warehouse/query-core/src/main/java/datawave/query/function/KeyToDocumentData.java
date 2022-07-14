@@ -232,8 +232,9 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     // map the key to the dockey (only shard, datatype, uid)
     public static Key getDocKey(Key key) {
         final ByteSequence row = key.getRowData(), cf = key.getColumnFamilyData(), cv = key.getColumnVisibilityData();
-        return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), EMPTY_BYTE_SEQUENCE.getBackingArray(),
-                        EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(), cv.offset(), cv.length(), key.getTimestamp());
+        return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(),
+                        EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(), cv.offset(),
+                        cv.length(), key.getTimestamp());
     }
     
     private static List<Entry<Key,Value>> appendHierarchyFields(List<Entry<Key,Value>> documentAttributes, Key key, SortedKeyValueIterator<Key,Value> source,

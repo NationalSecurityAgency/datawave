@@ -202,8 +202,8 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
                 // AccumuloOutputFormat.maxlatency
                 // AccumuloOutputFormat.maxmemory
                 // AccumuloOutputFormat.writethreads
-                AccumuloOutputFormat.setBatchWriterOptions(job,
-                                new BatchWriterConfig().setMaxLatency(30, TimeUnit.SECONDS).setMaxMemory(10485760).setMaxWriteThreads(2));
+                AccumuloOutputFormat.setBatchWriterOptions(job, new BatchWriterConfig().setMaxLatency(30, TimeUnit.SECONDS).setMaxMemory(10485760)
+                                .setMaxWriteThreads(2));
             }
         } catch (WebApplicationException wex) {
             throw wex;
@@ -269,8 +269,8 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
         }
         
         BulkInputFormat.setZooKeeperInstance(job.getConfiguration(), this.instanceName, this.zookeepers);
-        Iterator<Authorizations> authsIter = (runtimeQueryAuthorizations == null || runtimeQueryAuthorizations.isEmpty()) ? null
-                        : runtimeQueryAuthorizations.iterator();
+        Iterator<Authorizations> authsIter = (runtimeQueryAuthorizations == null || runtimeQueryAuthorizations.isEmpty()) ? null : runtimeQueryAuthorizations
+                        .iterator();
         Authorizations auths = (authsIter == null) ? null : authsIter.next();
         BulkInputFormat.setInputInfo(job, this.user, this.password.getBytes(), logic.getTableName(), auths);
         for (int priority = 10; authsIter != null && authsIter.hasNext(); ++priority) {
@@ -284,7 +284,8 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
         job.getConfiguration().set(BulkResultsFileOutputMapper.QUERY_IMPL_CLASS, queryImplClass.getName());
         job.getConfiguration().set(BulkResultsFileOutputMapper.QUERY_LOGIC_NAME, logic.getLogicName());
         
-        job.getConfiguration().set(BulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH,
+        job.getConfiguration().set(
+                        BulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH,
                         "classpath*:datawave/configuration/spring/CDIBeanPostProcessor.xml," + "classpath*:datawave/query/*QueryLogicFactory.xml,"
                                         + "classpath*:/MarkingFunctionsContext.xml," + "classpath*:/MetadataHelperContext.xml,"
                                         + "classpath*:/CacheContext.xml");

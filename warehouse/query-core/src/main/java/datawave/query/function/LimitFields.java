@@ -53,8 +53,8 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         // maps from the key with NO grouping context to a multimap of
         // key WITH grouping context to attributes:
         // DIRECTION : [DIRECTION.1 : [over,under], DIRECTION.2 : [sideways,down]]
-        LoadingCache<String,Multimap<String,Attribute<? extends Comparable<?>>>> hits = CacheBuilder.newBuilder()
-                        .build(new CacheLoader<String,Multimap<String,Attribute<? extends Comparable<?>>>>() {
+        LoadingCache<String,Multimap<String,Attribute<? extends Comparable<?>>>> hits = CacheBuilder.newBuilder().build(
+                        new CacheLoader<String,Multimap<String,Attribute<? extends Comparable<?>>>>() {
                             public Multimap<String,Attribute<? extends Comparable<?>>> load(String key) {
                                 return LinkedListMultimap.create();
                             }
@@ -63,8 +63,8 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         // key WITH grouping context to attributes:
         // DIRECTION : [DIRECTION.1 : [over,under], DIRECTION.2 : [sideways,down]]
         @SuppressWarnings("serial")
-        LoadingCache<String,Multimap<String,Attribute<? extends Comparable<?>>>> misses = CacheBuilder.newBuilder()
-                        .build(new CacheLoader<String,Multimap<String,Attribute<? extends Comparable<?>>>>() {
+        LoadingCache<String,Multimap<String,Attribute<? extends Comparable<?>>>> misses = CacheBuilder.newBuilder().build(
+                        new CacheLoader<String,Multimap<String,Attribute<? extends Comparable<?>>>>() {
                             public Multimap<String,Attribute<? extends Comparable<?>>> load(String key) {
                                 return LinkedListMultimap.create();
                             }

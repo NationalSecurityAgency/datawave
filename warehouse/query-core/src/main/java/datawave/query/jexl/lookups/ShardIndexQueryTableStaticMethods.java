@@ -117,8 +117,8 @@ public class ShardIndexQueryTableStaticMethods {
             }
         }
         
-        return new FieldNameIndexLookup(config, scannerFactory, getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helperRef), terms,
-                        execService);
+        return new FieldNameIndexLookup(config, scannerFactory, getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helperRef),
+                        terms, execService);
     }
     
     /**
@@ -132,8 +132,8 @@ public class ShardIndexQueryTableStaticMethods {
      * @return The actual set of expansion fields
      * @throws TableNotFoundException
      */
-    public static Set<String> getIndexedExpansionFields(Set<String> expansionFields, boolean reverseIndex, Set<String> ingestDataTypes,
-                    MetadataHelper helperRef) throws TableNotFoundException {
+    public static Set<String> getIndexedExpansionFields(Set<String> expansionFields, boolean reverseIndex, Set<String> ingestDataTypes, MetadataHelper helperRef)
+                    throws TableNotFoundException {
         if (expansionFields == null || expansionFields.isEmpty()) {
             return (reverseIndex ? helperRef.getReverseIndexedFields(ingestDataTypes) : helperRef.getIndexedFields(ingestDataTypes));
         } else {
@@ -572,8 +572,8 @@ public class ShardIndexQueryTableStaticMethods {
      * @throws java.util.concurrent.ExecutionException
      */
     public static RefactoredRangeDescription getRegexRange(String fieldName, String normalizedQueryTerm, boolean fullTableScanEnabled,
-                    MetadataHelper metadataHelper, ShardQueryConfiguration config)
-                    throws JavaRegexAnalyzer.JavaRegexParseException, TableNotFoundException, ExecutionException {
+                    MetadataHelper metadataHelper, ShardQueryConfiguration config) throws JavaRegexAnalyzer.JavaRegexParseException, TableNotFoundException,
+                    ExecutionException {
         if (log.isDebugEnabled()) {
             log.debug("getRegexRange: " + normalizedQueryTerm);
         }
@@ -589,8 +589,8 @@ public class ShardIndexQueryTableStaticMethods {
             if (!regex.isTrailingLiteral()) {
                 // if we require a full table scan but it is disabled, then bail
                 if (!fullTableScanEnabled) {
-                    PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.WILDCARDS_BOTH_SIDES,
-                                    MessageFormat.format("Term: {0}", normalizedQueryTerm));
+                    PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.WILDCARDS_BOTH_SIDES, MessageFormat.format(
+                                    "Term: {0}", normalizedQueryTerm));
                     log.error(qe);
                     throw new DoNotPerformOptimizedQueryException(qe);
                 }
@@ -626,8 +626,8 @@ public class ShardIndexQueryTableStaticMethods {
             if (!regex.isLeadingLiteral()) {
                 // if we require a full table scan but it is disabled, then bail
                 if (!fullTableScanEnabled) {
-                    PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.WILDCARDS_BOTH_SIDES,
-                                    MessageFormat.format("Term: {0}", normalizedQueryTerm));
+                    PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.WILDCARDS_BOTH_SIDES, MessageFormat.format(
+                                    "Term: {0}", normalizedQueryTerm));
                     log.error(qe);
                     throw new DoNotPerformOptimizedQueryException(qe);
                 }

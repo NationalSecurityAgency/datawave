@@ -328,7 +328,7 @@ public class GroupingRequiredFilterFunctions {
      * 
      * @param fields
      * @return a collection of matches
-     */
+     * */
     public static Collection<ValueTuple> atomValuesMatch(Object... fields) {
         List<Iterable<?>> iterableFields = new ArrayList<>();
         

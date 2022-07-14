@@ -27,7 +27,6 @@ public class SharedTriState implements Closeable, SharedTriStateReader, Listenab
     
     public enum STATE {
         NEEDS_UPDATE(0), UPDATING(1), UPDATED(2);
-        
         private final int value;
         private static final Map<Integer,STATE> typesByValue = new HashMap<>();
         static {

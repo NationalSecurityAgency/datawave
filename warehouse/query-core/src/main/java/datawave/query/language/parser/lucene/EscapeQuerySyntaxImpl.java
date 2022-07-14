@@ -175,7 +175,7 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
     public CharSequence escape(CharSequence text, Locale locale, Type type) {
         if (text == null || text.length() == 0)
             return text;
-            
+        
         // escape wildcards and the escape char (this has to be perform before
         // anything else)
         // since we need to preserve the UnescapedCharSequence and escape the

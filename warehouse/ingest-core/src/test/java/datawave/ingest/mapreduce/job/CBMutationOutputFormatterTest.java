@@ -280,8 +280,8 @@ public class CBMutationOutputFormatterTest {
             
             Configuration conf = new Configuration();
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(),
-                            Features.SIMULATION_MODE.getDeclaringClass().getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
+                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
             
             conf.set(simulationKey, Boolean.TRUE.toString());
             conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
@@ -318,8 +318,8 @@ public class CBMutationOutputFormatterTest {
             
             Configuration conf = new Configuration();
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(),
-                            Features.SIMULATION_MODE.getDeclaringClass().getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
+                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
             
             conf.set(simulationKey, Boolean.TRUE.toString());
             conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
@@ -362,8 +362,8 @@ public class CBMutationOutputFormatterTest {
             
             Configuration conf = new Configuration();
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(),
-                            Features.SIMULATION_MODE.getDeclaringClass().getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
+                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
             
             conf.set(simulationKey, Boolean.TRUE.toString());
             conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
@@ -408,8 +408,8 @@ public class CBMutationOutputFormatterTest {
             
             Configuration conf = new Configuration();
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(),
-                            Features.SIMULATION_MODE.getDeclaringClass().getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
+                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
             
             conf.set(simulationKey, Boolean.TRUE.toString());
             conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
@@ -455,8 +455,8 @@ public class CBMutationOutputFormatterTest {
             
             Configuration conf = new Configuration();
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(),
-                            Features.SIMULATION_MODE.getDeclaringClass().getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
+                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
             
             conf.set(simulationKey, Boolean.TRUE.toString());
             conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
@@ -515,8 +515,8 @@ public class CBMutationOutputFormatterTest {
             
             TypeRegistry.getInstance(conf);
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(),
-                            Features.SIMULATION_MODE.getDeclaringClass().getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
+                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
             
             conf.set(simulationKey, Boolean.TRUE.toString());
             conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
@@ -575,8 +575,8 @@ public class CBMutationOutputFormatterTest {
             
             TypeRegistry.getInstance(conf);
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(),
-                            Features.SIMULATION_MODE.getDeclaringClass().getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
+                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
             
             conf.set(simulationKey, Boolean.TRUE.toString());
             conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
@@ -635,8 +635,8 @@ public class CBMutationOutputFormatterTest {
             
             TypeRegistry.getInstance(conf);
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(),
-                            Features.SIMULATION_MODE.getDeclaringClass().getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
+                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
             
             conf.set(simulationKey, Boolean.TRUE.toString());
             conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
@@ -697,8 +697,8 @@ public class CBMutationOutputFormatterTest {
             
             TypeRegistry.getInstance(conf);
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(),
-                            Features.SIMULATION_MODE.getDeclaringClass().getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
+                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
             
             conf.set(simulationKey, Boolean.TRUE.toString());
             conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
@@ -759,8 +759,8 @@ public class CBMutationOutputFormatterTest {
             
             TypeRegistry.getInstance(conf);
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(),
-                            Features.SIMULATION_MODE.getDeclaringClass().getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
+                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
             
             conf.set(simulationKey, Boolean.TRUE.toString());
             conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());

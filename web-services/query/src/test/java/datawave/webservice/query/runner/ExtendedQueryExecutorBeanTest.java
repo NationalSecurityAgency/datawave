@@ -1120,8 +1120,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
         expect(this.traceInfos.get(userSid)).andReturn(Arrays.asList(PatternWrapper.wrap(query)));
-        expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector))
-                        .andThrow(new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION: PROBLEM ADDING QUERY LOGIC TO CACHE"));
+        expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).andThrow(
+                        new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION: PROBLEM ADDING QUERY LOGIC TO CACHE"));
         this.queryLogic1.close();
         this.connectionFactory.returnConnection(this.connector);
         PowerMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 2ND-LEVEL TEST EXCEPTION"));
@@ -1528,8 +1528,8 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations
         expect(context.getCallerPrincipal()).andReturn(principal);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal))
-                        .andThrow(new IllegalArgumentException("INTENTIONALLY THROWN TEST EXCEPTION: UNDEFINED QUERY LOGIC"));
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andThrow(
+                        new IllegalArgumentException("INTENTIONALLY THROWN TEST EXCEPTION: UNDEFINED QUERY LOGIC"));
         
         // Run the test
         PowerMock.replayAll();
@@ -1668,8 +1668,8 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
         
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-        queryParameters.putAll(QueryParametersImpl.paramsToMap(null, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate,
-                        pagesize, pageTimeout, maxResultsOverride, persistenceMode, null, trace));
+        queryParameters.putAll(QueryParametersImpl.paramsToMap(null, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
+                        expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, null, trace));
         queryParameters.putSingle("valid", "param");
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
@@ -2545,8 +2545,8 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertNotNull("Expected a DatawaveWebApplicationException to be thrown", result1);
-        assertEquals("Expected DatawaveWebApplicationException to have been caused by a locked cache entry", "500-9",
-                        ((QueryException) result1.getCause().getCause()).getErrorCode());
+        assertEquals("Expected DatawaveWebApplicationException to have been caused by a locked cache entry", "500-9", ((QueryException) result1.getCause()
+                        .getCause()).getErrorCode());
     }
     
     @Test(expected = DatawaveWebApplicationException.class)

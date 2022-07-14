@@ -314,8 +314,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
                     log.trace("Ignoring key due to not occuring within datatype filter: " + top);
                 }
                 Range newRange;
-                if (dataTypeSeekingFilter != null && (newRange = dataTypeSeekingFilter.getSeekRange(top, this.scanRange.getEndKey(),
-                                this.scanRange.isEndKeyInclusive())) != null) {
+                if (dataTypeSeekingFilter != null
+                                && (newRange = dataTypeSeekingFilter.getSeekRange(top, this.scanRange.getEndKey(), this.scanRange.isEndKeyInclusive())) != null) {
                     source.seek(newRange, seekColumnFamilies, includeColumnFamilies);
                 } else {
                     source.next();
@@ -326,8 +326,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
             // restrict the aggregation to the current target value within the document
             limitedSource.setLimit(new Key(top.getRow(), columnFamily, new Text(valueMinPrefix + Constants.MAX_UNICODE_STRING)));
             // Aggregate the document. NOTE: This will advance the source iterator
-            tk = buildDocument ? aggregation.apply(limitedSource, document, attributeFactory)
-                            : aggregation.apply(limitedSource, scanRange, seekColumnFamilies, includeColumnFamilies);
+            tk = buildDocument ? aggregation.apply(limitedSource, document, attributeFactory) : aggregation.apply(limitedSource, scanRange, seekColumnFamilies,
+                            includeColumnFamilies);
             if (log.isTraceEnabled()) {
                 log.trace("Doc size: " + this.document.size());
                 log.trace("Returning pointer " + tk.toStringNoTime());

@@ -60,8 +60,8 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
         try {
             Connector connector = instance.getConnector(conf.get(MetricsConfig.USER), new PasswordToken(conf.get(MetricsConfig.PASS).getBytes()));
             
-            writer = connector.createBatchWriter(conf.get(MetricsConfig.METRICS_TABLE, MetricsConfig.DEFAULT_METRICS_TABLE),
-                            new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(128L * 1024L).setMaxWriteThreads(11));
+            writer = connector.createBatchWriter(conf.get(MetricsConfig.METRICS_TABLE, MetricsConfig.DEFAULT_METRICS_TABLE), new BatchWriterConfig()
+                            .setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(128L * 1024L).setMaxWriteThreads(11));
         } catch (AccumuloException | TableNotFoundException | AccumuloSecurityException e) {
             writer = null;
         }
@@ -71,11 +71,11 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
             zooKeepers = conf.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS);
             zkConfig = ClientConfiguration.loadDefault().withInstance(conf.get(MetricsConfig.WAREHOUSE_INSTANCE)).withZkHosts(zooKeepers);
             instance = new ZooKeeperInstance(zkConfig);
-            Connector connector = instance.getConnector(conf.get(MetricsConfig.WAREHOUSE_USERNAME),
-                            new PasswordToken(conf.get(MetricsConfig.WAREHOUSE_PASSWORD).getBytes()));
+            Connector connector = instance.getConnector(conf.get(MetricsConfig.WAREHOUSE_USERNAME), new PasswordToken(conf
+                            .get(MetricsConfig.WAREHOUSE_PASSWORD).getBytes()));
             
-            warehouseWriter = connector.createBatchWriter(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE),
-                            new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(128L * 1024L * 1024L).setMaxWriteThreads(11));
+            warehouseWriter = connector.createBatchWriter(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE), new BatchWriterConfig()
+                            .setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(128L * 1024L * 1024L).setMaxWriteThreads(11));
         } catch (AccumuloException | TableNotFoundException | AccumuloSecurityException e) {
             warehouseWriter = null;
         }

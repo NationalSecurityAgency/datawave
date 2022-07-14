@@ -211,6 +211,7 @@
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-container-test-spi</artifactId>
+            <version>1.6.0.Final</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

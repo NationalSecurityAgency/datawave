@@ -278,8 +278,9 @@ public class ColumnBasedHandlerTestUtil {
         
         // check edge keys
         for (Key k : edgeKeys) {
-            keyPrint.add("edge key: " + k.getRow().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
-                            + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp() + "\n");
+            keyPrint.add("edge key: " + k.getRow().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;")
+                            + " ::: " + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: "
+                            + k.getTimestamp() + "\n");
         }
         
         try {
@@ -312,8 +313,8 @@ public class ColumnBasedHandlerTestUtil {
         private Multimap<BulkIngestKey,Value> cache = HashMultimap.create();
         
         @Override
-        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
-                        throws IOException, InterruptedException {
+        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException,
+                        InterruptedException {
             for (Map.Entry<BulkIngestKey,Value> entry : entries.entries()) {
                 cache.put(entry.getKey(), entry.getValue());
             }

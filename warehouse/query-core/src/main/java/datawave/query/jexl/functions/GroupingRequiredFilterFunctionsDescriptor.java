@@ -160,8 +160,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
         try {
             Class<?> clazz = GetFunctionClass.get(node);
             if (!GroupingRequiredFilterFunctions.class.equals(clazz)) {
-                throw new IllegalArgumentException(
-                                "Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
+                throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
             }
             return new GroupingRequiredFilterJexlArgumentDescriptor(node);
         } catch (ClassNotFoundException e) {

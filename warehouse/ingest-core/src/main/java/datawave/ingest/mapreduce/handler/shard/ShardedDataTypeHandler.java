@@ -412,8 +412,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * @param fields
      * @param reporter
      */
-    protected Multimap<BulkIngestKey,Value> createColumns(RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields,
-                    StatusReporter reporter) {
+    protected Multimap<BulkIngestKey,Value> createColumns(RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, StatusReporter reporter) {
         IngestHelperInterface helper = this.getHelper(event.getDataType());
         
         Multimap<BulkIngestKey,Value> values = HashMultimap.create();
