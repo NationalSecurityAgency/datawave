@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.Type;
@@ -11,7 +12,6 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.GeoWaveUtils;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFalseNode;

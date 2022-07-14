@@ -1985,10 +1985,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         optionalParams.add(QueryParameters.GROUP_FIELDS);
         optionalParams.add(QueryParameters.UNIQUE_FIELDS);
         optionalParams.add(QueryOptions.LOG_TIMING_DETAILS);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGESIZE);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGETIMEOUT);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_EXPIRATION);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_PAGESIZE);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_PAGETIMEOUT);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_EXPIRATION);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE);
         return optionalParams;
     }
     
