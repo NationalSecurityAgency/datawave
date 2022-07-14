@@ -623,8 +623,8 @@
                                             <version>1</version>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>jakarta.enterprise</groupId>
-                                            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+                                            <groupId>javax.enterprise</groupId>
+                                            <artifactId>cdi-api</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.resteasy</groupId>
