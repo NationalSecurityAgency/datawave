@@ -92,7 +92,8 @@ public class ShardKeyFunctorTest {
         
         cbKey1 = new org.apache.accumulo.core.data.Key("row", "fi\0and a cf", "and a cq");
         cbKey2 = cbKey1.followingKey(PartialKey.ROW_COLFAM_COLQUAL);
-        Assert.assertFalse("consecutive keys should not be in bloom filter with end inclusive", ShardKeyFunctor.isRangeInBloomFilter(new Range(cbKey1, cbKey2)));
+        Assert.assertFalse("consecutive keys should not be in bloom filter with end inclusive",
+                        ShardKeyFunctor.isRangeInBloomFilter(new Range(cbKey1, cbKey2)));
         Assert.assertTrue("consecutive keys should be in bloom filter with end exclusive",
                         ShardKeyFunctor.isRangeInBloomFilter(new Range(cbKey1, true, cbKey2, false)));
     }
@@ -123,8 +124,8 @@ public class ShardKeyFunctorTest {
         Assert.assertNull("row and cf (non-fi) and cq key should not be in bloom filter", functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("row", "fi\0and cf", "and a cq");
-        org.apache.hadoop.util.bloom.Key bfKey = new org.apache.hadoop.util.bloom.Key(new byte[] {'a', 'n', 'd', ' ', 'c', 'f', 'a', 'n', 'd', ' ', 'a', ' ',
-                'c', 'q'}, 1.0);
+        org.apache.hadoop.util.bloom.Key bfKey = new org.apache.hadoop.util.bloom.Key(
+                        new byte[] {'a', 'n', 'd', ' ', 'c', 'f', 'a', 'n', 'd', ' ', 'a', ' ', 'c', 'q'}, 1.0);
         Assert.assertEquals("row and cf and cq key should be in bloom filter", bfKey, functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("", "fi\0and cf", "and a cq");
@@ -166,8 +167,8 @@ public class ShardKeyFunctorTest {
         Assert.assertEquals("row and cf (non-fi) and cq key should not be in bloom filter", EMPTY_BF_KEY, functor.transform(cbKey));
         
         cbKey = new org.apache.accumulo.core.data.Key("row", "fi\0and cf", "and a cq");
-        org.apache.hadoop.util.bloom.Key bfKey = new org.apache.hadoop.util.bloom.Key(new byte[] {'a', 'n', 'd', ' ', 'c', 'f', 'a', 'n', 'd', ' ', 'a', ' ',
-                'c', 'q'}, 1.0);
+        org.apache.hadoop.util.bloom.Key bfKey = new org.apache.hadoop.util.bloom.Key(
+                        new byte[] {'a', 'n', 'd', ' ', 'c', 'f', 'a', 'n', 'd', ' ', 'a', ' ', 'c', 'q'}, 1.0);
         Assert.assertEquals("row and cf and cq key should be in bloom filter", bfKey, functor.transform(cbKey));
         
         cbKey = new org.apache.accumulo.core.data.Key("", "fi\0and cf", "and a cq");

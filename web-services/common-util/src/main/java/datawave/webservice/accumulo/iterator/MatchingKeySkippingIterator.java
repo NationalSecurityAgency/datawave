@@ -164,8 +164,8 @@ public class MatchingKeySkippingIterator extends SkippingIterator implements Opt
         
         @Override
         public int compare(Key k1, Key k2) {
-            return StringUtils.substringBefore(k1.getRow().toString(), this.delimiter).compareTo(
-                            StringUtils.substringBefore(k2.getRow().toString(), this.delimiter));
+            return StringUtils.substringBefore(k1.getRow().toString(), this.delimiter)
+                            .compareTo(StringUtils.substringBefore(k2.getRow().toString(), this.delimiter));
         }
         
     }

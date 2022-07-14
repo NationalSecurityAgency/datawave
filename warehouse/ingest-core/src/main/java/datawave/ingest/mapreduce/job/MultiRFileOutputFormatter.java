@@ -377,8 +377,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     }
     
     protected void setTableIdsAndConfigs() throws IOException {
-        ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(conf.get(INSTANCE_NAME))
-                        .withZkHosts(conf.get(ZOOKEEPERS)));
+        ZooKeeperInstance instance = new ZooKeeperInstance(
+                        ClientConfiguration.loadDefault().withInstance(conf.get(INSTANCE_NAME)).withZkHosts(conf.get(ZOOKEEPERS)));
         Connector connector = null;
         tableConfigs = new HashMap<>();
         Iterable<String> localityGroupTables = Splitter.on(",").split(conf.get(CONFIGURE_LOCALITY_GROUPS, ""));
@@ -390,8 +390,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             String compressionType = getCompressionType(conf);
             for (String tableName : tableIds.keySet()) {
                 ConfigurationCopy tableConfig = new ConfigurationCopy(connector.tableOperations().getProperties(tableName));
-                tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableBlackList.contains(tableName) ? Compression.COMPRESSION_NONE
-                                : compressionType));
+                tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(),
+                                (compressionTableBlackList.contains(tableName) ? Compression.COMPRESSION_NONE : compressionType));
                 if (Iterables.contains(localityGroupTables, tableName)) {
                     Map<String,Set<Text>> localityGroups = connector.tableOperations().getLocalityGroups(tableName);
                     // pull the locality groups for this table.
@@ -561,8 +561,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                         FileStatus fileStatus = fs.getFileStatus(path);
                         long fileSize = fileStatus.getLen();
                         openReader.close();
-                        log.info("Successfully wrote " + path + ". Total size: " + fileSize + " B. Total time: "
-                                        + (System.currentTimeMillis() - startWriteTime) + " ms.");
+                        log.info("Successfully wrote " + path + ". Total size: " + fileSize + " B. Total time: " + (System.currentTimeMillis() - startWriteTime)
+                                        + " ms.");
                     } catch (Exception ex) {
                         log.error("Verification of successful RFile completion failed!!! " + path, ex);
                         throw new IOException(ex);

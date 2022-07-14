@@ -474,8 +474,8 @@ public class CachedResultsBean {
                 qlCache.add(q.getId().toString(), owner, logic, connector);
                 
                 try {
-                    query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(
-                                    queryExpirationConf, q.getPageTimeout()), predictor, metricFactory);
+                    query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p,
+                                    new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, metricFactory);
                     query.setActiveCall(true);
                     // queryMetric was duplicated from the original earlier
                     query.setMetric(queryMetric);
@@ -812,8 +812,8 @@ public class CachedResultsBean {
         }
         
         if (!crq.getUser().equals(owner)) {
-            UnauthorizedQueryException e = new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}",
-                            crq.getUser(), owner));
+            UnauthorizedQueryException e = new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
+                            MessageFormat.format("{0} != {1}", crq.getUser(), owner));
             response.addException(e);
             response.setResult("Current user does not match user that defined query.");
             throw new UnauthorizedException(e, response);
@@ -921,7 +921,8 @@ public class CachedResultsBean {
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/CachedResults/")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Asynchronous
-    public void loadAsync(@QueryParam("queryId") @Required("queryId") String queryId, @QueryParam("alias") String alias, @Suspended AsyncResponse asyncResponse) {
+    public void loadAsync(@QueryParam("queryId") @Required("queryId") String queryId, @QueryParam("alias") String alias,
+                    @Suspended AsyncResponse asyncResponse) {
         
         String nameBase = UUID.randomUUID().toString().replaceAll("-", "");
         CreateQuerySessionIDFilter.QUERY_ID.set(queryId);
@@ -1256,8 +1257,8 @@ public class CachedResultsBean {
             
             int maxPageSize = cachedResultsConfiguration.getMaxPageSize();
             if (maxPageSize > 0 && cp.getPagesize() > maxPageSize) {
-                throw new PreConditionFailedQueryException(DatawaveErrorCode.REQUESTED_PAGE_SIZE_TOO_LARGE, MessageFormat.format("{0} > {1}.",
-                                cp.getPagesize(), maxPageSize));
+                throw new PreConditionFailedQueryException(DatawaveErrorCode.REQUESTED_PAGE_SIZE_TOO_LARGE,
+                                MessageFormat.format("{0} > {1}.", cp.getPagesize(), maxPageSize));
             }
             
             QueryLogic<?> queryLogic = loadCrq.getQueryLogic();
@@ -1432,8 +1433,8 @@ public class CachedResultsBean {
                 
                 int maxPageSize = cachedResultsConfiguration.getMaxPageSize();
                 if (maxPageSize > 0 && pagesize > maxPageSize) {
-                    throw new PreConditionFailedQueryException(DatawaveErrorCode.REQUESTED_PAGE_SIZE_TOO_LARGE, MessageFormat.format("{0} > {1}.", pagesize,
-                                    cachedResultsConfiguration.getMaxPageSize()));
+                    throw new PreConditionFailedQueryException(DatawaveErrorCode.REQUESTED_PAGE_SIZE_TOO_LARGE,
+                                    MessageFormat.format("{0} > {1}.", pagesize, cachedResultsConfiguration.getMaxPageSize()));
                 }
                 
                 synchronized (crq) {
@@ -2008,8 +2009,8 @@ public class CachedResultsBean {
                     query.cancel();
                     response.addMessage("CachedResults load canceled.");
                 } else {
-                    UnauthorizedQueryException e = new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}",
-                                    query.getSettings().getOwner(), owner));
+                    UnauthorizedQueryException e = new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
+                                    MessageFormat.format("{0} != {1}", query.getSettings().getOwner(), owner));
                     throw new UnauthorizedException(e, response);
                 }
             }
@@ -2173,8 +2174,8 @@ public class CachedResultsBean {
                 // will throw IllegalArgumentException if not defined
                 QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), p);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
-                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(queryExpirationConf,
-                                q.getPageTimeout()), predictor, metricFactory);
+                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
+                                new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, metricFactory);
                 query.setActiveCall(true);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 runningQueryCache.put(q.getId().toString(), query);
@@ -2182,8 +2183,8 @@ public class CachedResultsBean {
         } else {
             // Check to make sure that this query belongs to current user.
             if (!query.getSettings().getOwner().equals(owner)) {
-                throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", owner, query.getSettings()
-                                .getOwner()));
+                throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
+                                MessageFormat.format("{0} != {1}", owner, query.getSettings().getOwner()));
             }
         }
         query.setActiveCall(false);

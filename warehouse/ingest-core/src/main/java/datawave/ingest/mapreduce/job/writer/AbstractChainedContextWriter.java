@@ -33,8 +33,8 @@ public abstract class AbstractChainedContextWriter<OK,OV> extends StatsDHelper i
         super.setup(conf);
         
         @SuppressWarnings("unchecked")
-        Class<ContextWriter<OK,OV>> contextWriterClass = (Class<ContextWriter<OK,OV>>) conf
-                        .getClass(getChainedContextWriterOption(), null, ContextWriter.class);
+        Class<ContextWriter<OK,OV>> contextWriterClass = (Class<ContextWriter<OK,OV>>) conf.getClass(getChainedContextWriterOption(), null,
+                        ContextWriter.class);
         if (contextWriterClass == null) {
             throw new IllegalArgumentException(this.getClass() + " is a ChainedContextWriter but no follow-on context writer has been configured for "
                             + getChainedContextWriterOption());

@@ -37,7 +37,7 @@ public class ColumnQualifierRangeIterator extends ColumnRangeIterator {
             Key topColumnQual = new Key(getSource().getTopKey().getColumnQualifier());
             
             if (getColumnRange().beforeStartKey(topColumnQual)) { // top key's CQ is before the desired range starts, need to skip some CQs...
-            
+                
                 if (count < limit) {
                     advanceSource();
                     ++count;

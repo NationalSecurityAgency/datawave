@@ -131,8 +131,8 @@ public class DiscoveryLogicTest {
             for (int i = 0; i < numShards; i++) {
                 for (Date date : dates) {
                     String shard = dateFormatter.format(date);
-                    m.put(valueField.getValue1().toUpperCase(), shard + "_" + i + "\u0000datatype", viz, date.getTime(), new Value(makeUidList(24)
-                                    .toByteArray()));
+                    m.put(valueField.getValue1().toUpperCase(), shard + "_" + i + "\u0000datatype", viz, date.getTime(),
+                                    new Value(makeUidList(24).toByteArray()));
                 }
             }
             writer.addMutation(m);
@@ -144,8 +144,8 @@ public class DiscoveryLogicTest {
             for (int i = 0; i < numShards; i++) {
                 for (Date date : dates) {
                     String shard = dateFormatter.format(date);
-                    m.put(valueField.getValue1().toUpperCase(), shard + "_" + i + "\u0000datatype", viz, date.getTime(), new Value(makeUidList(24)
-                                    .toByteArray()));
+                    m.put(valueField.getValue1().toUpperCase(), shard + "_" + i + "\u0000datatype", viz, date.getTime(),
+                                    new Value(makeUidList(24).toByteArray()));
                 }
             }
             writer.addMutation(m);

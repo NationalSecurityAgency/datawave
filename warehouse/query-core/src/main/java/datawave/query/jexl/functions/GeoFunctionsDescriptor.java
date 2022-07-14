@@ -112,9 +112,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         JexlNode leLatNode1 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(1), Double.toString(maxLat));
                         
                         // now link em up
-                        JexlNode andNode1 = JexlNodeFactory.createAndNode(Arrays.asList(
-                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode1, leLonNode1))),
-                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode1, leLatNode1)))));
+                        JexlNode andNode1 = JexlNodeFactory
+                                        .createAndNode(Arrays.asList(BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode1, leLonNode1))),
+                                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode1, leLatNode1)))));
                         
                         JexlNode geLonNode2 = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), "-180");
                         JexlNode leLonNode2 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), Double.toString(maxLon));
@@ -123,9 +123,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         JexlNode leLatNode2 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(1), Double.toString(maxLat));
                         
                         // now link em up
-                        JexlNode andNode2 = JexlNodeFactory.createAndNode(Arrays.asList(
-                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode2, leLonNode2))),
-                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode2, leLatNode2)))));
+                        JexlNode andNode2 = JexlNodeFactory
+                                        .createAndNode(Arrays.asList(BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode2, leLonNode2))),
+                                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode2, leLatNode2)))));
                         
                         // link em up
                         returnNode = JexlNodeFactory.createAndNode(Arrays.asList(andNode1, andNode2));
@@ -138,9 +138,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         
                         // now link em up
                         
-                        returnNode = JexlNodeFactory.createAndNode(Arrays.asList(
-                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode, leLonNode))),
-                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode, leLatNode)))));
+                        returnNode = JexlNodeFactory
+                                        .createAndNode(Arrays.asList(BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode, leLonNode))),
+                                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode, leLatNode)))));
                     }
                 }
             } else if (name.equals("within_circle")) {
@@ -334,8 +334,8 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                             // if there are other fields, recreate the geo function node
                             if (!otherFields.isEmpty()) {
                                 // dereferencing the child node since we do not want the JexlASTScript nor the JexlASTReference parent nodes
-                                JexlNode geoNode = JexlASTHelper.dereference(JexlASTHelper.parseJexlQuery(
-                                                namespace + ":" + name + "(" + geoFields + ", " + arg1 + ", " + arg2 + ")").jjtGetChild(0));
+                                JexlNode geoNode = JexlASTHelper.dereference(JexlASTHelper
+                                                .parseJexlQuery(namespace + ":" + name + "(" + geoFields + ", " + arg1 + ", " + arg2 + ")").jjtGetChild(0));
                                 return JexlNodeFactory.createOrNode(Arrays.asList(geoNode, geoWaveNode));
                             } else {
                                 return geoWaveNode;
@@ -389,8 +389,8 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
             
             if (wkt != null) {
                 // dereferencing the child node since we do not want the JexlASTScript nor the JexlASTReference parent nodes
-                return JexlASTHelper.dereference(JexlASTHelper.parseJexlQuery("geowave:intersects(" + getFieldParam(fields) + ", '" + wkt + "')")
-                                .jjtGetChild(0));
+                return JexlASTHelper
+                                .dereference(JexlASTHelper.parseJexlQuery("geowave:intersects(" + getFieldParam(fields) + ", '" + wkt + "')").jjtGetChild(0));
             }
             
             return null;
@@ -437,8 +437,8 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
             throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of "
                             + node.jjtGetChild(0).image);
         if (!functionClass.equals(GeoFunctions.class))
-            throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in "
-                            + functionClass);
+            throw new IllegalArgumentException(
+                            "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
         
         verify(fvis.name(), fvis.args().size());
         

@@ -304,8 +304,7 @@ public class DateIndexHelper implements ApplicationContextAware {
      * @return A string of comma delimited days and shards, order unspecified
      * @throws TableNotFoundException
      */
-    @Cacheable(
-                    value = "getShardsAndDaysHint",
+    @Cacheable(value = "getShardsAndDaysHint",
                     key = "{#root.target.dateIndexTableName,#root.target.auths,#root.target.collapseDatePercentThreshold,#field,#begin,#end,#rangeBegin,#rangeEnd,#datatypeFilter}",
                     cacheManager = "dateIndexHelperCacheManager")
     public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter)

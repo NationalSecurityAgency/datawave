@@ -57,7 +57,7 @@ public class NYCTLCHelper extends CSVHelper {
         for (String parsedField : parsedHeader)
             if (!KNOWN_FIELDS.contains(parsedField))
                 unknownFields.add(parsedField);
-        
+            
         log.debug("Header contained unknown fields: [" + String.join(",", unknownFields) + "]");
     }
     

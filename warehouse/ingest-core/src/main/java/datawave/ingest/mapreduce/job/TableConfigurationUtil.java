@@ -215,8 +215,8 @@ public class TableConfigurationUtil {
      * @throws AccumuloException
      * @throws TableNotFoundException
      */
-    private void configureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf, Logger log) throws AccumuloSecurityException,
-                    AccumuloException, TableNotFoundException {
+    private void configureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf, Logger log)
+                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         
         Map<String,TableConfigHelper> tableConfigs = getTableConfigs(log, conf, tableNames);
         
@@ -338,8 +338,8 @@ public class TableConfigurationUtil {
      * @throws TableNotFoundException
      * @throws ClassNotFoundException
      */
-    void serializeAggregatorConfiguration(AccumuloHelper accumuloHelper, Configuration conf, Logger log) throws AccumuloException, ClassNotFoundException,
-                    TableNotFoundException, AccumuloSecurityException {
+    void serializeAggregatorConfiguration(AccumuloHelper accumuloHelper, Configuration conf, Logger log)
+                    throws AccumuloException, ClassNotFoundException, TableNotFoundException, AccumuloSecurityException {
         
         if (conf.getBoolean(TableConfigCache.ACCUMULO_CONFIG_CACHE_ENABLE_PROPERTY, false)) {
             TableConfigCache cache = new TableConfigCache(conf);

@@ -32,17 +32,20 @@ public class Loaded extends JexlQueryFunction {
         if (!knownType) {
             // if the type is not specified, then we accept the between arguments
             if (this.parameterList.size() < 1 || this.parameterList.size() > 3) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0}", this.name));
                 throw new IllegalArgumentException(qe);
             }
         } else if (type.equals("between")) {
             if (this.parameterList.size() < 2 || this.parameterList.size() > 4) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0}", this.name));
                 throw new IllegalArgumentException(qe);
             }
         } else {
             if (this.parameterList.size() < 1 || this.parameterList.size() > 3) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0}", this.name));
                 throw new IllegalArgumentException(qe);
             }
         }

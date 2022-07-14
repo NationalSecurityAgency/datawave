@@ -203,8 +203,8 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * @throws TableNotFoundException
      * @throws AccumuloSecurityException
      */
-    protected boolean areLocalityGroupsConfigured(String tableName, Map<String,Set<Text>> newLocalityGroups, TableOperations tops) throws AccumuloException,
-                    TableNotFoundException, AccumuloSecurityException {
+    protected boolean areLocalityGroupsConfigured(String tableName, Map<String,Set<Text>> newLocalityGroups, TableOperations tops)
+                    throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
         Map<String,Set<Text>> localityGroups = tops.getLocalityGroups(tableName);
         for (Map.Entry<String,Set<Text>> entry : newLocalityGroups.entrySet()) {
             Set<Text> families = localityGroups.get(entry.getKey());

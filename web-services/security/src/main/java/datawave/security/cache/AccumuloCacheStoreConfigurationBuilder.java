@@ -1,27 +1,27 @@
 package datawave.security.cache;
 
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.INSTANCE;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.INSTANCE_NAME;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.ZOOKEEPERS;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.USERNAME;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.PASSWORD;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.TABLE_NAME;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.AUTHORIZATIONS;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.WRITE_THREADS;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.MAX_LATENCY;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.MAX_MEMORY;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.AGEOFF_TTL;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.AGEOFF_PRIORITY;
+
+import java.util.List;
+
 import org.apache.accumulo.core.client.Instance;
 import org.infinispan.commons.configuration.Builder;
 import org.infinispan.configuration.cache.AbstractStoreConfigurationBuilder;
 import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
 
-import java.util.List;
-
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.AGEOFF_PRIORITY;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.AGEOFF_TTL;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.AUTHORIZATIONS;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.INSTANCE;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.INSTANCE_NAME;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.MAX_LATENCY;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.MAX_MEMORY;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.PASSWORD;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.TABLE_NAME;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.USERNAME;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.WRITE_THREADS;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.ZOOKEEPERS;
-
-public class AccumuloCacheStoreConfigurationBuilder extends
-                AbstractStoreConfigurationBuilder<AccumuloCacheStoreConfiguration,AccumuloCacheStoreConfigurationBuilder> {
+public class AccumuloCacheStoreConfigurationBuilder
+                extends AbstractStoreConfigurationBuilder<AccumuloCacheStoreConfiguration,AccumuloCacheStoreConfigurationBuilder> {
     
     public AccumuloCacheStoreConfigurationBuilder(PersistenceConfigurationBuilder builder) {
         super(builder, AccumuloCacheStoreConfiguration.attributeDefinitionSet());

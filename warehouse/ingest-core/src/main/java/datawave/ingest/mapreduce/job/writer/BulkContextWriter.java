@@ -20,8 +20,8 @@ import com.google.common.collect.Multimap;
 public class BulkContextWriter extends AbstractContextWriter<BulkIngestKey,Value> {
     
     @Override
-    protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException,
-                    InterruptedException {
+    protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
+                    throws IOException, InterruptedException {
         for (Map.Entry<BulkIngestKey,Value> entry : entries.entries()) {
             context.write(entry.getKey(), entry.getValue());
         }

@@ -46,9 +46,7 @@ public class TestDatawaveUserServiceTest {
         public static JavaArchive createDeployment() throws Exception {
             System.setProperty("cdi.bean.context", "testAuthServiceBeanRefContext.xml");
             System.setProperty("dw.security.use.testuserservice", "false");
-            return ShrinkWrap
-                            .create(JavaArchive.class)
-                            .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi")
+            return ShrinkWrap.create(JavaArchive.class).addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi")
                             .addClasses(TestDatawaveUserService.class, DatawaveUserService1.class, AltDatawaveUserService1.class, AltDatawaveUserService2.class)
                             .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
         }
@@ -72,11 +70,9 @@ public class TestDatawaveUserServiceTest {
         public static JavaArchive createDeployment() throws Exception {
             System.setProperty("cdi.bean.context", "testAuthServiceBeanRefContext.xml");
             System.setProperty("dw.security.use.testuserservice", "true");
-            return ShrinkWrap
-                            .create(JavaArchive.class)
-                            .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi")
-                            .addClasses(TestDatawaveUserService.class, DatawaveUserService1.class, AltDatawaveUserService1.class,
-                                            AltDatawaveUserService2.class, MockAccumuloConnectionFactory.class)
+            return ShrinkWrap.create(JavaArchive.class).addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi")
+                            .addClasses(TestDatawaveUserService.class, DatawaveUserService1.class, AltDatawaveUserService1.class, AltDatawaveUserService2.class,
+                                            MockAccumuloConnectionFactory.class)
                             .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
         }
         
@@ -88,9 +84,9 @@ public class TestDatawaveUserServiceTest {
         
         @Test
         public void testCannedUser() throws Exception {
-            DatawaveUser user = userService
-                            .lookup(Collections.singleton(SubjectIssuerDNPair.of("cn=server1, ou=my department, o=my company, st=some-state, c=us",
-                                            "cn=my company ca, o=my company, st=some-state, c=us"))).iterator().next();
+            DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair
+                            .of("cn=server1, ou=my department, o=my company, st=some-state, c=us", "cn=my company ca, o=my company, st=some-state, c=us")))
+                            .iterator().next();
             assertTrue(user.getAuths().contains("PUB"));
             assertTrue(user.getAuths().contains("PVT"));
         }
@@ -106,12 +102,10 @@ public class TestDatawaveUserServiceTest {
         public static JavaArchive createDeployment() throws Exception {
             System.setProperty("cdi.bean.context", "testAuthServiceBeanRefContext.xml");
             System.setProperty("dw.security.use.testuserservice", "true");
-            return ShrinkWrap
-                            .create(JavaArchive.class)
-                            .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi")
-                            .addClasses(TestDatawaveUserService.class, DatawaveUserService1.class, AltDatawaveUserService1.class,
-                                            AltDatawaveUserService2.class, AltDatawaveUserService3.class, AltDatawaveUserService4.class,
-                                            AltDatawaveUserService5.class, MockAccumuloConnectionFactory.class)
+            return ShrinkWrap.create(JavaArchive.class).addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi")
+                            .addClasses(TestDatawaveUserService.class, DatawaveUserService1.class, AltDatawaveUserService1.class, AltDatawaveUserService2.class,
+                                            AltDatawaveUserService3.class, AltDatawaveUserService4.class, AltDatawaveUserService5.class,
+                                            MockAccumuloConnectionFactory.class)
                             .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
         }
         
@@ -123,9 +117,9 @@ public class TestDatawaveUserServiceTest {
         
         @Test
         public void testCannedUser() throws Exception {
-            DatawaveUser user = userService
-                            .lookup(Collections.singleton(SubjectIssuerDNPair.of("cn=server1, ou=my department, o=my company, st=some-state, c=us",
-                                            "cn=my company ca, o=my company, st=some-state, c=us"))).iterator().next();
+            DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair
+                            .of("cn=server1, ou=my department, o=my company, st=some-state, c=us", "cn=my company ca, o=my company, st=some-state, c=us")))
+                            .iterator().next();
             assertTrue(user.getAuths().contains("PUB"));
             assertTrue(user.getAuths().contains("PVT"));
         }

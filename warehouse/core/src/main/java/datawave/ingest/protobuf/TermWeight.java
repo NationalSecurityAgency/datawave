@@ -476,8 +476,8 @@ public final class TermWeight {
         /**
          * Protobuf type {@code datawave.ingest.protobuf.Info}
          */
-        public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-                        datawave.ingest.protobuf.TermWeight.InfoOrBuilder {
+        public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder>
+                        implements datawave.ingest.protobuf.TermWeight.InfoOrBuilder {
             public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
                 return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_descriptor;
             }
@@ -907,17 +907,17 @@ public final class TermWeight {
     
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
-        java.lang.String[] descriptorData = {"\n\020TermWeight.proto\022\030datawave.ingest.prot"
-                        + "obuf\"[\n\004Info\022\022\n\ntermOffset\030\003 \003(\r\022\021\n\tprev"
-                        + "Skips\030\004 \003(\r\022\r\n\005score\030\005 \003(\r\022\035\n\017zeroOffset"
-                        + "Match\030\006 \001(\010:\004trueB\034\n\030datawave.ingest.pro" + "tobufH\001"};
+        java.lang.String[] descriptorData = {
+                "\n\020TermWeight.proto\022\030datawave.ingest.prot" + "obuf\"[\n\004Info\022\022\n\ntermOffset\030\003 \003(\r\022\021\n\tprev"
+                                + "Skips\030\004 \003(\r\022\r\n\005score\030\005 \003(\r\022\035\n\017zeroOffset"
+                                + "Match\030\006 \001(\010:\004trueB\034\n\030datawave.ingest.pro" + "tobufH\001"};
         com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner = new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
             public com.google.protobuf.ExtensionRegistry assignDescriptors(com.google.protobuf.Descriptors.FileDescriptor root) {
                 descriptor = root;
                 internal_static_datawave_ingest_protobuf_Info_descriptor = getDescriptor().getMessageTypes().get(0);
                 internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable = new com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-                                internal_static_datawave_ingest_protobuf_Info_descriptor, new java.lang.String[] {"TermOffset", "PrevSkips", "Score",
-                                        "ZeroOffsetMatch",});
+                                internal_static_datawave_ingest_protobuf_Info_descriptor,
+                                new java.lang.String[] {"TermOffset", "PrevSkips", "Score", "ZeroOffsetMatch",});
                 return null;
             }
         };

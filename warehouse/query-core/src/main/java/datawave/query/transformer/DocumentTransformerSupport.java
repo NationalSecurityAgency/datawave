@@ -415,7 +415,8 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      * @param attribute
      * @return
      */
-    protected FieldBase<?> createField(final String fieldName, final long ts, final Attribute<?> attribute, Map<String,String> markings, String columnVisibility) {
+    protected FieldBase<?> createField(final String fieldName, final long ts, final Attribute<?> attribute, Map<String,String> markings,
+                    String columnVisibility) {
         
         if (markings == null || markings.isEmpty()) {
             log.warn("Null or empty markings for " + fieldName + ":" + attribute);
@@ -424,14 +425,16 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         return createField(fieldName, (Long) ts, attribute, markings, columnVisibility);
     }
     
-    protected FieldBase<?> createField(final String fieldName, final Long ts, final Attribute<?> attribute, Map<String,String> markings, String columnVisibility) {
+    protected FieldBase<?> createField(final String fieldName, final Long ts, final Attribute<?> attribute, Map<String,String> markings,
+                    String columnVisibility) {
         if (this.transformValuePrefixFields.contains(fieldName)) {
             return convertHitTermField(fieldName, ts, attribute, markings, columnVisibility);
         }
         return this.makeField(fieldName, markings, columnVisibility, ts, attribute.getData());
     }
     
-    private FieldBase<?> convertHitTermField(final String fieldName, final Long ts, Attribute<?> attribute, Map<String,String> markings, String columnVisibility) {
+    private FieldBase<?> convertHitTermField(final String fieldName, final Long ts, Attribute<?> attribute, Map<String,String> markings,
+                    String columnVisibility) {
         return this.makeField(fieldName, markings, columnVisibility, ts, convertMappedAttribute(attribute).getData());
     }
     

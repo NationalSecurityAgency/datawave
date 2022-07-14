@@ -72,8 +72,7 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
     
     private enum reason {
         // the reason a query tree failed validation
-        DOUBLE_PAREN,
-        WRAPPED_SINGLE_CHILD
+        DOUBLE_PAREN, WRAPPED_SINGLE_CHILD
     }
     
     public static boolean validate(JexlNode node) {

@@ -47,8 +47,8 @@ public class ProtobufEdgeTableConfigHelper extends AbstractTableConfigHelper {
      * @throws AccumuloException
      * @throws TableNotFoundException
      */
-    private int getVersionIteratorPriority(final TableOperations tops, final IteratorScope scope) throws AccumuloSecurityException, AccumuloException,
-                    TableNotFoundException {
+    private int getVersionIteratorPriority(final TableOperations tops, final IteratorScope scope)
+                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         final IteratorSetting versioningIterator = tops.getIteratorSetting(tableName, "vers", scope);
         
         return ((null == versioningIterator) ? DEFAULT_VERSIONING_ITERATOR_PRIORITY : versioningIterator.getPriority());

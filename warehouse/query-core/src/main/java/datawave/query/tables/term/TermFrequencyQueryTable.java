@@ -100,8 +100,8 @@ public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
         String[] parts = StringUtils.split(term, '/');
         
         if (parts.length != 3) {
-            throw new IllegalArgumentException("Query does not specify all necessary parts: " + settings.getQuery()
-                            + ". Should be of the form 'DOCUMENT:shardId/datatype/uid'.");
+            throw new IllegalArgumentException(
+                            "Query does not specify all necessary parts: " + settings.getQuery() + ". Should be of the form 'DOCUMENT:shardId/datatype/uid'.");
         } else {
             String shardId = parts[0];
             String datatype = parts[1];

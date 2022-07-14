@@ -299,8 +299,8 @@ public class ContentOrderedEvaluatorTest {
     
     private void assertPhraseOffsetsContain(String field, int startOffset, int endOffset) {
         Collection<Triplet<String,Integer,Integer>> phraseOffsets = termOffsetMap.getPhraseIndexes(field);
-        boolean found = phraseOffsets.stream().anyMatch(
-                        (pair) -> pair.getValue0().equals(eventId) && pair.getValue1().equals(startOffset) && pair.getValue2().equals(endOffset));
+        boolean found = phraseOffsets.stream()
+                        .anyMatch((pair) -> pair.getValue0().equals(eventId) && pair.getValue1().equals(startOffset) && pair.getValue2().equals(endOffset));
         Assert.assertTrue(
                         "Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + field + " and eventId " + eventId.replace('\u0000', '/'),
                         found);

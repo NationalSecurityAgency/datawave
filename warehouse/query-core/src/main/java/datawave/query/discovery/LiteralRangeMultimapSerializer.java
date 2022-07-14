@@ -20,8 +20,8 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-public class LiteralRangeMultimapSerializer implements JsonSerializer<Multimap<String,LiteralRange<String>>>,
-                JsonDeserializer<Multimap<String,LiteralRange<String>>> {
+public class LiteralRangeMultimapSerializer
+                implements JsonSerializer<Multimap<String,LiteralRange<String>>>, JsonDeserializer<Multimap<String,LiteralRange<String>>> {
     
     private final LiteralRangeSerializer lrSerializer = new LiteralRangeSerializer();
     

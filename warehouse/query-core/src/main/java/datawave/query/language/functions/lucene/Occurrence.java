@@ -28,8 +28,8 @@ public class Occurrence extends LuceneQueryFunction {
                 String firstArg = this.parameterList.get(0);
                 type = WildcardFieldedFilter.BooleanType.valueOf(firstArg.toUpperCase());
             } catch (Exception e) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", e,
-                                this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0}", e, this.name));
                 throw new IllegalArgumentException(qe);
             }
             x = 1;

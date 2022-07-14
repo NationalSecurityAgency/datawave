@@ -28,8 +28,8 @@ public class GetAllMatches extends LuceneQueryFunction {
                 String firstArg = this.parameterList.get(0);
                 type = WildcardFieldedFilter.BooleanType.valueOf(firstArg.toUpperCase());
             } catch (Exception e) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", e,
-                                this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0}", e, this.name));
                 throw new IllegalArgumentException(qe);
             }
             x = 1;
@@ -58,12 +58,14 @@ public class GetAllMatches extends LuceneQueryFunction {
         String firstArg = this.parameterList.get(0);
         if (firstArg.equalsIgnoreCase("and") || firstArg.equalsIgnoreCase("or")) {
             if (this.parameterList.size() % 2 != 1) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0}", this.name));
                 throw new IllegalArgumentException(qe);
             }
         } else {
             if (this.parameterList.size() % 2 != 0) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0}", this.name));
                 throw new IllegalArgumentException(qe);
             }
         }

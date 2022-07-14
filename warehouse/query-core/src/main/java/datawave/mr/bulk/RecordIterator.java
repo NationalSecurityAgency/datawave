@@ -403,8 +403,8 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
      * @throws InstantiationException
      * @throws IOException
      */
-    protected SortedKeyValueIterator<Key,Value> buildTopIterators(SortedKeyValueIterator<Key,Value> topIter, Configuration conf) throws ClassNotFoundException,
-                    InstantiationException, IllegalAccessException, IOException {
+    protected SortedKeyValueIterator<Key,Value> buildTopIterators(SortedKeyValueIterator<Key,Value> topIter, Configuration conf)
+                    throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
         
         List<AccumuloIterator> iterators = BulkInputFormat.getIterators(conf);
         List<AccumuloIteratorOption> options = BulkInputFormat.getIteratorOptions(conf);

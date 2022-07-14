@@ -314,8 +314,8 @@ public class AtomServiceBean {
             throw web;
         } catch (Exception e) {
             VoidResponse response = new VoidResponse();
-            QueryException qe = new QueryException(DatawaveErrorCode.ENTRY_RETRIEVAL_ERROR, e, MessageFormat.format("entry: {0} from collection: {1}", id,
-                            category));
+            QueryException qe = new QueryException(DatawaveErrorCode.ENTRY_RETRIEVAL_ERROR, e,
+                            MessageFormat.format("entry: {0} from collection: {1}", id, category));
             log.error(qe);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);

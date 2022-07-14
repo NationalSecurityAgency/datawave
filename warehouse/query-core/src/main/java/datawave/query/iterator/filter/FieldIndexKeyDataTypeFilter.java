@@ -164,8 +164,8 @@ public class FieldIndexKeyDataTypeFilter implements Predicate<Key>, SeekingFilte
         if (nextDataType == null) {
             // roll over the key
             // this will be somewhat blind since the next value is not known
-            startKey = new Key(current.getRow(), current.getColumnFamily(), new Text(datawaveKey.getFieldValue() + Constants.NULL_BYTE_STRING
-                            + Constants.MAX_UNICODE_STRING));
+            startKey = new Key(current.getRow(), current.getColumnFamily(),
+                            new Text(datawaveKey.getFieldValue() + Constants.NULL_BYTE_STRING + Constants.MAX_UNICODE_STRING));
             inclusiveStart = false;
         } else {
             // generate a new range with the current value and new dataType

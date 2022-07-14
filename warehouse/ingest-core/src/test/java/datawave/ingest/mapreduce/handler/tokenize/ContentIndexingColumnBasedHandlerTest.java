@@ -205,8 +205,8 @@ public class ContentIndexingColumnBasedHandlerTest {
         handler.setup(ctx);
         
         helper.setup(ctx.getConfiguration());
-        testProcessing(handler, ALPHANUM_LIST, LIST_VALUE, tokenizedExpectedFields, tokenizedExpectedIndex, tokenizedExpectedReverse,
-                        tokenizedExpectedTfValues, true);
+        testProcessing(handler, ALPHANUM_LIST, LIST_VALUE, tokenizedExpectedFields, tokenizedExpectedIndex, tokenizedExpectedReverse, tokenizedExpectedTfValues,
+                        true);
     }
     
     @Test
@@ -350,8 +350,9 @@ public class ContentIndexingColumnBasedHandlerTest {
             handler.indexListEntries(field, true, true, null);
         }
         
-        Assert.assertTrue("Actual fields results do not match expected.\n Expected: " + expectedFields.toString() + "\nActual: "
-                        + handler.getFields().toString(), equalNciMaps(expectedFields, handler.getFields()));
+        Assert.assertTrue(
+                        "Actual fields results do not match expected.\n Expected: " + expectedFields.toString() + "\nActual: " + handler.getFields().toString(),
+                        equalNciMaps(expectedFields, handler.getFields()));
         Assert.assertTrue("Actual index results do not match expected\n Expected: " + expectedIndex.toString() + "\nActual: " + handler.getIndex().toString(),
                         equalNciMaps(expectedIndex, handler.getIndex()));
         Assert.assertTrue("Actual reverse results do not match expected\n Expected: " + expectedReverse.toString() + "\nActual: "

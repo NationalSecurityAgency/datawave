@@ -201,8 +201,8 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
         // if a delayed predicate, then leave it alone
         if (QueryPropertyMarker.findInstance(node).isType(ASTDelayedPredicate.class)) {
             return node;
-        } else if (!ExecutableDeterminationVisitor
-                        .isExecutable(node, data, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
+        } else if (!ExecutableDeterminationVisitor.isExecutable(node, data, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null,
+                        helper)) {
             super.visit(node, data);
         }
         return node;

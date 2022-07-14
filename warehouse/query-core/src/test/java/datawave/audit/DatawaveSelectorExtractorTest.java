@@ -136,8 +136,8 @@ public class DatawaveSelectorExtractorTest {
         QueryImpl q = new QueryImpl();
         q.setQuery(query);
         List<String> selectorList = extractor.extractSelectors(q);
-        List<String> expected = Lists.newArrayList(uuids.stream().map(x -> x.substring("_ANY_FIELD_ == '".length(), x.length() - 1))
-                        .collect(Collectors.toList()));
+        List<String> expected = Lists
+                        .newArrayList(uuids.stream().map(x -> x.substring("_ANY_FIELD_ == '".length(), x.length() - 1)).collect(Collectors.toList()));
         Assert.assertEquals(expected, selectorList);
     }
     

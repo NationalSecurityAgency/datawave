@@ -331,11 +331,10 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
                 q = Term(field);
                 break;
             case NOT:
-                jj_consume_token(NOT);
-                {
-                    if (true)
-                        return null;
-                }
+                jj_consume_token(NOT); {
+                if (true)
+                    return null;
+            }
                 break;
             case LPAREN:
                 jj_consume_token(LPAREN);

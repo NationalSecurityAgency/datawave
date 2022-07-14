@@ -146,8 +146,8 @@ public final class TokenTtlTrie {
                 // maintain original priority just update the ttl
                 stateTtlList.set(curState, ttl);
             } else {
-                throw new IllegalArgumentException(String.format("Token '%s'(#%d) already specified at index %d", new String(token),
-                                statePriorityList.get(curState), myPriority));
+                throw new IllegalArgumentException(
+                                String.format("Token '%s'(#%d) already specified at index %d", new String(token), statePriorityList.get(curState), myPriority));
             }
             return this;
         }

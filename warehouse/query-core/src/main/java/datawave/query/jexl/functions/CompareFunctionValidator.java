@@ -26,21 +26,21 @@ public class CompareFunctionValidator {
     
     public static void validate(String function, List<JexlNode> args) throws IllegalArgumentException {
         if (args.size() != 4) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format(
-                            "{0} requires 4 arguments", function));
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                            MessageFormat.format("{0} requires 4 arguments", function));
             throw new IllegalArgumentException(qe);
         } else {
             if (!operators.contains(args.get(1).image)) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format(
-                                "{0} requires valid comparison operator (<, <=, >, >=, ==/= or !=) as 2nd arguments", function));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0} requires valid comparison operator (<, <=, >, >=, ==/= or !=) as 2nd arguments", function));
                 throw new IllegalArgumentException(qe);
             }
             
             try {
                 Mode.valueOf(args.get(2).image);
             } catch (IllegalArgumentException iae) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format(
-                                "{0} requires ANY or ALL as 3rd arguments", function));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0} requires ANY or ALL as 3rd arguments", function));
                 throw new IllegalArgumentException(qe);
             }
         }

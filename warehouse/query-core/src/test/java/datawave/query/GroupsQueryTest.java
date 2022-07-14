@@ -87,8 +87,8 @@ public class GroupsQueryTest extends AbstractFunctionalQuery {
         int min = 40;
         int max = 170;
         String query = GroupField.STATE_EAST.getQueryField() + EQ_OP + state + AND_OP + "(" + GroupField.CITY_EAST.getQueryField() + EQ_OP + one + OR_OP
-                        + GroupField.CITY_EAST.getQueryField() + EQ_OP + two + ")" + AND_OP + "((_Bounded_ = true) && ("
-                        + GroupField.COUNT_EAST.getQueryField() + GT_OP + min + AND_OP + GroupField.COUNT_EAST.getQueryField() + LT_OP + max + "))";
+                        + GroupField.CITY_EAST.getQueryField() + EQ_OP + two + ")" + AND_OP + "((_Bounded_ = true) && (" + GroupField.COUNT_EAST.getQueryField()
+                        + GT_OP + min + AND_OP + GroupField.COUNT_EAST.getQueryField() + LT_OP + max + "))";
         runTest(query, query);
     }
     

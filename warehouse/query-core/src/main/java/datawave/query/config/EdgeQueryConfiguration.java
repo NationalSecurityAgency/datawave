@@ -135,7 +135,7 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration {
                     case ANY_LOAD:
                         this.dateRangeType = dateType.ANY_LOAD;
                         break;
-                // @WARNING no default case, i.e. we are ignoring unexpected values for dateRangeType
+                    // @WARNING no default case, i.e. we are ignoring unexpected values for dateRangeType
                 }
             }
             

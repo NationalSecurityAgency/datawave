@@ -96,8 +96,7 @@ public class XMLFieldConfigHelperTest {
     
     @Test(expected = IllegalArgumentException.class)
     public void testBadTag() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                        + "<fieldConfig>\n"
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
                         + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
@@ -109,8 +108,7 @@ public class XMLFieldConfigHelperTest {
     
     @Test(expected = IllegalArgumentException.class)
     public void testDuplicateField() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                        + "<fieldConfig>\n"
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
                         + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
@@ -122,8 +120,7 @@ public class XMLFieldConfigHelperTest {
     
     @Test(expected = IllegalStateException.class)
     public void testMissingDefault() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                        + "<fieldConfig>\n"
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
                         + "    <field name=\"A\" indexed=\"true\"/>\n" + "</fieldConfig>";
         
@@ -132,8 +129,7 @@ public class XMLFieldConfigHelperTest {
     
     @Test(expected = IllegalArgumentException.class)
     public void testIncompleteDefault() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                        + "<fieldConfig>\n"
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <default stored=\"true\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
                         + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
@@ -146,8 +142,7 @@ public class XMLFieldConfigHelperTest {
     
     @Test
     public void testMissingNomatch() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                        + "<fieldConfig>\n"
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
@@ -158,8 +153,7 @@ public class XMLFieldConfigHelperTest {
     
     @Test(expected = IllegalArgumentException.class)
     public void testIncompleteNomatch() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                        + "<fieldConfig>\n"
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
                         + "    <nomatch stored=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
@@ -170,8 +164,7 @@ public class XMLFieldConfigHelperTest {
     
     @Test
     public void testMultiType() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                        + "<fieldConfig>\n"
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType,datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";

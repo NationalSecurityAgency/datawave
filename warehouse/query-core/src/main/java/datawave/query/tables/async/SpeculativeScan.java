@@ -82,7 +82,8 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
     }
     
     public SpeculativeScan(String localTableName, Set<Authorizations> localAuths, ScannerChunk chunk, ResourceQueue delegatorReference,
-                    Class<? extends AccumuloResource> delegatedResourceInitializer, ArrayBlockingQueue<Entry<Key,Value>> results, ExecutorService callingService) {
+                    Class<? extends AccumuloResource> delegatedResourceInitializer, ArrayBlockingQueue<Entry<Key,Value>> results,
+                    ExecutorService callingService) {
         super(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, results, callingService);
         scans = Lists.newArrayList();
         scanFutures = Lists.newArrayList();

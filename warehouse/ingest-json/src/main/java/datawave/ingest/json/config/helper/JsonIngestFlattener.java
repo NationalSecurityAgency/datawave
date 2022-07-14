@@ -183,7 +183,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
                     // Also strip underscores since that's our occurrence delimiter
                     elementName = elementName.replaceAll(UNDERSCORE, EMPTY_STRING);
                     break;
-            // Other normalizations perhaps?
+                // Other normalizations perhaps?
             }
             
             return elementName;

@@ -58,9 +58,9 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             } else {
                 if (log.isTraceEnabled())
                     log.trace("Received term info multimap of size [" + terms.size() + "]");
-                ArrayList<DiscoveredThing> things = newArrayList(filter(
-                                transform(terms.asMap().values(), new TermInfoAggregation(separateCountsByColVis, showReferenceCount, reverseIndex)),
-                                Predicates.notNull()));
+                ArrayList<DiscoveredThing> things = newArrayList(
+                                filter(transform(terms.asMap().values(), new TermInfoAggregation(separateCountsByColVis, showReferenceCount, reverseIndex)),
+                                                Predicates.notNull()));
                 if (log.isTraceEnabled())
                     log.trace("After conversion to discovery objects, there are [" + things.size() + "] term info objects.");
                 if (things.isEmpty()) {

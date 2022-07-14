@@ -62,9 +62,13 @@ import java.util.function.Consumer;
 public class RebuildingScannerTestHelper {
     
     public enum TEARDOWN {
-        NEVER(NeverTeardown.class), ALWAYS(AlwaysTeardown.class), RANDOM(RandomTeardown.class), EVERY_OTHER(EveryOtherTeardown.class), ALWAYS_SANS_CONSISTENCY(
-                        AlwaysTeardownWithoutConsistency.class), RANDOM_SANS_CONSISTENCY(RandomTeardownWithoutConsistency.class), EVERY_OTHER_SANS_CONSISTENCY(
-                        EveryOtherTeardownWithoutConsistency.class);
+        NEVER(NeverTeardown.class),
+        ALWAYS(AlwaysTeardown.class),
+        RANDOM(RandomTeardown.class),
+        EVERY_OTHER(EveryOtherTeardown.class),
+        ALWAYS_SANS_CONSISTENCY(AlwaysTeardownWithoutConsistency.class),
+        RANDOM_SANS_CONSISTENCY(RandomTeardownWithoutConsistency.class),
+        EVERY_OTHER_SANS_CONSISTENCY(EveryOtherTeardownWithoutConsistency.class);
         
         private Class<? extends TeardownListener> tclass;
         
@@ -255,18 +259,18 @@ public class RebuildingScannerTestHelper {
         }
     }
     
-    public static Connector getConnector(InMemoryInstance i, String user, byte[] pass, TEARDOWN teardown, INTERRUPT interrupt) throws AccumuloException,
-                    AccumuloSecurityException {
+    public static Connector getConnector(InMemoryInstance i, String user, byte[] pass, TEARDOWN teardown, INTERRUPT interrupt)
+                    throws AccumuloException, AccumuloSecurityException {
         return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, new PasswordToken(pass))), teardown, interrupt);
     }
     
-    public static Connector getConnector(InMemoryInstance i, String user, ByteBuffer pass, TEARDOWN teardown, INTERRUPT interrupt) throws AccumuloException,
-                    AccumuloSecurityException {
+    public static Connector getConnector(InMemoryInstance i, String user, ByteBuffer pass, TEARDOWN teardown, INTERRUPT interrupt)
+                    throws AccumuloException, AccumuloSecurityException {
         return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, ByteBufferUtil.toBytes(pass))), teardown, interrupt);
     }
     
-    public static Connector getConnector(InMemoryInstance i, String user, CharSequence pass, TEARDOWN teardown, INTERRUPT interrupt) throws AccumuloException,
-                    AccumuloSecurityException {
+    public static Connector getConnector(InMemoryInstance i, String user, CharSequence pass, TEARDOWN teardown, INTERRUPT interrupt)
+                    throws AccumuloException, AccumuloSecurityException {
         return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, TextUtil.getBytes(new Text(pass.toString())))), teardown, interrupt);
     }
     
