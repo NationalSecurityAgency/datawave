@@ -226,7 +226,7 @@ public class IntersectionTest {
         JexlNode n1 = JexlNodeFactory.buildEQNode(field, value);
         ii1.applyNode(n1);
         Iterator<Tuple2<String,IndexInfo>> i1 = Arrays.asList(new Tuple2<>(shard, ii1)).iterator();
-        return ScannerStream.variable(i1, n1);
+        return ScannerStream.withData(i1, n1);
     }
     
     @Test
@@ -1066,6 +1066,6 @@ public class IntersectionTest {
             elements.add(new Tuple2<>(shard, info));
         }
         
-        return ScannerStream.variable(elements.iterator(), node);
+        return ScannerStream.withData(elements.iterator(), node);
     }
 }

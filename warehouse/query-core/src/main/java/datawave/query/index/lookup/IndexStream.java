@@ -21,22 +21,18 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          * PRESENT indicates that a given field and term has data in the global index.
          */
         PRESENT,
-        
         /**
          * ABSENT means that we expected data to exist, but did not find any.
          */
         ABSENT,
-        
         /**
-         * VARIABLE indicates that this particular stream will have some delayed and non delayed predicates
+         * VARIABLE indicates that this index stream has a mix of delayed and non-delayed terms
          */
         VARIABLE,
-        
         /**
-         * No op expression used to indicate that an expression is kept as a place holder.
+         * No op expression indicates that an expression is kept as a placeholder
          */
         NO_OP,
-        
         /**
          * Delayed expression
          */
@@ -45,22 +41,19 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          * UNINDEXED means that the given field is not present for any value in the index.
          */
         UNINDEXED,
-        
         /**
          * UKNOWN_FIELD means that the field has never been tracked by the system.
          */
         UNKNOWN_FIELD,
-        
         /**
-         * EXCEEDED_THRESHOLD means that a we exceeded a term threshold somewhere
+         * EXCEEDED_TERM_THRESHOLD means that we exceeded a term threshold somewhere
          */
         EXCEEDED_TERM_THRESHOLD,
-        
         /**
-         * EXCEEDED_THRESHOLD means that a we exceeded a value threshold somewhere
+         * EXCEEDED_VALUE_THRESHOLD means that we exceeded a value threshold somewhere. The RangeStream will generate a list of day ranges that covers the date
+         * range of the query.
          */
         EXCEEDED_VALUE_THRESHOLD,
-        
         /**
          * At some point in the processing chain, we determined that a node (range or regex) did not need to be expanded to satisfy the query using the field
          * index

@@ -86,7 +86,6 @@ public class Intersection extends BaseIndexStream {
     private Tuple2<String,IndexInfo> next;
     private JexlNode currNode;
     protected JexlNodeSet delayedNodes;
-    protected boolean isVariable;
     protected UidIntersector uidIntersector;
     
     private static final Logger log = Logger.getLogger(Intersection.class);
@@ -102,7 +101,6 @@ public class Intersection extends BaseIndexStream {
         if (log.isTraceEnabled()) {
             log.trace("Constructor -- has children? " + childrenItr.hasNext());
         }
-        isVariable = false;
         if (childrenItr.hasNext()) {
             boolean absent = false;
             boolean delayedField = false;
@@ -122,37 +120,44 @@ public class Intersection extends BaseIndexStream {
                         log.trace("Stream has next, so adding it to children " + stream.peek().second().getNode() + " " + key(stream));
                     }
                     
-                    if (StreamContext.VARIABLE == stream.context()) {
-                        if (log.isTraceEnabled())
-                            log.trace("Setting variable nodes");
-                        isVariable = true;
-                        JexlNode node = stream.peek().second().getNode();
-                        this.nodeSet.add(node);
-                        this.children.put(key(stream), stream);
-                    } else {
-                        
-                        if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context())
-                            exceededValueThreshold = true;
-                        
-                        this.nodeSet.add(stream.currentNode());
-                        this.children.put(key(stream), stream);
+                    switch (stream.context()) {
+                        case VARIABLE:
+                            if (log.isTraceEnabled())
+                                log.trace("Setting variable nodes");
+                            JexlNode node = stream.peek().second().getNode();
+                            this.nodeSet.add(node);
+                            this.children.put(key(stream), stream);
+                            break;
+                        default:
+                            if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context())
+                                exceededValueThreshold = true;
+                            this.nodeSet.add(stream.currentNode());
+                            this.children.put(key(stream), stream);
+                            break;
                     }
                 } else {
-                    if (StreamContext.EXCEEDED_TERM_THRESHOLD == stream.context()) {
-                        this.delayedNodes.add(stream.currentNode());
-                    } else if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context()) {
-                        exceededValueThreshold = true;
-                        absent = true;
-                    } else if (StreamContext.ABSENT == stream.context()) {
-                        absent = true;
-                    } else if (StreamContext.UNINDEXED == stream.context() || StreamContext.UNKNOWN_FIELD == stream.context()
-                                    || StreamContext.DELAYED_FIELD == stream.context() || StreamContext.IGNORED == stream.context()) {
-                        if (StreamContext.DELAYED_FIELD == stream.context())
-                            delayedField = true;
-                        this.delayedNodes.add(stream.currentNode());
-                    } else {
-                        QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_RANGE_STREAM, MessageFormat.format("{0}", stream.context()));
-                        throw new DatawaveFatalQueryException(qe);
+                    switch (stream.context()) {
+                        case EXCEEDED_TERM_THRESHOLD:
+                            this.delayedNodes.add(stream.currentNode());
+                            break;
+                        case EXCEEDED_VALUE_THRESHOLD:
+                            exceededValueThreshold = true;
+                            absent = true;
+                            break;
+                        case ABSENT:
+                            absent = true;
+                            break;
+                        case UNINDEXED:
+                        case UNKNOWN_FIELD:
+                        case DELAYED_FIELD:
+                        case IGNORED:
+                            if (StreamContext.DELAYED_FIELD == stream.context())
+                                delayedField = true;
+                            this.delayedNodes.add(stream.currentNode());
+                            break;
+                        default:
+                            QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_RANGE_STREAM, MessageFormat.format("{0}", stream.context()));
+                            throw new DatawaveFatalQueryException(qe);
                     }
                 }
                 
@@ -173,9 +178,6 @@ public class Intersection extends BaseIndexStream {
             if (absent) {
                 this.context = StreamContext.ABSENT;
                 this.contextDebug = "found absent child";
-            } else if (allChildrenAreUnindexed(this.children.values())) {
-                this.context = StreamContext.UNINDEXED;
-                this.contextDebug = "all children unindexed";
             } else if (this.children.isEmpty() && delayedField) {
                 this.context = StreamContext.DELAYED_FIELD;
                 this.contextDebug = "delayed field";
@@ -183,10 +185,19 @@ public class Intersection extends BaseIndexStream {
                 this.context = StreamContext.EXCEEDED_VALUE_THRESHOLD;
                 this.contextDebug = "all children exceeded value threshold";
                 next();
+            } else if (allChildrenAreUnindexed(this.children.values())) {
+                this.context = StreamContext.UNINDEXED;
+                this.contextDebug = "all children unindexed";
             } else {
-                this.context = StreamContext.PRESENT;
-                this.contextDebug = "children may intersect";
                 next();
+                if (next != null) {
+                    this.context = StreamContext.PRESENT;
+                    this.contextDebug = "children intersect";
+                } else {
+                    this.context = StreamContext.ABSENT;
+                    this.contextDebug = "children did not intersect";
+                }
+                
             }
         } else {
             this.context = StreamContext.ABSENT;

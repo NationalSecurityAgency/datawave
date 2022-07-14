@@ -3134,6 +3134,8 @@ public class RangeStreamTestX {
         rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
         rangeStream.setLimitScanners(false);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
+        
+        rangeStream.close();
     }
     
     private void runTest(RangeStream rangeStream, ASTJexlScript script, List<Range> expectedRanges, List<String> expectedQueries) throws Exception {

@@ -1161,8 +1161,8 @@ public class RangeStreamTest {
         RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
         rangeStream.streamPlans(script);
         // streamPlans(script) to populate the StreamContext.
-        assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
         assertTrue(rangeStream.iterator().hasNext());
+        assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
     }
     
     @Test
@@ -1186,8 +1186,8 @@ public class RangeStreamTest {
         RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
         rangeStream.streamPlans(script);
         // streamPlans(script) to populate the StreamContext.
-        assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
         assertFalse(rangeStream.iterator().hasNext());
+        assertEquals(IndexStream.StreamContext.ABSENT, rangeStream.context());
     }
     
     @Test
@@ -1576,8 +1576,8 @@ public class RangeStreamTest {
         // Create expected ranges verbosely, so it is obvious which shards contribute to the results.
         Range range1 = makeTestRange("20190310_21", "datatype1\u0000a.b.c");
         // Fun story. It's hard to roll up to a day range when you seek most of the way through the day and don't have all the shards for the day.
-        // Range range2 = makeTestRange("20190315_51", "datatype1\u0000a.b.c");
-        Set<Range> expectedRanges = Sets.newHashSet(range1);
+        Range range2 = makeTestRange("20190315_51", "datatype1\u0000a.b.c");
+        Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
         
         RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
         rangeStream.setLimitScanners(true);
