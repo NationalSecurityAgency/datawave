@@ -107,7 +107,7 @@
         <version.weld-se>3.1.1.Final</version.weld-se>
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
         <version.weld-test>2.3.5.Final</version.weld-test>
-        <version.wildfly>26.1.1.Final</version.wildfly>
+        <version.wildfly>24.0.1.Final</version.wildfly>
         <version.woodstox-core>5.0.3</version.woodstox-core>
         <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.12.2</version.xerces>
@@ -857,6 +857,11 @@
                         <artifactId>jboss-transaction-api_1.1_spec</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-core</artifactId>
+                <version>4.7.6.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld.se</groupId>
@@ -1730,7 +1735,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.jboss.spec.javax.ejb</groupId>
-                    <artifactId>jboss-ejb-api_3.1_spec</artifactId>
+                    <artifactId>jboss-ejb-api_3.2_spec</artifactId>
                 </dependency>
             </dependencies>
         </profile>
