@@ -627,8 +627,8 @@
                                             <artifactId>jakarta.enterprise.cdi-api</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-					    <groupId>org.jboss.spec.javax.ws.rs</groupId>
-				            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+                                            <groupId>org.jboss.resteasy</groupId>
+                                            <artifactId>resteasy-jaxrs</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.annotation</groupId>
@@ -660,7 +660,7 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.transaction</groupId>
-                                            <artifactId>jboss-transaction-api_1.3_spec</artifactId>
+                                            <artifactId>jboss-transaction-api_1.2_spec</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>xerces</groupId>

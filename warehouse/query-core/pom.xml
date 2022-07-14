@@ -165,10 +165,12 @@
             <groupId>org.javatuples</groupId>
             <artifactId>javatuples</artifactId>
         </dependency>
+        <!--
         <dependency>
-            <groupId>org.jboss.spec.javax.ws.rs</groupId>
-            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jaxrs</artifactId>
         </dependency>
+	-->
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
