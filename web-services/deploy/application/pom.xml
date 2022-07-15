@@ -625,12 +625,12 @@
                                         <artifactItem>
                                             <groupId>javax.enterprise</groupId>
                                             <artifactId>cdi-api</artifactId>
-					    <version>2.0</version>
+                                            <version>2.0</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.resteasy</groupId>
                                             <artifactId>resteasy-jaxrs</artifactId>
-					    <version>3.9.3.Final</version>
+                                            <version>3.9.3.Final</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.annotation</groupId>
@@ -663,7 +663,7 @@
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.transaction</groupId>
                                             <artifactId>jboss-transaction-api_1.2_spec</artifactId>
-					    <version>1.1.1.Final</version>
+                                            <version>1.1.1.Final</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>xerces</groupId>

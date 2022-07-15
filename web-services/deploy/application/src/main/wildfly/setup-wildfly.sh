@@ -68,7 +68,7 @@ echo "Applying DATAWAVE configuration to Wildfly server..."
 $WILDFLY_HOME/bin/jboss-cli.sh --file=./add-datawave-configuration.cli
 CONFIG_STATUS=$?
 if [ "$CONFIG_STATUS" -ne 0 ]; then
-    echo "Failed to deploy Datawave configuration to Wildfly. Please see $JBOSS_CONSOLE_LOG for details."
+    echo "Failed to deploy Datawave configuration to Wildfly. The ear will NOT be deployed. Please see $JBOSS_CONSOLE_LOG for details."
     exit 3
 fi
 rm -r $WILDFLY_HOME/standalone/log
