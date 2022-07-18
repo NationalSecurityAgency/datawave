@@ -44,6 +44,16 @@ public class JexlStringBuildingVisitorTest {
         Assert.assertEquals(expected, builtQuery);
     }
     
+    @Test
+    public void testDeeplyNestedAndOrNoFormatting() throws ParseException {
+        String query = "((_Value_ = true) && ((_Bounded_ = true) && ((NUM >= 0 && NUM <= 10) || (NUM >= -10 && ((NUM >= 10 || NUM <= 20) && NUM != 15)))))";
+        String expected = query;
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String builtQuery = JexlStringBuildingVisitor.buildQuery(node);
+        
+        Assert.assertEquals(expected, builtQuery);
+    }
+    
     /***** Testing building the query with EmptyDecorator and formatted on multiple lines *****/
     
     @Test
@@ -51,7 +61,7 @@ public class JexlStringBuildingVisitorTest {
         String query = "(BAR == 'foo' || BAR == 'blah')";
         String expected = "(\n    BAR == 'foo' || \n    BAR == 'blah'\n)";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -61,7 +71,7 @@ public class JexlStringBuildingVisitorTest {
         String query = "BAR == 'foo' || BAR == 'blah'";
         String expected = "BAR == 'foo' || \nBAR == 'blah'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -71,7 +81,7 @@ public class JexlStringBuildingVisitorTest {
         String query = "(BAR == 'foo' || BAR == 'blah' || BAR == 'test' || BAR == 'FOO')";
         String expected = "(\n    BAR == 'foo' || \n    BAR == 'blah' || \n    BAR == 'test' || \n    BAR == 'FOO'\n)";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -81,7 +91,7 @@ public class JexlStringBuildingVisitorTest {
         String query = "((BAR == 'foo' || BAR == 'blah') || (BAR == 'test' || BAR == 'FOO'))";
         String expected = "(\n    (\n        BAR == 'foo' || \n        BAR == 'blah'\n    ) || \n    (\n        BAR == 'test' || \n        BAR == 'FOO'\n    )\n)";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -92,7 +102,7 @@ public class JexlStringBuildingVisitorTest {
         String expected = "(\n    (\n        BAR == 'foo' && \n        (\n            BAR == 'blah' || \n            BAR == 'test'\n        )\n    ) "
                         + "|| \n    (\n        (\n            BAR == 'abc' || \n            BAR == '123'\n        ) && \n        BAR == 'FOO'\n    )\n)";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -123,7 +133,7 @@ public class JexlStringBuildingVisitorTest {
                         + "                BAR == 'foo' || \n" + "                BAR == 'blah'\n" + "            )\n" + "        )\n" + "    ) && \n"
                         + "    ((_Value_ = true) && ((_Bounded_ = true) && (NUM >= 0 && NUM <= 10)))\n" + ")";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -135,7 +145,7 @@ public class JexlStringBuildingVisitorTest {
                         + "            BAR == 'blah'\n" + "        )\n" + "    )\n" + ") && \n"
                         + "((_Value_ = true) && ((_Bounded_ = true) && (NUM >= 0 && NUM <= 10)))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -146,7 +156,7 @@ public class JexlStringBuildingVisitorTest {
         String query = "((_Bounded_ = true) && (POINT >= '1f20004a1400000000' && POINT <= '1f20004a1fffffffff'))";
         String expected = "((_Bounded_ = true) && (POINT >= '1f20004a1400000000' && POINT <= '1f20004a1fffffffff'))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -157,7 +167,7 @@ public class JexlStringBuildingVisitorTest {
         String query = "((_Bounded_ = true) && (POINT == '1f20004a1400000000'))";
         String expected = "((_Bounded_ = true) && (POINT == '1f20004a1400000000'))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -168,7 +178,7 @@ public class JexlStringBuildingVisitorTest {
         String query = "(_Value_ = true) && (BAR == 'foo')";
         String expected = "(_Value_ = true) && (BAR == 'foo')";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -179,7 +189,7 @@ public class JexlStringBuildingVisitorTest {
         String query = "((_Value_ = true) && (BAR == 'foo'))";
         String expected = "((_Value_ = true) && (BAR == 'foo'))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -190,7 +200,7 @@ public class JexlStringBuildingVisitorTest {
         String query = "(((_Value_ = true) && (BAR == 'foo')))";
         String expected = "(((_Value_ = true) && (BAR == 'foo')))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -202,7 +212,7 @@ public class JexlStringBuildingVisitorTest {
         String expected = "(\n" + "    (_Eval_ = true) && \n" + "    (\n" + "        FOO == 'bar' && \n" + "        (\n" + "            BAR == 'foo' || \n"
                         + "            BAR == 'blah'\n" + "        )\n" + "    )\n" + ")";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -213,7 +223,7 @@ public class JexlStringBuildingVisitorTest {
         String query = "((_Eval_ = true) && (BAR == 'foo' || BAR == 'blah'))";
         String expected = "(\n" + "    (_Eval_ = true) && \n" + "    (\n" + "        BAR == 'foo' || \n" + "        BAR == 'blah'\n" + "    )\n" + ")";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -224,7 +234,7 @@ public class JexlStringBuildingVisitorTest {
         String query = "((_Value_ = true) && ((_Bounded_ = true) && (NUM >= 0 && NUM <= 10)))";
         String expected = "((_Value_ = true) && ((_Bounded_ = true) && (NUM >= 0 && NUM <= 10)))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -234,7 +244,7 @@ public class JexlStringBuildingVisitorTest {
         String query = "((((FOO == 'BAR' && ((_Eval_ = true) && (THIS == 'THAT'))))))";
         String expected = "((((\n    FOO == 'BAR' && \n    ((_Eval_ = true) && (THIS == 'THAT'))\n))))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -245,7 +255,7 @@ public class JexlStringBuildingVisitorTest {
         String expected = "((((\n    FOO == 'BAR' && \n    ((_Eval_ = true) && (THIS == 'THAT'))\n)))) || "
                         + "\n((((\n    FOO == 'BAR' && \n    ((_Eval_ = true) && (THIS == 'THAT'))\n))))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -256,7 +266,18 @@ public class JexlStringBuildingVisitorTest {
         String expected = "((((\n    FOO == 'BAR' && \n    ((_Eval_ = true) && (THIS == 'THAT'))\n)))) && "
                         + "\n((((\n    FOO == 'BAR' && \n    ((_Eval_ = true) && (THIS == 'THAT'))\n))))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new EmptyDecorator());
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
+        
+        Assert.assertEquals(expected, builtQuery);
+    }
+    
+    @Test
+    public void testDeeplyNestedAndOrOneLineSomeFormatting() throws ParseException {
+        // Deeply nested query with 'and' and 'or' ops which should be on a single line based on 'needNewLines' function
+        String query = "((_Value_ = true) && ((_Bounded_ = true) && ((NUM >= 0 && NUM <= 10) || (NUM >= -10 && ((NUM >= 10 || NUM <= 20) && NUM != 15)))))";
+        String expected = query;
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String builtQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new EmptyDecorator());
         
         Assert.assertEquals(expected, builtQuery);
     }
@@ -338,7 +359,7 @@ public class JexlStringBuildingVisitorTest {
                         + "    )\n" + ")";
         String expected = strSub.replace(template);
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String decoratedBuiltQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new BashDecorator());
+        String decoratedBuiltQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new BashDecorator());
         
         Assert.assertEquals(expected, decoratedBuiltQuery);
     }
@@ -394,7 +415,7 @@ public class JexlStringBuildingVisitorTest {
                         + "        (<span class=\"field\">POINT</span><span class=\"method\">.max()</span> <span class=\"equal-op\">==</span> <span class=\"numeric-value\">5</span>)\n"
                         + "    )\n" + ")";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        String decoratedBuiltQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, new HtmlDecorator());
+        String decoratedBuiltQuery = JexlStringBuildingVisitor.buildDecoratedQuery(node, false, true, new HtmlDecorator());
         
         Assert.assertEquals(expected, decoratedBuiltQuery);
     }

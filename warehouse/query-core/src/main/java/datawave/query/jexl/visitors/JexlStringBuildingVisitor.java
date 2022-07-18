@@ -51,13 +51,14 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Scanner;
 import java.util.TreeSet;
 
@@ -78,10 +79,9 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
                     "getGroupsForValue", "getValuesForGroups", "toString", "values", "min", "max", "lessThan", "greaterThan", "compareWith");
 
     protected boolean sortDedupeChildren;
+    // Whether or not the query should be expanded to multiple lines
     protected boolean buildMultipleLines;
     protected JexlQueryDecorator decorator;
-    // List of existing decorators for JEXL Queries (those which implement JexlQueryDecorator)
-    protected static final List<String> existingDecorators = Arrays.asList("EmptyDecorator", "BashDecorator", "HtmlDecorator");
     
     /**
      * Default constructor. Visitor that will apply no formatting.
@@ -204,48 +204,87 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     }
     
     /**
-     * Determines whether a JexlNode should be formatted on multiple lines or not. If this node is a bounded marker node OR if this node is a marker node which
-     * has a child bounded marker node OR if this node is a marker node with a single term as a child, then return false (should all be one line). Otherwise,
-     * return true.
+     * Determines whether a JexlNode should be formatted on multiple lines or not. The JexlNodes which may be split into multiple lines are ASTOrNodes,
+     * ASTReferenceExpressions, and ASTAndNodes. In all cases: If buildMultipleLines is false, false is immediately returned. Or if the given node has an
+     * ASTAndNode ancestor which returns false for needNewLines(), immediately return false for the given node (anything that ancestor node is 'anded' with
+     * should be on the same line).
+     * 
+     * Further logic for splitting ASTOrNodes: True otherwise
+     * 
+     * Further logic for splitting ASTReferenceExpressions: If the node has a child ASTAndNode or ASTOrNode and that child needsNewLines(), return true. False
+     * otherwise
+     * 
+     * Further logic for splitting ASTAndNodes: If this node is a bounded marker node OR if this node is a marker node which has a child bounded marker node OR
+     * if this node is a marker node with a single term as a child, then we don't want to add any new lines on this visit or on visits to this nodes children
+     * (return false). Otherwise, return true.
      * 
      * @param node
      * @return
      */
     private boolean needNewLines(JexlNode node) {
-        if (buildMultipleLines == false)
+        JexlNode parent = node.jjtGetParent();
+        boolean needNewLines;
+        
+        if (buildMultipleLines == false) { // Always return false if the query is meant to be built without multiple lines in the first place
             return false;
-        
-        int numChildren = node.jjtGetNumChildren();
-        boolean needNewLines = true;
-        // Whether or not this node has a child with a bounded range query
-        boolean childHasBoundedRange = false;
-        // Whether or not this node is a marker node which has a child bounded marker node
-        boolean markerWithSingleTerm = false;
-        
-        for (int i = 0; i < numChildren; i++) {
-            if (QueryPropertyMarker.findInstance(node.jjtGetChild(i)).isType(BoundedRange.class)) {
-                childHasBoundedRange = true;
-            }
         }
         
-        if (numChildren == 2) {
-            if (QueryPropertyMarker.findInstance(node).isAnyType() && node.jjtGetChild(1) instanceof ASTReference
-                            && node.jjtGetChild(1).jjtGetChild(0) instanceof ASTReferenceExpression
-                            && !(node.jjtGetChild(1).jjtGetChild(0).jjtGetChild(0) instanceof ASTAndNode)
-                            && !(node.jjtGetChild(1).jjtGetChild(0).jjtGetChild(0) instanceof ASTOrNode)) {
-                markerWithSingleTerm = true;
+        // We want to go up the tree from this node to see if any parent ASTAndNodes return false for needNewLines().
+        // If this is the case, we also want to return false for this current node. (whenever needNewLines() returns false
+        // for an ASTAndNode, the children should also be printed on the same line)
+        while (parent != null) {
+            if (parent instanceof ASTAndNode && !needNewLines(parent)) {
+                return false;
             }
+            parent = parent.jjtGetParent();
         }
         
-        // If this node is a bounded marker node OR if this node is a marker node which has a child bounded marker node
-        // OR if this node is a marker node with a single term as a child, then
-        // we don't want to add any new lines on this visit or on visits to this nodes children
-        if (QueryPropertyMarker.findInstance(node).isType(BoundedRange.class) || (QueryPropertyMarker.findInstance(node).isAnyType() && childHasBoundedRange)
-                        || markerWithSingleTerm) {
+        // Or nodes are always split to multiple lines, unless buildMultipleLines is false or if a parent ASTAndNode returns false for needNewLines
+        if (node instanceof ASTOrNode) {
+            return true;
+        } else if (node instanceof ASTReferenceExpression) {
+            JexlNode child = node.jjtGetChild(0);
             needNewLines = false;
+            
+            if ((child instanceof ASTAndNode || child instanceof ASTOrNode) && needNewLines(child)) {
+                needNewLines = true;
+            }
+            return needNewLines;
+        } else if (node instanceof ASTAndNode) {
+            int numChildren = node.jjtGetNumChildren();
+            needNewLines = true;
+            // Whether or not this node has a child with a bounded range query
+            boolean childHasBoundedRange = false;
+            // Whether or not this node is a marker node which has a child bounded marker node
+            boolean markerWithSingleTerm = false;
+            
+            for (int i = 0; i < numChildren; i++) {
+                if (QueryPropertyMarker.findInstance(node.jjtGetChild(i)).isType(BoundedRange.class)) {
+                    childHasBoundedRange = true;
+                }
+            }
+            
+            if (numChildren == 2) {
+                if (QueryPropertyMarker.findInstance(node).isAnyType() && node.jjtGetChild(1) instanceof ASTReference
+                                && node.jjtGetChild(1).jjtGetChild(0) instanceof ASTReferenceExpression
+                                && !(node.jjtGetChild(1).jjtGetChild(0).jjtGetChild(0) instanceof ASTAndNode)
+                                && !(node.jjtGetChild(1).jjtGetChild(0).jjtGetChild(0) instanceof ASTOrNode)) {
+                    markerWithSingleTerm = true;
+                }
+            }
+            
+            // If this node is a bounded marker node OR if this node is a marker node which has a child bounded marker node
+            // OR if this node is a marker node with a single term as a child, then
+            // we don't want to add any new lines on this visit or on visits to this nodes children
+            if (QueryPropertyMarker.findInstance(node).isType(BoundedRange.class)
+                            || (QueryPropertyMarker.findInstance(node).isAnyType() && childHasBoundedRange) || markerWithSingleTerm) {
+                needNewLines = false;
+            }
+            
+            return needNewLines;
+        } else {
+            return false;
         }
-        
-        return needNewLines;
     }
 
     /**
@@ -336,21 +375,23 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     }
     
     /**
-     * Build a String that is the equivalent JEXL query with color styling and formatted on multiple lines.
+     * Build a String that is the equivalent JEXL query with decoration.
      * 
      * @param script
      *            An ASTJexlScript
      * @param sortDedupeChildren
      *            Whether or not to sort the child nodes, and dedupe them. Note: Only siblings (children with the same parent node) will be deduped. Flatten
      *            beforehand for maximum 'dedupeage'.
+     * @param buildMultipleLines
+     *            Whether or not the query should be formatted on multiple lines
      * @param decorator
-     *            How the query will be decorated (e.g., decoration for Bash or HTML)
+     *            How the query will be decorated (e.g., decoration for Bash, HTML, or no added decoration (EmptyDecorator))
      * @return
      */
-    public static String buildDecoratedQuery(JexlNode script, boolean sortDedupeChildren, JexlQueryDecorator decorator) {
+    public static String buildDecoratedQuery(JexlNode script, boolean sortDedupeChildren, boolean buildMultipleLines, JexlQueryDecorator decorator) {
         // Two visitors to keep containsOnly() and closeParensFollowedByAndOr() as simple as possible
-        JexlStringBuildingVisitor decoratedVisitor = new JexlStringBuildingVisitor(sortDedupeChildren, true, decorator);
-        JexlStringBuildingVisitor plainVisitor = new JexlStringBuildingVisitor(sortDedupeChildren, true, new EmptyDecorator());
+        JexlStringBuildingVisitor decoratedVisitor = new JexlStringBuildingVisitor(sortDedupeChildren, buildMultipleLines, decorator);
+        JexlStringBuildingVisitor plainVisitor = new JexlStringBuildingVisitor(sortDedupeChildren, buildMultipleLines, new EmptyDecorator());
         
         String decoratedQueryStr = null, plainQueryStr = null;
         try {
@@ -371,7 +412,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         int numChildren = node.jjtGetNumChildren();
         JexlNode parent = node.jjtGetParent();
         boolean wrapIt = false;
-        boolean needNewLines = buildMultipleLines;
+        boolean needNewLines = needNewLines(node);
         
         if (!(parent instanceof ASTReferenceExpression || parent instanceof ASTJexlScript || parent instanceof ASTOrNode || numChildren == 0)) {
             wrapIt = true;
@@ -407,19 +448,14 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         }
 
         Collection<String> childStrings = (sortDedupeChildren) ? new TreeSet<>() : new ArrayList<>(numChildren);
-        Collection<String> childStringsFormatted = (sortDedupeChildren) ? new TreeSet<>() : new ArrayList<>(numChildren);
         StringBuilder childSB = new StringBuilder();
         for (int i = 0; i < numChildren; i++) {
             node.jjtGetChild(i).jjtAccept(this, childSB);
             childStrings.add(childSB.toString());
             childSB.setLength(0);
         }
-        // If needNewLines is false, we should remove the new lines added to the child strings
-        for (String childString : childStrings) {
-            childStringsFormatted.add(needNewLines ? childString : childString.replace(NEWLINE, ""));
-        }
         
-        decorator.apply(sb, node, childStringsFormatted, needNewLines);
+        decorator.apply(sb, node, childStrings, needNewLines);
         
         if (wrapIt)
             sb.append(")");
@@ -757,12 +793,8 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
 
     public Object visit(ASTReferenceExpression node, Object data) {
         StringBuilder sb = (StringBuilder) data;
-        JexlNode child = node.jjtGetChild(0);
-        boolean needNewLines = false;
+        boolean needNewLines = needNewLines(node);
         
-        if ((child instanceof ASTAndNode || child instanceof ASTOrNode) && needNewLines(child)) {
-            needNewLines = true;
-        }
         sb.append("(" + (needNewLines ? NEWLINE : ""));
         
         int lastsize = sb.length();
@@ -888,69 +920,112 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         return sb;
     }
     
-    private static JexlQueryDecorator getDecoratorFromStr(String str) {
-        JexlQueryDecorator decorator = null;
-        
-        if (existingDecorators.contains(str)) {
-            if (str.equals(existingDecorators.get(0))) {
-                decorator = new EmptyDecorator();
-            } else if (str.equals(existingDecorators.get(1))) {
-                decorator = new BashDecorator();
-            } else if (str.equals(existingDecorators.get(2))) {
-                decorator = new HtmlDecorator();
-            }
-        }
-        
-        return decorator;
+    private static String getHelp() {
+        return "Usage:" + NEWLINE + "JexlStringBuildingVisitor [ --help | --BashMultipleLines | --BashSingleLine | --HtmlMultipleLines | "
+                        + "--HtmlSingleLine | --NoDecSingleLine | --NoDecMultipleLines ] {JEXL-QUERY-FILE(s)}" + NEWLINE + "or" + NEWLINE
+                        + "JexlStringBuildingVisitor [ --help | --BashMultipleLines | --BashSingleLine | --HtmlMultipleLines | "
+                        + "--HtmlSingleLine | --NoDecSingleLine | --NoDecMultipleLines ]" + NEWLINE + NEWLINE + "Description:" + NEWLINE
+                        + "The JexlStringBuildingVisitor program parses one or more JEXL query files, specified on the command" + NEWLINE
+                        + "line or the standard input if no filenames are provided. " + NEWLINE + "It prints various types of "
+                        + "output, depending upon the options selected." + NEWLINE + "It is useful for detecting errors in the JEXL query "
+                        + "and providing a formatted output." + NEWLINE + NEWLINE + "Options:" + NEWLINE + "--help" + NEWLINE
+                        + "    Displays how to use this program" + NEWLINE + "--BashMultipleLines" + NEWLINE
+                        + "    Formats each of the queries on multiple lines with bash color decoration" + NEWLINE + "--BashSingleLine" + NEWLINE
+                        + "    Formats each of the queries on a single line with bash color decoration" + NEWLINE + "--HtmlMultipleLines" + NEWLINE
+                        + "    Formats each of the queries on multiple lines with HTML color decoration" + NEWLINE + "--HtmlSingleLine" + NEWLINE
+                        + "    Formats each of the queries on a single line with HTML color decoration" + NEWLINE + "--NoDecMultipleLines" + NEWLINE
+                        + "    Formats each of the queries on multiple lines with no color decoration" + NEWLINE + "--NoDecSingleLine" + NEWLINE
+                        + "    Formats each of the queries on a single line with no color decoration" + NEWLINE;
     }
     
-    /**
-     * Usage: "JexlStringBuildingVisitor query decorator-class-name" or "JexlStringBuildingVisitor query" or "JexlStringBuildingVisitor"
-     * 
-     * @param args
-     */
     public static void main(String args[]) {
-        String query = null;
         JexlQueryDecorator decorator = null;
+        BufferedReader fileReader, cmdReader;
+        String query, builtQuery;
+        JexlNode node;
+        boolean buildMultipleLines = false;
         
-        if (args.length == 2) { // Provided query and decorator
-            query = args[0];
-            decorator = getDecoratorFromStr(args[1]);
-            if (decorator == null) {
-                System.out.println("Invalid decorator provided. Valid decorators are: " + existingDecorators.toString());
-                System.exit(1);
+        if (args.length == 0) { // No args provided: print how this class is meant to be used
+            System.out.println("ERROR: no args provided" + NEWLINE + getHelp());
+        } else if (args.length == 1) { // One arg: should be one of the valid options (e.g., --BashMultipleLines, --BashSingleLine, etc.)
+            if (args[0].equals("--help")) {
+                System.out.println(getHelp());
+            } else {
+                ArrayList<String> argsList = new ArrayList<String>();
+                argsList.add(args[0]);
+                // Prompt user to enter the file(s) to parse
+                System.out.println("Enter file names followed by 'done'");
+                Scanner sc = new Scanner(System.in);
+                String line = "";
+                do {
+                    line = sc.next();
+                    if (!line.equals("done"))
+                        argsList.add(line);
+                } while (!line.equals("done"));
+                sc.close();
+                
+                args = new String[argsList.size()];
+                args = argsList.toArray(args);
             }
-        } else if (args.length == 1) { // Provided query only
-            query = args[0];
-            decorator = new EmptyDecorator();
-        } else if (args.length == 0) { // Nothing provided, prompt user to enter
-            Scanner scanner = new Scanner(System.in);
-            query = scanner.nextLine();
-            decorator = getDecoratorFromStr(scanner.nextLine());
-            if (decorator == null) {
-                System.out.println("Invalid decorator provided. Valid decorators are: " + existingDecorators.toString());
-                System.exit(1);
-            }
-            scanner.close();
-        } else {
-            System.out.println("Invalid number of arguments. Valid arguments: \n<query> <decorator class name>\n<query>\nNo arguments");
-            System.exit(1);
         }
         
-        try {
-            JexlNode node = JexlASTHelper.parseJexlQuery(query);
-            String echoCommand = "echo " + DOUBLE_QUOTE + buildDecoratedQuery(node, false, decorator) + DOUBLE_QUOTE;
-            String[] commands = {"sh", "-c", echoCommand};
-            Process process = Runtime.getRuntime().exec(commands);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line = "";
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+        if (args.length >= 2) {
+            if (args[0].equals("--BashMultipleLines")) {
+                decorator = new BashDecorator();
+                buildMultipleLines = true;
+            } else if (args[0].equals("--BashSingleLine")) {
+                decorator = new BashDecorator();
+                buildMultipleLines = false;
+            } else if (args[0].equals("--HtmlMultipleLines")) {
+                decorator = new HtmlDecorator();
+                buildMultipleLines = true;
+            } else if (args[0].equals("--HtmlSingleLine")) {
+                decorator = new HtmlDecorator();
+                buildMultipleLines = false;
+            } else if (args[0].equals("--NoDecMultipleLines")) {
+                decorator = new EmptyDecorator();
+                buildMultipleLines = true;
+            } else if (args[0].equals("--NoDecSingleLine")) {
+                decorator = new EmptyDecorator();
+                buildMultipleLines = false;
+            } else if (args[0].equals("--help")) {
+                System.out.println(getHelp());
+            } else {
+                System.out.println("ERROR: Invalid option provided." + NEWLINE + getHelp());
             }
-        } catch (ParseException e) {
-            System.out.println("Failure to parse given query.");
-        } catch (IOException e) {
-            e.printStackTrace();
+        }
+        
+        if (decorator != null) {
+            for (int i = 1; i < args.length; i++) {
+                try {
+                    String path = args[i].replaceFirst("^~", System.getProperty("user.home"));
+                    fileReader = new BufferedReader(new FileReader(path));
+                    String fileReaderLine = fileReader.readLine();
+                    while (fileReaderLine != null) {
+                        query = fileReaderLine;
+                        
+                        node = JexlASTHelper.parseJexlQuery(query);
+                        builtQuery = buildDecoratedQuery(node, false, buildMultipleLines, decorator);
+                        String echoCommand = "echo " + DOUBLE_QUOTE + builtQuery + DOUBLE_QUOTE;
+                        String[] commands = {"sh", "-c", echoCommand};
+                        Process process = Runtime.getRuntime().exec(commands);
+                        cmdReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                        String cmdReaderLine = cmdReader.readLine();
+                        while (cmdReaderLine != null) {
+                            System.out.println(cmdReaderLine);
+                            cmdReaderLine = cmdReader.readLine();
+                        }
+                        
+                        fileReaderLine = fileReader.readLine();
+                    }
+                } catch (FileNotFoundException e) {
+                    System.out.println("ERROR: Failed to find given file." + NEWLINE + getHelp());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (ParseException e) {
+                    System.out.println("ERROR: Failed to parse query." + NEWLINE + getHelp());
+                }
+            }
         }
     }
 }

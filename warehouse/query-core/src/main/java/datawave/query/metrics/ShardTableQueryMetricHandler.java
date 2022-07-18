@@ -585,7 +585,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             if (query != null && isJexlQuery(metric.getParameters())) {
                 try {
                     queryNode = JexlASTHelper.parseJexlQuery(query);
-                    metric.setQuery(JexlStringBuildingVisitor.buildDecoratedQuery(queryNode, false, new HtmlDecorator()));
+                    metric.setQuery(JexlStringBuildingVisitor.buildDecoratedQuery(queryNode, false, true, new HtmlDecorator()));
                 } catch (org.apache.commons.jexl2.parser.ParseException e) {
                     log.error("Could not parse JEXL AST after performing transformations to run the query", e);
                     
@@ -598,7 +598,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             if (plan != null) {
                 try {
                     planNode = JexlASTHelper.parseJexlQuery(plan);
-                    metric.setPlan(JexlStringBuildingVisitor.buildDecoratedQuery(planNode, false, new HtmlDecorator()));
+                    metric.setPlan(JexlStringBuildingVisitor.buildDecoratedQuery(planNode, false, true, new HtmlDecorator()));
                 } catch (org.apache.commons.jexl2.parser.ParseException e) {
                     log.error("Could not parse JEXL AST after performing transformations to run the query", e);
                     

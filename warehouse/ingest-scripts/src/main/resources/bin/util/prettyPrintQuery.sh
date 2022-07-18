@@ -1,8 +1,4 @@
 #!/bin/bash
-echo "Arguments:"
-echo "<query>"
-echo "<decorator>"
-echo "Decorator can be EmptyDecorator, HtmlDecorator, or BashDecorator"
 
 DW_QUICKSTART_DIR="$HADOOP_HOME/.."
 
@@ -16,4 +12,4 @@ findJacksonJars () {
 
 JACKSON_JARS=$(findJacksonJars)
 
-java -cp $CLASSPATH:$JACKSON_JARS datawave.query.jexl.visitors.JexlStringBuildingVisitor
+java -cp $CLASSPATH:$JACKSON_JARS datawave.query.jexl.visitors.JexlStringBuildingVisitor "$@"
