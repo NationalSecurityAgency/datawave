@@ -34,7 +34,7 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          */
         NO_OP,
         /**
-         * Delayed expression
+         * DELAYED_FIELD means this term or junction of terms is delayed
          */
         DELAYED_FIELD,
         /**

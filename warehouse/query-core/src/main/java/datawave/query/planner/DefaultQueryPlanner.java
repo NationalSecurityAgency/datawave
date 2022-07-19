@@ -2408,23 +2408,31 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.trace("query stream is " + stream.context());
             }
             
-            // if a term threshold is exceeded and we cannot handle that, then
-            // throw unsupported
-            boolean thresholdExceeded = StreamContext.EXCEEDED_TERM_THRESHOLD.equals(stream.context());
-            if (thresholdExceeded && !config.canHandleExceededTermThreshold()) {
-                throw new UnsupportedOperationException(EXCEED_TERM_EXPANSION_ERROR);
+            switch (stream.context()) {
+                case EXCEEDED_TERM_THRESHOLD:
+                    // throw an unsupported exception if the planner cannot handle term threshold exceeded
+                    if (!config.canHandleExceededTermThreshold()) {
+                        throw new UnsupportedOperationException(EXCEED_TERM_EXPANSION_ERROR);
+                    }
+                    break;
+                case UNINDEXED:
+                    if (log.isDebugEnabled()) {
+                        log.debug("Full table scan required because of unindexed fields");
+                    }
+                    needsFullTable = true;
+                    break;
+                case DELAYED_FIELD:
+                    if (log.isDebugEnabled()) {
+                        log.debug("Full table scan required because query consists of only delayed expressions");
+                    }
+                    needsFullTable = true;
+                    break;
+                default:
+                    // the context is good and does not prevent a query from executing
             }
             
-            if (StreamContext.UNINDEXED.equals(stream.context())) {
-                log.debug("Needs full table scan because of unindexed fields");
-                needsFullTable = true;
-            } else if (StreamContext.DELAYED_FIELD.equals(stream.context())) {
-                log.debug("Needs full table scan because query consists of only delayed expressions");
-                needsFullTable = true;
-            }
-            // if a value threshold is exceeded and we cannot handle that, then
-            // force a full table scan
-            else if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
+            // check for the case where we cannot handle an ivarator but the query requires an ivarator
+            if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
                 log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
                 needsFullTable = true;
             }

@@ -45,7 +45,7 @@ public class Union extends BaseIndexStream {
         this.childNodes = new JexlNodeSet();
         this.delayedNodes = new JexlNodeSet();
         
-        boolean delayedFromUnindexed = false;
+        boolean delayedFromUnindexed = false; // did any delayed node come from an unindexed stream?
         
         for (IndexStream stream : children) {
             
@@ -109,23 +109,27 @@ public class Union extends BaseIndexStream {
             log.trace("union has " + childNodes.size() + " active children and " + delayedNodes.size() + " delayed children");
         }
         
-        if (delayedFromUnindexed) {
-            this.context = StreamContext.UNINDEXED;
-            this.contextDebug = "child contains an unindexed field";
+        if (childNodes.isEmpty() && delayedNodes.isEmpty()) {
+            // both delayed and non-delayed nodes empty indicates an absent state
+            this.context = StreamContext.ABSENT;
+            this.contextDebug = "children are all absent";
         } else if (!childNodes.isEmpty() && !delayedNodes.isEmpty()) {
-            // set this union's context based on the state of child index streams
+            // mix of delayed and non-delayed nodes indicates a variable state
             this.context = StreamContext.VARIABLE;
             this.contextDebug = "children are a mix of delayed and non-delayed";
         } else if (!childNodes.isEmpty() && delayedNodes.isEmpty()) {
+            // only child nodes, no delayed
             this.context = StreamContext.PRESENT;
             this.contextDebug = "children are all present";
-        } else if (childNodes.isEmpty() && !delayedNodes.isEmpty()) {
-            this.context = StreamContext.DELAYED_FIELD;
-            this.contextDebug = "children are all delayed";
         } else {
-            // both are empty
-            this.context = StreamContext.ABSENT;
-            this.contextDebug = "children are all absent";
+            // only delayed nodes, figure out which context to surface
+            if (delayedFromUnindexed) {
+                this.context = StreamContext.UNINDEXED;
+                this.contextDebug = "children contains at least one unindexed field";
+            } else {
+                this.context = StreamContext.DELAYED_FIELD;
+                this.contextDebug = "children are all delayed";
+            }
         }
         
         // advance the queue if we have active index streams

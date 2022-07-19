@@ -327,9 +327,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     return ScannerStream.noData(union.currentNode(), union);
                 case IGNORED:
                     return ScannerStream.ignored(union.currentNode(), union);
-                case PRESENT:
-                case VARIABLE:
+                case VARIABLE: // variable state becoming delayed means we can no longer prune the non-delayed terms from a query
                 case DELAYED_FIELD:
+                    return ScannerStream.delayedExpression(union.currentNode());
+                case PRESENT:
                 case EXCEEDED_TERM_THRESHOLD:
                 case EXCEEDED_VALUE_THRESHOLD:
                     return union;

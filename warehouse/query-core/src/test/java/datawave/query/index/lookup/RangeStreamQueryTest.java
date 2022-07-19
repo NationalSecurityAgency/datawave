@@ -12,7 +12,6 @@ import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
@@ -37,7 +36,15 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
+import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.ANCHOR;
+import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.ANCHOR_INTERSECT;
+import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.ANCHOR_UNION;
+import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED;
+import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_INTERSECT;
+import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_UNION;
+import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQuery;
 import static datawave.util.TableName.SHARD_INDEX;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -68,9 +75,9 @@ public class RangeStreamQueryTest {
         UNION, INTERSECTION
     }
     
-    // is the term added to the query an anchor term or is it delayed?
+    // is the term an anchor or delayed? is it a single term or a top level union/intersection?
     public enum TERM_CONTEXT {
-        ANCHOR, DELAYED
+        ANCHOR, ANCHOR_INTERSECT, ANCHOR_UNION, DELAYED, DELAYED_INTERSECT, DELAYED_UNION
     }
     
     @BeforeClass
@@ -153,97 +160,92 @@ public class RangeStreamQueryTest {
     
     @Test
     public void testSimpleQueries() throws Exception {
-        test("FOO3 == 'shard'");
-        test("FOO3 == 'uid'");
+        test("FOO3 == 'shard'", ANCHOR);
+        test("FOO3 == 'uid'", ANCHOR);
     }
     
     @Test
     public void testQueriesWithFilterIsNulls() throws Exception {
-        test("FOO == null", TERM_CONTEXT.DELAYED);
-        test("(FOO == null && FOO2 == null)", TERM_CONTEXT.DELAYED);
-        test("(FOO == null || FOO2 == null)", TERM_CONTEXT.DELAYED);
+        test("FOO == null", DELAYED);
+        test("(FOO == null && FOO2 == null)", DELAYED_INTERSECT);
+        test("(FOO == null || FOO2 == null)", DELAYED_UNION);
     }
     
     @Test
     public void testQueriesWithFilterIsNotNulls() throws Exception {
-        test("!(FOO == null)", TERM_CONTEXT.DELAYED);
-        test("(!(FOO == null) && !(FOO2 == null))", TERM_CONTEXT.DELAYED);
-        test("(!(FOO == null) || !(FOO2 == null))", TERM_CONTEXT.DELAYED);
+        test("!(FOO == null)", DELAYED);
+        test("(!(FOO == null) && !(FOO2 == null))", DELAYED_INTERSECT);
+        test("(!(FOO == null) || !(FOO2 == null))", DELAYED_UNION);
     }
     
     @Test
     public void testQueriesWithFilterIncludeRegex() throws Exception {
-        test("filter:includeRegex(FOO, 'ba.*')", TERM_CONTEXT.DELAYED);
-        test("(filter:includeRegex(FOO, 'ba.*') && filter:includeRegex(FOO2, 'ba.*'))", TERM_CONTEXT.DELAYED);
-        test("(filter:includeRegex(FOO, 'ba.*') || filter:includeRegex(FOO2, 'ba.*'))", TERM_CONTEXT.DELAYED);
+        test("filter:includeRegex(FOO, 'ba.*')", DELAYED);
+        test("(filter:includeRegex(FOO, 'ba.*') && filter:includeRegex(FOO2, 'ba.*'))", DELAYED_INTERSECT);
+        test("(filter:includeRegex(FOO, 'ba.*') || filter:includeRegex(FOO2, 'ba.*'))", DELAYED_UNION);
     }
     
     @Test
     public void testQueriesWithFilterExcludeRegex() throws Exception {
-        test("filter:excludeRegex(FOO, 'ba.*')", TERM_CONTEXT.DELAYED);
-        test("(filter:excludeRegex(FOO, 'ba.*') && filter:excludeRegex(FOO2, 'ba.*'))", TERM_CONTEXT.DELAYED);
-        test("(filter:excludeRegex(FOO, 'ba.*') || filter:excludeRegex(FOO2, 'ba.*'))", TERM_CONTEXT.DELAYED);
+        test("filter:excludeRegex(FOO, 'ba.*')", DELAYED);
+        test("(filter:excludeRegex(FOO, 'ba.*') && filter:excludeRegex(FOO2, 'ba.*'))", DELAYED_INTERSECT);
+        test("(filter:excludeRegex(FOO, 'ba.*') || filter:excludeRegex(FOO2, 'ba.*'))", DELAYED_UNION);
     }
     
     @Test
     public void testQueriesWithExceededValueMarkers() throws Exception {
         // the range stream creates a stream of day shards for these terms, thus they are treated as anchor terms
-        test("((_Value_ = true) && (FOO =~ 'ba.*'))");
-        test("(((_Value_ = true) && (FOO =~ 'ba.*')) && ((_Value_ = true) && (FOO2 =~ 'ba.*')))");
-        test("(((_Value_ = true) && (FOO =~ 'ba.*')) || ((_Value_ = true) && (FOO2 =~ 'ba.*')))");
+        test("((_Value_ = true) && (FOO =~ 'ba.*'))", ANCHOR);
+        test("(((_Value_ = true) && (FOO =~ 'ba.*')) && ((_Value_ = true) && (FOO2 =~ 'ba.*')))", ANCHOR_INTERSECT);
+        test("(((_Value_ = true) && (FOO =~ 'ba.*')) || ((_Value_ = true) && (FOO2 =~ 'ba.*')))", ANCHOR_UNION);
     }
     
     @Test
     public void testQueriesWithExceededTermMarkers() throws Exception {
-        test("((_Term_ = true) && (FOO =~ 'ba.*'))", TERM_CONTEXT.DELAYED);
-        test("(((_Term_ = true) && (FOO =~ 'ba.*')) && ((_Term_ = true) && (FOO2 =~ 'ba.*')))", TERM_CONTEXT.DELAYED);
-        test("(((_Term_ = true) && (FOO =~ 'ba.*')) || ((_Term_ = true) && (FOO2 =~ 'ba.*')))", TERM_CONTEXT.DELAYED);
+        test("((_Term_ = true) && (FOO =~ 'ba.*'))", DELAYED);
+        test("(((_Term_ = true) && (FOO =~ 'ba.*')) && ((_Term_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_INTERSECT);
+        test("(((_Term_ = true) && (FOO =~ 'ba.*')) || ((_Term_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_UNION);
     }
     
     @Test
     public void testQueriesWithDelayedRegexNodes() throws Exception {
-        test("((_Delayed_ = true) && (FOO =~ 'ba.*'))", TERM_CONTEXT.DELAYED);
-        test("(((_Delayed_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", TERM_CONTEXT.DELAYED);
-        test("(((_Delayed_ = true) && (FOO =~ 'ba.*')) || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", TERM_CONTEXT.DELAYED);
+        test("((_Delayed_ = true) && (FOO =~ 'ba.*'))", DELAYED);
+        test("(((_Delayed_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_INTERSECT);
+        test("(((_Delayed_ = true) && (FOO =~ 'ba.*')) || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_UNION);
     }
     
     @Test
     public void testQueriesWithBoundedRangeMarkers() throws Exception {
-        test("((_Bounded_ = true) && (FOO > '3' && FOO < 7))", TERM_CONTEXT.DELAYED);
-        test("(((_Bounded_ = true) && (FOO > '3' && FOO < 7)) && ((_Bounded_ = true) && (FOO2 > '3' && FOO2 < 7)))", TERM_CONTEXT.DELAYED);
-        test("(((_Bounded_ = true) && (FOO > '3' && FOO < 7)) || ((_Bounded_ = true) && (FOO2 > '3' && FOO2 < 7)))", TERM_CONTEXT.DELAYED);
+        test("((_Bounded_ = true) && (FOO > '3' && FOO < 7))", DELAYED);
+        test("(((_Bounded_ = true) && (FOO > '3' && FOO < 7)) && ((_Bounded_ = true) && (FOO2 > '3' && FOO2 < 7)))", DELAYED_INTERSECT);
+        test("(((_Bounded_ = true) && (FOO > '3' && FOO < 7)) || ((_Bounded_ = true) && (FOO2 > '3' && FOO2 < 7)))", DELAYED_UNION);
     }
     
     @Test
     public void testQueriesWithMixedDelays() throws Exception {
-        test("(!(FOO == null) && filter:includeRegex(FOO, 'ba.*'))", TERM_CONTEXT.DELAYED);
-        test("(!(FOO == null) && filter:includeRegex(FOO, 'ba.*') && ((_Delayed_ = true) && (FOO =~ 'ba.*')))", TERM_CONTEXT.DELAYED);
-        test("(!(FOO == null) || filter:includeRegex(FOO, 'ba.*'))", TERM_CONTEXT.DELAYED);
-        test("(!(FOO == null) || filter:includeRegex(FOO, 'ba.*') || ((_Delayed_ = true) && (FOO =~ 'ba.*')))", TERM_CONTEXT.DELAYED);
+        test("(!(FOO == null) && filter:includeRegex(FOO, 'ba.*'))", DELAYED_INTERSECT);
+        test("(!(FOO == null) && filter:includeRegex(FOO, 'ba.*') && ((_Delayed_ = true) && (FOO =~ 'ba.*')))", DELAYED_INTERSECT);
+        test("(!(FOO == null) || filter:includeRegex(FOO, 'ba.*'))", DELAYED_UNION);
+        test("(!(FOO == null) || filter:includeRegex(FOO, 'ba.*') || ((_Delayed_ = true) && (FOO =~ 'ba.*')))", DELAYED_UNION);
     }
     
     @Test
     public void testQueriesWithMixedMarkers() throws Exception {
-        test("(((_Value_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))");
-        test("(((_Value_ = true) && (FOO =~ 'ba.*')) || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", TERM_CONTEXT.DELAYED);
+        test("(((_Value_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", ANCHOR_INTERSECT);
+        test("(((_Value_ = true) && (FOO =~ 'ba.*')) || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_UNION);
     }
     
     @Test
     public void testQueriesWithMixedMarkersAndAnchors() throws Exception {
         // each intersection should pivot on the anchor term and add in the delayed markers
-        test("(FOO3 == 'shard' && !(FOO == null) && filter:includeRegex(FOO, 'ba.*'))");
-        test("(FOO3 == 'shard' && !(FOO == null) && filter:includeRegex(FOO, 'ba.*') && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))");
-        test("(FOO3 == 'shard' && ((_Value_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))");
+        test("(FOO3 == 'shard' && !(FOO == null) && filter:includeRegex(FOO, 'ba.*'))", ANCHOR_INTERSECT);
+        test("(FOO3 == 'shard' && !(FOO == null) && filter:includeRegex(FOO, 'ba.*') && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", ANCHOR_INTERSECT);
+        test("(FOO3 == 'shard' && ((_Value_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", ANCHOR_INTERSECT);
         
         // each whole union should be added into queries with top level intersections
-        test("(FOO3 == 'shard' || !(FOO == null) || filter:includeRegex(FOO, 'ba.*'))", TERM_CONTEXT.DELAYED);
-        test("(FOO3 == 'shard' || !(FOO == null) || filter:includeRegex(FOO, 'ba.*') || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", TERM_CONTEXT.DELAYED);
-        test("(FOO3 == 'shard' || ((_Value_ = true) && (FOO =~ 'ba.*')) || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", TERM_CONTEXT.DELAYED);
-    }
-    
-    // default term context to ANCHOR
-    private void test(String append) throws Exception {
-        test(append, TERM_CONTEXT.ANCHOR);
+        test("(FOO3 == 'shard' || !(FOO == null) || filter:includeRegex(FOO, 'ba.*'))", DELAYED_UNION);
+        test("(FOO3 == 'shard' || !(FOO == null) || filter:includeRegex(FOO, 'ba.*') || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_UNION);
+        test("(FOO3 == 'shard' || ((_Value_ = true) && (FOO =~ 'ba.*')) || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_UNION);
     }
     
     private void test(String append, TERM_CONTEXT termContext) throws Exception {
@@ -299,8 +301,19 @@ public class RangeStreamQueryTest {
                 "(FOO == 'uid' || FOO3 == 'uid') && (FOO == 'uid' || FOO2 == 'uid') && (FOO2 == 'uid' || FOO3 == 'uid')"};
         
         for (String query : queries) {
-            query += " && " + append;
-            test(query, query, QUERY_CONTEXT.INTERSECTION, termContext);
+            String appended = query + " && " + append;
+            switch (termContext) {
+                case ANCHOR:
+                case ANCHOR_INTERSECT:
+                case ANCHOR_UNION:
+                case DELAYED:
+                case DELAYED_INTERSECT:
+                case DELAYED_UNION:
+                    test(appended, appended, QUERY_CONTEXT.INTERSECTION, termContext);
+                    break;
+                default:
+                    throw new IllegalStateException("unknown term context: " + termContext);
+            }
         }
     }
     
@@ -352,8 +365,22 @@ public class RangeStreamQueryTest {
                 "(FOO == 'uid' && FOO3 == 'uid') || (FOO == 'uid' && FOO2 == 'uid') || (FOO2 == 'uid' && FOO3 == 'uid')"};
         
         for (String query : queries) {
-            query += " || " + append;
-            test(query, query, QUERY_CONTEXT.UNION, termContext);
+            String appended = query + " || " + append;
+            switch (termContext) {
+                case ANCHOR:
+                case ANCHOR_UNION:
+                case ANCHOR_INTERSECT:
+                    test(appended, appended, QUERY_CONTEXT.UNION, termContext);
+                    break;
+                case DELAYED:
+                case DELAYED_UNION:
+                case DELAYED_INTERSECT:
+                    // top level unions with a delayed term do not produce any query plans
+                    test(appended, null, QUERY_CONTEXT.UNION, termContext);
+                    break;
+                default:
+                    throw new IllegalStateException("unknown term context: " + termContext);
+            }
         }
     }
     
@@ -370,26 +397,16 @@ public class RangeStreamQueryTest {
         // call to 'iterator()' will modify the stream context
         Iterator<QueryPlan> queryPlanIter = queryPlans.iterator();
         
-        switch (rangeStream.context()) {
-            case PRESENT:
-            case INITIALIZED:
-            case EXCEEDED_VALUE_THRESHOLD:
-                // these are good
-                break;
-            case UNINDEXED:
-            case EXCEEDED_TERM_THRESHOLD:
-                // top level unions with a delayed term cannot be executed. Capture that case here.
-                if (termContext.equals(TERM_CONTEXT.DELAYED) && queryContext.equals(QUERY_CONTEXT.UNION)) {
-                    queryPlans.close();
-                    rangeStream.close();
-                    return;
-                }
-                break;
-            default:
-                queryPlans.close();
-                rangeStream.close();
-                fail("RangeStream context was: " + rangeStream.context() + " for query: " + query);
-                return;
+        // check for a top level union and a delayed term. These queries are not executable
+        if (queryContext == QUERY_CONTEXT.UNION && (termContext.equals(DELAYED) || termContext.equals(DELAYED_UNION) || termContext.equals(DELAYED_INTERSECT))) {
+            assertFalse("top level union and delayed term should have produced no query plans, but got one", queryPlanIter.hasNext());
+            queryPlans.close();
+            rangeStream.close();
+            return;
+        } else if (queryContext == QUERY_CONTEXT.INTERSECTION && rangeStream.context() != IndexStream.StreamContext.PRESENT) {
+            queryPlans.close();
+            rangeStream.close();
+            fail("RangeStream context was: " + rangeStream.context() + " for query: " + query);
         }
         
         assertTrue(query + " did not produce any query plans", queryPlanIter.hasNext());
@@ -400,8 +417,7 @@ public class RangeStreamQueryTest {
         ASTJexlScript plannedScript = JexlNodeFactory.createScript(plan.getQueryTree());
         ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
         if (!TreeEqualityVisitor.isEqual(expectedScript, plannedScript)) {
-            fail("Expected [" + JexlStringBuildingVisitor.buildQuery(expectedScript) + "] but got [" + JexlStringBuildingVisitor.buildQuery(plannedScript)
-                            + "]");
+            fail("Expected [" + buildQuery(expectedScript) + "] but got [" + buildQuery(plannedScript) + "]");
         }
         queryPlans.close();
         rangeStream.close();

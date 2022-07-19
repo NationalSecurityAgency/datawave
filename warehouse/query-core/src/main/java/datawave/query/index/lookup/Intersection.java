@@ -90,7 +90,7 @@ public class Intersection extends BaseIndexStream {
     
     private static final Logger log = Logger.getLogger(Intersection.class);
     
-    public Intersection(Iterable<? extends IndexStream> children, UidIntersector uidIntersector) {
+    public Intersection(Collection<? extends IndexStream> children, UidIntersector uidIntersector) {
         this.children = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
         this.uidIntersector = uidIntersector;
         this.delayedNodes = new JexlNodeSet();
@@ -137,20 +137,19 @@ public class Intersection extends BaseIndexStream {
                     }
                 } else {
                     switch (stream.context()) {
-                        case EXCEEDED_TERM_THRESHOLD:
-                            this.delayedNodes.add(stream.currentNode());
-                            break;
-                        case EXCEEDED_VALUE_THRESHOLD:
-                            exceededValueThreshold = true;
-                            absent = true;
-                            break;
                         case ABSENT:
+                        case EXCEEDED_VALUE_THRESHOLD:
+                            if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context()) {
+                                exceededValueThreshold = true;
+                            }
+                            // one or more index streams terminated early, no intersection possible
                             absent = true;
                             break;
                         case UNINDEXED:
                         case UNKNOWN_FIELD:
                         case DELAYED_FIELD:
                         case IGNORED:
+                        case EXCEEDED_TERM_THRESHOLD:
                             if (StreamContext.DELAYED_FIELD == stream.context())
                                 delayedField = true;
                             this.delayedNodes.add(stream.currentNode());
@@ -172,8 +171,9 @@ public class Intersection extends BaseIndexStream {
             allNodes.addAll(delayedNodes);
             
             currNode = JexlNodeFactory.createAndNode(allNodes);
-            
             Preconditions.checkNotNull(currNode);
+            
+            // three cases 1) absent in which case no intersection exists, 2) some form of delayed, 3) valid intersect
             
             if (absent) {
                 this.context = StreamContext.ABSENT;
@@ -185,10 +185,17 @@ public class Intersection extends BaseIndexStream {
                 this.context = StreamContext.EXCEEDED_VALUE_THRESHOLD;
                 this.contextDebug = "all children exceeded value threshold";
                 next();
-            } else if (allChildrenAreUnindexed(this.children.values())) {
+            } else if (areChildrenAllSameContext(children, StreamContext.UNINDEXED)) {
                 this.context = StreamContext.UNINDEXED;
                 this.contextDebug = "all children unindexed";
+            } else if (areChildrenAllSameContext(children, StreamContext.IGNORED)) {
+                this.context = StreamContext.IGNORED;
+                this.contextDebug = "all children ignored";
+            } else if (areChildrenAllSameContext(children, StreamContext.EXCEEDED_TERM_THRESHOLD)) {
+                this.context = StreamContext.EXCEEDED_TERM_THRESHOLD;
+                this.contextDebug = "all children exceeded term threshold";
             } else {
+                // TODO -- this logic does not handle the case of mixed markers
                 next();
                 if (next != null) {
                     this.context = StreamContext.PRESENT;
@@ -329,6 +336,28 @@ public class Intersection extends BaseIndexStream {
             }
         }
         return true;
+    }
+    
+    /**
+     * Checks all child index streams in this intersection against the provided context
+     *
+     * @param streams
+     *            a collection of IndexStream
+     * @param context
+     *            a {@link datawave.query.index.lookup.IndexStream.StreamContext}
+     * @return true if all child index streams have the specified context
+     */
+    public static boolean areChildrenAllSameContext(Collection<? extends IndexStream> streams, StreamContext context) {
+        if (!streams.isEmpty()) {
+            for (IndexStream stream : streams) {
+                if (!stream.context().equals(context)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        // no index streams
+        return false;
     }
     
     /*
