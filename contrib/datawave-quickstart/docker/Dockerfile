@@ -14,6 +14,12 @@ ENV YARN_IDENT_STRING=root HADOOP_MAPRED_IDENT_STRING=root
 ENV HDFS_NAMENODE_USER=root HDFS_DATANODE_USER=root
 ENV HDFS_SECONDARYNAMENODE_USER=root YARN_RESOURCEMANAGER_USER=root
 ENV YARN_NODEMANAGER_USER=root
+
+# Bind services to all interfaces
+ENV DW_BIND_HOST=0.0.0.0
+
+# Bind accumulo specifically to localhost
+# This can be overridden at runtime to match the service name
 ENV DW_ACCUMULO_BIND_HOST=localhost
 
 # Build context should be the DataWave source root, minus .git and other dirs. See .dockerignore
