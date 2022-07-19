@@ -110,10 +110,12 @@ public class TableConfigurationUtilTest {
     
     @Test
     public void testInvalidCacheFileCausesAccumuloRead() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
-        TableConfigCache.getCurrentCache(conf).clear();
         
         conf.set(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, "true");
         conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, "bogusCache");
+        
+        TableConfigCache.getCurrentCache(conf).clear();
+        TableConfigCache.getCurrentCache(conf).setCacheFilePath(conf);
         
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
         TableConfigurationUtil.registerTableNamesFromConfigFiles(conf);

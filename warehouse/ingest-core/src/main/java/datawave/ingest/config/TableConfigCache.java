@@ -46,7 +46,6 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     
     public void clear() {
         configMap = new HashMap();
-        cache = null;
     }
     
     public boolean isInitialized() {
