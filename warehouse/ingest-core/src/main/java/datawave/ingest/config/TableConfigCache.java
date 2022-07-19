@@ -23,6 +23,8 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     private Map<String,Map<String,String>> configMap = new HashMap<>();
     private static TableConfigCache cache;
     
+    private static final Object lock = new Object();
+    
     protected static final Logger log = Logger.getLogger("datawave.ingest");
     
     private TableConfigCache(Configuration conf) {
@@ -30,8 +32,10 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     }
     
     public static TableConfigCache getCurrentCache(Configuration conf) {
-        if (null == cache) {
-            cache = new TableConfigCache(conf);
+        synchronized (lock) {
+            if (null == cache) {
+                cache = new TableConfigCache(conf);
+            }
         }
         return cache;
     }
@@ -42,6 +46,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     
     public void clear() {
         configMap = new HashMap();
+        cache = null;
     }
     
     public boolean isInitialized() {

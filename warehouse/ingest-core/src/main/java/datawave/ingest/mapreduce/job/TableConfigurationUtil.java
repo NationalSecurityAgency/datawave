@@ -64,6 +64,9 @@ public class TableConfigurationUtil {
     Configuration conf;
     private TableConfigCache tableConfigCache;
     
+    // for testing
+    private boolean usingFileCache = false;
+    
     public TableConfigurationUtil(Configuration conf) {
         accumuloHelper = new AccumuloHelper();
         accumuloHelper.setup(conf);
@@ -408,6 +411,7 @@ public class TableConfigurationUtil {
             
             try {
                 setTableConfigsFromCacheFile();
+                usingFileCache = true;
                 return;
             } catch (Exception e) {
                 log.error("Unable to read accumulo config cache at " + tableConfigCache.getCacheFilePath() + "\n " + e.getCause()
@@ -416,6 +420,7 @@ public class TableConfigurationUtil {
         }
         try {
             setTableConfigsFromAccumulo(conf);
+            usingFileCache = false;
         } catch (AccumuloException | TableNotFoundException | AccumuloSecurityException e) {
             log.error("Unable to read desired table properties from accumulo.  Please verify your configuration. ");
             throw new IOException(e);
@@ -497,6 +502,10 @@ public class TableConfigurationUtil {
     
     public Map<Integer,Map<String,String>> getTableAggregators(String tableName) {
         return this.aggregators.get(tableName);
+    }
+    
+    public boolean isUsingFileCache() {
+        return usingFileCache;
     }
     
     public void setTableItersPrioritiesAndOpts() throws IOException {

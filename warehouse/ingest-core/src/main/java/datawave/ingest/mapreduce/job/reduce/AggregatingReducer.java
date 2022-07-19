@@ -55,8 +55,6 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     public static Text ALL_COLUMN_FAMILIES = new Text("*");
     
-    public static boolean alreadySetup = false;
-    
     public static final long MILLISPERDAY = 1000l * 60l * 60l * 24l;
     
     // Map of table names to aggregator map. The embedded map is a map of column families to aggregator instances
