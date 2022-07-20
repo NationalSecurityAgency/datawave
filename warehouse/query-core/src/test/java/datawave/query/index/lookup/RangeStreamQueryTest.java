@@ -227,11 +227,21 @@ public class RangeStreamQueryTest {
         test("(!(FOO == null) && filter:includeRegex(FOO, 'ba.*') && ((_Delayed_ = true) && (FOO =~ 'ba.*')))", DELAYED_INTERSECT);
         test("(!(FOO == null) || filter:includeRegex(FOO, 'ba.*'))", DELAYED_UNION);
         test("(!(FOO == null) || filter:includeRegex(FOO, 'ba.*') || ((_Delayed_ = true) && (FOO =~ 'ba.*')))", DELAYED_UNION);
+        
+        // additional test case with value exceeded
+        test("(!(FOO == null) && filter:includeRegex(FOO, 'ba.*') && ((_Value_ = true) && (FOO =~ 'ba.*')))", ANCHOR_INTERSECT);
+        test("(!(FOO == null) || filter:includeRegex(FOO, 'ba.*') || ((_Value_ = true) && (FOO =~ 'ba.*')))", DELAYED_UNION);
     }
     
     @Test
     public void testQueriesWithMixedMarkers() throws Exception {
+        // intersection of delayed markers is all delayed
+        test("(((_Term_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_INTERSECT);
+        // presence of value exceeded makes this an anchor
         test("(((_Value_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", ANCHOR_INTERSECT);
+        
+        // value exceeded or not, union is always delayed if at least one term is delayed
+        test("(((_Term_ = true) && (FOO =~ 'ba.*')) || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_UNION);
         test("(((_Value_ = true) && (FOO =~ 'ba.*')) || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_UNION);
     }
     
@@ -394,7 +404,7 @@ public class RangeStreamQueryTest {
         script = JexlASTHelper.parseAndFlattenJexlQuery(query);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         
-        // call to 'iterator()' will modify the stream context
+        // call to 'iterator()' may modify the stream context
         Iterator<QueryPlan> queryPlanIter = queryPlans.iterator();
         
         // check for a top level union and a delayed term. These queries are not executable

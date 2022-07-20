@@ -77,141 +77,131 @@ import org.apache.log4j.Logger;
  * </ul>
  */
 public class Intersection extends BaseIndexStream {
-    private TreeMultimap<String,IndexStream> children;
+    
     private final StreamContext context;
     private final String contextDebug;
+    
+    private TreeMultimap<String,IndexStream> children;
     private final List<String> childrenContextDebug = new ArrayList<>();
     
-    private JexlNodeSet nodeSet = new JexlNodeSet();
+    private final JexlNodeSet nodeSet = new JexlNodeSet(); // populated via active index streams
+    private final JexlNodeSet delayedNodes = new JexlNodeSet(); // populated via delayed index streams
+    
+    private JexlNode currNode; // current query
     private Tuple2<String,IndexInfo> next;
-    private JexlNode currNode;
-    protected JexlNodeSet delayedNodes;
+    
     protected UidIntersector uidIntersector;
     
     private static final Logger log = Logger.getLogger(Intersection.class);
     
-    public Intersection(Collection<? extends IndexStream> children, UidIntersector uidIntersector) {
+    public Intersection(Collection<? extends IndexStream> streams, UidIntersector uidIntersector) {
         this.children = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
         this.uidIntersector = uidIntersector;
-        this.delayedNodes = new JexlNodeSet();
-        Iterator<? extends IndexStream> childrenItr = children.iterator();
-        
-        boolean allExceededValueThreshold = true;
         
         if (log.isTraceEnabled()) {
-            log.trace("Constructor -- has children? " + childrenItr.hasNext());
+            log.trace("Constructor -- has children? " + streams.isEmpty());
         }
-        if (childrenItr.hasNext()) {
-            boolean absent = false;
-            boolean delayedField = false;
-            while (childrenItr.hasNext()) {
-                IndexStream stream = childrenItr.next();
-                if (log.isDebugEnabled()) {
-                    childrenContextDebug.add(stream.getContextDebug());
-                }
-                
-                if (StreamContext.NO_OP == stream.context())
-                    continue;
-                
-                boolean exceededValueThreshold = false;
-                
-                if (stream.hasNext()) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Stream has next, so adding it to children " + stream.peek().second().getNode() + " " + key(stream));
-                    }
-                    
-                    switch (stream.context()) {
-                        case VARIABLE:
-                            if (log.isTraceEnabled())
-                                log.trace("Setting variable nodes");
-                            JexlNode node = stream.peek().second().getNode();
-                            this.nodeSet.add(node);
-                            this.children.put(key(stream), stream);
-                            break;
-                        default:
-                            if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context())
-                                exceededValueThreshold = true;
-                            this.nodeSet.add(stream.currentNode());
-                            this.children.put(key(stream), stream);
-                            break;
-                    }
-                } else {
-                    switch (stream.context()) {
-                        case ABSENT:
-                        case EXCEEDED_VALUE_THRESHOLD:
-                            if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context()) {
-                                exceededValueThreshold = true;
-                            }
-                            // one or more index streams terminated early, no intersection possible
-                            absent = true;
-                            break;
-                        case UNINDEXED:
-                        case UNKNOWN_FIELD:
-                        case DELAYED_FIELD:
-                        case IGNORED:
-                        case EXCEEDED_TERM_THRESHOLD:
-                            if (StreamContext.DELAYED_FIELD == stream.context())
-                                delayedField = true;
-                            this.delayedNodes.add(stream.currentNode());
-                            break;
-                        default:
-                            QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_RANGE_STREAM, MessageFormat.format("{0}", stream.context()));
-                            throw new DatawaveFatalQueryException(qe);
-                    }
-                }
-                
-                if (!exceededValueThreshold)
-                    allExceededValueThreshold = false;
-            }
-            if (log.isTraceEnabled())
-                log.trace("size is " + this.children.size());
-            
-            JexlNodeSet allNodes = new JexlNodeSet();
-            allNodes.addAll(nodeSet);
-            allNodes.addAll(delayedNodes);
-            
-            currNode = JexlNodeFactory.createAndNode(allNodes);
-            Preconditions.checkNotNull(currNode);
-            
-            // three cases 1) absent in which case no intersection exists, 2) some form of delayed, 3) valid intersect
-            
-            if (absent) {
-                this.context = StreamContext.ABSENT;
-                this.contextDebug = "found absent child";
-            } else if (this.children.isEmpty() && delayedField) {
-                this.context = StreamContext.DELAYED_FIELD;
-                this.contextDebug = "delayed field";
-            } else if (allExceededValueThreshold) {
-                this.context = StreamContext.EXCEEDED_VALUE_THRESHOLD;
-                this.contextDebug = "all children exceeded value threshold";
-                next();
-            } else if (areChildrenAllSameContext(children, StreamContext.UNINDEXED)) {
-                this.context = StreamContext.UNINDEXED;
-                this.contextDebug = "all children unindexed";
-            } else if (areChildrenAllSameContext(children, StreamContext.IGNORED)) {
-                this.context = StreamContext.IGNORED;
-                this.contextDebug = "all children ignored";
-            } else if (areChildrenAllSameContext(children, StreamContext.EXCEEDED_TERM_THRESHOLD)) {
-                this.context = StreamContext.EXCEEDED_TERM_THRESHOLD;
-                this.contextDebug = "all children exceeded term threshold";
-            } else {
-                // TODO -- this logic does not handle the case of mixed markers
-                next();
-                if (next != null) {
-                    this.context = StreamContext.PRESENT;
-                    this.contextDebug = "children intersect";
-                } else {
-                    this.context = StreamContext.ABSENT;
-                    this.contextDebug = "children did not intersect";
-                }
-                
-            }
-        } else {
+        
+        if (streams.isEmpty()) {
             this.context = StreamContext.ABSENT;
             this.contextDebug = "no children";
+            return;
+        }
+        
+        // flag tells us to short circuit
+        boolean absent = false;
+        
+        for (IndexStream stream : streams) {
+            if (log.isDebugEnabled()) {
+                childrenContextDebug.add(stream.getContextDebug());
+            }
+            
+            if (stream.hasNext()) {
+                switch (stream.context()) {
+                    case PRESENT:
+                    case VARIABLE:
+                    case EXCEEDED_VALUE_THRESHOLD:
+                        if (log.isTraceEnabled()) {
+                            log.trace("Stream has next, so adding it to children " + stream.peek().second().getNode() + " " + key(stream));
+                        }
+                        this.nodeSet.add(stream.currentNode());
+                        this.children.put(key(stream), stream);
+                        break;
+                    default:
+                        throw new IllegalStateException("Unexpected stream context " + stream.context());
+                }
+            } else {
+                switch (stream.context()) {
+                    case ABSENT:
+                    case EXCEEDED_VALUE_THRESHOLD:
+                        // one or more index streams terminated early, no intersection possible
+                        absent = true;
+                        break;
+                    case IGNORED:
+                    case UNINDEXED:
+                    case DELAYED_FIELD:
+                    case UNKNOWN_FIELD:
+                    case EXCEEDED_TERM_THRESHOLD:
+                        this.delayedNodes.add(stream.currentNode());
+                        break;
+                    case NO_OP:
+                        // this intersection is going to be merged with a parent intersection, do nothing
+                        continue;
+                    default:
+                        QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_RANGE_STREAM, MessageFormat.format("{0}", stream.context()));
+                        throw new DatawaveFatalQueryException(qe);
+                }
+            }
         }
         if (log.isTraceEnabled())
-            log.trace("Stream context " + this.context);
+            log.trace("size is " + this.children.size());
+        
+        JexlNodeSet allNodes = new JexlNodeSet();
+        allNodes.addAll(nodeSet);
+        allNodes.addAll(delayedNodes);
+        
+        currNode = JexlNodeFactory.createAndNode(allNodes);
+        Preconditions.checkNotNull(currNode);
+        
+        // three cases 1) absent in which case no intersection exists, 2) some form of delayed, 3) valid intersect
+        
+        if (absent) {
+            this.context = StreamContext.ABSENT;
+            this.contextDebug = "found absent child";
+        } else if (areAllChildrenSameContext(streams, StreamContext.DELAYED_FIELD)) {
+            this.context = StreamContext.DELAYED_FIELD;
+            this.contextDebug = "delayed field";
+        } else if (areAllChildrenSameContext(streams, StreamContext.UNINDEXED)) {
+            this.context = StreamContext.UNINDEXED;
+            this.contextDebug = "all children unindexed";
+        } else if (areAllChildrenSameContext(streams, StreamContext.IGNORED)) {
+            this.context = StreamContext.IGNORED;
+            this.contextDebug = "all children ignored";
+        } else if (areAllChildrenSameContext(streams, StreamContext.EXCEEDED_TERM_THRESHOLD)) {
+            this.context = StreamContext.EXCEEDED_TERM_THRESHOLD;
+            this.contextDebug = "all children exceeded term threshold";
+        } else if (areAllChildrenSameContext(streams, StreamContext.EXCEEDED_VALUE_THRESHOLD)) {
+            this.context = StreamContext.EXCEEDED_VALUE_THRESHOLD;
+            this.contextDebug = "all children exceeded value threshold";
+            next(); // call next to populate the top key. this is a stream of days generated by the range stream
+        } else if (this.children.isEmpty() && !delayedNodes.isEmpty()) {
+            // we have a mix of delayed marker nodes
+            this.context = StreamContext.DELAYED_FIELD;
+            this.contextDebug = "children are a mix of delayed marker nodes";
+        } else {
+            // just because index streams are present, does not mean they actually intersect
+            next();
+            if (next != null) {
+                this.context = StreamContext.PRESENT;
+                this.contextDebug = "children intersect";
+            } else {
+                this.context = StreamContext.ABSENT;
+                this.contextDebug = "children did not intersect";
+            }
+        }
+        
+        if (log.isTraceEnabled())
+            log.trace("Stream context " + context());
     }
     
     @Override
@@ -329,15 +319,6 @@ public class Intersection extends BaseIndexStream {
         return merged;
     }
     
-    public static boolean allChildrenAreUnindexed(Iterable<IndexStream> stuff) {
-        for (IndexStream is : stuff) {
-            if (StreamContext.UNINDEXED != is.context()) {
-                return false;
-            }
-        }
-        return true;
-    }
-    
     /**
      * Checks all child index streams in this intersection against the provided context
      *
@@ -347,7 +328,7 @@ public class Intersection extends BaseIndexStream {
      *            a {@link datawave.query.index.lookup.IndexStream.StreamContext}
      * @return true if all child index streams have the specified context
      */
-    public static boolean areChildrenAllSameContext(Collection<? extends IndexStream> streams, StreamContext context) {
+    public static boolean areAllChildrenSameContext(Collection<? extends IndexStream> streams, StreamContext context) {
         if (!streams.isEmpty()) {
             for (IndexStream stream : streams) {
                 if (!stream.context().equals(context)) {
@@ -356,8 +337,7 @@ public class Intersection extends BaseIndexStream {
             }
             return true;
         }
-        // no index streams
-        return false;
+        return false; // no index streams
     }
     
     /*

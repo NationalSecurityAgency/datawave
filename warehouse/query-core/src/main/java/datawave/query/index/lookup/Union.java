@@ -59,10 +59,16 @@ public class Union extends BaseIndexStream {
             }
             
             if (stream.hasNext()) {
-                // index streams with data are always added
-                this.children.add(stream);
-                this.childNodes.add(stream.currentNode());
-                continue;
+                switch (stream.context()) {
+                    case PRESENT:
+                    case EXCEEDED_VALUE_THRESHOLD:
+                        // index streams with data are always added
+                        this.children.add(stream);
+                        this.childNodes.add(stream.currentNode());
+                        continue;
+                    default:
+                        throw new IllegalStateException("Unexpected stream context " + stream.context());
+                }
             }
             
             switch (stream.context()) {
