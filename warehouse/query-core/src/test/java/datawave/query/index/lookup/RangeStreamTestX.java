@@ -316,6 +316,30 @@ public class RangeStreamTestX {
         }
         bw.addMutation(m);
         
+        // --------------- Data for nested pruning
+        
+        m = new Mutation("1"); // fully distributed
+        m.put(new Text("F1"), new Text("20200101_10\0datatype1"), valueForShard);
+        m.put(new Text("F1"), new Text("20200101_11\0datatype1"), valueForShard);
+        m.put(new Text("F1"), new Text("20200101_12\0datatype1"), valueForShard);
+        bw.addMutation(m);
+        
+        m = new Mutation("2"); // fully distributed
+        m.put(new Text("F2"), new Text("20200101_10\0datatype1"), valueForShard);
+        m.put(new Text("F2"), new Text("20200101_11\0datatype1"), valueForShard);
+        m.put(new Text("F2"), new Text("20200101_12\0datatype1"), valueForShard);
+        bw.addMutation(m);
+        
+        m = new Mutation("3"); // skips shard _11
+        m.put(new Text("F3"), new Text("20200101_10\0datatype1"), valueForShard);
+        m.put(new Text("F3"), new Text("20200101_12\0datatype1"), valueForShard);
+        bw.addMutation(m);
+        
+        m = new Mutation("4"); // skips shard _11
+        m.put(new Text("F4"), new Text("20200101_10\0datatype1"), valueForShard);
+        m.put(new Text("F4"), new Text("20200101_12\0datatype1"), valueForShard);
+        bw.addMutation(m);
+        
         // ---------------
         
         bw.flush();
@@ -3098,6 +3122,40 @@ public class RangeStreamTestX {
         runTest(query, expectedRanges, expectedQueryStrings);
     }
     
+    @Test
+    public void testNestedPruningWithTopLevelIntersection() throws Exception {
+        String query = "F1 == '1' && (F2 == '2' || F3 == '3')";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("F1 == '1' && (F2 == '2' || F3 == '3')");
+        expectedQueries.add("F1 == '1' && F2 == '2'");
+        expectedQueries.add("F1 == '1' && (F2 == '2' || F3 == '3')");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
+    @Test
+    public void testDelayedNestedPruningWithTopLevelIntersection() throws Exception {
+        String query = "F1 == '1' && (((_Delayed_ = true) && (F2 == '2')) || F3 == '3')";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("F1 == '1' && (((_Delayed_ = true) && (F2 == '2')) || F3 == '3')");
+        expectedQueries.add("F1 == '1' && ((_Delayed_ = true) && (F2 == '2'))"); // F3 not present in shard 2
+        expectedQueries.add("F1 == '1' && (((_Delayed_ = true) && (F2 == '2')) || F3 == '3')");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
     private void runTest(String query, List<Range> expectedRanges, List<String> expectedQueries) throws Exception {
         
         assertEquals("Expected ranges and queries do not match, ranges: " + expectedRanges.size() + " queries: " + expectedQueries.size(),
@@ -3117,6 +3175,10 @@ public class RangeStreamTestX {
         dataTypes.putAll("B", Sets.newHashSet(new LcNoDiacriticsType()));
         dataTypes.putAll("C", Sets.newHashSet(new LcNoDiacriticsType()));
         dataTypes.putAll("D", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("F1", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("F2", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("F3", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("F4", Sets.newHashSet(new LcNoDiacriticsType()));
         
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);

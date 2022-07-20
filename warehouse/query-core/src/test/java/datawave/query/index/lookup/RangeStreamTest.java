@@ -1162,7 +1162,7 @@ public class RangeStreamTest {
         rangeStream.streamPlans(script);
         // streamPlans(script) to populate the StreamContext.
         assertFalse(rangeStream.iterator().hasNext());
-        assertEquals(IndexStream.StreamContext.DELAYED_FIELD, rangeStream.context());
+        assertEquals(IndexStream.StreamContext.ABSENT, rangeStream.context());
         // a non-existent field in a top level union means we cannot run this query. Logic changes if this union is nested within an intersection
     }
     

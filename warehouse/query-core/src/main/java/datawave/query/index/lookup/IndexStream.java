@@ -80,4 +80,13 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
      * @return the top shard after seeking, or null if no more values exist
      */
     String seek(String seekShard);
+    
+    /**
+     * In certain cases a next call must be made within a context
+     *
+     * @param context
+     *            a shard
+     * @return the next result
+     */
+    Tuple2<String,IndexInfo> next(String context);
 }

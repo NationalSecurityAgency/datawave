@@ -91,11 +91,12 @@ public class Intersection extends BaseIndexStream {
     private Tuple2<String,IndexInfo> next;
     
     protected UidIntersector uidIntersector;
+    protected static IndexStreamComparator streamComparator = new IndexStreamComparator();
     
     private static final Logger log = Logger.getLogger(Intersection.class);
     
     public Intersection(Collection<? extends IndexStream> streams, UidIntersector uidIntersector) {
-        this.children = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+        this.children = TreeMultimap.create(Ordering.natural(), streamComparator);
         this.uidIntersector = uidIntersector;
         
         if (log.isTraceEnabled()) {
@@ -232,6 +233,18 @@ public class Intersection extends BaseIndexStream {
     }
     
     /**
+     * This is a no-op for the Intersection class. Delegates to {@link #next()}
+     *
+     * @param context
+     *            a context
+     * @return the result of calling {@link #next()}
+     */
+    @Override
+    public Tuple2<String,IndexInfo> next(String context) {
+        return next();
+    }
+    
+    /**
      * Intersect the top elements of all child IndexStreams, then advance.
      *
      * @param keys
@@ -341,25 +354,29 @@ public class Intersection extends BaseIndexStream {
     }
     
     /*
-     * This method will advance all of the streams except for those returning a day. However if the key is a day then they are all advanced anyway. The reason
-     * for the special handling of "day" ranges is that multiple shards from a separate stream may match the day range and we need to ensure all of them get a
-     * chance. If the key is a "day" range, then all of the streams matched that day so we can safely advance them all. If the iterator `hasNext` after that,
-     * then it is added into the returned multimap with the next key it will return. If an iterator ever does not have a have a next, an empty multimap is
-     * returned, signifying the exhaustion of this intersection.
+     * This method will advance all streams except for those returning a day. However, if the key is a day then they are all advanced anyway. The reason for the
+     * special handling of "day" ranges is that multiple shards from a separate stream may match the day range and we need to ensure all of them get a chance.
+     * If the key is a "day" range, then all streams matched that day so we can safely advance them all. If the iterator `hasNext` after that, then it is added
+     * into the returned multimap with the next key it will return. If an iterator ever does not have a next, an empty multimap is returned, signifying the
+     * exhaustion of this intersection.
      */
     public static TreeMultimap<String,IndexStream> nextAll(String key, Collection<IndexStream> streams) {
-        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), streamComparator);
         for (IndexStream itr : streams) {
             
             // If we are next'ing based on a shard and this is a day, keep the day.
             if (!ShardEquality.isDay(key) && ShardEquality.isDay(key(itr.peek()))) {
                 newChildren.put(itr.peek().first(), itr);
             } else {
-                itr.next();
+                
+                //
+                String context = !newChildren.keySet().isEmpty() ? newChildren.keySet().first() : key;
+                itr.next(context);
+                
                 if (itr.hasNext()) {
                     newChildren.put(itr.peek().first(), itr);
                 } else {
-                    return TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+                    return TreeMultimap.create(Ordering.natural(), streamComparator);
                 }
             }
         }
@@ -383,7 +400,7 @@ public class Intersection extends BaseIndexStream {
      */
     @Deprecated
     public static TreeMultimap<String,IndexStream> pivot(TreeMultimap<String,IndexStream> children) {
-        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), streamComparator);
         final String max = children.keySet().last();
         newChildren.putAll(max, children.removeAll(max));
         for (IndexStream itr : children.values()) {
@@ -407,7 +424,7 @@ public class Intersection extends BaseIndexStream {
                 newChildren.put(dayOrShard, itr);
             } else {
                 // nobody has anything past max, so no intersection
-                return TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+                return TreeMultimap.create(Ordering.natural(), streamComparator);
             }
         }
         return newChildren;
@@ -426,7 +443,7 @@ public class Intersection extends BaseIndexStream {
      * @return a new sorted multi-map of {@link IndexStream}, or an empty multi-map if the intersection is exhausted
      */
     public static TreeMultimap<String,IndexStream> advanceStreams(TreeMultimap<String,IndexStream> children, String max) {
-        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), streamComparator);
         
         // Remove all IndexStreams already mapped to the highest key.
         newChildren.putAll(max, children.removeAll(max));
@@ -438,7 +455,7 @@ public class Intersection extends BaseIndexStream {
             
             // Cannot intersect with an empty IndexStream, return empty multi-map to signify end of intersection.
             if (dayOrShard == null || !stream.hasNext()) {
-                return TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+                return TreeMultimap.create(Ordering.natural(), streamComparator);
             } else {
                 // add the item into our map
                 newChildren.put(dayOrShard, stream);

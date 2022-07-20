@@ -2,6 +2,7 @@ package datawave.query.index.lookup;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -230,9 +231,17 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     }
                 }
                 if (queryStream.context() == StreamContext.VARIABLE) {
-                    context = StreamContext.PRESENT;
-                } else
+                    if (queryStream instanceof Union) {
+                        context = StreamContext.ABSENT;
+                        queryStream = null;
+                        itr = Collections.emptyIterator();
+                        return itr;
+                    } else {
+                        context = StreamContext.PRESENT;
+                    }
+                } else {
                     context = queryStream.context();
+                }
                 
                 if (log.isDebugEnabled()) {
                     log.debug("Query returned a stream with a context of " + this.context);
@@ -327,10 +336,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     return ScannerStream.noData(union.currentNode(), union);
                 case IGNORED:
                     return ScannerStream.ignored(union.currentNode(), union);
-                case VARIABLE: // variable state becoming delayed means we can no longer prune the non-delayed terms from a query
                 case DELAYED_FIELD:
                     return ScannerStream.delayedExpression(union.currentNode());
-                case PRESENT:
+                case PRESENT: //
+                case VARIABLE: // variable state becoming delayed means we can no longer prune the non-delayed terms from a query
                 case EXCEEDED_TERM_THRESHOLD:
                 case EXCEEDED_VALUE_THRESHOLD:
                     return union;

@@ -2,7 +2,9 @@ package datawave.query.index.lookup;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 import com.google.common.collect.PeekingIterator;
+import com.google.common.collect.TreeMultimap;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
@@ -16,6 +18,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -1005,6 +1008,75 @@ public class IntersectionTest {
         
         // No match on different day
         assertNull(intersection.isTopElementAMatch("20190302"));
+    }
+    
+    // test some ordering
+    
+    @Test
+    public void testTreeMultiMapOrdering() {
+        List<String> ignoredDays = Lists.newArrayList("20190304", "20190305", "20190306");
+        SortedSet<String> shards = buildShards(ignoredDays);
+        
+        ScannerStream s1 = buildFullScannerStream(shards, "A", "1");
+        ScannerStream s2 = buildFullScannerStream(shards, "B", "2");
+        ScannerStream s3 = buildFullScannerStream(shards, "C", "3");
+        Intersection intersection = new Intersection(Arrays.asList(s2, s3), new IndexInfo());
+        Union union = new Union(Arrays.asList(s2, s3));
+        
+        TreeMultimap<String,IndexStream> map = TreeMultimap.create(Ordering.natural(), new IndexStreamComparator());
+        map.put("s1", s1);
+        map.put("s1", s2);
+        map.put("s1", intersection);
+        map.put("s1", union);
+        
+        Iterator<IndexStream> iter = map.get("s1").iterator();
+        assertTrue(iter.next() instanceof ScannerStream);
+        assertTrue(iter.next() instanceof ScannerStream);
+        assertTrue(iter.next() instanceof Intersection);
+        assertTrue(iter.next() instanceof Union);
+        assertFalse(iter.hasNext());
+        
+        // -------------------------------------
+        map.clear();
+        map.put("s1", union);
+        map.put("s1", s1);
+        map.put("s1", intersection);
+        map.put("s1", s2);
+        
+        iter = map.get("s1").iterator();
+        assertTrue(iter.next() instanceof ScannerStream);
+        assertTrue(iter.next() instanceof ScannerStream);
+        assertTrue(iter.next() instanceof Intersection);
+        assertTrue(iter.next() instanceof Union);
+        assertFalse(iter.hasNext());
+        
+        // -------------------------------------
+        
+        map.clear();
+        map.put("s1", s1);
+        map.put("s1", intersection);
+        iter = map.get("s1").iterator();
+        assertTrue(iter.next() instanceof ScannerStream);
+        assertTrue(iter.next() instanceof Intersection);
+        
+        // -------------------------------------
+        
+        map.clear();
+        map.put("s1", s1);
+        map.put("s1", union);
+        iter = map.get("s1").iterator();
+        assertTrue(iter.next() instanceof ScannerStream);
+        assertTrue(iter.next() instanceof Union);
+        
+        // -------------------------------------
+        
+        map.clear();
+        map.put("s1", union);
+        map.put("s1", intersection);
+        iter = map.get("s1").iterator();
+        assertTrue(iter.next() instanceof Intersection);
+        assertTrue(iter.next() instanceof Union);
+        
     }
     
     private Intersection buildIntersectionOfShards() {

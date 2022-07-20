@@ -151,8 +151,19 @@ public class Union extends BaseIndexStream {
     
     @Override
     public Tuple2<String,IndexInfo> next() {
+        return next(null);
+    }
+    
+    /**
+     * Return the current result and search for the next result, optionally within a context
+     *
+     * @param context
+     *            determines if this union needs to return a result matching the context
+     * @return the current result
+     */
+    public Tuple2<String,IndexInfo> next(String context) {
         Tuple2<String,IndexInfo> ret = next;
-        next = advanceQueue();
+        next = advanceQueue(context);
         return ret;
     }
     
@@ -161,7 +172,16 @@ public class Union extends BaseIndexStream {
         return next;
     }
     
-    private Tuple2<String,IndexInfo> advanceQueue() {
+    /**
+     * Advance the priority queue of index streams, optionally within the provided context.
+     * <p>
+     * If a context is provided then this union is being advanced by an intersection
+     *
+     * @param context
+     *            optional parameter
+     * @return the next valid shard
+     */
+    private Tuple2<String,IndexInfo> advanceQueue(String context) {
         if (children.isEmpty()) {
             return null;
         }
@@ -169,6 +189,24 @@ public class Union extends BaseIndexStream {
         // shard can be either a specific shard or a day denoting all shards
         String dayOrShard = head.first();
         IndexInfo pointers = head.second();
+        
+        // check for edge case like 'A && (B || delayed_C)'
+        if (context != null && ShardEquality.lessThan(context, dayOrShard) && !delayedNodes.isEmpty()) {
+            
+            // build query from delayed nodes only
+            JexlNode node;
+            if (delayedNodes.size() == 1) {
+                node = delayedNodes.getNodes().iterator().next();
+            } else {
+                node = JexlNodeFactory.createOrNode(delayedNodes.getNodes());
+            }
+            
+            IndexInfo info = new IndexInfo(Long.MAX_VALUE);
+            info.applyNode(node);
+            
+            return new Tuple2<>(context, info);
+        }
+        
         // use startsWith to match shards with a day
         if (log.isTraceEnabled())
             log.trace("advancing " + pointers.getNode() + " " + children.peek().context());
@@ -379,7 +417,7 @@ public class Union extends BaseIndexStream {
         
         children.addAll(nextChildren);
         if (!children.isEmpty()) {
-            next = advanceQueue();
+            next = advanceQueue(null);
             if (next != null) {
                 return next.first();
             }

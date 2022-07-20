@@ -409,7 +409,7 @@ public class RangeStreamQueryTest {
         
         // check for a top level union and a delayed term. These queries are not executable
         if (queryContext == QUERY_CONTEXT.UNION && (termContext.equals(DELAYED) || termContext.equals(DELAYED_UNION) || termContext.equals(DELAYED_INTERSECT))) {
-            assertFalse("top level union and delayed term should have produced no query plans, but got one", queryPlanIter.hasNext());
+            assertFalse("top level union and delayed term should have produced no query plans, but got one for query " + query, queryPlanIter.hasNext());
             queryPlans.close();
             rangeStream.close();
             return;
