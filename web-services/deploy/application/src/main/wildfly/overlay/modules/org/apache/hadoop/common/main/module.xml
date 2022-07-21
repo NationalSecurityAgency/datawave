@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module xmlns="urn:jboss:module:1.3" name="org.apache.hadoop.common">
     <resources>
+        <resource-root path="jackson-annotations-${version.jackson}.jar"/>
+        <resource-root path="jackson-core-${version.jackson}.jar"/>
+        <resource-root path="jackson-databind-${version.jackson}.jar"/>
+        <resource-root path="jackson-datatype-guava-${version.jackson}.jar"/>
         <resource-root path="hadoop-auth-${version.hadoop}.jar"/>
         <resource-root path="hadoop-common-${version.hadoop}.jar"/>
         <resource-root path="htrace-core4-${version.htrace}.jar"/>

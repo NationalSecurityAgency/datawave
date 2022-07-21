@@ -14,10 +14,10 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # Remove the Elytron security subsystem entirely. Our JAAS security setup doesn't work
 # with it due to some bugs (the RunAsLoginModule doesn't work -- WFLY-11892) so we'll
 # just continue to use the deprecated system for now
-/subsystem=elytron:remove
+#/subsystem=elytron:remove
 
 # Remove the JWT subsystem since it requires the Elytron subsystem and we can't use the Elytron subsystem
-/subsystem=microprofile-jwt-smallrye:remove
+#/subsystem=microprofile-jwt-smallrye:remove
 
 # Change default ports to listen on all interfaces (can still override on command line)
 /interface=public/:write-attribute(name=inet-address,value="${jboss.bind.address:0.0.0.0}")

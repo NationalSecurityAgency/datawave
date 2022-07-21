@@ -563,6 +563,23 @@
                                     <outputDirectory>${project.build.directory}/wildfly/overlay/modules/org/apache/hadoop/common/main</outputDirectory>
                                     <artifactItems>
                                         <artifactItem>
+                                            <groupId>com.fasterxml.jackson.core</groupId>
+                                            <artifactId>jackson-annotations</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>com.fasterxml.jackson.core</groupId>
+                                            <artifactId>jackson-core</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>com.fasterxml.jackson.core</groupId>
+                                            <artifactId>jackson-databind</artifactId>
+                                        </artifactItem>
+                                        <!-- Pretty sure only need the datatype-guava.  Come ack and remove the other jackson deps if that's true -->
+                                        <artifactItem>
+                                            <groupId>com.fasterxml.jackson.datatype</groupId>
+                                            <artifactId>jackson-datatype-guava</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
                                             <groupId>org.apache.hadoop</groupId>
                                             <artifactId>hadoop-auth</artifactId>
                                         </artifactItem>

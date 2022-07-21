@@ -37,7 +37,7 @@
         <version.caffeine>2.7.0</version.caffeine>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
-        <version.commons-codec>1.12</version.commons-codec>
+        <version.commons-codec>1.15</version.commons-codec>
         <version.commons-collections>4.3</version.commons-collections>
         <version.commons-configuration>1.10</version.commons-configuration>
         <version.commons-configuration2>2.7</version.commons-configuration2>
@@ -62,10 +62,12 @@
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>1.10.2</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
-        <version.jackson>2.13.3</version.jackson>
+        <!-- This version of jackson ships with Wildfly 24. Trying to override the provided version with a more recent version (2.13.3) might be more trouble than its worth if we're
+             leaving WildFly and 2.12.3 is already an upgrade that should resolve some vulnerabilities -->
+        <version.jackson>2.12.3</version.jackson>
+        <version.jakarta-validation>2.0.2</version.jakarta-validation>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
-        <version.javax-validation>2.0.1.Final</version.javax-validation>
         <version.jcommander>1.72</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
@@ -88,8 +90,8 @@
         <version.microservice.query-metric-api>1.5.4</version.microservice.query-metric-api>
         <version.microservice.type-utils>1.8</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
-        <version.mysql-connector>8.0.16</version.mysql-connector>
-        <version.netty>4.1.42.Final</version.netty>
+        <version.mysql-connector>8.0.29</version.mysql-connector>
+        <version.netty>4.1.66.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.2</version.powermock>
@@ -102,8 +104,9 @@
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
         <version.surefire.plugin>3.0.0-M5</version.surefire.plugin>
-        <version.thrift>0.9.3</version.thrift>
-        <version.weld>3.1.9.Final</version.weld>
+        <version.thrift>0.13.0</version.thrift>
+        <!-- This version of weld ships with Wildfly 24. -->
+        <version.weld>3.1.7.SP1</version.weld>
         <version.wildfly>24.0.1.Final</version.wildfly>
         <version.woodstox-core>5.0.3</version.woodstox-core>
         <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
@@ -1016,9 +1019,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${version.javax-validation}</version>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>${version.jakarta-validation}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
