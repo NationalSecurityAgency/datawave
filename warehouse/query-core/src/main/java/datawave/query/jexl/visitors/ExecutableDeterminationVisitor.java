@@ -188,9 +188,18 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         Multimap<STATE,String> pop(Set<STATE> states);
         
         /**
+         * Move contributors from one state to another
+         * 
+         * @param state
+         * @param newState
+         */
+        void move(STATE state, STATE newState);
+        
+        /**
          * Take the top contributers map and summarize it adding that to the output.
          */
         void summarize();
+        
     }
     
     /**
@@ -203,6 +212,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         
         public StringListOutput(LinkedList<String> debugOutput) {
             this.outputLines = debugOutput;
+            push();
         }
         
         @Override
@@ -252,6 +262,13 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
                 return last;
             }
             return null;
+        }
+        
+        @Override
+        public void move(STATE state, STATE newState) {
+            if (!summaryContributors.isEmpty()) {
+                summaryContributors.getLast().putAll(newState, summaryContributors.getLast().removeAll(state));
+            }
         }
         
         /*
@@ -347,6 +364,15 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
     
     /**
+     * Summarize if requested
+     */
+    public void summarize() {
+        if (output != null) {
+            output.summarize();
+        }
+    }
+    
+    /**
      * Negate the current data object
      *
      * @param data
@@ -419,7 +445,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         
         // push down any negations to ensure the state is accurate
         JexlNode pushedDownTree = PushdownNegationVisitor.pushdownNegations(node);
-        return (STATE) pushedDownTree.jjtAccept(visitor, "");
+        STATE state = (STATE) pushedDownTree.jjtAccept(visitor, "");
+        visitor.summarize();
+        return state;
     }
     
     public static STATE getState(JexlNode node, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
@@ -429,7 +457,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         
         // push down any negations to ensure the state is accurate
         JexlNode pushedDownTree = PushdownNegationVisitor.pushdownNegations(node);
-        return (STATE) pushedDownTree.jjtAccept(visitor, "");
+        STATE state = (STATE) pushedDownTree.jjtAccept(visitor, "");
+        visitor.summarize();
+        return state;
     }
     
     public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
@@ -512,14 +542,15 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             if (state == STATE.PARTIAL) {
                 states.add(STATE.NON_EXECUTABLE);
             }
+            if (state == STATE.NEGATED_EXECUTABLE) {
+                states.add(STATE.EXECUTABLE);
+            }
             output.pop(states);
         }
         return state;
     }
     
     protected STATE unlessAnyNonExecutable(JexlNode node, Object data) {
-        STATE state;
-        boolean containsIgnorable = false;
         // all children must be executable for a script to be executable
         Set<STATE> states = new HashSet<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
@@ -597,7 +628,6 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         
         STATE state;
-        Set<STATE> states = new HashSet<>();
         if (isNoFieldOnly(node)) {
             state = STATE.IGNORABLE;
         } else if (isUnOrNoFielded(node)) {
@@ -611,9 +641,6 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
                 if (isIndexOnly(node)) {
                     state = STATE.ERROR;
                 }
-                states.add(STATE.NON_EXECUTABLE);
-            } else {
-                states.add(STATE.EXECUTABLE);
             }
         }
         if (output != null) {
@@ -910,11 +937,17 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         STATE state = allOrNone(node, negateData(data + PREFIX));
         // if there is no error and executability is being checked against the global index just return non-executable
         if (state == STATE.EXECUTABLE) {
+            if (output != null) {
+                output.move(state, STATE.NEGATED_EXECUTABLE);
+            }
             state = STATE.NEGATED_EXECUTABLE;
         }
         
         // global index does not yet support NEGATED_EXECUTABLE so unless it is an error it's always NON_EXECUTABLE
         if (!forFieldIndex && state != STATE.ERROR) {
+            if (output != null) {
+                output.move(state, STATE.NON_EXECUTABLE);
+            }
             state = STATE.NON_EXECUTABLE;
         }
         
@@ -924,13 +957,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         STATE state;
-        if (output != null) {
-            output.push();
-        }
         state = allOrNone(node, data);
-        if (output != null) {
-            output.summarize();
-        }
         return state;
     }
     
