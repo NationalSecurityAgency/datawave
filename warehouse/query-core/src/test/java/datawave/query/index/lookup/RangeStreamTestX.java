@@ -322,22 +322,26 @@ public class RangeStreamTestX {
         m.put(new Text("F1"), new Text("20200101_10\0datatype1"), valueForShard);
         m.put(new Text("F1"), new Text("20200101_11\0datatype1"), valueForShard);
         m.put(new Text("F1"), new Text("20200101_12\0datatype1"), valueForShard);
+        m.put(new Text("F1"), new Text("20200101_13\0datatype1"), valueForShard);
         bw.addMutation(m);
         
-        m = new Mutation("2"); // fully distributed
+        m = new Mutation("2"); // skips shard _11
         m.put(new Text("F2"), new Text("20200101_10\0datatype1"), valueForShard);
-        m.put(new Text("F2"), new Text("20200101_11\0datatype1"), valueForShard);
         m.put(new Text("F2"), new Text("20200101_12\0datatype1"), valueForShard);
+        m.put(new Text("F2"), new Text("20200101_13\0datatype1"), valueForShard);
         bw.addMutation(m);
         
-        m = new Mutation("3"); // skips shard _11
+        m = new Mutation("3"); // skips shard _12
         m.put(new Text("F3"), new Text("20200101_10\0datatype1"), valueForShard);
-        m.put(new Text("F3"), new Text("20200101_12\0datatype1"), valueForShard);
+        m.put(new Text("F3"), new Text("20200101_11\0datatype1"), valueForShard);
+        m.put(new Text("F3"), new Text("20200101_13\0datatype1"), valueForShard);
         bw.addMutation(m);
         
-        m = new Mutation("4"); // skips shard _11
+        m = new Mutation("4"); // fully distributed
         m.put(new Text("F4"), new Text("20200101_10\0datatype1"), valueForShard);
+        m.put(new Text("F4"), new Text("20200101_11\0datatype1"), valueForShard);
         m.put(new Text("F4"), new Text("20200101_12\0datatype1"), valueForShard);
+        m.put(new Text("F4"), new Text("20200101_13\0datatype1"), valueForShard);
         bw.addMutation(m);
         
         // ---------------
@@ -3124,34 +3128,114 @@ public class RangeStreamTestX {
     
     @Test
     public void testNestedPruningWithTopLevelIntersection() throws Exception {
-        String query = "F1 == '1' && (F2 == '2' || F3 == '3')";
+        String query = "F1 == '1' && (F3 == '3' || F4 == '4')";
         
         List<Range> expectedRanges = new ArrayList<>();
         expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
         expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
         expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
         
         List<String> expectedQueries = new ArrayList<>();
-        expectedQueries.add("F1 == '1' && (F2 == '2' || F3 == '3')");
-        expectedQueries.add("F1 == '1' && F2 == '2'");
-        expectedQueries.add("F1 == '1' && (F2 == '2' || F3 == '3')");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || F4 == '4')");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || F4 == '4')");
+        expectedQueries.add("F1 == '1' && F4 == '4'"); // F3 skips shard _12
+        expectedQueries.add("F1 == '1' && (F3 == '3' || F4 == '4')");
         
         runTest(query, expectedRanges, expectedQueries);
     }
     
     @Test
     public void testDelayedNestedPruningWithTopLevelIntersection() throws Exception {
-        String query = "F1 == '1' && (((_Delayed_ = true) && (F2 == '2')) || F3 == '3')";
+        String query = "F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))";
         
         List<Range> expectedRanges = new ArrayList<>();
         expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
         expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
         expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
         
         List<String> expectedQueries = new ArrayList<>();
-        expectedQueries.add("F1 == '1' && (((_Delayed_ = true) && (F2 == '2')) || F3 == '3')");
-        expectedQueries.add("F1 == '1' && ((_Delayed_ = true) && (F2 == '2'))"); // F3 not present in shard 2
-        expectedQueries.add("F1 == '1' && (((_Delayed_ = true) && (F2 == '2')) || F3 == '3')");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        expectedQueries.add("F1 == '1' && ((_Delayed_ = true) && (F4 == '4'))"); // F3 skips shard _12
+        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
+    @Test
+    public void testIntersectionOfNestedUnions() throws Exception {
+        String query = "(F1 == '1' || F2 == '2') && (F3 == '3' || F4 == '4')";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || F4 == '4')");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || F4 == '4')"); // F2 skips shard _11
+        expectedQueries.add("(F1 == '1' || F2 == '2') && F4 == '4'"); // F3 skips shard _12
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || F4 == '4')");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
+    @Test
+    public void testIntersectionOfNestedUnionsOnHasDelayedTerm() throws Exception {
+        String query = "(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))"); // F2 skips shard_11
+        expectedQueries.add("(F1 == '1' || F2 == '2') && ((_Delayed_ = true) && (F4 == '4'))"); // F3 skips shard _12
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
+    @Test
+    public void testOrAndOr() throws Exception {
+        String query = "F2 == '2' || (F1 == '1' && (F3 == '3' || F4 == '4'))";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("F2 == '2' || (F1 == '1' && (F3 == '3' || F4 == '4'))");
+        expectedQueries.add("(F1 == '1' && (F3 == '3' || F4 == '4'))"); // F2 skips shard _11
+        expectedQueries.add("F2 == '2' || (F1 == '1' && F4 == '4')"); // F3 skips shard _12
+        expectedQueries.add("F2 == '2' || (F1 == '1' && (F3 == '3' || F4 == '4'))");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
+    @Test
+    public void testOrAndOrWithDeeplyNestedDelayedTerm() throws Exception {
+        String query = "F2 == '2' || (F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))))";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("F2 == '2' || (F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))))");
+        expectedQueries.add("(F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))))"); // F2 skips shard _11
+        expectedQueries.add("F2 == '2' || (F1 == '1' && ((_Delayed_ = true) && (F4 == '4')))"); // F3 skips shard _12
+        expectedQueries.add("F2 == '2' || (F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))))");
         
         runTest(query, expectedRanges, expectedQueries);
     }
@@ -3164,7 +3248,6 @@ public class RangeStreamTestX {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-        // config.setBeginDate(new Date(0));
         config.setBeginDate(sdf.parse("20200101"));
         config.setEndDate(sdf.parse("20200105"));
         

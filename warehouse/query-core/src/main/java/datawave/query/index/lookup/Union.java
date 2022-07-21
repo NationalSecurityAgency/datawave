@@ -191,20 +191,10 @@ public class Union extends BaseIndexStream {
         IndexInfo pointers = head.second();
         
         // check for edge case like 'A && (B || delayed_C)'
+        // in this case term A hits on a shard that sorts before the next shard for term B
+        // even though term B doesn't hit, this union should still return the delayed term
         if (context != null && ShardEquality.lessThan(context, dayOrShard) && !delayedNodes.isEmpty()) {
-            
-            // build query from delayed nodes only
-            JexlNode node;
-            if (delayedNodes.size() == 1) {
-                node = delayedNodes.getNodes().iterator().next();
-            } else {
-                node = JexlNodeFactory.createOrNode(delayedNodes.getNodes());
-            }
-            
-            IndexInfo info = new IndexInfo(Long.MAX_VALUE);
-            info.applyNode(node);
-            
-            return new Tuple2<>(context, info);
+            return buildHitFromDelayedTerms(context);
         }
         
         // use startsWith to match shards with a day
@@ -279,6 +269,20 @@ public class Union extends BaseIndexStream {
         }
         
         return Tuples.tuple(dayOrShard, pointers);
+    }
+    
+    private Tuple2<String,IndexInfo> buildHitFromDelayedTerms(String context) {
+        JexlNode node;
+        if (delayedNodes.size() == 1) {
+            node = delayedNodes.getNodes().iterator().next();
+        } else {
+            node = JexlNodeFactory.createOrNode(delayedNodes.getNodes());
+        }
+        
+        IndexInfo info = new IndexInfo(-1); // delayed nodes considered a shard range
+        info.applyNode(node);
+        
+        return new Tuple2<>(context, info);
     }
     
     @Override
