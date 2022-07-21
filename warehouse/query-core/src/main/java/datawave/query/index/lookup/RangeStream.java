@@ -389,6 +389,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 case EXCEEDED_TERM_THRESHOLD:
                 case EXCEEDED_VALUE_THRESHOLD:
                 case PRESENT:
+                case VARIABLE:
                     return build;
                 case UNINDEXED:
                     return ScannerStream.unindexed(build.currentNode(), build);

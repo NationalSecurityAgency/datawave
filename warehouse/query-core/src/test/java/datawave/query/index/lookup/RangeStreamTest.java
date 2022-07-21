@@ -1105,9 +1105,13 @@ public class RangeStreamTest {
         
         RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
-        // streamPlans(script) to populate the StreamContext.
+        
+        assertEquals(IndexStream.StreamContext.VARIABLE, rangeStream.context());
+        Iterator<QueryPlan> iter = queryPlans.iterator();
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
-        for (QueryPlan queryPlan : queryPlans) {
+        
+        while (iter.hasNext()) {
+            QueryPlan queryPlan = iter.next();
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
                                 expectedRanges.remove(range));

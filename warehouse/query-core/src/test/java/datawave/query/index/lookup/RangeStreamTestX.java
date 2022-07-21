@@ -3203,6 +3203,25 @@ public class RangeStreamTestX {
     }
     
     @Test
+    public void testIntersectionOfNestedUnionsOnHasDelayedTerm_flipped() throws Exception {
+        String query = "(F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))) && (F1 == '1' || F2 == '2')";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))"); // F2 skips shard_11
+        expectedQueries.add("(F1 == '1' || F2 == '2') && ((_Delayed_ = true) && (F4 == '4'))"); // F3 skips shard _12
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
+    @Test
     public void testOrAndOr() throws Exception {
         String query = "F2 == '2' || (F1 == '1' && (F3 == '3' || F4 == '4'))";
         

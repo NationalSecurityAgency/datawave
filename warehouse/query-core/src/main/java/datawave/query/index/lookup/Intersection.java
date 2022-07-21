@@ -193,8 +193,13 @@ public class Intersection extends BaseIndexStream {
             // just because index streams are present, does not mean they actually intersect
             next();
             if (next != null) {
-                this.context = StreamContext.PRESENT;
-                this.contextDebug = "children intersect";
+                if (delayedNodes.isEmpty()) {
+                    this.context = StreamContext.PRESENT;
+                    this.contextDebug = "children intersect";
+                } else {
+                    this.context = StreamContext.VARIABLE;
+                    this.contextDebug = "children are a mix of delayed and non-delayed terms";
+                }
             } else {
                 this.context = StreamContext.ABSENT;
                 this.contextDebug = "children did not intersect";

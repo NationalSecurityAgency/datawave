@@ -61,6 +61,7 @@ public class Union extends BaseIndexStream {
             if (stream.hasNext()) {
                 switch (stream.context()) {
                     case PRESENT:
+                    case VARIABLE:
                     case EXCEEDED_VALUE_THRESHOLD:
                         // index streams with data are always added
                         this.children.add(stream);
@@ -82,7 +83,6 @@ public class Union extends BaseIndexStream {
                     delayedNodes.add(stream.currentNode());
                     continue;
                 case IGNORED:
-                case VARIABLE:
                 case DELAYED_FIELD:
                 case UNKNOWN_FIELD:
                 case EXCEEDED_TERM_THRESHOLD:
