@@ -101,6 +101,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         EXECUTABLE, PARTIAL, NON_EXECUTABLE, IGNORABLE, ERROR, NEGATED_EXECUTABLE
     }
     
+    /**
+     * A simple combination of a state and a reason/summary for the state
+     */
     public static class StateAndReason {
         public STATE state;
         public String reason;
@@ -108,34 +111,95 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     
     private static final Logger log = Logger.getLogger(ExecutableDeterminationVisitor.class);
     
+    /**
+     * The output interface which allows us to write lines into the output, and provides for handling a stack of summary contributors that in the end will
+     * contain the terms that contribute to the final state.
+     */
     private interface Output {
-        void enable();
-        
+        /**
+         * Disable additions. This is use for a visitor method that does not need any children node visits to contribute to the output/summary because it will
+         * take care of the summary itself.
+         */
         void disable();
         
+        /**
+         * Enable additions.
+         */
+        void enable();
+        
+        /**
+         * Write a line to the output, and potentially add it to the summary contributors
+         * 
+         * @param prefix
+         * @param node
+         * @param state
+         * @param partOfSummary
+         */
         void writeLine(Object prefix, JexlNode node, STATE state, boolean partOfSummary);
         
+        /**
+         * Write a line to the output, and potentially add it to the summary contributors
+         * 
+         * @param prefix
+         * @param node
+         * @param extra
+         * @param state
+         * @param partOfSummary
+         */
         void writeLine(Object prefix, JexlNode node, String extra, STATE state, boolean partOfSummary);
         
+        /**
+         * Write a formatted query string for the node to the output, and potentially add it to the summary contributors
+         * 
+         * @param prefix
+         * @param node
+         * @param state
+         * @param partOfSummary
+         */
         void writeNode(Object prefix, JexlNode node, STATE state, boolean partOfSummary);
         
+        /**
+         * Write a line to the output, and potentially add it to the summary contributors
+         * 
+         * @param prefix
+         * @param value
+         * @param state
+         * @param partOfSummary
+         */
         void writeLine(Object prefix, String value, STATE state, boolean partOfSummary);
         
+        /**
+         * Push an empty map of summary contributors onto the stack
+         */
         void push();
         
+        /**
+         * Pop a map of summary contributors off the stack, adding all of its contents to the new top-of-stack.
+         * 
+         * @return the popped off summary contributer map
+         */
         Multimap<STATE,String> pop();
         
+        /**
+         * Pop a map of summary contributors off the stack, adding contained states to the new top-of-stack.
+         * 
+         * @return the popped off summary contributer map
+         */
         Multimap<STATE,String> pop(Set<STATE> states);
         
-        void drop();
-        
-        void finalize();
+        /**
+         * Take the top contributers map and summarize it adding that to the output.
+         */
+        void summarize();
     }
     
+    /**
+     * An implementation of Output
+     */
     private static class StringListOutput implements Output {
         private boolean enabled = true;
         private final LinkedList<String> outputLines;
-        public LinkedList<Multimap<STATE,String>> contributors = new LinkedList<>();
+        public LinkedList<Multimap<STATE,String>> summaryContributors = new LinkedList<>();
         
         public StringListOutput(LinkedList<String> debugOutput) {
             this.outputLines = debugOutput;
@@ -154,16 +218,19 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         @Override
         public void push() {
             if (enabled) {
-                contributors.add(HashMultimap.create());
+                summaryContributors.add(HashMultimap.create());
             }
         }
         
         @Override
         public Multimap<STATE,String> pop() {
             if (enabled) {
-                Multimap<STATE,String> last = contributors.removeLast();
-                if (!contributors.isEmpty()) {
-                    contributors.getLast().putAll(last);
+                // remove the top of the stack
+                Multimap<STATE,String> last = summaryContributors.removeLast();
+                // if we still have a contributor map in the stack (this should always be the case)
+                if (!summaryContributors.isEmpty()) {
+                    // add the states to the new top-of-stack
+                    summaryContributors.getLast().putAll(last);
                 }
                 return last;
             }
@@ -173,22 +240,18 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         @Override
         public Multimap<STATE,String> pop(Set<STATE> states) {
             if (enabled) {
-                Multimap<STATE,String> last = contributors.removeLast();
-                if (!contributors.isEmpty()) {
+                // remove the top of the stack
+                Multimap<STATE,String> last = summaryContributors.removeLast();
+                // if we still have a contributor map in the stack (this should always be the case)
+                if (!summaryContributors.isEmpty()) {
+                    // add the relavent states to the new top-of-stack
                     for (STATE state : states) {
-                        contributors.getLast().putAll(state, last.get(state));
+                        summaryContributors.getLast().putAll(state, last.get(state));
                     }
                 }
                 return last;
             }
             return null;
-        }
-        
-        @Override
-        public void drop() {
-            if (enabled) {
-                contributors.removeLast();
-            }
         }
         
         /*
@@ -218,17 +281,18 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             if (enabled) {
                 outputLines.addFirst(prefix + value + " -> " + state);
                 if (partOfSummary) {
-                    contributors.getLast().put(state, value);
+                    summaryContributors.getLast().put(state, value);
                 }
             }
         }
         
         @Override
-        public void finalize() {
+        public void summarize() {
             outputLines.addFirst("Summary: " + summarize(pop()));
         }
         
-        public String summarize(Multimap<STATE,String> contributors) {
+        private String summarize(Multimap<STATE,String> contributors) {
+            // create a summary that contains up to 3 contributing terms/values per state
             StringBuilder builder = new StringBuilder();
             String separator = "";
             for (STATE state : contributors.keySet()) {
@@ -865,7 +929,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         state = allOrNone(node, data);
         if (output != null) {
-            output.finalize();
+            output.summarize();
         }
         return state;
     }
@@ -1067,9 +1131,6 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTIdentifier node, Object data) {
-        if (output != null) {
-            output.push();
-        }
         STATE state = STATE.IGNORABLE;
         if (output != null) {
             output.writeLine(data, node, ":" + node.image, state, true);
