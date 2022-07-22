@@ -2,7 +2,6 @@ package datawave.query.index.lookup;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -338,8 +337,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     return ScannerStream.ignored(union.currentNode(), union);
                 case DELAYED_FIELD:
                     return ScannerStream.delayedExpression(union.currentNode());
-                case PRESENT: //
-                case VARIABLE: // variable state becoming delayed means we can no longer prune the non-delayed terms from a query
+                case PRESENT:
+                case VARIABLE:
                 case EXCEEDED_TERM_THRESHOLD:
                 case EXCEEDED_VALUE_THRESHOLD:
                     return union;
@@ -696,7 +695,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             
             // create a list of tuples for each shard
             if (log.isDebugEnabled()) {
-                LiteralRange range = JexlASTHelper.findRange().indexedOnly(config.getDatatypeFilter(), metadataHelper).getRange(node);
+                LiteralRange<?> range = JexlASTHelper.findRange().indexedOnly(config.getDatatypeFilter(), metadataHelper).getRange(node);
                 if (range != null) {
                     log.debug("{\"" + range.getFieldName() + "\": \"" + range.getLower() + " - " + range.getUpper() + "\"} requires a full field index scan.");
                 } else {

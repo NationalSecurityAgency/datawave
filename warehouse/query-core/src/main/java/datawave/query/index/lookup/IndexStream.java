@@ -30,7 +30,7 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          */
         VARIABLE,
         /**
-         * No op expression indicates that an expression is kept as a placeholder
+         * NO_OP marks a node as a placeholder when it is consumed by a parent of the same node type
          */
         NO_OP,
         /**
