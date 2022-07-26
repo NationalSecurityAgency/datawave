@@ -238,14 +238,20 @@ public class Intersection extends BaseIndexStream {
     }
     
     /**
-     * This is a no-op for the Intersection class. Delegates to {@link #next()}
+     * Find the next result at or beyond the provided context.
+     * <p>
+     * Calls {@link #advanceStream(IndexStream, String)} before called {@link #next()}
      *
      * @param context
-     *            a context
+     *            a shard context
      * @return the result of calling {@link #next()}
      */
     @Override
     public Tuple2<String,IndexInfo> next(String context) {
+        
+        // advance all streams to the provided context
+        children = advanceStreams(children, context);
+        
         return next();
     }
     
@@ -450,15 +456,17 @@ public class Intersection extends BaseIndexStream {
     public static TreeMultimap<String,IndexStream> advanceStreams(TreeMultimap<String,IndexStream> children, String max) {
         TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), streamComparator);
         
-        // Remove all IndexStreams already mapped to the highest key.
-        newChildren.putAll(max, children.removeAll(max));
+        // Remove all IndexStreams already mapped to the highest key, if they exist
+        if (children.containsKey(max)) {
+            newChildren.putAll(max, children.removeAll(max));
+        }
         
         for (IndexStream stream : children.values()) {
             
             // Advance the IndexStream to the high key.
             String dayOrShard = advanceStream(stream, max);
             
-            // Cannot intersect with an empty IndexStream, return empty multi-map to signify end of intersection.
+            // Cannot intersect with an empty IndexStream, return empty multimap to signify end of intersection.
             if (dayOrShard == null || !stream.hasNext()) {
                 return TreeMultimap.create(Ordering.natural(), streamComparator);
             } else {
