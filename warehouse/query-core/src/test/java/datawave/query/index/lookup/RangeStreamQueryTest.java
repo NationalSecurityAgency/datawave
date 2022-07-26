@@ -404,7 +404,7 @@ public class RangeStreamQueryTest {
         script = JexlASTHelper.parseAndFlattenJexlQuery(query);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         
-        // call to 'iterator()' may modify the stream context
+        // a stream context of VARIABLE will change to PRESENT for intersections and ABSENT for unions
         Iterator<QueryPlan> queryPlanIter = queryPlans.iterator();
         
         // check for a top level union and a delayed term. These queries are not executable

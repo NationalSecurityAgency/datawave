@@ -40,14 +40,14 @@ public class Union extends BaseIndexStream {
     private static final Logger log = Logger.getLogger(Union.class);
     
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public Union(Iterable<? extends IndexStream> children) {
+    public Union(Iterable<? extends IndexStream> streams) {
         this.children = new PriorityQueue(16, PeekOrdering.make(new TupleComparator<>()));
         this.childNodes = new JexlNodeSet();
         this.delayedNodes = new JexlNodeSet();
         
         boolean delayedFromUnindexed = false; // did any delayed node come from an unindexed stream?
         
-        for (IndexStream stream : children) {
+        for (IndexStream stream : streams) {
             
             if (log.isDebugEnabled()) {
                 childrenContextDebug.add(stream.getContextDebug());
@@ -80,8 +80,6 @@ public class Union extends BaseIndexStream {
                 case UNINDEXED:
                     // a non-indexed field present in a top level union results in a non-executable query
                     delayedFromUnindexed = true;
-                    delayedNodes.add(stream.currentNode());
-                    continue;
                 case IGNORED:
                 case DELAYED_FIELD:
                 case UNKNOWN_FIELD:
@@ -228,6 +226,7 @@ public class Union extends BaseIndexStream {
             
             IndexStream itr = children.poll();
             
+            // delayed nodes are not added to the union at this stage, lest they be duplicated once per active index stream
             pointers = pointers.union(itr.peek().second(), Collections.emptyList());
             itr.next();
             if (itr.hasNext()) {

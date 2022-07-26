@@ -16,6 +16,9 @@ public class IndexStreamComparator implements Comparator<IndexStream> {
         
         int result = Integer.compare(leftId, rightId);
         if (result == 0) {
+            // a TreeMultimap is an implementation of a SortedKeySortedSetMultimap
+            // element uniqueness is NOT determined by the stream class and context
+            // return a 1 to insert this "equivalent" element after an existing element
             return 1;
         } else {
             return result;

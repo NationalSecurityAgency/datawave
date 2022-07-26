@@ -82,7 +82,10 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
     String seek(String seekShard);
     
     /**
-     * In certain cases a next call must be made within a context
+     * Additional context is required for nested unions that have a VARIABLE stream context.
+     * <p>
+     * The active terms in a union may hit on a later shard than the provided shard; in this case any delayed terms need to be returned in order to maintain as
+     * much of the original query as possible.
      *
      * @param context
      *            a shard
