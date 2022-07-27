@@ -165,7 +165,7 @@ public class IngestJob implements Tool {
     protected boolean collectDistributionStats = false;
     protected boolean createTables = false;
     protected boolean metricsOutputEnabled = true;
-    private String metricsLabelOverride = null;
+    protected String metricsLabelOverride = null;
     protected boolean generateMapFileRowKeys = false;
     protected String compressionType = null;
     protected final Set<String> compressionTableBlackList = new HashSet<>();
@@ -193,9 +193,9 @@ public class IngestJob implements Tool {
     
     protected boolean writeDirectlyToDest = false;
     
-    private Configuration hadoopConfiguration;
-    private List<Observer> jobObservers = new ArrayList<>();
-    private JobObservable jobObservable;
+    protected Configuration hadoopConfiguration;
+    protected List<Observer> jobObservers = new ArrayList<>();
+    protected JobObservable jobObservable;
     
     public static void main(String[] args) throws Exception {
         System.out.println("Running main");
@@ -247,6 +247,7 @@ public class IngestJob implements Tool {
     
     @Override
     public int run(String[] args) throws Exception {
+        inputFormat = EventSequenceFileInputFormat.class;
         
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
         
@@ -331,7 +332,7 @@ public class IngestJob implements Tool {
         // Use the job's configuration from this point.
         conf = job.getConfiguration();
         if (!useMapOnly || !outputMutations) {
-            // Calculate the sampled splits, splits file, and set up the partitioner, but not if only doing only a map phase and outputting mutations
+            // Calculate the sampled splits, splits file, and set up the partitioner, but not if only doing a map phase and outputting mutations
             // if not outputting mutations and only doing a map phase, we still need to go through this logic as the MultiRFileOutputFormatter
             // depends on this.
             try {
@@ -820,7 +821,7 @@ public class IngestJob implements Tool {
     protected void configureJob(Job job, Configuration conf, Path workDirPath, FileSystem outputFs) throws Exception {
         // create a job name
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss.SSS");
-        job.setJobName(IngestJob.class.getSimpleName() + "_" + format.format(new Date()));
+        job.setJobName(this.getClass().getSimpleName() + "_" + format.format(new Date()));
         
         // if doing this as a bulk job, create the job.paths file and the flag file if supplied
         if (!outputMutations) {
@@ -1018,7 +1019,7 @@ public class IngestJob implements Tool {
         }
     }
     
-    private void updateConfWithOverrides(Configuration conf) {
+    protected void updateConfWithOverrides(Configuration conf) {
         for (String[] conOverride : confOverrides) {
             conf.set(conOverride[0], conOverride[1]);
         }
@@ -1193,6 +1194,7 @@ public class IngestJob implements Tool {
      * Marks the input files given to this job as loaded by moving them from the "flagged" directory to the "loaded" directory.
      */
     protected void markFilesLoaded(FileSystem fs, Path[] inputPaths, JobID jobID) throws IOException {
+        
         for (Path src : inputPaths) {
             String ssrc = src.toString();
             if (ssrc.contains("/flagged/")) {
