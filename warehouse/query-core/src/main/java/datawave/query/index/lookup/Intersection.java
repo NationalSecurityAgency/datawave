@@ -91,7 +91,7 @@ public class Intersection extends BaseIndexStream {
     private Tuple2<String,IndexInfo> next;
     
     protected UidIntersector uidIntersector;
-    protected static IndexStreamComparator streamComparator = new IndexStreamComparator();
+    private static final IndexStreamComparator streamComparator = new IndexStreamComparator();
     
     private static final Logger log = Logger.getLogger(Intersection.class);
     
