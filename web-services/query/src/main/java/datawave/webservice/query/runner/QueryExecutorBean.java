@@ -1954,6 +1954,9 @@ public class QueryExecutorBean implements QueryExecutor {
             // So if the connection is null here, then either the query wasn't in the cache
             // at all, or it was but only because of a call to list. In either case, it's
             // an error.
+            if (!id.matches("[a-z\\d-]+")) {
+                throw new NotFoundQueryException(DatawaveErrorCode.INVALID_QUERY_ID, MessageFormat.format("{0}", id));
+            }
             if (null == query || null == query.getConnection()) {
                 // If the query just wasn't in the cache, then check the persister to see if the
                 // ID exists at all. If it doesn't, then we need to return a 404 rather than 412
@@ -2138,6 +2141,9 @@ public class QueryExecutorBean implements QueryExecutor {
         try {
             boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id, principal);
             Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, ((DatawavePrincipal) principal).getShortName());
+            if (!id.matches("[a-z\\d-]+")) {
+                throw new NotFoundQueryException(DatawaveErrorCode.INVALID_QUERY_ID, MessageFormat.format("{0}", id));
+            }
             if (tuple == null) {
                 try {
                     RunningQuery query = getQueryById(id, principal);
