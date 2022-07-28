@@ -4,7 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SortedSetMultimap;
-import com.google.common.collect.TreeMultimap;;
+import com.google.common.collect.TreeMultimap;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Attribute;

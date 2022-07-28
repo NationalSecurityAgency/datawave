@@ -3,10 +3,8 @@ package datawave.ingest.mapreduce.job;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.nio.file.Files;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -45,10 +43,6 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
-import org.apache.hadoop.tools.DistCp;
-import org.apache.hadoop.tools.DistCpOptions;
-import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -67,8 +61,6 @@ import datawave.util.StringUtils;
 import datawave.util.cli.PasswordConverter;
 
 public class IdentityMapIngestJob extends IngestJob {
-    @SuppressWarnings("rawtypes")
-    protected Class<? extends InputFormat> inputFormat = SequenceFileInputFormat.class;
     private ConsoleAppender ca = new ConsoleAppender(new PatternLayout("%p [%c{1}] %m%n"));
     private String manifestFiles;
     private Set<Path> errorSeqSet = new HashSet<>();
@@ -300,19 +292,11 @@ public class IdentityMapIngestJob extends IngestJob {
             log.error("Found Fatal Errors in the counters");
         }
         
-        // If we're doing "live" ingest (sending mutations to accumulo rather than
-        // bringing map files online), then simply delete the workDir since it
-        // doesn't contain anything we need. If we are doing bulk ingest, then
+        // Since we are doing bulk ingest, we will
         // write out a marker file to indicate that the job is complete and a
         // separate process will bulk import the map files.
         // For this class, we highly likely aren't going to be outputing mutations
-        if (outputMutations) {
-            markFilesLoaded(inputFs, FileInputFormat.getInputPaths(job), job.getJobID());
-            boolean deleted = outputFs.delete(workDirPath, true);
-            if (!deleted) {
-                log.error("Unable to remove job working directory: " + workDirPath);
-            }
-        } else {
+        if (!outputMutations) {
             // now move the job directory over to the warehouse if needed
             FileSystem destFs = getFileSystem(conf, destHdfs);
             
@@ -331,7 +315,7 @@ public class IdentityMapIngestJob extends IngestJob {
                         distCpConf.addResource(path);
                     }
                 }
-                log.info("Moving files and manifests (using distcp) in " + unqualifiedWorkPath + " from " + inputFs.getUri() + " to " + destFs.getUri());
+                log.info("Moving (using distcp) " + unqualifiedWorkPath + " from " + inputFs.getUri() + " to " + destFs.getUri());
                 try {
                     distCpDirectory(unqualifiedWorkPath, inputFs, destFs, distCpConf, deleteAfterDistCp);
                 } catch (Exception e) {
@@ -368,7 +352,7 @@ public class IdentityMapIngestJob extends IngestJob {
             File flagDir = new File(flagFileDir);
             if (flagDir.isDirectory() && flagDir.canWrite()) {
                 String baseFlagName = getBaseFlagFileName(flagFile);
-                File errorFlagFile = new File(flagDir, baseFlagName + "_" + "noManifest.flag.allfailed");
+                File errorFlagFile = new File(flagDir, baseFlagName + "_" + "nomanifest.flag.allfailed");
                 FileWriter fw = new FileWriter(errorFlagFile);
                 for (Path erroredSeqFile : errorSeqSet) {
                     fw.append(erroredSeqFile.toString());
@@ -464,8 +448,6 @@ public class IdentityMapIngestJob extends IngestJob {
                 disableSpeculativeExecution = true;
             } else if (args[i].equals("-skipMarkerFileGeneration")) {
                 generateMarkerFile = false;
-            } else if (args[i].equals("-outputMutations")) {
-                outputMutations = true;
             } else if (args[i].equals("-useCombiner")) {
                 useCombiner = true;
             } else if (args[i].equals("-useInlineCombiner")) {
@@ -625,7 +607,7 @@ public class IdentityMapIngestJob extends IngestJob {
             FileInputStream in = new FileInputStream(path);
             try (BufferedReader r = new BufferedReader(new InputStreamReader(in))) {
                 String line = r.readLine();
-                // There should only be one file path in each manifest
+                // There may be multiple files in each manifest
                 if (line != null) {
                     // Format: <Manifest file name, OG ingest file name>
                     manifests.put(path, new Path(line));
@@ -721,142 +703,6 @@ public class IdentityMapIngestJob extends IngestJob {
         boolean complete = createFileWithRetries(fs, new Path(workDir, "job.complete"), new Path(workDir, "job.[^p]*"), false);
         boolean manifestCreated = createFileWithRetries(fs, new Path(workDir, "job.manifests"), new Path(workDir, "job.[^pc]*"), true);
         return manifestCreated && complete;
-    }
-    
-    @Override
-    protected void distCpDirectory(Path workDir, FileSystem src, FileSystem dest, Configuration distcpConfig, boolean deleteAfterDistCp) throws Exception {
-        // We will move the sequences, the manifests, and the original files
-        
-        for (Map.Entry<String,Path> p : manifests.entrySet()) {
-            p.setValue(src.makeQualified(p.getValue()));
-        }
-        
-        /*
-         * We will continue to keep our sequence files as well as the manifest files This assumes the manifests are included with the sequence files in the
-         * srcpath When we run the discp, we will move those original files as well
-         */
-        // Attaching the src namenode address to each manifest path
-        Path srcPath = src.makeQualified(workDir);
-        manifests.put(srcPath.toString(), srcPath);
-        
-        Path destPath = dest.makeQualified(workDir);
-        Path logPath = new Path(destPath, "logs");
-        
-        // Make sure the destination path doesn't already exist, so that distcp won't
-        // complain. We could add -i to the distcp command, but we don't want to hide
-        // any other failures that we might care about (such as map files failing to
-        // copy). We know the distcp target shouldn't exist, so if it does, it could
-        // only be from a previous failed attempt.
-        dest.delete(destPath, true);
-        
-        // NOTE: be careful with the preserve option. We only want to preserve user, group, and permissions but
-        // not carry block size or replication across. This is especially important because by default the
-        // MapReduce jobs produce output with the replication set to 1 and we definitely don't want to preserve
-        // that when copying across clusters.
-        //@formatter:off
-        DistCpOptions options = new DistCpOptions.Builder((List<Path>) (manifests.values()), destPath)
-            .withLogPath(logPath)
-            .withMapBandwidth(distCpBandwidth)
-            .maxMaps(distCpMaxMaps)
-            .withCopyStrategy(distCpStrategy)
-            .withSyncFolder(true)
-            .preserve(DistCpOptions.FileAttribute.USER)
-            .preserve(DistCpOptions.FileAttribute.GROUP)
-            .preserve(DistCpOptions.FileAttribute.PERMISSION)
-            .preserve(DistCpOptions.FileAttribute.BLOCKSIZE)
-            .preserve(DistCpOptions.FileAttribute.CHECKSUMTYPE)
-            .withBlocking(true)
-            .build();
-        //@formatter:on
-        
-        DistCp cp = new DistCp(distcpConfig, options);
-        for (Path p : manifests.values()) {
-            log.info("Starting distcp from " + p.toString() + " to " + destPath + " with configuration: " + options);
-        }
-        
-        try {
-            cp.execute();
-        } catch (Exception e) {
-            throw new RuntimeException("Distcp failed.", e);
-        }
-        
-        Map<String,FileStatus> destFiles = new HashMap<>();
-        for (FileStatus destFile : dest.listStatus(destPath)) {
-            destFiles.put(destFile.getPath().getName(), destFile);
-        }
-        
-        // verify the data was copied
-        for (Path p : manifests.values()) {
-            for (FileStatus srcFile : src.listStatus(p)) {
-                FileStatus destFile = destFiles.get(srcFile.getPath().getName());
-                if (destFile == null || destFile.getLen() != srcFile.getLen()) {
-                    throw new RuntimeException("DistCp failed to copy " + srcFile.getPath());
-                }
-            }
-            
-            // now we can clean up the src job directories
-            if (deleteAfterDistCp) {
-                src.delete(p, true);
-            }
-        }
-        
-    }
-    
-    /**
-     * Marks the input files given to this job as loaded by moving them from the "flagged" directory to the "loaded" directory. We also handle moving the
-     * original files and manifests
-     */
-    @Override
-    protected void markFilesLoaded(FileSystem fs, Path[] inputPaths, JobID jobID) throws IOException {
-        for (Path src : inputPaths) {
-            String ssrc = src.toString();
-            if (ssrc.contains("/flagged/")) {
-                Path dst = new Path(ssrc.replaceFirst("/flagged/", "/loaded/"));
-                boolean mkdirs = fs.mkdirs(dst.getParent());
-                if (mkdirs) {
-                    boolean renamed = fs.rename(src, dst);
-                    if (!renamed) {
-                        throw new IOException("Unable to rename " + src + " to " + dst);
-                    }
-                } else {
-                    throw new IOException("Unable to create parent dir: " + dst.getParent());
-                }
-            }
-        }
-        // Moving original files
-        for (Path origFile : manifests.values()) {
-            String manifestString = origFile.toString();
-            if (manifestString.contains("/flagged/")) {
-                Path dst = new Path(manifestString.replaceFirst("/flagged/", "/loaded/"));
-                boolean mkdirs = fs.mkdirs(dst.getParent());
-                if (mkdirs) {
-                    boolean renamed = fs.rename(origFile, dst);
-                    if (!renamed) {
-                        throw new IOException("Unable to rename " + origFile + " to " + dst);
-                    }
-                } else {
-                    throw new IOException("Unable to create parent dir: " + dst.getParent());
-                }
-            }
-        }
-        // Finally, move the manifests
-        for (String manifest : manifests.keySet()) {
-            if (manifest.contains("/flagged/")) {
-                Path dst = new Path(manifest.replaceFirst("/flagged/", "/loaded/"));
-                boolean mkdirs = fs.mkdirs(dst.getParent());
-                if (mkdirs || fs.exists(dst.getParent())) {
-                    boolean renamed = fs.rename(new Path(manifest), dst);
-                    if (!renamed) {
-                        throw new IOException("Unable to rename " + manifest + " to " + dst);
-                    }
-                } else {
-                    throw new IOException("Unable to create parent dir: " + dst.getParent());
-                }
-            }
-        }
-        
-        // notify observers
-        jobObservable.setJobId(jobID.toString());
     }
     
     public static void main(String[] args) throws Exception {
