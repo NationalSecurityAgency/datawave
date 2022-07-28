@@ -87,7 +87,8 @@ public class BoundedRangeDetectionVisitor extends ShortCircuitBaseVisitor {
         return false;
     }
     
-    // ensure we short circuit these nodes
+    // Ensure we short circuit on the following nodes that make up a bounded range
+    // We can short circuit recursion at the leaf nodes to help speed up query planning time
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return data;
@@ -108,6 +109,7 @@ public class BoundedRangeDetectionVisitor extends ShortCircuitBaseVisitor {
         return data;
     }
     
+    // We don't expect to see a bounded range inside a function
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         return data;

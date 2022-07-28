@@ -24,7 +24,7 @@ public class BoundedRangeDetectionVisitorTest {
     public void init() throws Exception {
         this.config = ShardQueryConfiguration.create();
         Multimap<String,Type<?>> queryFieldsDatatypes = HashMultimap.create();
-        queryFieldsDatatypes.put("foo", new StringType());
+        queryFieldsDatatypes.put("FOO", new StringType());
         
         config.setQueryFieldsDatatypes(queryFieldsDatatypes);
         
@@ -34,23 +34,37 @@ public class BoundedRangeDetectionVisitorTest {
     
     @Test
     public void testBoundedRange() throws ParseException {
-        String queryString = "((_Bounded_ = true) && (foo >= '1' && foo <= '10'))";
+        String queryString = "((_Bounded_ = true) && (FOO >= '1' && FOO <= '10'))";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         assertTrue(BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, helper, script));
     }
     
     @Test
     public void testUnboundedRange() throws ParseException {
-        String queryString = "(foo == '1' && foo == '10')";
+        String queryString = "(FOO == '1' && FOO == '10')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         assertFalse(BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, helper, script));
     }
     
     @Test(expected = DatawaveFatalQueryException.class)
     public void testBoundedRangeMalformed() throws ParseException {
-        String queryString = "((_Bounded_ = true) && (foo == '1' && foo == '10'))";
+        String queryString = "((_Bounded_ = true) && (FOO == '1' && FOO == '10'))";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, helper, script);
+    }
+    
+    @Test
+    public void testBoundedRangeChildOr() throws ParseException {
+        String queryString = "(FOO == 'bar' || ((_Bounded_ = true) && (FOO >= '1' && FOO <= '10')))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
+        assertTrue(BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, helper, script));
+    }
+    
+    @Test
+    public void testBoundedRangeChildAnd() throws ParseException {
+        String queryString = "(FOO == 'bar' && ((_Bounded_ = true) && (FOO >= '1' && FOO <= '10')))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
+        assertTrue(BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, helper, script));
     }
     
 }
