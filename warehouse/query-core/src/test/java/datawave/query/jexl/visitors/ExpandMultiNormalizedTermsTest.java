@@ -15,7 +15,6 @@ import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
@@ -28,7 +27,6 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 public class ExpandMultiNormalizedTermsTest {
     
@@ -488,6 +486,43 @@ public class ExpandMultiNormalizedTermsTest {
             String expected = "((" + marker + " = true) && (FOO == 'Bar'))";
             expandTerms(original, expected);
         }
+    }
+    
+    @Test
+    public void testFailedRegexNormalizersAndNRNodes() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType()));
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        // this tests for the successful normalization as a simple number can be normalized as a regex
+        String original = "FOO =~ '32' && FOO !~ '42'";
+        String expected = "(FOO =~ '32' || FOO =~ '\\Q+bE3.2\\E') && (FOO !~ '\\Q+bE4.2\\E' && FOO !~ '42')";
+        expandTerms(original, expected);
+        
+        // in this case the numeric normalization fails, so we need to mark as evaluation only
+        original = "FOO =~ '3.*2' && FOO !~ '3.*22'";
+        expected = "((_Eval_ = true) && (FOO =~ '3.*2')) && ((_Eval_ = true) && (FOO !~ '3.*22'))";
+        expandTerms(original, expected);
+    }
+    
+    @Test
+    public void testNENodes() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType()));
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        // this tests for the successful normalization as a simple number can be normalized as a regex
+        String original = "FOO != '32' && FOO != '42'";
+        String expected = "(FOO != '+bE3.2' && FOO != '32') && (FOO != '42' && FOO != '+bE4.2')";
+        expandTerms(original, expected);
     }
     
     private void expandTerms(String original, String expected) throws ParseException {

@@ -1195,6 +1195,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setIncludeHierarchyFields(includeHierarchyFields);
     }
     
+    public boolean getEnforceUniqueConjunctionsWithinExpression() {
+        return getConfig().getEnforceUniqueConjunctionsWithinExpression();
+    }
+    
+    public void setEnforceUniqueConjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
+        getConfig().setEnforceUniqueConjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
+    }
+    
+    public boolean getEnforceUniqueDisjunctionsWithinExpression() {
+        return getConfig().getEnforceUniqueDisjunctionsWithinExpression();
+    }
+    
+    public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
+        getConfig().setEnforceUniqueDisjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
+    }
+    
     public List<String> getDocumentPermutations() {
         return getConfig().getDocumentPermutations();
     }
@@ -1959,6 +1975,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(QueryParameters.GROUP_FIELDS);
         optionalParams.add(QueryParameters.UNIQUE_FIELDS);
         optionalParams.add(QueryOptions.LOG_TIMING_DETAILS);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGESIZE);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGETIMEOUT);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_EXPIRATION);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE);
         return optionalParams;
     }
     
@@ -2396,6 +2416,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
+    }
+    
+    public boolean isLazySetMechanismEnabled() {
+        return getConfig().isLazySetMechanismEnabled();
+    }
+    
+    public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
+        getConfig().setLazySetMechanismEnabled(lazySetMechanismEnabled);
     }
     
     public long getVisitorFunctionMaxWeight() {
