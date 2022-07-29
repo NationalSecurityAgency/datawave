@@ -14,11 +14,8 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # Remove the Elytron security subsystem entirely. Our JAAS security setup doesn't work
 # with it due to some bugs (the RunAsLoginModule doesn't work -- WFLY-11892) so we'll
 # just continue to use the deprecated system for now
-/subsystem=elytron:remove
-
-# Remove the metrics subsystem since it is currently buggy (thread-safety issue) and can cause deployment failures
-# See WFLY-11801 for details.
-/subsystem=microprofile-metrics-smallrye:remove
+#/subsystem=elytron:remove
+#/subsystem=microprofile-jwt-smallrye:remove
 
 # Change default ports to listen on all interfaces (can still override on command line)
 /interface=public/:write-attribute(name=inet-address,value="${jboss.bind.address:0.0.0.0}")
@@ -202,7 +199,6 @@ jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 /subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=timeout-unit,value=MILLISECONDS)
 /subsystem=ejb3:write-attribute(name=default-slsb-instance-pool,value=slsb-strict-max-pool)
 /subsystem=transactions/:write-attribute(name=default-timeout,value=${jboss.transaction.time.out})
-/subsystem=ee/managed-executor-service=default:write-attribute(name=max-threads,value=${jboss.managed.executor.service.default.max.threads})
 
 # Configure the JDBC DataSource used by MySQL
 /subsystem=datasources/jdbc-driver=mysql:add(driver-name=mysql,driver-module-name=com.mysql.driver)

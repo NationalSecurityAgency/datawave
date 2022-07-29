@@ -22,7 +22,7 @@
         <module>map-reduce-status</module>
         <module>map-reduce-embedded</module>
         <module>atom</module>
-        <module>query-websocket</module>
+        <!--        <module>query-websocket</module>-->
         <module>web-root</module>
         <module>modification</module>
         <module>rest-api</module>
