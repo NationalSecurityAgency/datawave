@@ -55,10 +55,22 @@ public class SetMembershipVisitorTest {
         fields.clear();
     }
     
+    private void assertMembers(String query, Set<String> expectedMembers) throws Exception {
+        Assert.assertEquals(expectedMembers, SetMembershipVisitor.getMembers(indexOnly, config, JexlASTHelper.parseJexlQuery(query)));
+    }
+    
+    private void assertContains(String query) throws Exception {
+        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, config, JexlASTHelper.parseJexlQuery(query)));
+    }
+    
+    private void assertMembersIndexOnly(String query, Set<String> expectedMembers) throws Exception {
+        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(query);
+        Assert.assertEquals(expectedMembers, SetMembershipVisitor.getMembers(indexOnly, config, queryTree, true));
+    }
+    
     @Test
     public void simpleTestMembers() throws Exception {
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY"),
-                        SetMembershipVisitor.getMembers(indexOnly, config, JexlASTHelper.parseJexlQuery("INDEX_ONLY == 'foobar'")));
+        assertMembers("INDEX_ONLY == 'foobar'", Sets.newHashSet("INDEX_ONLY"));
     }
     
     @Test
@@ -66,21 +78,18 @@ public class SetMembershipVisitorTest {
         config.setDatatypeFilter(Collections.singleton("test"));
         config.setLazySetMechanismEnabled(true);
         
-        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery("BAR == 'foo' && filter:isNull(INDEX_ONLY)");
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY"), SetMembershipVisitor.getMembers(indexOnly, config, queryTree, true));
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree).contains("INDEX_ONLY" + SetMembershipVisitor.INDEX_ONLY_FUNCTION_SUFFIX));
+        assertMembersIndexOnly("BAR == 'foo' && filter:isNull(INDEX_ONLY)", Sets.newHashSet("INDEX_ONLY"));
+        assertMembersIndexOnly("(filter:isNull(INDEX_ONLY) && FOO == 'bar') || BAR == 'foo'", Sets.newHashSet("INDEX_ONLY"));
+        assertMembersIndexOnly("(filter:isNull(INDEX_ONLY) && FOO == 'bar') || ONLY_INDEXED == 'bar'",
+                        Sets.newHashSet(Sets.newHashSet("INDEX_ONLY", "ONLY_INDEXED")));
+        assertMembersIndexOnly(
+                        "filter:includeRegex(INDEX_ONLY,'.*test.*', ONLY_INDEXED, '.*test.*') && filter:excludeRegex(BODY, '.*nottest.*') && FOO == 'bar'",
+                        Sets.newHashSet("INDEX_ONLY", "ONLY_INDEXED", "BODY"));
         
-        queryTree = JexlASTHelper.parseJexlQuery("(filter:isNull(INDEX_ONLY) && FOO == 'bar') || BAR == 'foo'");
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY"), SetMembershipVisitor.getMembers(indexOnly, config, queryTree, true));
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree).contains("INDEX_ONLY" + SetMembershipVisitor.INDEX_ONLY_FUNCTION_SUFFIX));
-        
-        queryTree = JexlASTHelper.parseJexlQuery("(filter:isNull(INDEX_ONLY) && FOO == 'bar') || ONLY_INDEXED == 'bar'");
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY", "ONLY_INDEXED"), SetMembershipVisitor.getMembers(indexOnly, config, queryTree, true));
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree).contains("INDEX_ONLY" + SetMembershipVisitor.INDEX_ONLY_FUNCTION_SUFFIX));
-        
-        queryTree = JexlASTHelper
+        ASTJexlScript queryTree = JexlASTHelper
                         .parseJexlQuery("filter:includeRegex(INDEX_ONLY,'.*test.*', ONLY_INDEXED, '.*test.*') && filter:excludeRegex(BODY, '.*nottest.*') && FOO == 'bar'");
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY", "ONLY_INDEXED", "BODY"), SetMembershipVisitor.getMembers(indexOnly, config, queryTree, true));
+        SetMembershipVisitor.getMembers(indexOnly, config, queryTree, true);
+        
         String queryString = JexlStringBuildingVisitor.buildQuery(queryTree);
         Assert.assertTrue(queryString.contains("INDEX_ONLY" + SetMembershipVisitor.INDEX_ONLY_FUNCTION_SUFFIX));
         Assert.assertTrue(queryString.contains("ONLY_INDEXED" + SetMembershipVisitor.INDEX_ONLY_FUNCTION_SUFFIX));
@@ -90,14 +99,10 @@ public class SetMembershipVisitorTest {
     
     @Test
     public void rangeOperandTestMembers() throws Exception {
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY"),
-                        SetMembershipVisitor.getMembers(indexOnly, config, JexlASTHelper.parseJexlQuery("BAR == 'foo' && INDEX_ONLY >= 1")));
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY"),
-                        SetMembershipVisitor.getMembers(indexOnly, config, JexlASTHelper.parseJexlQuery("BAR == 'foo' && INDEX_ONLY > 1")));
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY"),
-                        SetMembershipVisitor.getMembers(indexOnly, config, JexlASTHelper.parseJexlQuery("BAR == 'foo' && INDEX_ONLY <= 1")));
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY"),
-                        SetMembershipVisitor.getMembers(indexOnly, config, JexlASTHelper.parseJexlQuery("BAR == 'foo' && INDEX_ONLY < 1")));
+        assertMembers("BAR == 'foo' && INDEX_ONLY >= 1", Sets.newHashSet("INDEX_ONLY"));
+        assertMembers("BAR == 'foo' && INDEX_ONLY > 1", Sets.newHashSet("INDEX_ONLY"));
+        assertMembers("BAR == 'foo' && INDEX_ONLY <= 1", Sets.newHashSet("INDEX_ONLY"));
+        assertMembers("BAR == 'foo' && INDEX_ONLY < 1", Sets.newHashSet("INDEX_ONLY"));
     }
     
     @Test
@@ -109,66 +114,49 @@ public class SetMembershipVisitorTest {
     
     @Test
     public void simpleTestContains() throws Exception {
-        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, config, JexlASTHelper.parseJexlQuery("INDEX_ONLY == 'foobar'")));
+        assertContains("INDEX_ONLY == 'foobar'");
     }
     
     @Test
     public void andTestContains() throws Exception {
-        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, config, JexlASTHelper.parseJexlQuery("BAR == 'foo' && INDEX_ONLY == 'foobar'")));
-        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, config, JexlASTHelper.parseJexlQuery("INDEX_ONLY == 'foobar' && BAR == 'foo'")));
-        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, config, JexlASTHelper.parseJexlQuery("INDEX_ONLY == 'foobar' && ONLY_INDEXED == 'bar'")));
+        assertContains("BAR == 'foo' && INDEX_ONLY == 'foobar'");
+        assertContains("INDEX_ONLY == 'foobar' && BAR == 'foo'");
+        assertContains("INDEX_ONLY == 'foobar' && ONLY_INDEXED == 'bar'");
     }
     
     @Test
     public void orTestContains() throws Exception {
-        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, config, JexlASTHelper.parseJexlQuery("BAR == 'foo' || INDEX_ONLY == 'foobar'")));
-        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, config, JexlASTHelper.parseJexlQuery("INDEX_ONLY == 'foobar' || BAR == 'foo'")));
-        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, config, JexlASTHelper.parseJexlQuery("INDEX_ONLY == 'foobar' || ONLY_INDEXED == 'bar'")));
+        assertContains("BAR == 'foo' || INDEX_ONLY == 'foobar'");
+        assertContains("INDEX_ONLY == 'foobar' || BAR == 'foo'");
+        assertContains("INDEX_ONLY == 'foobar' || ONLY_INDEXED == 'bar'");
     }
     
     @Test
     public void functionTestContains() throws Exception {
-        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, config, JexlASTHelper.parseJexlQuery("BAR == 'foo' && filter:isNull(INDEX_ONLY)")));
-        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, config,
-                        JexlASTHelper.parseJexlQuery("(filter:isNull(INDEX_ONLY) && FOO  == 'bar') || BAR == 'foo'")));
-        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, config,
-                        JexlASTHelper.parseJexlQuery("(filter:isNull(INDEX_ONLY) && FOO  == 'bar') || ONLY_INDEXED == 'bar'")));
+        assertContains("BAR == 'foo' && filter:isNull(INDEX_ONLY)");
+        assertContains("(filter:isNull(INDEX_ONLY) && FOO  == 'bar') || BAR == 'foo'");
+        assertContains("(filter:isNull(INDEX_ONLY) && FOO  == 'bar') || ONLY_INDEXED == 'bar'");
     }
     
     @Test
     public void andTestMembers() throws Exception {
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY"),
-                        SetMembershipVisitor.getMembers(indexOnly, config, JexlASTHelper.parseJexlQuery("BAR == 'foo' && INDEX_ONLY == 'foobar'")));
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY"),
-                        SetMembershipVisitor.getMembers(indexOnly, config, JexlASTHelper.parseJexlQuery("INDEX_ONLY == 'foobar' && BAR == 'foo'")));
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY", "ONLY_INDEXED"),
-                        SetMembershipVisitor.getMembers(indexOnly, config, JexlASTHelper.parseJexlQuery("INDEX_ONLY == 'foobar' && ONLY_INDEXED == 'bar'")));
+        assertContains("BAR == 'foo' && INDEX_ONLY == 'foobar'");
+        assertContains("INDEX_ONLY == 'foobar' && BAR == 'foo'");
+        assertContains("INDEX_ONLY == 'foobar' && ONLY_INDEXED == 'bar'");
     }
     
     @Test
     public void orTestMembers() throws Exception {
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY"),
-                        SetMembershipVisitor.getMembers(indexOnly, config, JexlASTHelper.parseJexlQuery("BAR == 'foo' || INDEX_ONLY == 'foobar'")));
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY"),
-                        SetMembershipVisitor.getMembers(indexOnly, config, JexlASTHelper.parseJexlQuery("INDEX_ONLY == 'foobar' || BAR == 'foo'")));
-        Assert.assertEquals(Sets.newHashSet("INDEX_ONLY", "ONLY_INDEXED"),
-                        SetMembershipVisitor.getMembers(indexOnly, config, JexlASTHelper.parseJexlQuery("INDEX_ONLY == 'foobar' || ONLY_INDEXED == 'bar'")));
+        assertContains("BAR == 'foo' || INDEX_ONLY == 'foobar'");
+        assertContains("INDEX_ONLY == 'foobar' || BAR == 'foo'");
+        assertContains("INDEX_ONLY == 'foobar' || ONLY_INDEXED == 'bar'");
     }
     
     @Test
     public void orAndTestMembers() throws Exception {
-        Assert.assertEquals(
-                        Sets.newHashSet("INDEX_ONLY"),
-                        SetMembershipVisitor.getMembers(indexOnly, config,
-                                        JexlASTHelper.parseJexlQuery("BAR == 'foo' || (INDEX_ONLY == 'foobar' && FOO == 'bar')")));
-        Assert.assertEquals(
-                        Sets.newHashSet("INDEX_ONLY"),
-                        SetMembershipVisitor.getMembers(indexOnly, config,
-                                        JexlASTHelper.parseJexlQuery("(INDEX_ONLY == 'foobar' && FOO == 'bar') || BAR == 'foo'")));
-        Assert.assertEquals(
-                        Sets.newHashSet("INDEX_ONLY", "ONLY_INDEXED"),
-                        SetMembershipVisitor.getMembers(indexOnly, config,
-                                        JexlASTHelper.parseJexlQuery("(INDEX_ONLY == 'foobar' && FOO == 'bar') || ONLY_INDEXED == 'bar'")));
+        assertMembers("BAR == 'foo' || (INDEX_ONLY == 'foobar' && FOO == 'bar')", Sets.newHashSet("INDEX_ONLY"));
+        assertMembers("(INDEX_ONLY == 'foobar' && FOO == 'bar') || BAR == 'foo'", Sets.newHashSet("INDEX_ONLY"));
+        assertMembers("(INDEX_ONLY == 'foobar' && FOO == 'bar') || ONLY_INDEXED == 'bar'", Sets.newHashSet("INDEX_ONLY", "ONLY_INDEXED"));
     }
     
     /**
