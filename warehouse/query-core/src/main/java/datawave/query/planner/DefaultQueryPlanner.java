@@ -150,6 +150,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -940,9 +941,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     config.setQueryTree(timedExecutableExpansion(timers, config.getQueryTree(), config, metadataHelper));
                 }
                 
-                List<String> debugOutput = null;
+                LinkedList<String> debugOutput = null;
                 if (log.isDebugEnabled()) {
-                    debugOutput = new ArrayList<>(32);
+                    debugOutput = new LinkedList<>();
                 }
                 
                 // Unless config.isExpandAllTerms is true, this may set some of
@@ -1518,7 +1519,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     protected ASTJexlScript timedAddDelayedPredicates(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config,
-                    MetadataHelper metadataHelper, Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields, List<String> debugOutput) {
+                    MetadataHelper metadataHelper, Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields,
+                    LinkedList<String> debugOutput) {
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
         config.setQueryTree(script);
         if (log.isDebugEnabled()) {
@@ -2357,6 +2359,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Preconditions.checkNotNull(queryTree);
         
         boolean needsFullTable = false;
+        String fullTableScanReason = null;
         CloseableIterable<QueryPlan> ranges = null;
         
         // if the query has already been reduced to false there is no reason to do more
@@ -2366,23 +2369,24 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         // if we still have an unexecutable tree, then a full table scan is
         // required
-        List<String> debugOutput = null;
+        LinkedList<String> debugOutput = null;
         if (log.isDebugEnabled()) {
-            debugOutput = new ArrayList<>(32);
+            debugOutput = new LinkedList<>();
         }
-        STATE state = ExecutableDeterminationVisitor.getState(queryTree, config, metadataHelper, debugOutput);
+        ExecutableDeterminationVisitor.StateAndReason state = ExecutableDeterminationVisitor.getStateAndReason(queryTree, config, metadataHelper, debugOutput);
         if (log.isDebugEnabled()) {
             logDebug(debugOutput, "ExecutableDeterminationVisitor at getQueryRanges:");
         }
         
-        if (state != STATE.EXECUTABLE) {
-            if (state == STATE.ERROR) {
+        if (state.state != STATE.EXECUTABLE) {
+            if (state.state == STATE.ERROR) {
                 log.warn("After expanding the query, it is determined that the query cannot be executed due to index-only fields mixed with expressions that cannot be run against the index.");
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_MIXED_INVALID_EXPRESSIONS);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_MIXED_INVALID_EXPRESSIONS, state.reason);
                 throw new InvalidQueryException(qe);
             }
             log.warn("After expanding the query, it is determined that the query cannot be executed against the field index and a full table scan is required");
             needsFullTable = true;
+            fullTableScanReason = state.reason;
         }
         
         // if a simple examination of the query has not forced a full table
@@ -2433,7 +2437,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // check for the case where we cannot handle an ivarator but the query requires an ivarator
             if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
                 log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
-                needsFullTable = true;
             }
             
             stopwatch.stop();
@@ -2445,7 +2448,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 if (log.isTraceEnabled())
                     log.trace("Full table scans are not enabled, query will not be run");
                 
-                QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
+                QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED, fullTableScanReason);
                 throw new FullTableScansDisallowedException(qe);
             }
             if (log.isTraceEnabled())
