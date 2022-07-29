@@ -24,6 +24,7 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -56,6 +57,8 @@ import static org.junit.Assert.fail;
  */
 @Category(IntegrationTest.class)
 public class RangeStreamQueryTest {
+    
+    private static final Logger log = Logger.getLogger(RangeStreamQueryTest.class);
     
     private static InMemoryInstance instance = new InMemoryInstance(RangeStreamQueryTest.class.toString());
     private static Connector connector;
@@ -155,7 +158,7 @@ public class RangeStreamQueryTest {
     
     @AfterClass
     public static void afterClass() {
-        System.out.println("Queries run: " + count);
+        log.info("ran " + count + " queries");
     }
     
     @Test

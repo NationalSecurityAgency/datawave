@@ -2437,6 +2437,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // check for the case where we cannot handle an ivarator but the query requires an ivarator
             if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
                 log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
+                needsFullTable = true;
             }
             
             stopwatch.stop();
