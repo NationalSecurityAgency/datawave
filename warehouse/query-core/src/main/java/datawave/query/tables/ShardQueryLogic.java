@@ -1066,7 +1066,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 documentEvaluation.addFunction(new CompositeProjectionFunction(includeGroupingContext, isReducedResponse(), compositeMaps));
             }
         } catch (TableNotFoundException e) {
-            log.error("Could not add CompositeProjectionTransform, error was: ", e);
+            throw new IllegalStateException("Could not add CompositeProjectionTransform, error was: ", e);
         }
         
         documentEvaluation.addFunction(new EmptyDocumentFunction());

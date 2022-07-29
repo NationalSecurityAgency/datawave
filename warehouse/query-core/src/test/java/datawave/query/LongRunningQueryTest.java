@@ -22,7 +22,6 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.text.DateFormat;
@@ -35,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -152,7 +150,6 @@ public class LongRunningQueryTest {
      * 
      * @throws Exception
      */
-    @Ignore
     @Test
     public void testLongRunningQueryWithNoResults() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();

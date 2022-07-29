@@ -473,7 +473,6 @@ public abstract class CompositeFunctionsTest {
         //  @formatter:on
         
         for (int i = 0; i < queryStrings.length; i++) {
-            System.out.println("query: " + i);
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
@@ -629,8 +628,7 @@ public abstract class CompositeFunctionsTest {
                 Arrays.asList("CORLEONE", "CAPONE"), // family has child MICHAEL
                 Collections.singletonList("CORLEONE"), Collections.singletonList("CORLEONE")};
         for (int i = 0; i < queryStrings.length; i++) {
-            System.out.println("Running query for index: " + i);
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
 

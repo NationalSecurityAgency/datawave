@@ -337,7 +337,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
             }
         } else if (val instanceof DatawavePartialInterpreter.State) {
             DatawavePartialInterpreter.State state = (DatawavePartialInterpreter.State) val;
-            if (state.set != null) {
+            if (state.getSet() != null) {
                 val = state.getSet().size();
             } else {
                 val = 0;

@@ -925,9 +925,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 return baos.toByteArray();
             }
         } catch (Exception e) {
-            log.error("something went wrong trying to serialize the offset map to a byte array");
+            throw new IllegalStateException("failed to serialize TermOffsetMap to byte array");
         }
-        return null;
     }
     
     private TermOffsetMap getOffsetMapFromBytes(byte[] data) {
@@ -936,9 +935,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 return (TermOffsetMap) ois.readObject();
             }
         } catch (Exception e) {
-            log.error("failed to deserialize offset map from byte array");
+            throw new IllegalStateException("failed to deserialize TermOffsetMap to byte array");
         }
-        return null;
     }
     
     public TermOffsetMap getOffsetMap() {

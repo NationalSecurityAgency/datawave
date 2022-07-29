@@ -77,6 +77,12 @@ import java.util.Set;
  * <li>(FALSE or UNKNOWN) evaluates to TRUE and is a PARTIAL evaluation</li>
  * <li>(UNKNOWN or UNKNOWN) evaluates to TRUE and is a PARTIAL evaluation</li>
  * </ul>
+ * <h2>Negation Logic</h2>
+ * <ul>
+ * <li>!(TRUE) evaluates to FALSE and is a FULL evaluation</li>
+ * <li>!(FALSE) evaluates to TRUE and is a FULL evaluation</li>
+ * <li>!(UNKNOWN) evaluates to TRUE and is a PARTIAL evaluation</li>
+ * </ul>
  */
 public class DatawavePartialInterpreter extends DatawaveInterpreter {
     
@@ -118,15 +124,28 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
      *
      * @param node
      *            the JexlNode
-     * @return true if incomplete fieldname found, false otherwise
+     * @return true any fields are considered incomplete
      */
     private boolean isIncomplete(JexlNode node) {
         for (String field : JexlASTHelper.getIdentifierNames(node)) {
             field = JexlASTHelper.deconstructIdentifier(field);
-            // if the field is not in the context, we cannot evaluate it.
-            return incompleteFields.contains(field) && context.has(field);
+            if (isFieldIncomplete(field)) {
+                return true;
+            }
         }
         return false;
+    }
+    
+    /**
+     * Returns true if the field is in the set of incomplete fields and is also present in the context
+     * 
+     * @param field
+     *            a field
+     * @return true if the field is incomplete
+     */
+    private boolean isFieldIncomplete(String field) {
+        // if the field is not in the context, we cannot evaluate it.
+        return incompleteFields.contains(field) && context.has(field);
     }
     
     /**
@@ -165,7 +184,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             JexlNode first = visitor.args().get(0);
             if (first instanceof ASTIdentifier) {
                 String field = JexlASTHelper.deconstructIdentifier((ASTIdentifier) first);
-                if (context.has(field) && incompleteFields.contains(field)) {
+                if (isFieldIncomplete(field)) {
                     return new State(true, true);
                 }
             }
@@ -175,7 +194,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             Set<String> fields = descriptor.fields(null, null);
             
             for (String field : fields) {
-                if (context.has(field) && incompleteFields.contains(field)) {
+                if (isFieldIncomplete(field)) {
                     return new State(true, true);
                 }
             }
@@ -211,6 +230,17 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         return getState(node, result);
     }
     
+    /**
+     * Arithmetic expressions like <code>1 + 1 + 1 == 3</code> means we can't simply call super.visit(ASTEQNode)
+     * <p>
+     *
+     *
+     * @param node
+     *            an ASTEQNode
+     * @param data
+     *            an object
+     * @return the resulting State object
+     */
     @Override
     public Object visit(ASTEQNode node, Object data) {
         String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
@@ -370,8 +400,8 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
                     if (state.fromUnknown) {
                         anyFromUnknown = true;
                     }
-                    if (state.set != null && !state.set.isEmpty()) {
-                        functionalSet.addAll(state.set);
+                    if (state.getSet() != null && !state.getSet().isEmpty()) {
+                        functionalSet.addAll(state.getSet());
                     }
                 }
             } else {
@@ -401,26 +431,25 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             if (left instanceof State) {
                 state = (State) left;
                 if (state.fromUnknown) {
+                    state.clearNumeric();
                     return state;
-                } else if (state.hasNumeric()) {
-                    left = state.getNumeric();
-                } else if (state.getSet() != null) {
-                    left = state.getSet().size();
+                } else {
+                    left = state.getNumericFromState();
                 }
             }
             if (right instanceof State) {
                 state = (State) right;
                 if (state.fromUnknown) {
+                    state.clearNumeric();
                     return state;
-                } else if (state.hasNumeric()) {
-                    right = state.getNumeric();
-                } else if (state.getSet() != null) {
-                    right = state.getSet().size();
+                } else {
+                    right = state.getNumericFromState();
                 }
             }
             
+            // neither side had an incomplete field if we reached this point
             if (arithmetic.greaterThanOrEqual(left, right)) {
-                return state != null ? state : new State(true);
+                return new State(true);
             } else {
                 return new State(false);
             }
@@ -438,30 +467,25 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             if (left instanceof State) {
                 state = (State) left;
                 if (state.fromUnknown) {
+                    state.clearNumeric();
                     return state;
-                } else if (state.hasNumeric()) {
-                    left = state.getNumeric();
-                } else if (state.getSet() != null) {
-                    left = state.getSet().size();
+                } else {
+                    left = state.getNumericFromState();
                 }
             }
             if (right instanceof State) {
                 state = (State) right;
                 if (state.fromUnknown) {
+                    state.clearNumeric();
                     return state;
-                } else if (state.hasNumeric()) {
-                    right = state.getNumeric();
-                } else if (state.getSet() != null) {
-                    right = state.getSet().size();
+                } else {
+                    right = state.getNumericFromState();
                 }
             }
             
+            // neither side had an incomplete field if we reached this point
             if (arithmetic.greaterThan(left, right)) {
-                if (state != null) {
-                    return state;
-                } else {
-                    return new State(true);
-                }
+                return new State(true);
             } else {
                 return new State(false);
             }
@@ -485,35 +509,30 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             if (left instanceof State) {
                 state = (State) left;
                 if (state.fromUnknown) {
+                    state.clearNumeric();
                     return state;
-                } else if (state.hasNumeric()) {
-                    left = state.getNumeric();
-                } else if (state.getSet() != null) {
-                    left = state.getSet().size();
+                } else {
+                    left = state.getNumericFromState();
                 }
             }
             if (right instanceof State) {
                 state = (State) right;
                 if (state.fromUnknown) {
+                    state.clearNumeric();
                     return state;
-                } else if (state.hasNumeric()) {
-                    right = state.getNumeric();
-                } else if (state.getSet() != null) {
-                    right = state.getSet().size();
+                } else {
+                    right = state.getNumericFromState();
                 }
             }
             
+            // neither side had an incomplete field if we reached this point
             if (arithmetic.lessThanOrEqual(left, right)) {
-                if (state != null) {
-                    return state;
-                } else {
-                    return new State(true);
-                }
+                return new State(true);
             } else {
                 return new State(false);
             }
         } catch (ArithmeticException xrt) {
-            throw new JexlException(node, "> error", xrt);
+            throw new JexlException(node, "<= error", xrt);
         }
     }
     
@@ -526,35 +545,30 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             if (left instanceof State) {
                 state = (State) left;
                 if (state.fromUnknown) {
+                    state.clearNumeric();
                     return state;
-                } else if (state.hasNumeric()) {
-                    left = state.getNumeric();
-                } else if (state.getSet() != null) {
-                    left = state.getSet().size();
+                } else {
+                    left = state.getNumericFromState();
                 }
             }
             if (right instanceof State) {
                 state = (State) right;
                 if (state.fromUnknown) {
+                    state.clearNumeric();
                     return state;
-                } else if (state.hasNumeric()) {
-                    right = state.getNumeric();
-                } else if (state.getSet() != null) {
-                    right = state.getSet().size();
+                } else {
+                    right = state.getNumericFromState();
                 }
             }
             
+            // neither side had an incomplete field if we reached this point
             if (arithmetic.lessThan(left, right)) {
-                if (state != null) {
-                    return state;
-                } else {
-                    return new State(true);
-                }
+                return new State(true);
             } else {
                 return new State(false);
             }
         } catch (ArithmeticException xrt) {
-            throw new JexlException(node, "> error", xrt);
+            throw new JexlException(node, "< error", xrt);
         }
     }
     
@@ -693,7 +707,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             // if the left result object is an instance of a state
             if (left instanceof State) {
                 State tmp = (State) left;
-                switch (tmp.set.size()) {
+                switch (tmp.getSet().size()) {
                     case 0:
                         left = tmp.getNumeric();
                         break;
@@ -707,7 +721,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             
             if (right instanceof State) {
                 State tmp = (State) right;
-                switch (tmp.set.size()) {
+                switch (tmp.getSet().size()) {
                     case 0:
                         right = tmp.getNumeric();
                         break;
@@ -866,6 +880,11 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             }
         }
         
+        public void clearNumeric() {
+            this.numeric = null;
+            this.set = FunctionalSet.emptySet();
+        }
+        
         /**
          * Determine if the numeric field is indeed a numeric
          *
@@ -875,6 +894,16 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             return numeric != null
                             && (numeric instanceof Integer || numeric instanceof Long || numeric instanceof Float || numeric instanceof Double
                                             || numeric instanceof BigDecimal || numeric instanceof BigInteger);
+        }
+        
+        public Object getNumericFromState() {
+            if (hasNumeric()) {
+                return this.numeric;
+            } else if (set != null) {
+                return this.set.size();
+            } else {
+                return null;
+            }
         }
         
         public Object getNumeric() {
