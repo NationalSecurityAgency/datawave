@@ -7,8 +7,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import datawave.query.attributes.ExcerptFields;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
@@ -16,6 +14,7 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
@@ -396,6 +395,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private long visitorFunctionMaxWeight = 5000000L;
     
     /**
+     * If true, the LAZY_SET mechanism will be enabled for non-event and index-only fields.
+     */
+    private boolean lazySetMechanismEnabled = false;
+    
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -581,6 +585,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
         this.setExcerptIterator(other.getExcerptIterator());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
+        this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
+        this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
     }
     
     /**
@@ -2279,5 +2285,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setVisitorFunctionMaxWeight(long visitorFunctionMaxWeight) {
         this.visitorFunctionMaxWeight = visitorFunctionMaxWeight;
+    }
+    
+    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
+        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+    }
+    
+    public long getQueryExecutionForPageTimeout() {
+        return this.queryExecutionForPageTimeout;
+    }
+    
+    public boolean isLazySetMechanismEnabled() {
+        return lazySetMechanismEnabled;
+    }
+    
+    public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
+        this.lazySetMechanismEnabled = lazySetMechanismEnabled;
     }
 }
