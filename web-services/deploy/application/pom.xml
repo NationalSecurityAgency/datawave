@@ -124,7 +124,8 @@
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
-        <!--
+        <!-- The websocket project contains code that is currently not used. With the Wildfly upgrade, the configuration needs to change to make it
+	     compile/deploy correctly.  This code can be re-enabled when/if the websocket tasks are worked in the future.
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-query-websocket</artifactId>

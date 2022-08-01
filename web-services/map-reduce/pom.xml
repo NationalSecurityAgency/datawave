@@ -152,9 +152,9 @@
         </dependency>
         <dependency>
             <!-- This is needed in order to submit MapReduce jobs. -->
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-mapper-asl</artifactId>
-            <version>1.9.13</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${version.jackson}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
