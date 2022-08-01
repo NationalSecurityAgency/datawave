@@ -72,9 +72,6 @@ public class TermFrequencyHitFunction {
     
     private SortedKeyValueIterator<Key,Value> source;
     
-    // Determines how the seek range for the field index is built, i.e., should it consider child documents
-    private boolean isTld = false;
-    
     // support for fetching all negated function fields and values in sorted order, reducing number
     // of seeks across index block boundaries.
     private int subQueryId = 0;
@@ -93,7 +90,6 @@ public class TermFrequencyHitFunction {
     public TermFrequencyHitFunction(TermFrequencyConfig tfConfig, Multimap<String,String> tfFVs) {
         this.tfConfig = tfConfig;
         this.tfFVs = tfFVs;
-        this.isTld = tfConfig.isTld();
         populateFunctionSearchSpace(tfConfig.getScript());
     }
     
@@ -118,9 +114,11 @@ public class TermFrequencyHitFunction {
         // Track the mapping of field/value to uids, specifically for the TLD case
         Multimap<String,String> fvUidCache = HashMultimap.create();
         
+        StringBuilder cqBuilder = new StringBuilder();
+        
         // 0. Handle negated content functions first.
         if (hasNegatedFunctions) {
-            if (isTld) {
+            if (tfConfig.isTld()) {
                 // A negated field value could be in any child document. Must scan the fi and build a document of those hits.
                 try {
                     negatedDocument = buildNegatedDocument(docKey);
@@ -190,13 +188,20 @@ public class TermFrequencyHitFunction {
                 
                 String datatype = parseDatatypeFromCF(docKey);
                 
-                String field, value;
                 for (String uid : intersectedUids) {
                     for (String fieldValue : functionHitsForField) {
                         int index = fieldValue.indexOf('\u0000');
-                        field = fieldValue.substring(0, index);
-                        value = fieldValue.substring(index + 1);
-                        hits.add(new Text(datatype + '\u0000' + uid + '\u0000' + value + '\u0000' + field));
+                        
+                        cqBuilder.setLength(0);
+                        cqBuilder.append(datatype);
+                        cqBuilder.append('\u0000');
+                        cqBuilder.append(uid);
+                        cqBuilder.append('\u0000');
+                        cqBuilder.append(fieldValue.substring(index + 1));
+                        cqBuilder.append('\u0000');
+                        cqBuilder.append(fieldValue, 0, index);
+                        
+                        hits.add(new Text(cqBuilder.toString()));
                     }
                 }
             }
@@ -436,7 +441,7 @@ public class TermFrequencyHitFunction {
         
         Key startKey = new Key(docKey.getRow(), cf, cq);
         Key endKey;
-        if (isTld) {
+        if (tfConfig.isTld()) {
             // Append max unicode to pick up child uids
             cq = new Text(value + '\u0000' + datatype + '\u0000' + uid + Constants.MAX_UNICODE_STRING);
             endKey = new Key(docKey.getRow(), cf, cq);

@@ -166,8 +166,8 @@ public class IteratorBuildingVisitorTest {
         Assert.assertTrue(range.isUpperInclusive());
     }
     
-    @Test
-    @Ignore
+    // top level negations are specifically not allowed
+    @Test(expected = IllegalStateException.class)
     public void NeTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 != 'v1'");
         Key hit = new Key("row", "dataType" + NULL + "123.345.456");
@@ -181,8 +181,9 @@ public class IteratorBuildingVisitorTest {
         
     }
     
-    @Test
-    @Ignore
+    // a top level union with a negation is effectively a full table scan
+    @Test(expected = IllegalStateException.class)
+    // context required to evaluate a union with a negation
     public void excludedOrTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 == 'v1' || !(F2 == 'v2')");
         Key hit = new Key("row", "dataType" + NULL + "123.345.456");
@@ -196,7 +197,6 @@ public class IteratorBuildingVisitorTest {
     }
     
     @Test
-    @Ignore
     public void nestedExcludeOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 == 'v1' && (!(F2 == 'v2') || !(F3 == 'v3'))");
         Key hit = new Key("row", "dataType" + NULL + "123.345.456");
