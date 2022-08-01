@@ -93,6 +93,7 @@ import datawave.query.jexl.visitors.UniqueExpressionTermsVisitor;
 import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
+import datawave.query.jexl.visitors.ValidateFilterFunctionVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
@@ -150,6 +151,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -752,8 +754,21 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // | Post Query Model Expansion Clean Up |
         // +-------------------------------------+
         
+        Set<String> indexOnlyFields = loadIndexedFields(config);
+        
+        if (!indexOnlyFields.isEmpty()) {
+            // filter:includeRegex and filter:excludeRegex functions cannot be run against index-only fields, clean that up
+            config.setQueryTree(expandRegexFunctionNodes(config.getQueryTree(), config, metadataHelper, indexOnlyFields));
+        }
+        
+        // validate filter functions are not running against index-only fields
+        config.setQueryTree(timedValidateFilterFunctions(timers, config.getQueryTree(), indexOnlyFields));
+        
         // rewrite filter:isNull and filter:isNotNull functions into their EQ and !(EQ) equivalents
         config.setQueryTree(timedRewriteNullFunctions(timers, config.getQueryTree()));
+        
+        // might be possible to completely eliminate rewritten isNotNull terms...
+        config.setQueryTree(timedPruneIsNotNullNodes(timers, config.getQueryTree()));
         
         // Enforce unique terms within an AND or OR expression.
         if (config.getEnforceUniqueTermsWithinExpressions()) {
@@ -770,8 +785,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedEnforceUniqueDisjunctionsWithinExpressions(timers, config.getQueryTree()));
         }
         
-        Set<String> indexOnlyFields = loadIndexedFields(config);
-        
         if (disableBoundedLookup) {
             // protection mechanism. If we disable bounded ranges and have a
             // LT,GT or ER node, we should expand it
@@ -779,11 +792,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 disableBoundedLookup = false;
             }
         }
-        if (!indexOnlyFields.isEmpty()) {
-            config.setQueryTree(expandRegexFunctionNodes(config.getQueryTree(), config, metadataHelper, indexOnlyFields));
-        }
-        
-        config.setQueryTree(timedPruneIsNotNullNodes(timers, config.getQueryTree()));
         
         config.setQueryTree(processTree(config.getQueryTree(), config, settings, metadataHelper, scannerFactory, queryData, timers, queryModel));
         
@@ -934,9 +942,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     config.setQueryTree(timedExecutableExpansion(timers, config.getQueryTree(), config, metadataHelper));
                 }
                 
-                List<String> debugOutput = null;
+                LinkedList<String> debugOutput = null;
                 if (log.isDebugEnabled()) {
-                    debugOutput = new ArrayList<>(32);
+                    debugOutput = new LinkedList<>();
                 }
                 
                 // Unless config.isExpandAllTerms is true, this may set some of
@@ -1244,8 +1252,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
     
+    protected ASTJexlScript timedValidateFilterFunctions(QueryStopwatch timers, ASTJexlScript queryTree, Set<String> indexOnlyFields)
+                    throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Rewrite Null Functions",
+                        () -> (ASTJexlScript) ValidateFilterFunctionVisitor.validate(queryTree, indexOnlyFields));
+    }
+    
     protected ASTJexlScript timedRewriteNullFunctions(QueryStopwatch timers, ASTJexlScript queryTree) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Rewrite Null Functions", () -> (ASTJexlScript) RewriteNullFunctionsVisitor.rewriteNullFunctions(queryTree));
+        return visitorManager.timedVisit(timers, "Rewrite Null Functions", () -> RewriteNullFunctionsVisitor.rewriteNullFunctions(queryTree));
     }
     
     protected ASTJexlScript timedEnforceUniqueTermsWithinExpressions(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
@@ -1506,7 +1520,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     protected ASTJexlScript timedAddDelayedPredicates(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config,
-                    MetadataHelper metadataHelper, Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields, List<String> debugOutput) {
+                    MetadataHelper metadataHelper, Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields,
+                    LinkedList<String> debugOutput) {
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
         config.setQueryTree(script);
         if (log.isDebugEnabled()) {
@@ -2345,6 +2360,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Preconditions.checkNotNull(queryTree);
         
         boolean needsFullTable = false;
+        String fullTableScanReason = null;
         CloseableIterable<QueryPlan> ranges = null;
         
         // if the query has already been reduced to false there is no reason to do more
@@ -2354,23 +2370,24 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         // if we still have an unexecutable tree, then a full table scan is
         // required
-        List<String> debugOutput = null;
+        LinkedList<String> debugOutput = null;
         if (log.isDebugEnabled()) {
-            debugOutput = new ArrayList<>(32);
+            debugOutput = new LinkedList<>();
         }
-        STATE state = ExecutableDeterminationVisitor.getState(queryTree, config, metadataHelper, debugOutput);
+        ExecutableDeterminationVisitor.StateAndReason state = ExecutableDeterminationVisitor.getStateAndReason(queryTree, config, metadataHelper, debugOutput);
         if (log.isDebugEnabled()) {
             logDebug(debugOutput, "ExecutableDeterminationVisitor at getQueryRanges:");
         }
         
-        if (state != STATE.EXECUTABLE) {
-            if (state == STATE.ERROR) {
+        if (state.state != STATE.EXECUTABLE) {
+            if (state.state == STATE.ERROR) {
                 log.warn("After expanding the query, it is determined that the query cannot be executed due to index-only fields mixed with expressions that cannot be run against the index.");
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_MIXED_INVALID_EXPRESSIONS);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_MIXED_INVALID_EXPRESSIONS, state.reason);
                 throw new InvalidQueryException(qe);
             }
             log.warn("After expanding the query, it is determined that the query cannot be executed against the field index and a full table scan is required");
             needsFullTable = true;
+            fullTableScanReason = state.reason;
         }
         
         // if a simple examination of the query has not forced a full table
@@ -2403,17 +2420,20 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             
             if (StreamContext.UNINDEXED.equals(stream.context())) {
-                log.debug("Needs full table scan because of unindexed fields");
                 needsFullTable = true;
+                fullTableScanReason = "Needs full table scan because of unindexed fields";
+                log.debug(fullTableScanReason);
             } else if (StreamContext.DELAYED_FIELD.equals(stream.context())) {
-                log.debug("Needs full table scan because query consists of only delayed expressions");
+                fullTableScanReason = "Needs full table scan because query consists of only delayed expressions";
                 needsFullTable = true;
+                log.debug(fullTableScanReason);
             }
             // if a value threshold is exceeded and we cannot handle that, then
             // force a full table scan
             else if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
-                log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
+                fullTableScanReason = "Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false";
                 needsFullTable = true;
+                log.debug(fullTableScanReason);
             }
             
             stopwatch.stop();
@@ -2425,7 +2445,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 if (log.isTraceEnabled())
                     log.trace("Full table scans are not enabled, query will not be run");
                 
-                QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
+                QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED, fullTableScanReason);
                 throw new FullTableScansDisallowedException(qe);
             }
             if (log.isTraceEnabled())
