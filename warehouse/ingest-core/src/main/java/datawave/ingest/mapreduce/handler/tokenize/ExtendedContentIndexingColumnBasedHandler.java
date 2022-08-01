@@ -548,7 +548,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         try {
             baos = new ByteArrayOutputStream(Math.max(rawValue.length / 2, 1024));
             if (useBase64Encoding) {
-                b64os = Base64.getEncoder().wrap(baos);
+                b64os = Base64.getMimeEncoder().wrap(baos);
             }
             gzos = new GZIPOutputStream(useBase64Encoding ? b64os : baos);
             

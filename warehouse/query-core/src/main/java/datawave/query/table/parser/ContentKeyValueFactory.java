@@ -44,7 +44,7 @@ public class ContentKeyValueFactory {
              * We are storing 'documents' in this column gzip'd and base64 encoded. Base64.decode detects and handles compression.
              */
             try {
-                c.setContents(Base64.getDecoder().decode(new String(value.get())));
+                c.setContents(Base64.getMimeDecoder().decode(new String(value.get())));
             } catch (IllegalStateException e) {
                 // Thrown when data is not Base64 encoded. Try GZIP
                 ByteArrayInputStream bais = new ByteArrayInputStream(value.get());
