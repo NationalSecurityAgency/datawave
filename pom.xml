@@ -72,7 +72,7 @@
         <version.jcommander>1.72</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
-        <version.jjwt>0.9.1</version.jjwt>
+        <version.jjwt>0.11.5</version.jjwt>
         <version.junit>4.13.1</version.junit>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
@@ -97,7 +97,7 @@
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.2</version.powermock>
         <version.protobuf>2.5.0</version.protobuf>
-        <version.protostuff>1.6.2</version.protostuff>
+        <version.protostuff>1.8.0</version.protostuff>
         <version.reload4j>1.2.19</version.reload4j>
         <version.slf4j>1.7.35</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
@@ -380,7 +380,17 @@
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt</artifactId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${version.jjwt}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${version.jjwt}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
                 <version>${version.jjwt}</version>
             </dependency>
             <dependency>
@@ -869,7 +879,6 @@
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-core-impl</artifactId>
                 <version>${version.weld}</version>
-                <!-- <scope>provided</scope> -->
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld.se</groupId>
