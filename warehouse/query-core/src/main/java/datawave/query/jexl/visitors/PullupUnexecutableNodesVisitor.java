@@ -128,7 +128,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        if (!ExecutableDeterminationVisitor.isExecutable(node, forFieldIndex, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, data);
         }
         return node;
@@ -137,8 +137,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     private boolean containsChild(JexlNode node, ExecutableDeterminationVisitor.STATE state) {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
-            if (state == ExecutableDeterminationVisitor.getState(child, forFieldIndex, config, indexedFields, indexOnlyFields, nonEventFields, false, null,
-                            helper)) {
+            if (state == ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
                 return true;
             }
         }
