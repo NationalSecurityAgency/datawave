@@ -259,23 +259,8 @@ public class ExecutableExpansionVisitor extends BaseVisitor {
         // create a top level orNode to join together the distributed elements
         ASTOrNode newOr = new ASTOrNode(ParserTreeConstants.JJTORNODE);
         
-        // since only ASTReference and ASTReferenceExpression nodes are allowed between the andNode and orNode all the children which should always have a
-        // single child check if there is a set of nodes between the child and orNode that need to be passed along
-        if (andNodeChild == orNode) {
-            // clear the child, its the same as the orNode and there is nothing to bridge
-            andNodeChild = null;
-        } else if (orNode.jjtGetParent().jjtGetNumChildren() == 1) {
-            // replace the orNode with a null so it won't be copied below
-            JexlNodes.children(orNode.jjtGetParent(), new JexlNode[0]);
-        } else {
-            // log an error and abort the distribute, this should never happen
-            log.warn("Unexpected number of children on the orNode parent, expected 1 got " + orNode.jjtGetParent().jjtGetNumChildren() + " aborting distribute");
-            throw new IllegalStateException("Unexpected number of children on the orNode parent, expected 1 got " + orNode.jjtGetParent().jjtGetNumChildren()
-                            + " aborting distribute");
-        }
-        
         // fetch the minimal expansion terms instead of expanding everything
-        List<JexlNode> orTerms = getOrTerms(orNode, andNodeChild);
+        List<JexlNode> orTerms = getOrTerms(orNode);
         
         // everything goes together, abort
         if (orTerms.size() == 1) {
@@ -312,23 +297,20 @@ public class ExecutableExpansionVisitor extends BaseVisitor {
     }
     
     /**
-     * Get the list of breakout terms from an orNode where each term is Executable or is the grouping of non-executable elements in a new orNode, each bridged
-     * appropriately
+     * Get the list of breakout terms from an orNode where each term is Executable or is the grouping of non-executable elements in a new orNode
      *
      * @param orNode
      *            the orNode to get expansion terms from
-     * @param bridgeFrom
-     *            the JexlNode to begin all bridges or null if there should be no bridging
-     * @return a non-null list of bridged JexlNode that should be part of the expansion
+     * @return a non-null list of JexlNodes that should be part of the expansion
      */
-    private List<JexlNode> getOrTerms(ASTOrNode orNode, JexlNode bridgeFrom) {
+    private List<JexlNode> getOrTerms(ASTOrNode orNode) {
         List<JexlNode> terms = new ArrayList<>();
         List<JexlNode> nonExecutablePool = new ArrayList<>();
         for (int i = 0; i < orNode.jjtGetNumChildren(); i++) {
             JexlNode child = orNode.jjtGetChild(i);
             if (ExecutableDeterminationVisitor.isExecutable(child, config, helper)) {
                 // break out
-                terms.add(bridge(child, bridgeFrom));
+                terms.add(child);
             } else {
                 // add to pool of non-broken out
                 nonExecutablePool.add(child);
@@ -348,44 +330,9 @@ public class ExecutableExpansionVisitor extends BaseVisitor {
             poolNode = nonExecutablePool.get(0);
         }
         
-        terms.add(bridge(poolNode, bridgeFrom));
+        terms.add(poolNode);
         
         return terms;
-    }
-    
-    /**
-     * bridge the gap between an orNode child and the expansion andNode so as to maintain tree continuity
-     *
-     * @param bridgeTo
-     *            the node to attach to the leaf of the bridge
-     * @param bridgeFrom
-     *            the node to begin bridging from, may be null to prevent bridging
-     * @return a JexlNode tree fragment representing a bridge of JexlNodes from bridgeFrom to bridgeTo, or bridgeTo if bridgeFrom is null
-     */
-    private JexlNode bridge(JexlNode bridgeTo, JexlNode bridgeFrom) {
-        JexlNode bridge = bridgeTo;
-        if (bridgeFrom != null) {
-            // make a copy of the extended region of the tree and add the orChild in bypassing the orNode
-            bridge = RebuildingVisitor.copy(bridgeFrom);
-            
-            // loop down through the copied extension until we get to the leaf
-            JexlNode current = bridge.jjtGetChild(0);
-            while (current != null && current.jjtGetNumChildren() != 0) {
-                current = current.jjtGetChild(0);
-            }
-            
-            // sanity check
-            if (current == null) {
-                log.error("Unexpected bridge format between andNode and orNode");
-                return null;
-            }
-            
-            // attach the oldOr to the end of the extension
-            bridgeTo.jjtSetParent(current);
-            current.jjtAddChild(bridgeTo, 0);
-        }
-        
-        return bridge;
     }
     
     /**

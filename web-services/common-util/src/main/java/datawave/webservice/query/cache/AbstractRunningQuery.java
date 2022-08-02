@@ -2,7 +2,8 @@ package datawave.webservice.query.cache;
 
 import java.io.Serializable;
 
-import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactory;
 
 /**
  * getLastUsed() on Infinispan Cache entry objects is probably used for eviction from the L1 cache and is therefore unreliable. This class will be used as the

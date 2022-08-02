@@ -1,6 +1,5 @@
 package datawave.query.function;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
@@ -8,16 +7,17 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.Numeric;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.functions.TermFrequencyList;
+import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.util.Tuple3;
 import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -34,12 +34,10 @@ public class JexlEvaluationTest {
         Document d = new Document();
         d.put("FOO", new Content("bar", new Key("shard", "datatype\0uid"), true));
         
-        JexlEvaluation evaluation = new JexlEvaluation(query);
         DatawaveJexlContext context = new DatawaveJexlContext();
         d.visit(Collections.singleton("FOO"), context);
         
-        boolean result = evaluation.apply(new Tuple3<>(new Key("shard", "datatype\0uid"), d, context));
-        assertTrue(result);
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
     }
     
     @Test
@@ -49,13 +47,28 @@ public class JexlEvaluationTest {
         d.put("FOO", new Content("bar", new Key("shard", "datatype\0uid"), true));
         d.put("FOO", new Content("bazaar", new Key("shard", "datatype\0uid"), true));
         
-        JexlEvaluation evaluation = new JexlEvaluation(query);
         DatawaveJexlContext context = new DatawaveJexlContext();
         d.visit(Collections.singleton("FOO"), context);
         
-        boolean result = evaluation.apply(new Tuple3<>(new Key("shard", "datatype\0uid"), d, context));
-        assertTrue(result);
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
+    }
+    
+    @Test
+    public void testRegexCaseIntersection() {
+        Document d = new Document();
+        d.put("FOO", new Content("Bar", new Key("shard", "datatype\0uid"), true));
+        d.put("FOO", new Numeric("123", new Key("shard", "datatype\0uid"), true));
         
+        DatawaveJexlContext context = new DatawaveJexlContext();
+        d.visit(Collections.singleton("FOO"), context);
+        
+        // match the original value
+        String query = "FOO == 'bar' && FOO =~ '12.*'";
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
+        
+        // match the normalized value
+        query = "FOO == 'bar' && FOO =~ '\\+cE1\\.2.*'";
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
     }
     
     @Test
@@ -65,12 +78,10 @@ public class JexlEvaluationTest {
         d.put("FOO", new Content("bar", new Key("shard", "datatype\0uid"), true));
         d.put("FOO", new Content("bazaar", new Key("shard", "datatype\0uid"), true));
         
-        JexlEvaluation evaluation = new JexlEvaluation(query);
         DatawaveJexlContext context = new DatawaveJexlContext();
         d.visit(Collections.singleton("FOO"), context);
         
-        boolean result = evaluation.apply(new Tuple3<>(new Key("shard", "datatype\0uid"), d, context));
-        assertTrue(result);
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
     }
     
     @Test
@@ -115,13 +126,10 @@ public class JexlEvaluationTest {
     
     // Assume fields are {ANCHOR, FOO, FOO2} and a constant doc key
     private void evaluate(String query, Document d) {
-        JexlEvaluation evaluation = new JexlEvaluation(query);
-        
         DatawaveJexlContext context = new DatawaveJexlContext();
         d.visit(Arrays.asList("ANCHOR", "FOO", "FOO2", "FOO3"), context);
         
-        boolean result = evaluation.apply(new Tuple3<>(new Key("shard", "datatype\0uid"), d, context));
-        assertTrue(result);
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
     }
     
     @Test
@@ -134,7 +142,7 @@ public class JexlEvaluationTest {
         map.put("dog", buildTfList("TOKFIELD", 3));
         
         DatawaveJexlContext context = new DatawaveJexlContext();
-        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, map);
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(map));
         
         Key docKey = new Key("shard", "datatype\0uid");
         
@@ -145,11 +153,7 @@ public class JexlEvaluationTest {
         d.put("TOKFIELD", new Content("dog", docKey, true));
         d.visit(Arrays.asList("FOO", "TOKFIELD"), context);
         
-        JexlEvaluation evaluation = new JexlEvaluation(query, new HitListArithmetic());
-        
-        Tuple3<Key,Document,DatawaveJexlContext> tuple = new Tuple3<>(docKey, d, context);
-        boolean result = evaluation.apply(tuple);
-        assertTrue(result);
+        assertEvaluation(query, docKey, d, context);
         
         // assert that "big red dog" came back in the hit terms
         boolean foundPhrase = false;
@@ -261,11 +265,20 @@ public class JexlEvaluationTest {
         DatawaveJexlContext context = new DatawaveJexlContext();
         d.visit(Arrays.asList("FOO", "FIELD_A", "FIELD_B", "FIELD_C"), context);
         
-        Tuple3<Key,Document,DatawaveJexlContext> tuple = new Tuple3<>(docKey, d, context);
+        assertEvaluation(query, docKey, d, context, expected);
+    }
+    
+    private void assertEvaluation(String query, Key key, Document d, DatawaveJexlContext context) {
+        assertEvaluation(query, key, d, context, true);
+    }
+    
+    private void assertEvaluation(String query, Key key, Document d, DatawaveJexlContext context, boolean expected) {
+        JexlEvaluation evaluation = new JexlEvaluation(query);
+        boolean result = evaluation.apply(new Tuple3<>(key, d, context));
+        assertEquals(expected, result);
         
-        JexlEvaluation evaluation = new JexlEvaluation(query, new HitListArithmetic());
-        boolean result = evaluation.apply(tuple);
-        
+        evaluation = new JexlEvaluation(query, new HitListArithmetic());
+        result = evaluation.apply(new Tuple3<>(key, d, context));
         assertEquals(expected, result);
     }
     

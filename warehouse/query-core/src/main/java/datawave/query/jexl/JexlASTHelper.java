@@ -22,6 +22,7 @@ import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.jexl.visitors.validate.JunctionValidatingVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.FunctionReferenceVisitor;
 import datawave.query.util.MetadataHelper;
@@ -469,7 +470,11 @@ public class JexlASTHelper {
         if (node instanceof ASTFunctionNode) {
             identifiers.addAll(getFunctionIdentifiers((ASTFunctionNode) node));
         } else if (node instanceof ASTMethodNode) {
-            // Don't get identifiers under a method node, they are method names
+            // the first child of a method node is typically the method name.
+            // identifiers may exist as arguments to methods in later children
+            for (int i = 1; i < node.jjtGetNumChildren(); i++) {
+                getIdentifiers(node.jjtGetChild(i), identifiers);
+            }
             return;
         } else if (node instanceof ASTAssignment) {
             // Don't get identifiers under assignments as they are only used for QueryPropertyMarkers
@@ -1609,6 +1614,34 @@ public class JexlASTHelper {
                 return sb.toString();
             }
         }
+    }
+    
+    /**
+     * Checks to see if the tree contains any AND/OR nodes with less than 2 children.
+     *
+     * @param node
+     *            the tree to validate
+     * @return true if valid, or false otherwise
+     */
+    public static boolean validateJunctionChildren(JexlNode node) {
+        return validateJunctionChildren(node, false);
+    }
+    
+    /**
+     * Checks to see if the tree contains any AND/OR nodes with less than 2 children.
+     * 
+     * @param node
+     *            the tree to validate
+     * @param failHard
+     *            if true, throw a {@link RuntimeException} if a violation was found
+     * @return true if valid, or false otherwise
+     */
+    public static boolean validateJunctionChildren(JexlNode node, boolean failHard) {
+        boolean valid = JunctionValidatingVisitor.validate(node);
+        if (!valid && failHard) {
+            throw new RuntimeException("Instance of AND/OR node found with less than 2 children");
+        }
+        return valid;
     }
     
     private JexlASTHelper() {}

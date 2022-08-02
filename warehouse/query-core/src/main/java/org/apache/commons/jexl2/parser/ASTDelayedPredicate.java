@@ -11,52 +11,59 @@ public class ASTDelayedPredicate extends QueryPropertyMarker {
     
     private static final String CLASS_NAME = ASTDelayedPredicate.class.getSimpleName();
     
+    /**
+     * Return the label this marker type: {@value #LABEL}. Overrides {@link QueryPropertyMarker#label()}.
+     * 
+     * @return the label
+     */
     public static String label() {
         return LABEL;
+    }
+    
+    /**
+     * Create and return a new {@link ASTDelayedPredicate} with the given source. This method will insert the marked node into the node tree in place of the
+     * provided node
+     * 
+     * @param node
+     *            the source node
+     * @return the new marker node
+     * @see QueryPropertyMarker#create(JexlNode, Class)
+     */
+    public static JexlNode create(JexlNode node) {
+        return create(node, ASTDelayedPredicate.class);
+    }
+    
+    public ASTDelayedPredicate() {
+        super();
     }
     
     public ASTDelayedPredicate(int id) {
         super(id);
     }
     
-    public ASTDelayedPredicate(Parser p, int id) {
-        super(p, id);
-    }
-    
+    /**
+     * Returns a new query property marker with the expression <code>(({@value #LABEL} = true) &amp;&amp; ({source}))</code>.
+     * 
+     * @param source
+     *            the source node
+     * @see QueryPropertyMarker#QueryPropertyMarker(JexlNode) the super constructor for additional information on the tree structure
+     */
     public ASTDelayedPredicate(JexlNode source) {
         super(source);
     }
     
+    /**
+     * Returns {@value #LABEL}.
+     * 
+     * @return the label
+     */
     @Override
     public String getLabel() {
         return LABEL;
     }
     
-    /** Accept the visitor. **/
-    @Override
-    public Object jjtAccept(ParserVisitor visitor, Object data) {
-        return visitor.visit(this, data);
-    }
-    
     @Override
     public String toString() {
         return CLASS_NAME;
-    }
-    
-    /**
-     * @param node
-     * @return
-     */
-    public static ASTDelayedPredicate create(JexlNode node) {
-        
-        JexlNode parent = node.jjtGetParent();
-        
-        ASTDelayedPredicate expr = new ASTDelayedPredicate(node);
-        
-        if (parent != null) {
-            JexlNodes.replaceChild(parent, node, expr);
-        }
-        
-        return expr;
     }
 }

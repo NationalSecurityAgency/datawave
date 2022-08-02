@@ -14,11 +14,12 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.attributes.Attribute;
+import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
+import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.transformer.GroupingTransform.GroupingTypeAttribute;
 import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -29,6 +30,7 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
+import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
@@ -80,6 +82,9 @@ import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.RANDOM_SANS_CO
 public abstract class GroupingTest {
     
     private static final Logger log = Logger.getLogger(GroupingTest.class);
+    
+    private static final String COLVIS_MARKING = "columnVisibility";
+    private static final String EXPECTED_COLVIS = "ALL&E&I";
     
     private static Authorizations auths = new Authorizations("ALL", "E", "I");
     
@@ -168,6 +173,7 @@ public abstract class GroupingTest {
         
         logic.setFullTableScanEnabled(true);
         logic.setMaxEvaluationPipelines(1);
+        logic.setQueryExecutionForPageTimeout(300000000000000L);
         deserializer = new KryoDocumentDeserializer();
     }
     
@@ -362,6 +368,41 @@ public abstract class GroupingTest {
     }
     
     @Test
+    public void testGroupingWithReducedResponse() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
+        
+        extraParameters.put("reduced.response", "true");
+        extraParameters.put("group.fields", "GENDER");
+        extraParameters.put("group.fields.batch.size", "0");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                EventQueryResponseBase response = (EventQueryResponseBase) runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate,
+                                extraParameters, teardown, interrupt);
+                
+                for (EventBase event : response.getEvents()) {
+                    // The event should have a collapsed columnVisibility
+                    String actualCV = event.getMarkings().get(COLVIS_MARKING).toString();
+                    Assert.assertEquals(EXPECTED_COLVIS, actualCV);
+                    
+                    // The fields should have no columnVisibility
+                    for (Object f : event.getFields()) {
+                        FieldBase<?> field = (FieldBase<?>) f;
+                        Assert.assertNull(field.getMarkings().get(COLVIS_MARKING));
+                    }
+                }
+            }
+        }
+    }
+    
+    @Test
     public void testGrouping4() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         
@@ -525,7 +566,7 @@ public abstract class GroupingTest {
     @Test
     public void testCountingMap() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
+        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
         GroupingTypeAttribute attr1 = new GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
         attr1.setColumnVisibility(new ColumnVisibility("A"));
         map.add(Collections.singleton(attr1));
@@ -555,7 +596,7 @@ public abstract class GroupingTest {
     @Test
     public void testCountingMapAgain() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
+        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
         
         GroupingTypeAttribute<?> attr1a = new GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
         attr1a.setColumnVisibility(new ColumnVisibility("A"));

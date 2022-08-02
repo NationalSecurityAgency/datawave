@@ -119,6 +119,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         setModelName(other.getModelName());
         setModelTableName(other.getModelTableName());
         setMetadataHelperFactory(other.getMetadataHelperFactory());
+        setDateFilterScanLimit(other.getDateFilterScanLimit());
+        setDateFilterSkipLimit(other.getDateFilterSkipLimit());
         visitationContext = other.visitationContext;
     }
     
@@ -691,6 +693,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
         optionalParams.add(EdgeQueryConfiguration.INCLUDE_STATS);
         optionalParams.add(EdgeQueryConfiguration.DATE_RANGE_TYPE);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGETIMEOUT);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_EXPIRATION);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE);
         return optionalParams;
     }
     

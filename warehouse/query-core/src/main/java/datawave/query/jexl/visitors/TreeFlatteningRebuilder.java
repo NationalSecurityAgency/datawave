@@ -301,7 +301,7 @@ public class TreeFlatteningRebuilder {
         // if this is an assignment node OR
         // if the parent is a NOT node, keep the reference
         if (!removeReferences || parent instanceof ASTNotNode || JexlASTHelper.dereference(node) instanceof ASTAssignment
-                        || QueryPropertyMarkerVisitor.getCopiedInstance(node).isAnyType()) {
+                        || QueryPropertyMarkerVisitor.getInstance(node).isAnyType()) {
             return node;
         }
         // if this is a (reference -> reference expression) combo with a single child, remove the reference and reference expression
@@ -381,8 +381,8 @@ public class TreeFlatteningRebuilder {
             // @formatter:off
             return  !(candidateNode instanceof ASTAndNode &&
                         (isBoundedRange((ASTAndNode) candidateNode) ||
-                        (isWrapped && (QueryPropertyMarkerVisitor.getCopiedInstance(candidateNode).isAnyType() ||
-                                       QueryPropertyMarkerVisitor.getCopiedInstance(parentNode).isAnyType()))));
+                        (isWrapped && (QueryPropertyMarkerVisitor.getInstance(candidateNode).isAnyType() ||
+                                       QueryPropertyMarkerVisitor.getInstance(parentNode).isAnyType()))));
             // @formatter:on
         }
         

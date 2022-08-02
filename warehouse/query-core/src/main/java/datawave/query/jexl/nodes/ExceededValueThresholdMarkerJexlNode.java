@@ -1,7 +1,6 @@
 package datawave.query.jexl.nodes;
 
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
 
 /**
  * This is a node that can be put in place of an ASTERNode to denote that the value threshold was exceeded preventing expansion into a conjunction of terms
@@ -10,45 +9,53 @@ public class ExceededValueThresholdMarkerJexlNode extends QueryPropertyMarker {
     
     private static final String LABEL = "_Value_";
     
+    /**
+     * Return the label this marker type: {@value #LABEL}. Overrides {@link QueryPropertyMarker#label()}.
+     * 
+     * @return the label
+     */
     public static String label() {
         return LABEL;
     }
     
-    public ExceededValueThresholdMarkerJexlNode(int id) {
-        super(id);
+    /**
+     * Create and return a new {@link ExceededValueThresholdMarkerJexlNode} with the given source.
+     * 
+     * @param node
+     *            the source node
+     * @return the new marker node
+     * @see QueryPropertyMarker#create(JexlNode, Class)
+     */
+    public static JexlNode create(JexlNode node) {
+        return create(node, ExceededValueThresholdMarkerJexlNode.class);
     }
     
     public ExceededValueThresholdMarkerJexlNode() {
         super();
     }
     
+    public ExceededValueThresholdMarkerJexlNode(int id) {
+        super(id);
+    }
+    
     /**
-     * This will create a structure as follows around the specified node: Reference (this node) Reference Expression AND Reference Reference Expression
-     * Assignment Reference Identifier:_Value_ True node (the one specified
-     * 
-     * Hence the resulting expression will be ((_Value_ = True) AND {specified node})
+     * Returns a new query property marker with the expression <code>(({@value #LABEL} = true) &amp;&amp; ({source}))</code>.
      * 
      * @param node
+     *            the source node
+     * @see QueryPropertyMarker#QueryPropertyMarker(JexlNode) the super constructor for additional information on the tree structure
      */
     public ExceededValueThresholdMarkerJexlNode(JexlNode node) {
         super(node);
     }
     
+    /**
+     * Returns {@value #LABEL}.
+     * 
+     * @return the label
+     */
     @Override
     public String getLabel() {
         return LABEL;
-    }
-    
-    public static ExceededValueThresholdMarkerJexlNode create(JexlNode node) {
-        
-        JexlNode parent = node.jjtGetParent();
-        
-        ExceededValueThresholdMarkerJexlNode expr = new ExceededValueThresholdMarkerJexlNode(node);
-        
-        if (parent != null) {
-            JexlNodes.replaceChild(parent, node, expr);
-        }
-        
-        return expr;
     }
 }
