@@ -399,6 +399,17 @@ public class QueryModelVisitorTest {
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_C"));
     }
     
+    @Test
+    public void testNoExpansionWithFunctions() {
+        QueryModel model = new QueryModel();
+        model.addTermToModel("FIELD_A", "FIELD_B");
+        model.addTermToModel("FIELD_A", "FIELD_C");
+        
+        String query = "filter:includeRegex(FIELD_A, 'ba.*') && filter:noExpansion(FIELD_A)";
+        String expected = "filter:includeRegex(FIELD_A, 'ba.*')";
+        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A"));
+    }
+    
     private void testNoExpansion(String query, String expected, QueryModel model, Set<String> expectedFields) {
         try {
             Set<String> allFields = new HashSet<>();
