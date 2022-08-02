@@ -55,20 +55,20 @@
         <version.google-guava>15.0</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
-        <!-- Can download cdh binary from https://www.cloudera.com/documentation/enterprise/release-notes/topics/cdh_vd_cdh_package_tarball_59.html#tarball_59x -->
-        <version.hadoop>3.0.0-cdh6.2.0</version.hadoop>
+        <version.hadoop>3.1.2</version.hadoop>
+        <version.hadoop-thirdparty>1.1.1</version.hadoop-thirdparty>
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>1.9.2.3</version.in-memory-accumulo>
+        <version.in-memory-accumulo>1.10.2</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <!-- CANNOT upgrade past 2.12.x version of jackson without upgrading Wildfly. While WildFly 24.0.1.Final uses jackson 2.12.3, jackson 2.12.7 is still
 	     compatible api wise while resolving vulnerabilities in jackson <=2.12.6. It's impossible to force Wildfly to use jackson 2.13.x without excluding the 
 	     jaxrs subsystem, which requires major surgery on WildFly. -->
         <version.jackson>2.12.7</version.jackson>
+        <version.jakarta-validation>2.0.2</version.jakarta-validation>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
-        <version.javax-validation>2.0.1.Final</version.javax-validation>
         <version.jcommander>1.72</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
@@ -709,6 +709,16 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.apache.hadoop.thirdparty</groupId>
+                <artifactId>hadoop-shaded-guava</artifactId>
+                <version>${version.hadoop-thirdparty}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop.thirdparty</groupId>
+                <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
+                <version>${version.hadoop-thirdparty}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.htrace</groupId>
                 <artifactId>htrace-core4</artifactId>
                 <version>${version.htrace}</version>
@@ -1006,9 +1016,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${version.javax-validation}</version>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>${version.jakarta-validation}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
