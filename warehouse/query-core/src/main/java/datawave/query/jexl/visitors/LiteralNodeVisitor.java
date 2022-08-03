@@ -46,12 +46,6 @@ public class LiteralNodeVisitor extends ShortCircuitBaseVisitor {
     }
     
     @Override
-    public Object visit(ASTAndNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-    
-    @Override
     public Object visit(ASTERNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
@@ -59,24 +53,6 @@ public class LiteralNodeVisitor extends ShortCircuitBaseVisitor {
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTOrNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTReferenceExpression node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
