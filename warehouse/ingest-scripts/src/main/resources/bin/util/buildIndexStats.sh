@@ -189,7 +189,7 @@ function calculateReducers() {
     local -r _reducers=$1
 
     # divisor for number of reducers based upon the number of shards
-    local -ir _divisor=6
+    local -ir _divisor=2
     local -i _num
     if [[ -n "${_NumShards}" ]]; then
         ((_num = _NumShards / _divisor))
@@ -291,7 +291,7 @@ export HADOOP_OPTS="${_DefaultJVMArgs}"
 # for remote debug of job
 # export HADOOP_CLIENT_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8989"
 
-declare -i TIMEOUT=600000
+declare -i TIMEOUT=1800000
 
 # map/reduce settings see Hadoop Map/Reduce properties
 _MapReduceOpts="-mapreduce.task.io.sort.mb=${_MapInMemSortBufferMBSize} \
