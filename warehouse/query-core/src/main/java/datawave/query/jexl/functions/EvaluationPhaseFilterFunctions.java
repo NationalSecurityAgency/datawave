@@ -142,8 +142,9 @@ public class EvaluationPhaseFilterFunctions {
                     return values.stream().map(EvaluationPhaseFilterFunctions::getHitTerm).collect(Collectors.toCollection(FunctionalSet::new));
                 }
             } else if (fieldValue instanceof State) {
-                Collection<?> values = (Collection<?>) ((State) fieldValue).getSet();
-                if (!values.isEmpty()) {
+                State state = (State) fieldValue;
+                if (state.isFunctionalSet() && !state.getFunctionalSet().isEmpty()) {
+                    Collection<?> values = (Collection<?>) state.getFunctionalSet();
                     return values.stream().map(EvaluationPhaseFilterFunctions::getHitTerm).collect(Collectors.toCollection(FunctionalSet::new));
                 }
             } else {
@@ -164,7 +165,7 @@ public class EvaluationPhaseFilterFunctions {
         if (fieldValue instanceof Collection) {
             return ((Collection<?>) fieldValue).isEmpty();
         } else if (fieldValue instanceof State) {
-            return ((State) fieldValue).getSet().isEmpty();
+            return ((State) fieldValue).getFunctionalSet().isEmpty();
         } else {
             return fieldValue == null;
         }
@@ -237,7 +238,11 @@ public class EvaluationPhaseFilterFunctions {
             String regex = regexObject.toString();
             
             if (fieldValue instanceof State) {
-                fieldValue = ((State) fieldValue).getSet();
+                State state = (State) fieldValue;
+                if (state.isFunctionalSet()) {
+                    fieldValue = state.getFunctionalSet();
+                }
+                // else we don't match boolean or number
             }
             if (fieldValue instanceof Iterable) {
                 // Cast as Iterable in order to call the right includeRegex method
@@ -274,12 +279,16 @@ public class EvaluationPhaseFilterFunctions {
             
             if (fieldValue instanceof State) {
                 State state = (State) fieldValue;
-                if (state.getSet().size() > 1) {
-                    return includeRegex(state.getSet(), regex);
-                } else if (state.getSet().size() == 1) {
-                    fieldValue = state.getSet().iterator().next();
+                if (state.isFunctionalSet()) {
+                    int size = state.getFunctionalSet().size();
+                    if (size == 0) {
+                        return FunctionalSet.emptySet();
+                    } else if (size == 1) {
+                        fieldValue = state.getFunctionalSet().iterator().next();
+                    } else {
+                        return includeRegex(state.getFunctionalSet(), regex);
+                    }
                 }
-                // else error
             }
             
             Pattern pattern = JexlPatternCache.getPattern(regex);
@@ -357,7 +366,12 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> getAllMatches(Object fieldValue, String regex) {
         if (fieldValue instanceof State) {
-            return includeRegex((Iterable<?>) ((State) fieldValue).getSet(), regex);
+            State state = (State) fieldValue;
+            if (state.isFunctionalSet()) {
+                return includeRegex(state.getFunctionalSet(), regex);
+            } else {
+                return FunctionalSet.emptySet();
+            }
         } else {
             return includeRegex(fieldValue, regex);
         }

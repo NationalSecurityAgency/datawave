@@ -2,8 +2,9 @@ package datawave.query.collections;
 
 import com.google.common.collect.Sets;
 import datawave.data.type.NumberType;
+import datawave.data.type.Type;
 import datawave.query.attributes.ValueTuple;
-import datawave.query.jexl.DatawavePartialInterpreter;
+import datawave.query.jexl.DatawavePartialInterpreter.State;
 import datawave.util.OperationEvaluator;
 import org.apache.log4j.Logger;
 
@@ -16,8 +17,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
-
-import datawave.data.type.Type;
 
 public class FunctionalSet<T extends ValueTuple> implements Set<T> {
     
@@ -255,9 +254,8 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
         
         Collection<T> values = new FunctionalSet<>();
         
-        if (in instanceof DatawavePartialInterpreter.State) {
-            DatawavePartialInterpreter.State state = (DatawavePartialInterpreter.State) in;
-            in = state.getNumeric();
+        if (in instanceof State) {
+            in = ((State) in).getValue();
         }
         
         if (in instanceof String) {

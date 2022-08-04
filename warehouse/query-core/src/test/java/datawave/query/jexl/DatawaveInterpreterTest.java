@@ -356,18 +356,6 @@ public class DatawaveInterpreterTest {
         test(array);
     }
     
-    /**
-     * Wrapper that accepts an array of [String, Boolean] pairs that are the query and expected evaluation state, respectively
-     *
-     * @param inputs
-     *            the inputs
-     */
-    protected void test(Object[][] inputs) {
-        for (Object[] o : inputs) {
-            test((String) o[0], (Boolean) o[1]);
-        }
-    }
-    
     @Ignore
     @Test
     public void testFilterFunctionMultiFieldedIsNull_future() {
@@ -407,6 +395,38 @@ public class DatawaveInterpreterTest {
         //  @formatter:on
         
         test(array);
+    }
+    
+    @Test
+    public void testGroupingFunctions() {
+        //  @formatter:off
+        Object[][] array = {
+                //  two groups for field MALE...this is a bug
+                {"grouping:getGroupsForMatchesInGroup(GENDER, 'MALE').size() == 2", true},
+                //  only one group matches AGE == 21
+                {"grouping:getGroupsForMatchesInGroup(GENDER, 'MALE', AGE, '21').size() == 1", true},
+                //  for groups that match GENDER == 'male', there is a value for AGE less than 19
+                {"AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(GENDER, 'MALE')) < 19", true},
+                //  for group that matches GENDER = 'male' and AGE == '16', there is an AGE less than 19
+                {"AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(GENDER, 'MALE', AGE, '16')) < 19", true}
+        };
+        //  @formatter:on
+        
+        for (Object[] o : array) {
+            test(buildContextWithGrouping(), (String) o[0], (Boolean) o[1]);
+        }
+    }
+    
+    /**
+     * Wrapper that accepts an array of [String, Boolean] pairs that are the query and expected evaluation state, respectively
+     *
+     * @param inputs
+     *            the inputs
+     */
+    protected void test(Object[][] inputs) {
+        for (Object[] o : inputs) {
+            test((String) o[0], (Boolean) o[1]);
+        }
     }
     
     /**
@@ -514,6 +534,29 @@ public class DatawaveInterpreterTest {
                 new ValueTuple("TEXT", "red", "red",  new TypeAttribute<>(new LcNoDiacriticsType("red"), docKey, true)),
                 new ValueTuple("TEXT", "dog", "dog",  new TypeAttribute<>(new LcNoDiacriticsType("dog"), docKey, true)))));
         //  @formatter:on
+        return context;
+    }
+    
+    /**
+     * Builds a default context and adds some fields with grouping
+     *
+     * @return a context with grouping
+     */
+    protected JexlContext buildContextWithGrouping() {
+        JexlContext context = buildDefaultContext();
+        
+        // {16, male}, {18, female}, {21, male}
+        
+        context.set("AGE",
+                        new FunctionalSet(Arrays.asList(new ValueTuple("AGE.0", "16", "+bE1.6", new TypeAttribute<>(new NumberType("16"), docKey, true)),
+                                        new ValueTuple("AGE.1", "18", "+bE1.8", new TypeAttribute<>(new NumberType("18"), docKey, true)), new ValueTuple(
+                                                        "AGE.2", "21", "+bE2.1", new TypeAttribute<>(new NumberType("18"), docKey, true)))));
+        
+        context.set("GENDER",
+                        new FunctionalSet(Arrays.asList(new ValueTuple("GENDER.0", "MALE", "male", new TypeAttribute<>(new LcNoDiacriticsType("MALE"), docKey,
+                                        true)), new ValueTuple("GENDER.1", "FEMALE", "female", new TypeAttribute<>(new LcNoDiacriticsType("FEMALE"), docKey,
+                                        true)), new ValueTuple("GENDER.2", "MALE", "male", new TypeAttribute<>(new LcNoDiacriticsType("MALE"), docKey, true)))));
+        
         return context;
     }
     

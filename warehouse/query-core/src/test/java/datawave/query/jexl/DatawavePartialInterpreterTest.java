@@ -272,6 +272,13 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
     }
     
     @Test
+    public void testGroupingFunctionsWithIncompleteFields() {
+        
+        // TODO -- add this in
+        // AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) < 19
+    }
+    
+    @Test
     public void testMinMaxSizeMethods_incomplete() {
         String query = "FIELD_A.min() > 0";
         test(query, true, true);

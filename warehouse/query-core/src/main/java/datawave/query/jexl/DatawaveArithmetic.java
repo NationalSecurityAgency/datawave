@@ -4,6 +4,7 @@ import datawave.data.type.DateType;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.query.attributes.ValueTuple;
+import datawave.query.jexl.DatawavePartialInterpreter.State;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
@@ -329,26 +330,28 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
     }
     
     private Object possibleValueTupleToDelegate(Object val) {
+        
+        // attempt to narrow a State to a ValueTuple
+        if (val instanceof State) {
+            State state = (State) val;
+            if (state.getValue() instanceof ValueTuple) {
+                val = state.getValue();
+            }
+        }
+        
         // if the incoming val is a ValueTuple, swap in the delegate value
         if (val instanceof ValueTuple) {
             val = ((ValueTuple) val).second();
             if (val instanceof Type<?>) {
                 val = ((Type) val).getDelegate();
             }
-        } else if (val instanceof DatawavePartialInterpreter.State) {
-            DatawavePartialInterpreter.State state = (DatawavePartialInterpreter.State) val;
-            if (state.getSet() != null) {
-                val = state.getSet().size();
-            } else {
-                val = 0;
-            }
         }
         return val;
     }
     
     /**
-     * Check for a {@link DatawavePartialInterpreter.State} as an incoming argument. These state args need to be narrowed to a functional set or numeric in
-     * order to find the correct method.
+     * Check for a {@link State} as an incoming argument. These state args need to be narrowed to a functional set or numeric in order to find the correct
+     * method.
      *
      * @param args
      *            function args
@@ -357,12 +360,14 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
     @Override
     protected boolean narrowArguments(Object[] args) {
         for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof DatawavePartialInterpreter.State) {
-                DatawavePartialInterpreter.State state = (DatawavePartialInterpreter.State) args[i];
-                if (state.hasNumeric()) {
-                    args[i] = state.getNumeric();
+            if (args[i] instanceof State) {
+                State state = (State) args[i];
+                if (state.isNumber()) {
+                    args[i] = state.getNumber();
+                } else if (state.isFunctionalSet()) {
+                    args[i] = state.getFunctionalSet();
                 } else {
-                    args[i] = state.getSet();
+                    args[i] = state.getValue();
                 }
             }
         }

@@ -56,8 +56,12 @@ public class GroupingRequiredFilterFunctions {
         Object fieldValue1 = args[0];
         String regex = args[1].toString();
         
+        // narrow args for State
         if (fieldValue1 instanceof State) {
-            fieldValue1 = ((State) fieldValue1).getSet();
+            State state = (State) fieldValue1;
+            if (state.isFunctionalSet()) {
+                fieldValue1 = state.getFunctionalSet();
+            }
         }
         
         if (fieldValue1 instanceof Iterable) {
@@ -76,8 +80,14 @@ public class GroupingRequiredFilterFunctions {
             }
             for (int i = 2; i < args.length; i++) {
                 
+                // narrow args
                 if (args[i] instanceof State) {
-                    args[i] = ((State) args[i]).getSet();
+                    State state = (State) args[i];
+                    if (state.isFunctionalSet()) {
+                        args[i] = state.getFunctionalSet();
+                    } else {
+                        args[i] = state.getValue();
+                    }
                 }
                 
                 if (args[i] instanceof Iterable) {
@@ -169,8 +179,12 @@ public class GroupingRequiredFilterFunctions {
         Object fieldValue1 = args[0];
         String regex = args[1].toString();
         
+        // narrow args for state if needed
         if (fieldValue1 instanceof State) {
-            fieldValue1 = ((State) fieldValue1).getSet();
+            State state = (State) fieldValue1;
+            if (state.isFunctionalSet()) {
+                fieldValue1 = state.getFunctionalSet();
+            }
         }
         
         if (fieldValue1 instanceof Iterable) {
@@ -187,8 +201,14 @@ public class GroupingRequiredFilterFunctions {
             
             for (int i = 2; i < args.length; i += 2) {
                 
+                // narrow arg
                 if (args[i] instanceof State) {
-                    args[i] = ((State) args[i]).getSet();
+                    State state = (State) args[i];
+                    if (state.isFunctionalSet()) {
+                        args[i] = state.getFunctionalSet();
+                    } else {
+                        args[i] = state.getValue();
+                    }
                 }
                 
                 if (args[i] instanceof Iterable) {

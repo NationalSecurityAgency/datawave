@@ -37,8 +37,6 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -110,7 +108,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         Object matched = super.interpret(node);
         if (matched instanceof State) {
             State state = (State) matched;
-            if (state.matched && state.fromUnknown) {
+            if (state.isMatched() && state.isIncomplete()) {
                 callback.setUsed(true);
             }
         } else {
@@ -158,7 +156,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     public static boolean isMatched(Object scriptExecuteResult) {
         if (scriptExecuteResult instanceof State) {
             State state = (State) scriptExecuteResult;
-            return state.matched;
+            return state.isMatched();
         } else {
             return DatawaveInterpreter.isMatched(scriptExecuteResult);
         }
@@ -204,7 +202,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         Object result = super.visit(node, data);
         if (result instanceof Integer || result instanceof Long) {
             // filter functions like 'getMaxTime' or 'getMinTime'. No incomplete fields exist if we got to this point
-            return new State(true, false, new FunctionalSet(), result);
+            return new State(true, false, result);
         }
         
         if (result instanceof Collection) {
@@ -213,11 +211,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
                 if (isEmpty) {
                     return new State(true, false);
                 } else {
-                    if (result instanceof FunctionalSet) {
-                        return new State(true, false, (FunctionalSet) result);
-                    } else {
-                        return new State(true, false, new FunctionalSet(), result);
-                    }
+                    return new State(true, false, result);
                 }
             } else {
                 if (isEmpty) {
@@ -255,9 +249,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             // we could have an expression like '1+1+1 == 3'
             if (left instanceof State) {
                 State state = (State) left;
-                if (state.hasNumeric()) {
-                    left = state.getNumeric();
-                }
+                left = state.narrowToNumber();
             }
             
             result = arithmetic.equals(left, right) ? Boolean.TRUE : Boolean.FALSE;
@@ -319,7 +311,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
                 // Child nodes were put onto the stack left to right. PollLast to evaluate left to right.
                 result = (State) interpretOr(children.pollLast().jjtAccept(this, data), result);
                 
-                if (result.matched && !result.fromUnknown) {
+                if (result.isMatched() && !result.isIncomplete()) {
                     break;
                 }
             }
@@ -346,7 +338,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             if (left instanceof State) {
                 leftState = (State) left;
             } else if (left instanceof FunctionalSet) {
-                leftState = new State(true, false, (FunctionalSet) left);
+                leftState = new State(true, false, left);
             }
         }
         
@@ -354,7 +346,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             if (right instanceof State) {
                 rightState = (State) right;
             } else if (right instanceof FunctionalSet) {
-                rightState = new State(true, false, (FunctionalSet) right);
+                rightState = new State(true, false, right);
             }
         }
         
@@ -394,14 +386,14 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             Object o = child.jjtAccept(this, data);
             if (o instanceof State) {
                 State state = (State) o;
-                if (!state.matched) {
+                if (!state.isMatched()) {
                     return state;
                 } else {
-                    if (state.fromUnknown) {
+                    if (state.isIncomplete()) {
                         anyFromUnknown = true;
                     }
-                    if (state.getSet() != null && !state.getSet().isEmpty()) {
-                        functionalSet.addAll(state.getSet());
+                    if (state.isFunctionalSet()) {
+                        functionalSet.addAll(state.getFunctionalSet());
                     }
                 }
             } else {
@@ -427,23 +419,21 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         Object left = node.jjtGetChild(0).jjtAccept(this, data);
         Object right = node.jjtGetChild(1).jjtAccept(this, data);
         try {
-            State state = null;
+            State state;
             if (left instanceof State) {
                 state = (State) left;
-                if (state.fromUnknown) {
-                    state.clearNumeric();
+                if (state.isIncomplete()) {
                     return state;
                 } else {
-                    left = state.getNumericFromState();
+                    left = state.narrowToNumber();
                 }
             }
             if (right instanceof State) {
                 state = (State) right;
-                if (state.fromUnknown) {
-                    state.clearNumeric();
+                if (state.isIncomplete()) {
                     return state;
                 } else {
-                    right = state.getNumericFromState();
+                    right = state.narrowToNumber();
                 }
             }
             
@@ -463,23 +453,21 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         Object left = node.jjtGetChild(0).jjtAccept(this, data);
         Object right = node.jjtGetChild(1).jjtAccept(this, data);
         try {
-            State state = null;
+            State state;
             if (left instanceof State) {
                 state = (State) left;
-                if (state.fromUnknown) {
-                    state.clearNumeric();
+                if (state.isIncomplete()) {
                     return state;
                 } else {
-                    left = state.getNumericFromState();
+                    left = state.narrowToNumber();
                 }
             }
             if (right instanceof State) {
                 state = (State) right;
-                if (state.fromUnknown) {
-                    state.clearNumeric();
+                if (state.isIncomplete()) {
                     return state;
                 } else {
-                    right = state.getNumericFromState();
+                    right = state.narrowToNumber();
                 }
             }
             
@@ -505,23 +493,21 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         Object left = node.jjtGetChild(0).jjtAccept(this, data);
         Object right = node.jjtGetChild(1).jjtAccept(this, data);
         try {
-            State state = null;
+            State state;
             if (left instanceof State) {
                 state = (State) left;
-                if (state.fromUnknown) {
-                    state.clearNumeric();
+                if (state.isIncomplete()) {
                     return state;
                 } else {
-                    left = state.getNumericFromState();
+                    left = state.narrowToNumber();
                 }
             }
             if (right instanceof State) {
                 state = (State) right;
-                if (state.fromUnknown) {
-                    state.clearNumeric();
+                if (state.isIncomplete()) {
                     return state;
                 } else {
-                    right = state.getNumericFromState();
+                    right = state.narrowToNumber();
                 }
             }
             
@@ -541,23 +527,21 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         Object left = node.jjtGetChild(0).jjtAccept(this, data);
         Object right = node.jjtGetChild(1).jjtAccept(this, data);
         try {
-            State state = null;
+            State state;
             if (left instanceof State) {
                 state = (State) left;
-                if (state.fromUnknown) {
-                    state.clearNumeric();
+                if (state.isIncomplete()) {
                     return state;
                 } else {
-                    left = state.getNumericFromState();
+                    left = state.narrowToNumber();
                 }
             }
             if (right instanceof State) {
                 state = (State) right;
-                if (state.fromUnknown) {
-                    state.clearNumeric();
+                if (state.isIncomplete()) {
                     return state;
                 } else {
-                    right = state.getNumericFromState();
+                    right = state.narrowToNumber();
                 }
             }
             
@@ -593,12 +577,12 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         }
         
         State state = (State) o;
-        if (state.fromUnknown && state.matched) {
+        if (state.isIncomplete() && state.isMatched()) {
             // persist "matched from unknown" as-is
             return state;
         } else {
             // otherwise, flip the sign and return
-            state.matched = !state.matched;
+            state.setMatched(!state.isMatched());
             return state;
         }
     }
@@ -662,15 +646,16 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     public Object visit(ASTSizeMethod node, Object data) {
         if (data instanceof FunctionalSet) {
             boolean fromIncomplete = isFunctionalSetIncomplete(incompleteFields, (FunctionalSet) data);
-            data = new State(true, fromIncomplete, (FunctionalSet) data);
+            data = new State(true, fromIncomplete, data);
         }
         
         if (data instanceof State) {
             // need to clear the functional set otherwise functions like filter:getAllMatches(FIELD).size() will
             // pass the functional set to an additive node.
             State state = (State) data;
-            state.numeric = state.set.size();
-            state.set = new FunctionalSet();
+            if (state.isFunctionalSet()) {
+                state.narrowToNumber();
+            }
             return state;
         }
         
@@ -695,41 +680,41 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             leftState = getState(node.jjtGetChild(0), left);
         }
         
-        if (leftState.fromUnknown) {
+        if (leftState.isIncomplete()) {
             return leftState;
         }
         
-        Object result;
+        Object result = null;
         for (int c = 2, size = node.jjtGetNumChildren(); c < size; c += 2) {
             Object right = node.jjtGetChild(c).jjtAccept(this, data);
             State rightState = getState(node.jjtGetChild(c), right);
             
             // if the left result object is an instance of a state
             if (left instanceof State) {
-                State tmp = (State) left;
-                switch (tmp.getSet().size()) {
-                    case 0:
-                        left = tmp.getNumeric();
-                        break;
-                    case 1:
-                        left = tmp.getSet().iterator().next();
-                        break;
-                    default:
-                        throw new IllegalStateException("Could not coalesce State to numeric for additive op");
+                State state = (State) left;
+                
+                if (state.isNumber()) {
+                    left = state.getNumber();
+                } else if (state.isFunctionalSet()) {
+                    left = state.getFunctionalSet().size();
+                } else {
+                    throw new IllegalStateException("Could not coalesce State to numeric for additive op");
                 }
             }
             
             if (right instanceof State) {
-                State tmp = (State) right;
-                switch (tmp.getSet().size()) {
-                    case 0:
-                        right = tmp.getNumeric();
-                        break;
-                    case 1:
-                        right = tmp.getSet().iterator().next();
-                        break;
-                    default:
-                        throw new IllegalStateException("Could not coalesce State to numeric for additive op");
+                State state = (State) right;
+                
+                if (state.isIncomplete()) {
+                    throw new IllegalStateException("additive node had a right arg that was incomplete");
+                }
+                
+                if (state.isNumber()) {
+                    right = state.getNumber();
+                } else if (state.isFunctionalSet()) {
+                    right = state.getFunctionalSet().size();
+                } else {
+                    throw new IllegalStateException("Could not coalesce State to numeric for additive op");
                 }
             }
             
@@ -756,20 +741,18 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             }
         }
         
-        // may call getState() on left or just set the numerical result
-        leftState.numeric = left;
-        return leftState;
+        return new State(true, false, result);
     }
     
     public Object visit(ASTMethodNode node, Object data) {
         if (data instanceof State) {
             State state = (State) data;
-            if (state.getSet() != null) {
-                return super.visit(node, state.getSet());
+            if (state.isFunctionalSet()) {
+                return super.visit(node, state.getFunctionalSet());
             }
         } else if (data instanceof FunctionalSet) {
             if (isFunctionalSetIncomplete(incompleteFields, (FunctionalSet) data)) {
-                return new State(true, true, (FunctionalSet) data);
+                return new State(true, true, data);
             }
         }
         
@@ -820,37 +803,44 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         } else if (scriptExecuteResult instanceof Integer || scriptExecuteResult instanceof Long) {
             // if we got a numeric script result this could be the result of ASTMult or ASTDiv node. In this case we
             // did match and must persist the result as a numeric
-            return new State(true, fromUnknown, new FunctionalSet(), scriptExecuteResult);
+            return new State(true, fromUnknown, scriptExecuteResult);
         }
         return new State(matched, fromUnknown);
     }
     
     /**
-     * Used to track matched state on a per-node basis.
+     * Track some basic metadata about the state of each node in the tree.
+     * <ul>
+     * <li>the evaluation result (boolean)</li>
+     * <li>if the evaluation is from an incomplete field (boolean)</li>
+     * <li>a backing object</li>
+     * </ul>
+     * <p>
+     * The backing object may be a {@link Number}, {@link FunctionalSet<?>}, or {@link Collection<?>}.
      */
     public class State {
-        boolean matched;
-        boolean fromUnknown;
-        FunctionalSet set;
-        Object numeric;
+        
+        boolean matched; // evaluation result
+        boolean incomplete; // did an incomplete field contribute to the evaluation state?
+        Object value; // FunctionalSet, Boolean, Numeric, or null;
         
         public State(boolean matched) {
-            this(matched, false, new FunctionalSet(), null);
+            this(matched, false, new FunctionalSet());
         }
         
-        public State(boolean matched, boolean fromUnknown) {
-            this(matched, fromUnknown, new FunctionalSet(), null);
+        public State(boolean matched, boolean incomplete) {
+            this(matched, incomplete, new FunctionalSet());
         }
         
-        public State(boolean matched, boolean fromUnknown, FunctionalSet set) {
-            this(matched, fromUnknown, set, null);
-        }
-        
-        public State(boolean matched, boolean fromUnknown, FunctionalSet set, Object numeric) {
+        public State(boolean matched, boolean incomplete, Object value) {
             this.matched = matched;
-            this.fromUnknown = fromUnknown;
-            this.set = set;
-            this.numeric = numeric;
+            this.incomplete = incomplete;
+            if (value instanceof ValueTuple) {
+                FunctionalSet set = new FunctionalSet<>();
+                set.add((ValueTuple) value);
+                value = set;
+            }
+            this.value = value;
         }
         
         /**
@@ -863,55 +853,84 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             if (this.matched) {
                 if (other.matched) {
                     // both match
-                    if ((this.fromUnknown && !other.fromUnknown) || (!this.fromUnknown && other.fromUnknown)) {
+                    if ((this.incomplete && !other.incomplete) || (!this.incomplete && other.incomplete)) {
                         // if both match but only one is from an unknown field
-                        this.fromUnknown = false;
+                        this.incomplete = false;
                     }
                 }
             } else if (other.matched) {
                 this.matched = other.matched;
-                this.fromUnknown = other.fromUnknown;
+                this.incomplete = other.incomplete;
             }
             
-            if (this.set != null && other.set != null) {
-                this.set.addAll(other.set);
-            } else if (this.set == null && other.set != null) {
-                this.set = other.set;
+            if (isFunctionalSet() && other.isFunctionalSet()) {
+                FunctionalSet set = new FunctionalSet();
+                set.addAll(getFunctionalSet());
+                set.addAll(other.getFunctionalSet());
+                this.value = set;
+            } else {
+                throw new IllegalStateException("expected two FunctionalSets when merging States");
             }
         }
         
-        public void clearNumeric() {
-            this.numeric = null;
-            this.set = FunctionalSet.emptySet();
+        public boolean isMatched() {
+            return this.matched;
+        }
+        
+        public void setMatched(boolean matched) {
+            this.matched = matched;
+        }
+        
+        public boolean isIncomplete() {
+            return this.incomplete;
         }
         
         /**
-         * Determine if the numeric field is indeed a numeric
          *
-         * @return true if a number otherwise false
+         * @return the raw backing object without any casting
          */
-        public boolean hasNumeric() {
-            return numeric != null
-                            && (numeric instanceof Integer || numeric instanceof Long || numeric instanceof Float || numeric instanceof Double
-                                            || numeric instanceof BigDecimal || numeric instanceof BigInteger);
+        public Object getValue() {
+            return this.value;
         }
         
-        public Object getNumericFromState() {
-            if (hasNumeric()) {
-                return this.numeric;
-            } else if (set != null) {
-                return this.set.size();
+        // utility methods for determining value type
+        
+        public boolean isNumber() {
+            return this.value instanceof Number;
+        }
+        
+        public Number getNumber() {
+            return (Number) this.value;
+        }
+        
+        public boolean isFunctionalSet() {
+            return value instanceof FunctionalSet;
+        }
+        
+        public FunctionalSet getFunctionalSet() {
+            return (FunctionalSet) value;
+        }
+        
+        public boolean isNarrowableToNumber() {
+            return value instanceof Number || value instanceof FunctionalSet || value instanceof Collection;
+        }
+        
+        /**
+         * Narrows the value to a number. If the value is a FunctionalSet the size of the set is returned.
+         *
+         * @return a numeric representation of the value, or null if so such representation is possible
+         */
+        public Object narrowToNumber() {
+            if (isNumber()) {
+                return getNumber();
+            } else if (isFunctionalSet()) {
+                return getFunctionalSet().size();
+            } else if (value instanceof Collection<?>) {
+                // for example, the result of 'grouping:getGroupsForMatchesInGroup'
+                return ((Collection<?>) value).size();
             } else {
                 return null;
             }
-        }
-        
-        public Object getNumeric() {
-            return this.numeric;
-        }
-        
-        public FunctionalSet getSet() {
-            return this.set;
         }
     }
 }
