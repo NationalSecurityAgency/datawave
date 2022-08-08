@@ -246,20 +246,20 @@ public abstract class FunctionalSetTest {
         }
         // @formatter:off
         String[] queryStrings = {
-                "AG.min() > 10", // model expands to AGE.min() > 10 || ETA.min() > 10
+                "AG.min() > 10", // model expands to (AGE || ETA).min() > 10
                 "AG.max() == 40",
                 "AG.max() >= 40",
                 "AG.min() < 10",
                 
                 "AG.greaterThan(39).size() >= 1",
                 "AG.compareWith(40,'==').size() == 1",
-                
+
                 "BIRTH_DATE.min() < '1920-12-28T00:00:05.000Z'",
                 "DEATH_DATE.max() - BIRTH_DATE.min() > 1000*60*60*24", // one day
                 "DEATH_DATE.max() - BIRTH_DATE.min() > 1000*60*60*24*5 + 1000*60*60*24*7", // 5 plus 7 days for the calculator-deprived
                 "DEATH_DATE.min() < '20160301120000'",
-                
-                "AG.size() > 0", // model expands to AGE.size() > 0 || ETA.size() > 0
+
+                "AG.size() > 0", // model expands to (AGE || ETA).size() > 0 || ETA.size() > 0
                 "ETA.size() > 0",
                 "AGE.size() > 0"
         };
@@ -269,15 +269,15 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList(),
-                
+
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE"),
-                
+
                 Arrays.asList("CAPONE"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
-                
+
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
                 Arrays.asList("CORLEONE", "ANDOLINI"),
                 Arrays.asList("SOPRANO", "CAPONE"),};
@@ -335,7 +335,6 @@ public abstract class FunctionalSetTest {
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
-        
                 Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "10 <= AG && AG <= 18"
                 Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "10 <= AG && AG <= 18",
                 Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "18 >= AG && 10 <= AG",

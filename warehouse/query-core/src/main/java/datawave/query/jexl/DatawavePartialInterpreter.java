@@ -9,6 +9,7 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
@@ -105,16 +106,104 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
      */
     @Override
     public Object interpret(JexlNode node) {
-        Object matched = super.interpret(node);
-        if (matched instanceof State) {
-            State state = (State) matched;
+        Object result = super.interpret(node);
+        if (result instanceof State) {
+            State state = (State) result;
             if (state.isMatched() && state.isIncomplete()) {
-                callback.setUsed(true);
+                callback.setUsed(true); // only set the callback if the documented matched
             }
         } else {
-            throw new IllegalStateException("result of interpret was not STATE, it was " + matched.getClass().getSimpleName());
+            throw new IllegalStateException("result of interpret was not STATE, it was " + result.getClass().getSimpleName());
         }
-        return matched;
+        return result;
+    }
+    
+    /**
+     * Nodes may be defeated for the purposes of evaluation prior to visiting.
+     * <p>
+     * If a node relies wholly upon incomplete fields a visit is not required.
+     *
+     * @param node
+     *            a JexlNode
+     * @return a State object if an incomplete field exists, or null if no incomplete fields are present
+     */
+    private State getPreOrderState(JexlNode node) {
+        
+        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+        Object result = resultMap.get(nodeString);
+        if (result instanceof State) {
+            return (State) result;
+        }
+        
+        boolean isPresent;
+        boolean isIncomplete;
+        boolean incompleteAndPresent = false;
+        boolean incompleteAndAbsent = false;
+        boolean completeAndPresent = false;
+        
+        Set<String> fields = JexlASTHelper.getIdentifierNames(node);
+        for (String field : fields) {
+            field = JexlASTHelper.deconstructIdentifier(field);
+            isPresent = isFieldPresent(field);
+            isIncomplete = isFieldIncomplete(field);
+            
+            if (isIncomplete) {
+                if (isPresent) {
+                    incompleteAndPresent = true;
+                } else {
+                    incompleteAndAbsent = true;
+                }
+            } else if (isPresent) {
+                completeAndPresent = true;
+            }
+        }
+        
+        State state = null;
+        boolean hasMethod = new HasMethodVisitor().hasMethod(node);
+        
+        if (hasMethod && incompleteAndPresent) {
+            
+            // odd case like (FIELD_A || FIELD_B).getValuesForGroups(grouping:getGroupsForMatchesInGroup(...)...
+            state = new State(true, true);
+            
+        } else if (!completeAndPresent) {
+            
+            if (incompleteAndPresent) {
+                state = new State(true, true);
+            } else if (incompleteAndAbsent) {
+                state = new State(false, true);
+            }
+        }
+        
+        if (state != null) {
+            resultMap.put(nodeString, state.copy());
+        }
+        return state;
+    }
+    
+    /**
+     * No fields were incomplete
+     *
+     * @param node
+     *            a JexlNode
+     * @param result
+     *            the result of a delegate call to the {@link DatawaveInterpreter}
+     * @return a State object
+     */
+    private State getPostOrderState(JexlNode node, Object result) {
+        
+        State state;
+        boolean matched = isMatched(result) || result instanceof ValueTuple;
+        
+        if (matched) {
+            state = new State(true, false, result);
+        } else {
+            state = new State(false, false, result);
+        }
+        
+        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+        resultMap.put(nodeString, state.copy());
+        return state;
     }
     
     /**
@@ -124,7 +213,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
      *            the JexlNode
      * @return true any fields are considered incomplete
      */
-    private boolean isIncomplete(JexlNode node) {
+    private boolean isFieldIncomplete(JexlNode node) {
         for (String field : JexlASTHelper.getIdentifierNames(node)) {
             field = JexlASTHelper.deconstructIdentifier(field);
             if (isFieldIncomplete(field)) {
@@ -135,15 +224,42 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     }
     
     /**
-     * Returns true if the field is in the set of incomplete fields and is also present in the context
+     * Returns true if the field is in the set of incomplete fields
      * 
      * @param field
      *            a field
      * @return true if the field is incomplete
      */
     private boolean isFieldIncomplete(String field) {
-        // if the field is not in the context, we cannot evaluate it.
-        return incompleteFields.contains(field) && context.has(field);
+        return incompleteFields.contains(field);
+    }
+    
+    /**
+     * Determines if the provided JexlNode contains a field that exists in the context
+     *
+     * @param node
+     *            a JexlNode
+     * @return true if any field is present in the context
+     */
+    private boolean isFieldPresent(JexlNode node) {
+        for (String field : JexlASTHelper.getIdentifierNames(node)) {
+            field = JexlASTHelper.deconstructIdentifier(field);
+            if (isFieldPresent(field)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Determines if a field exists in the context
+     *
+     * @param field
+     *            a field
+     * @return true if the field can never be evaluated
+     */
+    private boolean isFieldPresent(String field) {
+        return context.has(field);
     }
     
     /**
@@ -173,6 +289,11 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         
+        State state = getPreOrderState(node);
+        if (state != null) {
+            return state;
+        }
+        
         // get the namespace
         FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
         visitor.visit(node, null);
@@ -200,28 +321,28 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         
         // if no determination could be made about an UNKNOWN status, fallback to a normal visit
         Object result = super.visit(node, data);
-        if (result instanceof Integer || result instanceof Long) {
-            // filter functions like 'getMaxTime' or 'getMinTime'. No incomplete fields exist if we got to this point
-            return new State(true, false, result);
-        }
         
-        if (result instanceof Collection) {
-            boolean isEmpty = ((Collection<?>) result).isEmpty();
-            if (hasSiblings(node)) {
-                if (isEmpty) {
-                    return new State(true, false);
-                } else {
-                    return new State(true, false, result);
-                }
-            } else {
-                if (isEmpty) {
-                    return new State(true);
-                } else {
-                    return new State(false);
-                }
+        // functions with siblings have the collection returned, otherwise collections are cast to a boolean
+        boolean hasSiblings = hasSiblings(node);
+        boolean matched = true;
+        
+        // cast result to boolean if no sibling methods found
+        if (!hasSiblings && result instanceof Collection) {
+            Collection collection = (Collection) result;
+            if (collection.isEmpty()) {
+                matched = false;
             }
         }
-        return getState(node, result);
+        
+        if (result instanceof Boolean && !((Boolean) result)) {
+            matched = false;
+        }
+        
+        if (matched) {
+            return new State(true, false, result);
+        } else {
+            return new State(false, false);
+        }
     }
     
     /**
@@ -237,19 +358,20 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
      */
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
-        Object result = resultMap.get(nodeString);
-        if (result instanceof Boolean) {
-            return new State((Boolean) result);
+        State state = getPreOrderState(node);
+        if (state != null) {
+            return state;
         }
         
+        Object result;
         Object left = node.jjtGetChild(0).jjtAccept(this, data);
         Object right = node.jjtGetChild(1).jjtAccept(this, data);
         try {
             // we could have an expression like '1+1+1 == 3'
             if (left instanceof State) {
-                State state = (State) left;
-                left = state.narrowToNumber();
+                state = (State) left;
+                // left = state.narrowToNumber();
+                left = state.getValue();
             }
             
             result = arithmetic.equals(left, right) ? Boolean.TRUE : Boolean.FALSE;
@@ -257,14 +379,18 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             throw new JexlException(node, "== error", xrt);
         }
         
-        resultMap.put(nodeString, result);
-        return getState(node, result);
+        return getPostOrderState(node, result);
     }
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        Object match = super.visit(node, data);
-        return getState(node, match);
+        State state = getPreOrderState(node);
+        if (state != null) {
+            return state;
+        }
+        
+        Object result = super.visit(node, data);
+        return getPostOrderState(node, result);
     }
     
     @Override
@@ -416,10 +542,15 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     
     @Override
     public Object visit(ASTGENode node, Object data) {
+        
+        State state = getPreOrderState(node);
+        if (state != null) {
+            return state;
+        }
+        
         Object left = node.jjtGetChild(0).jjtAccept(this, data);
         Object right = node.jjtGetChild(1).jjtAccept(this, data);
         try {
-            State state;
             if (left instanceof State) {
                 state = (State) left;
                 if (state.isIncomplete()) {
@@ -450,10 +581,15 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     
     @Override
     public Object visit(ASTGTNode node, Object data) {
+        
+        State state = getPreOrderState(node);
+        if (state != null) {
+            return state;
+        }
+        
         Object left = node.jjtGetChild(0).jjtAccept(this, data);
         Object right = node.jjtGetChild(1).jjtAccept(this, data);
         try {
-            State state;
             if (left instanceof State) {
                 state = (State) left;
                 if (state.isIncomplete()) {
@@ -490,10 +626,15 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     
     @Override
     public Object visit(ASTLENode node, Object data) {
+        
+        State state = getPreOrderState(node);
+        if (state != null) {
+            return state;
+        }
+        
         Object left = node.jjtGetChild(0).jjtAccept(this, data);
         Object right = node.jjtGetChild(1).jjtAccept(this, data);
         try {
-            State state;
             if (left instanceof State) {
                 state = (State) left;
                 if (state.isIncomplete()) {
@@ -524,16 +665,21 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     
     @Override
     public Object visit(ASTLTNode node, Object data) {
+        
+        State state = getPreOrderState(node);
+        if (state != null) {
+            return state;
+        }
+        
         Object left = node.jjtGetChild(0).jjtAccept(this, data);
         Object right = node.jjtGetChild(1).jjtAccept(this, data);
         try {
-            State state;
             if (left instanceof State) {
                 state = (State) left;
                 if (state.isIncomplete()) {
                     return state;
                 } else {
-                    left = state.narrowToNumber();
+                    left = state.getValue();
                 }
             }
             if (right instanceof State) {
@@ -541,7 +687,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
                 if (state.isIncomplete()) {
                     return state;
                 } else {
-                    right = state.narrowToNumber();
+                    right = state.getValue();
                 }
             }
             
@@ -644,22 +790,21 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     
     @Override
     public Object visit(ASTSizeMethod node, Object data) {
-        if (data instanceof FunctionalSet) {
-            boolean fromIncomplete = isFunctionalSetIncomplete(incompleteFields, (FunctionalSet) data);
-            data = new State(true, fromIncomplete, data);
-        }
-        
         if (data instanceof State) {
-            // need to clear the functional set otherwise functions like filter:getAllMatches(FIELD).size() will
-            // pass the functional set to an additive node.
             State state = (State) data;
-            if (state.isFunctionalSet()) {
-                state.narrowToNumber();
+            Object value = state.getValue();
+            if (value instanceof FunctionalSet) {
+                value = ((FunctionalSet) value).size();
+            } else if (value instanceof Collection) {
+                value = ((Collection) value).size();
             }
-            return state;
+            
+            return new State(state.isMatched(), state.isIncomplete(), value);
         }
         
-        return super.visit(node, data);
+        // always returns a number
+        Object result = super.visit(node, data);
+        return new State(true, false, result);
     }
     
     /**
@@ -692,11 +837,8 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             // if the left result object is an instance of a state
             if (left instanceof State) {
                 State state = (State) left;
-                
-                if (state.isNumber()) {
-                    left = state.getNumber();
-                } else if (state.isFunctionalSet()) {
-                    left = state.getFunctionalSet().size();
+                if (state.isNarrowableToNumber()) {
+                    left = state.narrowToNumber();
                 } else {
                     throw new IllegalStateException("Could not coalesce State to numeric for additive op");
                 }
@@ -709,10 +851,8 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
                     throw new IllegalStateException("additive node had a right arg that was incomplete");
                 }
                 
-                if (state.isNumber()) {
-                    right = state.getNumber();
-                } else if (state.isFunctionalSet()) {
-                    right = state.getFunctionalSet().size();
+                if (state.isNarrowableToNumber()) {
+                    right = state.narrowToNumber();
                 } else {
                     throw new IllegalStateException("Could not coalesce State to numeric for additive op");
                 }
@@ -745,22 +885,25 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     }
     
     public Object visit(ASTMethodNode node, Object data) {
-        if (data instanceof State) {
-            State state = (State) data;
-            if (state.isFunctionalSet()) {
-                return super.visit(node, state.getFunctionalSet());
-            }
-        } else if (data instanceof FunctionalSet) {
-            if (isFunctionalSetIncomplete(incompleteFields, (FunctionalSet) data)) {
-                return new State(true, true, data);
+        
+        State state = getPreOrderState(node);
+        if (state != null) {
+            return state;
+        }
+        
+        Object result;
+        if (data == null) {
+            result = super.visit(node, FunctionalSet.emptySet());
+        } else {
+            if (data instanceof State) {
+                state = (State) data;
+                result = super.visit(node, state.getValue());
+            } else {
+                result = super.visit(node, data);
             }
         }
         
-        if (data == null) {
-            return super.visit(node, FunctionalSet.emptySet());
-        } else {
-            return super.visit(node, data);
-        }
+        return getPostOrderState(node, result);
     }
     
     /**
@@ -795,17 +938,17 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
      * @return a State object
      */
     private State getState(JexlNode node, Object scriptExecuteResult) {
-        boolean fromUnknown = isIncomplete(node);
-        boolean matched = isMatched(scriptExecuteResult) || scriptExecuteResult instanceof ValueTuple || fromUnknown;
+        boolean isFieldIncomplete = isFieldIncomplete(node);
+        boolean matched = isMatched(scriptExecuteResult) || scriptExecuteResult instanceof ValueTuple || isFieldIncomplete;
         
         if (scriptExecuteResult instanceof ValueTuple) {
-            return new State(true, fromUnknown, new FunctionalSet(Collections.singleton(scriptExecuteResult)));
+            return new State(true, isFieldIncomplete, new FunctionalSet(Collections.singleton(scriptExecuteResult)));
         } else if (scriptExecuteResult instanceof Integer || scriptExecuteResult instanceof Long) {
             // if we got a numeric script result this could be the result of ASTMult or ASTDiv node. In this case we
             // did match and must persist the result as a numeric
-            return new State(true, fromUnknown, scriptExecuteResult);
+            return new State(true, isFieldIncomplete, scriptExecuteResult);
         }
-        return new State(matched, fromUnknown);
+        return new State(matched, isFieldIncomplete);
     }
     
     /**
@@ -816,13 +959,13 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
      * <li>a backing object</li>
      * </ul>
      * <p>
-     * The backing object may be a {@link Number}, {@link FunctionalSet<?>}, or {@link Collection<?>}.
+     * The backing object may be a {@link FunctionalSet<?>}, {@link Collection<?>, {@link ValueTuple<?>}, or null}.
      */
     public class State {
         
         boolean matched; // evaluation result
         boolean incomplete; // did an incomplete field contribute to the evaluation state?
-        Object value; // FunctionalSet, Boolean, Numeric, or null;
+        Object value; // FunctionalSet, Collection, ValueTuple, Numeric, or null;
         
         public State(boolean matched) {
             this(matched, false, new FunctionalSet());
@@ -850,26 +993,52 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
          *            another State
          */
         public void mergeOr(State other) {
-            if (this.matched) {
-                if (other.matched) {
-                    // both match
-                    if ((this.incomplete && !other.incomplete) || (!this.incomplete && other.incomplete)) {
-                        // if both match but only one is from an unknown field
-                        this.incomplete = false;
+            
+            // Case 1: both match
+            if (this.isMatched() && other.isMatched()) {
+                // matched remains the same
+                // only persist incomplete flag if both sides are incomplete
+                this.incomplete = this.isIncomplete() && other.isIncomplete();
+                
+                if (this.isIncomplete() && other.isIncomplete()) {
+                    // no boolean, just two empty functional sets
+                } else if (this.isIncomplete() && !other.isIncomplete()) {
+                    this.value = other.getValue();
+                } else if (!this.isIncomplete() && other.isIncomplete()) {
+                    // no-op
+                } else {
+                    // merge the values
+                    if (isFunctionalSet() && other.isFunctionalSet()) {
+                        FunctionalSet set = new FunctionalSet();
+                        set.addAll(getFunctionalSet());
+                        set.addAll(other.getFunctionalSet());
+                        this.value = set;
+                    } else {
+                        throw new IllegalStateException("expected two FunctionalSets when merging States");
                     }
                 }
-            } else if (other.matched) {
-                this.matched = other.matched;
-                this.incomplete = other.incomplete;
             }
-            
-            if (isFunctionalSet() && other.isFunctionalSet()) {
-                FunctionalSet set = new FunctionalSet();
-                set.addAll(getFunctionalSet());
-                set.addAll(other.getFunctionalSet());
-                this.value = set;
-            } else {
-                throw new IllegalStateException("expected two FunctionalSets when merging States");
+            // Case 2: left side matches
+            else if (this.isMatched() && !other.isMatched()) {
+                // matched remains the same
+                // incomplete remains the same
+                // value remains the same
+                // effectively a no-op
+            }
+            // Case 3: right side matches
+            else if (!this.isMatched() && other.isMatched()) {
+                this.matched = other.isMatched();
+                // use other incomplete state
+                this.incomplete = other.isIncomplete();
+                this.value = other.getValue();
+            }
+            // Case 4: neither side matches
+            else {
+                // no-op?
+                int i = 0;
+                if (this.isIncomplete() != other.isIncomplete()) {
+                    throw new IllegalStateException("merge OR error: incomplete states did not match");
+                }
             }
         }
         
@@ -911,6 +1080,20 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             return (FunctionalSet) value;
         }
         
+        public boolean isValueTuple() {
+            return value instanceof ValueTuple || (value instanceof FunctionalSet && ((FunctionalSet) value).iterator().next() instanceof ValueTuple);
+        }
+        
+        public ValueTuple getValueTuple() {
+            if (value instanceof ValueTuple) {
+                return (ValueTuple) value;
+            } else if (value instanceof FunctionalSet) {
+                return (ValueTuple) ((FunctionalSet) value).iterator().next();
+            } else {
+                return null;
+            }
+        }
+        
         public boolean isNarrowableToNumber() {
             return value instanceof Number || value instanceof FunctionalSet || value instanceof Collection;
         }
@@ -924,13 +1107,50 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             if (isNumber()) {
                 return getNumber();
             } else if (isFunctionalSet()) {
-                return getFunctionalSet().size();
+                FunctionalSet set = getFunctionalSet();
+                if (set.size() == 1) {
+                    Object o = set.iterator().next();
+                    if (o instanceof ValueTuple) {
+                        return o;
+                    }
+                }
+                // fallback to size of functional set
+                return set.size();
             } else if (value instanceof Collection<?>) {
                 // for example, the result of 'grouping:getGroupsForMatchesInGroup'
                 return ((Collection<?>) value).size();
             } else {
                 return null;
             }
+        }
+        
+        /**
+         * Get a copy of the current state
+         * 
+         * @return
+         */
+        public State copy() {
+            return new State(this.matched, this.incomplete, this.value);
+        }
+    }
+    
+    class HasMethodVisitor extends BaseVisitor {
+        
+        private boolean methodExists = false;
+        
+        public HasMethodVisitor() {
+            
+        }
+        
+        public boolean hasMethod(JexlNode node) {
+            node.jjtAccept(this, null);
+            return methodExists;
+        }
+        
+        @Override
+        public Object visit(ASTMethodNode node, Object data) {
+            methodExists = true;
+            return data;
         }
     }
 }

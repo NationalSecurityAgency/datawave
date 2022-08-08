@@ -255,6 +255,10 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
         Collection<T> values = new FunctionalSet<>();
         
         if (in instanceof State) {
+            State state = (State) in;
+            if (state.isIncomplete()) {
+                throw new IllegalStateException("should not have gotten here");
+            }
             in = ((State) in).getValue();
         }
         

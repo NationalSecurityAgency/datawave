@@ -118,7 +118,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         }
         
         // pass a hint back to the webservice about the evaluation state
-        if (engine.wasCallbackUsed() && matched) {
+        if (matched && engine.wasCallbackUsed()) {
             Document document = input.second();
             Content attr = new Content(String.valueOf(EVAL_STATE.PARTIAL), document.getMetadata(), document.isToKeep());
             document.put(EVAL_STATE_FIELD, attr);

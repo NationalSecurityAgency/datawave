@@ -99,21 +99,42 @@ public class DatawaveInterpreterTest {
                 {"!(ZEE == 'bar')", true}};   //  non-existent field
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     @Test
     public void testUnions() {
         //  @formatter:off
         Object[][] array = {
-                {"FOO == 'bar' || FOO == 'baz'", true},
-                {"FOO == 'abc' || FOO == 'xyz'", false},
-                {"FOO == 'abc' || !(FOO == 'xyz')", true},
+                //  simple cases
+                {"FOO == 'bar' || FOO == 'baz'", true}, //  TRUE or TRUE = TRUE
+                {"FOO == 'bar' || FOO == 'xyz'", true}, //  TRUE or FALSE = TRUE
+                {"FOO == 'abc' || FOO == 'baz'", true}, //  FALSE or TRUE = TRUE
+                {"FOO == 'abc' || FOO == 'xyz'", false}, //  FALSE or FALSE = TRUE
+
+                //  one side negation cases
+                {"FOO == 'bar' || !(FOO == 'baz')", true}, //  TRUE or NOT TRUE = TRUE
+                {"FOO == 'bar' || !(FOO == 'xyz')", true}, //  TRUE or NOT FALSE = TRUE
+                {"FOO == 'abc' || !(FOO == 'baz')", false}, //  FALSE or NOT TRUE = FALSE
+                {"FOO == 'abc' || !(FOO == 'xyz')", true}, //  FALSE or NOT FALSE = TRUE
+
+                //  both sides negation cases
+                {"!(FOO == 'bar') || !(FOO == 'baz')", false}, //  NOT TRUE or NOT TRUE = FALSE
+                {"!(FOO == 'bar') || !(FOO == 'xyz')", true}, //  NOT TRUE or NOT FALSE = TRUE
+                {"!(FOO == 'abc') || !(FOO == 'baz')", true}, //  NOT FALSE or NOT TRUE = TRUE
+                {"!(FOO == 'abc') || !(FOO == 'xyz')", true}, //  NOT FALSE or NOT FALSE = TRUE
+
+                //  extended cases
+                {"FOO == 'bar' || FOO == 'baz' || FOO == 'bar' || FOO == 'baz'", true},
                 {"FOO == 'bar' || FOO == 'baz' || FOO == 'barzee' || FOO == 'zeebar'", true},
-                {"FOO == 'barzee' || FOO == 'zeebar' || FOO == 'bar' || FOO == 'baz'", true}};
+                {"FOO == 'barzee' || FOO == 'zeebar' || FOO == 'bar' || FOO == 'baz'", true},
+                {"FOO == 'bar' || FOO == 'barzee' || FOO == 'baz' || FOO == 'zeebar'", true},
+                {"FOO == 'barzee' || FOO == 'bar' || FOO == 'zeebar' || FOO == 'baz'", true},
+                {"FOO == 'abc' || FOO == 'def' || FOO == 'ghi' || FOO == 'xyz'", false},
+        };
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     @Test
@@ -126,7 +147,7 @@ public class DatawaveInterpreterTest {
                 {"FOO == 'barzee' && FOO == 'zeebar' && FOO == 'bar' && FOO == 'baz'", false}};
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     @Test
@@ -139,7 +160,7 @@ public class DatawaveInterpreterTest {
                 {"((FOO == 'bar' || FOO == 'zeebar') && (FOO == 'barzee' || FOO == 'baz'))", true}};
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     @Test
@@ -158,7 +179,7 @@ public class DatawaveInterpreterTest {
                 {"((_Bounded_ = true) && (SPEED >= '+bE9' && SPEED <= '+cE1')) || !(FOO == 'bar')", false}};
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     @Test
@@ -174,32 +195,32 @@ public class DatawaveInterpreterTest {
                 {"content:phrase(termOffsetMap, 'big', 'red', 'dog') && (TEXT == 'big' && TEXT == 'red' && TEXT == 'dog')", true}};
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     @Test
     public void testDateEquality() {
         String query = "BIRTH_DATE == '1910-12-28T00:00:05.000Z'";
-        test(query, true);
+        testInput(query, true);
     }
     
     @Test
     public void testMultipleTimeFunctions() {
         // long value is 80+ years
         String query = "FOO == 'bar' && filter:getMaxTime(DEATH_DATE) - filter:getMinTime(BIRTH_DATE) > 2522880000000L";
-        test(query, true);
+        testInput(query, true);
         
         query = "BIRTH_DATE.min() < '1920-12-28T00:00:05.000Z'";
-        test(query, true);
+        testInput(query, true);
         
         query = "DEATH_DATE.max() - BIRTH_DATE.min() > 1000 * 60 * 60 * 24"; // one day
-        test(query, true);
+        testInput(query, true);
         
         query = "DEATH_DATE.max() - BIRTH_DATE.min() > 1000 * 60 * 60 * 24 * 5 + 1000 * 60 * 60 * 24 * 7"; // 5 plus 7 days for the calculator-deprived
-        test(query, true);
+        testInput(query, true);
         
         query = "DEATH_DATE.min() < '20160301120000'";
-        test(query, true);
+        testInput(query, true);
     }
     
     /**
@@ -229,7 +250,7 @@ public class DatawaveInterpreterTest {
                 {"FOO == 'bar' && filter:isNull(ABSENT)", true}};
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     /**
@@ -259,7 +280,7 @@ public class DatawaveInterpreterTest {
                 {"FOO == 'bar' && !(filter:isNull(ABSENT))", false}};
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     /**
@@ -282,7 +303,7 @@ public class DatawaveInterpreterTest {
                 {"filter:includeRegex(FOO, 'bar').size() < 2", true}};
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     @Test
@@ -296,7 +317,7 @@ public class DatawaveInterpreterTest {
                 {"filter:matchesAtLeastCountOf(2,bar,'FOO','SPEED')", false}};
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     // (f1.size() + f2.size()) > x is logically equivalent to f:matchesAtLeastCountOf(x,FIELD,'value')
@@ -317,26 +338,116 @@ public class DatawaveInterpreterTest {
                 {"(filter:includeRegex(SPEED, '1.*').size() - filter:includeRegex(FOO, 'ba.*').size()) == 0", true}};
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     @Test
     public void testJexlMinMaxFunctions() {
         //  @formatter:off
         Object[][] array = {
+                //  max numeric, string value
                 {"SPEED.max() == 147", true},
                 {"SPEED.max() > 147", false},
                 {"SPEED.max() >= 147", true},
                 {"SPEED.max() < 147", false},
                 {"SPEED.max() <= 147", true},
+
+                //  max numeric, normalized value
+                {"SPEED.max() == '+cE1.47'", true},
+                {"SPEED.max() > '+cE1.47'", false},
+                {"SPEED.max() >= '+cE1.47'", true},
+                {"SPEED.max() < '+cE1.47'", false},
+                {"SPEED.max() <= '+cE1.47'", true},
+
+                //  min numeric, string value
                 {"SPEED.min() == 123", true},
                 {"SPEED.min() > 123", false},
                 {"SPEED.min() >= 123", true},
                 {"SPEED.min() < 123", false},
-                {"SPEED.min() <= 123", true}};
+                {"SPEED.min() <= 123", true},
+
+                //  min numeric, normalized value
+                {"SPEED.min() == '+cE1.23'", true},
+                {"SPEED.min() > '+cE1.23'", false},
+                {"SPEED.min() >= '+cE1.23'", true},
+                {"SPEED.min() < '+cE1.23'", false},
+                {"SPEED.min() <= '+cE1.23'", true}
+        };
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
+    }
+    
+    @Test
+    public void testGreaterThan() {
+        //  @formatter:off
+        Object[][] array = {
+                {"SPEED.greaterThan(17).size() == 2", true},
+                {"SPEED.greaterThan(17).size() == 1", false},
+
+                {"SPEED.compareWith(17,'>').size() == 2", true},
+                {"SPEED.compareWith(17,'>').size() == 1", false},
+
+                {"SPEED.compareWith(17,'>=').size() == 2", true},
+                {"SPEED.compareWith(17,'>=').size() == 1", false},
+
+                //  and multi-fielded variants
+                {"(AGE||SPEED).greaterThan(17).size() == 4", true},
+                {"(AGE||SPEED).greaterThan(17).size() == 1", false},
+
+                {"(AGE||SPEED).compareWith(17,'>').size() == 4", true},
+                {"(AGE||SPEED).compareWith(17,'>').size() == 1", false},
+
+                {"(AGE||SPEED).compareWith(17,'>=').size() == 4", true},
+                {"(AGE||SPEED).compareWith(17,'>=').size() == 1", false},
+        };
+        //  @formatter:on
+        
+        testInputsWithContext(buildContextWithGrouping(), array);
+    }
+    
+    @Test
+    public void testFilterGetAllMatchesSize() {
+        //  @formatter:off
+        Object[][] array = {
+                //  field present, value matches
+                {"filter:getAllMatches(FOO,'bar').size() == 0", false},
+                {"filter:getAllMatches(FOO,'bar').size() == 1", true},
+                //  field present, value misses
+                {"filter:getAllMatches(FOO,'nada').size() == 0", true},
+                {"filter:getAllMatches(FOO,'nada').size() == 1", false},
+                //  field absent, value would match
+                {"filter:getAllMatches(ABSENT,'bar').size() == 0", true},
+                {"filter:getAllMatches(ABSENT,'bar').size() == 1", false},
+                //  field absent, value would miss
+                {"filter:getAllMatches(ABSENT,'nada').size() == 0", true},
+                {"filter:getAllMatches(ABSENT,'nada').size() == 1", false},
+        };
+        //  @formatter:on
+        
+        testInputs(array);
+    }
+    
+    @Test
+    public void testFilterGetAllMatchesContains() {
+        //  @formatter:off
+        Object[][] array = {
+                //  field present, value matches
+                {"filter:getAllMatches(FOO,'bar').contains('bar')", true},
+                {"filter:getAllMatches(FOO,'bar').contains('baz')", false},
+                //  field present, value misses
+                {"filter:getAllMatches(FOO,'nada').contains('nada')", false},
+                {"filter:getAllMatches(FOO,'nada').contains('zip')", false},
+                //  field absent, value would match
+                {"filter:getAllMatches(ABSENT,'bar').contains('bar')", false},
+                {"filter:getAllMatches(ABSENT,'bar').contains('baz')", false},
+                //  field absent, value would miss
+                {"filter:getAllMatches(ABSENT,'nada').contains('nada')", false},
+                {"filter:getAllMatches(ABSENT,'nada').contains('zip')", false},
+        };
+        //  @formatter:on
+        
+        testInputs(array);
     }
     
     @Test
@@ -353,7 +464,7 @@ public class DatawaveInterpreterTest {
                 {"FOO == 'bar' && filter:getAllMatches(FOO,'hubert').size() == 0", true}};
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     @Ignore
@@ -369,7 +480,7 @@ public class DatawaveInterpreterTest {
                 {"FOO == 'bar' && filter:isNull(ABSENT || ABSENT)", true}};
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     @Ignore
@@ -394,14 +505,14 @@ public class DatawaveInterpreterTest {
                 {"FOO == 'bar' && !(filter:isNull(ABSENT || ABSENT))", false}};
         //  @formatter:on
         
-        test(array);
+        testInputs(array);
     }
     
     @Test
     public void testGroupingFunctions() {
         //  @formatter:off
         Object[][] array = {
-                //  two groups for field MALE...this is a bug
+                //  getGroupsForMatchesInGroup() without a sibling method will flatten the resulting collection to a boolean
                 {"grouping:getGroupsForMatchesInGroup(GENDER, 'MALE').size() == 2", true},
                 //  only one group matches AGE == 21
                 {"grouping:getGroupsForMatchesInGroup(GENDER, 'MALE', AGE, '21').size() == 1", true},
@@ -412,20 +523,44 @@ public class DatawaveInterpreterTest {
         };
         //  @formatter:on
         
-        for (Object[] o : array) {
-            test(buildContextWithGrouping(), (String) o[0], (Boolean) o[1]);
-        }
+        testInputsWithContext(buildContextWithGrouping(), array);
+    }
+    
+    @Test
+    public void testFieldEqualsField() {
+        //  @formatter:off
+        Object[][] array = {
+                {"FOO == TEXT", true},
+                {"FOO == SPEED", false},
+                {"filter:compare(FOO,'==','ANY',TEXT)", true},
+                {"filter:compare(FOO,'==','ANY',SPEED)", false}
+        };
+        //  @formatter:on
+        
+        testInputs(array);
     }
     
     /**
-     * Wrapper that accepts an array of [String, Boolean] pairs that are the query and expected evaluation state, respectively
+     * Wrapper that accepts an array of [String, Boolean] pairs that are the query and expected evaluation state, respectively. Tests using a default context.
      *
      * @param inputs
      *            the inputs
      */
-    protected void test(Object[][] inputs) {
+    protected void testInputs(Object[][] inputs) {
+        testInputsWithContext(buildDefaultContext(), inputs);
+    }
+    
+    /**
+     * Tests an array of inputs against the provided context
+     *
+     * @param context
+     *            a non-default context
+     * @param inputs
+     *            the inputs
+     */
+    protected void testInputsWithContext(JexlContext context, Object[][] inputs) {
         for (Object[] o : inputs) {
-            test((String) o[0], (Boolean) o[1]);
+            testInputWithContext(context, (String) o[0], (Boolean) o[1]);
         }
     }
     
@@ -435,11 +570,11 @@ public class DatawaveInterpreterTest {
      * @param query
      * @param expectedResult
      */
-    protected void test(String query, boolean expectedResult) {
-        test(buildDefaultContext(), query, expectedResult, false);
+    protected void testInput(String query, boolean expectedResult) {
+        testInputWithContext(buildDefaultContext(), query, expectedResult);
     }
     
-    protected void test(JexlContext context, String query, boolean expectedResult) {
+    protected void testInputWithContext(JexlContext context, String query, boolean expectedResult) {
         test(context, query, expectedResult, false);
     }
     
@@ -466,8 +601,8 @@ public class DatawaveInterpreterTest {
         executed = dwScript.execute(context);
         isMatched = matchResult(executed);
         assertEquals("Unexpected result for query (flattened tree): " + query, expectedResult, isMatched);
-        assertEquals("Expected callback state of [" + expectedCallbackState + "] but was [" + dwScript.getCallback() + "]", expectedCallbackState,
-                        dwScript.getCallback());
+        assertEquals("Expected callback state of [" + expectedCallbackState + "] but was [" + dwScript.getCallback() + "] for query " + query,
+                        expectedCallbackState, dwScript.getCallback());
     }
     
     protected JexlEngine getJexlEngine() {
@@ -501,12 +636,13 @@ public class DatawaveInterpreterTest {
         //  standard field value pair
         context.set("FOO", new FunctionalSet(Arrays.asList(
                 new ValueTuple("FOO", "bar", "bar", new TypeAttribute<>(new LcNoDiacriticsType("bar"), docKey, true)),
-                new ValueTuple("FOO", "baz", "baz", new TypeAttribute<>(new LcNoDiacriticsType("baz"), docKey, true)))));
+                new ValueTuple("FOO", "baz", "baz", new TypeAttribute<>(new LcNoDiacriticsType("baz"), docKey, true)),
+                new ValueTuple("FOO", "big", "big", new TypeAttribute<>(new LcNoDiacriticsType("big"), docKey, true)))));
 
         //  numerics for bounded range queries
         context.set("SPEED", new FunctionalSet(Arrays.asList(
-                new ValueTuple("SPEED", "123", "+cE1.23", new TypeAttribute<>(new NumberType("123"), docKey, true)),
-                new ValueTuple("SPEED", "147", "+cE1.47", new TypeAttribute<>(new NumberType("147"), docKey, true)))));
+                new ValueTuple("SPEED", new NumberType("123"), "+cE1.23", new TypeAttribute<>(new NumberType("123"), docKey, true)),
+                new ValueTuple("SPEED", new NumberType("147"), "+cE1.47", new TypeAttribute<>(new NumberType("147"), docKey, true)))));
 
         //  dates
         DateType firstDate = new DateType("1910-12-28T00:00:05.000Z");
@@ -547,16 +683,17 @@ public class DatawaveInterpreterTest {
         
         // {16, male}, {18, female}, {21, male}
         
-        context.set("AGE",
-                        new FunctionalSet(Arrays.asList(new ValueTuple("AGE.0", "16", "+bE1.6", new TypeAttribute<>(new NumberType("16"), docKey, true)),
-                                        new ValueTuple("AGE.1", "18", "+bE1.8", new TypeAttribute<>(new NumberType("18"), docKey, true)), new ValueTuple(
-                                                        "AGE.2", "21", "+bE2.1", new TypeAttribute<>(new NumberType("18"), docKey, true)))));
-        
-        context.set("GENDER",
-                        new FunctionalSet(Arrays.asList(new ValueTuple("GENDER.0", "MALE", "male", new TypeAttribute<>(new LcNoDiacriticsType("MALE"), docKey,
-                                        true)), new ValueTuple("GENDER.1", "FEMALE", "female", new TypeAttribute<>(new LcNoDiacriticsType("FEMALE"), docKey,
-                                        true)), new ValueTuple("GENDER.2", "MALE", "male", new TypeAttribute<>(new LcNoDiacriticsType("MALE"), docKey, true)))));
-        
+        //  @formatter:off
+        context.set("AGE", new FunctionalSet(Arrays.asList(
+                new ValueTuple("AGE.0", new NumberType("16"), "+bE1.6", new TypeAttribute<>(new NumberType("16"), docKey, true)),
+                new ValueTuple("AGE.1", new NumberType("18"), "+bE1.8", new TypeAttribute<>(new NumberType("18"), docKey, true)),
+                new ValueTuple("AGE.2", new NumberType("21"), "+bE2.1", new TypeAttribute<>(new NumberType("18"), docKey, true)))));
+
+        context.set("GENDER", new FunctionalSet(Arrays.asList(
+                new ValueTuple("GENDER.0", "MALE", "male", new TypeAttribute<>(new LcNoDiacriticsType("MALE"), docKey, true)),
+                new ValueTuple("GENDER.1", "FEMALE", "female", new TypeAttribute<>(new LcNoDiacriticsType("FEMALE"), docKey, true)),
+                new ValueTuple("GENDER.2", "MALE", "male", new TypeAttribute<>(new LcNoDiacriticsType("MALE"), docKey, true)))));
+        //  @formatter:on
         return context;
     }
     

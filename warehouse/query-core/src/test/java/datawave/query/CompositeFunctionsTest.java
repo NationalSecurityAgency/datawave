@@ -6,7 +6,6 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.LogTiming;
@@ -576,9 +575,15 @@ public abstract class CompositeFunctionsTest {
         List<String>[] expectedLists = new List[] {
                 Collections.singletonList("SOPRANO"), // family name starts with C or S
                 Collections.singletonList("SOPRANO"), // family name starts with C or S
-                Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"),
-                Collections.singletonList("CORLEONE"), Arrays.asList("CORLEONE", "CAPONE"), Collections.singletonList("SOPRANO"),
-                Collections.singletonList("SOPRANO"), Collections.singletonList("CORLEONE")};
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Collections.singletonList("CORLEONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Collections.singletonList("SOPRANO"),
+                Collections.singletonList("SOPRANO"),
+                Collections.singletonList("CORLEONE")
+                };
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
