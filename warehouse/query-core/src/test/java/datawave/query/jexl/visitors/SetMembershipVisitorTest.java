@@ -159,6 +159,21 @@ public class SetMembershipVisitorTest {
         assertMembers("(INDEX_ONLY == 'foobar' && FOO == 'bar') || ONLY_INDEXED == 'bar'", Sets.newHashSet("INDEX_ONLY", "ONLY_INDEXED"));
     }
     
+    @Test
+    public void rangeOperandTestContains() throws Exception {
+        assertContains("BAR == 'foo' && INDEX_ONLY >= 1");
+        assertContains("BAR == 'foo' && INDEX_ONLY > 1");
+        assertContains("BAR == 'foo' && INDEX_ONLY <= 1");
+        assertContains("BAR == 'foo' && INDEX_ONLY < 1");
+    }
+    
+    @Test
+    public void phraseTestContains() throws Exception {
+        JexlNode node = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2,
+                        JexlASTHelper.parseJexlQuery("BAR == 'foo' && content:phrase(termOffsetMap, 'foo', 'bar')"));
+        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, config, node));
+    }
+    
     /**
      * Verify that {@link SetMembershipVisitor#contains(Set, ShardQueryConfiguration, JexlNode)} returns false for a query that does not contain any of the
      * target fields.
