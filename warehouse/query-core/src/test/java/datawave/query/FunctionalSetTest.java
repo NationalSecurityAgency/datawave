@@ -21,16 +21,16 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.inject.Inject;
 import java.text.DateFormat;
@@ -53,11 +53,11 @@ import java.util.UUID;
  */
 public abstract class FunctionalSetTest {
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends FunctionalSetTest {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             QueryTestTableHelper qtth = new QueryTestTableHelper(FunctionalSetTest.ShardRange.class.toString(), log);
             connector = qtth.connector;
@@ -75,11 +75,11 @@ public abstract class FunctionalSetTest {
         }
     }
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends FunctionalSetTest {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             QueryTestTableHelper qtth = new QueryTestTableHelper(FunctionalSetTest.DocumentRange.class.toString(), log);
             connector = qtth.connector;
@@ -127,12 +127,12 @@ public abstract class FunctionalSetTest {
         
     }
     
-    @AfterClass
+    @AfterAll
     public static void teardown() {
         TypeRegistry.reset();
     }
     
-    @Before
+    @BeforeEach
     public void setup() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
@@ -174,14 +174,14 @@ public abstract class FunctionalSetTest {
             
             Attribute<?> attr = d.get("UUID.0");
             
-            Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(), attr instanceof TypeAttribute
-                            || attr instanceof PreNormalizedAttribute);
+            Assertions.assertNotNull(attr, "Result Document did not contain a 'UUID'");
+            Assertions.assertTrue(attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute,
+                            "Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName());
             
             TypeAttribute<?> UUIDAttr = (TypeAttribute<?>) attr;
             
             String UUID = UUIDAttr.getType().getDelegate().toString();
-            Assert.assertTrue("Received unexpected UUID for query:" + querystr + "  " + UUID, expected.contains(UUID));
+            Assertions.assertTrue(expected.contains(UUID), "Received unexpected UUID for query:" + querystr + "  " + UUID);
             
             resultSet.add(UUID);
             docs.add(d);
@@ -199,8 +199,8 @@ public abstract class FunctionalSetTest {
         if (!expected.containsAll(resultSet)) {
             log.error("Expected results " + expected + " differ form actual results " + resultSet);
         }
-        Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
-        Assert.assertEquals("Unexpected number of records for query:" + querystr, expected.size(), resultSet.size());
+        Assertions.assertTrue(expected.containsAll(resultSet), "Expected results " + expected + " differ form actual results " + resultSet);
+        Assertions.assertEquals(expected.size(), resultSet.size(), "Unexpected number of records for query:" + querystr);
     }
     
     @Test
@@ -220,7 +220,7 @@ public abstract class FunctionalSetTest {
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
-                Arrays.asList("SOPRANO")
+                Collections.singletonList("SOPRANO")
         };
         // @formatter:on
         
@@ -262,12 +262,12 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("ANDOLINI", "SOPRANO", "CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE"),
-                Arrays.asList(),
+                Collections.emptyList(),
                 
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE"),
-                
-                Arrays.asList("CAPONE"),
+
+                Collections.singletonList("CAPONE"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
@@ -340,13 +340,13 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("SOPRANO", "CORLEONE"), // "'female' == GENDER"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "'FEMALE' == GENDER"
 
-                Arrays.asList("SOPRANO"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')) == MAGIC",
-                Arrays.asList("SOPRANO"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')) < 19"
-                Arrays.asList("CAPONE"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE')) == 30"
-                Arrays.asList("CAPONE"), // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
-                
-                Arrays.asList("SOPRANO"), // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
-                Arrays.asList() // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
+                Collections.singletonList("SOPRANO"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')) == MAGIC",
+                Collections.singletonList("SOPRANO"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')) < 19"
+                Collections.singletonList("CAPONE"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE')) == 30"
+                Collections.singletonList("CAPONE"), // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
+
+                Collections.singletonList("SOPRANO"), // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
+                Collections.emptyList() // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
         };
         // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
@@ -367,7 +367,7 @@ public abstract class FunctionalSetTest {
                 "UUID == 'SOPRANO' && NAM.min().hashCode() != 0",
         };
         List<String>[] expectedLists = new List[] {
-                Arrays.asList("SOPRANO"),
+                Collections.singletonList("SOPRANO"),
         };
         // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {

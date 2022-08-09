@@ -1,6 +1,6 @@
 package datawave.query.testframework;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class ShardIdValues {
      *            list of valid shard id date entries
      */
     public ShardIdValues(final List<String> shardDate) {
-        Assert.assertFalse("there must be at least one shard id value", shardDate.isEmpty());
+        Assertions.assertFalse(shardDate.isEmpty(), "there must be at least one shard id value");
         this.shardIds = new HashMap<>();
         for (String shard : shardDate) {
             Date date = convertShardToDate(shard);

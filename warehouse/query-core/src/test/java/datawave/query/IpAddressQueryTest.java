@@ -1,7 +1,7 @@
 package datawave.query;
 
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -10,9 +10,9 @@ import datawave.query.testframework.IpAddressDataType;
 import datawave.query.testframework.IpAddressDataType.IpAddrEntry;
 import datawave.query.testframework.IpAddressDataType.IpAddrField;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
@@ -24,12 +24,12 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class IpAddressQueryTest extends AbstractFunctionalQuery {
     
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = new AccumuloSetupExtension();
     
     private static final Logger log = Logger.getLogger(IpAddressQueryTest.class);
     
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         FieldConfig fieldInfo = new IpAddrFields();
         DataTypeHadoopConfig dataType = new IpAddressDataType(IpAddrEntry.ipbase, fieldInfo);

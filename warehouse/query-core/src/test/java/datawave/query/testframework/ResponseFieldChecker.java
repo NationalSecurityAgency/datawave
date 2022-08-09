@@ -3,7 +3,7 @@ package datawave.query.testframework;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.util.Set;
 
@@ -36,20 +36,20 @@ public class ResponseFieldChecker implements QueryLogicTestHarness.DocumentCheck
     public void assertValid(final Document doc) {
         for (final String field : this.fields) {
             final Attribute val = doc.get(field);
-            Assert.assertNotNull("missing return field(" + field + ")", val);
+            Assertions.assertNotNull(val, "missing return field(" + field + ")");
             if (val instanceof Attributes) {
                 Attributes multiAttr = (Attributes) val;
                 for (Attribute attr : multiAttr.getAttributes()) {
-                    Assert.assertNotNull("missing metadata for field(" + field + ")", attr.getMetadata());
+                    Assertions.assertNotNull(attr.getMetadata(), "missing metadata for field(" + field + ")");
                 }
             } else {
-                Assert.assertNotNull("missing metadata for field(" + field + ")", val.getMetadata());
+                Assertions.assertNotNull(val.getMetadata(), "missing metadata for field(" + field + ")");
             }
         }
         
         for (final String field : this.missing) {
             final Attribute val = doc.get(field);
-            Assert.assertNull("blacklisted return field(" + field + ")", val);
+            Assertions.assertNull(val, "blacklisted return field(" + field + ")");
         }
     }
 }

@@ -14,8 +14,8 @@ import org.apache.commons.jexl2.JexlException;
 import org.apache.commons.jexl2.Script;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.easymock.EasyMock;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.easymock.EasyMock.mock;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DatawaveInterpreterTest {
     
@@ -46,7 +46,7 @@ public class DatawaveInterpreterTest {
     public void largeOrListTest() {
         List<String> uuids = new ArrayList<>();
         for (int i = 0; i < 1000000; i++)
-            uuids.add("'" + UUID.randomUUID().toString() + "'");
+            uuids.add("'" + UUID.randomUUID() + "'");
         
         String query = String.join(" || ", uuids);
         
@@ -297,7 +297,7 @@ public class DatawaveInterpreterTest {
         test(query, buildDefaultContext(), true);
     }
     
-    @Ignore
+    @Disabled
     @Test
     public void testFilterFunctionMultiFieldedIsNull() {
         // Once #1604 is complete these tests will evaluate correctly
@@ -340,7 +340,7 @@ public class DatawaveInterpreterTest {
         test(query, buildDefaultContext(), false);
     }
     
-    @Ignore
+    @Disabled
     @Test
     public void testFilterFunctionsMultiFieldedIsNotNull() {
         // Once #1604 is complete these tests will evaluate correctly
@@ -391,9 +391,7 @@ public class DatawaveInterpreterTest {
     
     /**
      * Evaluate a query against a default context
-     * 
-     * @param query
-     * @param expectedResult
+     *
      */
     private void test(String query, boolean expectedResult) {
         test(query, buildDefaultContext(), expectedResult);
@@ -415,13 +413,13 @@ public class DatawaveInterpreterTest {
         Script script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
         Object executed = script.execute(context);
         boolean isMatched = ArithmeticJexlEngines.isMatched(executed);
-        assertEquals("Unexpected result for query (binary tree): " + query, expectedResult, isMatched);
+        assertEquals(expectedResult, isMatched, "Unexpected result for query (binary tree): " + query);
         
         // create flattened tree and execute the query
         DatawaveJexlScript dwScript = DatawaveJexlScript.create((ExpressionImpl) script);
         executed = dwScript.execute(context);
         isMatched = ArithmeticJexlEngines.isMatched(executed);
-        assertEquals("Unexpected result for query (flattened tree): " + query, expectedResult, isMatched);
+        assertEquals(expectedResult, isMatched, "Unexpected result for query (flattened tree): " + query);
     }
     
     protected Key docKey = new Key("dt\0uid");

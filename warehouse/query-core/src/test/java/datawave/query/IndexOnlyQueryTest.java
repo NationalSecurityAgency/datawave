@@ -2,16 +2,17 @@ package datawave.query;
 
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -22,12 +23,12 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
     
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = new AccumuloSetupExtension();
     
     private static final Logger log = Logger.getLogger(IndexOnlyQueryTest.class);
     
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         FieldConfig generic = new GenericCityFields();
         Set<String> comp = new HashSet<>();
@@ -137,22 +138,22 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
     
     // ============================================
     // error conditions
-    @Test(expected = FullTableScansDisallowedException.class)
-    public void testErrorOrNot() throws Exception {
+    @Test
+    public void testErrorOrNot() {
         log.info("------  testErrorOrNot  ------");
         String state = "'usa'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + OR_OP + "!(" + CityField.STATE.name() + EQ_OP + state + ")";
-            runTest(query, query);
+            Assertions.assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
         }
     }
     
-    @Test(expected = FullTableScansDisallowedException.class)
-    public void testErrorNotRegex() throws Exception {
+    @Test
+    public void testErrorNotRegex() {
         log.info("------  testErrorNotRegex  ------");
         String state = "'or.*'";
         String query = CityField.STATE.name() + " !~ " + state;
-        runTest(query, query);
+        Assertions.assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
     
     // ============================================

@@ -4,9 +4,9 @@ import datawave.query.attributes.Document;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.AbstractMap;
 import java.util.Map;
@@ -14,7 +14,7 @@ import java.util.Map;
 public class ChainableEventDataQueryFilterTest {
     private ChainableEventDataQueryFilter filter;
     
-    @Before
+    @BeforeEach
     public void setup() {
         filter = new ChainableEventDataQueryFilter();
     }
@@ -59,7 +59,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertTrue(result);
+        Assertions.assertTrue(result);
     }
     
     @Test
@@ -82,7 +82,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result);
+        Assertions.assertFalse(result);
     }
     
     @Test
@@ -104,7 +104,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result);
+        Assertions.assertFalse(result);
     }
     
     @Test
@@ -126,7 +126,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertTrue(result);
+        Assertions.assertTrue(result);
     }
     
     @Test
@@ -148,7 +148,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result);
+        Assertions.assertFalse(result);
     }
     
     @Test
@@ -169,7 +169,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result);
+        Assertions.assertFalse(result);
     }
     
     @Test
@@ -193,8 +193,8 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result == filter1Result);
+        Assertions.assertNotNull(result);
+        Assertions.assertSame(result, filter1Result);
     }
     
     @Test
@@ -218,8 +218,8 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result == filter2Result);
+        Assertions.assertNotNull(result);
+        Assertions.assertSame(result, filter2Result);
     }
     
     @Test
@@ -243,8 +243,8 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result == filter1Result);
+        Assertions.assertNotNull(result);
+        Assertions.assertSame(result, filter1Result);
     }
     
     @Test
@@ -268,8 +268,8 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result == filter2Result);
+        Assertions.assertNotNull(result);
+        Assertions.assertSame(result, filter2Result);
     }
     
     @Test
@@ -295,8 +295,8 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.equals(filter1Result));
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.equals(filter1Result));
     }
     
     @Test
@@ -322,8 +322,8 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.equals(filter1Result));
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.equals(filter1Result));
     }
     
     @Test
@@ -349,8 +349,8 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.equals(filter2Result));
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.equals(filter2Result));
     }
     
     @Test
@@ -376,8 +376,8 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.equals(filter2Result));
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.equals(filter2Result));
     }
     
     @Test
@@ -403,11 +403,11 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.getStartKey().getRow().toString().equals("1"));
-        Assert.assertFalse(result.isStartKeyInclusive());
-        Assert.assertTrue(result.getEndKey().getRow().toString().equals("9999"));
-        Assert.assertFalse(result.isEndKeyInclusive());
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals("1", result.getStartKey().getRow().toString());
+        Assertions.assertFalse(result.isStartKeyInclusive());
+        Assertions.assertEquals("9999", result.getEndKey().getRow().toString());
+        Assertions.assertFalse(result.isEndKeyInclusive());
     }
     
     @Test
@@ -433,8 +433,8 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.equals(filter1Result));
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.equals(filter1Result));
     }
     
     @Test
@@ -460,8 +460,8 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.equals(filter1Result));
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.equals(filter1Result));
     }
     
     @Test
@@ -487,8 +487,8 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.equals(filter2Result));
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.equals(filter2Result));
     }
     
     @Test
@@ -514,8 +514,8 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.equals(filter2Result));
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.equals(filter2Result));
     }
     
     @Test
@@ -541,11 +541,11 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.getStartKey().getRow().toString().equals("1"));
-        Assert.assertFalse(result.isStartKeyInclusive());
-        Assert.assertTrue(result.getEndKey().getRow().toString().equals("9999"));
-        Assert.assertFalse(result.isEndKeyInclusive());
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals("1", result.getStartKey().getRow().toString());
+        Assertions.assertFalse(result.isStartKeyInclusive());
+        Assertions.assertEquals("9999", result.getEndKey().getRow().toString());
+        Assertions.assertFalse(result.isEndKeyInclusive());
     }
     
     @Test
@@ -565,7 +565,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertTrue(result == -1);
+        Assertions.assertEquals(-1, result);
     }
     
     @Test
@@ -585,7 +585,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertTrue(result == 10);
+        Assertions.assertEquals(10, result);
     }
     
     @Test
@@ -605,7 +605,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertTrue(result == 10);
+        Assertions.assertEquals(10, result);
     }
     
     @Test
@@ -625,7 +625,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertTrue(result == 8);
+        Assertions.assertEquals(8, result);
     }
     
     @Test
@@ -645,7 +645,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertTrue(result == 8);
+        Assertions.assertEquals(8, result);
     }
     
     @Test
@@ -667,7 +667,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertTrue(result == null);
+        Assertions.assertNull(result);
     }
     
     @Test
@@ -691,7 +691,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertTrue(result == null);
+        Assertions.assertNull(result);
     }
     
     @Test
@@ -716,7 +716,7 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertTrue(result == key2);
+        Assertions.assertSame(result, key2);
     }
     
     @Test
@@ -739,6 +739,6 @@ public class ChainableEventDataQueryFilterTest {
         
         EasyMock.verify(mockFilter1, mockFilter2);
         
-        Assert.assertTrue(result == key2);
+        Assertions.assertSame(result, key2);
     }
 }

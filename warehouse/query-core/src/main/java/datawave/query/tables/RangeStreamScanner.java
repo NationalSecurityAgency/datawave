@@ -1,5 +1,31 @@
 package datawave.query.tables;
 
+import com.google.common.base.VerifyException;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Queues;
+import com.google.common.util.concurrent.MoreExecutors;
+import datawave.mr.bulk.RfileScanner;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.index.lookup.IndexInfo;
+import datawave.query.index.lookup.IndexMatch;
+import datawave.query.index.lookup.ShardEquality;
+import datawave.query.tables.stats.ScanSessionStats.TIMERS;
+import datawave.webservice.query.Query;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Column;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.util.PeekingIterator;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -20,34 +46,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import com.google.common.base.Throwables;
-import datawave.mr.bulk.RfileScanner;
-import datawave.query.index.lookup.IndexInfo;
-import datawave.query.index.lookup.IndexMatch;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.index.lookup.ShardEquality;
-import datawave.query.tables.stats.ScanSessionStats.TIMERS;
-import datawave.webservice.query.Query;
-
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Column;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.PeekingIterator;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
-import com.google.common.collect.Maps;
-import com.google.common.collect.Queues;
-import com.google.common.util.concurrent.MoreExecutors;
 
 /**
  * Purpose: Extends Scanner session so that we can modify how we build our subsequent ranges. Breaking this out cleans up the code. May require implementation
@@ -115,7 +113,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         currentQueue = Queues.newArrayDeque();
         readLock = queueLock.readLock();
         writeLock = queueLock.writeLock();
-        myExecutor = MoreExecutors.sameThreadExecutor();
+        myExecutor = MoreExecutors.newDirectExecutorService();
         if (null != stats)
             initializeTimers();
     }
@@ -133,7 +131,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         currentQueue = Queues.newArrayDeque();
         readLock = queueLock.readLock();
         writeLock = queueLock.writeLock();
-        myExecutor = MoreExecutors.sameThreadExecutor();
+        myExecutor = MoreExecutors.newDirectExecutorService();
         if (null != stats)
             initializeTimers();
     }
@@ -406,7 +404,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             }
             if (uncaughtExceptionHandler.getThrowable() != null) {
                 log.error("Exception discovered on hasNext call", uncaughtExceptionHandler.getThrowable());
-                Throwables.propagate(uncaughtExceptionHandler.getThrowable());
+                throw new VerifyException(uncaughtExceptionHandler.getThrowable());
             }
         }
         return (null != currentEntry);
@@ -434,7 +432,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             flush();
         } catch (Exception e) {
             uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), e);
-            Throwables.propagate(e);
+            throw new VerifyException(e);
         }
     }
     

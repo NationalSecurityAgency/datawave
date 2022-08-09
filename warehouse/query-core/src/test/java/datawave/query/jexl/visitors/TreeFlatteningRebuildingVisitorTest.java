@@ -10,8 +10,8 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.Parser;
 import org.apache.commons.lang.StringUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
 import java.util.Collections;
@@ -147,7 +147,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         for (int i = 2; i <= numTerms; i++) {
             sb.append(" OR ").append(i);
         }
-        Assert.assertNotNull(TreeFlatteningRebuildingVisitor.flattenAll(new Parser(new StringReader(";")).parse(new StringReader(new LuceneToJexlQueryParser()
+        Assertions.assertNotNull(TreeFlatteningRebuildingVisitor.flattenAll(new Parser(new StringReader(";")).parse(new StringReader(new LuceneToJexlQueryParser()
                         .parse(sb.toString()).toString()), null)));
     }
     
@@ -172,11 +172,11 @@ public class TreeFlatteningRebuildingVisitorTest {
         JexlNode or1 = JexlNodeFactory.createUnwrappedOrNode(Collections.singleton(and1));
         
         JexlNode flattened = TreeFlatteningRebuildingVisitor.flatten(or1);
-        
-        Assert.assertEquals(ASTJexlScript.class, flattened.getClass());
-        Assert.assertEquals(1, flattened.jjtGetNumChildren());
-        Assert.assertEquals(ASTEQNode.class, flattened.jjtGetChild(0).getClass());
-        Assert.assertEquals(JexlStringBuildingVisitor.buildQuery(eqNode), JexlStringBuildingVisitor.buildQuery(flattened));
+
+        Assertions.assertEquals(ASTJexlScript.class, flattened.getClass());
+        Assertions.assertEquals(1, flattened.jjtGetNumChildren());
+        Assertions.assertEquals(ASTEQNode.class, flattened.jjtGetChild(0).getClass());
+        Assertions.assertEquals(JexlStringBuildingVisitor.buildQuery(eqNode), JexlStringBuildingVisitor.buildQuery(flattened));
     }
     
     private void assertResult(String expected, String original) throws ParseException {

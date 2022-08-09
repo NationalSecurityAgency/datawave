@@ -14,7 +14,7 @@ import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.util.Tuple3;
 import org.apache.accumulo.core.data.Key;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,8 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JexlEvaluationTest {
     
@@ -137,9 +137,9 @@ public class JexlEvaluationTest {
         String query = "FOO == 'bar' && TOKFIELD == 'big' && TOKFIELD == 'red' && TOKFIELD == 'dog' && content:phrase(termOffsetMap, 'big', 'red', 'dog')";
         
         Map<String,TermFrequencyList> map = new HashMap<>();
-        map.put("big", buildTfList("TOKFIELD", 1));
-        map.put("red", buildTfList("TOKFIELD", 2));
-        map.put("dog", buildTfList("TOKFIELD", 3));
+        map.put("big", buildTfList(1));
+        map.put("red", buildTfList(2));
+        map.put("dog", buildTfList(3));
         
         DatawaveJexlContext context = new DatawaveJexlContext();
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(map));
@@ -282,14 +282,14 @@ public class JexlEvaluationTest {
         assertEquals(expected, result);
     }
     
-    private TermFrequencyList buildTfList(String field, int... offsets) {
-        TermFrequencyList.Zone zone = buildZone(field);
+    private TermFrequencyList buildTfList(int... offsets) {
+        TermFrequencyList.Zone zone = buildZone();
         List<TermWeightPosition> position = buildTermWeightPositions(offsets);
         return new TermFrequencyList(Maps.immutableEntry(zone, position));
     }
     
-    private TermFrequencyList.Zone buildZone(String field) {
-        return new TermFrequencyList.Zone(field, true, "shard\0datatype\0uid");
+    private TermFrequencyList.Zone buildZone() {
+        return new TermFrequencyList.Zone("TOKFIELD", true, "shard\0datatype\0uid");
     }
     
     private List<TermWeightPosition> buildTermWeightPositions(int... offsets) {

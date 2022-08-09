@@ -62,7 +62,7 @@ public class IpAddressDataType extends AbstractDataTypeConfig {
         private static final List<String> Headers;
         
         static {
-            Headers = Stream.of(IpAddrField.values()).map(e -> e.name()).collect(Collectors.toList());
+            Headers = Stream.of(IpAddrField.values()).map(Enum::name).collect(Collectors.toList());
         }
         
         /**
@@ -105,7 +105,7 @@ public class IpAddressDataType extends AbstractDataTypeConfig {
             return fieldMetadata;
         }
         
-        private RawMetaData metadata;
+        private final RawMetaData metadata;
         
         IpAddrField(final Normalizer<?> normalizer) {
             this(normalizer, false);

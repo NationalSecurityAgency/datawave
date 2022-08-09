@@ -6,7 +6,7 @@ import datawave.query.testframework.BaseRawData;
 import datawave.query.testframework.RawData;
 import datawave.query.testframework.cardata.CarsDataType.CarField;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -28,7 +28,7 @@ public class CarDataManager extends AbstractDataManager {
     
     @Override
     public void addTestData(final URI file, final String datatype, final Set<String> indexes) throws IOException {
-        Assert.assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
+        Assertions.assertFalse(this.rawData.containsKey(datatype), "datatype has already been configured(" + datatype + ")");
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
             String[] data;
             int count = 0;
@@ -64,9 +64,9 @@ public class CarDataManager extends AbstractDataManager {
     
     static class CarRawData extends BaseRawData {
         
-        CarRawData(final String datatype, final String fields[]) {
+        CarRawData(final String datatype, final String[] fields) {
             super(datatype, fields, CarField.headers(), CarField.getFieldsMetadata());
-            Assert.assertEquals("car ingest data field count is invalid", CarField.headers().size(), fields.length);
+            Assertions.assertEquals(CarField.headers().size(), fields.length, "car ingest data field count is invalid");
         }
     }
 }

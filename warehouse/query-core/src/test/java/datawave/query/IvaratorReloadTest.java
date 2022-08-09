@@ -18,10 +18,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.util.AbstractMap;
@@ -30,6 +29,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
 
@@ -41,20 +41,17 @@ public class IvaratorReloadTest {
     public static List<Map.Entry<Key,Value>> sourceList = new ArrayList<>();
     public static SortedKeyValueIterator source = new SortedListKeyValueIterator(sourceList);
     
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File tempDir = new File("/tmp/test/IvaratorReloadTest");
     
     /**
      * Basically create an ivarator, seek it and verify it persisted. Then create a second ivarator against the same directory, and verify it reused the same
      * files by verifying the files were not overwritten or changed.
-     * 
-     * @throws Exception
+     *
      */
     @Test
     public void reloadTest() throws Exception {
         setupKeyValues();
-        
-        File tempDir = temporaryFolder.newFolder();
         
         LocalFileSystem fs = new LocalFileSystem();
         fs.initialize(tempDir.toURI(), new Configuration());
@@ -70,8 +67,8 @@ public class IvaratorReloadTest {
         File completeFile = new File(shardDir, "complete");
         
         IvaratorDirState state1 = getIvaratorDirState(shardDir);
-        Assert.assertTrue("Missing complete file", state1.complete);
-        Assert.assertFalse("Missing sorted set files", state1.sortedSetBytes.isEmpty());
+        Assertions.assertTrue(state1.complete, "Missing complete file");
+        Assertions.assertFalse(state1.sortedSetBytes.isEmpty(), "Missing sorted set files");
         
         DatawaveFieldIndexRangeIteratorJexl secondRangeIvarator = createRangeIvarator(fs, uniqueDir);
         secondRangeIvarator.init(source, null, null);
@@ -80,7 +77,7 @@ public class IvaratorReloadTest {
         secondRangeIvarator.seek(range2, new HashSet<>(), false);
         
         IvaratorDirState state2 = getIvaratorDirState(shardDir);
-        Assert.assertEquals("Ivarator dir changed but it should not have", state1, state2);
+        Assertions.assertEquals(state1, state2, "Ivarator dir changed but it should not have");
     }
     
     public static DatawaveFieldIndexRangeIteratorJexl createRangeIvarator(FileSystem fs, Path uniqueDir) {
@@ -123,7 +120,7 @@ public class IvaratorReloadTest {
     public static BasePoolableObjectFactory<SortedKeyValueIterator<Key,Value>> createIvaratorSourceFactory() {
         return new BasePoolableObjectFactory<SortedKeyValueIterator<Key,Value>>() {
             @Override
-            public SortedKeyValueIterator<Key,Value> makeObject() throws Exception {
+            public SortedKeyValueIterator<Key,Value> makeObject() {
                 return new SortedListKeyValueIterator(sourceList);
             }
         };
@@ -170,17 +167,14 @@ public class IvaratorReloadTest {
         
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("complete: ").append(complete).append(", ").append("dates: ").append(sortedSetDates).append(", ").append("bytes: ")
-                            .append(sortedSetBytes);
-            return builder.toString();
+            return "complete: " + complete + ", " + "dates: " + sortedSetDates + ", " + "bytes: " + sortedSetBytes;
         }
     }
     
     private IvaratorDirState getIvaratorDirState(File shardDir) {
         IvaratorDirState state = new IvaratorDirState();
         
-        for (File file : shardDir.listFiles()) {
+        for (File file : Objects.requireNonNull(shardDir.listFiles())) {
             if (file.getName().startsWith("SortedSetFile")) {
                 state.sortedSetBytes.put(file.getName(), file.length());
                 state.sortedSetDates.put(file.getName(), file.lastModified());

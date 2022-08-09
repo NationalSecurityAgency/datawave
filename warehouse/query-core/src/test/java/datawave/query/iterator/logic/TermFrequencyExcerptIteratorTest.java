@@ -14,14 +14,14 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -32,11 +32,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
     
     private static final Text row = new Text("20220115_1");
@@ -48,8 +48,8 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
     private final Map<String,String> options = new HashMap<>();
     private final TermFrequencyExcerptIterator iterator = new TermFrequencyExcerptIterator();
     
-    @BeforeClass
-    public static void beforeClass() throws Exception {
+    @BeforeAll
+    public static void beforeClass() {
         givenData("email", "123.456.789", "BODY", "the quick brown fox jumped over the lazy dog ");
         givenData("email", "123.456.789", "CONTENT", "there is no greater divide in fandoms than that between star wars and star trek fans");
         givenData("scan", "987.654.321", "TITLE", "document scan 12345");
@@ -85,7 +85,7 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
         return map;
     }
     
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         options.clear();
     }
@@ -196,7 +196,7 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
     public void testStartOffsetGreaterThanEndOffset() {
         givenOptions("BODY", 10, 1);
         
-        Assert.assertThrows("End offset must be greater than start offset", IllegalArgumentException.class, () -> iterator.validateOptions(options));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> iterator.validateOptions(options));
     }
     
     private void givenOptions(String field, int start, int end) {

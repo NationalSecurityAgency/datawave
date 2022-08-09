@@ -3,12 +3,14 @@ package datawave.query.jexl.visitors;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor.GeoWaveQueryInfo;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GeoWaveQueryInfoVisitorTest {
     
@@ -23,7 +25,7 @@ public class GeoWaveQueryInfoVisitorTest {
     public void testGeoField() throws Exception {
         ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(COMBINED_FIELDS_QUERY);
         
-        GeoWaveQueryInfo queryInfo = new GeoWaveQueryInfoVisitor(Arrays.asList("GEO_FIELD")).parseGeoWaveQueryInfo(queryTree);
+        GeoWaveQueryInfo queryInfo = new GeoWaveQueryInfoVisitor(Collections.singletonList("GEO_FIELD")).parseGeoWaveQueryInfo(queryTree);
         assertEquals(2, queryInfo.getMinTier());
         assertEquals(2, queryInfo.getMaxTier());
     }
@@ -32,7 +34,7 @@ public class GeoWaveQueryInfoVisitorTest {
     public void testGeomField() throws Exception {
         ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(COMBINED_FIELDS_QUERY);
         
-        GeoWaveQueryInfo queryInfo = new GeoWaveQueryInfoVisitor(Arrays.asList("GEOM_FIELD")).parseGeoWaveQueryInfo(queryTree);
+        GeoWaveQueryInfo queryInfo = new GeoWaveQueryInfoVisitor(Collections.singletonList("GEOM_FIELD")).parseGeoWaveQueryInfo(queryTree);
         assertEquals(5, queryInfo.getMinTier());
         assertEquals(5, queryInfo.getMaxTier());
     }
@@ -41,16 +43,16 @@ public class GeoWaveQueryInfoVisitorTest {
     public void testPointField() throws Exception {
         ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(COMBINED_FIELDS_QUERY);
         
-        GeoWaveQueryInfo queryInfo = new GeoWaveQueryInfoVisitor(Arrays.asList("POINT_FIELD")).parseGeoWaveQueryInfo(queryTree);
+        GeoWaveQueryInfo queryInfo = new GeoWaveQueryInfoVisitor(Collections.singletonList("POINT_FIELD")).parseGeoWaveQueryInfo(queryTree);
         assertEquals(31, queryInfo.getMinTier());
         assertEquals(31, queryInfo.getMaxTier());
     }
     
-    @Test(expected = NumberFormatException.class)
+    @Test
     public void testOtherField() throws Exception {
         ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(COMBINED_FIELDS_QUERY);
         
-        new GeoWaveQueryInfoVisitor(Arrays.asList("NAME")).parseGeoWaveQueryInfo(queryTree);
+        assertThrows(NumberFormatException.class, () -> new GeoWaveQueryInfoVisitor(Collections.singletonList("NAME")).parseGeoWaveQueryInfo(queryTree));
     }
     
     @Test

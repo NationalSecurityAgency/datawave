@@ -4,16 +4,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
-import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import org.apache.accumulo.core.data.Key;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
 import java.util.Calendar;
@@ -23,26 +21,24 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Due to the expansive nature of {@link EvaluationPhaseFilterFunctions}, tests for individual methods are encapsulated within their own test suites represented
- * by the nested classes found herein. The {@link Enclosed} runner will run all tests within these test suites.
+ * by the nested classes found herein.
  */
-@RunWith(Enclosed.class)
 public class EvaluationPhaseFilterFunctionsTest {
     
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#occurrence(Object, int)} and {@link EvaluationPhaseFilterFunctions#occurrence(Object, String, int)}.
      */
-    public static class OccurrenceSingularValueTests {
+    @Nested
+    public class OccurrenceSingularValueTests {
         
-        private static final Object singularFieldValue = toValueTuple("FOO.1,BAR,bar");
+        private final Object singularFieldValue = toValueTuple("FOO.1,BAR,bar");
         
         private Object fieldValue;
         private String operator;
@@ -178,7 +174,9 @@ public class EvaluationPhaseFilterFunctionsTest {
             givenFieldValue(null);
             givenOperator("~=");
             
-            assertThatIllegalArgumentException().isThrownBy(() -> resultForOperator(0)).withMessage("~= is not a valid comparison operator");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> resultForOperator(0));
+            
+            Assertions.assertEquals("~= is not a valid comparison operator", exception.getMessage());
         }
         
         // Verify that the default operator is ==.
@@ -217,17 +215,18 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#occurrence(Iterable, String, int)} and {@link EvaluationPhaseFilterFunctions#occurrence(Iterable, int)}.
      */
-    public static class OccurrenceIterableValueTests {
+    @Nested
+    public class OccurrenceIterableValueTests {
         
-        private static final ValueTuple indexFieldValue = toValueTuple("FOO.1,INDEX,index");
-        private static final ValueTuple eventFieldValue = toValueTuple("FOO.1,EVENT,event");
-        private static final Object object = new Object();
+        private final ValueTuple indexFieldValue = toValueTuple("FOO.1,INDEX,index");
+        private final ValueTuple eventFieldValue = toValueTuple("FOO.1,EVENT,event");
+        private final Object object = new Object();
         
         private Iterable<?> fieldValue;
         private String operator;
         
-        @BeforeClass
-        public static void setup() {
+        @BeforeEach
+        public void setup() {
             indexFieldValue.getSource().setFromIndex(true);
             eventFieldValue.getSource().setFromIndex(false);
         }
@@ -239,23 +238,23 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertThat(resultForOperator(1)).isFalse();
-            assertThat(resultForOperator(2)).isTrue();
+            assertTrue(resultForOperator(1));
+            assertFalse(resultForOperator(2));
             
             // Results in total count of indexed fields: 3.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
-            assertThat(resultForOperator(3)).isFalse();
-            assertThat(resultForOperator(4)).isTrue();
+            assertFalse(resultForOperator(3));
+            assertTrue(resultForOperator(4));
             
             // Results in total count of event fields: 2.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
-            assertThat(resultForOperator(2)).isFalse();
-            assertThat(resultForOperator(3)).isTrue();
+            assertFalse(resultForOperator(2));
+            assertTrue(resultForOperator(3));
             
             // Results in total count of objects: 2.
             givenFieldValues(object, object);
-            assertThat(resultForOperator(2)).isFalse();
-            assertThat(resultForOperator(3)).isTrue();
+            assertFalse(resultForOperator(2));
+            assertTrue(resultForOperator(3));
         }
         
         // Verify comparison for operator <=.
@@ -265,24 +264,24 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertThat(resultForOperator(0)).isFalse();
-            assertThat(resultForOperator(1)).isTrue();
-            assertThat(resultForOperator(2)).isTrue();
+            assertFalse(resultForOperator(0));
+            assertTrue(resultForOperator(1));
+            assertTrue(resultForOperator(2));
             
             // Results in total count of indexed fields: 3.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
-            assertThat(resultForOperator(2)).isFalse();
-            assertThat(resultForOperator(3)).isTrue();
+            assertFalse(resultForOperator(2));
+            assertTrue(resultForOperator(3));
             
             // Results in total count of event fields: 2.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
-            assertThat(resultForOperator(1)).isFalse();
-            assertThat(resultForOperator(2)).isTrue();
+            assertFalse(resultForOperator(1));
+            assertTrue(resultForOperator(2));
             
             // Results in total count of objects: 2.
             givenFieldValues(object, object);
-            assertThat(resultForOperator(1)).isFalse();
-            assertThat(resultForOperator(2)).isTrue();
+            assertFalse(resultForOperator(1));
+            assertTrue(resultForOperator(2));
         }
         
         // Verify comparison for operator ==.
@@ -292,24 +291,24 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertThat(resultForOperator(0)).isFalse();
-            assertThat(resultForOperator(1)).isTrue();
-            assertThat(resultForOperator(2)).isFalse();
+            assertFalse(resultForOperator(0));
+            assertTrue(resultForOperator(1));
+            assertFalse(resultForOperator(2));
             
             // Results in total count of indexed fields: 3.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
-            assertThat(resultForOperator(2)).isFalse();
-            assertThat(resultForOperator(3)).isTrue();
+            assertFalse(resultForOperator(2));
+            assertTrue(resultForOperator(3));
             
             // Results in total count of event fields: 2.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
-            assertThat(resultForOperator(1)).isFalse();
-            assertThat(resultForOperator(2)).isTrue();
+            assertFalse(resultForOperator(1));
+            assertTrue(resultForOperator(2));
             
             // Results in total count of objects: 2.
             givenFieldValues(object, object);
-            assertThat(resultForOperator(1)).isFalse();
-            assertThat(resultForOperator(2)).isTrue();
+            assertFalse(resultForOperator(1));
+            assertTrue(resultForOperator(2));
         }
         
         // Verify comparison for operator =.
@@ -319,24 +318,24 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertThat(resultForOperator(0)).isFalse();
-            assertThat(resultForOperator(1)).isTrue();
-            assertThat(resultForOperator(2)).isFalse();
+            assertFalse(resultForOperator(0));
+            assertTrue(resultForOperator(1));
+            assertFalse(resultForOperator(2));
             
             // Results in total count of indexed fields: 3.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
-            assertThat(resultForOperator(2)).isFalse();
-            assertThat(resultForOperator(3)).isTrue();
+            assertFalse(resultForOperator(2));
+            assertTrue(resultForOperator(3));
             
             // Results in total count of event fields: 2.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
-            assertThat(resultForOperator(1)).isFalse();
-            assertThat(resultForOperator(2)).isTrue();
+            assertFalse(resultForOperator(1));
+            assertTrue(resultForOperator(2));
             
             // Results in total count of objects: 2.
             givenFieldValues(object, object);
-            assertThat(resultForOperator(1)).isFalse();
-            assertThat(resultForOperator(2)).isTrue();
+            assertFalse(resultForOperator(1));
+            assertTrue(resultForOperator(2));
         }
         
         // Verify comparison for operator >=.
@@ -346,22 +345,22 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertThat(resultForOperator(0)).isTrue();
+            assertTrue(resultForOperator(0));
             
             // Results in total count of indexed fields: 3.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
-            assertThat(resultForOperator(2)).isTrue();
-            assertThat(resultForOperator(4)).isFalse();
+            assertTrue(resultForOperator(2));
+            assertFalse(resultForOperator(4));
             
             // Results in total count of event fields: 2.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
-            assertThat(resultForOperator(2)).isTrue();
-            assertThat(resultForOperator(3)).isFalse();
+            assertTrue(resultForOperator(2));
+            assertFalse(resultForOperator(3));
             
             // Results in total count of objects: 2.
             givenFieldValues(object, object);
-            assertThat(resultForOperator(2)).isTrue();
-            assertThat(resultForOperator(3)).isFalse();
+            assertTrue(resultForOperator(2));
+            assertFalse(resultForOperator(3));
         }
         
         // Verify comparison for operator >.
@@ -371,23 +370,23 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertThat(resultForOperator(0)).isTrue();
-            assertThat(resultForOperator(1)).isFalse();
+            assertTrue(resultForOperator(0));
+            assertFalse(resultForOperator(1));
             
             // Results in total count of indexed fields: 3.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
-            assertThat(resultForOperator(2)).isTrue();
-            assertThat(resultForOperator(3)).isFalse();
+            assertTrue(resultForOperator(2));
+            assertFalse(resultForOperator(3));
             
             // Results in total count of event fields: 2.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
-            assertThat(resultForOperator(1)).isTrue();
-            assertThat(resultForOperator(2)).isFalse();
+            assertTrue(resultForOperator(1));
+            assertFalse(resultForOperator(2));
             
             // Results in total count of objects: 2.
             givenFieldValues(object, object);
-            assertThat(resultForOperator(1)).isTrue();
-            assertThat(resultForOperator(2)).isFalse();
+            assertTrue(resultForOperator(1));
+            assertFalse(resultForOperator(2));
         }
         
         // Verify comparison for operator >.
@@ -397,24 +396,24 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertThat(resultForOperator(0)).isTrue();
-            assertThat(resultForOperator(1)).isFalse();
-            assertThat(resultForOperator(2)).isTrue();
+            assertTrue(resultForOperator(0));
+            assertFalse(resultForOperator(1));
+            assertTrue(resultForOperator(2));
             
             // Results in total count of indexed fields: 3.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
-            assertThat(resultForOperator(3)).isFalse();
-            assertThat(resultForOperator(4)).isTrue();
+            assertFalse(resultForOperator(3));
+            assertTrue(resultForOperator(4));
             
             // Results in total count of event fields: 2.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
-            assertThat(resultForOperator(2)).isFalse();
-            assertThat(resultForOperator(3)).isTrue();
+            assertFalse(resultForOperator(2));
+            assertTrue(resultForOperator(3));
             
             // Results in total count of objects: 2.
             givenFieldValues(object, object);
-            assertThat(resultForOperator(2)).isFalse();
-            assertThat(resultForOperator(3)).isTrue();
+            assertFalse(resultForOperator(2));
+            assertTrue(resultForOperator(3));
         }
         
         // Verify an exception is thrown when an invalid operator is given.
@@ -423,7 +422,9 @@ public class EvaluationPhaseFilterFunctionsTest {
             givenFieldValue(null);
             givenOperator("~=");
             
-            assertThatIllegalArgumentException().isThrownBy(() -> resultForOperator(0)).withMessage("~= is not a valid comparison operator");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> resultForOperator(0));
+            
+            Assertions.assertEquals("~= is not a valid comparison operator", exception.getMessage());
         }
         
         // Verify that the default operator is ==.
@@ -431,24 +432,24 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testDefaultOperator() {
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertThat(resultForDefaultOperator(0)).isFalse();
-            assertThat(resultForDefaultOperator(1)).isTrue();
-            assertThat(resultForDefaultOperator(2)).isFalse();
+            assertFalse(resultForDefaultOperator(0));
+            assertTrue(resultForDefaultOperator(1));
+            assertFalse(resultForDefaultOperator(2));
             
             // Results in total count of indexed fields: 3.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
-            assertThat(resultForDefaultOperator(2)).isFalse();
-            assertThat(resultForDefaultOperator(3)).isTrue();
+            assertFalse(resultForDefaultOperator(2));
+            assertTrue(resultForDefaultOperator(3));
             
             // Results in total count of event fields: 2.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
-            assertThat(resultForDefaultOperator(1)).isFalse();
-            assertThat(resultForDefaultOperator(2)).isTrue();
+            assertFalse(resultForDefaultOperator(1));
+            assertTrue(resultForDefaultOperator(2));
             
             // Results in total count of objects: 2.
             givenFieldValues(object, object);
-            assertThat(resultForDefaultOperator(1)).isFalse();
-            assertThat(resultForDefaultOperator(2)).isTrue();
+            assertFalse(resultForDefaultOperator(1));
+            assertTrue(resultForDefaultOperator(2));
         }
         
         private void givenFieldValue(Iterable<?> fieldValue) {
@@ -475,7 +476,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#isNotNull(Object)}.
      */
-    public static class IsNotNullTests {
+    @Nested
+    public class IsNotNullTests {
         
         private Object fieldValue;
         
@@ -483,7 +485,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         @Test
         public void testNullValue() {
             givenFieldValue(null);
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         // Verify that a non-null value tuple returns a set with that value tuple.
@@ -498,7 +500,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         @Test
         public void testEmptyCollection() {
             givenFieldValue(Collections.emptySet());
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         // Verify that a non-empty collection of value tuples returns a set with the tuples.
@@ -522,7 +524,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#isNull(Object)}
      */
-    public static class IsNullTests {
+    @Nested
+    public class IsNullTests {
         
         private Object fieldValue;
         
@@ -566,7 +569,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#excludeRegex(Object, String)} (Object, String)}.
      */
-    public static class ExcludeRegexSingularValueTests {
+    @Nested
+    public class ExcludeRegexSingularValueTests {
         
         private Object fieldValue;
         private String regex;
@@ -629,7 +633,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#excludeRegex(Object, String)} (Iterable, String)}.
      */
-    public static class ExcludeRegexIterableValueTests {
+    @Nested
+    public class ExcludeRegexIterableValueTests {
         
         private Iterable<Object> fieldValues;
         private String regex;
@@ -707,7 +712,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#includeRegex(Object, String)}.
      */
-    public static class IncludeRegexSingularValueTests {
+    @Nested
+    public class IncludeRegexSingularValueTests {
         
         private Object fieldValue;
         private String regex;
@@ -717,7 +723,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testNullFieldValue() {
             fieldValue = null;
             givenRegex("ba.*");
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         @Test
@@ -736,7 +742,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Verify that the regex does not match against the fieldName (first) portion of the value tuple.
             givenFieldValue(toValueTuple("BAR.1,BOOM,boom"));
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         @Test
@@ -750,11 +756,11 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Verify that the regex does not match against the normalized value (third) portion of the value tuple.
             givenFieldValue(toValueTuple("FOO.1,BOOM,BAR"));
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
             
             // Verify that the regex does not match against the fieldName (first) portion of the value tuple.
             givenFieldValue(toValueTuple("BAR.1,BOOM,boom"));
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         private void givenFieldValue(Object fieldValue) {
@@ -773,7 +779,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#includeRegex(Iterable, String)}.
      */
-    public static class IncludeRegexIterableValueTests {
+    @Nested
+    public class IncludeRegexIterableValueTests {
         
         private Iterable<Object> fieldValues;
         private String regex;
@@ -782,7 +789,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testNullFieldValues() {
             fieldValues = null;
             givenRegex("ba.*");
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         // Verify that the regex is only matched against the value and the normalized value for a case-sensitive regex.
@@ -847,7 +854,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getAllMatches(Object, String)}.
      */
-    public static class GetAllMatchesSingularValueTests {
+    @Nested
+    public class GetAllMatchesSingularValueTests {
         
         private Object fieldValue;
         private String regex;
@@ -857,7 +865,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testNullFieldValue() {
             givenFieldValue(null);
             givenRegex("ba.*");
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         @Test
@@ -876,7 +884,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Verify that the regex does not match against the fieldName (first) portion of the value tuple.
             givenFieldValue(toValueTuple("BAR.1,BOOM,boom"));
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         @Test
@@ -890,11 +898,11 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Verify that the regex does not match against the normalized value (third) portion of the value tuple.
             givenFieldValue(toValueTuple("FOO.1,BOOM,BAR"));
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
             
             // Verify that the regex does not match against the fieldName (first) portion of the value tuple.
             givenFieldValue(toValueTuple("BAR.1,BOOM,boom"));
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         private void givenFieldValue(Object fieldValue) {
@@ -913,7 +921,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getAllMatches(Iterable, String)}.
      */
-    public static class GetAllMatchesIterableValueTests {
+    @Nested
+    public class GetAllMatchesIterableValueTests {
         
         private Iterable<Object> fieldValues;
         private String regex;
@@ -922,7 +931,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testNullFieldValues() {
             fieldValues = null;
             givenRegex("ba.*");
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         // Verify that the regex is only matched against the value and the normalized value for a case-sensitive regex.
@@ -981,7 +990,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#matchesAtLeastCountOf(Object[])}.
      */
-    public static class MatchesAtLeastCountOfTests {
+    @Nested
+    public class MatchesAtLeastCountOfTests {
         
         private int minimum;
         private Iterable<Object> fieldValues;
@@ -1009,7 +1019,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             givenFieldValues(toValueTuple("STOOGE.1,MOE,moe"), toValueTuple("STOOGE.2,LARRY,larry"), toValueTuple("STOOGE.3,GROUCHO,groucho"));
             givenRegexes("MOE", "LARRY", "JOE", "SHEMP", "CURLEY JOE");
             
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         private void givenMinimum(int minimum) {
@@ -1037,7 +1047,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#includeText(Object, String)}.
      */
-    public static class IncludeTextSingularValue {
+    @Nested
+    public class IncludeTextSingularValue {
         
         private Object fieldValue;
         private String valueToMatch;
@@ -1048,7 +1059,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             givenFieldValue(null);
             givenValueToMatch("text");
             
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         // Verify that a set containing the hit term is returned when the text exactly matches the non-normalized value.
@@ -1067,7 +1078,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             givenFieldValue(toValueTuple("FOO.1,BAR,boom"));
             givenValueToMatch("bar");
             
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         public void givenFieldValue(Object fieldValue) {
@@ -1086,7 +1097,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#includeText(Iterable, String)}.
      */
-    public static class IncludeTextIterableValue {
+    @Nested
+    public class IncludeTextIterableValue {
         
         private Iterable<Object> fieldValues;
         private String valueToMatch;
@@ -1097,7 +1109,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             fieldValues = null;
             givenValueToMatch("FOO");
             
-            assertThat(result()).isEmpty();
+            assertTrue(result().isEmpty());
         }
         
         // Verify that a set is returned only with hit terms where the non-normalized value exactly match the text.
@@ -1129,7 +1141,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getMatchToLeftOfPeriod(String, int)}.
      */
-    public static class GetMatchToLeftOfPeriodTests {
+    @Nested
+    public class GetMatchToLeftOfPeriodTests {
         
         @SuppressWarnings("FieldCanBeLocal")
         private final String input = "first.second.third.fourth";
@@ -1150,8 +1163,9 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testInvalidPosition() {
             givenPosition(2);
             
-            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter")).withMessage(
-                            "Input second.third.fourth does not have a '.' at position " + position + " from the left.");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> assertResult("doesn't matter"));
+            
+            Assertions.assertEquals("Input second.third.fourth does not have a '.' at position " + position + " from the left.", exception.getMessage());
         }
         
         private void givenPosition(int position) {
@@ -1166,7 +1180,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getMatchToRightOfPeriod(String, int)}.
      */
-    public static class GetMatchToRightOfPeriodTests {
+    @Nested
+    public class GetMatchToRightOfPeriodTests {
         
         private final String input = "first.second.third.fourth";
         private int position;
@@ -1189,8 +1204,9 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testInvalidPosition() {
             givenPosition(3);
             
-            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter")).withMessage(
-                            "Input " + input + " does not have a '.' at position " + position + " from the right.");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> assertResult("doesn't matter"));
+            
+            Assertions.assertEquals("Input " + input + " does not have a '.' at position " + position + " from the right.", exception.getMessage());
         }
         
         private void givenPosition(int position) {
@@ -1205,7 +1221,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#betweenInclusive(long, long, long)}.
      */
-    public static class BetweenInclusiveTests {
+    @Nested
+    public class BetweenInclusiveTests {
         
         @Test
         public void testLessThanRange() {
@@ -1236,13 +1253,13 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getTime(Object, boolean)}.
      */
-    public static class GetTimeTests {
+    @Nested
+    public class GetTimeTests {
         
-        private static final long ONEMILLISECOND = 1L;
-        private static final long ONESECOND = TimeUnit.SECONDS.toMillis(1);
-        private static final long ONEMINUTE = TimeUnit.MINUTES.toMillis(1);
-        private static final long ONEHOUR = TimeUnit.HOURS.toMillis(1);
-        private static final long ONEDAY = TimeUnit.DAYS.toMillis(1);
+        private final long ONESECOND = TimeUnit.SECONDS.toMillis(1);
+        private final long ONEMINUTE = TimeUnit.MINUTES.toMillis(1);
+        private final long ONEHOUR = TimeUnit.HOURS.toMillis(1);
+        private final long ONEDAY = TimeUnit.DAYS.toMillis(1);
         
         private long expectedTime;
         
@@ -1344,6 +1361,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertTime(nextTime("Wed Oct 06 16:51:34 EST 2021")); // EEE MMM dd HH:mm:ss zzz yyyy
             
             // Granular to millisecond with default timezone GMT. Should increase by one millisecond.
+            long ONEMILLISECOND = 1L;
             givenExpectedTime(1633539094215L + ONEMILLISECOND);
             assertTime(nextTime("2021-10-06 16:51:34.215")); // yyyy-MM-dd HH:mm:ss.S
             assertTime(nextTime("2021-10-06 16:51:34.215")); // yyyy-MM-dd HH:mm:ss.SSS
@@ -1359,8 +1377,9 @@ public class EvaluationPhaseFilterFunctionsTest {
         
         @Test
         public void testInvalidDate() {
-            assertThatExceptionOfType(ParseException.class).isThrownBy(() -> nextTime("notavaliddate")).withMessage(
-                            "Unable to parse value using known date formats: notavaliddate");
+            ParseException exception = Assertions.assertThrows(ParseException.class, () -> nextTime("notavaliddate"));
+            
+            Assertions.assertEquals("Unable to parse value using known date formats: notavaliddate", exception.getMessage());
         }
         
         private void givenExpectedTime(long expectedTime) {
@@ -1383,11 +1402,12 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Contains tests for {@link EvaluationPhaseFilterFunctions#compare(Object, String, String, Object)}.
      */
-    public static class CompareTests {
+    @Nested
+    public class CompareTests {
         
-        private static final ValueTuple A = toValueTuple("FOO.3,A,a");
-        private static final ValueTuple B = toValueTuple("FOO.2,B,b");
-        private static final ValueTuple C = toValueTuple("FOO.1,C,c");
+        private final ValueTuple A = toValueTuple("FOO.3,A,a");
+        private final ValueTuple B = toValueTuple("FOO.2,B,b");
+        private final ValueTuple C = toValueTuple("FOO.1,C,c");
         
         private Object field1;
         private Object field2;
@@ -1852,7 +1872,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Contains tests for {@link EvaluationPhaseFilterFunctions#afterDate(Iterable, String)}
      */
-    public static class AfterDateTests {
+    @Nested
+    public class AfterDateTests {
         @Test
         public void testAfterDateIterator() {
             FunctionalSet<ValueTuple> values = new FunctionalSet<>();
@@ -1863,7 +1884,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                Assertions.assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
         
@@ -1877,7 +1898,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                Assertions.assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
         
@@ -1891,7 +1912,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                Assertions.assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
     }
@@ -1899,7 +1920,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Contains tests for {@link EvaluationPhaseFilterFunctions#beforeDate(Iterable, String)}.
      */
-    public static class BeforeDateTests {
+    @Nested
+    public class BeforeDateTests {
         
         @Test
         public void testBeforeDateIterator() {
@@ -1911,7 +1933,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                Assertions.assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
         
@@ -1925,7 +1947,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                Assertions.assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
         
@@ -1939,7 +1961,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                Assertions.assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
     }
@@ -1947,7 +1969,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#timeFunction(Object, Object, String, String, long)}.
      */
-    public static class TimeFunctionTests {
+    @Nested
+    public class TimeFunctionTests {
         
         @Test
         public void testNullTimeValues() {
@@ -1972,11 +1995,4 @@ public class EvaluationPhaseFilterFunctionsTest {
         return new ValueTuple(field, type, normalized, typeAttribute);
     }
     
-    private static ValueTuple toNonTypedValueTuple(String csv) {
-        String[] tokens = csv.split(",");
-        String field = tokens[0];
-        String normalized = tokens[2];
-        PreNormalizedAttribute attribute = new PreNormalizedAttribute(normalized, null, false);
-        return new ValueTuple(field, "second", normalized, attribute);
-    }
 }

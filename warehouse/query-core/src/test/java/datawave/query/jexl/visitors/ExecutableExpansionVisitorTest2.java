@@ -7,14 +7,14 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test just the visitor with input/output query plans
@@ -26,7 +26,7 @@ public class ExecutableExpansionVisitorTest2 {
     private ShardQueryConfiguration config;
     private MockMetadataHelper metadataHelper;
     
-    @Before
+    @BeforeEach
     public void beforeEach() {
         config = new ShardQueryConfiguration();
         config.setIndexedFields(indexedFields);

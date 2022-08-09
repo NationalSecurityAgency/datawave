@@ -7,24 +7,24 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Set;
 
 import static datawave.query.Constants.ANY_FIELD;
 import static datawave.query.Constants.NO_FIELD;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FieldMissingFromSchemaVisitorTest {
     
     // Special fields required by visitor.
-    private Set<String> specialFields = Sets.newHashSet(ANY_FIELD, NO_FIELD);
+    private final Set<String> specialFields = Sets.newHashSet(ANY_FIELD, NO_FIELD);
     
     private MockMetadataHelper helper;
     
-    @Before
+    @BeforeEach
     public void before() {
         helper = new MockMetadataHelper();
     }

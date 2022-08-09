@@ -1,9 +1,6 @@
 package datawave.query.predicate;
 
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NumberType;
 import datawave.query.Constants;
-import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
@@ -16,10 +13,9 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.AbstractMap;
 import java.util.Collections;
@@ -31,37 +27,25 @@ import java.util.Set;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TLDEventDataFilterTest extends EasyMockSupport {
     private TLDEventDataFilter filter;
     private ASTJexlScript mockScript;
     private TypeMetadata mockAttributeFactory;
     
-    private AttributeFactory attrFactory;
-    private MockMetadataHelper helper = new MockMetadataHelper();
-    private MockDateIndexHelper helper2 = new MockDateIndexHelper();
-    private ShardQueryConfiguration config = new ShardQueryConfiguration();
+    private final MockMetadataHelper helper = new MockMetadataHelper();
+    private final MockDateIndexHelper helper2 = new MockDateIndexHelper();
+    private final ShardQueryConfiguration config = new ShardQueryConfiguration();
     
-    @Before
+    @BeforeEach
     public void setup() {
         mockScript = createMock(ASTJexlScript.class);
         mockAttributeFactory = createMock(TypeMetadata.class);
-        
-        String lcNoDiacritics = LcNoDiacriticsType.class.getName();
-        String number = NumberType.class.getName();
-        
-        TypeMetadata md = new TypeMetadata();
-        md.put("FOO", "dataType", lcNoDiacritics);
-        md.put("BAZ", "dataType", number);
-        md.put("BAR", "dataType", lcNoDiacritics);
-        md.put("BAR", "dataType", number);
-        
-        attrFactory = new AttributeFactory(md);
     }
     
     @Test
@@ -110,7 +94,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, null, null, -1, -1);
         String field = filter.getCurrentField(key);
         
-        assertTrue(field.equals("field"));
+        assertEquals("field", field);
         
         verifyAll();
     }
@@ -127,7 +111,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, null, null, -1, -1);
         String field = filter.getCurrentField(key);
         
-        assertTrue(field.equals("field"));
+        assertEquals("field", field);
         
         verifyAll();
     }
@@ -144,7 +128,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, null, null, -1, -1);
         String field = filter.getCurrentField(key);
         
-        assertTrue(field.equals("field"));
+        assertEquals("field", field);
         
         verifyAll();
     }
@@ -160,7 +144,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, null, null, -1, -1);
         String field = filter.getCurrentField(key);
         
-        assertTrue(field.equals("field"));
+        assertEquals("field", field);
         
         verifyAll();
     }
@@ -213,7 +197,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertEquals(seekRange.getStartKey().getRow(), key.getRow());
         assertEquals(seekRange.getStartKey().getColumnFamily(), key.getColumnFamily());
         assertEquals(seekRange.getStartKey().getColumnQualifier().toString(), "field1" + "\u0001");
-        assertEquals(true, seekRange.isStartKeyInclusive());
+        assertTrue(seekRange.isStartKeyInclusive());
         
         // now fails
         assertFalse(filter.keep(key));
@@ -249,7 +233,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertEquals(seekRange.getStartKey().getRow(), key1.getRow());
         assertEquals(seekRange.getStartKey().getColumnFamily(), key1.getColumnFamily());
         assertEquals(seekRange.getStartKey().getColumnQualifier().toString(), "field1" + "\u0001");
-        assertEquals(true, seekRange.isStartKeyInclusive());
+        assertTrue(seekRange.isStartKeyInclusive());
         // now fails
         assertFalse(filter.keep(key1));
         
@@ -311,7 +295,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertEquals(seekRange.getStartKey().getRow(), key1.getRow());
         assertEquals(seekRange.getStartKey().getColumnFamily(), key1.getColumnFamily());
         assertEquals(seekRange.getStartKey().getColumnQualifier().toString(), "field1" + "\u0001");
-        assertEquals(true, seekRange.isStartKeyInclusive());
+        assertTrue(seekRange.isStartKeyInclusive());
         
         verifyAll();
     }

@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 public class VisibilityWiseGuysIngestWithModel {
     
     public enum WhatKindaRange {
-        SHARD, DOCUMENT;
+        SHARD, DOCUMENT
     }
     
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
@@ -45,10 +45,10 @@ public class VisibilityWiseGuysIngestWithModel {
     protected static final long timeStamp = 1356998400000l;
     
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
-    public static final String sopranoUID = UID.builder().newId("Soprano".toString().getBytes(), (Date) null).toString();
-    public static final String caponeUID = UID.builder().newId("Capone".toString().getBytes(), (Date) null).toString();
+    public static final String sopranoUID = UID.builder().newId("Soprano".getBytes(), (Date) null).toString();
+    public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
     
-    protected static String normalizeColVal(Map.Entry<String,String> colVal) throws Exception {
+    protected static String normalizeColVal(Map.Entry<String,String> colVal) {
         if ("FROM_ADDRESS".equals(colVal.getKey()) || "TO_ADDRESS".equals(colVal.getKey())) {
             return ipAddressType.normalize(colVal.getValue());
         } else {
@@ -69,13 +69,12 @@ public class VisibilityWiseGuysIngestWithModel {
     /**
      * gparent - parent - child -
      *
-     * @return
      */
     public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        Mutation mutation = null;
+        Mutation mutation;
         
         try {
             // write the shard table :
@@ -630,9 +629,9 @@ public class VisibilityWiseGuysIngestWithModel {
             
             bw.addMutation(mutation);
             
-            addFiTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
-            addFiTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
-            addFiTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID);
+            addFiTokens(bw, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
+            addFiTokens(bw, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
+            addFiTokens(bw, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID);
         } finally {
             if (null != bw) {
                 bw.close();
@@ -868,7 +867,6 @@ public class VisibilityWiseGuysIngestWithModel {
     /**
      * forces a shard range
      *
-     * @return
      */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
@@ -892,7 +890,7 @@ public class VisibilityWiseGuysIngestWithModel {
         }
     }
     
-    private static void addFiTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid) throws MutationsRejectedException {
+    private static void addFiTokens(BatchWriter bw, String field, String phrase, String uid) throws MutationsRejectedException {
         Mutation fi = new Mutation(shard);
         fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
                         emptyValue);

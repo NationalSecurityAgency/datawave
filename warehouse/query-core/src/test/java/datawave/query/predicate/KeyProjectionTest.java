@@ -3,23 +3,24 @@ package datawave.query.predicate;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.accumulo.core.data.Key;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KeyProjectionTest {
     
     private List<Entry<Key,String>> fiData;
     private List<Entry<Key,String>> eventData;
     
-    @Before
+    @BeforeEach
     public void setup() {
         fiData = new ArrayList<>();
         fiData.add(Maps.immutableEntry(new Key("20200314_1", "fi\0FIELD_A"), "data"));
@@ -38,32 +39,32 @@ public class KeyProjectionTest {
         eventData.add(Maps.immutableEntry(new Key("20200314_1", "datatype\0uid", "FIELD_Z\0value_z"), "data"));
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testNoConfiguration() {
         KeyProjection projection = new KeyProjection();
         
         Iterator<Entry<Key,String>> iter = fiData.iterator();
-        assertTrue(projection.apply(iter.next()));
+        assertThrows(RuntimeException.class, () -> assertTrue(projection.apply(iter.next())));
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testTooMuchConfiguration() {
         KeyProjection projection = new KeyProjection();
         projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
         projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
         
         Iterator<Entry<Key,String>> iter = fiData.iterator();
-        assertTrue(projection.apply(iter.next()));
+        assertThrows(RuntimeException.class, () -> assertTrue(projection.apply(iter.next())));
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testTooMuchOfTheSameConfiguration() {
         KeyProjection projection = new KeyProjection();
         projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
         projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
         
         Iterator<Entry<Key,String>> iter = fiData.iterator();
-        assertTrue(projection.apply(iter.next()));
+        assertThrows(RuntimeException.class, () -> assertTrue(projection.apply(iter.next())));
     }
     
     @Test

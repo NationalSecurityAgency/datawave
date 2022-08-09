@@ -1,11 +1,10 @@
 package datawave.mr.bulk.split;
 
-import java.io.IOException;
-
-import org.apache.log4j.Logger;
-
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
+import org.apache.log4j.Logger;
+
+import java.io.IOException;
 
 public abstract class LocationStrategy implements Funnel<RangeSplit> {
     
@@ -23,7 +22,7 @@ public abstract class LocationStrategy implements Funnel<RangeSplit> {
     public void funnel(RangeSplit rangeSplit, PrimitiveSink sink) {
         try {
             for (String location : rangeSplit.getLocations()) {
-                sink.putString(location.trim().toLowerCase());
+                sink.putBytes(location.trim().toLowerCase().getBytes());
             }
         } catch (IOException e) {
             log.error(e);

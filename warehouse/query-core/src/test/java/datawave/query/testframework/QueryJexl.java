@@ -20,8 +20,8 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.commons.jexl2.parser.TokenMgrError;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -158,7 +158,7 @@ public class QueryJexl {
     private void normalizeScript(final SimpleNode node, final Deque<SimpleNode> nodes) {
         int num = node.jjtGetNumChildren();
         for (int n = 0; n < num; n++) {
-            SimpleNode child = node.jjtGetChild(n);
+            JexlNode child = node.jjtGetChild(n);
             if (0 < child.jjtGetNumChildren()) {
                 if (!(child instanceof ASTReference || child instanceof ASTReferenceExpression)) {
                     // this may be an op node (e.g. ASTEQNode) or some other node
@@ -177,7 +177,7 @@ public class QueryJexl {
                     
                     // check for string or numeric literal on node stack
                     SimpleNode entry = nodes.removeFirst();
-                    Assert.assertNotNull(entry);
+                    Assertions.assertNotNull(entry);
                     if (entry instanceof ASTStringLiteral || entry instanceof ASTNumberLiteral) {
                         // exp is "value OP field"
                         // remove op node
@@ -191,11 +191,11 @@ public class QueryJexl {
                 } else if (child instanceof ASTStringLiteral || child instanceof ASTNumberLiteral) {
                     // check for identifier on node stack
                     SimpleNode entry = nodes.removeFirst();
-                    Assert.assertNotNull(entry);
+                    Assertions.assertNotNull(entry);
                     if (entry instanceof ASTIdentifier) {
                         // exp is "field OP value"
                         SimpleNode opNode = nodes.removeFirst();
-                        normalizeField(((JexlNode) entry).image, (JexlNode) child, opNode);
+                        normalizeField(((JexlNode) entry).image, child, opNode);
                     } else {
                         // push entry back on stack and add literal
                         nodes.addFirst(entry);
@@ -207,7 +207,7 @@ public class QueryJexl {
     }
     
     private void normalizeField(final String field, final JexlNode value, final SimpleNode opNode) {
-        Assert.assertNotNull(opNode);
+        Assertions.assertNotNull(opNode);
         Normalizer<?> norm = this.manager.getNormalizer(field);
         if (null != norm) {
             if (norm instanceof NumberNormalizer) {
@@ -252,7 +252,7 @@ public class QueryJexl {
             try {
                 this.date = DataTypeHadoopConfig.YMD_DateFormat.parse(testDate);
             } catch (ParseException pe) {
-                Assert.fail("invalid test date (" + testDate + ")");
+                Assertions.fail("invalid test date (" + testDate + ")");
             }
         }
         
@@ -264,11 +264,11 @@ public class QueryJexl {
                 String q = "HOME == '" + val + "' or xxx == 'xxx'";
                 QueryJexl p = new QueryJexl(q, manager, date, date);
                 Set<Map<String,String>> resp = p.evaluate();
-                Assert.assertEquals(1, resp.size());
+                Assertions.assertEquals(1, resp.size());
                 Map<String,String> entry = resp.iterator().next();
-                Assert.assertEquals(val.toLowerCase(), entry.get(TestHeader.home.name()));
-                Assert.assertEquals("away-" + n, entry.get(TestHeader.away.name()));
-                Assert.assertEquals("" + n, entry.get(TestHeader.num.name()));
+                Assertions.assertEquals(val.toLowerCase(), entry.get(TestHeader.home.name()));
+                Assertions.assertEquals("away-" + n, entry.get(TestHeader.away.name()));
+                Assertions.assertEquals("" + n, entry.get(TestHeader.num.name()));
             }
         }
         
@@ -280,7 +280,7 @@ public class QueryJexl {
                 String q = "HOME =~ '" + val + "'";
                 QueryJexl p = new QueryJexl(q, manager, date, date);
                 Set<Map<String,String>> resp = p.evaluate();
-                Assert.assertEquals(TEST_ENTRIES, resp.size());
+                Assertions.assertEquals(TEST_ENTRIES, resp.size());
             }
         }
         
@@ -292,11 +292,11 @@ public class QueryJexl {
                 String q = "HOME !~ '" + val + "'";
                 QueryJexl p = new QueryJexl(q, manager, date, date);
                 Set<Map<String,String>> resp = p.evaluate();
-                Assert.assertEquals(TEST_ENTRIES - 1, resp.size());
+                Assertions.assertEquals(TEST_ENTRIES - 1, resp.size());
                 for (Map<String,String> entry : resp) {
-                    Assert.assertNotEquals("home-" + n, entry.get(TestHeader.home.name()));
-                    Assert.assertNotEquals("away-" + n, entry.get(TestHeader.away.name()));
-                    Assert.assertNotEquals("" + n, entry.get(TestHeader.num.name()));
+                    Assertions.assertNotEquals("home-" + n, entry.get(TestHeader.home.name()));
+                    Assertions.assertNotEquals("away-" + n, entry.get(TestHeader.away.name()));
+                    Assertions.assertNotEquals("" + n, entry.get(TestHeader.num.name()));
                 }
             }
         }
@@ -307,9 +307,9 @@ public class QueryJexl {
             String q = "HOME == 'hoME-2' and away == 'aWAy-2'";
             QueryJexl p = new QueryJexl(q, manager, date, date);
             Set<Map<String,String>> resp = p.evaluate();
-            Assert.assertEquals(1, resp.size());
+            Assertions.assertEquals(1, resp.size());
             Map<String,String> entry = resp.iterator().next();
-            Assert.assertEquals("away-2", entry.get(TestHeader.away.name()));
+            Assertions.assertEquals("away-2", entry.get(TestHeader.away.name()));
         }
         
         @Test
@@ -318,10 +318,10 @@ public class QueryJexl {
             String q = "hOmE == 'hoMe-2' or Home == 'HOME-2' or Away == 'aWAy-3'";
             QueryJexl p = new QueryJexl(q, manager, date, date);
             Set<Map<String,String>> resp = p.evaluate();
-            Assert.assertEquals(2, resp.size());
+            Assertions.assertEquals(2, resp.size());
             for (Map<String,String> entry : resp) {
                 String away = entry.get(TestHeader.away.name());
-                Assert.assertTrue(away.equals("away-2") || away.equals("away-3"));
+                Assertions.assertTrue(away.equals("away-2") || away.equals("away-3"));
             }
         }
         
@@ -331,7 +331,7 @@ public class QueryJexl {
             String q = "(hOmE == 'hoMe-2' or Home == 'HOME-2') and (Away == 'aWAy-3' or NuM == 1)";
             QueryJexl p = new QueryJexl(q, manager, date, date);
             Set<Map<String,String>> resp = p.evaluate();
-            Assert.assertEquals(0, resp.size());
+            Assertions.assertEquals(0, resp.size());
             
         }
         
@@ -341,10 +341,10 @@ public class QueryJexl {
             String q = "(hOmE == 'hoMe-2' or Home == 'HOME-3' or 'hOME-1' == HoMe) and (Away == 'aWAy-3' or NuM == 1)";
             QueryJexl p = new QueryJexl(q, manager, date, date);
             Set<Map<String,String>> resp = p.evaluate();
-            Assert.assertEquals(2, resp.size());
+            Assertions.assertEquals(2, resp.size());
             for (Map<String,String> entry : resp) {
                 String away = entry.get(TestHeader.away.name());
-                Assert.assertTrue(away.equals("away-3") || away.equals("away-1"));
+                Assertions.assertTrue(away.equals("away-3") || away.equals("away-1"));
             }
         }
         
@@ -355,9 +355,9 @@ public class QueryJexl {
                 String q = this.manager.convertAnyField(phrase);
                 QueryJexl p = new QueryJexl(q, manager, date, date);
                 Set<Map<String,String>> resp = p.evaluate();
-                Assert.assertEquals(1, resp.size());
+                Assertions.assertEquals(1, resp.size());
                 Map<String,String> entry = resp.iterator().next();
-                Assert.assertEquals("" + n, entry.get(TestHeader.num.name()));
+                Assertions.assertEquals("" + n, entry.get(TestHeader.num.name()));
             }
         }
         
@@ -368,9 +368,9 @@ public class QueryJexl {
                 String q = this.manager.convertAnyField(phrase);
                 QueryJexl p = new QueryJexl(q, manager, date, date);
                 Set<Map<String,String>> resp = p.evaluate();
-                Assert.assertEquals(1, resp.size());
+                Assertions.assertEquals(1, resp.size());
                 Map<String,String> entry = resp.iterator().next();
-                Assert.assertEquals("" + n, entry.get(TestHeader.num.name()));
+                Assertions.assertEquals("" + n, entry.get(TestHeader.num.name()));
             }
         }
         
@@ -381,9 +381,9 @@ public class QueryJexl {
                 String q = "" + n + " == nUm or NUM == " + n;
                 QueryJexl p = new QueryJexl(q, manager, date, date);
                 Set<Map<String,String>> resp = p.evaluate();
-                Assert.assertEquals(1, resp.size());
+                Assertions.assertEquals(1, resp.size());
                 Map<String,String> entry = resp.iterator().next();
-                Assert.assertEquals("" + n, entry.get(TestHeader.num.name()));
+                Assertions.assertEquals("" + n, entry.get(TestHeader.num.name()));
             }
         }
         
@@ -393,9 +393,9 @@ public class QueryJexl {
             String q = "HOME == 'hOme-2' or ('homE-3' == Home and xXXx == 'xXx')";
             QueryJexl p = new QueryJexl(q, manager, date, date);
             Set<Map<String,String>> resp = p.evaluate();
-            Assert.assertEquals(1, resp.size());
+            Assertions.assertEquals(1, resp.size());
             Map<String,String> entry = resp.iterator().next();
-            Assert.assertEquals("away-2", entry.get("away"));
+            Assertions.assertEquals("away-2", entry.get("away"));
         }
     }
     
@@ -464,7 +464,7 @@ public class QueryJexl {
             }
         }
         
-        TestRawData(final String fields[]) {
+        TestRawData(final String[] fields) {
             super(TestManager.dataType, fields, TestHeader.headers(), metadata);
         }
         

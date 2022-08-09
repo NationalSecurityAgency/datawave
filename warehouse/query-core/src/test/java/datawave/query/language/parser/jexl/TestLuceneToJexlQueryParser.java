@@ -12,20 +12,19 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessorPipeline;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestLuceneToJexlQueryParser {
     
     private LuceneToJexlQueryParser parser;
     
-    @Before
+    @BeforeEach
     public void setUp() {
         parser = new LuceneToJexlQueryParser();
         parser.setSkipTokenizeUnfieldedFields(Sets.newHashSet("noToken"));
@@ -34,16 +33,16 @@ public class TestLuceneToJexlQueryParser {
     
     private static final String anyField = Constants.ANY_FIELD;
     
-    @Test(expected = ParseException.class)
-    public void testFunctionArgsWithMisMatchedQuotes_case01() throws ParseException {
+    @Test
+    public void testFunctionArgsWithMisMatchedQuotes_case01() {
         // mismatched quotes
-        parseQuery("Field:Selector AND #INCLUDE('AND', 'FIELD1, ' regex')");
+        assertThrows(ParseException.class, () -> parseQuery("Field:Selector AND #INCLUDE('AND', 'FIELD1, ' regex')"));
     }
     
-    @Test(expected = ParseException.class)
-    public void testFunctionArgsWithMisMatchedQuotes_case02() throws ParseException {
+    @Test
+    public void testFunctionArgsWithMisMatchedQuotes_case02() {
         // mismatched quotes
-        parseQuery("F:S AND #INCLUDE(FIELD, 'reg\\)ex)'");
+        assertThrows(ParseException.class, () -> parseQuery("F:S AND #INCLUDE(FIELD, 'reg\\)ex)'"));
     }
     
     @Test
@@ -83,12 +82,7 @@ public class TestLuceneToJexlQueryParser {
         // if you want a backslash right before a closing single (or double) quote, you need to escape the backslash
         assertEquals("F == 'S' && filter:includeRegex(FIELD, 'test\\\\\\\\')", parseQuery("F:S AND #INCLUDE(FIELD, 'test\\\\')"));
         
-        try {
-            assertEquals("", parseQuery("F:S AND #INCLUDE(FIELD, 'test\\')"));
-            Assert.fail("This test case should have failed with a ParseException");
-        } catch (ParseException e) {
-            // expected
-        }
+        assertThrows(ParseException.class, () -> assertEquals("", parseQuery("F:S AND #INCLUDE(FIELD, 'test\\')")));
     }
     
     @Test
@@ -181,24 +175,16 @@ public class TestLuceneToJexlQueryParser {
     
     @Test
     public void testCompareInvalidOpArg() {
-        try {
-            parseQuery("F1:A AND F2:B AND #COMPARE(F1, <>, ALL, F2)");
-            fail("Expected an IllegalArgumentException");
-        } catch (ParseException e) {
-            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
-            assertTrue(e.getCause().getMessage().startsWith("#COMPARE function requires a valid op arg:"));
-        }
+        ParseException e = assertThrows(ParseException.class, () -> parseQuery("F1:A AND F2:B AND #COMPARE(F1, <>, ALL, F2)"));
+        assertEquals(IllegalArgumentException.class, e.getCause().getClass());
+        assertTrue(e.getCause().getMessage().startsWith("#COMPARE function requires a valid op arg:"));
     }
     
     @Test
     public void testCompareInvalidModeArg() {
-        try {
-            parseQuery("F1:A AND F2:B AND #COMPARE(F1, <, A FEW OR SEVERAL, F2)");
-            fail("Expected an IllegalArgumentException");
-        } catch (ParseException e) {
-            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
-            assertTrue(e.getCause().getMessage().startsWith("#COMPARE function requires a valid mode arg:"));
-        }
+        ParseException e = assertThrows(ParseException.class, () -> parseQuery("F1:A AND F2:B AND #COMPARE(F1, <, A FEW OR SEVERAL, F2)"));
+        assertEquals(IllegalArgumentException.class, e.getCause().getClass());
+        assertTrue(e.getCause().getMessage().startsWith("#COMPARE function requires a valid mode arg:"));
     }
     
     @Test
@@ -431,8 +417,6 @@ public class TestLuceneToJexlQueryParser {
             if (node instanceof ServerHeadNode) {
                 parsedQuery = node.getOriginalQuery();
             }
-        } catch (UnsupportedOperationException e) {
-            throw new ParseException(e);
         } catch (RuntimeException e) {
             throw new ParseException(e);
         }
@@ -501,29 +485,29 @@ public class TestLuceneToJexlQueryParser {
         try {
             parseQuery(func);
         } catch (Exception e) {
-            Assert.fail("Queries that are just post filters should now be allowed: " + func);
+            Assertions.fail("Queries that are just post filters should now be allowed: " + func);
         }
         String query = null;
         try {
             query = "fielda:selectora or " + func;
             parseQuery(query);
         } catch (Exception e) {
-            Assert.fail("Queries should now be able to have a query or'ed with a post filter: " + query);
+            Assertions.fail("Queries should now be able to have a query or'ed with a post filter: " + query);
         }
         try {
             query = "fielda:selectora or (fieldb:selecorb and #isnull(nullfield))";
             parseQuery(query);
         } catch (Exception e) {
-            Assert.fail("Queries should now be able to have a query with a nested post filter: " + query);
+            Assertions.fail("Queries should now be able to have a query with a nested post filter: " + query);
         }
     }
     
     @Test
-    public void testFunctionWrongDepth() throws ParseException {
+    public void testFunctionWrongDepth() {
         try {
             parseQuery("#isnotnull(nonnullfield)");
         } catch (ParseException ex) {
-            Assert.fail("Should no longer throw ParseException");
+            Assertions.fail("Should no longer throw ParseException");
         }
     }
     
@@ -619,11 +603,11 @@ public class TestLuceneToJexlQueryParser {
     @Test
     public void testCustomQueryNodeProcessor() throws ParseException {
         String query = "TOKFIELD:\"quick wi-fi fox\"";
-        Assert.assertEquals(
+        Assertions.assertEquals(
                         "(content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi-fi', 'fox') || content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi', 'fi', 'fox'))",
                         parseQuery(query));
         parser.setQueryNodeProcessorFactory(new TestQueryNodeProcessorFactory());
-        Assert.assertEquals("content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi-fi', 'fox')", parseQuery(query));
+        Assertions.assertEquals("content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi-fi', 'fox')", parseQuery(query));
     }
     
     @Test
@@ -639,7 +623,7 @@ public class TestLuceneToJexlQueryParser {
         parser.setAnalyzer(analyzer);
         // this isn't the most realistic test, but it does verify that we don't lose the rest of the token stream
         // when the first token emitted is the same as the input token.
-        Assert.assertEquals("(TOKFIELD == '/home/datawave/README.md' || "
+        Assertions.assertEquals("(TOKFIELD == '/home/datawave/README.md' || "
                         + "content:phrase(TOKFIELD, termOffsetMap, '/home/datawave/readme.md', 'home/datawave/readme.md', "
                         + "'home', 'datawave/readme.md', 'datawave', 'readme.md', 'readme', 'md'))", parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
     }

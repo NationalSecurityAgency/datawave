@@ -15,9 +15,9 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,14 +26,11 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.any;
-import static org.hamcrest.CoreMatchers.anything;
-
 public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
     
-    @Before
+    @BeforeEach
     public void setup() {
         config = createMock(ShardQueryConfiguration.class);
         helper = createMock(MetadataHelper.class);
@@ -59,23 +56,23 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         LinkedList<String> output = new LinkedList<>();
         
         boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        Assert.assertFalse(executable);
-        Assert.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
+        Assertions.assertFalse(executable);
+        Assertions.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
         
         output.clear();
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        Assert.assertFalse(fiExecutable);
-        Assert.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
+        Assertions.assertFalse(fiExecutable);
+        Assertions.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, state);
-        Assert.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, state);
+        Assertions.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, fiState);
-        Assert.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, fiState);
+        Assertions.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
         
         verifyAll();
     }
@@ -98,23 +95,23 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         replayAll();
         
         boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        Assert.assertFalse(executable);
-        Assert.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
+        Assertions.assertFalse(executable);
+        Assertions.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
         
         output.clear();
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        Assert.assertFalse(fiExecutable);
-        Assert.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
+        Assertions.assertFalse(fiExecutable);
+        Assertions.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, state);
-        Assert.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, state);
+        Assertions.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, fiState);
-        Assert.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, fiState);
+        Assertions.assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
         
         verifyAll();
     }
@@ -137,23 +134,23 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         replayAll();
         
         boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        Assert.assertFalse(executable);
-        Assert.assertEquals("Summary: ERROR:[INDEXONLYFIELD != null]", output.get(0));
+        Assertions.assertFalse(executable);
+        Assertions.assertEquals("Summary: ERROR:[INDEXONLYFIELD != null]", output.get(0));
         
         output.clear();
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        Assert.assertFalse(fiExecutable);
-        Assert.assertEquals("Summary: ERROR:[INDEXONLYFIELD != null]", output.get(0));
+        Assertions.assertFalse(fiExecutable);
+        Assertions.assertEquals("Summary: ERROR:[INDEXONLYFIELD != null]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, state);
-        Assert.assertEquals("Summary: ERROR:[INDEXONLYFIELD != null]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, state);
+        Assertions.assertEquals("Summary: ERROR:[INDEXONLYFIELD != null]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, fiState);
-        Assert.assertEquals("Summary: ERROR:[INDEXONLYFIELD != null]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, fiState);
+        Assertions.assertEquals("Summary: ERROR:[INDEXONLYFIELD != null]", output.get(0));
         
         verifyAll();
     }
@@ -177,23 +174,23 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         replayAll();
         
         boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        Assert.assertFalse(executable);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD == null]", output.get(0));
+        Assertions.assertFalse(executable);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD == null]", output.get(0));
         
         output.clear();
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        Assert.assertFalse(fiExecutable);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD == null]", output.get(0));
+        Assertions.assertFalse(fiExecutable);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD == null]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, state);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD == null]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, state);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD == null]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, fiState);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD == null]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, fiState);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD == null]", output.get(0));
         
         verifyAll();
     }
@@ -217,23 +214,23 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         replayAll();
         
         boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        Assert.assertFalse(executable);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD != null]", output.get(0));
+        Assertions.assertFalse(executable);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD != null]", output.get(0));
         
         output.clear();
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        Assert.assertFalse(fiExecutable);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD != null]", output.get(0));
+        Assertions.assertFalse(fiExecutable);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD != null]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, state);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD != null]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, state);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD != null]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, fiState);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD != null]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, fiState);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD != null]", output.get(0));
         
         verifyAll();
     }
@@ -241,8 +238,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     /**
      * Expected outputs Global Index: EXECUTABLE || NOT_EXECUTABLE == PARTIAL Field Index: EXECUTABLE || !(EXECUTABLE && EXECUTABLE) == EXECUTABLE || EXECUTABLE
      * == EXECUTABLE
-     * 
-     * @throws Exception
+     *
      */
     @Test
     public void testNegatedAndExecutable() throws Exception {
@@ -263,23 +259,23 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         replayAll();
         
         boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        Assert.assertFalse(executable);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
+        Assertions.assertFalse(executable);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
         
         output.clear();
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        Assert.assertFalse(fiExecutable);
-        Assert.assertEquals("Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
+        Assertions.assertFalse(fiExecutable);
+        Assertions.assertEquals("Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, state);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, state);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE, fiState);
-        Assert.assertEquals("Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE, fiState);
+        Assertions.assertEquals("Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
         
         verifyAll();
     }
@@ -287,8 +283,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     /**
      * Expected outputs Global Index: EXECUTABLE || NOT_EXECUTABLE == PARTIAL Field Index: EXECUTABLE || !!(EXECUTABLE && EXECUTABLE) == EXECUTABLE ||
      * EXECUTABLE == EXECUTABLE
-     * 
-     * @throws Exception
+     *
      */
     @Test
     public void testDoubleNegatedAndExecutable() throws Exception {
@@ -309,23 +304,23 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         replayAll();
         
         boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        Assert.assertTrue(executable);
-        Assert.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
+        Assertions.assertTrue(executable);
+        Assertions.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
         
         output.clear();
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        Assert.assertTrue(fiExecutable);
-        Assert.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
+        Assertions.assertTrue(fiExecutable);
+        Assertions.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, state);
-        Assert.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, state);
+        Assertions.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, fiState);
-        Assert.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, fiState);
+        Assertions.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'c', INDEXEDFIELD == 'a']", output.get(0));
         
         verifyAll();
     }
@@ -355,23 +350,23 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         replayAll();
         
         boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        Assert.assertFalse(executable);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'a', filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
+        Assertions.assertFalse(executable);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'a', filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
         
         output.clear();
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        Assert.assertFalse(fiExecutable);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
+        Assertions.assertFalse(fiExecutable);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, state);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'a', filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, state);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'a', filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, fiState);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, fiState);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
         
         verifyAll();
     }
@@ -379,8 +374,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     /**
      * Expected outputs Global Index: EXECUTABLE || NOT_EXECUTABLE == PARTIAL Field Index: EXECUTABLE || !!(EXECUTABLE && NOT_EXECUTABLE) == EXECUTABLE ||
      * EXECUTABLE == EXECUTABLE
-     * 
-     * @throws Exception
+     *
      */
     @Test
     public void testDoubleNegatedAndNotExecutable() throws Exception {
@@ -401,23 +395,23 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         replayAll();
         
         boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        Assert.assertTrue(executable);
-        Assert.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'a']", output.get(0));
+        Assertions.assertTrue(executable);
+        Assertions.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'a']", output.get(0));
         
         output.clear();
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        Assert.assertTrue(fiExecutable);
-        Assert.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'a']", output.get(0));
+        Assertions.assertTrue(fiExecutable);
+        Assertions.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'a']", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, state);
-        Assert.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'a']", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, state);
+        Assertions.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'a']", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, fiState);
-        Assert.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'a']", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, fiState);
+        Assertions.assertEquals("Summary: EXECUTABLE:[INDEXONLYFIELD == 'b', INDEXEDFIELD == 'a']", output.get(0));
         
         verifyAll();
     }
@@ -447,25 +441,25 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         replayAll();
         
         boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        Assert.assertFalse(executable);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXONLYFIELD == 'b', filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
+        Assertions.assertFalse(executable);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXONLYFIELD == 'b', filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
         
         output.clear();
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        Assert.assertFalse(fiExecutable);
-        Assert.assertTrue(Arrays.asList(
+        Assertions.assertFalse(fiExecutable);
+        Assertions.assertTrue(Arrays.asList(
                         new String[] {"Summary: EXECUTABLE:[INDEXEDFIELD == 'a']; NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']",
                                 "Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']; EXECUTABLE:[INDEXEDFIELD == 'a']"}).contains(output.get(0)));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, state);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[INDEXONLYFIELD == 'b', filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, state);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[INDEXONLYFIELD == 'b', filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE, fiState);
-        Assert.assertTrue(Arrays.asList(
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE, fiState);
+        Assertions.assertTrue(Arrays.asList(
                         new String[] {"Summary: EXECUTABLE:[INDEXEDFIELD == 'a']; NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']",
                                 "Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']; EXECUTABLE:[INDEXEDFIELD == 'a']"}).contains(output.get(0)));
         
@@ -497,47 +491,45 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         replayAll();
         
         boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        Assert.assertFalse(executable);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
+        Assertions.assertFalse(executable);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
         
         output.clear();
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        Assert.assertFalse(fiExecutable);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
+        Assertions.assertFalse(fiExecutable);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, state);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, state);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, fiState);
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, fiState);
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[filter:includeRegex(INDEXEDFIELD, '.*')]", output.get(0));
         
         verifyAll();
     }
     
     @Test
     public void testNegationEvaluation() {
-        Assert.assertFalse(ExecutableDeterminationVisitor.isNegated(null));
-        Assert.assertFalse(ExecutableDeterminationVisitor.isNegated(""));
-        Assert.assertFalse(ExecutableDeterminationVisitor.isNegated("!!"));
-        Assert.assertFalse(ExecutableDeterminationVisitor.isNegated("            !                    !    "));
-        Assert.assertFalse(ExecutableDeterminationVisitor.isNegated("!           !   !  !    !        !    !    !"));
+        Assertions.assertFalse(ExecutableDeterminationVisitor.isNegated(null));
+        Assertions.assertFalse(ExecutableDeterminationVisitor.isNegated(""));
+        Assertions.assertFalse(ExecutableDeterminationVisitor.isNegated("!!"));
+        Assertions.assertFalse(ExecutableDeterminationVisitor.isNegated("            !                    !    "));
+        Assertions.assertFalse(ExecutableDeterminationVisitor.isNegated("!           !   !  !    !        !    !    !"));
         
-        Assert.assertTrue(ExecutableDeterminationVisitor.isNegated("!!!"));
-        Assert.assertTrue(ExecutableDeterminationVisitor.isNegated("            !                    !    !"));
-        Assert.assertTrue(ExecutableDeterminationVisitor.isNegated("!                                !    !"));
-        Assert.assertTrue(ExecutableDeterminationVisitor.isNegated("!           !   !  !    !            !    !"));
-        Assert.assertTrue(ExecutableDeterminationVisitor.isNegated("!           !   !  !    !            !    !             "));
+        Assertions.assertTrue(ExecutableDeterminationVisitor.isNegated("!!!"));
+        Assertions.assertTrue(ExecutableDeterminationVisitor.isNegated("            !                    !    !"));
+        Assertions.assertTrue(ExecutableDeterminationVisitor.isNegated("!                                !    !"));
+        Assertions.assertTrue(ExecutableDeterminationVisitor.isNegated("!           !   !  !    !            !    !"));
+        Assertions.assertTrue(ExecutableDeterminationVisitor.isNegated("!           !   !  !    !            !    !             "));
     }
     
     /**
      * Copied from JexlNodeFactory without the AND/OR restrictions
-     * 
-     * @param toWrap
-     * @return
+     *
      */
     private JexlNode wrap(JexlNode toWrap) {
         ASTReference reference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
@@ -578,8 +570,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         
         replayAll();
         
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.IGNORABLE, ExecutableDeterminationVisitor.getState(andNode, config, helper, output));
-        Assert.assertEquals("Summary: ", output.get(0)); // no summary because the query is empty
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.IGNORABLE, ExecutableDeterminationVisitor.getState(andNode, config, helper, output));
+        Assertions.assertEquals("Summary: ", output.get(0)); // no summary because the query is empty
         
         verifyAll();
     }
@@ -612,8 +604,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         
         replayAll();
         
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, ExecutableDeterminationVisitor.getState(andNode, config, helper, output));
-        Assert.assertEquals("Summary: EXECUTABLE:[INDEXEDFIELD == 'v2', INDEXEDFIELD == 'v1']", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, ExecutableDeterminationVisitor.getState(andNode, config, helper, output));
+        Assertions.assertEquals("Summary: EXECUTABLE:[INDEXEDFIELD == 'v2', INDEXEDFIELD == 'v1']", output.get(0));
         
         verifyAll();
     }
@@ -644,8 +636,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         
         replayAll();
         
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.IGNORABLE, ExecutableDeterminationVisitor.getState(orNode, config, helper, output));
-        Assert.assertEquals("Summary: ", output.get(0)); // empty summary because the query is empty
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.IGNORABLE, ExecutableDeterminationVisitor.getState(orNode, config, helper, output));
+        Assertions.assertEquals("Summary: ", output.get(0)); // empty summary because the query is empty
         
         verifyAll();
     }
@@ -678,8 +670,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         
         replayAll();
         
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, ExecutableDeterminationVisitor.getState(orNode, config, helper, output));
-        Assert.assertEquals("Summary: EXECUTABLE:[INDEXEDFIELD == 'v2', INDEXEDFIELD == 'v1']", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, ExecutableDeterminationVisitor.getState(orNode, config, helper, output));
+        Assertions.assertEquals("Summary: EXECUTABLE:[INDEXEDFIELD == 'v2', INDEXEDFIELD == 'v1']", output.get(0));
         
         verifyAll();
     }
@@ -693,7 +685,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         replayAll();
         
         JexlNode query = ASTEvaluationOnly.create(JexlASTHelper.parseJexlQuery("FOO == FOO2"));
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, ExecutableDeterminationVisitor.getState(query, config, helper, output));
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[ASTEvaluationOnly( delayed/eval only predicate )]", output.get(0));
+        Assertions.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, ExecutableDeterminationVisitor.getState(query, config, helper, output));
+        Assertions.assertEquals("Summary: NON_EXECUTABLE:[ASTEvaluationOnly( delayed/eval only predicate )]", output.get(0));
     }
 }

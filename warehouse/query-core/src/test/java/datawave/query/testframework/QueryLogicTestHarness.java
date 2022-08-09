@@ -13,7 +13,7 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -88,9 +88,7 @@ public class QueryLogicTestHarness {
             // AttributeFactory class
             int count = 0;
             for (Attribute<? extends Comparable<?>> attribute : document.getAttributes()) {
-                if (attribute instanceof TimingMetadata) {
-                    // ignore
-                } else if (attribute instanceof Attributes) {
+                if (attribute instanceof Attributes) {
                     Attributes attrs = (Attributes) attribute;
                     Collection<Class<?>> types = new HashSet<>();
                     for (Attribute<? extends Comparable<?>> attr : attrs.getAttributes()) {
@@ -102,8 +100,8 @@ public class QueryLogicTestHarness {
                             }
                         }
                     }
-                    Assert.assertEquals(AttributeFactory.getKeepers(types), types);
-                } else {
+                    Assertions.assertEquals(AttributeFactory.getKeepers(types), types);
+                } else if (!(attribute instanceof TimingMetadata)) {
                     count++;
                 }
             }
@@ -118,8 +116,8 @@ public class QueryLogicTestHarness {
             log.debug("result(" + extractedResult + ") key(" + entry.getKey() + ") document(" + document + ")");
             
             // verify expected results
-            Assert.assertNotNull("extracted result", extractedResult);
-            Assert.assertFalse("duplicate result(" + extractedResult + ") key(" + entry.getKey() + ")", actualResults.contains(extractedResult));
+            Assertions.assertNotNull(extractedResult, "extracted result");
+            Assertions.assertFalse(actualResults.contains(extractedResult), "duplicate result(" + extractedResult + ") key(" + entry.getKey() + ")");
             actualResults.add(extractedResult);
             
             // perform any custom assert checks on document
@@ -145,8 +143,8 @@ public class QueryLogicTestHarness {
             }
         }
         
-        Assert.assertEquals("results do not match expected", expected.size(), actualResults.size());
-        Assert.assertTrue("expected and actual values do not match", expected.containsAll(actualResults));
-        Assert.assertTrue("expected and actual values do not match", actualResults.containsAll(expected));
+        Assertions.assertEquals(expected.size(), actualResults.size(), "results do not match expected");
+        Assertions.assertTrue(expected.containsAll(actualResults), "expected and actual values do not match");
+        Assertions.assertTrue(actualResults.containsAll(expected), "expected and actual values do not match");
     }
 }

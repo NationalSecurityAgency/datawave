@@ -1,30 +1,26 @@
 package datawave.query.tables.edge;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import javax.inject.Inject;
-
 import datawave.configuration.spring.SpringBean;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@RunWith(Arquillian.class)
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+@ExtendWith(ArquillianExtension.class)
 public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
-    private static final Logger log = Logger.getLogger(EdgeQueryFunctionalTest.class);
-    
     @Inject
     @SpringBean(name = "RewriteEdgeQuery")
     EdgeQueryLogic logic;
@@ -435,16 +431,19 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         
     }
     
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testUnknownFunction() throws Exception {
         
         QueryImpl q = configQuery("SOURCE == 'SUN' && (filter:includeregex(SINK, 'earth|mars'))", auths);
         
-        EdgeQueryLogic logic = runLogic(q, auths);
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
+            EdgeQueryLogic logic = runLogic(q, auths);
+            
+            List<String> expected = new ArrayList<>();
+            
+            compareResults(logic, expected);
+        });
         
-        List<String> expected = new ArrayList<>();
-        
-        compareResults(logic, expected);
     }
     
     @Test

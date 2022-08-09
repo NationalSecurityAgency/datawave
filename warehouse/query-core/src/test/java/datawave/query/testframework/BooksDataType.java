@@ -69,7 +69,7 @@ public class BooksDataType extends AbstractDataTypeConfig {
         
         private static final List<String> headers;
         static {
-            headers = Stream.of(BooksField.values()).map(e -> e.name()).collect(Collectors.toList());
+            headers = Stream.of(BooksField.values()).map(Enum::name).collect(Collectors.toList());
         }
         
         public static List<String> getHeaders() {
@@ -103,13 +103,11 @@ public class BooksDataType extends AbstractDataTypeConfig {
         }
     }
     
-    private final FieldConfig fieldConfig;
     private final ConfigData configData;
     
     public BooksDataType(final String datatype, final String file, final FieldConfig fieldData, final ConfigData cfgData) throws IOException,
                     URISyntaxException {
         super(datatype, file, FileType.GROUPING, fieldData, null);
-        this.fieldConfig = fieldData;
         this.configData = cfgData;
         
         // NOTE: see super for default settings
@@ -128,8 +126,8 @@ public class BooksDataType extends AbstractDataTypeConfig {
         this.hConf.set(this.dataType + CSVHelper.PROCESS_EXTRA_FIELDS, "true");
         
         // load raw test data into the data manager
-        Set<String> anyFieldIndexes = new HashSet<>(fieldConfig.getIndexFields());
-        anyFieldIndexes.addAll(fieldConfig.getReverseIndexFields());
+        Set<String> anyFieldIndexes = new HashSet<>(fieldData.getIndexFields());
+        anyFieldIndexes.addAll(fieldData.getReverseIndexFields());
         
         log.debug(this.toString());
     }

@@ -1,5 +1,25 @@
 package datawave.query.tables.edge;
 
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.data.normalizer.Normalizer;
+import datawave.query.MockAccumuloRecordWriter;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.logic.BaseQueryLogic;
+import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.TaskAttemptID;
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -13,27 +33,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import datawave.data.normalizer.Normalizer;
-import datawave.query.MockAccumuloRecordWriter;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.logic.BaseQueryLogic;
-
-import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.TaskAttemptID;
-import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Assert;
-import org.junit.BeforeClass;
 
 /**
  * A base test class to encapsulate everything needed to run query tests against an edge query logic.
@@ -50,13 +49,12 @@ public abstract class BaseEdgeQueryTest {
     protected static Connector connector;
     protected static datawave.query.MockAccumuloRecordWriter recordWriter;
     protected Set<Authorizations> auths = Collections.singleton(new Authorizations("A", "B", "C", "D"));
-    protected Set<Authorizations> limitedAuths = Collections.singleton(new Authorizations("A", "B"));
     
     protected static final String UNEXPECTED_NUM_RECORDS = "Did not receive the expected number of records.";
     protected static final String UNEXPECTED_RECORD = "Found an unexpected record.";
     
     private String serializeAuths(Set<Authorizations> sentAuths) {
-        Assert.assertEquals(1, sentAuths.size());
+        Assertions.assertEquals(1, sentAuths.size());
         return sentAuths.iterator().next().serialize();
     }
     
@@ -141,11 +139,11 @@ public abstract class BaseEdgeQueryTest {
             foundKeys.add(entry.getKey());
             Key k = entry.getKey();
             System.out.println("key = " + k.toStringNoTime());
-            Assert.assertTrue(UNEXPECTED_RECORD + " : " + k.toStringNoTime(), expected.contains(k.toStringNoTime()));
+            Assertions.assertTrue(expected.contains(k.toStringNoTime()), UNEXPECTED_RECORD + " : " + k.toStringNoTime());
             recordsFound++;
         }
         
-        Assert.assertEquals(UNEXPECTED_NUM_RECORDS, expected.size(), recordsFound);
+        Assertions.assertEquals(expected.size(), recordsFound, UNEXPECTED_NUM_RECORDS);
     }
     
     public static void addEdges() throws IOException, InterruptedException {
@@ -167,7 +165,7 @@ public abstract class BaseEdgeQueryTest {
         recordWriter.close(context);
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", "UTF8");

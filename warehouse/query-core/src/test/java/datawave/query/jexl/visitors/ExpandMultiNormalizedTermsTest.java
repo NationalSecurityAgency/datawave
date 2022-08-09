@@ -21,8 +21,8 @@ import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -33,7 +33,7 @@ public class ExpandMultiNormalizedTermsTest {
     private ShardQueryConfiguration config;
     private MockMetadataHelper helper;
     
-    @Before
+    @BeforeEach
     public void before() {
         // Create fresh query config
         config = new ShardQueryConfiguration();
@@ -472,15 +472,15 @@ public class ExpandMultiNormalizedTermsTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        List<String> markers = Arrays.asList(new String[] {IndexHoleMarkerJexlNode.label(), ASTDelayedPredicate.label(), ASTEvaluationOnly.label(),
-                ExceededOrThresholdMarkerJexlNode.label()});
+        List<String> markers = Arrays.asList(IndexHoleMarkerJexlNode.label(), ASTDelayedPredicate.label(), ASTEvaluationOnly.label(),
+                        ExceededOrThresholdMarkerJexlNode.label());
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'bar'))";
             expandTerms(original, expected);
         }
         
-        markers = Arrays.asList(new String[] {ExceededTermThresholdMarkerJexlNode.label(), ExceededValueThresholdMarkerJexlNode.label()});
+        markers = Arrays.asList(ExceededTermThresholdMarkerJexlNode.label(), ExceededValueThresholdMarkerJexlNode.label());
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'Bar'))";

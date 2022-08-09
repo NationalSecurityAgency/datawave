@@ -12,8 +12,8 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,8 +22,8 @@ import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NodeTransformVisitorTest {
     
@@ -55,7 +55,7 @@ public class NodeTransformVisitorTest {
         }
     };
     
-    @Before
+    @BeforeEach
     public void beforeTest() {
         regexPushdownRule.setRegexPatterns(Arrays.asList(".\\.\\*", "\\.\\*.", "\\.\\*<[^<>]+>"));
     }
@@ -98,7 +98,7 @@ public class NodeTransformVisitorTest {
             log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
             log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
         }
-        assertTrue(comparison.getReason(), comparison.isEqual());
+        assertTrue(comparison.isEqual(), comparison.getReason());
     }
     
     private void assertLineage(JexlNode node) {
@@ -136,12 +136,7 @@ public class NodeTransformVisitorTest {
                 "BLA =~ 'okregex' && " +
                 "((_Eval_ = true) && (_ANYFIELD_ =~ '.*<bla>'))";
         // @formatter:on
-        try {
-            testPushdown(query, expected);
-            fail("Expected anyfield regex pushdown to fail");
-        } catch (Exception e) {
-            // ok
-        }
+        assertThrows(Exception.class, () -> testPushdown(query, expected));
     }
     
     @Test

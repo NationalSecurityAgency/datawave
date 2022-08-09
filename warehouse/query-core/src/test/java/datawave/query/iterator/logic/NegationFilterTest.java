@@ -2,19 +2,19 @@ package datawave.query.iterator.logic;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.TreeMultimap;
-import datawave.query.iterator.Util;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.NestedIterator;
-import org.junit.Test;
+import datawave.query.iterator.Util;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NegationFilterTest {
     @Test
@@ -35,7 +35,7 @@ public class NegationFilterTest {
     }
     
     @Test
-    public void testDuplicateTerm() throws Throwable {
+    public void testDuplicateTerm() {
         List<String> filterSet1 = Lists.newArrayList("a", "b", "c", "q", "r", "s");
         Itr<String> f1 = new Itr<>(filterSet1);
         List<String> filterSet2 = Lists.newArrayList("a", "b", "c", "d", "e", "f");
@@ -51,7 +51,7 @@ public class NegationFilterTest {
     }
     
     @Test
-    public void testExhausted() throws Throwable {
+    public void testExhausted() {
         List<String> filterSet1 = Lists.newArrayList("a", "b", "c");
         Itr<String> f1 = new Itr<>(filterSet1);
         List<String> filterSet2 = Lists.newArrayList("a", "b", "c", "d", "e", "f");
@@ -67,7 +67,7 @@ public class NegationFilterTest {
     }
     
     @Test
-    public void testEmpty() throws Throwable {
+    public void testEmpty() {
         List<String> filterSet1 = Lists.newArrayList("a", "b");
         Itr<String> f1 = new Itr<>(filterSet1);
         List<String> filterSet2 = Lists.newArrayList("a", "b", "c", "d", "e", "f");
@@ -83,7 +83,7 @@ public class NegationFilterTest {
     }
     
     @Test
-    public void testContains() throws Throwable {
+    public void testContains() {
         List<String> filterSet1 = Lists.newArrayList("a", "b");
         Itr<String> f1 = new Itr<>(filterSet1);
         List<String> filterSet2 = Lists.newArrayList("a", "b", "c", "d", "e", "f");
@@ -104,8 +104,8 @@ public class NegationFilterTest {
     
     // A wrapper around a java.util.Iterator
     static class Itr<K extends Comparable<K>> implements NestedIterator<K> {
-        private Iterator<K> i;
-        private boolean contextRequired;
+        private final Iterator<K> i;
+        private final boolean contextRequired;
         
         public Itr(Iterable<K> it, boolean contextRequired) {
             i = it.iterator();

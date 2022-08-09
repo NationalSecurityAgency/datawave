@@ -1,8 +1,14 @@
 package datawave.query.index.lookup;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import datawave.ingest.protobuf.Uid;
+import datawave.query.util.SortedKeyValueIteratorToIterator;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedMapIterator;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -10,17 +16,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.TreeMap;
 
-import datawave.ingest.protobuf.Uid;
-import datawave.query.util.SortedKeyValueIteratorToIterator;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedMapIterator;
-import org.junit.Test;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ShardLimitingIteratorTest {
     

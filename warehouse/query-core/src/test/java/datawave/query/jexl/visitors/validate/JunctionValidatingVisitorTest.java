@@ -9,14 +9,14 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JunctionValidatingVisitorTest {
     
@@ -36,7 +36,7 @@ public class JunctionValidatingVisitorTest {
     @Test
     public void testInvalidDisjunctionOneChild() {
         ASTEQNode eqNode = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "bar");
-        ASTOrNode disjunction = (ASTOrNode) JexlNodeFactory.createOrNode(Arrays.asList(eqNode));
+        ASTOrNode disjunction = (ASTOrNode) JexlNodeFactory.createOrNode(Collections.singletonList(eqNode));
         assertFalse(validate(disjunction));
     }
     
@@ -56,7 +56,7 @@ public class JunctionValidatingVisitorTest {
     @Test
     public void testInvalidConjunctionOneChild() {
         ASTEQNode eqNode = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "bar");
-        ASTAndNode conjunction = (ASTAndNode) JexlNodeFactory.createAndNode(Arrays.asList(eqNode));
+        ASTAndNode conjunction = (ASTAndNode) JexlNodeFactory.createAndNode(Collections.singletonList(eqNode));
         assertFalse(validate(conjunction));
     }
     
@@ -72,7 +72,7 @@ public class JunctionValidatingVisitorTest {
     @Test
     public void testValidDisjunctionInvalidConjunction() {
         ASTEQNode eqNode = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "baz");
-        ASTAndNode invalidConjunction = (ASTAndNode) JexlNodeFactory.createUnwrappedAndNode(Arrays.asList(eqNode));
+        ASTAndNode invalidConjunction = (ASTAndNode) JexlNodeFactory.createUnwrappedAndNode(Collections.singletonList(eqNode));
         
         ASTEQNode termA = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "bar");
         ASTOrNode validDisjunction = (ASTOrNode) JexlNodeFactory.createUnwrappedOrNode(Arrays.asList(termA, invalidConjunction));
@@ -90,7 +90,7 @@ public class JunctionValidatingVisitorTest {
         ASTEQNode right = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "baz");
         ASTOrNode validDisjunction = (ASTOrNode) JexlNodeFactory.createUnwrappedOrNode(Arrays.asList(left, right));
         
-        ASTAndNode invalidConjunction = (ASTAndNode) JexlNodeFactory.createUnwrappedAndNode(Arrays.asList(validDisjunction));
+        ASTAndNode invalidConjunction = (ASTAndNode) JexlNodeFactory.createUnwrappedAndNode(Collections.singletonList(validDisjunction));
         
         assertFalse(validate(invalidConjunction));
         // top level AndNode does not print because of single child

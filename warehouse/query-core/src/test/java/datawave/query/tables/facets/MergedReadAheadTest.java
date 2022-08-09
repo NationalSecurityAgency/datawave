@@ -2,7 +2,7 @@ package datawave.query.tables.facets;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class MergedReadAheadTest {
     @Test
@@ -45,19 +45,20 @@ public class MergedReadAheadTest {
         testMergedReadAhead(Arrays.asList("a", "b", "c", "d", "e"), false, lowercaseFunction, Collections.singletonList(uppercaseVowelFilterPredicate));
     }
     
-    public void testMergedReadAhead(List<String> expected, boolean streaming, Function<String,String> functionalMerge, List<Predicate<String>> filters) {
+    public void testMergedReadAhead(List<String> expected, boolean streaming, java.util.function.Function<String,String> functionalMerge,
+                    List<Predicate<String>> filters) {
         final List<String> input = Arrays.asList("A", "B", "C", "D", "E");
         final List<String> output = new ArrayList<>();
         
-        MergedReadAhead<String> mra = new MergedReadAhead<>(streaming, input.iterator(), functionalMerge, filters);
+        MergedReadAhead<String> mra = new MergedReadAhead<>(streaming, input.iterator(), functionalMerge::apply, filters);
         while (mra.hasNext()) {
             output.add(mra.next());
         }
         
-        assertArrayEquals("Expected input and output arrays to be equal (streaming=" + streaming + ")", expected.toArray(), output.toArray());
+        assertArrayEquals(expected.toArray(), output.toArray(), "Expected input and output arrays to be equal (streaming=" + streaming + ")");
     }
     
-    static final Function<String,String> lowercaseFunction = new Function<String,String>() {
+    static final java.util.function.Function<String,String> lowercaseFunction = new Function<String,String>() {
         @Nullable
         @Override
         public String apply(@Nullable String s) {
@@ -73,6 +74,7 @@ public class MergedReadAheadTest {
         @Override
         public boolean apply(@Nullable String s) {
             for (String v : vowels) {
+                assert s != null;
                 if (s.startsWith(v)) {
                     return false;
                 }
@@ -87,6 +89,7 @@ public class MergedReadAheadTest {
         @Override
         public boolean apply(@Nullable String s) {
             for (String v : vowels) {
+                assert s != null;
                 if (s.startsWith(v)) {
                     return false;
                 }

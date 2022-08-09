@@ -5,23 +5,24 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class PushdownLowSelectivityNodesVisitorTest {
     
     private ShardQueryConfiguration config;
     private MockMetadataHelper helper;
     
-    @Before
+    @BeforeEach
     public void beforeEach() {
         config = new ShardQueryConfiguration();
         config.setMinSelectivity(0.002);
@@ -32,7 +33,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
     
     private Map<String,Map<String,MetadataCardinalityCounts>> buildTermCounts() {
         
-        List<String> fields = Arrays.asList("FOO");
+        List<String> fields = Collections.singletonList("FOO");
         List<String> values = Arrays.asList("a", "b", "c");
         
         Map<String,Map<String,MetadataCardinalityCounts>> counts = new HashMap<>();
@@ -87,8 +88,8 @@ public class PushdownLowSelectivityNodesVisitorTest {
             
             ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
             //  @formatter:off
-            assertTrue("Expected: " + expected + "\nBut was: " + JexlStringBuildingVisitor.buildQueryWithoutParse(pushed),
-                    TreeEqualityVisitor.isEqual(expectedScript, pushed));
+            assertTrue(
+                    TreeEqualityVisitor.isEqual(expectedScript, pushed), "Expected: " + expected + "\nBut was: " + JexlStringBuildingVisitor.buildQueryWithoutParse(pushed));
             //  @formatter:on
         } catch (Exception e) {
             fail("Error running test: " + e.getMessage());

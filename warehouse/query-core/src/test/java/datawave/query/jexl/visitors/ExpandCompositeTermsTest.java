@@ -17,9 +17,9 @@ import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,7 +41,7 @@ public class ExpandCompositeTermsTest {
     
     private ShardQueryConfiguration conf;
     
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         Multimap<String,String> multimap = LinkedListMultimap.create();
         multimap.put("MAKE_COLOR", "MAKE");
@@ -63,7 +63,7 @@ public class ExpandCompositeTermsTest {
         compositeFieldSeparators = Collections.unmodifiableMap(sepMap);
     }
     
-    @Before
+    @BeforeEach
     public void before() {
         conf = new ShardQueryConfiguration();
         conf.setCompositeToFieldMap(compositeToFieldMap);

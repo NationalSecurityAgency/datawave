@@ -1,25 +1,22 @@
 package datawave.query.edge;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.inject.Inject;
-
 import datawave.configuration.spring.SpringBean;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.query.tables.edge.EdgeQueryFunctionalTest;
 import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
     
@@ -69,16 +66,18 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         compareResults(logic, expected);
     }
     
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testUnknownFunction() throws Exception {
         
         QueryImpl q = configQuery("SOURCE == 'SUN' && (filter:includeregex(SINK, 'earth|mars'))", auths);
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
+            EdgeQueryLogic logic = runLogic(q, auths);
+            
+            List<String> expected = new ArrayList<>();
+            
+            compareResults(logic, expected);
+        });
         
-        EdgeQueryLogic logic = runLogic(q, auths);
-        
-        List<String> expected = new ArrayList<>();
-        
-        compareResults(logic, expected);
     }
     
     @Test
@@ -108,12 +107,10 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         DefaultExtendedEdgeQueryLogic logic = runLogic(q, auths);
         
         int counter = 0;
-        Iterator<Entry<Key,Value>> ita = logic.iterator();
-        while (ita.hasNext()) {
-            ita.next();
+        for (Entry<Key,Value> ignored : logic) {
             counter++;
         }
-        Assert.assertTrue(counter > 0);
+        Assertions.assertTrue(counter > 0);
     }
     
     @Test
@@ -124,18 +121,15 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         DefaultExtendedEdgeQueryLogic logic = runLogic(q, auths);
         
         int counter = 0;
-        Iterator<Entry<Key,Value>> ita = logic.iterator();
-        while (ita.hasNext()) {
-            ita.next();
+        for (Entry<Key,Value> ignored : logic) {
             counter++;
         }
-        Assert.assertTrue(counter > 0);
+        Assertions.assertTrue(counter > 0);
     }
     
     /**
      * Tests to make sure QueryModel is applied properly to a query string
-     * 
-     * @throws Exception
+     *
      */
     @Test
     public void testQueryModelApplied() throws Exception {
@@ -150,7 +144,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         logic.setupQuery(config);
         String actualQueryString = config.getQueryString();
         
-        Assert.assertEquals(expectedQueryString, actualQueryString);
+        Assertions.assertEquals(expectedQueryString, actualQueryString);
     }
     
     @Test
@@ -159,21 +153,21 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         q.addParameter("delimiter", ",");
         q.addParameter("query.syntax", "LIST");
         
-        List<String> expected = new ArrayList();
+        List<String> expected = new ArrayList<>();
         expected.add("MARS");
         expected.add("JUPITER");
         expected.add("VENUS");
         
         List<String> sources = logic.getSelectors(q);
         
-        Assert.assertTrue(sources.containsAll(expected));
+        Assertions.assertTrue(sources.containsAll(expected));
         
         q = configQuery("SOURCE == 'MARS' OR SOURCE == 'JUPITER' OR SOURCE == 'VENUS'", auths);
         q.addParameter("query.syntax", "JEXL");
         
         sources = logic.getSelectors(q);
         
-        Assert.assertTrue(sources.containsAll(expected));
+        Assertions.assertTrue(sources.containsAll(expected));
     }
     
     @Test
@@ -189,14 +183,10 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         expected.add("mercury STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         
         compareResults(logic, expected);
-        
-        try {
-            logic = runLogic(q, auths, 1);
-            compareResults(logic, expected);
-            Assert.fail("Expected to fail because the scan limit was reached");
-        } catch (ColumnRangeIterator.ScanLimitReached e) {
-            // expected
-        }
+        Assertions.assertThrows(ColumnRangeIterator.ScanLimitReached.class, () -> {
+            DefaultExtendedEdgeQueryLogic l = runLogic(q, auths, 1);
+            compareResults(l, expected);
+        });
     }
     
 }

@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 public class WiseGuysIngest {
     
     public enum WhatKindaRange {
-        SHARD, DOCUMENT;
+        SHARD, DOCUMENT
     }
     
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
@@ -48,10 +48,10 @@ public class WiseGuysIngest {
     
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
     public static final String corleoneChildUID = UID.builder().newId("Corleone".getBytes(), (Date) null, "1").toString();
-    public static final String sopranoUID = UID.builder().newId("Soprano".toString().getBytes(), (Date) null).toString();
-    public static final String caponeUID = UID.builder().newId("Capone".toString().getBytes(), (Date) null).toString();
+    public static final String sopranoUID = UID.builder().newId("Soprano".getBytes(), (Date) null).toString();
+    public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
     
-    protected static String normalizeColVal(Map.Entry<String,String> colVal) throws Exception {
+    protected static String normalizeColVal(Map.Entry<String,String> colVal) {
         if ("FROM_ADDRESS".equals(colVal.getKey()) || "TO_ADDRESS".equals(colVal.getKey())) {
             return ipAddressType.normalize(colVal.getValue());
         } else {
@@ -74,13 +74,12 @@ public class WiseGuysIngest {
     /**
      * gparent - parent - child -
      *
-     * @return
      */
     public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        Mutation mutation = null;
+        Mutation mutation;
         
         try {
             // write the shard table :
@@ -967,7 +966,6 @@ public class WiseGuysIngest {
     /**
      * forces a shard range
      *
-     * @return
      */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();

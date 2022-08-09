@@ -1,27 +1,21 @@
 package datawave.query.tables.facets;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import datawave.util.UniversalSet;
-import datawave.query.iterator.SourceManager;
-import datawave.query.iterator.builder.IteratorBuilder;
-import datawave.query.jexl.JexlASTHelper;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.SourceManager;
 import datawave.query.iterator.builder.IndexIteratorBuilder;
+import datawave.query.iterator.builder.IteratorBuilder;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.predicate.NegationPredicate;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.SortedKeyValueIteratorToIterator;
 import datawave.query.util.TypeMetadata;
-
+import datawave.util.UniversalSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -33,10 +27,14 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * A visitor that builds a tree of iterators. The main points are at ASTAndNodes and ASTOrNodes, where the code will build AndIterators and OrIterators,
@@ -109,7 +107,7 @@ public class FacetedVisitor extends BaseVisitor {
         
         script.jjtAccept(this, kvIterList);
         
-        Iterator<Entry<Key,Value>> kvIter = Iterators.emptyIterator();
+        Iterator<Entry<Key,Value>> kvIter = Collections.emptyIterator();
         for (Iterator<Entry<Key,Value>> iter : kvIterList) {
             kvIter = Iterators.concat(kvIter, iter);
         }

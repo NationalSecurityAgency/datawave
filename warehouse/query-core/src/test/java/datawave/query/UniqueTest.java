@@ -23,16 +23,16 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.inject.Inject;
 import java.text.DateFormat;
@@ -57,12 +57,12 @@ public abstract class UniqueTest {
     
     private static final Logger log = Logger.getLogger(UniqueTest.class);
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends UniqueTest {
         protected static Connector connector = null;
-        private static Authorizations auths = new Authorizations("ALL");
+        private static final Authorizations auths = new Authorizations("ALL");
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             
             // testing tear downs but without consistency, because when we tear it down then we loose the ongoing bloom filter and subsequently the rebuild will
@@ -85,12 +85,12 @@ public abstract class UniqueTest {
         }
     }
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends UniqueTest {
         protected static Connector connector = null;
-        private static Authorizations auths = new Authorizations("ALL");
+        private static final Authorizations auths = new Authorizations("ALL");
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             
             // testing tear downs but without consistency, because when we tear it down then we loose the ongoing bloom filter and subsequently the rebuild will
@@ -142,12 +142,12 @@ public abstract class UniqueTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @AfterClass
+    @AfterAll
     public static void teardown() {
         TypeRegistry.reset();
     }
     
-    @Before
+    @BeforeEach
     public void setup() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
@@ -191,7 +191,7 @@ public abstract class UniqueTest {
         // mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
         // mapper.writeValue(new File("/tmp/grouped2.json"), response);
         
-        Assert.assertTrue(response instanceof DefaultEventQueryResponse);
+        Assertions.assertTrue(response instanceof DefaultEventQueryResponse);
         DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;
         
         for (EventBase event : eventQueryResponse.getEvents()) {
@@ -205,9 +205,9 @@ public abstract class UniqueTest {
                     break;
                 }
             }
-            Assert.assertTrue(found);
+            Assertions.assertTrue(found);
         }
-        Assert.assertTrue(expected.isEmpty());
+        Assertions.assertTrue(expected.isEmpty());
     }
     
     @Test
@@ -309,7 +309,7 @@ public abstract class UniqueTest {
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
     }
     
-    @Test(expected = InvalidQueryException.class)
+    @Test
     public void testUniquenessWithBadField() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
@@ -321,8 +321,10 @@ public abstract class UniqueTest {
         String queryString = "UUID:/^[CS].*/ AND #UNIQUE(FOO_BAR,$MAGIC)";
         runTestQueryWithUniqueness(new HashSet(), queryString, startDate, endDate, extraParameters);
         
-        queryString = "UUID:/^[CS].*/ AND #UNIQUE(foo_bar,$magic)";
-        runTestQueryWithUniqueness(new HashSet(), queryString, startDate, endDate, extraParameters);
+        String queryString2 = "UUID:/^[CS].*/ AND #UNIQUE(foo_bar,$magic)";
+        Assertions.assertThrows(InvalidQueryException.class, () -> {
+            runTestQueryWithUniqueness(new HashSet(), queryString2, startDate, endDate, extraParameters);
+        });
     }
     
     @Test

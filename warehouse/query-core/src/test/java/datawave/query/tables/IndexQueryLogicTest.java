@@ -7,7 +7,7 @@ import datawave.query.Constants;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -22,10 +22,10 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,8 +45,8 @@ import java.util.Set;
  */
 public class IndexQueryLogicTest extends AbstractFunctionalQuery {
     
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = new AccumuloSetupExtension();
     
     private static final Logger log = Logger.getLogger(IndexQueryLogicTest.class);
     
@@ -54,7 +54,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         super(CarsDataType.getManager());
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCarFields();
@@ -65,7 +65,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         connector = accumuloSetup.loadTables(log);
     }
     
-    @Before
+    @BeforeEach
     public void querySetUp() throws IOException {
         log.debug("---------  querySetUp  ---------");
         

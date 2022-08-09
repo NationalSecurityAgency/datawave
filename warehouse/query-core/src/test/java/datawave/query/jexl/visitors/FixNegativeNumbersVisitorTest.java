@@ -6,7 +6,7 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class FixNegativeNumbersVisitorTest {
     

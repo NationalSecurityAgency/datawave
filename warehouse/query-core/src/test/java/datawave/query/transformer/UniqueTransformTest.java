@@ -9,20 +9,20 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.DiacriticContent;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TimingMetadata;
-import datawave.query.function.LogTiming;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
+import datawave.query.function.LogTiming;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.hadoop.io.Text;
 import org.apache.commons.lang.RandomStringUtils;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.apache.hadoop.io.Text;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,8 +39,8 @@ import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class UniqueTransformTest {
     
@@ -52,7 +52,7 @@ public class UniqueTransformTest {
     private final List<UniqueTransform.FieldSet> expectedOrderedFieldSets = new ArrayList<>();
     private UniqueFields uniqueFields = new UniqueFields();
     
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         for (int i = 0; i < 5; i++) {
             int length = random.nextInt(11) + 10;
@@ -60,7 +60,7 @@ public class UniqueTransformTest {
         }
     }
     
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         inputDocuments.clear();
         expectedUniqueDocuments.clear();
@@ -246,7 +246,7 @@ public class UniqueTransformTest {
         givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:04");
         givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
         
-        givenValueTransformersForField("Attr0", UniqueGranularity.ALL, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
+        givenValueTransformersForField(UniqueGranularity.ALL, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         
         assertUniqueDocuments();
     }
@@ -264,7 +264,7 @@ public class UniqueTransformTest {
         givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:04:20");
         givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
         
-        givenValueTransformersForField("Attr0", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE, UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        givenValueTransformersForField(UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE, UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
         
         assertUniqueDocuments();
     }
@@ -282,16 +282,13 @@ public class UniqueTransformTest {
         givenInputDocument().withKeyValue("Attr0", "2001-03-10 13:20:15");
         givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
         
-        givenValueTransformersForField("Attr0", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR, UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        givenValueTransformersForField(UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR, UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
         
         assertUniqueDocuments();
     }
     
     @Test
     public void testUniquenessWithTimingMetric() {
-        List<Document> input = new ArrayList<>();
-        List<Document> expected = new ArrayList<>();
-        
         String MARKER_STRING = "\u2735FinalDocument\u2735";
         TimingMetadata timingMetadata = new TimingMetadata();
         timingMetadata.setNextCount(5l);
@@ -496,7 +493,7 @@ public class UniqueTransformTest {
         List<Document> actual = getUniqueDocumentsWithUpdateConfigCalls(inputDocuments);
         Collections.sort(expectedUniqueDocuments);
         Collections.sort(actual);
-        assertEquals("Unique documents do not match expected", expectedUniqueDocuments, actual);
+        assertEquals(expectedUniqueDocuments, actual, "Unique documents do not match expected");
     }
     
     private List<Document> getUniqueDocuments(List<Document> documents) {
@@ -530,15 +527,15 @@ public class UniqueTransformTest {
                         .collect(Collectors.toList());
         Collections.sort(expectedOrderedFieldSets);
         
-        assertEquals("Ordered field sets do not match expected", expectedOrderedFieldSets, actual);
+        assertEquals(expectedOrderedFieldSets, actual, "Ordered field sets do not match expected");
     }
     
     private void givenValueTransformerForFields(UniqueGranularity transformer, String... fields) {
         Arrays.stream(fields).forEach((field) -> uniqueFields.put(field, transformer));
     }
     
-    private void givenValueTransformersForField(String field, UniqueGranularity... transformers) {
-        Arrays.stream(transformers).forEach((transformer) -> uniqueFields.put(field, transformer));
+    private void givenValueTransformersForField(UniqueGranularity... transformers) {
+        Arrays.stream(transformers).forEach((transformer) -> uniqueFields.put("Attr0", transformer));
     }
     
     private UniqueTransform getUniqueTransform() {
@@ -575,7 +572,7 @@ public class UniqueTransformTest {
             
             Text MARKER_TEXT = new Text(docKey);
             ByteSequence MARKER_SEQUENCE = new ArrayByteSequence(MARKER_TEXT.getBytes(), 0, MARKER_TEXT.getLength());
-            byte EMPTY_BYTES[] = new byte[0];
+            byte[] EMPTY_BYTES = new byte[0];
             Key key = new Key(EMPTY_BYTES, EMPTY_BYTES, MARKER_SEQUENCE.subSequence(0, MARKER_SEQUENCE.length()).toArray());
             this.document = new Document(key, true);
             inputDocuments.add(document);

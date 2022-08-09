@@ -75,7 +75,7 @@ public class SharedTriState implements Closeable, SharedTriStateReader, Listenab
     }
     
     public void addListener(SharedTriStateListener listener) {
-        this.addListener((SharedTriStateListener) listener, MoreExecutors.sameThreadExecutor());
+        this.addListener(listener, MoreExecutors.directExecutor());
     }
     
     public void addListener(final SharedTriStateListener listener, Executor executor) {
@@ -114,9 +114,9 @@ public class SharedTriState implements Closeable, SharedTriStateReader, Listenab
     
     private static STATE fromBytes(byte[] bytes) {
         if (log.isDebugEnabled()) {
-            log.debug("fromBytes(" + Arrays.toString(bytes) + ") and STATE:" + STATE.forValue((int) bytes[0]));
+            log.debug("fromBytes(" + Arrays.toString(bytes) + ") and STATE:" + STATE.forValue(bytes[0]));
         }
-        return STATE.forValue((int) bytes[0]);
+        return STATE.forValue(bytes[0]);
     }
     
     @Override

@@ -3,9 +3,8 @@ package datawave.query.testframework;
 import datawave.data.normalizer.Normalizer;
 import datawave.data.normalizer.NumberNormalizer;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import org.apache.log4j.Logger;
 import org.bouncycastle.util.Strings;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,7 +19,6 @@ import java.util.Set;
  * Represents a single event of raw data read from an ingest file. This is a generic POJO that can be used for any data event. This class is immutable.
  */
 public abstract class BaseRawData implements RawData {
-    private static final Logger log = Logger.getLogger(BaseRawData.class);
     
     /**
      * Field name for the datatype for each event. This field is added to every event.
@@ -81,7 +79,7 @@ public abstract class BaseRawData implements RawData {
         // add each header event
         final List<String> hdrs = getHeaders();
         // ensure headers match field input
-        Assert.assertEquals(hdrs.size(), fields.length);
+        Assertions.assertEquals(hdrs.size(), fields.length);
         
         for (int n = 0; n < hdrs.size(); n++) {
             String header = hdrs.get(n);
@@ -234,7 +232,7 @@ public abstract class BaseRawData implements RawData {
     
     @Override
     public boolean containsField(String field) {
-        return this.metaDataMap.keySet().contains(field.toLowerCase());
+        return this.metaDataMap.containsKey(field.toLowerCase());
     }
     
     @Override
@@ -250,7 +248,7 @@ public abstract class BaseRawData implements RawData {
     
     @Override
     public Normalizer<?> getNormalizer(String field) {
-        Assert.assertTrue(containsField(field));
+        Assertions.assertTrue(containsField(field));
         return this.metaDataMap.get(field.toLowerCase()).normalizer;
     }
     

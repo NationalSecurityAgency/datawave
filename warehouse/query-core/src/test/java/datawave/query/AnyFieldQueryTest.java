@@ -9,7 +9,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.rules.RegexPushdownTransformRule;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
@@ -20,9 +20,10 @@ import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.RawDataManager;
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,16 +35,16 @@ import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = new AccumuloSetupExtension();
     
     private static final Logger log = Logger.getLogger(AnyFieldQueryTest.class);
     
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         FieldConfig generic = new GenericCityFields();
         generic.addReverseIndexField(CityField.STATE.name());
@@ -123,14 +124,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             String query = Constants.ANY_FIELD + cityPhrase;
             
             // Test the plan with all expansions
-            try {
-                String plan = getPlan(query, true, true);
-                fail("Expected FullTableScanDisallowedException but got plan: " + plan);
-            } catch (FullTableScansDisallowedException e) {
-                // expected
-            } catch (Exception e) {
-                fail("Expected FullTableScanDisallowedException but got " + e);
-            }
+            assertThrows(FullTableScansDisallowedException.class, () -> getPlan(query, true, true));
             
             // Test the plan sans value expansion
             String anyCity = "!(CITY == '" + city.name() + "'";
@@ -150,14 +144,8 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             
             // test running the query
             anyCity = this.dataManager.convertAnyField(cityPhrase, RawDataManager.AND_OP);
-            try {
-                runTest(query, anyCity);
-                fail("expecting exception");
-            } catch (FullTableScansDisallowedException e) {
-                // expected
-            } catch (Exception e) {
-                fail("Expected FullTableScanDisallowedException but got " + e);
-            }
+            String finalAnyCity = anyCity;
+            assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, finalAnyCity));
             
             this.logic.setFullTableScanEnabled(true);
             try {
@@ -468,7 +456,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         String query = first + AND_OP + Constants.ANY_FIELD + phrase;
         
         // Test the plan with all expansions
-        String expect = "false";
+        String expect;
         String plan = getPlan(query, true, true);
         assertPlanEquals("false", plan);
         
@@ -477,7 +465,6 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         assertPlanEquals("false", plan);
         
         // Test the plan sans field expansion
-        expect = "false";
         plan = getPlan(query, false, true);
         assertPlanEquals("false", plan);
         
@@ -546,7 +533,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             String query = qCity + AND_OP + Constants.ANY_FIELD + phrase;
             
             // Test the plan with all expansions
-            String expect = "false";
+            String expect;
             String plan = getPlan(query, true, true);
             assertPlanEquals("false", plan);
             
@@ -564,40 +551,19 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         }
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testRegexWithFIAndRI() throws Exception {
         String phrase = RE_OP + "'.*iss.*'";
         String query = Constants.ANY_FIELD + phrase;
         
         // Test the plan with all expansions
-        try {
-            String plan = getPlan(query, true, true);
-            fail("Expected DatawaveFatalQueryException but got plan: " + plan);
-        } catch (DatawaveFatalQueryException e) {
-            // expected
-        } catch (Exception e) {
-            fail("Expected DatawaveFatalQueryException but got " + e);
-        }
+        Assertions.assertThrows(DatawaveFatalQueryException.class, () -> getPlan(query, true, true), "DatawaveFatalQueryException was expected");
         
         // Test the plan sans value expansion
-        try {
-            String plan = getPlan(query, true, false);
-            fail("Expected DatawaveFatalQueryException but got plan: " + plan);
-        } catch (DatawaveFatalQueryException e) {
-            // expected
-        } catch (Exception e) {
-            fail("Expected DatawaveFatalQueryException but got " + e);
-        }
+        Assertions.assertThrows(DatawaveFatalQueryException.class, () -> getPlan(query, true, false), "DatawaveFatalQueryException was expected");
         
         // Test the plan sans field expansion
-        try {
-            String plan = getPlan(query, false, true);
-            fail("Expected DatawaveFatalQueryException but got plan: " + plan);
-        } catch (DatawaveFatalQueryException e) {
-            // expected
-        } catch (Exception e) {
-            fail("Expected DatawaveFatalQueryException but got " + e);
-        }
+        Assertions.assertThrows(DatawaveFatalQueryException.class, () -> getPlan(query, false, true), "DatawaveFatalQueryException was expected");
         
         // test running the query
         String expect = this.dataManager.convertAnyField(EQ_OP + "'nothing'");
@@ -754,14 +720,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         String query = Constants.ANY_FIELD + regPhrase;
         
         // Test the plan with all expansions
-        try {
-            String plan = getPlan(query, true, true);
-            fail("Expected FullTableScanDisallowedException but got plan: " + plan);
-        } catch (FullTableScansDisallowedException e) {
-            // expected
-        } catch (Exception e) {
-            fail("Expected FullTableScanDisallowedException but got " + e);
-        }
+        assertThrows(FullTableScansDisallowedException.class, () -> getPlan(query, true, true));
         
         // Test the plan sans value expansion
         String expect = "(((!(((_Delayed_ = true)" + JEXL_AND_OP + "(" + Constants.ANY_FIELD + RE_OP + "'.*ica')))" + JEXL_AND_OP + "!("
@@ -777,14 +736,8 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         
         // test running the query
         expect = this.dataManager.convertAnyField(regPhrase, AND_OP);
-        try {
-            runTest(query, expect);
-            fail("full table scan exception expected");
-        } catch (FullTableScansDisallowedException e) {
-            // expected
-        } catch (Exception e) {
-            fail("Expected FullTableScanDisallowedException but got " + e);
-        }
+        String finalExpect = expect;
+        assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, finalExpect));
         
         try {
             this.logic.setFullTableScanEnabled(true);
@@ -947,7 +900,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     }
     
     @Test
-    public void testRegexPushdownAnyfield() throws Exception {
+    public void testRegexPushdownAnyfield() {
         String roPhrase = RE_OP + "'ro.*'";
         String anyRo = this.dataManager.convertAnyField(roPhrase);
         String oPhrase = RE_OP + "'.*a'";
@@ -959,35 +912,15 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setTransformRules(Collections.singletonList(rule));
         
         // Test the plan with all expansions
-        try {
-            String plan = getPlan(query, true, true);
-            fail("Expected failure for regex pushdown on anyfield");
-        } catch (Exception e) {
-            // expected
-        }
+        assertThrows(Exception.class, () -> getPlan(query, true, true));
         
-        try {
-            String plan = getPlan(query, false, true);
-            fail("Expected failure for regex pushdown on anyfield");
-        } catch (Exception e) {
-            // expected
-        }
+        assertThrows(Exception.class, () -> getPlan(query, false, true));
         
-        try {
-            String plan = getPlan(query, true, false);
-            fail("Expected failure for regex pushdown on anyfield");
-        } catch (Exception e) {
-            // expected
-        }
+        assertThrows(Exception.class, () -> getPlan(query, true, false));
         
         // test running the query
         String expect = anyRo + AND_OP + anyO;
-        try {
-            runTest(query, expect);
-            fail("Expected failure for regex pushdown on anyfield");
-        } catch (Exception e) {
-            // expected
-        }
+        assertThrows(Exception.class, () -> runTest(query, expect));
     }
     
     @Test

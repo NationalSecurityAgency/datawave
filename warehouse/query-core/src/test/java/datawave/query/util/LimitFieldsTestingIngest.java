@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class LimitFieldsTestingIngest {
     
     public enum WhatKindaRange {
-        SHARD, DOCUMENT;
+        SHARD, DOCUMENT
     }
     
     private static final Type<?> dateType = new DateType();
@@ -41,14 +41,13 @@ public class LimitFieldsTestingIngest {
     
     /**
      *
-     * 
-     * @return
+     *
      */
     public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        Mutation mutation = null;
+        Mutation mutation;
         
         String myUID = UID.builder().newId("MyUid".getBytes(), (Date) null).toString();
         
@@ -256,8 +255,7 @@ public class LimitFieldsTestingIngest {
     
     /**
      * forces a shard range
-     * 
-     * @return
+     *
      */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();

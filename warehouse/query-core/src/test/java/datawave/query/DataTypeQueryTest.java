@@ -2,7 +2,7 @@ package datawave.query;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.BaseRawData;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
@@ -12,9 +12,9 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,8 +32,8 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 
 public class DataTypeQueryTest extends AbstractFunctionalQuery {
     
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = new AccumuloSetupExtension();
     
     private static final Logger log = Logger.getLogger(DataTypeQueryTest.class);
     
@@ -42,7 +42,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
     private static final List<CityEntry> TEST_DATATYPES = Arrays.asList(CityEntry.generic, CityEntry.usa, CityEntry.dup_usa);
     private static final List<String> INVALID_DATATYPES = Arrays.asList("invalid-one", "invalid-two");
     
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
@@ -200,7 +200,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         
         final String phrase = EQ_OP + "'ohio'";
         final String any = this.dataManager.convertAnyField(phrase);
-        for (String num : TEST_NUMS) {
+        for (String ignore : TEST_NUMS) {
             String query = Constants.ANY_FIELD + phrase;
             StringBuilder expect = new StringBuilder();
             expect.append(any).append(AND_OP).append("(");
@@ -224,7 +224,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         
         final String phrase = EQ_OP + "'ohio'";
         final String any = this.dataManager.convertAnyField(phrase);
-        for (String num : TEST_NUMS) {
+        for (String ignore : TEST_NUMS) {
             String query = Constants.ANY_FIELD + phrase;
             StringBuilder expect = new StringBuilder();
             expect.append(any).append(AND_OP).append("(");

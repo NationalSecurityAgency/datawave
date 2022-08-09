@@ -48,11 +48,11 @@
         <version.commons-pool>1.6</version.commons-pool>
         <version.curator>2.13.0</version.curator>
         <version.deltaspike>1.9.0</version.deltaspike>
-        <version.easymock>4.0.2</version.easymock>
+        <version.easymock>4.3</version.easymock>
         <version.geoserver>2.14.2</version.geoserver>
         <version.geotools>20.1</version.geotools>
         <version.geowave>1.1.0</version.geowave>
-        <version.google-guava>15.0</version.google-guava>
+        <version.google-guava>31.1-jre</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <version.hadoop>3.1.2</version.hadoop>
@@ -104,7 +104,7 @@
         <version.spring>5.1.8.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
-        <version.surefire.plugin>3.0.0-M5</version.surefire.plugin>
+        <version.surefire.plugin>3.0.0-M7</version.surefire.plugin>
         <version.thrift>0.9.3</version.thrift>
         <!-- This version of weld ships with Wildfly 24.0.1.Final. It has the same coupling to the version of WildFly that the version of jackson does.  -->
         <version.weld>3.1.7.SP1</version.weld>

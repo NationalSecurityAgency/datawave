@@ -2,7 +2,6 @@ package datawave.query.testframework;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
-import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
 import datawave.ingest.csv.mr.input.CSVRecordReader;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.CSVHelper;
@@ -20,7 +19,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.io.IOException;
 import java.net.URI;
@@ -138,7 +137,7 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         
         // RawDataManager manager = mgr;
         URL url = this.getClass().getClassLoader().getResource(ingestFile);
-        Assert.assertNotNull("unable to resolve ingest file(" + ingestFile + ")", url);
+        Assertions.assertNotNull(url, "unable to resolve ingest file(" + ingestFile + ")");
         this.ingestPath = url.toURI();
         this.dataType = dt;
         this.fieldConfig = config;

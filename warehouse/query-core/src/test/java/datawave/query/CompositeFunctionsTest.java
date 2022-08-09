@@ -23,18 +23,17 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -53,24 +52,28 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  * Tests the composite functions, the #JEXL lucene function, the matchesAtLeastCountOf function. and others
  * 
  */
 public abstract class CompositeFunctionsTest {
     
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static File tempDir = new File("/tmp/test/TempDirForCompositeFunctionsTestShardRange");
     
-    @RunWith(Arquillian.class)
+    @TempDir
+    public static File tempDir2 = new File("/tmp/test/TempDirForCompositeFunctionsTestDocumentRange");
+    
+    @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends CompositeFunctionsTest {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             // this will get property substituted into the TypeMetadataBridgeContext.xml file
             // for the injection test (when this unit test is first created)
-            File tempDir = temporaryFolder.newFolder("TempDirForCompositeFunctionsTestShardRange");
             System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
@@ -84,7 +87,7 @@ public abstract class CompositeFunctionsTest {
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
-        @AfterClass
+        @AfterAll
         public static void teardown() {
             TypeRegistry.reset();
         }
@@ -101,16 +104,15 @@ public abstract class CompositeFunctionsTest {
         }
     }
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends CompositeFunctionsTest {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             // this will get property substituted into the TypeMetadataBridgeContext.xml file
             // for the injection test (when this unit test is first created)
-            File tempDir = temporaryFolder.newFolder("TempDirForCompositeFunctionsTestDocumentRange");
-            System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
+            System.setProperty("type.metadata.dir", tempDir2.getCanonicalPath());
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.DocumentRange.class.toString(), log);
             connector = qtth.connector;
@@ -123,7 +125,7 @@ public abstract class CompositeFunctionsTest {
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
-        @AfterClass
+        @AfterAll
         public static void teardown() {
             TypeRegistry.reset();
         }
@@ -144,7 +146,7 @@ public abstract class CompositeFunctionsTest {
     
     protected Authorizations auths = new Authorizations("ALL");
     
-    private Set<Authorizations> authSet = Collections.singleton(auths);
+    private final Set<Authorizations> authSet = Collections.singleton(auths);
     
     @Inject
     @SpringBean(name = "EventQuery")
@@ -174,7 +176,7 @@ public abstract class CompositeFunctionsTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @Before
+    @BeforeEach
     public void setup() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
@@ -224,14 +226,14 @@ public abstract class CompositeFunctionsTest {
                 attr = d.get("UUID.0");
             }
             
-            Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(), attr instanceof TypeAttribute
-                            || attr instanceof PreNormalizedAttribute);
+            Assertions.assertNotNull(attr, "Result Document did not contain a 'UUID'");
+            Assertions.assertTrue(attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute,
+                            "Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName());
             
             TypeAttribute<?> UUIDAttr = (TypeAttribute<?>) attr;
             
             String UUID = UUIDAttr.getType().getDelegate().toString();
-            Assert.assertTrue("Received unexpected UUID: " + UUID, expected.contains(UUID));
+            Assertions.assertTrue(expected.contains(UUID), "Received unexpected UUID: " + UUID);
             
             resultSet.add(UUID);
             docs.add(d);
@@ -249,8 +251,8 @@ public abstract class CompositeFunctionsTest {
         if (!expected.containsAll(resultSet)) {
             log.error("Expected results " + expected + " differ form actual results " + resultSet);
         }
-        Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
-        Assert.assertEquals("Unexpected number of records", expected.size(), resultSet.size());
+        Assertions.assertTrue(expected.containsAll(resultSet), "Expected results " + expected + " differ form actual results " + resultSet);
+        Assertions.assertEquals(expected.size(), resultSet.size(), "Unexpected number of records");
     }
     
     @Test
@@ -356,7 +358,7 @@ public abstract class CompositeFunctionsTest {
                 runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
             } catch (Throwable t) {
                 log.error(t);
-                Assert.assertTrue(t instanceof DatawaveFatalQueryException);
+                Assertions.assertTrue(t instanceof DatawaveFatalQueryException);
             }
         }
     }
@@ -389,7 +391,7 @@ public abstract class CompositeFunctionsTest {
                 runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
             } catch (Throwable t) {
                 log.error(t);
-                Assert.assertTrue(t instanceof DatawaveFatalQueryException);
+                Assertions.assertTrue(t instanceof DatawaveFatalQueryException);
             }
         }
         
@@ -767,12 +769,12 @@ public abstract class CompositeFunctionsTest {
         for (String query : queries) {
             try {
                 runTestQuery(Collections.emptyList(), query, startDate, endDate, extraParameters);
-                Assert.fail("query should not have run without throwing an exception: " + query);
+                fail("query should not have run without throwing an exception: " + query);
             } catch (DatawaveFatalQueryException e) {
                 String correctErrMsg = "datawave.webservice.query.exception.BadRequestQueryException: Invalid arguments to function. Filter function cannot evaluate against index-only field";
-                Assert.assertTrue("Expected query to fail: " + query, e.getMessage().startsWith(correctErrMsg));
+                Assertions.assertTrue(e.getMessage().startsWith(correctErrMsg), "Expected query to fail: " + query);
             } catch (Exception e) {
-                Assert.fail("Expected filter function with index-only fields to fail validation: " + query);
+                fail("Expected filter function with index-only fields to fail validation: " + query);
             }
             
         }

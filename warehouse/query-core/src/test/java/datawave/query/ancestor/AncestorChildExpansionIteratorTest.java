@@ -1,15 +1,15 @@
 package datawave.query.ancestor;
 
-import datawave.query.function.Equality;
 import datawave.query.Constants;
 import datawave.query.function.AncestorEquality;
+import datawave.query.function.Equality;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -21,16 +21,16 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 public class AncestorChildExpansionIteratorTest {
-    private List<String> children = Arrays.asList("a", "a.1", "a.1.1", "a.1.2", "a.1.2.1", "a.10", "a.2", "a.3", "a.4", "a.4.1", "a.4.1.1", "a.4.1.2", "a.4.2",
-                    "a.5", "a.6", "a.7", "a.8", "a.9");
+    private static final List<String> children = Arrays.asList("a", "a.1", "a.1.1", "a.1.2", "a.1.2.1", "a.10", "a.2", "a.3", "a.4", "a.4.1", "a.4.1.1",
+                    "a.4.1.2", "a.4.2", "a.5", "a.6", "a.7", "a.8", "a.9");
     
-    private List<Map.Entry<Key,Value>> baseValues;
-    private AncestorChildExpansionIterator iterator;
-    private IteratorToSortedKeyValueIterator baseIterator;
-    private Equality equality;
+    private static List<Map.Entry<Key,Value>> baseValues;
+    private static AncestorChildExpansionIterator iterator;
+    private static IteratorToSortedKeyValueIterator baseIterator;
+    private static Equality equality;
     
-    @Before
-    public void setup() {
+    @BeforeAll
+    static void setup() {
         baseValues = new ArrayList<>();
         equality = new AncestorEquality();
         baseIterator = new IteratorToSortedKeyValueIterator(baseValues.iterator());
@@ -39,51 +39,51 @@ public class AncestorChildExpansionIteratorTest {
     
     // basic iterator contract verification
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testUninitializedHasTop() {
-        iterator.hasTop();
+        Assertions.assertThrows(IllegalStateException.class, () -> iterator.hasTop());
     }
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testUninitializedgetTopKey() {
-        iterator.getTopKey();
+        Assertions.assertThrows(IllegalStateException.class, () -> iterator.getTopKey());
     }
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testUninitializedgetTopValue() {
-        iterator.getTopValue();
+        Assertions.assertThrows(IllegalStateException.class, () -> iterator.getTopValue());
     }
     
-    @Test(expected = IllegalStateException.class)
-    public void testUninitializedNext() throws IOException {
-        iterator.next();
+    @Test
+    public void testUninitializedNext() {
+        Assertions.assertThrows(IllegalStateException.class, () -> iterator.next());
     }
     
     @Test
     public void testSeekEnablesHasTop() throws IOException {
         iterator.seek(new Range(), Collections.EMPTY_LIST, false);
-        Assert.assertFalse(iterator.hasTop());
+        Assertions.assertFalse(iterator.hasTop());
     }
     
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void testNoTopGetTopKeyError() throws IOException {
         iterator.seek(new Range(), Collections.EMPTY_LIST, false);
-        Assert.assertFalse(iterator.hasTop());
-        iterator.getTopKey();
+        Assertions.assertFalse(iterator.hasTop());
+        Assertions.assertThrows(NoSuchElementException.class, () -> iterator.getTopKey());
     }
     
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void testNoTopGetTopValueError() throws IOException {
         iterator.seek(new Range(), Collections.EMPTY_LIST, false);
-        Assert.assertFalse(iterator.hasTop());
-        iterator.getTopValue();
+        Assertions.assertFalse(iterator.hasTop());
+        Assertions.assertThrows(NoSuchElementException.class, () -> iterator.getTopValue());
     }
     
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void testNoTopNextError() throws IOException {
         iterator.seek(new Range(), Collections.EMPTY_LIST, false);
-        Assert.assertFalse(iterator.hasTop());
-        iterator.next();
+        Assertions.assertFalse(iterator.hasTop());
+        Assertions.assertThrows(NoSuchElementException.class, () -> iterator.next());
     }
     
     // end basic iterator contract verification
@@ -99,12 +99,12 @@ public class AncestorChildExpansionIteratorTest {
     }
     
     private void assertKey(Key key, String uid) {
-        Assert.assertNotNull(key);
-        Assert.assertEquals(key.getRow().toString(), FI_ROW);
-        Assert.assertEquals(key.getColumnFamily().toString(), FI_COLUMN_FAMILY);
-        Assert.assertEquals(key.getColumnQualifier().toString(), FI_COLUMN_QUALIFIER_PREFIX + uid);
-        Assert.assertEquals(new String(key.getColumnVisibilityParsed().getExpression()), FI_VIS);
-        Assert.assertEquals(key.getTimestamp(), FI_TIMESTAMP);
+        Assertions.assertNotNull(key);
+        Assertions.assertEquals(key.getRow().toString(), FI_ROW);
+        Assertions.assertEquals(key.getColumnFamily().toString(), FI_COLUMN_FAMILY);
+        Assertions.assertEquals(key.getColumnQualifier().toString(), FI_COLUMN_QUALIFIER_PREFIX + uid);
+        Assertions.assertEquals(new String(key.getColumnVisibilityParsed().getExpression()), FI_VIS);
+        Assertions.assertEquals(key.getTimestamp(), FI_TIMESTAMP);
     }
     
     @Test
@@ -115,14 +115,14 @@ public class AncestorChildExpansionIteratorTest {
         
         iterator.seek(new Range(), Collections.EMPTY_LIST, false);
         
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();
         assertKey(topKey, "a.3");
         Value topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertFalse(iterator.hasTop());
+        Assertions.assertFalse(iterator.hasTop());
     }
     
     @Test
@@ -133,35 +133,35 @@ public class AncestorChildExpansionIteratorTest {
         
         iterator.seek(new Range(), Collections.EMPTY_LIST, false);
         
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();
         assertKey(topKey, "a.1");
         Value topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.1");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.2");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.2.1");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertFalse(iterator.hasTop());
+        Assertions.assertFalse(iterator.hasTop());
     }
     
     @Test
@@ -174,35 +174,35 @@ public class AncestorChildExpansionIteratorTest {
         
         iterator.seek(new Range(), Collections.EMPTY_LIST, false);
         
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();
         assertKey(topKey, "a.1");
         Value topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.1");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.2");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.2.1");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertFalse(iterator.hasTop());
+        Assertions.assertFalse(iterator.hasTop());
     }
     
     @Test
@@ -214,35 +214,35 @@ public class AncestorChildExpansionIteratorTest {
         
         iterator.seek(new Range(), Collections.EMPTY_LIST, false);
         
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();
         assertKey(topKey, "a.3");
         Value topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.4.1");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.4.1.1");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.4.1.2");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertFalse(iterator.hasTop());
+        Assertions.assertFalse(iterator.hasTop());
     }
     
     @Test
@@ -256,55 +256,55 @@ public class AncestorChildExpansionIteratorTest {
         
         iterator.seek(new Range(), Collections.EMPTY_LIST, false);
         
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();
         assertKey(topKey, "a.1");
         Value topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.1");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.2");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.2.1");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.3");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.4.1.1");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertTrue(iterator.hasTop());
+        Assertions.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.9");
         topValue = iterator.getTopValue();
-        Assert.assertNotNull(topValue);
+        Assertions.assertNotNull(topValue);
         
         iterator.next();
-        Assert.assertFalse(iterator.hasTop());
+        Assertions.assertFalse(iterator.hasTop());
     }
 }

@@ -1,7 +1,7 @@
 package datawave.query.statsd;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -18,7 +18,7 @@ public class QueryStatsdDClientTest {
     
     @Test
     public void testMetrics() {
-        SimpleUDPServer server = null;
+        SimpleUDPServer server;
         server = new SimpleUDPServer(9875);
         server.start();
         
@@ -36,17 +36,17 @@ public class QueryStatsdDClientTest {
         client.flush();
         
         // wait at least 200 ms to ensure the data is received
-        sleep(1000);
+        sleep();
         
         // verify the sent metrics
         Set<String> messages = new HashSet<>(server.getMessages());
         System.out.println(messages);
-        Assert.assertFalse("Did not receive messages", messages.isEmpty());
-        Assert.assertEquals("Did not receive 4 messages", 4, messages.size());
-        Assert.assertTrue("Did not receive correct seek message", messages.contains("queryid.dwquery.seek_calls:1|c"));
-        Assert.assertTrue("Did not receive correct next message", messages.contains("queryid.dwquery.next_calls:2|c"));
-        Assert.assertTrue("Did not receive correct sources message", messages.contains("queryid.dwquery.sources:3|c"));
-        Assert.assertTrue("Did not receive correct timing message", messages.contains("queryid.dwquery.MyMethod:4242|c"));
+        Assertions.assertFalse(messages.isEmpty(), "Did not receive messages");
+        Assertions.assertEquals(4, messages.size(), "Did not receive 4 messages");
+        Assertions.assertTrue(messages.contains("queryid.dwquery.seek_calls:1|c"), "Did not receive correct seek message");
+        Assertions.assertTrue(messages.contains("queryid.dwquery.next_calls:2|c"), "Did not receive correct next message");
+        Assertions.assertTrue(messages.contains("queryid.dwquery.sources:3|c"), "Did not receive correct sources message");
+        Assertions.assertTrue(messages.contains("queryid.dwquery.MyMethod:4242|c"), "Did not receive correct timing message");
         
         client.stop();
         server.stop();
@@ -54,7 +54,7 @@ public class QueryStatsdDClientTest {
     
     @Test
     public void testMultipleQueryMetrics() {
-        SimpleUDPServer server = null;
+        SimpleUDPServer server;
         server = new SimpleUDPServer(9876);
         server.start();
         
@@ -79,23 +79,23 @@ public class QueryStatsdDClientTest {
         client2.flush();
         
         // wait at least 200 ms to ensure the data is received
-        sleep(1000);
+        sleep();
         
         // verify the sent metrics
         Set<String> messages = new HashSet<>(server.getMessages());
         System.out.println(messages);
-        Assert.assertFalse("Did not receive messages", messages.isEmpty());
-        Assert.assertEquals("Did not receive 8 messages", 8, messages.size());
+        Assertions.assertFalse(messages.isEmpty(), "Did not receive messages");
+        Assertions.assertEquals(Float.parseFloat("Did not receive 8 messages"), 8, messages.size());
         
-        Assert.assertTrue("Did not receive correct seek message", messages.contains("queryid1.dwquery.seek_calls:1|c"));
-        Assert.assertTrue("Did not receive correct next message", messages.contains("queryid1.dwquery.next_calls:2|c"));
-        Assert.assertTrue("Did not receive correct sources message", messages.contains("queryid1.dwquery.sources:3|c"));
-        Assert.assertTrue("Did not receive correct timing message", messages.contains("queryid1.dwquery.MyMethod:4242|c"));
+        Assertions.assertTrue(messages.contains("queryid1.dwquery.seek_calls:1|c"), "Did not receive correct seek message");
+        Assertions.assertTrue(messages.contains("queryid1.dwquery.next_calls:2|c"), "Did not receive correct next message");
+        Assertions.assertTrue(messages.contains("queryid1.dwquery.sources:3|c"), "Did not receive correct sources message");
+        Assertions.assertTrue(messages.contains("queryid1.dwquery.MyMethod:4242|c"), "Did not receive correct timing message");
         
-        Assert.assertTrue("Did not receive correct seek message", messages.contains("queryid2.dwquery.seek_calls:2|c"));
-        Assert.assertTrue("Did not receive correct next message", messages.contains("queryid2.dwquery.next_calls:1|c"));
-        Assert.assertTrue("Did not receive correct sources message", messages.contains("queryid2.dwquery.sources:1|c"));
-        Assert.assertTrue("Did not receive correct timing message", messages.contains("queryid2.dwquery.MyMethod:4243|c"));
+        Assertions.assertTrue(messages.contains("queryid2.dwquery.seek_calls:2|c"), "Did not receive correct seek message");
+        Assertions.assertTrue(messages.contains("queryid2.dwquery.next_calls:1|c"), "Did not receive correct next message");
+        Assertions.assertTrue(messages.contains("queryid2.dwquery.sources:1|c"), "Did not receive correct sources message");
+        Assertions.assertTrue(messages.contains("queryid2.dwquery.MyMethod:4243|c"), "Did not receive correct timing message");
         
         client1.stop();
         client2.stop();
@@ -104,11 +104,11 @@ public class QueryStatsdDClientTest {
     
     public static class SimpleUDPServer implements Runnable {
         
-        private List<String> messages = new ArrayList<>();
+        private final List<String> messages = new ArrayList<>();
         private Thread thread = null;
         private boolean running = false;
         private boolean stop = false;
-        private volatile int port = 9875;
+        private volatile int port;
         private IOException exception = null;
         
         SimpleUDPServer(int port) {
@@ -174,11 +174,11 @@ public class QueryStatsdDClientTest {
         }
     }
     
-    private void sleep(long time) {
+    private void sleep() {
         long start = System.currentTimeMillis();
-        while (System.currentTimeMillis() - start < time) {
+        while (System.currentTimeMillis() - start < (long) 1000) {
             try {
-                Thread.sleep(time - Math.max(1, System.currentTimeMillis() - start));
+                Thread.sleep((long) 1000 - Math.max(1, System.currentTimeMillis() - start));
             } catch (InterruptedException ie) {
                 // cont
             }

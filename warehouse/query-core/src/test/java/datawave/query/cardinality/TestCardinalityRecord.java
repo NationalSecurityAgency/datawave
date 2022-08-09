@@ -1,7 +1,7 @@
 package datawave.query.cardinality;
 
-import org.junit.Test;
-import org.locationtech.jts.util.Assert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +21,7 @@ public class TestCardinalityRecord {
         Map<String,List<String>> valueMap = new HashMap<>();
         List<String> results = cr.assembleValues("FIELD1", valueMap);
         
-        Assert.equals(0, results.size());
+        Assertions.assertEquals(0, results.size());
     }
     
     @Test
@@ -40,7 +40,7 @@ public class TestCardinalityRecord {
         List<String> results = cr.assembleValues("FIELD1", valueMap);
         
         int expectedSize = list1.size();
-        Assert.equals(expectedSize, results.size());
+        Assertions.assertEquals(expectedSize, results.size());
     }
     
     @Test
@@ -65,7 +65,7 @@ public class TestCardinalityRecord {
         List<String> results = cr.assembleValues("FIELD1|FIELD2", valueMap);
         
         int expectedSize = list1.size() * list2.size();
-        Assert.equals(expectedSize, results.size());
+        Assertions.assertEquals(expectedSize, results.size());
     }
     
     @Test
@@ -107,6 +107,6 @@ public class TestCardinalityRecord {
         List<String> results = cr.assembleValues("FIELD1|FIELD2|FIELD3|FIELD4|FIELD5", valueMap);
         
         int expectedSize = list1.size() * list2.size() * list3.size() * list4.size() * list5.size();
-        Assert.equals(expectedSize, results.size());
+        Assertions.assertEquals(expectedSize, results.size());
     }
 }

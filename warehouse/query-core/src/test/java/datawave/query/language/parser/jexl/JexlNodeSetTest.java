@@ -8,14 +8,18 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JexlNodeSetTest {
     
@@ -76,10 +80,10 @@ public class JexlNodeSetTest {
         assertEquals(1, array.length);
     }
     
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testToArray2() {
         JexlNodeSet nodeSet = new JexlNodeSet();
-        nodeSet.toArray(new Object[0]);
+        assertThrows(UnsupportedOperationException.class, () -> nodeSet.toArray(new Object[0]));
     }
     
     @Test
@@ -325,16 +329,16 @@ public class JexlNodeSetTest {
     public void testEquals() {
         JexlNodeSet prime = new JexlNodeSet();
         
-        assertFalse(prime.equals(null));
-        assertTrue(prime.equals(prime));
+        assertNotEquals(null, prime);
+        assertEquals(prime, prime);
         
         JexlNodeSet other = new JexlNodeSet();
         other.add(JexlNodeFactory.buildEQNode("FOO", "bar"));
         
-        assertFalse(prime.equals(other));
+        assertNotEquals(prime, other);
         
         prime.add(JexlNodeFactory.buildEQNode("FOO", "bar"));
-        assertTrue(prime.equals(other));
+        assertEquals(prime, other);
     }
     
     // Test exercises the directAddAll() codepath found within the addAll() method.

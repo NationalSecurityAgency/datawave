@@ -69,7 +69,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
         if (indexLookupMap == null) {
             indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
             
-            Iterator<Entry<Key,Value>> iter = Iterators.emptyIterator();
+            Iterator<Entry<Key,Value>> iter = Collections.emptyIterator();
             
             ScannerSession bs;
             

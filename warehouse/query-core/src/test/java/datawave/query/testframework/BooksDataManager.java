@@ -10,7 +10,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -57,9 +57,7 @@ public class BooksDataManager extends AbstractDataManager {
         RawMetaData shardMetdata = new RawMetaData(this.cfgData.getDateField(), Normalizer.LC_NO_DIACRITICS_NORMALIZER, false);
         this.metadata = new HashMap<>();
         this.metadata.put(this.cfgData.getDateField().toLowerCase(), shardMetdata);
-        for (Map.Entry<String,RawMetaData> field : data.getMetadata().entrySet()) {
-            this.metadata.put(field.getKey(), field.getValue());
-        }
+        this.metadata.putAll(data.getMetadata());
         this.rawDataIndex.put(datatype, indexes.getIndexFields());
     }
     
@@ -99,7 +97,7 @@ public class BooksDataManager extends AbstractDataManager {
      *            uri of CSV file
      */
     public void loadGroupingData(final URI file) {
-        Assert.assertFalse("datatype has already been configured(" + this.datatype + ")", this.rawData.containsKey(this.datatype));
+        Assertions.assertFalse(this.rawData.containsKey(this.datatype), "datatype has already been configured(" + this.datatype + ")");
         
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
             GroupingAccumuloWriter writer = new GroupingAccumuloWriter(this.datatype, this.accumuloConn, this.cfgData.getDateField(), this.fieldIndex,
@@ -108,16 +106,14 @@ public class BooksDataManager extends AbstractDataManager {
             Set<RawData> bookData = new HashSet<>();
             List<Map.Entry<Multimap<String,String>,UID>> loadData = new ArrayList<>();
             
-            int count = 0;
             String[] data;
             while (null != (data = csv.readNext())) {
-                RawData rawEntry = new BooksRawData(this.datatype, this.getHeaders(), this.metadata, data);
+                BooksRawData rawEntry = new BooksRawData(this.datatype, this.getHeaders(), this.metadata, data);
                 bookData.add(rawEntry);
                 
-                final Multimap<String,String> mm = ((BooksRawData) rawEntry).toMultimap();
+                final Multimap<String,String> mm = rawEntry.toMultimap();
                 UID uid = UID.builder().newId(mm.toString().getBytes(), "");
                 loadData.add(Maps.immutableEntry(mm, uid));
-                count++;
             }
             this.rawData.put(this.datatype, bookData);
             writer.addData(loadData);
@@ -130,7 +126,7 @@ public class BooksDataManager extends AbstractDataManager {
     public void addTestData(URI file, String datatype, Set<String> indexes) throws IOException {
         // ignore
         log.error("noop condition - use loadTestData method");
-        Assert.fail("method not supported for books data manager");
+        Assertions.fail("method not supported for books data manager");
     }
     
     /**

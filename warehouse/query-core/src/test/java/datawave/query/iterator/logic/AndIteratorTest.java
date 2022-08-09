@@ -2,18 +2,14 @@ package datawave.query.iterator.logic;
 
 import com.google.common.collect.Lists;
 import datawave.query.iterator.NestedIterator;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class AndIteratorTest {
-    
-    @Before
-    public void setup() {}
     
     @Test
     public void testSingleInclude() {
@@ -23,12 +19,12 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("a", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("b", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -40,14 +36,14 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("e", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("a", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("b", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("e", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -59,12 +55,12 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("b", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("c", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -79,10 +75,10 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes, excludes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("b", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -97,10 +93,10 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes, excludes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("a", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -115,12 +111,12 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes, excludes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("a", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("b", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -135,14 +131,14 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes, excludes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("f", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("a", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("b", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("f", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -157,14 +153,14 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes, excludes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("f", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("a", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("b", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("f", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -176,10 +172,10 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("b", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -193,10 +189,10 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes, excludes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("a", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -214,9 +210,9 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(unsourcedIterator.isContextRequired());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(unsourcedIterator.isContextRequired());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -235,9 +231,9 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(unsourcedIterator.isContextRequired());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(unsourcedIterator.isContextRequired());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -249,13 +245,13 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
         iterator.setContext("e");
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("e", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("c", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("e", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -267,11 +263,11 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
         iterator.setContext("d");
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("c", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     @Test
@@ -283,13 +279,13 @@ public class AndIteratorTest {
         AndIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
         iterator.setContext("z");
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("z", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("c", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("z", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     private NegationFilterTest.Itr<String> getItr(List<String> source, boolean contextRequired) {

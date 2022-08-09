@@ -1,5 +1,13 @@
 package datawave.query.language.parser.jexl;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import datawave.query.language.parser.ParseException;
+import datawave.query.language.tree.QueryNode;
+import datawave.query.language.tree.ServerHeadNode;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -7,49 +15,40 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Assert;
-import datawave.query.language.parser.ParseException;
-import datawave.query.language.tree.QueryNode;
-import datawave.query.language.tree.ServerHeadNode;
-
-import org.junit.Test;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestLuceneToJexlControlledQueryParser {
     
     private LuceneToJexlControlledQueryParser parser;
     
-    @Test(expected = ParseException.class)
-    public void testDisallowedAnyfield() throws ParseException {
+    @Test
+    public void testDisallowedAnyfield() {
         parser = new LuceneToJexlControlledQueryParser();
         parser.setAllowAnyField(false);
-        parseQuery("anyfield should not work");
+        assertThrows(ParseException.class, () -> parseQuery("anyfield should not work"));
     }
     
     /**
      * Noticed bug when no allowed fields were set, users could not perform an ANYFIELD query.
-     * 
-     * @throws ParseException
+     *
      */
     @Test
     public void testAllowedAnyfieldWithEmptyAllowedFields() throws ParseException {
         parser = new LuceneToJexlControlledQueryParser();
         parser.setAllowAnyField(true);
-        parser.setIncludedValues(ImmutableMap.<String,Set<String>> of());
-        parser.setAllowedFields(ImmutableSet.<String> of());
+        parser.setIncludedValues(ImmutableMap.of());
+        parser.setAllowedFields(ImmutableSet.of());
         parseQuery("unfieldedValue");
     }
     
-    @Test(expected = ParseException.class)
-    public void testDisallowedFieldsInAnd() throws ParseException {
+    @Test
+    public void testDisallowedFieldsInAnd() {
         parser = new LuceneToJexlControlledQueryParser();
         Set<String> allowedFields = new HashSet<>();
         allowedFields.add("FIELD1");
         allowedFields.add("FIELD2");
         parser.setAllowedFields(allowedFields);
-        parseQuery("FIELD1:value FIELD2:value FIELD3:value");
+        assertThrows(ParseException.class, () -> parseQuery("FIELD1:value FIELD2:value FIELD3:value"));
     }
     
     /**
@@ -70,22 +69,22 @@ public class TestLuceneToJexlControlledQueryParser {
         parser.parse("field1:value FIELD2:value field3:value");
     }
     
-    @Test(expected = ParseException.class)
-    public void testDisallowedFieldsInFunction1() throws ParseException {
+    @Test
+    public void testDisallowedFieldsInFunction1() {
         parser = new LuceneToJexlControlledQueryParser();
         Set<String> allowedFields = new HashSet<>();
         allowedFields.add("FIELD1");
         parser.setAllowedFields(allowedFields);
-        parseQuery("FIELD1:value #INCLUDE(FIELD3, regex3)");
+        assertThrows(ParseException.class, () -> parseQuery("FIELD1:value #INCLUDE(FIELD3, regex3)"));
     }
     
-    @Test(expected = ParseException.class)
-    public void testDisallowedFieldsInFunction2() throws ParseException {
+    @Test
+    public void testDisallowedFieldsInFunction2() {
         parser = new LuceneToJexlControlledQueryParser();
         Set<String> allowedFields = new HashSet<>();
         allowedFields.add("FIELD1");
         parser.setAllowedFields(allowedFields);
-        parseQuery("FIELD1:value #ISNULL(FIELD3)");
+        assertThrows(ParseException.class, () -> parseQuery("FIELD1:value #ISNULL(FIELD3)"));
     }
     
     @Test
@@ -95,7 +94,7 @@ public class TestLuceneToJexlControlledQueryParser {
         allowedFields.add("FIELD1");
         allowedFields.add("FIELD2");
         parser.setAllowedFields(allowedFields);
-        Assert.assertEquals("FIELD1 == 'value' && FIELD2 == 'value'", parseQuery("FIELD1:value FIELD2:value"));
+        Assertions.assertEquals("FIELD1 == 'value' && FIELD2 == 'value'", parseQuery("FIELD1:value FIELD2:value"));
     }
     
     @Test
@@ -112,7 +111,7 @@ public class TestLuceneToJexlControlledQueryParser {
         includedValues.put("FIELD3", Collections.singleton("specialvalue3"));
         parser.setIncludedValues(includedValues);
         
-        Assert.assertEquals("(FIELD1 == 'value') && (filter:includeRegex(FIELD2, 'specialvalue2') || filter:includeRegex(FIELD3, 'specialvalue3'))",
+        Assertions.assertEquals("(FIELD1 == 'value') && (filter:includeRegex(FIELD2, 'specialvalue2') || filter:includeRegex(FIELD3, 'specialvalue3'))",
                         parseQuery("FIELD1:value"));
     }
     
@@ -130,7 +129,8 @@ public class TestLuceneToJexlControlledQueryParser {
         excludedValues.put("FIELD3", Collections.singleton("specialvalue3"));
         parser.setExcludedValues(excludedValues);
         
-        Assert.assertEquals("(FIELD1 == 'value') && (not(filter:includeRegex(FIELD2, 'specialvalue2')) && not(filter:includeRegex(FIELD3, 'specialvalue3')))",
+        Assertions.assertEquals(
+                        "(FIELD1 == 'value') && (not(filter:includeRegex(FIELD2, 'specialvalue2')) && not(filter:includeRegex(FIELD3, 'specialvalue3')))",
                         parseQuery("FIELD1:value"));
     }
     
@@ -156,7 +156,8 @@ public class TestLuceneToJexlControlledQueryParser {
         
         String expandedQuery = parseQuery("$9001_1:dudududuu");
         
-        Assert.assertEquals("($9001_1 == 'dudududuu') && (filter:includeRegex($1337_1, 'John') && not(filter:includeRegex($1337_1, 'Cena')))", expandedQuery);
+        Assertions.assertEquals("($9001_1 == 'dudududuu') && (filter:includeRegex($1337_1, 'John') && not(filter:includeRegex($1337_1, 'Cena')))",
+                        expandedQuery);
     }
     
     private String parseQuery(String query) throws ParseException {

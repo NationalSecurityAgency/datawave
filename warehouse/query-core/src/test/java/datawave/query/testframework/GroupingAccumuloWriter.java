@@ -22,7 +22,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.util.Calendar;
 import java.util.Collection;
@@ -77,8 +77,6 @@ class GroupingAccumuloWriter {
      * 
      * @param data
      *            raw data (NOTE: the key values in the multimap are expected to be uppercase)
-     * @throws MutationsRejectedException
-     * @throws TableNotFoundException
      */
     void addData(final List<Map.Entry<Multimap<String,String>,UID>> data) throws MutationsRejectedException, TableNotFoundException {
         final BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
@@ -204,8 +202,8 @@ class GroupingAccumuloWriter {
     
     private String extractShard(Multimap<String,String> data) {
         Collection<String> shard = data.get(this.shardField);
-        Assert.assertNotNull("shard date field not found in raw data", shard);
-        Assert.assertEquals("shard date is invalid", 1, shard.size());
+        Assertions.assertNotNull(shard, "shard date field not found in raw data");
+        Assertions.assertEquals(1, shard.size(), "shard date is invalid");
         return shard.iterator().next();
     }
     
@@ -236,7 +234,7 @@ class GroupingAccumuloWriter {
         }
         
         // add others as needed
-        Assert.assertNotNull(clName);
+        Assertions.assertNotNull(clName);
         return clName;
     }
 }

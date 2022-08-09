@@ -34,8 +34,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.hadoop.io.Text;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -54,10 +54,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static datawave.util.TableName.SHARD_INDEX;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration test for the {@link RangeStreamScanner}
@@ -72,17 +72,17 @@ public class RangeStreamScannerTest {
     
     // Helper method that builds an accumulo mutation for an index entry.
     // Format: bar FOO:20190314\u0000datatype1:doc1,doc2,doc3
-    private static Mutation buildMutation(String fieldName, String fieldValue, String shard, String datatype, String colViz, String... docIds) {
+    private static Mutation buildMutation(String fieldValue, String shard, String... docIds) {
         List<String> docIdList = Lists.newArrayList(docIds);
-        return buildMutation(fieldName, fieldValue, shard, datatype, colViz, docIdList);
+        return buildMutation(fieldValue, shard, docIdList);
     }
     
     // Helper method that builds an accumulo mutation for an index entry.
     // Format: bar FOO:20190314\u0000datatype1:doc1,doc2,doc3
-    private static Mutation buildMutation(String fieldName, String fieldValue, String shard, String datatype, String colViz, List<String> docIds) {
-        Text columnFamily = new Text(fieldName);
-        Text columnQualifier = new Text(shard + '\u0000' + datatype);
-        ColumnVisibility columnVisibility = new ColumnVisibility(colViz);
+    private static Mutation buildMutation(String fieldValue, String shard, List<String> docIds) {
+        Text columnFamily = new Text("FOO");
+        Text columnQualifier = new Text(shard + '\u0000' + "datatype1");
+        ColumnVisibility columnVisibility = new ColumnVisibility("A");
         
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.addAllUID(docIds);
@@ -97,7 +97,7 @@ public class RangeStreamScannerTest {
         return mutation;
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws Exception {
         InMemoryInstance instance = new InMemoryInstance();
         connector = instance.getConnector("", new PasswordToken(new byte[0]));
@@ -110,13 +110,13 @@ public class RangeStreamScannerTest {
         
         // FOO == 'bar' hits day 20190314 with 1 shard, each shard has 2 document ids.
         // This remains under the shards/day limit and under the documents/shard limit.
-        bw.addMutation(buildMutation("FOO", "bar", "20190314", "datatype1", "A", "doc1", "doc2"));
+        bw.addMutation(buildMutation("bar", "20190314", "doc1", "doc2"));
         
         // FOO == 'baz' hits day 20190317 with 15 shards, each shard has 2 document ids.
         // This exceeds the shards/day limit and remains under the documents/shard limit.
         for (int ii = 0; ii < 15; ii++) {
             String shard = "20190317_" + ii;
-            bw.addMutation(buildMutation("FOO", "baz", shard, "datatype1", "A", "doc1", "doc2"));
+            bw.addMutation(buildMutation("baz", shard, "doc1", "doc2"));
         }
         
         // FOO == 'boo' hits day 20190319 with 8 shards, each shard has 15 document ids.
@@ -127,7 +127,7 @@ public class RangeStreamScannerTest {
         }
         for (int jj = 0; jj < 8; jj++) {
             String shard = "20190319_" + jj;
-            bw.addMutation(buildMutation("FOO", "boo", shard, "datatype1", "A", docIds));
+            bw.addMutation(buildMutation("boo", shard, docIds));
         }
         
         // FOO == 'boohoo' hits day 20190319 with 15 shards, each shard has 25 document ids.
@@ -138,7 +138,7 @@ public class RangeStreamScannerTest {
         }
         for (int jj = 0; jj < 15; jj++) {
             String shard = "20190323_" + jj;
-            bw.addMutation(buildMutation("FOO", "boohoo", shard, "datatype1", "A", docIds));
+            bw.addMutation(buildMutation("boohoo", shard, docIds));
         }
         
         // Flush mutations and close the writer.
@@ -283,7 +283,7 @@ public class RangeStreamScannerTest {
         int documentCount = 0;
         while (scannerStream.hasNext()) {
             Tuple2<String,IndexInfo> entry = scannerStream.next();
-            assertTrue("Expected shard to start with '20190317_' but was: " + entry.first(), entry.first().startsWith("20190317_"));
+            assertTrue(entry.first().startsWith("20190317_"), "Expected shard to start with '20190317_' but was: " + entry.first());
             assertEquals(2, entry.second().count());
             shardCount++;
             documentCount += entry.second().count();
@@ -317,7 +317,7 @@ public class RangeStreamScannerTest {
         int documentCount = 0;
         while (scannerStream.hasNext()) {
             Tuple2<String,IndexInfo> entry = scannerStream.next();
-            assertTrue("Expected shard to start with '20190319_' but was: " + entry.first(), entry.first().startsWith("20190319_"));
+            assertTrue(entry.first().startsWith("20190319_"), "Expected shard to start with '20190319_' but was: " + entry.first());
             assertEquals(15, entry.second().count());
             shardCount++;
             documentCount += entry.second().count();
@@ -350,7 +350,7 @@ public class RangeStreamScannerTest {
         int documentCount = 0;
         while (scannerStream.hasNext()) {
             Tuple2<String,IndexInfo> entry = scannerStream.next();
-            assertTrue("Expected shard to start with '20190323' but was: " + entry.first(), entry.first().startsWith("20190323"));
+            assertTrue(entry.first().startsWith("20190323"), "Expected shard to start with '20190323' but was: " + entry.first());
             shardCount++;
             documentCount += entry.second().count();
         }
@@ -383,7 +383,7 @@ public class RangeStreamScannerTest {
         
         TreeMap<Key,Value> sortedDatas = new TreeMap<>();
         for (int ii = 0; ii < 20; ii++) {
-            Entry<Key,Value> entry = buildEntry("20190314_" + ii, "FOO", "bar");
+            Entry<Key,Value> entry = buildEntry("20190314_" + ii);
             sortedDatas.put(entry.getKey(), entry.getValue());
         }
         
@@ -394,8 +394,10 @@ public class RangeStreamScannerTest {
         
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
         
+        assert datas.peek() != null;
         assertEquals("20190314_0", datas.peek().getKey().getColumnQualifier().toString());
         scanner.advanceQueueToShard(datas, "20190314_15");
+        assert datas.peek() != null;
         assertEquals("20190314_15", datas.peek().getKey().getColumnQualifier().toString());
     }
     
@@ -440,13 +442,11 @@ public class RangeStreamScannerTest {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
         
         // Top value is a day
-        Entry<Key,Value> topDay = buildEntry("20190314", "FOO", "bar");
-        scanner.currentEntry = topDay;
+        scanner.currentEntry = buildEntry("20190314");
         assertEquals("20190314", scanner.currentEntryMatchesShard("20190314"));
         
         // Top value is a shard
-        Entry<Key,Value> topShard = buildEntry("20190314_0", "FOO", "bar");
-        scanner.currentEntry = topShard;
+        scanner.currentEntry = buildEntry("20190314_0");
         assertEquals("20190314_0", scanner.currentEntryMatchesShard("20190314_0"));
     }
     
@@ -454,12 +454,10 @@ public class RangeStreamScannerTest {
     public void testCurrentEntryMatchesShard_topShardBeyondSeekShard() throws Exception {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
         
-        Entry<Key,Value> topDay = buildEntry("20190314", "FOO", "bar");
-        scanner.currentEntry = topDay;
+        scanner.currentEntry = buildEntry("20190314");
         assertEquals("20190314", scanner.currentEntryMatchesShard("20190310"));
         
-        Entry<Key,Value> topShard = buildEntry("20190314_0", "FOO", "bar");
-        scanner.currentEntry = topShard;
+        scanner.currentEntry = buildEntry("20190314_0");
         assertEquals("20190314_0", scanner.currentEntryMatchesShard("20190310_0"));
     }
     
@@ -467,8 +465,7 @@ public class RangeStreamScannerTest {
     public void testCurrentEntryMatchesShard_topShardMatchesDay() throws Exception {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
         
-        Entry<Key,Value> topShard = buildEntry("20190314_0", "FOO", "bar");
-        scanner.currentEntry = topShard;
+        scanner.currentEntry = buildEntry("20190314_0");
         assertEquals("20190314_0", scanner.currentEntryMatchesShard("20190310"));
     }
     
@@ -476,8 +473,7 @@ public class RangeStreamScannerTest {
     public void testCurrentEntryMatchesShard_topDayMatchesShard() throws Exception {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
         
-        Entry<Key,Value> topDay = buildEntry("20190314", "FOO", "bar");
-        scanner.currentEntry = topDay;
+        scanner.currentEntry = buildEntry("20190314");
         assertEquals("20190314", scanner.currentEntryMatchesShard("20190310_0"));
     }
     
@@ -485,17 +481,15 @@ public class RangeStreamScannerTest {
     public void testCurrentEntryMatchesShard_noMatch() throws Exception {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
         
-        Entry<Key,Value> topDay = buildEntry("20190314", "FOO", "bar");
-        scanner.currentEntry = topDay;
+        scanner.currentEntry = buildEntry("20190314");
         assertNull(scanner.currentEntryMatchesShard("20190315"));
         
-        Entry<Key,Value> topShard = buildEntry("20190314_0", "FOO", "bar");
-        scanner.currentEntry = topShard;
-        assertNull("20190314_0", scanner.currentEntryMatchesShard("20190315_0"));
+        scanner.currentEntry = buildEntry("20190314_0");
+        assertNull(scanner.currentEntryMatchesShard("20190315_0"));
     }
     
     // Assumes entries have the datatype stripped off, per the CreateUidsIterator contract.
-    private Entry<Key,Value> buildEntry(String shard, String field, String value) {
+    private Entry<Key,Value> buildEntry(String shard) {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.addAllUID(Collections.singletonList("uid0"));
         builder.setCOUNT(1);
@@ -503,7 +497,7 @@ public class RangeStreamScannerTest {
         Uid.List list = builder.build();
         
         Value uids = new Value(list.toByteArray());
-        Key key = new Key(value, field, shard);
+        Key key = new Key("bar", "FOO", shard);
         
         return new AbstractMap.SimpleEntry<>(key, uids);
     }

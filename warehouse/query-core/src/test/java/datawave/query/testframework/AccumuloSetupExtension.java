@@ -206,7 +206,7 @@ public class AccumuloSetupExtension implements AfterEachCallback, BeforeEachCall
         Path tmpPath = new Path(tempFolder.toURI());
         // To prevent periodic test cases failing, added "---" prefix for UUID for test cases to support queries with _ANYFIELD_ starting with particular
         // letters.
-        Path seqFile = new Path(tmpPath, "---" + UUID.randomUUID().toString());
+        Path seqFile = new Path(tmpPath, "---" + UUID.randomUUID());
         
         TaskAttemptID id = new TaskAttemptID("testJob", 0, TaskType.MAP, 0, 0);
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, id);

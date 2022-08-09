@@ -1,10 +1,10 @@
 package org.apache.commons.jexl2.parser;
 
 import datawave.query.jexl.JexlASTHelper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JexlNodesTest {
     

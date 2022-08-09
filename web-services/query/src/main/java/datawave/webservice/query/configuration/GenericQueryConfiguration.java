@@ -1,19 +1,16 @@
 package datawave.webservice.query.configuration;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-
+import com.google.common.collect.Iterators;
 import datawave.util.TableName;
 import datawave.webservice.query.logic.BaseQueryLogic;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 
-import com.google.common.collect.Iterators;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * <p>
@@ -43,7 +40,7 @@ public abstract class GenericQueryConfiguration {
     // Table name
     private String tableName = TableName.SHARD;
     
-    private Iterator<QueryData> queries = Iterators.emptyIterator();
+    private Iterator<QueryData> queries = Collections.emptyIterator();
     
     protected boolean bypassAccumulo;
     

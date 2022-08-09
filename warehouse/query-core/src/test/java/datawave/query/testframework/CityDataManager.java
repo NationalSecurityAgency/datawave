@@ -3,7 +3,7 @@ package datawave.query.testframework;
 import au.com.bytecode.opencsv.CSVReader;
 import datawave.query.testframework.CitiesDataType.CityField;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -32,7 +32,7 @@ public class CityDataManager extends AbstractDataManager {
     
     @Override
     public void addTestData(final URI file, final String datatype, final Set<String> indexes) throws IOException {
-        Assert.assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
+        Assertions.assertFalse(this.rawData.containsKey(datatype), "datatype has already been configured(" + datatype + ")");
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader, ',', '\"', '\0')) {
             String[] data;
             int count = 0;
@@ -70,9 +70,9 @@ public class CityDataManager extends AbstractDataManager {
      * POJO for a single raw data entry.
      */
     private static class CityRawData extends BaseRawData {
-        CityRawData(final String datatype, final String fields[]) {
+        CityRawData(final String datatype, final String[] fields) {
             super(datatype, fields, CityField.headers(), CityField.getFieldsMetadata());
-            Assert.assertEquals("city ingest data field count is invalid", CityField.headers().size(), fields.length);
+            Assertions.assertEquals(CityField.headers().size(), fields.length, "city ingest data field count is invalid");
         }
     }
 }

@@ -3,7 +3,7 @@ package datawave.query;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
@@ -13,9 +13,10 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,8 +29,8 @@ import static datawave.query.testframework.RawDataManager.RN_OP;
 
 public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
     
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = new AccumuloSetupExtension();
     
     private static final Logger log = Logger.getLogger(FilterFunctionQueryTest.class);
     
@@ -41,7 +42,7 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
     private static final String MatchesAtLeastCountOf = "filter:matchesAtLeastCountOf(";
     private static final String Occurrence = "filter:occurrence(";
     
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
@@ -323,33 +324,34 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
     
     // ============================================
     // error conditions
-    @Test(expected = FullTableScansDisallowedException.class)
-    public void testErrorFilterOnly() throws Exception {
+    @Test
+    public void testErrorFilterOnly() {
         log.info("------  testFilterOnly  ------");
         
         String state = "'.+iSs.+'";
         
         String query = IncludeRegex + CityField.STATE.name() + "," + state + ")";
         String expectQuery = CityField.STATE.name() + RE_OP + state;
-        runTest(query, expectQuery);
+        Assertions.assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, expectQuery));
+        
     }
     
-    @Test(expected = InvalidQueryException.class)
-    public void testErrorIndexDatatype() throws Exception {
+    @Test
+    public void testErrorIndexDatatype() {
         log.info("------  testErrorDatatype  ------");
         
         String query = CityField.CODE.name() + RE_OP + "'ab.*?'" + AND_OP + IncludeRegex + "NONE, 'xx') " + AND_OP + IsNotNull + CityField.STATE.name() + ")";
         String expectQuery = CityField.CODE.name() + EQ_OP + "'xxx'";
-        runTest(query, expectQuery);
+        Assertions.assertThrows(InvalidQueryException.class, () -> runTest(query, expectQuery));
     }
     
-    @Test(expected = InvalidQueryException.class)
-    public void testErrorNoIndexDatatype() throws Exception {
+    @Test
+    public void testErrorNoIndexDatatype() {
         log.info("------  testErrorNoIndexDatatype  ------");
         
         String query = "Unindex" + RE_OP + "'ab.*?'" + AND_OP + IncludeRegex + "NONE, 'ab') " + AND_OP + IsNotNull + CityField.STATE.name() + ")";
         String expectQuery = CityField.CODE.name() + EQ_OP + "'xxx'";
-        runTest(query, expectQuery);
+        Assertions.assertThrows(InvalidQueryException.class, () -> runTest(query, expectQuery));
     }
     
     // ============================================

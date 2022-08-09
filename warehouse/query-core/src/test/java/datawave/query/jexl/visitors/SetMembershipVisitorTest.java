@@ -6,15 +6,14 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.assertj.core.api.Assertions;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class SetMembershipVisitorTest {
     
@@ -22,7 +21,7 @@ public class SetMembershipVisitorTest {
     private final Set<String> fields = new HashSet<>();
     private JexlNode query;
     
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         config.setLazySetMechanismEnabled(false);
         query = null;
@@ -227,9 +226,8 @@ public class SetMembershipVisitorTest {
     public void testIndexOnlyFieldTaggingWhenLazySetMechanismIsDisabled() throws ParseException {
         givenFields("CITY", "NAME", "COUNTY");
         givenQuery("CITY == 'bar' && filter:includeRegex(NAME, 'aaa|bbb')");
-        
-        Assertions.assertThatExceptionOfType(DatawaveFatalQueryException.class).isThrownBy(() -> SetMembershipVisitor.getMembers(fields, config, query, true))
-                        .withMessage("LAZY_SET mechanism is disabled for index-only fields");
+        DatawaveFatalQueryException thrown = Assertions.assertThrows(DatawaveFatalQueryException.class,() ->  SetMembershipVisitor.getMembers(fields, config, query, true));
+        Assertions.assertEquals("LAZY_SET mechanism is disabled for index-only fields", thrown.getMessage());
     }
     
     /**
@@ -240,9 +238,8 @@ public class SetMembershipVisitorTest {
     public void testPreviouslyTaggedIndexOnlyFieldWhenLazySetMechanismIsDisabled() throws ParseException {
         givenFields("CITY", "NAME", "COUNTY");
         givenQuery("CITY == 'bar' && filter:includeRegex(NAME@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION, 'aaa|bbb')");
-        
-        Assertions.assertThatExceptionOfType(DatawaveFatalQueryException.class).isThrownBy(() -> SetMembershipVisitor.getMembers(fields, config, query, true))
-                        .withMessage("LAZY_SET mechanism is disabled for index-only fields");
+        DatawaveFatalQueryException thrown = Assertions.assertThrows(DatawaveFatalQueryException.class,() ->  SetMembershipVisitor.getMembers(fields, config, query, true));
+        Assertions.assertEquals("LAZY_SET mechanism is disabled for index-only fields", thrown.getMessage());
     }
     
     /**
@@ -253,9 +250,8 @@ public class SetMembershipVisitorTest {
     public void testPreviouslyTaggedNonMatchingFieldWhenLazySetMechanismIsDisabled() throws ParseException {
         givenFields("CITY", "NAME", "COUNTY");
         givenQuery("NON_MATCH@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION == 'aaa'");
-        
-        Assertions.assertThatExceptionOfType(DatawaveFatalQueryException.class).isThrownBy(() -> SetMembershipVisitor.getMembers(fields, config, query, false))
-                        .withMessage("LAZY_SET mechanism is disabled for index-only fields");
+        DatawaveFatalQueryException thrown = Assertions.assertThrows(DatawaveFatalQueryException.class,() ->  SetMembershipVisitor.getMembers(fields, config, query, false));
+        Assertions.assertEquals("LAZY_SET mechanism is disabled for index-only fields", thrown.getMessage());
     }
     
     private void givenLazySetMechanismEnabled() {
@@ -271,15 +267,15 @@ public class SetMembershipVisitorTest {
     }
     
     private void assertContains(boolean expected) {
-        assertThat(SetMembershipVisitor.contains(fields, config, query)).isEqualTo(expected);
+        Assertions.assertEquals(expected, SetMembershipVisitor.contains(fields, config, query));
     }
     
     private void assertMembership(String... expected) {
-        assertThat(SetMembershipVisitor.getMembers(fields, config, query)).containsExactly(expected);
+        Assertions.assertArrayEquals(expected, SetMembershipVisitor.getMembers(fields, config, query).toArray());
     }
     
     private void assertMembershipWithTagging(String... expected) {
-        assertThat(SetMembershipVisitor.getMembers(fields, config, query, true)).containsExactly(expected);
+        Assertions.assertArrayEquals(expected, SetMembershipVisitor.getMembers(fields, config, query, true).toArray());
     }
     
     private void assertQuery(String expected) {

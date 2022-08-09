@@ -5,10 +5,10 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.validate.ASTValidator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class IsNotNullPruningVisitorTest {
     
@@ -382,8 +382,7 @@ public class IsNotNullPruningVisitorTest {
     @Test
     public void testFutureCase_FieldForUnion() {
         // in this case FOO is a common field for the nested union and we can prune the isNotNull term
-        String query = "!(FOO == null) && (FOO == 'bar' || filter:includeRegex(FOO, 'ba.*'))";
-        String expected = "(FOO == 'bar' || filter:includeRegex(FOO, 'ba.*'))";
+        String query;
         // test(query, expected);
         
         // TODO -- update to f:includeText when #1534 is merged
@@ -484,8 +483,8 @@ public class IsNotNullPruningVisitorTest {
             ASTJexlScript visited = (ASTJexlScript) IsNotNullPruningVisitor.prune(script);
             ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
             
-            assertTrue("visit produced an invalid tree", ASTValidator.isValid(visited));
-            assertTrue(JexlStringBuildingVisitor.buildQueryWithoutParse(visited), TreeEqualityVisitor.checkEquality(visited, expectedScript).isEqual());
+            assertTrue(ASTValidator.isValid(visited), "visit produced an invalid tree");
+            assertTrue(TreeEqualityVisitor.checkEquality(visited, expectedScript).isEqual(), JexlStringBuildingVisitor.buildQueryWithoutParse(visited));
             
         } catch (ParseException | InvalidQueryTreeException e) {
             e.printStackTrace();

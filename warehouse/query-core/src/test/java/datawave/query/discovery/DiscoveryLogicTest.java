@@ -21,9 +21,9 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 import org.javatuples.Pair;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -37,10 +37,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DiscoveryLogicTest {
-    private static Logger log = Logger.getLogger(DiscoveryLogicTest.class);
+    private static final Logger log = Logger.getLogger(DiscoveryLogicTest.class);
     
     protected static Set<Pair<String,String>> terms;
     protected static Set<Pair<String,String>> terms2;
@@ -53,7 +53,7 @@ public class DiscoveryLogicTest {
     protected DiscoveryLogic logic;
     protected SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyyMMdd");
     
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         blank = new Value(new byte[0]);
         terms = Sets.newHashSet(Pair.with("firetruck", "vehicle"), Pair.with("ruddy duck", "bird"), Pair.with("ruddy duck", "unidentified flying object"),
@@ -72,20 +72,20 @@ public class DiscoveryLogicTest {
         System.setProperty(MetadataHelperFactory.ALL_AUTHS_PROPERTY, queryAuths);
     }
     
-    @Before
+    @BeforeEach
     public void setup() throws Throwable {
         QueryTestTableHelper testTableHelper = new QueryTestTableHelper(DiscoveryLogicTest.class.getCanonicalName(), log);
         recordWriter = new MockAccumuloRecordWriter();
         testTableHelper.configureTables(recordWriter);
         connector = testTableHelper.connector;
         
-        for (Pair p : terms) {
+        for (Pair<String,String> p : terms) {
             insertIndex(p);
         }
         
-        insertForwardModel("animal", "rooster");
-        insertForwardModel("animal", "bird");
-        insertReverseModel("occupation", "job");
+        insertForwardModel("rooster");
+        insertForwardModel("bird");
+        insertReverseModel();
         
         logic = new DiscoveryLogic();
         logic.setIndexTableName(TableName.SHARD_INDEX);
@@ -101,10 +101,10 @@ public class DiscoveryLogicTest {
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
     }
     
-    protected Uid.List makeUidList(int count) {
+    protected Uid.List makeUidList() {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setIGNORE(true);
-        builder.setCOUNT(count);
+        builder.setCOUNT(24);
         return builder.build();
     }
     
@@ -131,8 +131,7 @@ public class DiscoveryLogicTest {
             for (int i = 0; i < numShards; i++) {
                 for (Date date : dates) {
                     String shard = dateFormatter.format(date);
-                    m.put(valueField.getValue1().toUpperCase(), shard + "_" + i + "\u0000datatype", viz, date.getTime(), new Value(makeUidList(24)
-                                    .toByteArray()));
+                    m.put(valueField.getValue1().toUpperCase(), shard + "_" + i + "\u0000datatype", viz, date.getTime(), new Value(makeUidList().toByteArray()));
                 }
             }
             writer.addMutation(m);
@@ -144,32 +143,31 @@ public class DiscoveryLogicTest {
             for (int i = 0; i < numShards; i++) {
                 for (Date date : dates) {
                     String shard = dateFormatter.format(date);
-                    m.put(valueField.getValue1().toUpperCase(), shard + "_" + i + "\u0000datatype", viz, date.getTime(), new Value(makeUidList(24)
-                                    .toByteArray()));
+                    m.put(valueField.getValue1().toUpperCase(), shard + "_" + i + "\u0000datatype", viz, date.getTime(), new Value(makeUidList().toByteArray()));
                 }
             }
             writer.addMutation(m);
         }
     }
     
-    protected void insertForwardModel(String from, String to) throws Throwable {
+    protected void insertForwardModel(String to) throws Throwable {
         BatchWriterConfig config = new BatchWriterConfig().setMaxMemory(1024L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
         ColumnVisibility viz = new ColumnVisibility("FOO");
         
         try (BatchWriter writer = connector.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
-            Mutation m = new Mutation(from.toUpperCase());
+            Mutation m = new Mutation("animal".toUpperCase());
             m.put("DATAWAVE", to.toUpperCase() + "\u0000forward", viz, blank);
             writer.addMutation(m);
         }
     }
     
-    protected void insertReverseModel(String from, String to) throws Throwable {
+    protected void insertReverseModel() throws Throwable {
         BatchWriterConfig config = new BatchWriterConfig().setMaxMemory(1024L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
         ColumnVisibility viz = new ColumnVisibility("FOO");
         
         try (BatchWriter writer = connector.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
-            Mutation m = new Mutation(from.toUpperCase());
-            m.put("DATAWAVE", to.toUpperCase() + "\u0000reverse", viz, blank);
+            Mutation m = new Mutation("occupation".toUpperCase());
+            m.put("DATAWAVE", "job".toUpperCase() + "\u0000reverse", viz, blank);
             writer.addMutation(m);
         }
     }
@@ -267,7 +265,7 @@ public class DiscoveryLogicTest {
     
     @Test
     public void testReverse() throws Throwable {
-        for (Pair p : terms2) {
+        for (Pair<String,String> p : terms2) {
             insertIndex(p);
         }
         

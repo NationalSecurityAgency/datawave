@@ -10,7 +10,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -21,15 +21,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EntryParserTest {
     
-    private static void addToExpected(Collection<IndexMatch> expected, String prefix, Iterable<String> docIds, JexlNode node) {
+    private static void addToExpected(Collection<IndexMatch> expected, Iterable<String> docIds, JexlNode node) {
         for (String docId : docIds)
-            expected.add(new IndexMatch(prefix + '\u0000' + docId, node));
+            expected.add(new IndexMatch("A" + '\u0000' + docId, node));
     }
     
     /**
@@ -48,7 +48,7 @@ public class EntryParserTest {
         List<IndexMatch> expected = new LinkedList<>();
         
         data.put(new Key("row", "cf", "20190314\u0000A"), hasDocs);
-        addToExpected(expected, "A", docIds, JexlNodeFactory.buildEQNode("hello", "world"));
+        addToExpected(expected, docIds, JexlNodeFactory.buildEQNode("hello", "world"));
         
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);
@@ -82,7 +82,7 @@ public class EntryParserTest {
         
         data.put(new Key("row", "cf", "20190314\u0000A"), hasDocs);
         List<String> docIds = Arrays.asList("doc1", "doc2", "doc3", "doc4");
-        addToExpected(expected, "A", docIds, JexlNodeFactory.buildEQNode("hello", "world"));
+        addToExpected(expected, docIds, JexlNodeFactory.buildEQNode("hello", "world"));
         
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);
@@ -114,7 +114,7 @@ public class EntryParserTest {
         
         data.put(new Key("row", "cf", "20190314_0\u0000A"), hasDocs);
         List<String> docIds = Arrays.asList("doc1", "doc2", "doc3", "doc4");
-        addToExpected(expected, "A", docIds, JexlNodeFactory.buildEQNode("hello", "world"));
+        addToExpected(expected, docIds, JexlNodeFactory.buildEQNode("hello", "world"));
         
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);

@@ -4,32 +4,19 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.Tuple2;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ScannerStreamTest {
     
-    private SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-    
-    @Test
-    public void testHasNextPeekIteration() {
-        List<Tuple2<String,IndexInfo>> elements = createIter("20090606", "20090704");
-        ScannerStream stream = buildScannerStream(elements.iterator());
-        
-        while (stream.hasNext()) {
-            stream.peek();
-            stream.next();
-        }
-        assertFalse(stream.hasNext());
-    }
+    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
     
     // Repeated peek() calls followed by a next() should return the same element.
     @Test

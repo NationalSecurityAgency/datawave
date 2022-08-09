@@ -79,7 +79,7 @@ public class CarsDataType extends AbstractDataTypeConfig {
         private static final List<String> Headers;
         
         static {
-            Headers = Stream.of(CarField.values()).map(e -> e.name()).collect(Collectors.toList());
+            Headers = Stream.of(CarField.values()).map(Enum::name).collect(Collectors.toList());
         }
         
         private static final Map<String,RawMetaData> fieldMetadata;
@@ -149,7 +149,7 @@ public class CarsDataType extends AbstractDataTypeConfig {
         
         private static final Map<String,RawMetaData> metadataMapping = new HashMap<>();
         
-        private RawMetaData metadata;
+        private final RawMetaData metadata;
         
         CarField(final Normalizer<?> normalizer) {
             this(normalizer, false);
@@ -202,8 +202,6 @@ public class CarsDataType extends AbstractDataTypeConfig {
      *            ingest file path
      * @param config
      *            hadoop field configuration
-     * @throws IOException
-     * @throws URISyntaxException
      */
     public CarsDataType(final String car, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
         super(car, ingestFile, config, carManager);

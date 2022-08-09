@@ -2,14 +2,14 @@ package datawave.query.attributes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class UniqueGranularityTest {
     
@@ -50,7 +50,7 @@ public class UniqueGranularityTest {
     public void testNamesForUniqueness() {
         Set<String> names = new HashSet<>();
         for (UniqueGranularity transformer : UniqueGranularity.values()) {
-            assertFalse("Duplicate name found: " + transformer.getName(), names.contains(transformer.getName()));
+            assertFalse(names.contains(transformer.getName()), "Duplicate name found: " + transformer.getName());
             names.add(transformer.getName());
         }
     }
@@ -59,7 +59,7 @@ public class UniqueGranularityTest {
     public void testStaticOf() {
         for (UniqueGranularity transformer : UniqueGranularity.values()) {
             UniqueGranularity actual = UniqueGranularity.of(transformer.getName());
-            assertEquals("Incorrect transformer " + actual + " returned for name " + transformer.getName(), transformer, actual);
+            assertEquals(transformer, actual, "Incorrect transformer " + actual + " returned for name " + transformer.getName());
         }
     }
     

@@ -11,7 +11,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
@@ -24,16 +24,14 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import static datawave.query.Constants.NULL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TermFrequencyIteratorTest {
     
-    private String lowers = "abcdefghijklmnopqrstuvwxyz";
-    private String uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private final String uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     
     @Test
     public void testDocRange_singleKey_parent() throws IOException {
@@ -363,7 +361,7 @@ public class TermFrequencyIteratorTest {
                 hits.add(tfIter.getTopKey());
                 tfIter.next();
             }
-            assertEquals("Expected to get 20 hits for field " + field + "but was " + hits.size(), 20, hits.size());
+            assertEquals(20, hits.size(), "Expected to get 20 hits for field " + field + "but was " + hits.size());
         }
     }
     
@@ -379,8 +377,8 @@ public class TermFrequencyIteratorTest {
         TermFrequencyIterator iter = new TermFrequencyIterator(fieldValues, keys);
         iter.init(tfIter, null, null);
         
-        Key start = getTfKey("row", "type1", "123.345.456", "FIELD_A", "value_c");
-        Key end = getTfKey("row", "type1", "123.345.456.1", "FIELD_A", "value_d");
+        Key start = getTfKey("123.345.456", "value_c");
+        Key end = getTfKey("123.345.456.1", "value_d");
         Range r = new Range(start, true, end, false);
         
         // Hit the first key
@@ -444,6 +442,7 @@ public class TermFrequencyIteratorTest {
         TreeMap<Key,Value> data = new TreeMap<>();
         for (int ii = 0; ii < 10; ii++) {
             for (int jj = 0; jj < 10; jj++) {
+                String lowers = "abcdefghijklmnopqrstuvwxyz";
                 for (int lower = 0; lower < lowers.length(); lower++) {
                     for (int upper = 0; upper < uppers.length(); upper++) {
                         String uid = "uid" + ii;
@@ -468,20 +467,20 @@ public class TermFrequencyIteratorTest {
     public SortedListKeyValueIterator buildIterAcrossValuesWithNulls() {
         List<Map.Entry<Key,Value>> baseSource = new ArrayList<>();
         
-        baseSource.add(new SimpleEntry(getTfKey("row", "type1", "123.345.456", "FIELD_A", "value_a"), new Value()));
-        baseSource.add(new SimpleEntry(getTfKey("row", "type1", "123.345.456", "FIELD_A", "value_b"), new Value()));
-        baseSource.add(new SimpleEntry(getTfKey("row", "type1", "123.345.456", "FIELD_A", "value_c"), new Value()));
-        baseSource.add(new SimpleEntry(getTfKey("row", "type1", "123.345.456", "FIELD_A", "val\0ue_d"), new Value()));
-        baseSource.add(new SimpleEntry(getTfKey("row", "type1", "123.345.456.1", "FIELD_A", "value_a"), new Value()));
-        baseSource.add(new SimpleEntry(getTfKey("row", "type1", "123.345.456.1", "FIELD_A", "value_b"), new Value()));
-        baseSource.add(new SimpleEntry(getTfKey("row", "type1", "123.345.456.1", "FIELD_A", "val\0ue_c"), new Value()));
-        baseSource.add(new SimpleEntry(getTfKey("row", "type1", "123.345.456.1", "FIELD_A", "value_d"), new Value()));
+        baseSource.add(new SimpleEntry(getTfKey("123.345.456", "value_a"), new Value()));
+        baseSource.add(new SimpleEntry(getTfKey("123.345.456", "value_b"), new Value()));
+        baseSource.add(new SimpleEntry(getTfKey("123.345.456", "value_c"), new Value()));
+        baseSource.add(new SimpleEntry(getTfKey("123.345.456", "val\0ue_d"), new Value()));
+        baseSource.add(new SimpleEntry(getTfKey("123.345.456.1", "value_a"), new Value()));
+        baseSource.add(new SimpleEntry(getTfKey("123.345.456.1", "value_b"), new Value()));
+        baseSource.add(new SimpleEntry(getTfKey("123.345.456.1", "val\0ue_c"), new Value()));
+        baseSource.add(new SimpleEntry(getTfKey("123.345.456.1", "value_d"), new Value()));
         
         return new SortedListKeyValueIterator(baseSource);
     }
     
-    private Key getTfKey(String row, String dataType, String uid, String fieldName, String fieldValue) {
-        return new Key(row, "tf", dataType + NULL + uid + NULL + fieldValue + NULL + fieldName);
+    private Key getTfKey(String uid, String fieldValue) {
+        return new Key("row", "tf", "type1" + NULL + uid + NULL + fieldValue + NULL + "FIELD_A");
     }
     
     public Multimap<String,String> buildFieldValues(String field, String... values) {

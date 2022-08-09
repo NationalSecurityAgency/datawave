@@ -10,8 +10,8 @@ import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,12 +21,12 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PushdownLargeFieldedListsVisitorTest {
     protected ShardQueryConfiguration conf = null;
     
-    @Before
+    @BeforeEach
     public void setupConfiguration() {
         conf = new ShardQueryConfiguration();
         conf.setMaxOrExpansionThreshold(3);
@@ -66,7 +66,6 @@ public class PushdownLargeFieldedListsVisitorTest {
     @Test
     public void testPushdownMultiple() throws Throwable {
         testDoubleId("FOO == 'BAR' || BAR == 'BAR' || FOO == 'FOO' || BAR == 'FOO' || FOO == 'FOOBAR' || BAR == 'FOOBAR'", "((_List_ = true) && ((id = '",
-                        "') && (field = 'BAR') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}'))) || ((_List_ = true) && ((id = '",
                         "') && (field = 'FOO') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}')))");
     }
     
@@ -89,14 +88,13 @@ public class PushdownLargeFieldedListsVisitorTest {
     public void testPushdownComplex() throws Throwable {
         testDoubleId("f:includeRegex(FOO, 'blabla') && X == 'Y' && (FOO == 'BAR' || BAR == 'BAR' || FOO == 'FOO' || BAR == 'FOO' || FOO == 'FOOBAR' || BAR == 'FOOBAR') && !(Y == 'X')",
                         "f:includeRegex(FOO, 'blabla') && X == 'Y' && (((_List_ = true) && ((id = '",
-                        "') && (field = 'BAR') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}'))) || ((_List_ = true) && ((id = '",
                         "') && (field = 'FOO') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}')))) && !(Y == 'X')");
         
     }
     
     @Test
     public void testPushdownFst() throws Throwable {
-        setupFst("FOO == 'BAR' || FOO == 'FOO' ||  FOO == 'FOOBAR'", "((_List_ = true) && ((id = '", "') && (field = 'FOO') && (params = '{\"fstURI\":\"");
+        setupFst();
     }
     
     private void testSimple(String query, String expected) throws Throwable {
@@ -116,22 +114,25 @@ public class PushdownLargeFieldedListsVisitorTest {
         assertEquals(left + id + right, rewritten);
     }
     
-    private void testDoubleId(String query, String left1, String right1, String left2) throws Throwable {
+    private void testDoubleId(String query, String left1, String left2) throws Throwable {
         String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
                         TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query)), null, null));
         String id1 = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
         String id2 = rewritten.substring(rewritten.lastIndexOf("id = '") + 6, rewritten.lastIndexOf("') && (field"));
-        assertEquals(left1 + id1 + right1 + id2 + left2, rewritten);
+        assertEquals(left1 + id1 + "') && (field = 'BAR') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}'))) || ((_List_ = true) && ((id = '" + id2
+                        + left2, rewritten);
     }
     
-    private void testFst(String query, String left, String right, FileSystem fileSystem, URI hdfsCacheURI) throws Throwable {
+    private void testFst(FileSystem fileSystem, URI hdfsCacheURI) throws Throwable {
         String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
-                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query)), fileSystem, hdfsCacheURI.toString()));
+                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery("FOO == 'BAR' || FOO == 'FOO' ||  FOO == 'FOOBAR'")), fileSystem,
+                        hdfsCacheURI.toString()));
         String id = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
-        assertEquals(left + id + right + hdfsCacheURI + "/PushdownLargeFileFst.1.fst\"}')))", rewritten);
+        assertEquals("((_List_ = true) && ((id = '" + id + "') && (field = 'FOO') && (params = '{\"fstURI\":\"" + hdfsCacheURI
+                        + "/PushdownLargeFileFst.1.fst\"}')))", rewritten);
     }
     
-    private void setupFst(String query, String left, String right) throws Throwable {
+    private void setupFst() throws Throwable {
         conf.setMaxOrExpansionFstThreshold(3);
         
         final URI hdfsCacheURI;
@@ -150,9 +151,10 @@ public class PushdownLargeFieldedListsVisitorTest {
             hdfsCacheURI = new URI("file:" + tmpDir.getPath());
             fileSystem = FileSystem.get(hdfsCacheURI, hadoopConf);
             
+            assert hadoopConfig != null;
             conf.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
             conf.setIvaratorCacheDirConfigs(Collections.singletonList(new IvaratorCacheDirConfig(hdfsCacheURI.toString())));
-            testFst(query, left, right, fileSystem, hdfsCacheURI);
+            testFst(fileSystem, hdfsCacheURI);
             
         } catch (MalformedURLException e) {
             throw new IllegalStateException("Unable to load hadoop configuration", e);

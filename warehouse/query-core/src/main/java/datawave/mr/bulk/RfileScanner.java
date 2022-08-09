@@ -1,5 +1,28 @@
 package datawave.mr.bulk;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import datawave.common.util.ArgumentChecker;
+import datawave.mr.bulk.split.TabletSplitSplit;
+import datawave.query.tables.SessionOptions;
+import datawave.security.iterator.ConfigurableVisibilityFilter;
+import datawave.security.util.AuthorizationsUtil;
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.log4j.Logger;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
@@ -10,31 +33,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import datawave.common.util.ArgumentChecker;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.IOUtils;
-import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.log4j.Logger;
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-
-import datawave.mr.bulk.split.TabletSplitSplit;
-import datawave.query.tables.SessionOptions;
-import datawave.security.iterator.ConfigurableVisibilityFilter;
-import datawave.security.util.AuthorizationsUtil;
 
 public class RfileScanner extends SessionOptions implements BatchScanner, Closeable {
     
@@ -116,7 +114,7 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
     
     protected Iterator<Entry<Key,Value>> getIterator(List<InputSplit> splits, AccumuloConfiguration acuTableConf) {
         // optimization for single tablets
-        Iterator<Entry<Key,Value>> kv = Iterators.emptyIterator();
+        Iterator<Entry<Key,Value>> kv = Collections.emptyIterator();
         for (InputSplit split : splits) {
             RecordIterator recordIter = null;
             
@@ -139,7 +137,7 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
             if (resought.get()) {
                 resought.set(false);
                 
-                kv = Iterators.emptyIterator();
+                kv = Collections.emptyIterator();
                 
                 for (RecordIterator recordIterator : iterators) {
                     kv = Iterators.concat(kv, new RfileIterator(recordIterator));

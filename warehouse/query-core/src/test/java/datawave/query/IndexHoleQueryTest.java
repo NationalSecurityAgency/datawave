@@ -4,7 +4,7 @@ import datawave.query.config.IndexHole;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.BaseShardIdRange;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
@@ -14,9 +14,10 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.ShardIdValues;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,8 +34,8 @@ import static datawave.query.testframework.RawDataManager.EQ_OP;
  */
 public class IndexHoleQueryTest extends AbstractFunctionalQuery {
     
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = new AccumuloSetupExtension();
     
     private static final Logger log = Logger.getLogger(IndexHoleQueryTest.class);
     
@@ -45,7 +46,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         INDEX_HOLE.add(hole);
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         // add two datatypes that contain different indexes - this will create an index hole
@@ -76,14 +77,14 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         runTest(query, query, start, end);
     }
     
-    @Test(expected = FullTableScansDisallowedException.class)
-    public void testErrorFieldOnly() throws Exception {
+    @Test
+    public void testErrorFieldOnly() {
         log.info("------  testErrorFieldOnly  ------");
         String usa = "'uSa'";
         String query = CityField.CODE.name() + EQ_OP + usa;
         // setting the index hole creates an invalid query
         this.logic.setIndexHoles(INDEX_HOLE);
-        runTest(query, query);
+        Assertions.assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
     
     @Test

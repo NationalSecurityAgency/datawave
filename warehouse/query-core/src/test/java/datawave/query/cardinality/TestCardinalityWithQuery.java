@@ -31,13 +31,12 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.hadoop.io.Text;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -47,6 +46,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -63,17 +63,17 @@ public class TestCardinalityWithQuery {
     static String SHARD_TABLE_NAME = "shard";
     static String SHARD_INDEX_TABLE_NAME = "shardIndex";
     
-    @Rule
-    public TemporaryFolder tempDir = new TemporaryFolder();
+    @TempDir
+    public File tempDir = new File("/tmp/test/TestCardinalityWithQuery");
     
     private DatawavePrincipal datawavePrincipal;
-    private Authorizations auths = new Authorizations("STUFF,THINGS");
+    private final Authorizations auths = new Authorizations("STUFF,THINGS");
     
     private static final Value NULL_VALUE = new Value(new byte[0]);
     
     private Path temporaryFolder;
     
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         instance = new InMemoryInstance();
         connector = instance.getConnector("root", new PasswordToken(""));
@@ -88,10 +88,10 @@ public class TestCardinalityWithQuery {
         
     }
     
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        temporaryFolder = tempDir.newFolder().toPath();
+        temporaryFolder = tempDir.toPath();
         
         logic = new ShardQueryLogic();
         logic.setMarkingFunctions(new MarkingFunctions.Default());
@@ -107,7 +107,7 @@ public class TestCardinalityWithQuery {
         datawavePrincipal = new DatawavePrincipal(Collections.singleton(user));
     }
     
-    @After
+    @AfterEach
     public void cleanUp() {
         temporaryFolder.toFile().deleteOnExit();
     }
@@ -143,8 +143,8 @@ public class TestCardinalityWithQuery {
         m.put(colf, new Text("DATE\u000020190102"), vis, timestamp, NULL_VALUE);
         m.put(colf, new Text("FIELD\u0000value"), vis, timestamp, NULL_VALUE);
         
-        m.put(new Text("fi\u0000ID"), new Text("id-001\u0000" + colf.toString()), vis, timestamp, NULL_VALUE);
-        m.put(new Text("fi\u0000FIELD"), new Text("value\u0000" + colf.toString()), vis, timestamp, NULL_VALUE);
+        m.put(new Text("fi\u0000ID"), new Text("id-001\u0000" + colf), vis, timestamp, NULL_VALUE);
+        m.put(new Text("fi\u0000FIELD"), new Text("value\u0000" + colf), vis, timestamp, NULL_VALUE);
         
         bw.addMutation(m);
         bw.close();
@@ -188,11 +188,11 @@ public class TestCardinalityWithQuery {
         AbstractQueryLogicTransformer<?,?> et = (DocumentTransformer) it.getTransformer();
         
         CardinalityConfiguration cconf = new CardinalityConfiguration();
-        Set<String> cardFields = new HashSet<String>();
+        Set<String> cardFields = new HashSet<>();
         cardFields.add("ID");
         cconf.setCardinalityFields(cardFields);
         
-        Map<String,String> cmap = new HashMap<String,String>();
+        Map<String,String> cmap = new HashMap<>();
         cmap.put("ID", "ID");
         cconf.setCardinalityFieldReverseMapping(cmap);
         
@@ -206,27 +206,27 @@ public class TestCardinalityWithQuery {
         EventQueryResponseBase response = (EventQueryResponseBase) et.createResponse(query.next());
         
         // Wait for cardinality info to be written to the file
-        Thread.currentThread().sleep(1000);
+        Thread.sleep(1000);
         
-        Assert.assertTrue(response.getReturnedEvents().intValue() > 0);
+        Assertions.assertTrue(response.getReturnedEvents().intValue() > 0);
         
         boolean createdDocFile = false;
         boolean readDocFile = false;
         File folder = new File(path);
-        for (File f : folder.listFiles()) {
+        for (File f : Objects.requireNonNull(folder.listFiles())) {
             if (f.getName().contains("document")) {
                 createdDocFile = true;
                 CardinalityRecord rcc = CardinalityRecord.readFromDisk(f);
                 if (null != rcc) {
                     for (DateFieldValueCardinalityRecord dr : rcc.getCardinalityMap().values()) {
-                        Assert.assertEquals("20190101", dr.getEventDate());
+                        Assertions.assertEquals("20190101", dr.getEventDate());
                         readDocFile = true;
                     }
                 }
             }
         }
-        Assert.assertTrue(createdDocFile);
-        Assert.assertTrue(readDocFile);
+        Assertions.assertTrue(createdDocFile);
+        Assertions.assertTrue(readDocFile);
         
     }
     

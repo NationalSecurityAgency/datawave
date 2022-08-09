@@ -1,5 +1,32 @@
 package datawave.query.tables;
 
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.base.VerifyException;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Queues;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.Service;
+import datawave.mr.bulk.RfileResource;
+import datawave.query.tables.async.Scan;
+import datawave.query.tables.async.ScannerChunk;
+import datawave.query.tables.async.SessionArbiter;
+import datawave.query.tables.async.SpeculativeScan;
+import datawave.webservice.query.Query;
+import org.apache.accumulo.core.client.impl.ScannerOptions;
+import org.apache.accumulo.core.client.impl.TabletLocator;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.log4j.Logger;
+
 import java.io.InterruptedIOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Collection;
@@ -17,36 +44,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import com.google.common.base.Throwables;
-import org.apache.accumulo.core.client.impl.ScannerOptions;
-import org.apache.accumulo.core.client.impl.TabletLocator;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.log4j.Logger;
-
-import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Queues;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.Service;
-
-import datawave.mr.bulk.RfileResource;
-import datawave.query.tables.async.Scan;
-import datawave.query.tables.async.ScannerChunk;
-import datawave.query.tables.async.SessionArbiter;
-import datawave.query.tables.async.SpeculativeScan;
-import datawave.webservice.query.Query;
 
 /**
  * 
@@ -159,7 +156,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         
         delegatorReference = super.sessionDelegator;
         
-        scannerBatches = Iterators.emptyIterator();
+        scannerBatches = Collections.emptyIterator();
         
         currentBatch = Queues.newLinkedBlockingDeque();
         
@@ -332,7 +329,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
             while (!service.awaitTermination(250, TimeUnit.MILLISECONDS)) {}
         } catch (Exception e) {
             uncaughtExceptionHandler.uncaughtException(Thread.currentThread().currentThread(), e);
-            Throwables.propagate(e);
+            throw new VerifyException(e);
         }
     }
     
@@ -456,9 +453,10 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     
     protected void submitScan(Scan scan, boolean increment) {
         ListenableFuture<Scan> future = (ListenableFuture<Scan>) service.submit(scan);
-        if (increment)
+        if (increment) {
             runnableCount.incrementAndGet();
-        Futures.addCallback(future, this);
+        }
+        Futures.addCallback(future, this, MoreExecutors.directExecutor());
     }
     
     /**
@@ -549,7 +547,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         }
         uncaughtExceptionHandler.uncaughtException(Thread.currentThread().currentThread(), t);
         stopAsync();
-        Throwables.propagate(t);
+        throw new VerifyException(t);
     }
     
     private boolean isInterruptedException(Throwable t) {
@@ -665,7 +663,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     
     @Override
     public void close() {
-        stop();
+        stopAsync();
         service.shutdownNow();
         listenerService.shutdownNow();
     }

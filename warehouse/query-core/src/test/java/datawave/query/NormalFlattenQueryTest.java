@@ -5,7 +5,7 @@ import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.FlattenData;
@@ -14,9 +14,10 @@ import datawave.query.testframework.FlattenDataType.FlattenBaseFields;
 import datawave.query.testframework.RawDataManager;
 import datawave.query.testframework.RawMetaData;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -40,8 +41,8 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
  */
 public class NormalFlattenQueryTest extends AbstractFunctionalQuery {
     
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = new AccumuloSetupExtension();
     
     private static final Logger log = Logger.getLogger(NormalFlattenQueryTest.class);
     
@@ -60,7 +61,7 @@ public class NormalFlattenQueryTest extends AbstractFunctionalQuery {
         }
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         accumuloSetup.setData(FileType.JSON, flatten);
         connector = accumuloSetup.loadTables(log);
@@ -95,13 +96,13 @@ public class NormalFlattenQueryTest extends AbstractFunctionalQuery {
         runTest(query, query);
     }
     
-    @Test(expected = FullTableScansDisallowedException.class)
-    public void testErrorCityOrState() throws Exception {
+    @Test
+    public void testErrorCityOrState() {
         log.info("------  testErrorCityOrState  ------");
         String city = "'auStin'";
         String state = "'KansAs'";
         String query = NormalField.STATE + EQ_OP + state + OR_OP + NormalField.SMALL_CITY.name() + EQ_OP + city;
-        runTest(query, query);
+        Assertions.assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
     
     @Test
@@ -196,7 +197,7 @@ public class NormalFlattenQueryTest extends AbstractFunctionalQuery {
         static final List<String> headers;
         
         static {
-            headers = Stream.of(NormalField.values()).map(e -> e.name()).collect(Collectors.toList());
+            headers = Stream.of(NormalField.values()).map(Enum::name).collect(Collectors.toList());
         }
         
         static final Map<String,RawMetaData> metadataMapping = new HashMap<>();

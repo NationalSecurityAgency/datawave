@@ -2,8 +2,8 @@ package datawave.query.iterator.logic;
 
 import com.google.common.collect.Lists;
 import datawave.query.iterator.NestedIterator;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.List;
@@ -16,26 +16,26 @@ public class AndOrIteratorTest {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
         
-        childExcludes.add(getItr(Lists.newArrayList("b", "c"), false));
-        childExcludes.add(getItr(Lists.newArrayList("a", "b"), false));
+        childExcludes.add(getItr(Lists.newArrayList("b", "c")));
+        childExcludes.add(getItr(Lists.newArrayList("a", "b")));
         
         OrIterator childOr = new OrIterator(childIncludes, childExcludes);
         
         Set<NestedIterator<String>> includes = new HashSet<>();
         includes.add(childOr);
-        includes.add(getItr(Lists.newArrayList("a", "b", "c"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c")));
         
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(childOr.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(childOr.isContextRequired());
         
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("a", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("c", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     // X AND (Y OR !Z)
@@ -44,26 +44,26 @@ public class AndOrIteratorTest {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
         
-        childIncludes.add(getItr(Lists.newArrayList("b", "c"), false));
-        childExcludes.add(getItr(Lists.newArrayList("a", "b"), false));
+        childIncludes.add(getItr(Lists.newArrayList("b", "c")));
+        childExcludes.add(getItr(Lists.newArrayList("a", "b")));
         
         OrIterator childOr = new OrIterator(childIncludes, childExcludes);
         
         Set<NestedIterator<String>> includes = new HashSet<>();
         includes.add(childOr);
-        includes.add(getItr(Lists.newArrayList("a", "b", "c"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c")));
         
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(childOr.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(childOr.isContextRequired());
         
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("b", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("c", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     // X AND (!Y AND !Z)
@@ -72,63 +72,63 @@ public class AndOrIteratorTest {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
         
-        childExcludes.add(getItr(Lists.newArrayList("b", "c"), false));
-        childExcludes.add(getItr(Lists.newArrayList("a", "b"), false));
+        childExcludes.add(getItr(Lists.newArrayList("b", "c")));
+        childExcludes.add(getItr(Lists.newArrayList("a", "b")));
         
         NestedIterator child = new AndIterator(childIncludes, childExcludes);
         
         Set<NestedIterator<String>> includes = new HashSet<>();
         includes.add(child);
-        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d")));
         
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(child.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(child.isContextRequired());
         
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("d", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("d", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     // X OR !Y
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testDeferredOrMissingContext() {
         Set<NestedIterator<String>> includes = new HashSet<>();
         Set<NestedIterator<String>> excludes = new HashSet<>();
         
-        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d"), false));
-        excludes.add(getItr(Lists.newArrayList("a"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d")));
+        excludes.add(getItr(Lists.newArrayList("a")));
         
         NestedIterator iterator = new OrIterator(includes, excludes);
-        iterator.initialize();
+        Assertions.assertThrows(IllegalStateException.class, iterator::initialize);
     }
     
     // !X OR !Y
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testDeferredOr() {
         Set<NestedIterator<String>> includes = new HashSet<>();
         Set<NestedIterator<String>> excludes = new HashSet<>();
         
-        excludes.add(getItr(Lists.newArrayList("a", "b", "c", "d"), false));
-        excludes.add(getItr(Lists.newArrayList("a"), false));
+        excludes.add(getItr(Lists.newArrayList("a", "b", "c", "d")));
+        excludes.add(getItr(Lists.newArrayList("a")));
         
         NestedIterator iterator = new OrIterator(includes, excludes);
-        iterator.initialize();
+        Assertions.assertThrows(IllegalStateException.class, iterator::initialize);
     }
     
     // !X AND !Y
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testDeferredAnd() {
         Set<NestedIterator<String>> includes = new HashSet<>();
         Set<NestedIterator<String>> excludes = new HashSet<>();
         
-        excludes.add(getItr(Lists.newArrayList("a", "b", "c", "d"), false));
-        excludes.add(getItr(Lists.newArrayList("a"), false));
+        excludes.add(getItr(Lists.newArrayList("a", "b", "c", "d")));
+        excludes.add(getItr(Lists.newArrayList("a")));
         
         NestedIterator iterator = new AndIterator(includes, excludes);
-        iterator.initialize();
+        Assertions.assertThrows(IllegalStateException.class, iterator::initialize);
     }
     
     // X AND !Y AND (!Z OR !A)
@@ -137,31 +137,31 @@ public class AndOrIteratorTest {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
         
-        childExcludes.add(getItr(Lists.newArrayList("b", "d"), false));
-        childExcludes.add(getItr(Lists.newArrayList("c"), false));
+        childExcludes.add(getItr(Lists.newArrayList("b", "d")));
+        childExcludes.add(getItr(Lists.newArrayList("c")));
         
         NestedIterator<String> child = new OrIterator<>(childIncludes, childExcludes);
         
         Set<NestedIterator<String>> includes = new HashSet<>();
         Set<NestedIterator<String>> excludes = new HashSet<>();
         
-        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d"), false));
-        excludes.add(getItr(Lists.newArrayList("a"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d")));
+        excludes.add(getItr(Lists.newArrayList("a")));
         includes.add(child);
         
         NestedIterator iterator = new AndIterator(includes, excludes);
         iterator.initialize();
         
-        Assert.assertTrue(child.isContextRequired());
-        Assert.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(child.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
         
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("d", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("b", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("c", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("d", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     // X AND (Y OR !Y)
@@ -170,30 +170,30 @@ public class AndOrIteratorTest {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
         
-        childIncludes.add(getItr(Lists.newArrayList("b", "c"), false));
-        childExcludes.add(getItr(Lists.newArrayList("b", "c"), false));
+        childIncludes.add(getItr(Lists.newArrayList("b", "c")));
+        childExcludes.add(getItr(Lists.newArrayList("b", "c")));
         
         NestedIterator child = new OrIterator(childIncludes, childExcludes);
         
         Set<NestedIterator<String>> includes = new HashSet<>();
         includes.add(child);
-        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d")));
         
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(child.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(child.isContextRequired());
         
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("d", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("a", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("b", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("c", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("d", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     // X AND (Y AND !Y)
@@ -202,22 +202,22 @@ public class AndOrIteratorTest {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
         
-        childIncludes.add(getItr(Lists.newArrayList("b", "c"), false));
-        childExcludes.add(getItr(Lists.newArrayList("b", "c"), false));
+        childIncludes.add(getItr(Lists.newArrayList("b", "c")));
+        childExcludes.add(getItr(Lists.newArrayList("b", "c")));
         
         NestedIterator child = new AndIterator(childIncludes, childExcludes);
         
         Set<NestedIterator<String>> includes = new HashSet<>();
         includes.add(child);
-        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d")));
         
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertFalse(child.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertFalse(child.isContextRequired());
         
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     // X OR (Y AND Z)
@@ -226,32 +226,32 @@ public class AndOrIteratorTest {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
         
-        childIncludes.add(getItr(Lists.newArrayList("a", "c", "f"), false));
-        childIncludes.add(getItr(Lists.newArrayList("b", "c", "f"), false));
+        childIncludes.add(getItr(Lists.newArrayList("a", "c", "f")));
+        childIncludes.add(getItr(Lists.newArrayList("b", "c", "f")));
         
         NestedIterator child = new AndIterator(childIncludes, childExcludes);
         
         Set<NestedIterator<String>> includes = new HashSet<>();
         includes.add(child);
-        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d")));
         
         NestedIterator iterator = new OrIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertFalse(child.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertFalse(child.isContextRequired());
         
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("d", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("f", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("a", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("b", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("c", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("d", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("f", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     // X OR (Y AND !Z)
@@ -260,28 +260,28 @@ public class AndOrIteratorTest {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
         
-        childIncludes.add(getItr(Lists.newArrayList("a", "b"), false));
-        childExcludes.add(getItr(Lists.newArrayList("b", "f"), false));
+        childIncludes.add(getItr(Lists.newArrayList("a", "b")));
+        childExcludes.add(getItr(Lists.newArrayList("b", "f")));
         
         NestedIterator child = new AndIterator(childIncludes, childExcludes);
         
         Set<NestedIterator<String>> includes = new HashSet<>();
         includes.add(child);
-        includes.add(getItr(Lists.newArrayList("c", "d"), false));
+        includes.add(getItr(Lists.newArrayList("c", "d")));
         
         NestedIterator iterator = new OrIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertFalse(child.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertFalse(child.isContextRequired());
         
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("d", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("a", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("c", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("d", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     // X AND ((!Y OR Z) OR W)
@@ -290,35 +290,35 @@ public class AndOrIteratorTest {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
         
-        childExcludes.add(getItr(Lists.newArrayList("a", "b", "c", "d"), false));
-        childIncludes.add(getItr(Lists.newArrayList("b", "c"), false));
+        childExcludes.add(getItr(Lists.newArrayList("a", "b", "c", "d")));
+        childIncludes.add(getItr(Lists.newArrayList("b", "c")));
         
         NestedIterator child1 = new OrIterator(childIncludes, childExcludes);
         
         Set<NestedIterator<String>> includes = new HashSet<>();
         includes.add(child1);
-        includes.add(getItr(Lists.newArrayList("c", "d"), false));
+        includes.add(getItr(Lists.newArrayList("c", "d")));
         
         NestedIterator child2 = new OrIterator(includes);
         
         includes = new HashSet<>();
         includes.add(child2);
-        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d")));
         
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(child2.isContextRequired());
-        Assert.assertTrue(child1.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(child2.isContextRequired());
+        Assertions.assertTrue(child1.isContextRequired());
         
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("d", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("b", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("c", iterator.next());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("d", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     // X AND (Y OR !Z)
@@ -327,24 +327,24 @@ public class AndOrIteratorTest {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
         
-        childIncludes.add(getItr(Lists.newArrayList("b", "b1", "b2", "b3", "c"), false));
-        childExcludes.add(getItr(Lists.newArrayList("a", "b"), false));
+        childIncludes.add(getItr(Lists.newArrayList("b", "b1", "b2", "b3", "c")));
+        childExcludes.add(getItr(Lists.newArrayList("a", "b")));
         
         OrIterator childOr = new OrIterator(childIncludes, childExcludes);
         
         Set<NestedIterator<String>> includes = new HashSet<>();
         includes.add(childOr);
-        includes.add(getItr(Lists.newArrayList("a", "c"), false));
+        includes.add(getItr(Lists.newArrayList("a", "c")));
         
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(childOr.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(childOr.isContextRequired());
         
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
+        Assertions.assertEquals("c", iterator.next());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     // X AND (Y OR !Z)
@@ -353,22 +353,22 @@ public class AndOrIteratorTest {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
         
-        childIncludes.add(getItr(Lists.newArrayList("b", "b1", "b2", "b3", "c"), false));
-        childExcludes.add(getItr(Lists.newArrayList("z", "z1"), false));
+        childIncludes.add(getItr(Lists.newArrayList("b", "b1", "b2", "b3", "c")));
+        childExcludes.add(getItr(Lists.newArrayList("z", "z1")));
         
         OrIterator childOr = new OrIterator(childIncludes, childExcludes);
         
         Set<NestedIterator<String>> includes = new HashSet<>();
         includes.add(childOr);
-        includes.add(getItr(Lists.newArrayList("z"), false));
+        includes.add(getItr(Lists.newArrayList("z")));
         
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(childOr.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(childOr.isContextRequired());
         
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
     // X AND !(Y OR !Z)
@@ -377,26 +377,26 @@ public class AndOrIteratorTest {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
         
-        childIncludes.add(getItr(Lists.newArrayList("b", "b1", "b2", "b3", "c"), false));
-        childExcludes.add(getItr(Lists.newArrayList("z1", "z2"), false));
+        childIncludes.add(getItr(Lists.newArrayList("b", "b1", "b2", "b3", "c")));
+        childExcludes.add(getItr(Lists.newArrayList("z1", "z2")));
         
         OrIterator childOr = new OrIterator(childIncludes, childExcludes);
         
         Set<NestedIterator<String>> includes = new HashSet<>();
         Set<NestedIterator<String>> excludes = new HashSet<>();
-        includes.add(getItr(Lists.newArrayList("z"), false));
+        includes.add(getItr(Lists.newArrayList("z")));
         excludes.add(childOr);
         
         NestedIterator iterator = new AndIterator(includes, excludes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(childOr.isContextRequired());
+        Assertions.assertFalse(iterator.isContextRequired());
+        Assertions.assertTrue(childOr.isContextRequired());
         
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.hasNext());
     }
     
-    private NegationFilterTest.Itr<String> getItr(List<String> source, boolean contextRequired) {
-        return new NegationFilterTest.Itr<>(source, contextRequired);
+    private NegationFilterTest.Itr<String> getItr(List<String> source) {
+        return new NegationFilterTest.Itr<>(source, false);
     }
 }

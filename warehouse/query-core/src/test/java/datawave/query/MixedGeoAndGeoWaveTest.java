@@ -26,11 +26,11 @@ import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.testframework.MockStatusReporter;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.testframework.MockStatusReporter;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
@@ -52,24 +52,25 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.util.GeometricShapeFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
+import java.io.File;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,11 +90,11 @@ import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class MixedGeoAndGeoWaveTest {
     
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static File temporaryFolder = new File("/tmp/test/MixedGeoAndGeoWaveTest");
     
     private static final int NUM_CIRCLE_POINTS = 60;
     private static final int NUM_SHARDS = 100;
@@ -190,7 +191,7 @@ public class MixedGeoAndGeoWaveTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() throws Exception {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
         
@@ -203,7 +204,7 @@ public class MixedGeoAndGeoWaveTest {
         recNum = ingestData(conf, POINT_FIELD, pointData, recNum, MID_DATE);
         ingestData(conf, POLY_POINT_FIELD, polyData, recNum, MID_DATE);
         
-        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.toURI().toString()));
     }
     
     public static int ingestData(Configuration conf, String fieldName, String[] data, int startRecNum, String ingestDate) throws Exception {
@@ -218,13 +219,13 @@ public class MixedGeoAndGeoWaveTest {
         Multimap<BulkIngestKey,Value> keyValues = HashMultimap.create();
         int recNum = startRecNum;
         
-        for (int i = 0; i < data.length; i++) {
+        for (String datum : data) {
             record.clear();
-            record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
+            record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 1, null));
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
             record.setDate(formatter.parse(ingestDate).getTime());
-            record.setRawData((fieldName + data[i]).getBytes("UTF8"));
+            record.setRawData((fieldName + datum).getBytes(StandardCharsets.UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
             
@@ -305,10 +306,9 @@ public class MixedGeoAndGeoWaveTest {
         String query = "geo:within_bounding_box(" + GEO_FIELD + ", '2_0.5', '10_1.5')";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(2, events.size());
+        Assertions.assertEquals(2, events.size());
         
-        List<String> geoList = new ArrayList<>();
-        geoList.addAll(Arrays.asList(GEO_6, POINT_4));
+        List<String> geoList = new ArrayList<>(Arrays.asList(GEO_6, POINT_4));
         
         for (DefaultEvent event : events) {
             String geo = null;
@@ -319,10 +319,10 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     @Test
@@ -330,10 +330,9 @@ public class MixedGeoAndGeoWaveTest {
         String query = "geowave:intersects(" + GEO_FIELD + ", 'POLYGON((0.5 2, 1.5 2, 1.5 10, 0.5 10, 0.5 2))')";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(2, events.size());
+        Assertions.assertEquals(2, events.size());
         
-        List<String> geoList = new ArrayList<>();
-        geoList.addAll(Arrays.asList(GEO_6, POINT_4));
+        List<String> geoList = new ArrayList<>(Arrays.asList(GEO_6, POINT_4));
         
         for (DefaultEvent event : events) {
             String geo = null;
@@ -344,10 +343,10 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     @Test
@@ -356,10 +355,9 @@ public class MixedGeoAndGeoWaveTest {
                         + ", '2_0.5', '10_1.5'))";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(2, events.size());
+        Assertions.assertEquals(2, events.size());
         
-        List<String> geoList = new ArrayList<>();
-        geoList.addAll(Arrays.asList(GEO_6, POINT_4));
+        List<String> geoList = new ArrayList<>(Arrays.asList(GEO_6, POINT_4));
         
         for (DefaultEvent event : events) {
             String geo = null;
@@ -370,10 +368,10 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     @Test
@@ -383,10 +381,9 @@ public class MixedGeoAndGeoWaveTest {
                         + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))'))";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(2, events.size());
+        Assertions.assertEquals(2, events.size());
         
-        List<String> geoList = new ArrayList<>();
-        geoList.addAll(Arrays.asList(GEO_6, POINT_4));
+        List<String> geoList = new ArrayList<>(Arrays.asList(GEO_6, POINT_4));
         
         for (DefaultEvent event : events) {
             String geo = null;
@@ -397,10 +394,10 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     @Test
@@ -408,7 +405,7 @@ public class MixedGeoAndGeoWaveTest {
         String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_-180', '90_180')";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(12, events.size());
+        Assertions.assertEquals(12, events.size());
         
         List<String> geoList = new ArrayList<>();
         geoList.addAll(Arrays.asList(pointData));
@@ -423,10 +420,10 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     @Test
@@ -434,7 +431,7 @@ public class MixedGeoAndGeoWaveTest {
         String query = "geowave:intersects(" + GEO_FIELD + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(12, events.size());
+        Assertions.assertEquals(12, events.size());
         
         List<String> geoList = new ArrayList<>();
         geoList.addAll(Arrays.asList(pointData));
@@ -449,10 +446,10 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     @Test
@@ -461,7 +458,7 @@ public class MixedGeoAndGeoWaveTest {
                         + ", '-90_-180', '90_180'))";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(12, events.size());
+        Assertions.assertEquals(12, events.size());
         
         List<String> geoList = new ArrayList<>();
         geoList.addAll(Arrays.asList(pointData));
@@ -476,10 +473,10 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     @Test
@@ -489,7 +486,7 @@ public class MixedGeoAndGeoWaveTest {
                         + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))'))";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(12, events.size());
+        Assertions.assertEquals(12, events.size());
         
         List<String> geoList = new ArrayList<>();
         geoList.addAll(Arrays.asList(pointData));
@@ -504,10 +501,10 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     @Test
@@ -515,7 +512,7 @@ public class MixedGeoAndGeoWaveTest {
         String query = "geo:within_circle(" + GEO_FIELD + ", '0_0', 90)";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(12, events.size());
+        Assertions.assertEquals(12, events.size());
         
         List<String> geoList = new ArrayList<>();
         geoList.addAll(Arrays.asList(pointData));
@@ -530,10 +527,10 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     @Test
@@ -541,7 +538,7 @@ public class MixedGeoAndGeoWaveTest {
         String query = "geowave:intersects(" + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "')";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(12, events.size());
+        Assertions.assertEquals(12, events.size());
         
         List<String> geoList = new ArrayList<>();
         geoList.addAll(Arrays.asList(pointData));
@@ -556,10 +553,10 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     @Test
@@ -567,7 +564,7 @@ public class MixedGeoAndGeoWaveTest {
         String query = "geo:within_circle(" + GEO_FIELD + ", '0_0', 90) && ((_Eval_ = true) && geo:within_circle(" + GEO_FIELD + ", '0_0', 90))";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(12, events.size());
+        Assertions.assertEquals(12, events.size());
         
         List<String> geoList = new ArrayList<>();
         geoList.addAll(Arrays.asList(pointData));
@@ -582,10 +579,10 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     @Test
@@ -594,7 +591,7 @@ public class MixedGeoAndGeoWaveTest {
                         + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "'))";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(12, events.size());
+        Assertions.assertEquals(12, events.size());
         
         List<String> geoList = new ArrayList<>();
         geoList.addAll(Arrays.asList(pointData));
@@ -609,10 +606,10 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     @Test
@@ -620,7 +617,7 @@ public class MixedGeoAndGeoWaveTest {
         String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_0.01', '90_-0.01')";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(8, events.size());
+        Assertions.assertEquals(8, events.size());
         
         List<String> geoList = new ArrayList<>();
         geoList.addAll(Arrays.asList(pointData));
@@ -635,10 +632,10 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     @Test
@@ -647,7 +644,7 @@ public class MixedGeoAndGeoWaveTest {
                         + ", '-90_0.01', '90_-0.01'))";
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(8, events.size());
+        Assertions.assertEquals(8, events.size());
         
         List<String> geoList = new ArrayList<>();
         geoList.addAll(Arrays.asList(pointData));
@@ -662,17 +659,17 @@ public class MixedGeoAndGeoWaveTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(geoList.remove(geo));
+            Assertions.assertTrue(geoList.remove(geo));
         }
         
-        Assert.assertEquals(0, geoList.size());
+        Assertions.assertEquals(0, geoList.size());
     }
     
     // Note: Trying to ingest non-point WKT as PointType will not work. PointType can only be used for POINT wkt
-    @Test(expected = InvalidQueryException.class)
-    public void polyPointTest() throws Exception {
+    @Test
+    public void polyPointTest() {
         String query = "geo:within_bounding_box(" + POLY_POINT_FIELD + ", '-1_-1', '1_1')";
-        getQueryResults(query);
+        Assertions.assertThrows(InvalidQueryException.class, () -> getQueryResults(query));
     }
     
     private Polygon createCircle(double lon, double lat, double radius) {
@@ -711,7 +708,7 @@ public class MixedGeoAndGeoWaveTest {
         auths.add(new Authorizations(AUTHS));
         
         Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
+        query.initialize(USER, Collections.singletonList(USER_DN), null, queryParams, null);
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
@@ -737,6 +734,7 @@ public class MixedGeoAndGeoWaveTest {
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
         
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
+        assert hdfsSiteConfig != null;
         logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
         
         setupIvarator(logic);
@@ -765,6 +763,7 @@ public class MixedGeoAndGeoWaveTest {
             } else if (rawData.startsWith(POLY_POINT_FIELD)) {
                 prefix = POLY_POINT_FIELD;
             }
+            assert prefix != null;
             NormalizedContentInterface geo_nci = new NormalizedFieldAndValue(prefix, rawData.substring(prefix.length()));
             eventFields.put(prefix, geo_nci);
             return normalizeMap(eventFields);
