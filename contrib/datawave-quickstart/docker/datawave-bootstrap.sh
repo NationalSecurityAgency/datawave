@@ -36,6 +36,9 @@ do
           --web)
              START_WEB=true
              ;;
+          --webdebug)
+             START_WEB_DEBUG=true
+             ;;
           --test)
              START_TEST=true
              START_AS_DAEMON=false
@@ -54,6 +57,8 @@ done
 [ "${START_ACCUMULO}" == true ] && accumuloStart
 
 [ "${START_WEB}" == true ] && datawaveWebStart
+
+[ "${START_WEB_DEBUG}" == true ] && datawaveWebStart --debug
 
 if [ "${START_TEST}" == true ] ; then
     datawaveWebStart

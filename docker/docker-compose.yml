@@ -24,6 +24,13 @@ services:
       - "8021:8021"
       # accumulo monitor
       - "9995:9995"
+      # web server
+      - "9443:8443"
+      # web server debug port
+      - "5011:8787"
+    extra_hosts:
+      - "${DW_HOSTNAME}:${DW_HOST_IP}"
+      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
     volumes:
       - hadoop_conf:/opt/datawave/contrib/datawave-quickstart/hadoop/client/conf
       - quickstart_data:/opt/datawave/contrib/datawave-quickstart/data

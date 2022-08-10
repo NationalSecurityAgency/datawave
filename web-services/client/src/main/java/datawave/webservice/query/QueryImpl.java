@@ -64,6 +64,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     public static final String END_DATE = QueryParameters.QUERY_END;
     public static final String QUERY_USER_FIELD = "QUERY_USER";
     public static final String QUERY_LOGIC_NAME_FIELD = "QUERY_LOGIC_NAME";
+    public static final String POOL = QueryParameters.QUERY_POOL;
     
     @XmlAccessorType(XmlAccessType.FIELD)
     public static final class Parameter implements Serializable, Message<Parameter> {
@@ -247,6 +248,8 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     protected String owner;
     @XmlElement
     protected String columnVisibility;
+    @XmlElement
+    protected String pool;
     @XmlTransient
     protected Map<String,List<String>> optionalQueryParameters;
     
@@ -290,6 +293,10 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     
     public int getPageTimeout() {
         return pageTimeout;
+    }
+    
+    public String getPool() {
+        return pool;
     }
     
     public long getMaxResultsOverride() {
@@ -346,6 +353,10 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     
     public void setPageTimeout(int pageTimeout) {
         this.pageTimeout = pageTimeout;
+    }
+    
+    public void setPool(String pool) {
+        this.pool = pool;
     }
     
     public void setParameters(Set<Parameter> parameters) {
@@ -435,6 +446,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         query.setColumnVisibility(this.getColumnVisibility());
         query.setBeginDate(this.getBeginDate());
         query.setEndDate(this.getEndDate());
+        query.setPool(this.getPool());
         if (null != this.parameters && !this.parameters.isEmpty())
             query.setParameters(new HashSet<Parameter>(this.parameters));
         query.setDnList(this.dnList);
@@ -460,6 +472,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         tsb.append(COLUMN_VISIBILITY, this.getColumnVisibility());
         tsb.append(BEGIN_DATE, this.getBeginDate());
         tsb.append(END_DATE, this.getEndDate());
+        tsb.append(POOL, this.getPool());
         return tsb.toString();
     }
     
@@ -476,13 +489,14 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                         && Objects.equals(beginDate, that.beginDate) && Objects.equals(endDate, that.endDate)
                         && Objects.equals(queryAuthorizations, that.queryAuthorizations) && Objects.equals(expirationDate, that.expirationDate)
                         && Objects.equals(parameters, that.parameters) && Objects.equals(dnList, that.dnList) && Objects.equals(owner, that.owner)
-                        && Objects.equals(columnVisibility, that.columnVisibility) && Objects.equals(optionalQueryParameters, that.optionalQueryParameters);
+                        && Objects.equals(columnVisibility, that.columnVisibility) && Objects.equals(optionalQueryParameters, that.optionalQueryParameters)
+                        && Objects.equals(pool, that.pool);
     }
     
     @Override
     public int hashCode() {
         return Objects.hash(queryLogicName, id, queryName, userDN, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout,
-                        maxResultsOverridden, maxResultsOverride, parameters, dnList, owner, columnVisibility, optionalQueryParameters);
+                        maxResultsOverridden, maxResultsOverride, parameters, dnList, owner, columnVisibility, optionalQueryParameters, pool);
     }
     
     public Parameter findParameter(String parameter) {
@@ -576,6 +590,10 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
             if (message.pageTimeout == 0)
                 throw new UninitializedMessageException(message, SCHEMA);
             output.writeUInt32(15, message.pageTimeout, false);
+            
+            if (message.pool != null) {
+                output.writeString(16, message.pool, false);
+            }
         }
         
         public void mergeFrom(Input input, QueryImpl message) throws IOException {
@@ -633,6 +651,8 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                     case 15:
                         message.pageTimeout = input.readUInt32();
                         break;
+                    case 16:
+                        message.pool = input.readString();
                     default:
                         input.handleUnknownField(number, this);
                         break;
@@ -672,6 +692,8 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                     return COLUMN_VISIBILITY;
                 case 15:
                     return PAGE_TIMEOUT;
+                case 16:
+                    return POOL;
                 default:
                     return null;
             }
@@ -699,6 +721,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
             fieldMap.put(DN_LIST, 13);
             fieldMap.put(COLUMN_VISIBILITY, 14);
             fieldMap.put(PAGE_TIMEOUT, 15);
+            fieldMap.put(POOL, 16);
         }
     };
     
@@ -724,6 +747,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         this.owner = getOwner(this.userDN);
         this.beginDate = qp.getBeginDate();
         this.endDate = qp.getEndDate();
+        this.pool = qp.getPool();
         if (optionalQueryParameters != null) {
             for (Entry<String,List<String>> entry : optionalQueryParameters.entrySet()) {
                 if (entry.getValue().get(0) != null) {
@@ -826,6 +850,11 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                 throw new RuntimeException("Error formatting date", e);
             }
         }
+        p.set(PAGE_TIMEOUT, Integer.toString(this.pageTimeout));
+        if (this.pool != null) {
+            p.set(QueryParameters.QUERY_POOL, this.pool);
+        }
+        
         if (this.parameters != null) {
             for (Parameter parameter : parameters) {
                 p.set(parameter.getParameterName(), parameter.getParameterValue());
@@ -878,6 +907,11 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                 case QueryParameters.QUERY_END:
                     setEndDate(DefaultQueryParameters.parseEndDate(map.get(key).get(0)));
                     break;
+                case PAGE_TIMEOUT:
+                    setPageTimeout(Integer.parseInt(map.get(key).get(0)));
+                    break;
+                case POOL:
+                    setPool(map.get(key).get(0));
                 default:
                     addParameter(key, map.get(key).get(0));
                     break;
