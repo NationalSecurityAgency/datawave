@@ -111,18 +111,12 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         
-        JexlNode copy = RebuildingVisitor.copy(node);
-        
         FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
-        copy.jjtAccept(visitor, null);
+        node.jjtAccept(visitor, null);
         
         if (visitor.namespace().equals(EVAL_PHASE_FUNCTION_NAMESPACE)) {
-            JexlNode rewritten = null;
             if (visitor.name().equals(IS_NULL) || visitor.name().equals(IS_NOT_NULL)) {
-                rewritten = rewriteFilterFunction(visitor);
-            }
-            
-            if (rewritten != null) {
+                JexlNode rewritten = rewriteFilterFunction(visitor);
                 JexlNodes.replaceChild(node.jjtGetParent(), node, rewritten);
             }
         }
@@ -234,11 +228,16 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
         boolean junctionType = node instanceof ASTAndNode;
         List<JexlNode> children = new ArrayList<>();
         for (JexlNode child : JexlNodes.children(node)) {
-            JexlNode deref = JexlASTHelper.dereference(child);
-            if (junctionType ? (deref instanceof ASTAndNode) : (deref instanceof ASTOrNode)) {
-                Collections.addAll(children, JexlNodes.children(deref));
-            } else {
+            
+            if (QueryPropertyMarkerVisitor.getInstance(child).isAnyType()) {
                 children.add(child);
+            } else {
+                JexlNode deref = JexlASTHelper.dereference(child);
+                if (junctionType ? (deref instanceof ASTAndNode) : (deref instanceof ASTOrNode)) {
+                    Collections.addAll(children, JexlNodes.children(deref));
+                } else {
+                    children.add(child);
+                }
             }
         }
         JexlNodes.children(node, children.toArray(new JexlNode[0]));

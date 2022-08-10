@@ -123,7 +123,7 @@ public class LongRunningQueryTest {
         logic.setupQuery(config);
         
         RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
-                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
+                        null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();
@@ -178,7 +178,7 @@ public class LongRunningQueryTest {
         logic.setupQuery(config);
         
         RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
-                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
+                        null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();
@@ -235,7 +235,7 @@ public class LongRunningQueryTest {
         logic.setupQuery(config);
         
         RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
-                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
+                        null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();
