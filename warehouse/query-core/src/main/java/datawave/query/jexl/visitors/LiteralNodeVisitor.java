@@ -3,14 +3,11 @@ package datawave.query.jexl.visitors;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.query.jexl.JexlASTHelper;
-import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.ASTNRNode;
 
 import java.util.Set;
 
@@ -47,6 +44,12 @@ public class LiteralNodeVisitor extends ShortCircuitBaseVisitor {
     
     @Override
     public Object visit(ASTERNode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTNRNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
