@@ -15,7 +15,6 @@ import javax.websocket.EndpointConfig;
  * of the known types of query messages. //
  */
 public class JsonQueryMessageDecoder implements Decoder.Text<QueryMessage> {
-
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @Override

@@ -66,9 +66,9 @@
 	     compatible api wise while resolving vulnerabilities in jackson <=2.12.6. It's impossible to force Wildfly to use jackson 2.13.x without excluding the 
 	     jaxrs subsystem, which requires major surgery on WildFly. -->
         <version.jackson>2.12.7</version.jackson>
+        <version.jakarta-validation>2.0.2</version.jakarta-validation>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
-        <version.javax-validation>2.0.1.Final</version.javax-validation>
         <version.jcommander>1.72</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
@@ -1006,9 +1006,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${version.javax-validation}</version>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>${version.jakarta-validation}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
