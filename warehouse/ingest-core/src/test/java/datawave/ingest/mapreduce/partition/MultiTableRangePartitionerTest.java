@@ -6,6 +6,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -29,6 +30,7 @@ public class MultiTableRangePartitionerTest {
         mockJob = new Job();
         configuration = mockJob.getConfiguration();
         configuration.set("job.table.names", TableName.SHARD);
+        configuration.set("ingest.work.dir.qualified", "testtmp");
     }
     
     @Test
@@ -41,6 +43,19 @@ public class MultiTableRangePartitionerTest {
     public void testEmptySplitsThrowsException() throws IOException, URISyntaxException {
         mockContextForLocalCacheFile(createUrl("trimmed_empty_splits.txt"));
         getPartition();
+    }
+    
+    @Test
+    public void testCleanUpWorkDir() throws URISyntaxException, IOException {
+        MultiTableRangePartitioner partitioner = new MultiTableRangePartitioner();
+        partitioner.setConf(configuration);
+        // create a temp path and uri
+        Path workDirPath = new Path(configuration.get("ingest.work.dir.qualified"));
+        FileSystem outputFs = FileSystem.get(configuration);
+        outputFs.mkdirs(workDirPath);
+        Assert.assertTrue(outputFs.exists(workDirPath));
+        partitioner.cleanUpWorkDir();
+        Assert.assertFalse(outputFs.exists(workDirPath));
     }
     
     @Test(expected = RuntimeException.class)

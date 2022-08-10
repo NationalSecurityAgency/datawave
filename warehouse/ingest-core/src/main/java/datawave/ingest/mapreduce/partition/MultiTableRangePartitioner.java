@@ -115,8 +115,8 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
     
     @Override
     public void initializeJob(Job job) {
+        Configuration conf = job.getConfiguration();
         try {
-            Configuration conf = job.getConfiguration();
             // only create the splits file if we haven't already created it, possibly for another table
             if (null == NonShardedSplitsFile.findSplitsFile(job.getConfiguration(), job.getLocalCacheFiles(), isTrimmed())) {
                 URI splitsFileUri = createTheSplitsFile(conf);
@@ -124,7 +124,20 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
             }
         } catch (Exception e) {
             log.error(e);
+            try {
+                cleanUpWorkDir();
+            } catch (IOException ex) {
+                log.error(ex);
+            }
             throw new RuntimeException("Failed to initialize partitioner for job", e);
+        }
+    }
+    
+    public void cleanUpWorkDir() throws IOException {
+        Path workDirPath = new Path(conf.get("ingest.work.dir.qualified"));
+        FileSystem outputFs = FileSystem.get(conf);
+        if (outputFs.exists(workDirPath)) {
+            outputFs.delete(workDirPath, true);
         }
     }
     
