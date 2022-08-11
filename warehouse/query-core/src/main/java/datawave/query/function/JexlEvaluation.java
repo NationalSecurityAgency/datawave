@@ -2,7 +2,7 @@ package datawave.query.function;
 
 import datawave.data.type.StringType;
 import datawave.query.attributes.Attributes;
-import datawave.query.attributes.HitTermType;
+import datawave.data.type.HitTermType;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.ArithmeticJexlEngines;

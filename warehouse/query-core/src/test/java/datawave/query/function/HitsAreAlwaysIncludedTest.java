@@ -9,7 +9,7 @@ import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.HitTermType;
+import datawave.data.type.HitTermType;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;

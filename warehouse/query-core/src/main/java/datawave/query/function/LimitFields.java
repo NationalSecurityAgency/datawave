@@ -14,7 +14,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.HitTermType;
+import datawave.data.type.HitTermType;
 import datawave.query.attributes.Numeric;
 import datawave.query.attributes.TypeAttribute;
 import datawave.util.StringUtils;
