@@ -4,10 +4,7 @@ import com.google.common.collect.Sets;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
-import datawave.query.attributes.Document;
+import datawave.query.attributes.*;
 import datawave.data.type.HitTermType;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
@@ -179,12 +176,12 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
             if (hitAttribute instanceof Attributes) {
                 Attributes attributes = (Attributes) hitAttribute;
                 for (Attribute attr : attributes.getAttributes()) {
-                    if (HitTermType.matches.test(attr)) {
+                    if (attr instanceof TypeAttribute && ((TypeAttribute) attr).getType() instanceof HitTermType) {
                         String content = attr.toString();
                         Assert.assertTrue(goodResults.contains(content));
                     }
                 }
-            } else if (HitTermType.matches.test(hitAttribute)) {
+            } else if (hitAttribute instanceof TypeAttribute && ((TypeAttribute) hitAttribute).getType() instanceof HitTermType) {
                 // Content content = (Content) hitAttribute;
                 Assert.assertTrue(goodResults.contains(hitAttribute.toString()));
             }
