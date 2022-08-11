@@ -1938,6 +1938,11 @@ public class QueryExecutorBean implements QueryExecutor {
         RunningQuery query = null;
         Query contentLookupSettings = null;
         try {
+            if (!id.matches("[a-z\\d-]+")) {
+                log.error("Invalid query id: " + id);
+                GenericResponse<String> genericResponse = new GenericResponse<>();
+                throwBadRequest(DatawaveErrorCode.INVALID_QUERY_ID, genericResponse);
+            }
             
             ctx.getUserTransaction().begin();
             
@@ -1954,9 +1959,6 @@ public class QueryExecutorBean implements QueryExecutor {
             // So if the connection is null here, then either the query wasn't in the cache
             // at all, or it was but only because of a call to list. In either case, it's
             // an error.
-            if (!id.matches("[a-z\\d-]+")) {
-                throw new NotFoundQueryException(DatawaveErrorCode.INVALID_QUERY_ID, MessageFormat.format("{0}", id));
-            }
             if (null == query || null == query.getConnection()) {
                 // If the query just wasn't in the cache, then check the persister to see if the
                 // ID exists at all. If it doesn't, then we need to return a 404 rather than 412
@@ -2142,7 +2144,9 @@ public class QueryExecutorBean implements QueryExecutor {
             boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id, principal);
             Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, ((DatawavePrincipal) principal).getShortName());
             if (!id.matches("[a-z\\d-]+")) {
-                throw new NotFoundQueryException(DatawaveErrorCode.INVALID_QUERY_ID, MessageFormat.format("{0}", id));
+                log.error("Invalid query id: " + id);
+                GenericResponse<String> genericResponse = new GenericResponse<>();
+                throwBadRequest(DatawaveErrorCode.INVALID_QUERY_ID, genericResponse);
             }
             if (tuple == null) {
                 try {
