@@ -30,6 +30,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.spring.SpringBean;
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDBuilder;
 import datawave.ingest.data.RawRecordContainer;
@@ -42,7 +43,18 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
+import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.microservice.querymetric.QueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetricsDetailListResponse;
+import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.query.iterator.QueryOptions;
+import datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.AuthorizationsUtil;
@@ -52,21 +64,12 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
-import datawave.webservice.query.metric.BaseQueryMetricListResponse;
-import datawave.webservice.query.metric.QueryMetric;
-import datawave.webservice.query.metric.QueryMetricListResponse;
-import datawave.webservice.query.metric.QueryMetricsDetailListResponse;
-import datawave.webservice.query.metric.QueryMetricsSummaryHtmlResponse;
-import datawave.webservice.query.metric.QueryMetricsSummaryResponse;
+
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.runner.RunningQuery;
@@ -128,6 +131,10 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     
     @Inject
     private QueryMetricFactory metricFactory;
+    
+    @Inject
+    @SpringBean(name = "LuceneToJexlQueryParser", refreshable = true)
+    private LuceneToJexlQueryParser luceneToJexlQueryParser;
     
     private Collection<String> connectorAuthorizationCollection = null;
     private String connectorAuthorizations = null;
@@ -374,11 +381,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             
             // user's DatawavePrincipal must have the Administrator role to use the Metrics query logic
             QueryMetric cachedQueryMetric;
-            QueryMetric newCachedQueryMetric;
+            QueryMetric updatedQueryMetricCopy;
             synchronized (ShardTableQueryMetricHandler.class) {
                 cachedQueryMetric = (QueryMetric) metricsCache.get(updatedQueryMetric.getQueryId());
-                // duplicate updatedQueryMetric because we're counting on the cache to be a snapshot of the QueryMetric
-                // so that we can retrieve it next update call to create the delete Mutations for the values written to Accumulo
                 Map<Long,PageMetric> storedPageMetricMap = new TreeMap<>();
                 if (cachedQueryMetric != null) {
                     List<PageMetric> cachedPageMetrics = cachedQueryMetric.getPageTimes();
@@ -392,11 +397,10 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 for (PageMetric p : updatedQueryMetric.getPageTimes()) {
                     storedPageMetricMap.put(p.getPageNumber(), p);
                 }
-                newCachedQueryMetric = (QueryMetric) updatedQueryMetric.duplicate();
                 ArrayList<PageMetric> newPageMetrics = new ArrayList<>();
                 newPageMetrics.addAll(storedPageMetricMap.values());
-                newCachedQueryMetric.setPageTimes(newPageMetrics);
-                metricsCache.put(updatedQueryMetric.getQueryId(), newCachedQueryMetric);
+                updatedQueryMetric.setPageTimes(newPageMetrics);
+                metricsCache.put(updatedQueryMetric.getQueryId(), updatedQueryMetric);
             }
             
             List<QueryMetric> queryMetrics = new ArrayList<>();
@@ -428,19 +432,10 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 writeMetrics(updatedQueryMetric, queryMetrics, lastUpdated, true);
             }
             
-            long nextUpdateNumber = 0;
-            
-            for (BaseQueryMetric m : queryMetrics) {
-                if ((m.getNumUpdates() + 1) > nextUpdateNumber) {
-                    nextUpdateNumber = m.getNumUpdates() + 1;
-                }
-            }
-            
-            updatedQueryMetric.setNumUpdates(nextUpdateNumber);
-            
+            populateMetricSelectors(updatedQueryMetric, this.luceneToJexlQueryParser);
+            incrementNumUpdates(updatedQueryMetric, queryMetrics);
             synchronized (ShardTableQueryMetricHandler.class) {
-                newCachedQueryMetric.setNumUpdates(nextUpdateNumber);
-                metricsCache.put(updatedQueryMetric.getQueryId(), newCachedQueryMetric);
+                metricsCache.put(updatedQueryMetric.getQueryId(), updatedQueryMetric);
             }
             
             // write new entry
@@ -524,12 +519,11 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 }
             }
         }
-        
-        return queryMetrics;
+        return JexlFormattedStringBuildingVisitor.formatMetrics(queryMetrics);
     }
     
     @Override
-    public QueryMetricListResponse query(String user, String queryId, DatawavePrincipal datawavePrincipal) {
+    public QueryMetricsDetailListResponse query(String user, String queryId, DatawavePrincipal datawavePrincipal) {
         QueryMetricsDetailListResponse response = new QueryMetricsDetailListResponse();
         
         try {
@@ -833,13 +827,13 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     }
     
     @Override
-    public QueryMetricsSummaryHtmlResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        return (QueryMetricsSummaryHtmlResponse) getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryHtmlResponse());
+    public QueryMetricsSummaryResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
     
     @Override
-    public QueryMetricsSummaryHtmlResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        return (QueryMetricsSummaryHtmlResponse) getQueryMetricsSummary(begin, end, true, datawavePrincipal, new QueryMetricsSummaryHtmlResponse());
+    public QueryMetricsSummaryResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, true, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
     
     public QueryMetricsSummaryResponse getQueryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser, DatawavePrincipal datawavePrincipal,

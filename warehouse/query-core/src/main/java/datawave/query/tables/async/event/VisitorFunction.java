@@ -1,7 +1,8 @@
 package datawave.query.tables.async.event;
 
 import com.google.common.base.Function;
-import com.google.common.collect.Lists;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -48,13 +49,13 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Purpose: Perform intermediate transformations on ScannerChunks as they are before being sent to the tablet server.
@@ -72,7 +73,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected Set<String> indexOnlyFields;
     protected Set<String> nonEventFields;
     
-    Map<String,String> previouslyExpanded = new ConcurrentHashMap<>();
+    // thread-safe cache where the key is the original query, and the value is the expanded query
+    private Cache<String,String> queryCache;
     
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
     
@@ -107,6 +109,13 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             throw new RuntimeException(e);
         }
         
+        // Note: By default, the concurrency (which determines the number of simultaneous writes) is set to 4
+        // @formatter:off
+        queryCache = CacheBuilder.newBuilder()
+                .maximumWeight(config.getVisitorFunctionMaxWeight())
+                .weigher((String key, String value) -> key.length() + value.length())
+                .build();
+        // @formatter:on
     }
     
     private Date getEarliestBeginDate(Collection<Range> ranges) {
@@ -150,7 +159,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     
                     ASTJexlScript script = null;
                     
-                    boolean evaluatedPreviously = previouslyExecutable(query);
+                    boolean evaluatedPreviously = true;
+                    String newQuery = queryCache.getIfPresent(query);
+                    if (newQuery == null) {
+                        evaluatedPreviously = false;
+                        newQuery = query;
+                    }
                     
                     boolean madeChange = false;
                     
@@ -160,15 +174,15 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         madeChange = true;
                     }
                     
-                    String newQuery = evaluatedPreviously ? previouslyExpanded.get(query) : query;
-                    
-                    List<String> debug = null;
-                    if (log.isTraceEnabled())
-                        debug = Lists.newArrayList();
+                    LinkedList<String> debug = null;
+                    if (log.isTraceEnabled()) {
+                        debug = new LinkedList<>();
+                    }
                     
                     if (!config.isDisableWhindexFieldMappings() && !evaluatedPreviously) {
-                        if (null == script)
+                        if (null == script) {
                             script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                        }
                         
                         // apply the whindex using the shard date
                         ASTJexlScript rebuiltScript = WhindexVisitor.apply(script, config, getEarliestBeginDate(newSettings.getRanges()), metadataHelper);
@@ -183,8 +197,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     }
                     
                     if (!config.isBypassExecutabilityCheck() || !evaluatedPreviously) {
-                        if (null == script)
-                            script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                        // if the script is not set, recreate it using newQuery
+                        // if evaluatedPreviously is true, newQuery will be set to the new, expanded query
+                        // if evaluatedPreviously is false, newQuery will be set to the original query
+                        if (null == script) {
+                            script = JexlASTHelper.parseAndFlattenJexlQuery(newQuery);
+                        }
                         
                         if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
                                         this.metadataHelper)) {
@@ -259,8 +277,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         if (!evaluatedPreviously) {
                             // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
                             if (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
-                                if (null == script)
+                                if (null == script) {
                                     script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                                }
                                 try {
                                     script = pushdownLargeFieldedLists(config, script);
                                     madeChange = true;
@@ -272,18 +291,19 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     }
                     
                     // only recompile the script if changes were made to the query
-                    if (madeChange)
+                    if (madeChange) {
                         newQuery = JexlStringBuildingVisitor.buildQuery(script);
+                    }
                     
                     try {
-                        previouslyExpanded.put(query, newQuery);
+                        queryCache.put(query, newQuery);
                     } catch (NullPointerException npe) {
                         throw new DatawaveFatalQueryException(String.format("New query is null! madeChange: %b, qid: %s", madeChange,
                                         setting.getOptions().get(QueryOptions.QUERY_ID)), npe);
                     }
                     
                     // test the final script for thresholds
-                    DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config, false);
+                    DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config.getMaxDepthThreshold(), config.getFinalMaxTermThreshold());
                     
                     newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
                     newOptions.removeScanIterator(setting.getName());
@@ -309,10 +329,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         
         newSettings.setOptions(newOptions);
         return newSettings;
-    }
-    
-    private boolean previouslyExecutable(String query) {
-        return previouslyExpanded.containsKey(query);
     }
     
     /**
@@ -347,7 +363,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             
             // check term limits and use the capacity map to reduce further if necessary
             int termCount = TermCountingVisitor.countTerms(script);
-            if (termCount > config.getMaxTermThreshold()) {
+            if (termCount > config.getFinalMaxTermThreshold()) {
                 // check if the capacity is available to get under the term limit
                 // determine if its possible to reduce enough to meet the threshold
                 int capacitySum = 0;
@@ -355,7 +371,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     capacitySum += capacity;
                 }
                 
-                if (termCount - capacitySum <= config.getMaxTermThreshold()) {
+                if (termCount - capacitySum <= config.getFinalMaxTermThreshold()) {
                     // preserve the original config and set minimum thresholds for creating Value and Range ivarators
                     int originalMaxOrExpansionThreshold = config.getMaxOrExpansionThreshold();
                     int originalMaxOrRangeThreshold = config.getMaxOrRangeThreshold();
@@ -374,7 +390,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         
                         // sort from largest to smallest reductions and make reductions until under the threshold
                         Set<String> fieldsToReduce = new HashSet<>();
-                        int toReduce = termCount - config.getMaxTermThreshold();
+                        int toReduce = termCount - config.getFinalMaxTermThreshold();
                         while (toReduce > 0) {
                             // get the highest value field out of the map
                             Integer reduction = sortedMap.lastKey();

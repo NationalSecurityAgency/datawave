@@ -3,10 +3,13 @@ package datawave.query.util;
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.DateType;
+import datawave.data.type.GeometryType;
 import datawave.data.type.IpAddressType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
+import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
+import datawave.data.type.util.Geometry;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
@@ -34,6 +37,7 @@ public class WiseGuysIngest {
     private static final Type<?> ipAddressType = new IpAddressType();
     private static final Type<?> numberType = new NumberType();
     private static final Type<?> dateType = new DateType();
+    private static final Type<?> geoType = new GeometryType();
     
     protected static final String datatype = "test";
     protected static final String date = "20130101";
@@ -60,6 +64,8 @@ public class WiseGuysIngest {
             return numberType.getClass().getName();
         } else if ("FROM_ADDRESS".equals(column) || "TO_ADDRESS".equals(column)) {
             return ipAddressType.getClass().getName();
+        } else if ("GEO".equals(column)) {
+            return geoType.getClass().getName();
         } else {
             return lcNoDiacriticsType.getClass().getName();
         }
@@ -107,6 +113,7 @@ public class WiseGuysIngest {
             mutation.put(datatype + "\u0000" + corleoneUID, "QUOTE" + "\u0000" + "Im gonna make him an offer he cant refuse", columnVisibility, timeStamp,
                             emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "NUMBER" + "\u0000" + "25", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "GEO" + "\u0000" + "POINT(10 10)", columnVisibility, timeStamp, emptyValue);
             
             mutation.put(datatype + "\u0000" + corleoneChildUID, "UUID.0" + "\u0000" + "ANDOLINI", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneChildUID, "ETA.0" + "\u0000" + "12", columnVisibility, timeStamp, emptyValue);
@@ -128,6 +135,7 @@ public class WiseGuysIngest {
             mutation.put(datatype + "\u0000" + sopranoUID, "DEATH_DATE" + "\u0000" + "2000-12-28T00:00:05.000Z", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "QUOTE" + "\u0000" + "If you can quote the rules then you can obey them", columnVisibility,
                             timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "GEO" + "\u0000" + "POINT(20 20)", columnVisibility, timeStamp, emptyValue);
             
             mutation.put(datatype + "\u0000" + caponeUID, "NAME.0" + "\u0000" + "ALPHONSE", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "NAME.1" + "\u0000" + "FRANK", columnVisibility, timeStamp, emptyValue);
@@ -153,6 +161,7 @@ public class WiseGuysIngest {
                             + "You can get much farther with a kind word and a gun than you can with a kind word alone", columnVisibility, timeStamp,
                             emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "NUMBER" + "\u0000" + "25", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "GEO" + "\u0000" + "POINT(30 30)", columnVisibility, timeStamp, emptyValue);
             
             bw.addMutation(mutation);
             
@@ -247,6 +256,14 @@ public class WiseGuysIngest {
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneChildUID));
             bw.addMutation(mutation);
             
+            // geo
+            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)")) {
+                mutation = new Mutation(normalized);
+                mutation.put("GEO".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                                range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
+                bw.addMutation(mutation);
+            }
+            
             // sopranos
             // uuid
             mutation = new Mutation(lcNoDiacriticsType.normalize("SOPRANO"));
@@ -275,6 +292,14 @@ public class WiseGuysIngest {
             mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
             bw.addMutation(mutation);
+            
+            // geo
+            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)")) {
+                mutation = new Mutation(normalized);
+                mutation.put("GEO".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                                range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID));
+                bw.addMutation(mutation);
+            }
             
             // capones
             // uuid
@@ -325,6 +350,14 @@ public class WiseGuysIngest {
             mutation.put("ETA".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneChildUID));
             bw.addMutation(mutation);
+            
+            // geo
+            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)")) {
+                mutation = new Mutation(normalized);
+                mutation.put("GEO".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                                range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
+                bw.addMutation(mutation);
+            }
             
             // add some index-only fields
             mutation = new Mutation("chicago");
@@ -601,6 +634,11 @@ public class WiseGuysIngest {
             mutation.put("fi\u0000" + "ETA", numberType.normalize("12") + "\u0000" + datatype + "\u0000" + corleoneChildUID, columnVisibility, timeStamp,
                             emptyValue);
             
+            // geo
+            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)")) {
+                mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
+            }
+            
             // sopranos
             // uuid
             mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("SOPRANO") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
@@ -618,6 +656,11 @@ public class WiseGuysIngest {
             // ages
             mutation.put("fi\u0000" + "AGE", numberType.normalize("16") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp, emptyValue);
             mutation.put("fi\u0000" + "AGE", numberType.normalize("18") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp, emptyValue);
+            
+            // geo
+            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)")) {
+                mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
+            }
             
             // capones
             // uuid
@@ -646,6 +689,11 @@ public class WiseGuysIngest {
             mutation.put("fi\u0000" + "AGE", numberType.normalize("34") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
             mutation.put("fi\u0000" + "AGE", numberType.normalize("20") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
             mutation.put("fi\u0000" + "AGE", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
+            
+            // geo
+            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)")) {
+                mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
+            }
             
             // add some index-only fields
             mutation.put("fi\u0000" + "LOCATION", "chicago" + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
@@ -714,6 +762,14 @@ public class WiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("ETA")), emptyValue);
+            bw.addMutation(mutation);
+            
+            mutation = new Mutation("GEO");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(22L)));
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("GEO")), emptyValue);
             bw.addMutation(mutation);
             
             mutation = new Mutation("MAGIC");
@@ -838,7 +894,6 @@ public class WiseGuysIngest {
             mutation.put("DATAWAVE", "NULL1" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
             mutation.put("DATAWAVE", "UUID" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
             bw.addMutation(mutation);
-            
         } finally {
             if (null != bw) {
                 bw.close();

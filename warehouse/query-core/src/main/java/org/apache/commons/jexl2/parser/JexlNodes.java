@@ -1,6 +1,7 @@
 package org.apache.commons.jexl2.parser;
 
 import com.google.common.base.Preconditions;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -170,8 +171,19 @@ public class JexlNodes {
         literal.image = value;
     }
     
+    /**
+     * Negate the provided JexlNode
+     *
+     * @param node
+     *            an arbitrary JexlNode
+     * @return a negated version of the provided JexlNode
+     */
     public static ASTNotNode negate(JexlNode node) {
-        return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), wrap(node));
+        if (QueryPropertyMarker.findInstance(node).isAnyType()) {
+            // marked node trees begin with ref-refExpr, no need to wrap again
+            return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), node);
+        }
+        return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), makeRef(wrap(node)));
     }
     
     public static ASTIdentifier makeIdentifierWithImage(String image) {
@@ -251,5 +263,21 @@ public class JexlNodes {
      */
     public static boolean isNotChildless(JexlNode node) {
         return node != null && node.jjtGetNumChildren() > 0;
+    }
+    
+    /**
+     * Ascends the entire Jexl tree searching for a negation. In the case of an unflattened tree this may be an expensive operation
+     *
+     * @param node
+     *            an arbitrary JexlNode
+     * @return true if an ASTNotNode exists in this node's ancestry
+     */
+    public static boolean findNegatedParent(JexlNode node) {
+        while (node.jjtGetParent() != null) {
+            node = node.jjtGetParent();
+            if (node instanceof ASTNotNode)
+                return true;
+        }
+        return false;
     }
 }
