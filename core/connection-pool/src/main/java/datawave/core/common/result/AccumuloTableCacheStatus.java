@@ -1,6 +1,5 @@
 package datawave.core.common.result;
 
-import datawave.core.common.cache.TableCacheDescription;
 import datawave.webservice.HtmlProvider;
 import datawave.webservice.result.BaseResponse;
 

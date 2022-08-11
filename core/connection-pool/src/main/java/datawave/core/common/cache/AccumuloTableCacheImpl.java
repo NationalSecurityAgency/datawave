@@ -2,6 +2,7 @@ package datawave.core.common.cache;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.result.TableCacheDescription;
 import org.apache.accumulo.core.util.NamingThreadFactory;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;

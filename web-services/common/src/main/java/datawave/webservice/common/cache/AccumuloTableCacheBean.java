@@ -6,7 +6,7 @@ import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.common.cache.AccumuloTableCache;
 import datawave.core.common.cache.AccumuloTableCacheImpl;
 import datawave.core.common.cache.AccumuloTableCacheProperties;
-import datawave.core.common.cache.TableCacheDescription;
+import datawave.core.common.result.TableCacheDescription;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.result.AccumuloTableCacheStatus;
 import datawave.interceptor.RequiredInterceptor;

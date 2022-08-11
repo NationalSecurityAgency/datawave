@@ -1,4 +1,4 @@
-package datawave.core.common.cache;
+package datawave.core.common.result;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

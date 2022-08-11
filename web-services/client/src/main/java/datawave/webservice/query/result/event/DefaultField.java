@@ -22,8 +22,8 @@ import io.protostuff.Output;
 import io.protostuff.Schema;
 
 import datawave.data.type.Type;
-import datawave.webservice.query.util.StringMapAdapter;
 import datawave.webservice.query.util.TypedValue;
+import datawave.webservice.xml.util.StringMapAdapter;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;

@@ -1,5 +1,5 @@
 @XmlSchema(namespace="${datawave.webservice.namespace}", elementFormDefault=XmlNsForm.QUALIFIED, xmlns={@XmlNs(prefix = "", namespaceURI = "${datawave.webservice.namespace}")})
-package datawave.webservice.model;
+package datawave.security.authorization;
 
 import javax.xml.bind.annotation.XmlNs;
 import javax.xml.bind.annotation.XmlNsForm;
