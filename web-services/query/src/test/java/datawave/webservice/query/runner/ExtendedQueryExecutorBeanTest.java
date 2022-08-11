@@ -915,7 +915,6 @@ public class ExtendedQueryExecutorBeanTest {
         
         MultivaluedMap<String,String> op = new MultivaluedMapImpl<>();
         op.putAll(qp.getUnknownParameters(queryParameters));
-        // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
