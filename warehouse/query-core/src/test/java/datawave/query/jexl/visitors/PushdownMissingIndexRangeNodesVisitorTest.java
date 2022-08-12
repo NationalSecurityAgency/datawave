@@ -265,4 +265,23 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
         Assert.assertEquals("FOO == 'jsub' && (((_Value_ = true) && (FOO =~ 'ca.*')) || UNINDEXED =~ 'ca.*')", result);
     }
     
+    @Test
+    public void testDelayMultipleHoles() throws Exception {
+        ASTJexlScript script = JexlASTHelper
+                        .parseJexlQuery("FOO == 'jsub' && (FOO == 'ca1' || FOO == 'ca2' || FOO == 'ca3' || FOO == 'ca4' || UNINDEXED == 'ca1')");
+        
+        List<IndexHole> holes = new ArrayList<>();
+        holes.add(new IndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca21", "ca3"}));
+        holes.add(new IndexHole(new String[] {"20100101", "20100102"}, new String[] {"dab", "dac"}));
+        holes.add(new IndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca11"}));
+        holes.add(new IndexHole(new String[] {"20100101", "20100102"}, new String[] {"aba", "abc"}));
+        holes.add(new IndexHole(new String[] {"20100102", "20100103"}, new String[] {"ca2", "ca21"}));
+        
+        config.setIndexHoles(holes);
+        String result = JexlStringBuildingVisitor.buildQuery(PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, helper));
+        Assert.assertEquals(
+                        "FOO == 'jsub' && (((_Hole_ = true) && (FOO == 'ca1')) || FOO == 'ca2' || ((_Hole_ = true) && (FOO == 'ca3')) || FOO == 'ca4' || UNINDEXED == 'ca1')",
+                        result);
+    }
+    
 }
