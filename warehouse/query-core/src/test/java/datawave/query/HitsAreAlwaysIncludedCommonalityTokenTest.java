@@ -182,7 +182,6 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
                     }
                 }
             } else if (hitAttribute instanceof TypeAttribute && ((TypeAttribute) hitAttribute).getType() instanceof HitTermType) {
-                // Content content = (Content) hitAttribute;
                 Assert.assertTrue(goodResults.contains(hitAttribute.toString()));
             }
             
