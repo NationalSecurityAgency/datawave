@@ -168,6 +168,19 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         this.datawaveType = (Type<T>) Class.forName(datawaveTypeString).newInstance();
     }
     
+    /**
+     * Check any Attribute to see if its underlying type matches a passed class type
+     * 
+     * @param attr
+     *            to check for its type
+     * @param clazz
+     *            type to check for
+     * @return true if type of attr matches class
+     */
+    public static boolean matches(Attribute<?> attr, Class<?> clazz) {
+        return attr instanceof TypeAttribute && ((TypeAttribute) attr).getType().getClass().equals(clazz);
+    }
+    
     /*
      * (non-Javadoc)
      * 
