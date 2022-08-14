@@ -178,7 +178,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
      * @return true if type of attr matches class
      */
     public static boolean matches(Attribute<?> attr, Class<?> clazz) {
-        return attr instanceof TypeAttribute && ((TypeAttribute) attr).getType().getClass().equals(clazz);
+        return attr instanceof TypeAttribute && ((TypeAttribute) attr).getType().getClass().isAssignableFrom(clazz);
     }
     
     /*
