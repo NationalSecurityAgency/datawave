@@ -92,9 +92,10 @@
         <version.microservice.type-utils>1.8</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>8.0.29</version.mysql-connector>
-        <version.netty>4.1.42.Final</version.netty>
+        <version.netty>4.1.66.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
-        <version.picketbox>5.0.3.Final</version.picketbox>
+	<!--This version of picketbox ships with Wildfly 24.0.1.Final. -->
+        <version.picketbox>5.0.3.Final-redhat-00007</version.picketbox>
         <version.powermock>2.0.2</version.powermock>
         <version.protobuf>2.5.0</version.protobuf>
         <version.protostuff>1.8.0</version.protostuff>
@@ -104,7 +105,7 @@
         <version.spring>5.1.8.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
-        <version.surefire.plugin>3.0.0-M5</version.surefire.plugin>
+        <version.surefire.plugin>3.0.0-M6</version.surefire.plugin>
         <version.thrift>0.9.3</version.thrift>
         <!-- This version of weld ships with Wildfly 24.0.1.Final. It has the same coupling to the version of WildFly that the version of jackson does.  -->
         <version.weld>3.1.7.SP1</version.weld>
@@ -1492,7 +1493,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>1.6.0</version>
+                    <version>3.1.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
