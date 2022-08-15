@@ -94,8 +94,7 @@
         <version.mysql-connector>8.0.29</version.mysql-connector>
         <version.netty>4.1.66.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
-	<!--This version of picketbox ships with Wildfly 24.0.1.Final. -->
-        <version.picketbox>5.0.3.Final-redhat-00007</version.picketbox>
+        <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.2</version.powermock>
         <version.protobuf>2.5.0</version.protobuf>
         <version.protostuff>1.8.0</version.protostuff>
