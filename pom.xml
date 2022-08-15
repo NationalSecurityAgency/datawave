@@ -60,7 +60,7 @@
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>1.9.2.3</version.in-memory-accumulo>
+        <version.in-memory-accumulo>1.10.2</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <!-- CANNOT upgrade past 2.12.x version of jackson without upgrading Wildfly. While WildFly 24.0.1.Final uses jackson 2.12.3, jackson 2.12.7 is still
 	     compatible api wise while resolving vulnerabilities in jackson <=2.12.6. It's impossible to force Wildfly to use jackson 2.13.x without excluding the 
@@ -94,8 +94,7 @@
         <version.mysql-connector>8.0.29</version.mysql-connector>
         <version.netty>4.1.66.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
-	<!--This version of picketbox ships with Wildfly 24.0.1.Final. -->
-        <version.picketbox>5.0.3.Final-redhat-00007</version.picketbox>
+        <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.2</version.powermock>
         <version.protobuf>2.5.0</version.protobuf>
         <version.protostuff>1.8.0</version.protostuff>
