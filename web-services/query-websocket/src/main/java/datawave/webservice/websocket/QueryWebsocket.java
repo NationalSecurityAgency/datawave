@@ -11,6 +11,7 @@ import datawave.webservice.result.VoidResponse;
 import datawave.webservice.websocket.codec.QueryResponseMessageJsonEncoder;
 import datawave.webservice.websocket.messages.CancelMessage;
 import datawave.webservice.websocket.messages.CreateQueryMessage;
+import datawave.webservice.websocket.messages.QueryMessage;
 import datawave.webservice.websocket.messages.QueryResponseMessage;
 import datawave.webservice.websocket.messages.QueryResponseMessage.ResponseType;
 import org.slf4j.Logger;
@@ -26,6 +27,8 @@ import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
 import java.util.concurrent.Future;
+
+import static datawave.webservice.metrics.Constants.REQUEST_LOGIN_TIME_HEADER;
 
 /**
  * A websocket-based interface for running DATAWAVE queries. The websocket lifespan is a single query. A client connects to this endpoint and submits a query
@@ -64,37 +67,37 @@ public class QueryWebsocket {
     public void closeConnection(Session session) throws IOException {
         cancelActiveQuery(session);
     }
-    
-//    @OnMessage
-    public void handleMessage(final Session session) { // , QueryMessage message) {
-    // switch (message.getType()) {
-    // case CREATE: {
-    // if (session.getUserProperties().get(ACTIVE_QUERY_FUTURE) != null) {
-    // session.getAsyncRemote().sendObject(
-    // new QueryResponseMessage(ResponseType.CREATION_FAILURE, "Query already active. Only one query per websocket is allowed."));
-    // } else {
-    // CreateQueryMessage cqm = (CreateQueryMessage) message;
-    // String logicName = (String) session.getUserProperties().get(LOGIC_NAME);
-    // QueryObserver observer = new QueryObserver(log, session);
-    //
-    // Long startTime = System.nanoTime();
-    // Long loginTime = null;
-    // try {
-    // loginTime = Long.valueOf((String) session.getUserProperties().get(REQUEST_LOGIN_TIME_HEADER));
-    // } catch (Exception e) {
-    // // Ignore -- login time won't be available
-    // }
-    //
-    // Future<?> activeQuery = queryExecutorBean.executeAsync(logicName, cqm.getParameters(), startTime, loginTime, observer);
-    // session.getUserProperties().put(ACTIVE_QUERY_FUTURE, activeQuery);
-    // }
-    // }
-    // break;
-    // case CANCEL: {
-    // cancelActiveQuery(session);
-    // }
-    // break;
-    // }
+
+    @OnMessage
+    public void handleMessage(final Session session, QueryMessage message) {
+        switch (message.getType()) {
+            case CREATE: {
+                if (session.getUserProperties().get(ACTIVE_QUERY_FUTURE) != null) {
+                    session.getAsyncRemote().sendObject(
+                            new QueryResponseMessage(ResponseType.CREATION_FAILURE, "Query already active. Only one query per websocket is allowed."));
+                } else {
+                    CreateQueryMessage cqm = (CreateQueryMessage) message;
+                    String logicName = (String) session.getUserProperties().get(LOGIC_NAME);
+                    QueryObserver observer = new QueryObserver(log, session);
+
+                    Long startTime = System.nanoTime();
+                    Long loginTime = null;
+                    try {
+                        loginTime = Long.valueOf((String) session.getUserProperties().get(REQUEST_LOGIN_TIME_HEADER));
+                    } catch (Exception e) {
+                        // Ignore -- login time won't be available
+                    }
+
+                    Future<?> activeQuery = queryExecutorBean.executeAsync(logicName, cqm.getParameters(), startTime, loginTime, observer);
+                    session.getUserProperties().put(ACTIVE_QUERY_FUTURE, activeQuery);
+                }
+            }
+            break;
+            case CANCEL: {
+                cancelActiveQuery(session);
+            }
+            break;
+        }
     }
     
     protected void cancelActiveQuery(Session session) {
