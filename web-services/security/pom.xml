@@ -252,6 +252,9 @@
                 <targetPath>test-classes</targetPath>
                 <filtering>true</filtering>
                 <directory>src/test/resources</directory>
+                <excludes>
+                    <exclude>*.pkcs12</exclude>
+                </excludes>
             </resource>
         </resources>
         <plugins>
