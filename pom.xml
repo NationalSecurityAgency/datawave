@@ -55,7 +55,7 @@
         <version.google-guava>15.0</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
-        <version.hadoop>3.1.2</version.hadoop>
+        <version.hadoop>3.3.3</version.hadoop>
         <version.hadoop-thirdparty>1.1.1</version.hadoop-thirdparty>
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
@@ -1281,7 +1281,7 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-			    <!-- Upgrading to 10.x will require us to be using Java 11 -->
+                            <!-- Upgrading to 10.x will require us to be using Java 11 -->
                             <version>9.3</version>
                         </dependency>
                     </dependencies>
