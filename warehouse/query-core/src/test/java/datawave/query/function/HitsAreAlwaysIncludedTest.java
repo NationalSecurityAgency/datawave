@@ -189,13 +189,11 @@ public abstract class HitsAreAlwaysIncludedTest {
                 Attributes attributes = (Attributes) hitAttribute;
                 for (Attribute attr : attributes.getAttributes()) {
                     if (TypeAttribute.matches(attr, HitTermType.class)) {
-                        TypeAttribute content = (TypeAttribute) attr;
-                        Assert.assertTrue(expectedHits.remove(content.toString()));
+                        Assert.assertTrue(expectedHits.remove(((TypeAttribute) attr).getType().getDelegateAsString()));
                     }
                 }
             } else if (hitAttribute instanceof TypeAttribute) {
-                TypeAttribute attr = (TypeAttribute) hitAttribute;
-                Assert.assertTrue(attr + " is not an expected hit", expectedHits.remove(attr.toString()));
+                Assert.assertTrue(hitAttribute + " is not an expected hit", expectedHits.remove(((TypeAttribute) hitAttribute).getType().getDelegateAsString()));
             } else {
                 Assert.fail("Did not find hit term field");
             }

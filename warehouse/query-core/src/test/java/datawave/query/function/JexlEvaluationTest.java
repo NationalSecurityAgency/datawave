@@ -3,11 +3,7 @@ package datawave.query.function;
 import com.google.common.collect.Maps;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.Numeric;
+import datawave.query.attributes.*;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.functions.TermFrequencyList;
@@ -159,7 +155,7 @@ public class JexlEvaluationTest {
         boolean foundPhrase = false;
         Attributes attrs = (Attributes) d.get("HIT_TERM");
         for (Attribute<?> attr : attrs.getAttributes()) {
-            if (attr.toString().equals("TOKFIELD:big red dog")) {
+            if (attr instanceof TypeAttribute && ((TypeAttribute) attr).getType().getDelegateAsString().equals("TOKFIELD:big red dog")) {
                 foundPhrase = true;
             }
         }
