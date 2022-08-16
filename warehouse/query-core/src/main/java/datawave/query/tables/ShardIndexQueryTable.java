@@ -444,7 +444,17 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             public String getClassLoaderContext() {
                 return null;
             }
-            
+
+            @Override
+            public ConsistencyLevel getConsistencyLevel() {
+                return null;
+            }
+
+            @Override
+            public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
+
+            }
+
             @Override
             public void fetchColumn(Text colFam, Text colQual) {}
             

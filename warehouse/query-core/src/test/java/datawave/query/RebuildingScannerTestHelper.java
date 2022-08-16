@@ -524,7 +524,17 @@ public class RebuildingScannerTestHelper {
                 throw new RuntimeException("Misconfigured teardown listener class most likely", e);
             }
         }
-        
+
+        @Override
+        public ConsistencyLevel getConsistencyLevel() {
+            return ConsistencyLevel.IMMEDIATE;
+        }
+
+        @Override
+        public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
+
+        }
+
         @Override
         public void setRange(Range range) {
             ((InMemoryScanner) delegate).setRange(range);
@@ -585,7 +595,17 @@ public class RebuildingScannerTestHelper {
                 throw new RuntimeException("Misconfigured teardown listener class most likely", e);
             }
         }
-        
+
+        @Override
+        public ConsistencyLevel getConsistencyLevel() {
+            return ConsistencyLevel.IMMEDIATE;
+        }
+
+        @Override
+        public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
+
+        }
+
         @Override
         public void setRanges(Collection<Range> ranges) {
             ((InMemoryBatchScanner) delegate).setRanges(ranges);
@@ -799,7 +819,17 @@ public class RebuildingScannerTestHelper {
         public String getClassLoaderContext() {
             return delegate.getClassLoaderContext();
         }
-        
+
+        @Override
+        public ConsistencyLevel getConsistencyLevel() {
+            return ConsistencyLevel.IMMEDIATE;
+        }
+
+        @Override
+        public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
+
+        }
+
         @Override
         public void forEach(Consumer<? super Map.Entry<Key,Value>> action) {
             delegate.forEach(action);
