@@ -107,13 +107,19 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
     }
     
     @Override
+    public Object visit(ASTNENode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
     public Object visit(ASTERNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
     
     @Override
-    public Object visit(ASTNENode node, Object data) {
+    public Object visit(ASTNRNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
@@ -159,11 +165,6 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
     
     @Override
     public Object visit(ASTGENode node, Object data) {
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTNRNode node, Object data) {
         return data;
     }
     
