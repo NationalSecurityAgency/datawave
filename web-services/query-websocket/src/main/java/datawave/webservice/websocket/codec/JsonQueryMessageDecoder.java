@@ -12,7 +12,7 @@ import javax.websocket.EndpointConfig;
 
 /**
  * Decodes incoming JSON text into a {@link datawave.webservice.websocket.messages.QueryMessage}. Based on the message content, the returned object will be one
- * of the known types of query messages. //
+ * of the known types of query messages.
  */
 public class JsonQueryMessageDecoder implements Decoder.Text<QueryMessage> {
     private ObjectMapper objectMapper = new ObjectMapper();
