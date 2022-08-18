@@ -12,13 +12,14 @@ import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
 import java.io.InputStream;
+import java.util.Collection;
 
 /**
- * Utility class to load a model from XML using jaxb objects generated in web service
+ * Utility class to load a model
  */
-public class LoadModelFromXml {
+public class LoadModel {
     
-    private static final Logger log = Logger.getLogger(LoadModelFromXml.class);
+    private static final Logger log = Logger.getLogger(LoadModel.class);
     
     public static QueryModel loadModelFromXml(InputStream stream) throws Exception {
         
@@ -41,8 +42,12 @@ public class LoadModelFromXml {
             }
         }
         
+        return loadModelFromFieldMappings(xmlModel.getFields());
+    }
+    
+    public static QueryModel loadModelFromFieldMappings(Collection<FieldMapping> fieldMappings) {
         QueryModel model = new QueryModel();
-        for (FieldMapping mapping : xmlModel.getFields()) {
+        for (FieldMapping mapping : fieldMappings) {
             switch (mapping.getDirection()) {
                 case FORWARD:
                     model.addTermToModel(mapping.getModelFieldName(), mapping.getFieldName());
@@ -67,12 +72,10 @@ public class LoadModelFromXml {
      * 
      * @return QueryModel instance
      */
-    public static QueryModel loadModel(String queryModelXml) throws Exception {
-        QueryModel model = null;
-        try (InputStream modelStream = LoadModelFromXml.class.getResourceAsStream(queryModelXml)) {
+    public static QueryModel loadModelFromXml(String queryModelXml) throws Exception {
+        QueryModel model;
+        try (InputStream modelStream = LoadModel.class.getResourceAsStream(queryModelXml)) {
             model = loadModelFromXml(modelStream);
-        } catch (Throwable t) {
-            throw t;
         }
         return model;
     }

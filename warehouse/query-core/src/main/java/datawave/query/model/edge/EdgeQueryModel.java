@@ -8,7 +8,7 @@ import datawave.edge.model.DefaultEdgeModelFieldsFactory;
 import datawave.edge.model.EdgeModelFields;
 import datawave.edge.model.EdgeModelFieldsFactory;
 import datawave.query.model.QueryModel;
-import datawave.query.model.util.LoadModelFromXml;
+import datawave.query.model.util.LoadModel;
 
 /**
  * This class defines a typical QueryModel, allowing the query syntax for edge queries to be easily customized for an external client's needs/preferences.
@@ -72,7 +72,7 @@ public class EdgeQueryModel extends QueryModel {
      * @return EdgeQueryModel instance
      */
     public static EdgeQueryModel loadModel(String queryModelXml, EdgeModelFields fields) throws Exception {
-        return new EdgeQueryModel(LoadModelFromXml.loadModel(queryModelXml), fields);
+        return new EdgeQueryModel(LoadModel.loadModelFromXml(queryModelXml), fields);
     }
     
     /**
