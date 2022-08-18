@@ -26,7 +26,7 @@ public class LiteralNodeSubsetVisitorTest {
     
     @Test
     public void testSingleLiteralWithoutMatch() throws ParseException {
-        String queryString = "HERPDERP == '10000000'";
+        String queryString = "RANDOMFIELD == '10000000'";
         Set<String> expectedLiterals = new HashSet<>();
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         Multimap<String,String> literals = LiteralNodeSubsetVisitor.getLiterals(expectedLiterals, script);
@@ -73,7 +73,7 @@ public class LiteralNodeSubsetVisitorTest {
     
     @Test
     public void testSingleLiteralWithNoMatchAndRegex() throws ParseException {
-        String queryString = "LULZ == '1000000' || BAR =~ 'abcd.*\\d'";
+        String queryString = "DIFFERENTFIELD == '1000000' || BAR =~ 'abcd.*\\d'";
         
         Assert.assertEquals(0, getLiterals(queryString).size());
     }
