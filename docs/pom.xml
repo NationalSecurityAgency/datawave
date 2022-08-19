@@ -301,7 +301,7 @@
                         </goals>
                         <phase>package</phase>
                         <configuration combine.children="append">
-			    <doclint>none</doclint>
+                            <doclint>none</doclint>
                             <sourcepath>${project.build.directory}/dependency</sourcepath>
                             <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
                             <excludePackageNames>generated-sources.*</excludePackageNames>

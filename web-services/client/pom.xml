@@ -225,8 +225,7 @@
                         <configuration>
                             <outputDirectory>lib</outputDirectory>
                             <includeScope>runtime</includeScope>
-                            <excludeScope>provided</excludeScope>
-                            <excludeScope>test</excludeScope>
+                            <!-- <excludeScope>provided</excludeScope> -->
                         </configuration>
                     </execution>
                 </executions>

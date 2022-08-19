@@ -268,7 +268,6 @@
                 <configuration>
                     <defaultLibBundleDir>lib/</defaultLibBundleDir>
                     <skinnyWars>true</skinnyWars>
-                    <fileNameMapping>standard</fileNameMapping>
                     <classifier>${build.env}</classifier>
                     <modules combine.children="append">
                         <ejbModule>
