@@ -278,8 +278,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <!-- We need to use this version because 2.2.1 has a bug in its filter handling. -->
-                <version>2.2-beta-2</version>
+                <version>3.4.2</version>
                 <configuration>
                     <descriptors>
                         <descriptor>src/main/assembly/dist.xml</descriptor>
