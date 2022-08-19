@@ -252,7 +252,7 @@
                     <dependency>
                         <groupId>org.jboss.spec.javax.annotation</groupId>
                         <artifactId>jboss-annotations-api_1.3_spec</artifactId>
-                        <version>1.0.0.Final</version>
+                        <version>1.0.1.Final</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -301,7 +301,7 @@
                         </goals>
                         <phase>package</phase>
                         <configuration combine.children="append">
-			    <doclint>none</doclint>
+                            <doclint>none</doclint>
                             <sourcepath>${project.build.directory}/dependency</sourcepath>
                             <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
                             <excludePackageNames>generated-sources.*</excludePackageNames>

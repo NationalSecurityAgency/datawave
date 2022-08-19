@@ -167,7 +167,7 @@
                             <outputDirectory>lib</outputDirectory>
                             <includeArtifactIds>commons-collections,
                                 commons-io,
-                                commons-lang,
+                                commons-lang3,
                                 commons-logging,
                                 datawave-core,
                                 datawave-ingest-configuration,
@@ -177,8 +177,10 @@
                                 guava,
                                 hadoop-common,
                                 hadoop-mapreduce-client-core,
+				hadoop-shaded-guava,
+				hadoop-shaded-protobuf_3_7,
                                 log4j,
-                                slf4j-api</includeArtifactIds>
+                                slf4j-api,</includeArtifactIds>
                         </configuration>
                     </execution>
                 </executions>

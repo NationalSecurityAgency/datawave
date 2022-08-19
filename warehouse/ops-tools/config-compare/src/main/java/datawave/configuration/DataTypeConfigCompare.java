@@ -1,6 +1,6 @@
 package datawave.configuration;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 
 import java.util.Map;
@@ -69,6 +69,7 @@ public class DataTypeConfigCompare {
     private String getPrefix(Configuration c) {
         String prefix = c.get(PREFIX);
         
+        // When we upgrade to Java 11, stop using StringUtils and just call `prefix.isBlank()`
         if (StringUtils.isBlank(prefix)) {
             throw new IllegalArgumentException("Configurations must contain a 'data.name' field.");
         }

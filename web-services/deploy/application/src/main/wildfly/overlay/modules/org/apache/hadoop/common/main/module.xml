@@ -3,8 +3,10 @@
     <resources>
         <resource-root path="hadoop-auth-${version.hadoop}.jar"/>
         <resource-root path="hadoop-common-${version.hadoop}.jar"/>
+	<resource-root path="hadoop-shaded-guava-${version.hadoop-thirdparty}.jar" />
+	<resource-root path="hadoop-shaded-protobuf_3_7-${version.hadoop-thirdparty}.jar" />
         <resource-root path="htrace-core4-${version.htrace}.jar"/>
-        <resource-root path="protobuf-java-${version.protobuf}.jar"/>
+	<resource-root path="commons-lang3-${version.commons-lang}.jar"/>
         <resource-root path="commons-configuration2-${version.commons-configuration2}.jar"/>
         <resource-root path="woodstox-core-${version.woodstox-core}.jar"/>
         <resource-root path="stax2-api-${version.woodstox-stax2}.jar"/>

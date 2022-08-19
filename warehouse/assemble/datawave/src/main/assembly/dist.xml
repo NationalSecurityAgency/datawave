@@ -154,7 +154,8 @@
                   <include>${groupId}:datawave-core</include>
                   <include>${groupId}:datawave-ingest-csv</include>
                   <include>${groupId}:datawave-ingest-json</include>
-                  <include>${groupId}:datawave-ingest-core</include>
+		  <!-- Because useStrictFiltering is true, the below line causes an error with the upgrade to the assembly-plugin version. If everything works, come bacn and remove it -->
+                  <!-- <include>${groupId}:datawave-ingest-core</include> -->
                   <include>${groupId}:datawave-ingest-configuration</include>
                   <include>${groupId}:datawave-query-core</include>
                   <include>gov.nsa.datawave.microservice:accumulo-utils</include>
