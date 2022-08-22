@@ -1,12 +1,12 @@
 package datawave.query.iterator.aggregation;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.commons.lang.builder.HashCodeBuilder;
 
 /**
  * A "struct" containing the Key and Iterator&lt;Entry&lt;Key,Value&gt;&gt; for a Document

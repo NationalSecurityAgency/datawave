@@ -1,22 +1,9 @@
 package datawave.query.iterators;
 
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.TreeSet;
-
-import datawave.util.TextUtil;
 import datawave.iterators.IteratorSettingHelper;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
-
+import datawave.util.TextUtil;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -29,10 +16,21 @@ import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.math.LongRange;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.TreeSet;
 
 /**
  * 
@@ -61,7 +59,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
     private final SimpleDateFormat dateParser = initDateParser();
     private long stamp_start;
     private long stamp_end;
-    private LongRange stampRange = null;
+    private org.apache.commons.lang3.Range<Long> stampRange = null;
     // Wrapping iterator only accesses its private source in setSource and getSource
     // Since this class overrides these methods, it's safest to keep the source declaration here
     protected SortedKeyValueIterator<Key,Value> source;
@@ -106,7 +104,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         
         this.stamp_start = other.stamp_start;
         this.stamp_end = other.stamp_end;
-        this.stampRange = new LongRange(stamp_start, stamp_end);
+        this.stampRange = org.apache.commons.lang3.Range.between(stamp_start, stamp_end);
         
         this.uniqByDataTypeOption = other.uniqByDataTypeOption;
         if (null != other.fieldNameFilter && !other.fieldNameFilter.isEmpty()) {
@@ -359,7 +357,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
     }
     
     private boolean acceptTimestamp(Key k) {
-        return this.stampRange.containsLong(k.getTimestamp());
+        return this.stampRange.contains(k.getTimestamp());
     }
     
     private boolean isFieldIndexKey(Key key) {
@@ -860,7 +858,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                     this.stamp_end -= 1000;
                 }
             }
-            this.stampRange = new LongRange(stamp_start, stamp_end);
+            this.stampRange = org.apache.commons.lang3.Range.between(stamp_start, stamp_end);
         } catch (Exception e) {
             log.error("Invalid time range for " + FieldIndexCountingIterator.class.getName());
             return false;

@@ -1,9 +1,14 @@
 package datawave.webservice.query.result.event;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import datawave.data.type.Type;
+import datawave.webservice.query.util.StringMapAdapter;
+import datawave.webservice.query.util.TypedValue;
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -13,18 +18,10 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
-
-import datawave.data.type.Type;
-import datawave.webservice.query.util.StringMapAdapter;
-import datawave.webservice.query.util.TypedValue;
-
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This object is contained inside of Event objects to describe name/value pairs of data in the Event. Even though the columnVisibility of the Field has already

@@ -10,7 +10,7 @@ import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.marking.MarkingFunctions;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 

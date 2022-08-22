@@ -1,26 +1,24 @@
 package datawave.iterators;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
+import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.edge.protobuf.EdgeData;
 import datawave.edge.util.EdgeKey;
+import datawave.edge.util.EdgeKey.STATS_TYPE;
 import datawave.edge.util.EdgeKeyDecoder;
 import datawave.edge.util.EdgeValue;
-import datawave.edge.util.EdgeValueHelper;
-import datawave.edge.util.EdgeKey.STATS_TYPE;
 import datawave.edge.util.EdgeValue.EdgeValueBuilder;
-
+import datawave.edge.util.EdgeValueHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.LongCombiner.VarLenEncoder;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Combines edges from different values based on the edge type found in the key.

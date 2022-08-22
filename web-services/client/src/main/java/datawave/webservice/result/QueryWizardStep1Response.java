@@ -12,7 +12,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import datawave.webservice.HtmlProvider;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @XmlRootElement(name = "QueryWizardStep1")
 @XmlAccessorType(XmlAccessType.NONE)

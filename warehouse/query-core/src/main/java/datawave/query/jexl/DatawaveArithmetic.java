@@ -5,7 +5,7 @@ import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.query.attributes.ValueTuple;
 import org.apache.commons.jexl2.JexlArithmetic;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.util.IntsRef;
 import org.apache.lucene.util.IntsRefBuilder;

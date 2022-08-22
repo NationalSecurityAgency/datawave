@@ -1,19 +1,18 @@
 package datawave.data.hash;
 
-import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
-import static datawave.data.hash.UIDConstants.TIME_SEPARATOR;
+import datawave.util.StringUtils;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.hadoop.util.hash.Hash;
+import org.apache.hadoop.util.hash.MurmurHash;
 
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.Date;
 
-import datawave.util.StringUtils;
-
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.hadoop.util.hash.Hash;
-import org.apache.hadoop.util.hash.MurmurHash;
+import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
+import static datawave.data.hash.UIDConstants.TIME_SEPARATOR;
 
 /**
  * Internal, DATAWAVE-specific, unique identifier. Instead of using a UUID which consumes 128 bits, we are using:

@@ -27,7 +27,7 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;

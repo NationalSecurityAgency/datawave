@@ -1,7 +1,7 @@
 package datawave.query.planner;
 
 import datawave.query.model.QueryModel;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 

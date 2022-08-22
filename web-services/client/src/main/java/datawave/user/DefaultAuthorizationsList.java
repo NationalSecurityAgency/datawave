@@ -20,7 +20,7 @@ import javax.xml.bind.annotation.adapters.XmlAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import io.protostuff.Schema;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * A list representing authorizations to be used with the DataWave web service. User authorizations are not necessarily a single list of authorizations. When a

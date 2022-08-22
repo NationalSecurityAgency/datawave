@@ -9,7 +9,7 @@ import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.webservice.query.data.ObjectSizeOf;
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.hadoop.io.WritableUtils;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKBReader;

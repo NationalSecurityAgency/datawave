@@ -1,6 +1,6 @@
 package datawave.webservice.query;
 
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.LinkedMultiValueMap;

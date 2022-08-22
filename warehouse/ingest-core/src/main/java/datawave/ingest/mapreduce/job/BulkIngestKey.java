@@ -1,16 +1,15 @@
 package datawave.ingest.mapreduce.job;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
-import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.accumulo.core.data.Key;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.io.WritableUtils;
 
-import org.apache.accumulo.core.data.Key;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 /**
  * Used during bulk ingest to convey the table name to the reducer and stores the key for sorting.

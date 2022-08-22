@@ -1,5 +1,24 @@
 package datawave.core.iterators;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+import datawave.ingest.protobuf.Uid;
+import datawave.query.Constants;
+import datawave.util.TextUtil;
+import datawave.util.time.DateHelper;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.OptionDescriber;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.hadoop.io.ArrayWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableUtils;
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Arrays;
@@ -11,27 +30,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import datawave.ingest.protobuf.Uid;
-import datawave.query.Constants;
-import datawave.util.TextUtil;
-
-import datawave.util.time.DateHelper;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.OptionDescriber;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
-
-import com.google.protobuf.InvalidProtocolBufferException;
 
 /**
  * <p>

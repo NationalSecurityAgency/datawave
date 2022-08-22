@@ -1,12 +1,8 @@
 package datawave.ingest.mapreduce.handler.tokenize;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import datawave.data.type.Type;
-import datawave.ingest.metadata.id.MetadataIdParser;
 import datawave.ingest.data.RawDataErrorNames;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -14,13 +10,15 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.EventFieldNormalizerHelper;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
-
-import org.apache.commons.lang.StringUtils;
+import datawave.ingest.metadata.id.MetadataIdParser;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class ExtendedContentIngestHelper extends BaseIngestHelper implements TermFrequencyIngestHelperInterface {
     

@@ -1,23 +1,10 @@
 package datawave.core.iterators;
 
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.TreeMap;
-import java.util.TreeSet;
-
+import com.google.common.collect.Sets;
 import datawave.iterators.IteratorSettingHelper;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.util.TextUtil;
-
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -30,13 +17,23 @@ import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.math.LongRange;
-import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Sets;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * 
@@ -66,7 +63,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
     private final SimpleDateFormat dateParser = initDateParser();
     private long stamp_start;
     private long stamp_end;
-    private LongRange stampRange = null;
+    private org.apache.commons.lang3.Range<Long> stampRange = null;
     // Wrapping iterator only accesses its private source in setSource and getSource
     // Since this class overrides these methods, it's safest to keep the source declaration here
     protected SortedKeyValueIterator<Key,Value> source;
@@ -115,7 +112,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         
         this.stamp_start = other.stamp_start;
         this.stamp_end = other.stamp_end;
-        this.stampRange = new LongRange(stamp_start, stamp_end);
+        this.stampRange = org.apache.commons.lang3.Range.between(stamp_start, stamp_end);
         
         this.uniqByDataTypeOption = other.uniqByDataTypeOption;
         this.uniqByVisibilityOption = other.uniqByVisibilityOption;
@@ -358,7 +355,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
     }
     
     private boolean acceptTimestamp(Key k) {
-        return this.stampRange.containsLong(k.getTimestamp());
+        return this.stampRange.contains(k.getTimestamp());
     }
     
     private boolean isFieldIndexKey(Key key) {
@@ -819,7 +816,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                     this.stamp_end -= 1;
                 }
             }
-            this.stampRange = new LongRange(stamp_start, stamp_end);
+            this.stampRange = org.apache.commons.lang3.Range.between(stamp_start, stamp_end);
         } catch (Exception e) {
             log.error("Invalid time range for " + FieldIndexCountingIteratorPerVisibility.class.getName());
             return false;

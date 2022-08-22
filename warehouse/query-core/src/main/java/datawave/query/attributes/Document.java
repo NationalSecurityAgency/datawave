@@ -18,7 +18,7 @@ import datawave.query.util.TypeMetadata;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 

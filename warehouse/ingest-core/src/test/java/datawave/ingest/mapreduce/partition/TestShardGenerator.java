@@ -2,7 +2,7 @@ package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.ShardedTableMapFile;
 import datawave.util.time.DateHelper;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;

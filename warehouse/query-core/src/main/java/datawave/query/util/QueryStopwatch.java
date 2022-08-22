@@ -15,7 +15,7 @@ import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;

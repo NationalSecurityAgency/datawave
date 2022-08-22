@@ -1,15 +1,14 @@
 package datawave.ingest.csv.mr.input;
 
+import datawave.data.hash.UID;
+import datawave.ingest.data.RawDataErrorNames;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.CSVHelper;
-import datawave.data.hash.UID;
 import datawave.ingest.input.reader.EventRecordReader;
 import datawave.ingest.input.reader.LongLineEventRecordReader;
-import datawave.ingest.data.RawDataErrorNames;
-
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.text.StrTokenizer;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.text.StrTokenizer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.InputSplit;

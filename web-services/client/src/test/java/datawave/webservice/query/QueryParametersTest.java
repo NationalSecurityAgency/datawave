@@ -1,6 +1,6 @@
 package datawave.webservice.query;
 
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;

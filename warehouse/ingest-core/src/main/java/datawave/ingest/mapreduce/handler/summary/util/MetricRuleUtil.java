@@ -1,14 +1,13 @@
 package datawave.ingest.mapreduce.handler.summary.util;
 
+import datawave.ingest.data.config.NormalizedContentInterface;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Collection;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import datawave.ingest.data.config.NormalizedContentInterface;
-
-import org.apache.commons.lang.StringUtils;
 
 public final class MetricRuleUtil {
     

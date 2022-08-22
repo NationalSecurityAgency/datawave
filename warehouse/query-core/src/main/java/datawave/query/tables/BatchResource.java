@@ -1,23 +1,21 @@
 package datawave.query.tables;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Set;
-
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import datawave.security.util.ScannerHelper;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Set;
 
 public class BatchResource extends RunningResource {
     

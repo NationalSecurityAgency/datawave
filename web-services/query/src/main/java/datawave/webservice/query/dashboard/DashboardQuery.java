@@ -4,7 +4,7 @@ import datawave.webservice.common.extjs.ExtJsResponse;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.runner.QueryExecutor;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 import javax.ws.rs.core.MultivaluedMap;

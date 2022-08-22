@@ -94,7 +94,7 @@ import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.lang.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.FileStatus;

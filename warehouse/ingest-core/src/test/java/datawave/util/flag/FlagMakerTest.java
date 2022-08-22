@@ -5,7 +5,7 @@ import datawave.util.flag.config.FlagDataTypeConfig;
 import datawave.util.flag.config.FlagMakerConfig;
 import datawave.util.flag.processor.DateUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.math.LongRange;
+import org.apache.commons.lang3.Range;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -134,7 +134,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         log.info("-----  testProcessFlags  -----");
         File f = setUpFlagDir();
         // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5);
+        Range<Long> range = createTestFiles(2, 5);
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
         instance.processFlags();
         
@@ -161,7 +161,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         log.info("-----  testFlagFileTimeStamps  -----");
         File f = setUpFlagDir();
         // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5);
+        Range<Long> range = createTestFiles(2, 5);
         fmc.setSetFlagFileTimestamp(true);
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
         instance.processFlags();
@@ -169,7 +169,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         // ensure the flag files have appropriate dates
         for (File file : f.listFiles()) {
             if (file.getName().endsWith(".flag")) {
-                assertTrue(range.containsLong(file.lastModified()));
+                assertTrue(range.contains(file.lastModified()));
             }
         }
     }
@@ -182,7 +182,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         log.info("-----  testUnsetFlagFileTimeStamps  -----");
         File f = setUpFlagDir();
         // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5);
+        Range<Long> range = createTestFiles(2, 5);
         fmc.setSetFlagFileTimestamp(false);
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
         instance.processFlags();
@@ -191,7 +191,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         // ensure the flag files have appropriate dates
         for (File file : f.listFiles()) {
             if (file.getName().endsWith(".flag")) {
-                assertFalse(range.containsLong(file.lastModified()));
+                assertFalse(range.contains(file.lastModified()));
             }
         }
     }
@@ -204,7 +204,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         log.info("-----  testFolderTimeStamps  -----");
         File f = setUpFlagDir();
         // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5, true);
+        Range<Long> range = createTestFiles(2, 5, true);
         fmc.setSetFlagFileTimestamp(true);
         fmc.setUseFolderTimestamp(true);
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
@@ -214,7 +214,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         // ensure the flag files have appropriate dates
         for (File file : f.listFiles()) {
             if (file.getName().endsWith(".flag")) {
-                assertTrue(range.containsLong(file.lastModified()));
+                assertTrue(range.contains(file.lastModified()));
             }
         }
     }
@@ -225,7 +225,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         int expectedMax = (COUNTER_LIMIT - 2) / 2;
         File f = setUpFlagDir();
         // two days, expectedMax + 20 files each day
-        LongRange range = createTestFiles(2, expectedMax + 20, true);
+        Range<Long> range = createTestFiles(2, expectedMax + 20, true);
         int total = 2 * 2 * (expectedMax + 20);
         fmc.setSetFlagFileTimestamp(true);
         fmc.setUseFolderTimestamp(true);
@@ -255,7 +255,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         fmc.setTimeoutMilliSecs(0);
         
         // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5);
+        Range<Long> range = createTestFiles(2, 5);
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
         instance.processFlags();
         
@@ -287,7 +287,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         log.info("-----  testMaxFileLength  -----");
         File f = setUpFlagDir();
         // two days, expectedMax + 20 files each day
-        LongRange range = createTestFiles(2, 20, true);
+        Range<Long> range = createTestFiles(2, 20, true);
         int total = 2 * 2 * 20;
         fmc.setSetFlagFileTimestamp(true);
         fmc.setUseFolderTimestamp(true);
@@ -443,7 +443,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         log.info("-----  testFlagFileMarkerError  -----");
         File f = setUpFlagDir();
         // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5);
+        Range<Long> range = createTestFiles(2, 5);
         fmc.setSetFlagFileTimestamp(true);
         List<FlagDataTypeConfig> cfgs = fmc.getFlagConfigs();
         FlagDataTypeConfig cfg = cfgs.get(0);
@@ -461,7 +461,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         log.info("-----  testFlagFileMarker  -----");
         File f = setUpFlagDir();
         // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5);
+        Range<Long> range = createTestFiles(2, 5);
         // fmc.setSetFlagFileTimestamp(true);
         List<FlagDataTypeConfig> cfgs = fmc.getFlagConfigs();
         FlagDataTypeConfig cfg = cfgs.get(0);
@@ -471,7 +471,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         // ensure the flag files have appropriate dates
         for (File file : f.listFiles()) {
             if (file.getName().endsWith(".flag")) {
-                assertTrue(range.containsLong(file.lastModified()));
+                assertTrue(range.contains(file.lastModified()));
             }
         }
         assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);

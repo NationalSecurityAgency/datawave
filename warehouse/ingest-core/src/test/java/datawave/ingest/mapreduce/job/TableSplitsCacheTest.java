@@ -432,7 +432,7 @@ public class TableSplitsCacheTest {
         return mocked;
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testCtorWithNullArgument() {
         logger.info("testCtorWithNullArgument called...");
         setSplitsCacheDir();

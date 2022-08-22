@@ -16,7 +16,7 @@ import datawave.ingest.metadata.id.MetadataIdParser;
 import datawave.ingest.validation.EventValidator;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctionsFactory;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;

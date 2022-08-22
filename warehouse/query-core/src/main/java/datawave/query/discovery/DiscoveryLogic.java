@@ -1,7 +1,50 @@
 package datawave.query.discovery;
 
-import static com.google.common.collect.Iterators.concat;
-import static com.google.common.collect.Iterators.transform;
+import com.google.common.base.Function;
+import com.google.common.base.Stopwatch;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import datawave.data.type.Type;
+import datawave.query.Constants;
+import datawave.query.QueryParameters;
+import datawave.query.discovery.FindLiteralsAndPatternsVisitor.QueryValues;
+import datawave.query.exceptions.IllegalRangeArgumentException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.visitors.CaseSensitivityVisitor;
+import datawave.query.jexl.visitors.QueryModelVisitor;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.language.tree.QueryNode;
+import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.ShardIndexQueryTable;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.ScannerBase;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.hadoop.io.ArrayWritable;
+import org.apache.hadoop.io.DataInputBuffer;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
+import org.apache.log4j.Logger;
+import org.javatuples.Pair;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,54 +61,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import datawave.data.type.Type;
-import datawave.query.QueryParameters;
-import datawave.query.exceptions.IllegalRangeArgumentException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.jexl.visitors.CaseSensitivityVisitor;
-import datawave.query.jexl.visitors.QueryModelVisitor;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.language.tree.QueryNode;
-import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
-import datawave.query.Constants;
-import datawave.query.discovery.FindLiteralsAndPatternsVisitor.QueryValues;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.tables.ShardIndexQueryTable;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.exception.QueryException;
-
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.LongRange;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.DataInputBuffer;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
-import org.apache.log4j.Logger;
-import org.javatuples.Pair;
-
-import com.google.common.base.Function;
-import com.google.common.base.Stopwatch;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
+import static com.google.common.collect.Iterators.concat;
+import static com.google.common.collect.Iterators.transform;
 
 public class DiscoveryLogic extends ShardIndexQueryTable {
     
@@ -255,7 +252,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         // we don't need to bump up the end date any more because it's not apart of the range set on the scanner
         Date end = config.getEndDate();
         
-        LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
+        org.apache.commons.lang3.Range<Long> dateRange = org.apache.commons.lang3.Range.between(begin.getTime(), end.getTime());
         
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());

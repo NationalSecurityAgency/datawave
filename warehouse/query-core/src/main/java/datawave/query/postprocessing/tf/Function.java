@@ -1,14 +1,12 @@
 package datawave.query.postprocessing.tf;
 
+import com.google.common.collect.Lists;
+import datawave.query.jexl.visitors.PrintingVisitor;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 import java.util.Collections;
 import java.util.List;
-
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-
-import com.google.common.collect.Lists;
-
-import datawave.query.jexl.visitors.PrintingVisitor;
 
 /**
  * Represents a function in a JEXL expression. Functions have a name a list of arguments associated with them. Functions are agnostic with regards to the

@@ -1,6 +1,6 @@
 package datawave.query.util;
 
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 public class Tuple2<A,B> extends Tuple1<A> {
     private B second;

@@ -47,7 +47,7 @@ import datawave.webservice.results.mr.MapReduceInfoResponseList;
 import datawave.webservice.results.mr.MapReduceJobDescription;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;

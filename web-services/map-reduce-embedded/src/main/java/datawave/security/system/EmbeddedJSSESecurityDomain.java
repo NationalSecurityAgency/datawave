@@ -1,6 +1,6 @@
 package datawave.security.system;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.jboss.security.JSSESecurityDomain;
 import org.jboss.security.PicketBoxMessages;

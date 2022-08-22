@@ -7,7 +7,7 @@ import datawave.data.type.IpAddressType;
 import datawave.data.normalizer.NormalizationException;
 import datawave.query.attributes.ValueTuple;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;

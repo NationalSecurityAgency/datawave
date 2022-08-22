@@ -1,13 +1,12 @@
 package datawave.edge.util;
 
-import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
-
 import datawave.data.type.Type;
+import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.hadoop.io.Text;
 
 import java.nio.charset.CharacterCodingException;

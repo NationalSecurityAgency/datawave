@@ -1,13 +1,12 @@
 package datawave.query.predicate;
 
-import java.util.Map.Entry;
-
+import com.google.common.base.Predicate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.commons.lang.math.LongRange;
+import org.apache.commons.lang3.Range;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Predicate;
+import java.util.Map.Entry;
 
 /**
  * Excludes documents which do not fall within the given time range
@@ -15,7 +14,7 @@ import com.google.common.base.Predicate;
 public class TimeFilter {
     private static final Logger log = Logger.getLogger(TimeFilter.class);
     
-    protected final LongRange acceptedRange;
+    protected final Range<Long> acceptedRange;
     protected final KeyTimeFilter keyTimeFilter;
     protected final KeyValueTimeFilter keyValueTimeFilter;
     
@@ -26,7 +25,7 @@ public class TimeFilter {
     }
     
     public TimeFilter(long start, long end) {
-        acceptedRange = new LongRange(start, end);
+        acceptedRange = Range.between(start, end);
         keyTimeFilter = new KeyTimeFilter();
         keyValueTimeFilter = new KeyValueTimeFilter();
     }
@@ -36,7 +35,7 @@ public class TimeFilter {
         public boolean apply(Key input) {
             final long timestamp = input.getTimestamp();
             
-            return acceptedRange.containsLong(timestamp);
+            return acceptedRange.contains(timestamp);
         }
     }
     

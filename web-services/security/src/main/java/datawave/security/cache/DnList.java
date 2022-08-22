@@ -3,7 +3,7 @@ package datawave.security.cache;
 import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.util.DnUtils;
 import datawave.webservice.HtmlProvider;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -114,8 +114,8 @@ public class DnList implements HtmlProvider {
             for (int i = 0; i < subDns.length; i += 2) {
                 if (i > 0)
                     builder.append("<br/>&#160;&#160;&#160;&#160;");
-                builder.append(StringEscapeUtils.escapeHtml(subDns[i]));
-                builder.append(" (issuer: ").append(StringEscapeUtils.escapeHtml(subDns[i + 1])).append(")");
+                builder.append(StringEscapeUtils.escapeHtml4(subDns[i]));
+                builder.append(" (issuer: ").append(StringEscapeUtils.escapeHtml4(subDns[i + 1])).append(")");
             }
             builder.append("</a>").append("</td>");
             DatawaveUserInfo u = (userInfos != null) ? userInfos.get(dn) : null;

@@ -1,18 +1,17 @@
 package datawave.webservice.common.result;
 
-import java.io.Serializable;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import com.google.common.base.Objects;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import com.google.common.base.Objects;
-import org.apache.commons.lang.builder.CompareToBuilder;
+import java.io.Serializable;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 @XmlRootElement(name = "Connection")
 @XmlAccessorType(XmlAccessType.NONE)

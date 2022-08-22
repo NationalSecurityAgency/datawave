@@ -1,6 +1,6 @@
 package datawave.webservice.query.map;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -42,7 +42,7 @@ public class QueryGeometry implements Serializable {
     }
     
     public String toGeoJsonFeature() {
-        return "{'type': 'Feature', 'properties': {'function': \"" + StringEscapeUtils.escapeHtml(function) + "\"},'geometry': " + geometry + "}";
+        return "{'type': 'Feature', 'properties': {'function': \"" + StringEscapeUtils.escapeHtml4(function) + "\"},'geometry': " + geometry + "}";
     }
     
     @Override

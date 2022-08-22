@@ -17,7 +17,7 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;

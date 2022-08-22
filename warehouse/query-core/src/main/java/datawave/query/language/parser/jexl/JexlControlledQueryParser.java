@@ -15,7 +15,7 @@ import datawave.query.jexl.JexlASTHelper;
 
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class JexlControlledQueryParser implements QueryParser, ControlledQueryParser {
     

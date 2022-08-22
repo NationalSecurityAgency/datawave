@@ -1,17 +1,18 @@
 package datawave.audit;
 
-import java.util.ArrayList;
-import java.util.List;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.IntRange;
+import org.apache.commons.lang3.Range;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SplitSelectorExtractor implements SelectorExtractor {
     
     protected String separatorCharacter = null;
     protected String separatorParameter = null;
-    protected List<IntRange> useSplitsList = null;
+    protected List<Range<Integer>> useSplitsList = null;
     
     @Override
     public List<String> extractSelectors(Query query) throws IllegalArgumentException {
@@ -60,20 +61,20 @@ public class SplitSelectorExtractor implements SelectorExtractor {
         this.useSplitsList = parseUseSplitsRanges(useSplits);
     }
     
-    public List<IntRange> parseUseSplitsRanges(String useSplits) {
+    public List<Range<Integer>> parseUseSplitsRanges(String useSplits) {
         
-        List<IntRange> useSplitsList = new ArrayList<>();
+        List<Range<Integer>> useSplitsList = new ArrayList<>();
         if (useSplits != null) {
             try {
                 String[] split1 = useSplits.trim().split(",");
                 for (String s : split1) {
                     String[] split2 = s.trim().split("-");
                     if (split2.length == 1) {
-                        long v1 = Integer.parseInt(split2[0]);
+                        int v1 = Integer.parseInt(split2[0]);
                         if (s.endsWith("-")) {
-                            useSplitsList.add(new IntRange(v1, Integer.MAX_VALUE));
+                            useSplitsList.add(Range.between(v1, Integer.MAX_VALUE));
                         } else {
-                            useSplitsList.add(new IntRange(v1));
+                            useSplitsList.add(Range.is(v1));
                         }
                     } else if (split2.length == 2) {
                         long v1 = Long.parseLong(split2[0]);
@@ -81,7 +82,7 @@ public class SplitSelectorExtractor implements SelectorExtractor {
                         if (v1 > v2) {
                             throw new NumberFormatException(v1 + " > " + v2 + " in range " + s);
                         }
-                        useSplitsList.add(new IntRange(v1, v2));
+                        useSplitsList.add(Range.between(((Long) v1).intValue(), ((Long) v2).intValue()));
                     } else {
                         throw new NumberFormatException("range " + s + " contains more than 2 end points");
                     }
@@ -93,11 +94,11 @@ public class SplitSelectorExtractor implements SelectorExtractor {
         return useSplitsList;
     }
     
-    public boolean useSplit(List<IntRange> useSplitList, int splitNumber) {
+    public boolean useSplit(List<Range<Integer>> useSplitList, int splitNumber) {
         
         boolean useSplit = false;
-        for (IntRange range : useSplitList) {
-            if (range.containsInteger(splitNumber)) {
+        for (Range<Integer> range : useSplitList) {
+            if (range.contains(splitNumber)) {
                 useSplit = true;
                 break;
             }

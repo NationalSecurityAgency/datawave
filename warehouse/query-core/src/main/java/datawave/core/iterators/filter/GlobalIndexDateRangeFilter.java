@@ -1,19 +1,19 @@
 package datawave.core.iterators.filter;
 
-import java.io.IOException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map;
-
 import datawave.query.Constants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.lang.math.LongRange;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.Range;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Map;
 
 /**
  * The iterator skips entries in the global index for entries that lie outside the date range set on the BatchScanner
@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
  */
 public class GlobalIndexDateRangeFilter extends Filter {
     
-    private LongRange range = null;
+    private Range<Long> range = null;
     private static final Logger log = Logger.getLogger(GlobalIndexDateRangeFilter.class);
     
     @Override
@@ -39,9 +39,9 @@ public class GlobalIndexDateRangeFilter extends Filter {
             if (start > end)
                 throw new IllegalArgumentException("Start date comes after end date");
             
-            range = new LongRange(start, end);
+            range = Range.between(start, end);
             if (log.isDebugEnabled()) {
-                log.debug("Set the date range to " + new Date(range.getMinimumLong()) + " to " + new Date(range.getMaximumLong()));
+                log.debug("Set the date range to " + new Date(range.getMinimum()) + " to " + new Date(range.getMaximum()));
             }
         } else {
             throw new IllegalArgumentException("Both options must be set: " + Constants.START_DATE + " and " + Constants.END_DATE);
@@ -65,7 +65,7 @@ public class GlobalIndexDateRangeFilter extends Filter {
     
     @Override
     public boolean accept(Key k, Value v) {
-        return range.containsLong(k.getTimestamp());
+        return range.contains(k.getTimestamp());
         
     }
     

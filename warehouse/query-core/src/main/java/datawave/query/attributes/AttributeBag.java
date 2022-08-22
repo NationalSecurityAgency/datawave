@@ -6,7 +6,7 @@ import datawave.marking.MarkingFunctions.Exception;
 import datawave.marking.MarkingFunctionsFactory;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.mutable.MutableLong;
+import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;

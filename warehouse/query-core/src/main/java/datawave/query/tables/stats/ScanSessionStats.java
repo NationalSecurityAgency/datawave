@@ -1,18 +1,17 @@
 package datawave.query.tables.stats;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import datawave.query.util.QueryStopwatch;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableLong;
+import org.apache.commons.lang3.time.StopWatch;
+import org.apache.log4j.Logger;
 
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import datawave.query.util.QueryStopwatch;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.mutable.MutableLong;
-import org.apache.commons.lang.time.StopWatch;
-import org.apache.log4j.Logger;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * 

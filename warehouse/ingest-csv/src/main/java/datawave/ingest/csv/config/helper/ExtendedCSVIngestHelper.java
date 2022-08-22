@@ -11,9 +11,9 @@ import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import datawave.ingest.data.config.ingest.EventFieldNormalizerHelper;
 import datawave.ingest.data.normalizer.SimpleGroupFieldNameParser;
 import datawave.ingest.metadata.id.MetadataIdParser;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.text.StrMatcher;
-import org.apache.commons.lang.text.StrTokenizer;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.text.StrMatcher;
+import org.apache.commons.lang3.text.StrTokenizer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 

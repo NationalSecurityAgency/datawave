@@ -1,21 +1,19 @@
 package datawave.ingest.mapreduce.partition;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.util.StringUtils;
-
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Attempts to distribute rows among reducers evenly. This can also be configured to also shuffle specific column families within each row

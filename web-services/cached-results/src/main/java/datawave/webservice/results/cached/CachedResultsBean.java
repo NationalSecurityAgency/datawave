@@ -66,7 +66,7 @@ import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.jexl2.parser.TokenMgrError;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;

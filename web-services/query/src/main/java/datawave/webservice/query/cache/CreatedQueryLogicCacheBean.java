@@ -8,7 +8,7 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.logic.QueryLogic;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 

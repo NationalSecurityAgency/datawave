@@ -19,7 +19,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;

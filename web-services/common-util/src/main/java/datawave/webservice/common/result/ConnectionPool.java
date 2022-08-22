@@ -1,7 +1,7 @@
 package datawave.webservice.common.result;
 
-import java.io.Serializable;
-import java.util.List;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -9,9 +9,8 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import java.io.Serializable;
+import java.util.List;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)

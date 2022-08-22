@@ -46,9 +46,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.LongRange;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Text;
@@ -516,7 +515,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         // we don't need to bump up the end date any more because it's not apart of the range set on the scanner
         Date end = config.getEndDate();
         
-        LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
+        org.apache.commons.lang3.Range<Long> dateRange = org.apache.commons.lang3.Range.between(begin.getTime(), end.getTime());
         
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
@@ -545,7 +544,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         // we don't need to bump up the end date any more because it's not apart of the range set on the scanner
         Date end = config.getEndDate();
         
-        LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
+        org.apache.commons.lang3.Range<Long> dateRange = org.apache.commons.lang3.Range.between(begin.getTime(), end.getTime());
         
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());

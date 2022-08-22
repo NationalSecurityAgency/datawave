@@ -4,7 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SortedSetMultimap;
-import com.google.common.collect.TreeMultimap;;
+import com.google.common.collect.TreeMultimap;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Attribute;
@@ -12,7 +12,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.slf4j.Logger;
 
 import java.math.BigDecimal;
@@ -26,6 +26,8 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 import static org.slf4j.LoggerFactory.getLogger;
+
+;
 
 /**
  * Provides functionality commonly needed to group documents (regardless if done server or client side).

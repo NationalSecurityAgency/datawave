@@ -1,13 +1,8 @@
 package datawave.ingest.mapreduce.handler.tokenize;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-
+import com.google.common.base.Preconditions;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
@@ -34,11 +29,10 @@ import datawave.ingest.util.BloomFilterWrapper;
 import datawave.ingest.util.Identity;
 import datawave.ingest.util.TimeoutStrategy;
 import datawave.util.TextUtil;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
@@ -50,9 +44,13 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * Content indexing column based handler. will provide content tokenization, which will include storing offsets, and the TERM_COUNT for that event.

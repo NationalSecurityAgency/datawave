@@ -1,5 +1,37 @@
 package datawave.query.ancestor;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import datawave.query.Constants;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.function.AncestorEquality;
+import datawave.query.function.JexlEvaluation;
+import datawave.query.iterator.NestedQueryIterator;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.SourcedOptions;
+import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.predicate.AncestorEventDataFilter;
+import datawave.query.predicate.ConfiguredPredicate;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.util.Tuple3;
+import datawave.util.StringUtils;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
@@ -9,40 +41,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.Constants;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.ValueTuple;
-import datawave.query.function.JexlEvaluation;
-import datawave.query.jexl.HitListArithmetic;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.util.Tuple3;
-import datawave.util.StringUtils;
-import datawave.query.function.AncestorEquality;
-import datawave.query.iterator.NestedQueryIterator;
-import datawave.query.iterator.QueryIterator;
-import datawave.query.iterator.SourcedOptions;
-import datawave.query.iterator.logic.IndexIterator;
-import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.predicate.AncestorEventDataFilter;
-import datawave.query.predicate.ConfiguredPredicate;
-
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 /**
  * This is an ancestor QueryIterator implementation (all ancestor's metadata up to the TLD is included with each child)

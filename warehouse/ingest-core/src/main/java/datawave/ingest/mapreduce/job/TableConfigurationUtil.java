@@ -121,7 +121,7 @@ public class TableConfigurationUtil {
         
         if (MetricsConfiguration.isEnabled(conf)) {
             String metricsTable = MetricsConfiguration.getTable(conf);
-            if (org.apache.commons.lang.StringUtils.isNotBlank(metricsTable)) {
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(metricsTable)) {
                 tables.add(metricsTable);
             }
         }
@@ -314,7 +314,7 @@ public class TableConfigurationUtil {
         if (MetricsConfiguration.isEnabled(conf)) {
             String metricsTable = MetricsConfiguration.getTable(conf);
             int priority = MetricsConfiguration.getTablePriority(conf);
-            if (org.apache.commons.lang.StringUtils.isNotBlank(metricsTable)) {
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(metricsTable)) {
                 tablePriorities.put(metricsTable, priority);
             }
         }

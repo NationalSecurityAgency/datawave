@@ -18,7 +18,7 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.RawDataManager;
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.junit.ClassRule;
 import org.junit.Test;

@@ -4,7 +4,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.edge.protobuf.EdgeData;
 import datawave.edge.protobuf.EdgeData.EdgeValue.Builder;
 import org.apache.accumulo.core.data.Value;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.UUID;

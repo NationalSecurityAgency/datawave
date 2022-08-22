@@ -2,8 +2,8 @@ package datawave.webservice.query;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 

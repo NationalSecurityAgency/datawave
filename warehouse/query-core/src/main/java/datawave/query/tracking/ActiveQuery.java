@@ -5,7 +5,7 @@ import com.codahale.metrics.Timer;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.profile.QuerySpan;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;

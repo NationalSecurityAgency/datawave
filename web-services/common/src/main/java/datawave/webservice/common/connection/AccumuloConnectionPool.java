@@ -1,16 +1,16 @@
 package datawave.webservice.common.connection;
 
+import org.apache.accumulo.core.client.Connector;
+import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.accumulo.core.client.Connector;
-import org.apache.commons.lang.mutable.MutableInt;
-import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.apache.log4j.Logger;
 
 public class AccumuloConnectionPool extends GenericObjectPool<Connector> {
     

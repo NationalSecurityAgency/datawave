@@ -25,7 +25,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.jboss.logging.NDC;
 
@@ -672,7 +672,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         String host = System.getProperty("jboss.host.name");
         
         return new StringBuilder().append("host:").append(host).append(", id:").append(this.getSettings().getId()).append(", query:")
-                        .append(StringEscapeUtils.escapeHtml(this.getSettings().getQuery())).append(", auths:")
+                        .append(StringEscapeUtils.escapeHtml4(this.getSettings().getQuery())).append(", auths:")
                         .append(this.getSettings().getQueryAuthorizations()).append(", user:").append(this.getSettings().getOwner()).append(", queryLogic:")
                         .append(this.getSettings().getQueryLogicName()).append(", name:").append(this.getSettings().getQueryName()).append(", pagesize:")
                         .append(this.getSettings().getPagesize()).append(", begin:").append(this.getSettings().getBeginDate()).append(", end:")

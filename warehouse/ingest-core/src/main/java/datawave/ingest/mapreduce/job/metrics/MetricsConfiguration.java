@@ -2,7 +2,7 @@ package datawave.ingest.mapreduce.job.metrics;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 

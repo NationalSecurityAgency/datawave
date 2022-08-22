@@ -17,7 +17,7 @@ import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.util.TypedValue;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Maps;

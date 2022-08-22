@@ -1,21 +1,19 @@
 package datawave.query.attributes;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.DatawaveJexlContext;
+import org.apache.accumulo.core.data.Key;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.hadoop.io.WritableUtils;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
-
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.collections.FunctionalSet;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.hadoop.io.WritableUtils;
-
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 
 /**
  * An abstract Attribute that does no normalization

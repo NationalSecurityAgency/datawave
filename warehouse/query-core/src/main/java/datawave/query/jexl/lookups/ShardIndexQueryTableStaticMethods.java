@@ -39,9 +39,8 @@ import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.LongRange;
-import org.apache.commons.lang.time.FastDateFormat;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -425,7 +424,7 @@ public class ShardIndexQueryTableStaticMethods {
         return bs;
     }
     
-    public static final void configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, ScannerBase bs, LongRange dateRange) {
+    public static final void configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, ScannerBase bs, org.apache.commons.lang3.Range<Long> dateRange) {
         // Setup the GlobalIndexDateRangeFilter
         
         if (log.isTraceEnabled()) {
@@ -435,14 +434,14 @@ public class ShardIndexQueryTableStaticMethods {
         bs.addScanIterator(cfg);
     }
     
-    public static final IteratorSetting configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, LongRange dateRange) {
+    public static final IteratorSetting configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, org.apache.commons.lang3.Range<Long> dateRange) {
         // Setup the GlobalIndexDateRangeFilter
         if (log.isTraceEnabled()) {
             log.trace("Configuring GlobalIndexDateRangeFilter with " + dateRange);
         }
         IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 21, "dateFilter", GlobalIndexDateRangeFilter.class);
-        cfg.addOption(Constants.START_DATE, Long.toString(dateRange.getMinimumLong()));
-        cfg.addOption(Constants.END_DATE, Long.toString(dateRange.getMaximumLong()));
+        cfg.addOption(Constants.START_DATE, Long.toString(dateRange.getMinimum()));
+        cfg.addOption(Constants.END_DATE, Long.toString(dateRange.getMaximum()));
         return cfg;
     }
     

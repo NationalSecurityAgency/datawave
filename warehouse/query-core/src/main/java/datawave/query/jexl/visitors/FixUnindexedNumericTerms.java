@@ -1,7 +1,6 @@
 package datawave.query.jexl.visitors;
 
-import java.util.Collection;
-
+import com.google.common.base.Preconditions;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -10,7 +9,6 @@ import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -20,10 +18,9 @@ import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
-import com.google.common.base.Preconditions;
+import java.util.Collection;
 
 /**
  * When we have an unindexed field that appears numeric in nature, convert the string literals to numeric literals.

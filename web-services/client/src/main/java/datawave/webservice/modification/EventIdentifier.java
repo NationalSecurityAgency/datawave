@@ -1,6 +1,6 @@
 package datawave.webservice.modification;
 
-import java.io.Serializable;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -8,8 +8,7 @@ import javax.xml.bind.annotation.XmlAccessorOrder;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import org.apache.commons.lang.builder.ToStringBuilder;
+import java.io.Serializable;
 
 @XmlRootElement(name = "EventIdentifier")
 @XmlAccessorType(XmlAccessType.FIELD)

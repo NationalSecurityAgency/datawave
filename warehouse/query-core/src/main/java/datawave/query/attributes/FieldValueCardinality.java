@@ -1,13 +1,12 @@
 package datawave.query.attributes;
 
-import datawave.webservice.query.data.ObjectSizeOf;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.log4j.Logger;
-
 import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import com.clearspring.analytics.stream.cardinality.ICardinality;
 import com.google.common.base.Preconditions;
+import datawave.webservice.query.data.ObjectSizeOf;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.log4j.Logger;
 
 public class FieldValueCardinality implements Comparable<FieldValueCardinality> {
     

@@ -1,6 +1,6 @@
 package datawave.configuration;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.impl.config.DefaultConfigPropertyProducer;
 
@@ -12,7 +12,6 @@ import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.Specializes;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.interceptor.Interceptor;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;

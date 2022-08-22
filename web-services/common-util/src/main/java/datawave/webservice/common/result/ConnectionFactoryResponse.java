@@ -1,11 +1,8 @@
 package datawave.webservice.common.result;
 
-import java.text.NumberFormat;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import datawave.webservice.HtmlProvider;
+import datawave.webservice.result.BaseResponse;
+import org.apache.commons.text.StringEscapeUtils;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -14,11 +11,12 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import datawave.webservice.HtmlProvider;
-import datawave.webservice.result.BaseResponse;
-
-import org.apache.commons.lang.StringEscapeUtils;
+import java.text.NumberFormat;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 @XmlRootElement(name = "ConnectionFactoryResponse")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -148,12 +146,12 @@ public class ConnectionFactoryResponse extends BaseResponse implements HtmlProvi
                         builder.append("<td></td>");
                         builder.append("<td></td>");
                         builder.append("<td></td>");
-                        builder.append("<td class=\"allBorders\">").append(StringEscapeUtils.escapeHtml(name)).append("</td>");
+                        builder.append("<td class=\"allBorders\">").append(StringEscapeUtils.escapeHtml4(name)).append("</td>");
                         if (name.equals("query.id") && queryUser != null) {
                             builder.append("<td class=\"allBorders\"><a href=\"/DataWave/Query/Metrics/id/").append(value).append("/").append("\">")
                                             .append(value).append("</a></td>");
                         } else {
-                            builder.append("<td class=\"allBorders\">").append(StringEscapeUtils.escapeHtml(e.getValue().toString())).append("</td>");
+                            builder.append("<td class=\"allBorders\">").append(StringEscapeUtils.escapeHtml4(e.getValue().toString())).append("</td>");
                         }
                         builder.append("</tr>");
                     }

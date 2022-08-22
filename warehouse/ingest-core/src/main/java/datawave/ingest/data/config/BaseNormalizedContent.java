@@ -1,11 +1,10 @@
 package datawave.ingest.data.config;
 
-import java.util.Map;
-
 import datawave.data.type.Type;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import java.util.Map;
 
 /**
  * Base container class implementation of the NormalizedContentInterface. This class is utilized to retain the original and transformed content and labels for a

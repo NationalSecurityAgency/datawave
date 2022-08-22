@@ -1,22 +1,20 @@
 package datawave.ingest.csv.config.helper;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.metadata.id.MetadataIdParser;
+import datawave.ingest.validation.EventValidator;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.conf.Configuration;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.metadata.id.MetadataIdParser;
-import datawave.ingest.validation.EventValidator;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.hadoop.conf.Configuration;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 
 public class ExtendedCSVHelper extends CSVHelper {
     

@@ -1,6 +1,8 @@
 package datawave.query.util.sortedset;
 
-import static org.apache.accumulo.core.util.ByteBufferUtil.toBytes;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -9,9 +11,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import static org.apache.accumulo.core.util.ByteBufferUtil.toBytes;
 
 /**
  * A KeyValue that is serializable. Well, this is not actually a KeyValue as that class does not have a default constructor and hence cannot be serializable.

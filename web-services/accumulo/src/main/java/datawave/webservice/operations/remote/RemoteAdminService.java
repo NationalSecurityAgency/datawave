@@ -11,7 +11,7 @@ import datawave.webservice.response.ListUsersResponse;
 import datawave.webservice.response.UpdateResponse;
 import datawave.webservice.response.ValidateVisibilityResponse;
 import datawave.webservice.result.VoidResponse;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.entity.StringEntity;

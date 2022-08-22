@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpGet;

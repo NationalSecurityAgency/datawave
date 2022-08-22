@@ -5,7 +5,7 @@ import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.iterator.profile.QuerySpan;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 

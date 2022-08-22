@@ -3,7 +3,6 @@ package datawave.query.jexl.visitors;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -15,7 +14,7 @@ import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.log4j.Logger;
 
 /**

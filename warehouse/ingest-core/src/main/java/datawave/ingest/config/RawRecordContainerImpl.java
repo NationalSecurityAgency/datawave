@@ -1,5 +1,26 @@
 package datawave.ingest.config;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.protobuf.ByteString;
+import datawave.data.hash.UID;
+import datawave.data.hash.UIDBuilder;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.ingest.IgnorableErrorHelperInterface;
+import datawave.ingest.protobuf.RawRecordContainer.Data;
+import datawave.marking.MarkingFunctions;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -14,29 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDBuilder;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.ingest.IgnorableErrorHelperInterface;
-import datawave.ingest.protobuf.RawRecordContainer.Data;
-import datawave.marking.MarkingFunctions;
-
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.hadoop.conf.Configurable;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Writable;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.protobuf.ByteString;
 
 public class RawRecordContainerImpl implements Writable, Configurable, RawRecordContainer {
     

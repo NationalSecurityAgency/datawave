@@ -14,7 +14,7 @@ import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import org.apache.commons.dbutils.DbUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;

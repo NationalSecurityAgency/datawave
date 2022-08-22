@@ -3,7 +3,7 @@ package datawave.query.attributes;
 import com.google.common.base.Objects;
 import datawave.data.type.Type;
 import datawave.query.util.Tuple3;
-import org.apache.commons.lang.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 
 import java.util.Collection;
 

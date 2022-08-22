@@ -1,11 +1,9 @@
 package datawave.webservice.query.metric;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-
 import datawave.configuration.RefreshEvent;
 import datawave.configuration.spring.SpringBean;
 import datawave.metrics.remote.RemoteQueryMetricService;
-
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
@@ -14,8 +12,8 @@ import datawave.util.timely.UdpClient;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.result.VoidResponse;
 import org.apache.commons.collections4.map.LRUMap;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.CompareToBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 

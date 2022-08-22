@@ -61,8 +61,8 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.Parser;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.jexl2.parser.TokenMgrError;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.io.StringReader;

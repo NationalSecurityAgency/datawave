@@ -1,10 +1,11 @@
 package datawave.query.cardinality;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.io.Serializable;
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.log4j.Logger;
 
 public class DateFieldValueCardinalityRecord implements Comparable, Serializable {
     private static final long serialVersionUID = 1L;

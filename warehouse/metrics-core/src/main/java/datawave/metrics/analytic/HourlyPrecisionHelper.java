@@ -1,7 +1,7 @@
 package datawave.metrics.analytic;
 
 import datawave.metrics.config.MetricsConfig;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 

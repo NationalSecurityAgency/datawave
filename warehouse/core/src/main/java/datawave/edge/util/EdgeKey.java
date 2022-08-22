@@ -1,18 +1,18 @@
 package datawave.edge.util;
 
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
 import java.nio.charset.CharacterCodingException;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
 
 /**
  * This is an abstraction of the keys found in the protobuf edge table.

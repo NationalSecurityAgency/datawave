@@ -22,7 +22,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.QueryData;
 
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;

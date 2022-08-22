@@ -2,7 +2,7 @@ package datawave.mapreduce.shardStats;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import org.apache.accumulo.core.data.Value;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;

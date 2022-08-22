@@ -12,7 +12,7 @@ import datawave.util.flag.processor.FlagDistributor;
 import datawave.util.flag.processor.SizeValidator;
 import datawave.util.flag.processor.UnusableFileException;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;

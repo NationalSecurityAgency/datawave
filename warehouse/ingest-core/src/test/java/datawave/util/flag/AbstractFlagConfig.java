@@ -1,5 +1,17 @@
 package datawave.util.flag;
 
+import datawave.util.StringUtils;
+import datawave.util.flag.config.ConfigUtil;
+import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.Range;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
+
+import javax.xml.bind.JAXBException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -7,20 +19,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.UUID;
-
-import javax.xml.bind.JAXBException;
-
-import datawave.util.StringUtils;
-import datawave.util.flag.config.ConfigUtil;
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.math.LongRange;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
 
 public class AbstractFlagConfig {
     
@@ -53,23 +51,23 @@ public class AbstractFlagConfig {
         return ConfigUtil.getXmlObject(FlagMakerConfig.class, TEST_CONFIG);
     }
     
-    protected LongRange createTestFiles(int days, int filesPerDay) throws IOException {
+    protected Range<Long> createTestFiles(int days, int filesPerDay) throws IOException {
         return createTestFiles(days, filesPerDay, false);
     }
     
-    protected LongRange createTestFiles(int days, int filesPerDay, boolean folderRange) throws IOException {
+    protected Range<Long> createTestFiles(int days, int filesPerDay, boolean folderRange) throws IOException {
         return createTestFiles(days, filesPerDay, "2013/01", folderRange, "");
     }
     
-    protected LongRange createBogusTestFiles(int days, int filesPerDay) throws IOException {
+    protected Range<Long> createBogusTestFiles(int days, int filesPerDay) throws IOException {
         return createTestFiles(days, filesPerDay, "20xx/dd", false, "");
     }
     
-    protected LongRange createCopyingTestFiles(int days, int filesPerDay) throws IOException {
+    protected Range<Long> createCopyingTestFiles(int days, int filesPerDay) throws IOException {
         return createTestFiles(days, filesPerDay, "2013/01", false, "._COPYING_");
     }
     
-    protected LongRange createTestFiles(int days, int filesPerDay, String datepath, boolean folderRange, String postfix) throws IOException {
+    protected Range<Long> createTestFiles(int days, int filesPerDay, String datepath, boolean folderRange, String postfix) throws IOException {
         Calendar c = Calendar.getInstance();
         c.set(Calendar.HOUR_OF_DAY, 0);
         c.set(Calendar.MINUTE, 0);
@@ -94,32 +92,32 @@ public class AbstractFlagConfig {
                 }
             }
         }
-        LongRange range = null;
+        Range<Long> range = null;
         for (File file : inputdirs) {
             for (int i = 0; i < days;) {
                 File one = new File(file.getAbsolutePath() + File.separator + datepath + File.separator + "0" + ++i);
                 // set a day that is 10 days past the folder date
                 c.set(Calendar.DAY_OF_MONTH, i + 10);
-                final LongRange endRange = writeTestFiles(one, filesPerDay, c.getTimeInMillis(), folderRange, postfix);
+                final Range<Long> endRange = writeTestFiles(one, filesPerDay, c.getTimeInMillis(), folderRange, postfix);
                 range = merge(range, endRange);
             }
         }
         return range;
     }
     
-    private LongRange merge(LongRange range1, LongRange range2) {
+    private Range<Long> merge(Range<Long> range1, Range<Long> range2) {
         if (range1 == null) {
             return range2;
         } else if (range2 == null) {
             return range1;
         } else {
-            long min = Math.min(range1.getMinimumLong(), range2.getMinimumLong());
-            long max = Math.max(range1.getMaximumLong(), range2.getMaximumLong());
-            return new LongRange(min, max);
+            long min = Math.min(range1.getMinimum(), range2.getMinimum());
+            long max = Math.max(range1.getMaximum(), range2.getMaximum());
+            return Range.between(min, max);
         }
     }
     
-    private LongRange writeTestFiles(File f, int count, long time, boolean folderRange, String postfix) throws IOException {
+    private Range<Long> writeTestFiles(File f, int count, long time, boolean folderRange, String postfix) throws IOException {
         if (!f.exists()) {
             f.mkdirs();
         }
@@ -143,9 +141,9 @@ public class AbstractFlagConfig {
             c.set(Calendar.YEAR, Integer.parseInt(dir[dir.length - 3]));
             c.set(Calendar.MONTH, Integer.parseInt(dir[dir.length - 2]) - 1);
             c.set(Calendar.DAY_OF_MONTH, Integer.parseInt(dir[dir.length - 1]));
-            return new LongRange(c.getTimeInMillis(), c.getTimeInMillis());
+            return Range.between(c.getTimeInMillis(), c.getTimeInMillis());
         } else {
-            return new LongRange(time, time + ((count - 1) * 1000));
+            return Range.between(time, time + ((count - 1) * 1000));
         }
     }
     
