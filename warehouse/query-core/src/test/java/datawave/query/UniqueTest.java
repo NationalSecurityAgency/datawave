@@ -18,7 +18,6 @@ import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
-import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -52,7 +51,7 @@ import java.util.UUID;
 
 /**
  * Applies uniqueness to queries
- * 
+ *
  */
 public abstract class UniqueTest {
     

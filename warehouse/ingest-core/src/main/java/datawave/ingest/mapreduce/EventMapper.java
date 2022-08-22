@@ -404,9 +404,8 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         // Flag to control whether a reprocessed event caused an NDC.push
         boolean reprocessedNDCPush = false;
         
-        byte[] rawData = value.getRawData();
-        if (rawData != null) {
-            long rawDataBytes = rawData.length;
+        long rawDataBytes = value.getDataOutputSize();
+        if (rawDataBytes != -1) {
             getCounter(context, IngestInput.LINE_BYTES.toString(), "TOTAL").increment(rawDataBytes);
             long minBytes = getCounter(context, IngestInput.LINE_BYTES.toString(), "MIN").getValue();
             if (rawDataBytes < minBytes) {

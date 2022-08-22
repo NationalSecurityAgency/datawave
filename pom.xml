@@ -1126,6 +1126,13 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <!-- old version of bytebuddy was making it onto the classpath and was incompatible with mockito -->
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.10.5</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-api-easymock</artifactId>
                 <version>${version.powermock}</version>

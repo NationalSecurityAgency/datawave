@@ -30,6 +30,20 @@ import org.apache.commons.collections4.functors.NOPTransformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
+import javax.enterprise.inject.Typed;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+
 /**
  * Query Logic implementation that is configured with more than one query logic delegate. The queries are run in parallel and results are retrieved as they come
  * back from the delegates. This class restricts the delegates such that they have to return the same type of response object and two query logics with the same
@@ -362,5 +376,4 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         }
         return params.isEmpty() ? null : params;
     }
-    
 }

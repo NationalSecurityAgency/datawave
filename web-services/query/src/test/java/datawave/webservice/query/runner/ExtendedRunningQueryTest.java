@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
@@ -177,7 +178,9 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
+        expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
+        this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
@@ -248,6 +251,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
+        expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
         
         Iterator<Object> iterator = resultObjects.iterator();
@@ -266,6 +270,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
+        this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
@@ -327,10 +332,12 @@ public class ExtendedRunningQueryTest {
         this.queryMetrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(3);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
-        expect(this.transformIterator.hasNext()).andReturn(true);
+        expect(this.transformIterator.hasNext()).andReturn(true).times(0, 1);
         expect(this.genericConfiguration.getQueryString()).andReturn("query").once();
+        expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
+        this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
@@ -381,6 +388,7 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getColumnVisibility()).andReturn(null);
         expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         expect(this.genericConfiguration.getQueryString()).andReturn("query").once();
+        expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
         this.queryLogic.setupQuery(this.genericConfiguration);
@@ -450,17 +458,21 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
+        expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(dnResultLimit);
         
         Iterator<Object> iterator = resultObjects.iterator();
         int count = 0;
-        expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
         while (iterator.hasNext() && count < dnResultLimit) {
             expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
             expect(this.transformIterator.next()).andReturn(iterator.next());
             count++;
         }
-        expect(this.transformIterator.getTransformer()).andReturn(transformer).times(count);
+        
+        // now that the results thread is separate from the running query thread, we could continue getting stuff
+        expect(this.transformIterator.getTransformer()).andReturn(transformer).anyTimes();
+        expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext()).anyTimes();
+        expect(this.transformIterator.next()).andReturn(iterator.next()).anyTimes();
         
         expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
         expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
@@ -468,6 +480,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
+        this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
