@@ -1810,7 +1810,7 @@ public class QueryOptions implements OptionDescriber {
     public static Set<String> buildFieldSetFromString(String fieldStr) {
         Set<String> fields = new HashSet<>();
         for (String field : StringUtils.split(fieldStr, ',')) {
-            if (!org.apache.commons.lang.StringUtils.isBlank(field)) {
+            if (!org.apache.commons.lang3.StringUtils.isBlank(field)) {
                 fields.add(field);
             }
         }

@@ -51,7 +51,7 @@ public class DocumentSerialization {
      */
     public static ReturnType getReturnType(Query settings) {
         Parameter returnType = settings.findParameter(Constants.RETURN_TYPE);
-        if (null != returnType && !org.apache.commons.lang.StringUtils.isBlank(returnType.getParameterValue())) {
+        if (null != returnType && !org.apache.commons.lang3.StringUtils.isBlank(returnType.getParameterValue())) {
             return ReturnType.valueOf(returnType.getParameterValue());
         }
         

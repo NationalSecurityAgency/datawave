@@ -67,7 +67,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         
         boolean reducedInSettings = false;
         String reducedResponseStr = settings.findParameter(QueryOptions.REDUCED_RESPONSE).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(reducedResponseStr)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(reducedResponseStr)) {
             reducedInSettings = Boolean.parseBoolean(reducedResponseStr);
         }
         boolean reduced = (this.isReducedResponse() || reducedInSettings);
@@ -87,7 +87,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         // Get the list of fields to project up the stack. May be null.
         final String facetedFields = settings.findParameter(FacetedConfiguration.FACETED_FIELDS).getParameterValue().trim();
         
-        if (org.apache.commons.lang.StringUtils.isNotBlank(facetedFields)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(facetedFields)) {
             Set<String> facetedFieldSet = Sets.newHashSet(StringUtils.split(facetedFields, Constants.PARAM_VALUE_SEP));
             
             // Only set the projection fields if we were actually given some
@@ -97,29 +97,29 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         }
         
         final String limitFieldsString = settings.findParameter(QueryParameters.LIMIT_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(limitFieldsString)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(limitFieldsString)) {
             boolean limitFields = Boolean.parseBoolean(limitFieldsString);
             facetedConfig.setHasFieldLimits(limitFields);
         }
         
         final String streamingEnabledStr = settings.findParameter(FacetedConfiguration.STREAMING_ENABLED).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(streamingEnabledStr)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(streamingEnabledStr)) {
             boolean streamingEnabled = Boolean.parseBoolean(streamingEnabledStr);
             facetedConfig.setStreamingMode(streamingEnabled);
         }
         
         final String facetedType = settings.findParameter(FacetedConfiguration.FACETED_SEARCH_TYPE).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(facetedType)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(facetedType)) {
             facetedConfig.setType(FacetedSearchType.valueOf(facetedType));
         }
         
         final String maximumGroupCount = settings.findParameter(FacetedConfiguration.MAXIMUM_GROUP_COUNT).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(maximumGroupCount)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(maximumGroupCount)) {
             facetedConfig.setMaximumFacetGroupCount(Integer.parseInt(maximumGroupCount));
         }
         
         final String minimumCount = settings.findParameter(FacetedConfiguration.MINIMUM_COUNT).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(minimumCount)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(minimumCount)) {
             facetedConfig.setMinimumCount(Integer.parseInt(minimumCount));
         }
         

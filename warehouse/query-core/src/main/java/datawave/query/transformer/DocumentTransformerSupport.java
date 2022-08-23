@@ -123,7 +123,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         this.reducedResponse = reducedResponse;
         
         String logTimingDetailsStr = settings.findParameter(QueryOptions.LOG_TIMING_DETAILS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(logTimingDetailsStr)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(logTimingDetailsStr)) {
             logTimingDetails = Boolean.parseBoolean(logTimingDetailsStr);
         }
     }
@@ -296,7 +296,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         
         String eventId = uid;
         String uidField = cardinalityConfiguration.getCardinalityUidField();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(uidField)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(uidField)) {
             List<String> documentUidValues = getFieldValues(document, uidField, true);
             if (documentUidValues.isEmpty() == false) {
                 eventId = documentUidValues.get(0);
