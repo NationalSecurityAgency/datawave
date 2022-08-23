@@ -35,6 +35,7 @@ import datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.NoResultsQueryException;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
@@ -1015,6 +1016,9 @@ public class ExtendedQueryExecutorBeanTest {
             subject.next("{id}");
         } catch (Exception e) {
             result1 = e.getCause();
+            assertTrue(e.getCause().toString().contains("BadRequestQueryException: Invalid query id."));
+            assertEquals(e.getMessage(), "HTTP 400 Bad Request");
+            assertTrue(((BadRequestQueryException) result1).getErrorCode().equals("404-3"));
         }
         
         assertNotNull("Expected a non-null response", result1);
