@@ -98,7 +98,7 @@ public class LiteralNodeSubsetVisitorTest {
     
     @Test
     public void testMultipleLiteralsNoMatchAndRegex() throws ParseException {
-        String queryString = "FLIM == 'FLAM' && PARA == 'diddle' || CHEESE =~ 'ka.*\\d'";
+        String queryString = "FLIM == 'flam' && PARA == 'diddle' || CHEESE =~ 'ka.*\\d'";
         
         Assert.assertEquals(0, getLiterals(queryString).size());
     }
