@@ -75,7 +75,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
     public void testDifferentObjectsSameValuesSameHash() {
         JexlNode eq01 = buildEQNode("FOO", "bar");
         JexlNode eq02 = buildEQNode("FOO", "bar");
-
+        
         Assertions.assertEquals(nodeToKey(eq01), nodeToKey(eq02));
     }
     
@@ -87,7 +87,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
         
         JexlNode or01 = JexlNodeFactory.createOrNode(Arrays.asList(eq01, eq02));
         JexlNode or02 = JexlNodeFactory.createOrNode(Arrays.asList(eq01, eq02, eq03));
-
+        
         Assertions.assertNotEquals(nodeToKey(or01), nodeToKey(or02));
     }
     

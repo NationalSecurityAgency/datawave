@@ -86,8 +86,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
@@ -111,8 +110,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
@@ -162,8 +160,7 @@ public abstract class ExecutableExpansionVisitorTest {
         deserializer = new KryoDocumentDeserializer();
     }
     
-    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                    throws Exception;
+    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
                     throws Exception {
@@ -198,9 +195,9 @@ public abstract class ExecutableExpansionVisitorTest {
                 attr = d.get("UUID.0");
             
             Assertions.assertNotNull(attr, "Result Document did not contain a 'UUID'");
-            Assertions.assertTrue(attr instanceof TypeAttribute
-                                        || attr instanceof PreNormalizedAttribute, "Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName());
-
+            Assertions.assertTrue(attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute,
+                            "Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName());
+            
             assert attr instanceof TypeAttribute<?>;
             TypeAttribute<?> UUIDAttr = (TypeAttribute<?>) attr;
             
@@ -242,7 +239,8 @@ public abstract class ExecutableExpansionVisitorTest {
         for (int i = 0; i < queryStrings.length; i++) {
             List<String> expected = expectedLists[i];
             String query = queryStrings[i];
-            Assertions.assertThrows(DatawaveFatalQueryException.class, () -> runTestQuery(expected, query, format.parse("20091231"), format.parse("20150101"), extraParameters));
+            Assertions.assertThrows(DatawaveFatalQueryException.class,
+                            () -> runTestQuery(expected, query, format.parse("20091231"), format.parse("20150101"), extraParameters));
         }
     }
     
@@ -480,7 +478,7 @@ public abstract class ExecutableExpansionVisitorTest {
             ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
             
             EasyMock.verify(config, helper);
-
+            
             Assertions.assertNotEquals(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(newTree));
             String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
             Assertions.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(newTree));
@@ -613,7 +611,8 @@ public abstract class ExecutableExpansionVisitorTest {
             Assertions.assertTrue(
                             JexlStringBuildingVisitor
                                             .buildQuery(queryTree)
-                                            .equals("((_Value_ = true) && (UUID == 'capone')) && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"), JexlStringBuildingVisitor.buildQuery(queryTree));
+                                            .equals("((_Value_ = true) && (UUID == 'capone')) && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"),
+                            JexlStringBuildingVisitor.buildQuery(queryTree));
             
             // not executable
             Assertions.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -773,14 +772,15 @@ public abstract class ExecutableExpansionVisitorTest {
                 Assertions.assertTrue(
                                 JexlStringBuildingVisitor
                                                 .buildQuery(queryTree)
-                                                .equals("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))"), JexlStringBuildingVisitor.buildQuery(queryTree));
+                                                .equals("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))"),
+                                JexlStringBuildingVisitor.buildQuery(queryTree));
             } else {
                 // included ExceededValueThresholdMarker before
                 Assertions.assertTrue(
                                 JexlStringBuildingVisitor
                                                 .buildQuery(queryTree)
-                                                .equals("UUID == 'capone' && ((_List_ = true) && ((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))"),                                 JexlStringBuildingVisitor.buildQuery(queryTree)
-                        );
+                                                .equals("UUID == 'capone' && ((_List_ = true) && ((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))"),
+                                JexlStringBuildingVisitor.buildQuery(queryTree));
             }
             
             // starts off executable
@@ -788,8 +788,8 @@ public abstract class ExecutableExpansionVisitorTest {
             // what came out is executable
             Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // the visitor changed nothing
-            Assertions.assertTrue(
-                            JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)), JexlStringBuildingVisitor.buildQuery(newTree));
+            Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)),
+                            JexlStringBuildingVisitor.buildQuery(newTree));
         }
     }
     
@@ -822,7 +822,8 @@ public abstract class ExecutableExpansionVisitorTest {
             
             // included ExceededValueThresholdMarker before
             Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree).equals(
-                                        "UUID == 'capone' && (QUOTE == 'kind' || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"), JexlStringBuildingVisitor.buildQuery(queryTree));
+                            "UUID == 'capone' && (QUOTE == 'kind' || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"),
+                            JexlStringBuildingVisitor.buildQuery(queryTree));
             
             // starts off executable
             Assertions.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -865,7 +866,8 @@ public abstract class ExecutableExpansionVisitorTest {
             
             // included ExceededValueThresholdMarker before
             Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree).equals(
-                                        "UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"), JexlStringBuildingVisitor.buildQuery(queryTree));
+                            "UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"),
+                            JexlStringBuildingVisitor.buildQuery(queryTree));
             
             // starts off executable
             Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -873,7 +875,7 @@ public abstract class ExecutableExpansionVisitorTest {
             Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // the visitor changed nothing
             Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)),
-                    JexlStringBuildingVisitor.buildQuery(newTree));
+                            JexlStringBuildingVisitor.buildQuery(newTree));
         }
     }
     
@@ -915,7 +917,7 @@ public abstract class ExecutableExpansionVisitorTest {
             Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // the visitor changed nothing
             Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)),
-                    JexlStringBuildingVisitor.buildQuery(newTree));
+                            JexlStringBuildingVisitor.buildQuery(newTree));
         }
     }
     
@@ -957,7 +959,7 @@ public abstract class ExecutableExpansionVisitorTest {
             Assertions.assertFalse(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // the visitor changed nothing
             Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)),
-                    JexlStringBuildingVisitor.buildQuery(newTree));
+                            JexlStringBuildingVisitor.buildQuery(newTree));
         }
     }
     
@@ -993,8 +995,9 @@ public abstract class ExecutableExpansionVisitorTest {
             Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // the visitor changed nothing
             Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree).equals(
-                                        "(QUOTE == 'kind' && UUID == 'capone') || "
-                                                        + "((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')"), JexlStringBuildingVisitor.buildQuery(newTree));
+                            "(QUOTE == 'kind' && UUID == 'capone') || "
+                                            + "((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')"),
+                            JexlStringBuildingVisitor.buildQuery(newTree));
         }
     }
     

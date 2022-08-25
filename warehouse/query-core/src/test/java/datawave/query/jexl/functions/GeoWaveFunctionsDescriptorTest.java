@@ -79,19 +79,19 @@ public class GeoWaveFunctionsDescriptorTest {
                 "((-180 68, -100 68, -100 70, -180 70, -180 68)), " + // GROUP 2
                 "((-5 -5, 5 -5, 5 5, -5 5, -5 -5)))";                 // GROUP 3
         // @formatter:on
-
+        
         Class<GeoWaveFunctionsDescriptor> clazz = GeoWaveFunctionsDescriptor.class;
         Method method = clazz.getDeclaredMethod("getSeparateEnvelopes", Geometry.class, Integer.TYPE);
         method.setAccessible(true);
         List<Envelope> envelopes = (List<Envelope>) method.invoke(null, AbstractGeometryNormalizer.parseGeometry(wkt), 4);
-
+        
         Assertions.assertEquals(3, envelopes.size());
-
+        
         List<Envelope> expectedEnvelopes = new ArrayList<>();
         expectedEnvelopes.add(new Envelope(100, 180, 20, 70));
         expectedEnvelopes.add(new Envelope(-180, -80, 60, 88));
         expectedEnvelopes.add(new Envelope(-5, 5, -5, 5));
-
+        
         Iterator<Envelope> expectedIter = expectedEnvelopes.iterator();
         while (expectedIter.hasNext()) {
             boolean foundMatch = false;

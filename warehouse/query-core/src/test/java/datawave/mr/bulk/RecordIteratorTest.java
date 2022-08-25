@@ -102,7 +102,7 @@ public class RecordIteratorTest {
         vf = (VisibilityFilter) source;
         actualAuths = new TreeSet<>(Arrays.asList(ReflectionTestUtils.getField(vf, "authorizations").toString().split(",")));
         assertEquals(new TreeSet<>(Arrays.asList("B1", "B2", "B3")), actualAuths);
-        source =ReflectionTestUtils.getField(vf, "source");
+        source = ReflectionTestUtils.getField(vf, "source");
         
         // Next on the stack is the "table iterators" which should be a SynchronizedIterator first.
         assertEquals(SynchronizedIterator.class, source.getClass());

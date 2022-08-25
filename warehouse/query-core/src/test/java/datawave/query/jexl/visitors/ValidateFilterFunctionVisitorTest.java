@@ -331,21 +331,21 @@ public class ValidateFilterFunctionVisitorTest {
     }
     
     private void test(String query, boolean exceptionExpected) {
-
-            if (exceptionExpected) {
-                Assertions.assertThrows(DatawaveFatalQueryException.class, () -> {
-                    ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-                    ValidateFilterFunctionVisitor.validate(script, indexOnlyFields);
-                });
-            } else {
-                try {
+        
+        if (exceptionExpected) {
+            Assertions.assertThrows(DatawaveFatalQueryException.class, () -> {
                 ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
                 ValidateFilterFunctionVisitor.validate(script, indexOnlyFields);
-                } catch (ParseException e) {
-                    fail("Failed to parse query: " + query);
-                }
+            });
+        } else {
+            try {
+                ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                ValidateFilterFunctionVisitor.validate(script, indexOnlyFields);
+            } catch (ParseException e) {
+                fail("Failed to parse query: " + query);
             }
-
+        }
+        
     }
     
 }

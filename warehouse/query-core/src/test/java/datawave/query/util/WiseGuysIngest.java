@@ -893,7 +893,6 @@ public class WiseGuysIngest {
             mutation.put("DATAWAVE", "NULL1" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
             mutation.put("DATAWAVE", "UUID" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
             bw.addMutation(mutation);
-            
         } finally {
             if (null != bw) {
                 bw.close();

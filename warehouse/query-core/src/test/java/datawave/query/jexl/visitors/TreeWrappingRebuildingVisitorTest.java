@@ -6,7 +6,6 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.jupiter.api.Test;
 
-
 public class TreeWrappingRebuildingVisitorTest {
     
     /**

@@ -147,8 +147,8 @@ public class TreeFlatteningRebuildingVisitorTest {
         for (int i = 2; i <= numTerms; i++) {
             sb.append(" OR ").append(i);
         }
-        Assertions.assertNotNull(TreeFlatteningRebuildingVisitor.flattenAll(new Parser(new StringReader(";")).parse(new StringReader(new LuceneToJexlQueryParser()
-                        .parse(sb.toString()).toString()), null)));
+        Assertions.assertNotNull(TreeFlatteningRebuildingVisitor.flattenAll(new Parser(new StringReader(";")).parse(new StringReader(
+                        new LuceneToJexlQueryParser().parse(sb.toString()).toString()), null)));
     }
     
     @Test
@@ -172,7 +172,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         JexlNode or1 = JexlNodeFactory.createUnwrappedOrNode(Collections.singleton(and1));
         
         JexlNode flattened = TreeFlatteningRebuildingVisitor.flatten(or1);
-
+        
         Assertions.assertEquals(ASTJexlScript.class, flattened.getClass());
         Assertions.assertEquals(1, flattened.jjtGetNumChildren());
         Assertions.assertEquals(ASTEQNode.class, flattened.jjtGetChild(0).getClass());
