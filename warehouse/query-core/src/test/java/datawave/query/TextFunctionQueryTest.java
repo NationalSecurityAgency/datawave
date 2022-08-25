@@ -60,7 +60,7 @@ public class TextFunctionQueryTest extends AbstractFunctionalQuery {
         state = "lazio";
         query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#TEXT(" + state + ")";
         // should return the empty set
-        runTestQuery(Collections.EMPTY_SET, query);
+        runTestQuery(Collections.emptySet(), query);
     }
     
     @Test
@@ -112,7 +112,7 @@ public class TextFunctionQueryTest extends AbstractFunctionalQuery {
         state1 = "lazio";
         query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#TEXT(OR, STATE," + state1 + ", STATE, " + state2 + ")";
         // should return the empty set
-        runTestQuery(Collections.EMPTY_SET, query);
+        runTestQuery(Collections.emptySet(), query);
     }
     
     // ============================================

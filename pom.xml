@@ -1382,21 +1382,16 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${version.surefire.plugin}</version>
                     <configuration>
+                        <!--
                         <reuseForks>false</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
                         <threadCount>1</threadCount>
                         <threadCountClasses>1</threadCountClasses>
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
+			-->
                         <groups>datawave.common.test.integration.IntegrationTest</groups>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.maven.surefire</groupId>
-                            <artifactId>surefire-junit47</artifactId>
-                            <version>${version.surefire.plugin}</version>
-                        </dependency>
-                    </dependencies>
                     <executions>
                         <execution>
                             <id>integration-test</id>
@@ -1471,13 +1466,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${version.surefire.plugin}</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.maven.surefire</groupId>
-                            <artifactId>surefire-junit47</artifactId>
-                            <version>${version.surefire.plugin}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

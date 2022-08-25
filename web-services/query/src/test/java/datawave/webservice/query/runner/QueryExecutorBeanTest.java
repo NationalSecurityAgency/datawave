@@ -281,7 +281,7 @@ public class QueryExecutorBeanTest {
                         queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
         
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
-        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
+        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.emptySet());
         EasyMock.expect(logic.getConnectionPriority()).andReturn(AccumuloConnectionFactory.Priority.NORMAL);
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
@@ -366,7 +366,7 @@ public class QueryExecutorBeanTest {
                         (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
         
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
-        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
+        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.emptySet());
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         EasyMock.expect(logic.getAuditType(EasyMock.<Query> anyObject())).andReturn(AuditType.ACTIVE).anyTimes();
@@ -424,7 +424,7 @@ public class QueryExecutorBeanTest {
                         queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
         
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
-        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
+        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.emptySet());
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         

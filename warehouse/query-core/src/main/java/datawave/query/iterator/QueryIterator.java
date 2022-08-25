@@ -299,7 +299,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (validConfig != null) {
             ivaratorCacheDirConfigs = Collections.singletonList(validConfig);
         } else {
-            ivaratorCacheDirConfigs = Collections.EMPTY_LIST;
+            ivaratorCacheDirConfigs = Collections.emptyList();
         }
     }
     
@@ -866,7 +866,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     
                     Entry<DocumentData,Document> entry = null;
                     if (input != null) {
-                        entry = Maps.immutableEntry(new DocumentData(input.getKey(), Collections.singleton(input.getKey()), Collections.EMPTY_LIST, true),
+                        entry = Maps.immutableEntry(new DocumentData(input.getKey(), Collections.singleton(input.getKey()), Collections.emptyList(), true),
                                         input.getValue());
                     }
                     return entry;

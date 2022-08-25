@@ -10,17 +10,18 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BoundedRangeDetectionVisitorTest {
     private ShardQueryConfiguration config;
     private MockMetadataHelper helper;
     
-    @Before
+    @BeforeEach
     public void init() throws Exception {
         this.config = ShardQueryConfiguration.create();
         Multimap<String,Type<?>> queryFieldsDatatypes = HashMultimap.create();
@@ -46,11 +47,11 @@ public class BoundedRangeDetectionVisitorTest {
         assertFalse(BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, helper, script));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testBoundedRangeMalformed() throws ParseException {
         String queryString = "((_Bounded_ = true) && (FOO == '1' && FOO == '10'))";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
-        BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, helper, script);
+        Assertions.assertThrows(DatawaveFatalQueryException.class, () -> BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, helper, script));
     }
     
     @Test

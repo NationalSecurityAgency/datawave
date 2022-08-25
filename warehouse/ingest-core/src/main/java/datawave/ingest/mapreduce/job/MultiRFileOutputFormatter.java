@@ -1,20 +1,13 @@
 package datawave.ingest.mapreduce.job;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.ClientConfiguration;
@@ -49,10 +42,15 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
     
@@ -147,7 +145,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected static Set<String> getCompressionTableBlackList(Configuration conf) {
         String tableListString = conf.get(COMPRESSION_BLACKLIST);
         if (tableListString == null) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         } else {
             String[] tables = StringUtils.split(tableListString, ',');
             return new HashSet<>(Arrays.asList(tables));

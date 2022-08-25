@@ -43,12 +43,12 @@ public class DocumentSpecificNestedIterator extends NestedQueryIterator<Key> {
     
     @Override
     public Collection<NestedIterator<Key>> leaves() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
     
     @Override
     public Collection<NestedIterator<Key>> children() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
     
     @Override

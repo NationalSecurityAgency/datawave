@@ -4,6 +4,10 @@
  */
 package datawave.util.flag.processor;
 
+import com.google.common.collect.Ordering;
+import datawave.util.flag.InputFile;
+import datawave.util.flag.config.FlagDataTypeConfig;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,11 +16,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
-import datawave.util.flag.InputFile;
-import datawave.util.flag.config.FlagDataTypeConfig;
-
-import com.google.common.collect.Ordering;
 
 /**
  * Normally distributes data based on a generic slice object.
@@ -73,7 +72,7 @@ public abstract class AbstractSliceDistributor<S extends Comparable<S>> implemen
         }
         
         if (totalMaps == 0)
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         HashSet<InputFile> flagFiles = new HashSet<>();
         if (totalMaps < fc.getMaxFlags()) {
             // get everything

@@ -8,14 +8,11 @@ import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class PullupUnexecutableNodesVisitorTest {
     
@@ -26,7 +23,7 @@ public class PullupUnexecutableNodesVisitorTest {
     private ShardQueryConfiguration config;
     private MockMetadataHelper helper;
     
-    @Before
+    @BeforeEach
     public void setup() {
         indexedFields = Sets.newHashSet("FOO");
         indexOnlyFields = Sets.newHashSet("IO_FOO");
@@ -152,13 +149,13 @@ public class PullupUnexecutableNodesVisitorTest {
             String visitedString = JexlStringBuildingVisitor.buildQuery(visitedScript);
             ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
             
-            assertTrue("Expected " + expected + " but got " + visitedString, TreeEqualityVisitor.isEqual(expectedScript, visitedScript));
-            assertTrue(ASTValidator.isValid(visitedScript));
-            assertEquals(expected, visitedString);
+            Assertions.assertTrue(TreeEqualityVisitor.isEqual(expectedScript, visitedScript), "Expected " + expected + " but got " + visitedString);
+            Assertions.assertTrue(ASTValidator.isValid(visitedScript));
+            Assertions.assertEquals(expected, visitedString);
         } catch (ParseException e) {
-            fail("Failed to parse query: " + query);
+            Assertions.fail("Failed to parse query: " + query);
         } catch (InvalidQueryTreeException e) {
-            fail("Failed to validate query: " + query);
+            Assertions.fail("Failed to validate query: " + query);
         }
     }
     

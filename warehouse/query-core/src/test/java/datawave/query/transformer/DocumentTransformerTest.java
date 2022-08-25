@@ -52,9 +52,9 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
 // EasyMock.expect(mockQuery.getQueryAuthorizations()).andReturn("A,B,C");
 // EasyMock.expect(mockQuery.findParameter("log.timing.details")).andReturn(new QueryImpl.Parameter("", ""));
 // EasyMock.expect(mockDeserializer.apply(entry)).andReturn(documentEntry);
-// // EasyMock.expect(mockDocument.getDictionary()).andReturn(Collections.EMPTY_MAP);
+// // EasyMock.expect(mockDocument.getDictionary()).andReturn(Collections.emptyMap());
 // // mockDocument.debugDocumentSize(key);
-// EasyMock.expect(mockMarkingFunctions.translateFromColumnVisibility(key.getColumnVisibilityParsed())).andReturn(Collections.EMPTY_MAP);
+// EasyMock.expect(mockMarkingFunctions.translateFromColumnVisibility(key.getColumnVisibilityParsed())).andReturn(Collections.emptyMap());
 // // EasyMock.expect(mockDocument.getDictionary()).andReturn(dictionary);
 // // EasyMock.expect(mockNumeric.getData()).andReturn("5");
 // EasyMock.expect(mockResponseFactory.getField()).andReturn(simpleField);
@@ -90,7 +90,7 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
 // AbstractMap.SimpleEntry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
 //
 // Map<String,List<String>> fieldMap = new HashMap<>();
-// List<String> fieldList = Collections.EMPTY_LIST;
+// List<String> fieldList = Collections.emptyList();
 // fieldMap.put("field2", fieldList);
 // Document d = new Document();
 // basicExpects(d, key, entry);

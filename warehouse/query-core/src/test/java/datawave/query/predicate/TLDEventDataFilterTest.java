@@ -160,7 +160,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         // expected key structure
         Key key = new Key("row", "column", "field1" + Constants.NULL_BYTE_STRING + "value");
-        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, null, null, 1, -1, fieldLimits, "LIMIT_FIELD", Collections.EMPTY_SET);
+        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, null, null, 1, -1, fieldLimits, "LIMIT_FIELD", Collections.emptySet());
         
         assertTrue(filter.keep(key));
         assertNull(filter.getSeekRange(key, key.followingKey(PartialKey.ROW), false));
@@ -182,7 +182,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         // expected key structure
         Key key = new Key("row", "dataType" + Constants.NULL + "123.345.456", "field1" + Constants.NULL_BYTE_STRING + "value");
-        filter = new TLDEventDataFilter(query, mockAttributeFactory, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD", Collections.EMPTY_SET);
+        filter = new TLDEventDataFilter(query, mockAttributeFactory, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD", Collections.emptySet());
         
         assertTrue(filter.keep(key));
         // increments counts = 1
@@ -217,7 +217,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         Key key1 = new Key("row", "column", "field1" + Constants.NULL_BYTE_STRING + "value");
         Key key2 = new Key("row", "column", "field2" + Constants.NULL_BYTE_STRING + "value");
-        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, null, null, 1, -1, fieldLimits, "LIMIT_FIELD", Collections.EMPTY_SET);
+        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, null, null, 1, -1, fieldLimits, "LIMIT_FIELD", Collections.emptySet());
         
         assertTrue(filter.keep(key1));
         // increments counts = 1
@@ -273,7 +273,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         Key key1 = new Key("row", "column", "field1" + Constants.NULL_BYTE_STRING + "value");
         Key key2 = new Key("row", "column", "field2" + Constants.NULL_BYTE_STRING + "value");
-        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, null, null, 3, -1, fieldLimits, "LIMIT_FIELD", Collections.EMPTY_SET);
+        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, null, null, 3, -1, fieldLimits, "LIMIT_FIELD", Collections.emptySet());
         
         assertTrue(filter.keep(key1));
         // increments counts = 1

@@ -31,9 +31,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.Text;
-import org.junit.Before;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
@@ -414,7 +414,7 @@ public class RangeStreamTest {
         bw.close();
     }
     
-    @Before
+    @BeforeEach
     public void setupTest() {
         config = new ShardQueryConfiguration();
         config.setConnector(connector);

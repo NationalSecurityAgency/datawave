@@ -310,7 +310,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      *             test error condition
      */
     protected void runTest(final String query, final String expectQuery) throws Exception {
-        runTest(query, expectQuery, (Map<String,String>) Collections.EMPTY_MAP);
+        runTest(query, expectQuery, Collections.emptyMap());
     }
     
     protected void runTest(final String query, final Collection<String> expectResp) throws Exception {

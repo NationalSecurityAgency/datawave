@@ -7,7 +7,7 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -18,14 +18,14 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public class AncestorUidIntersectorTest {
-    private static AncestorUidIntersector intersector;
-    private static Set<IndexMatch> uids1;
-    private static Set<IndexMatch> uids2;
-    private static JexlNode node1;
-    private static JexlNode node2;
+    private AncestorUidIntersector intersector;
+    private Set<IndexMatch> uids1;
+    private Set<IndexMatch> uids2;
+    private JexlNode node1;
+    private JexlNode node2;
     
-    @BeforeAll
-    static void setup() {
+    @BeforeEach
+    public void setup() {
         intersector = new AncestorUidIntersector();
         uids1 = new TreeSet<>();
         uids2 = new TreeSet<>();

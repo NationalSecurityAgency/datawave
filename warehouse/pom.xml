@@ -46,7 +46,6 @@
         <!-- default value - override on command-line to skip tests -->
         <version.basis-rlp>7.5.0</version.basis-rlp>
         <version.dropwizard-metrics>3.2.6</version.dropwizard-metrics>
-        <version.hadoop.processors>2.2.3</version.hadoop.processors>
         <version.hamcrest>1.3</version.hamcrest>
     </properties>
     <dependencyManagement>
@@ -464,7 +463,6 @@
                         <!-- BT_ROOT is for the tests that use basis tokenization -->
                         <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                        <runOrder>${runOrder}</runOrder>
                         <environmentVariables>
                             <ACCUMULO_HOME>/dev/null</ACCUMULO_HOME>
                             <ACCUMULO_CONF_DIR>/dev/null</ACCUMULO_CONF_DIR>

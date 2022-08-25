@@ -1,16 +1,7 @@
 package datawave.core.iterators;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import datawave.data.hash.UIDConstants;
 import datawave.util.StringUtils;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -22,6 +13,14 @@ import org.apache.accumulo.core.iterators.SkippingIterator;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>
@@ -53,7 +52,7 @@ public class DescendentFilterIterator extends SkippingIterator implements Option
     
     private Range prevRange = new Range();
     @SuppressWarnings("unchecked")
-    private Collection<ByteSequence> columnFamilies = (Set<ByteSequence>) Collections.EMPTY_SET;
+    private Collection<ByteSequence> columnFamilies = Collections.emptySet();
     private boolean colfInclusive = false;
     
     private final Text prevRow = new Text();

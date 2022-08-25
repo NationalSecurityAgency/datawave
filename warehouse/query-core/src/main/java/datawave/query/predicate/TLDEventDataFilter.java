@@ -1,12 +1,7 @@
 package datawave.query.predicate;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
+import datawave.query.Constants;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tld.TLD;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -18,8 +13,12 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 
-import datawave.query.Constants;
-import datawave.query.jexl.JexlASTHelper;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query except for the root document in which case all fields
@@ -65,7 +64,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     
     public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek,
                     long maxKeysBeforeSeek) {
-        this(script, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null, Collections.EMPTY_SET);
+        this(script, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.emptyMap(), null, Collections.emptySet());
     }
     
     /**
