@@ -2,7 +2,9 @@ package datawave.query.index.lookup;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 import com.google.common.collect.PeekingIterator;
+import com.google.common.collect.TreeMultimap;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
@@ -11,12 +13,11 @@ import datawave.query.util.Tuples;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -32,17 +33,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class IntersectionTest {
     
     // Helper method to generate index matches (document id - field, value)
-    private List<IndexMatch> buildIndexMatches(String... docIds) {
+    private List<IndexMatch> buildIndexMatches(String field, String value, String... docIds) {
         List<IndexMatch> matches = new ArrayList<>(docIds.length);
         for (String docId : docIds) {
-            matches.add(buildIndexMatch(docId));
+            matches.add(buildIndexMatch(field, value, docId));
         }
         return matches;
     }
     
     // Helper method to generate index matches (document id - field, value)
-    private IndexMatch buildIndexMatch(String docId) {
-        JexlNode eqNode = JexlNodeFactory.buildEQNode("FIELD", "VALUE");
+    private IndexMatch buildIndexMatch(String field, String value, String docId) {
+        JexlNode eqNode = JexlNodeFactory.buildEQNode(field, value);
         return new IndexMatch(docId, eqNode);
     }
     
@@ -61,14 +62,14 @@ public class IntersectionTest {
     @Test
     public void testIntersection_SameShardStreams() {
         // Build a peeking iterator for a left side term
-        List<IndexMatch> leftMatches = buildIndexMatches("doc1", "doc2", "doc3");
+        List<IndexMatch> leftMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
         IndexInfo left = new IndexInfo(leftMatches);
         left.setNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         Tuple2<String,IndexInfo> leftTuple = Tuples.tuple("20190314_0", left);
         PeekingIterator<Tuple2<String,IndexInfo>> leftIter = Iterators.peekingIterator(Collections.singleton(leftTuple).iterator());
         
         // Build a peeking iterator for a right side term.
-        List<IndexMatch> rightMatches = buildIndexMatches("doc2", "doc3", "doc4");
+        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
         IndexInfo right = new IndexInfo(rightMatches);
         right.setNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         Tuple2<String,IndexInfo> rightTuple = Tuples.tuple("20190314_0", right);
@@ -109,7 +110,7 @@ public class IntersectionTest {
         PeekingIterator<Tuple2<String,IndexInfo>> leftIter = Iterators.peekingIterator(Collections.singleton(leftTuple).iterator());
         
         // Build a peeking iterator for a right side term.
-        List<IndexMatch> rightMatches = buildIndexMatches("doc2", "doc3", "doc4");
+        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
         IndexInfo right = new IndexInfo(rightMatches);
         right.setNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         Tuple2<String,IndexInfo> rightTuple = Tuples.tuple("20190314_0", right);
@@ -144,14 +145,14 @@ public class IntersectionTest {
     @Test
     public void testIntersection_DifferentShardStreams() {
         // Build a peeking iterator for a left side term
-        List<IndexMatch> leftMatches = buildIndexMatches("doc1", "doc2", "doc3");
+        List<IndexMatch> leftMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
         IndexInfo left = new IndexInfo(leftMatches);
         left.setNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         Tuple2<String,IndexInfo> leftTuple = Tuples.tuple("20190314_0", left);
         PeekingIterator<Tuple2<String,IndexInfo>> leftIter = Iterators.peekingIterator(Collections.singleton(leftTuple).iterator());
         
         // Build a peeking iterator for a right side term.
-        List<IndexMatch> rightMatches = buildIndexMatches("doc2", "doc3", "doc4");
+        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
         IndexInfo right = new IndexInfo(rightMatches);
         right.setNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         Tuple2<String,IndexInfo> rightTuple = Tuples.tuple("20190314_1", right);
@@ -172,14 +173,14 @@ public class IntersectionTest {
     @Test
     public void testIntersection_ShardAndDayStreams() {
         // Build a peeking iterator for a left side term
-        List<IndexMatch> leftMatches = buildIndexMatches("doc1", "doc2", "doc3");
+        List<IndexMatch> leftMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
         IndexInfo left = new IndexInfo(leftMatches);
         left.setNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         Tuple2<String,IndexInfo> leftTuple = Tuples.tuple("20190314", left);
         PeekingIterator<Tuple2<String,IndexInfo>> leftIter = Iterators.peekingIterator(Collections.singleton(leftTuple).iterator());
         
         // Build a peeking iterator for a right side term.
-        List<IndexMatch> rightMatches = buildIndexMatches("doc2", "doc3", "doc4");
+        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
         IndexInfo right = new IndexInfo(rightMatches);
         right.setNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         Tuple2<String,IndexInfo> rightTuple = Tuples.tuple("20190314_0", right);
@@ -217,7 +218,7 @@ public class IntersectionTest {
         assertEquals(IndexStream.StreamContext.ABSENT, intersection.context());
     }
     
-    private ScannerStream buildScannerStream(String field, String value, List<String> uids) {
+    private ScannerStream buildScannerStream(String shard, String field, String value, List<String> uids) {
         IndexInfo ii1;
         if (uids != null) {
             ii1 = new IndexInfo(uids);
@@ -226,8 +227,8 @@ public class IntersectionTest {
         }
         JexlNode n1 = JexlNodeFactory.buildEQNode(field, value);
         ii1.applyNode(n1);
-        Iterator<Tuple2<String,IndexInfo>> i1 = Collections.singletonList(new Tuple2<>("20090101_1", ii1)).iterator();
-        return ScannerStream.variable(i1, n1);
+        Iterator<Tuple2<String,IndexInfo>> i1 = Arrays.asList(new Tuple2<>(shard, ii1)).iterator();
+        return ScannerStream.withData(i1, n1);
     }
     
     @Test
@@ -236,13 +237,13 @@ public class IntersectionTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("A == '1' && B == '2' && C == '3'");
         
         // A - uids
-        ScannerStream s1 = buildScannerStream("A", "1", Collections.singletonList("a.b.c"));
+        ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList("a.b.c"));
         
         // B - uids
-        ScannerStream s2 = buildScannerStream("B", "2", Arrays.asList("a.b.c", "a.b.c.d"));
+        ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", Arrays.asList("a.b.c", "a.b.c.d"));
         
         // C - uids
-        ScannerStream s3 = buildScannerStream("C", "3", Arrays.asList("a.b.c", "az"));
+        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", Arrays.asList("a.b.c", "az"));
         
         List<? extends IndexStream> toMerge = Arrays.asList(s1, s2, s3);
         
@@ -266,10 +267,10 @@ public class IntersectionTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("A == '1' && B == '2'");
         
         // A - uids
-        ScannerStream s1 = buildScannerStream("A", "1", Collections.emptyList());
+        ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList());
         
         // B - uids
-        ScannerStream s2 = buildScannerStream("B", "2", null);
+        ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", null);
         
         List<? extends IndexStream> toMerge = Arrays.asList(s1, s2);
         
@@ -285,13 +286,13 @@ public class IntersectionTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("A == '1' && B == '2' && C == '3'");
         
         // A - uids
-        ScannerStream s1 = buildScannerStream("A", "1", Arrays.asList("a.b.c", "a.b.z"));
+        ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList("a.b.c", "a.b.z"));
         
         // B - infinite
-        ScannerStream s2 = buildScannerStream("B", "2", null);
+        ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", null);
         
         // C - infinite
-        ScannerStream s3 = buildScannerStream("C", "3", null);
+        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", null);
         
         List<? extends IndexStream> toMerge = Arrays.asList(s1, s2, s3);
         
@@ -314,7 +315,7 @@ public class IntersectionTest {
         
         assertFalse(uidsIterator.hasNext());
         
-        all.sort(Comparator.comparing(IndexMatch::getUid));
+        Collections.sort(all, (m1, m2) -> m1.getUid().compareTo(m2.getUid()));
         
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
@@ -333,7 +334,7 @@ public class IntersectionTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("A == '1' && B == '2' && C == '3'");
         
         // A - uids
-        ScannerStream s1 = buildScannerStream("A", "1", Arrays.asList("a.b.c", "a.b.z"));
+        ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList("a.b.c", "a.b.z"));
         
         // B - unindexed
         ScannerStream s2 = ScannerStream.unindexed(JexlNodeFactory.buildEQNode("B", "2"));
@@ -362,7 +363,7 @@ public class IntersectionTest {
         
         assertFalse(uidsIterator.hasNext());
         
-        all.sort(Comparator.comparing(IndexMatch::getUid));
+        Collections.sort(all, (m1, m2) -> m1.getUid().compareTo(m2.getUid()));
         
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
@@ -382,7 +383,7 @@ public class IntersectionTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("A == '1' && B == '2' && C == '3' && D == '4'");
         
         // A - uids
-        ScannerStream s1 = buildScannerStream("A", "1", Arrays.asList("a.b.c", "a.b.z"));
+        ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList("a.b.c", "a.b.z"));
         
         // B - unindexed
         ScannerStream s2 = ScannerStream.unindexed(JexlNodeFactory.buildEQNode("B", "2"));
@@ -391,7 +392,7 @@ public class IntersectionTest {
         ScannerStream s3 = ScannerStream.delayedExpression(JexlNodeFactory.buildEQNode("C", "3"));
         
         // D - infinite
-        ScannerStream s4 = buildScannerStream("D", "4", null);
+        ScannerStream s4 = buildScannerStream("20090101_1", "D", "4", null);
         
         List<? extends IndexStream> toMerge = Arrays.asList(s1, s2, s3, s4);
         
@@ -414,7 +415,7 @@ public class IntersectionTest {
         
         assertFalse(uidsIterator.hasNext());
         
-        all.sort(Comparator.comparing(IndexMatch::getUid));
+        Collections.sort(all, (m1, m2) -> m1.getUid().compareTo(m2.getUid()));
         
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
@@ -434,13 +435,13 @@ public class IntersectionTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("(A == '1' || B == '2') && C == '3'");
         
         // A - uids
-        ScannerStream s1 = buildScannerStream("A", "1", Arrays.asList("a.b.c", "a.b.z"));
+        ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList("a.b.c", "a.b.z"));
         
         // B - uids
-        ScannerStream s2 = buildScannerStream("B", "2", Arrays.asList("x.y.z", "x.y.z.1"));
+        ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", Arrays.asList("x.y.z", "x.y.z.1"));
         
         // C - uids
-        ScannerStream s3 = buildScannerStream("C", "3", null);
+        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", null);
         
         List<? extends IndexStream> toUnion = Arrays.asList(s1, s2);
         Union union = new Union(toUnion);
@@ -471,7 +472,7 @@ public class IntersectionTest {
         
         assertFalse(uidsIterator.hasNext());
         
-        all.sort(Comparator.comparing(IndexMatch::getUid));
+        Collections.sort(all, (m1, m2) -> m1.getUid().compareTo(m2.getUid()));
         
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
@@ -499,19 +500,19 @@ public class IntersectionTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("(A == '1' && B == '2') && (C == '3' && D == '4') && E =='5'");
         
         // A uid
-        ScannerStream s1 = buildScannerStream("A", "1", Arrays.asList("a.b.c", "a.b.z"));
+        ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList("a.b.c", "a.b.z"));
         
         // B infinite
-        ScannerStream s2 = buildScannerStream("B", "2", null);
+        ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", null);
         
         // C uid
-        ScannerStream s3 = buildScannerStream("C", "3", Arrays.asList("a.b.c", "x.y.z.1"));
+        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", Arrays.asList("a.b.c", "x.y.z.1"));
         
         // D infinite
-        ScannerStream s4 = buildScannerStream("D", "4", null);
+        ScannerStream s4 = buildScannerStream("20090101_1", "D", "4", null);
         
         // E infinite
-        ScannerStream s5 = buildScannerStream("E", "5", null);
+        ScannerStream s5 = buildScannerStream("20090101_1", "E", "5", null);
         
         List<? extends IndexStream> toIntersection1 = Arrays.asList(s1, s2);
         Intersection intersection1 = new Intersection(toIntersection1, new IndexInfo());
@@ -535,7 +536,7 @@ public class IntersectionTest {
         
         assertFalse(uidsIterator.hasNext());
         
-        all.sort(Comparator.comparing(IndexMatch::getUid));
+        Collections.sort(all, (m1, m2) -> m1.getUid().compareTo(m2.getUid()));
         
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
@@ -550,25 +551,25 @@ public class IntersectionTest {
         // (((A OR B) AND C) OR ((D OR E) AND F)) AND G
         
         // A - uids
-        ScannerStream s1 = buildScannerStream("A", "1", Arrays.asList("a.b.c", "a.b.z"));
+        ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList("a.b.c", "a.b.z"));
         
         // B - uids
-        ScannerStream s2 = buildScannerStream("B", "2", Arrays.asList("x.y.z", "x.y.z.1"));
+        ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", Arrays.asList("x.y.z", "x.y.z.1"));
         
         // C - infinite
-        ScannerStream s3 = buildScannerStream("C", "3", null);
+        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", null);
         
         // D - uids
-        ScannerStream s4 = buildScannerStream("D", "4", Arrays.asList("a.a.a", "b.b.b"));
+        ScannerStream s4 = buildScannerStream("20090101_1", "D", "4", Arrays.asList("a.a.a", "b.b.b"));
         
         // E - empty
         ScannerStream s5 = ScannerStream.noData(JexlNodeFactory.buildEQNode("E", "5"));
         
         // F - uid
-        ScannerStream s6 = buildScannerStream("F", "6", Collections.singletonList("b.b.b"));
+        ScannerStream s6 = buildScannerStream("20090101_1", "F", "6", Arrays.asList("b.b.b"));
         
         // G - single uid
-        ScannerStream s7 = buildScannerStream("G", "7", Collections.singletonList("a.b.c"));
+        ScannerStream s7 = buildScannerStream("20090101_1", "G", "7", Arrays.asList("a.b.c"));
         
         List<? extends IndexStream> toUnion1 = Arrays.asList(s1, s2);
         Union union1 = new Union(toUnion1);
@@ -598,7 +599,7 @@ public class IntersectionTest {
         
         assertFalse(uidsIterator.hasNext());
         
-        all.sort(Comparator.comparing(IndexMatch::getUid));
+        Collections.sort(all, (m1, m2) -> m1.getUid().compareTo(m2.getUid()));
         
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
@@ -615,25 +616,25 @@ public class IntersectionTest {
         // (((A OR B) AND C) OR ((D OR E) AND F)) AND G
         
         // A - uids
-        ScannerStream s1 = buildScannerStream("A", "1", Arrays.asList("a.b.c", "a.b.z"));
+        ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList("a.b.c", "a.b.z"));
         
         // B - uids
-        ScannerStream s2 = buildScannerStream("B", "2", Arrays.asList("x.y.z", "x.y.z.1"));
+        ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", Arrays.asList("x.y.z", "x.y.z.1"));
         
         // C - infinite
-        ScannerStream s3 = buildScannerStream("C", "3", null);
+        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", null);
         
         // D - uids
-        ScannerStream s4 = buildScannerStream("D", "4", Arrays.asList("a.a.a", "b.b.b"));
+        ScannerStream s4 = buildScannerStream("20090101_1", "D", "4", Arrays.asList("a.a.a", "b.b.b"));
         
         // E - empty
         ScannerStream s5 = ScannerStream.noData(JexlNodeFactory.buildEQNode("E", "5"));
         
         // F - uid
-        ScannerStream s6 = buildScannerStream("F", "6", Collections.singletonList("b.b.b"));
+        ScannerStream s6 = buildScannerStream("20090101_1", "F", "6", Arrays.asList("b.b.b"));
         
         // G - single uid
-        ScannerStream s7 = buildScannerStream("G", "7", Arrays.asList("a.b.c", "x.y.z.1"));
+        ScannerStream s7 = buildScannerStream("20090101_1", "G", "7", Arrays.asList("a.b.c", "x.y.z.1"));
         
         List<? extends IndexStream> toUnion1 = Arrays.asList(s1, s2);
         Union union1 = new Union(toUnion1);
@@ -666,7 +667,7 @@ public class IntersectionTest {
         
         assertFalse(uidsIterator.hasNext());
         
-        all.sort(Comparator.comparing(IndexMatch::getUid));
+        Collections.sort(all, (m1, m2) -> m1.getUid().compareTo(m2.getUid()));
         
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
@@ -688,13 +689,13 @@ public class IntersectionTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("A == '1' && B == '2' && C == '3'");
         
         // A - uids
-        ScannerStream s1 = buildScannerStream("A", "1", Collections.singletonList("a.b.c"));
+        ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList("a.b.c"));
         
         // B - uids
-        ScannerStream s2 = buildScannerStream("B", "2", Arrays.asList("a.b.c", "a.b.c.d"));
+        ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", Arrays.asList("a.b.c", "a.b.c.d"));
         
         // C - uids
-        ScannerStream s3 = buildScannerStream("C", "3", Arrays.asList("a.b.c", "az"));
+        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", Arrays.asList("a.b.c", "az"));
         
         List<? extends IndexStream> toMerge = Arrays.asList(s1, s2, s3);
         
@@ -997,7 +998,6 @@ public class IntersectionTest {
         
         // Match on shard within the day
         assertEquals("20190301_0", intersection.isTopElementAMatch("20190301_0"));
-        
         // Match on same day
         assertEquals("20190301", intersection.isTopElementAMatch("20190301"));
         
@@ -1006,6 +1006,75 @@ public class IntersectionTest {
         
         // No match on different day
         assertNull(intersection.isTopElementAMatch("20190302"));
+    }
+    
+    // test some ordering
+    
+    @Test
+    public void testTreeMultiMapOrdering() {
+        List<String> ignoredDays = Lists.newArrayList("20190304", "20190305", "20190306");
+        SortedSet<String> shards = buildShards(ignoredDays);
+        
+        ScannerStream s1 = buildFullScannerStream(shards, "A", "1");
+        ScannerStream s2 = buildFullScannerStream(shards, "B", "2");
+        ScannerStream s3 = buildFullScannerStream(shards, "C", "3");
+        Intersection intersection = new Intersection(Arrays.asList(s2, s3), new IndexInfo());
+        Union union = new Union(Arrays.asList(s2, s3));
+        
+        TreeMultimap<String,IndexStream> map = TreeMultimap.create(Ordering.natural(), new IndexStreamComparator());
+        map.put("s1", s1);
+        map.put("s1", s2);
+        map.put("s1", intersection);
+        map.put("s1", union);
+        
+        Iterator<IndexStream> iter = map.get("s1").iterator();
+        assertTrue(iter.next() instanceof ScannerStream);
+        assertTrue(iter.next() instanceof ScannerStream);
+        assertTrue(iter.next() instanceof Intersection);
+        assertTrue(iter.next() instanceof Union);
+        assertFalse(iter.hasNext());
+        
+        // -------------------------------------
+        map.clear();
+        map.put("s1", union);
+        map.put("s1", s1);
+        map.put("s1", intersection);
+        map.put("s1", s2);
+        
+        iter = map.get("s1").iterator();
+        assertTrue(iter.next() instanceof ScannerStream);
+        assertTrue(iter.next() instanceof ScannerStream);
+        assertTrue(iter.next() instanceof Intersection);
+        assertTrue(iter.next() instanceof Union);
+        assertFalse(iter.hasNext());
+        
+        // -------------------------------------
+        
+        map.clear();
+        map.put("s1", s1);
+        map.put("s1", intersection);
+        iter = map.get("s1").iterator();
+        assertTrue(iter.next() instanceof ScannerStream);
+        assertTrue(iter.next() instanceof Intersection);
+        
+        // -------------------------------------
+        
+        map.clear();
+        map.put("s1", s1);
+        map.put("s1", union);
+        iter = map.get("s1").iterator();
+        assertTrue(iter.next() instanceof ScannerStream);
+        assertTrue(iter.next() instanceof Union);
+        
+        // -------------------------------------
+        
+        map.clear();
+        map.put("s1", union);
+        map.put("s1", intersection);
+        iter = map.get("s1").iterator();
+        assertTrue(iter.next() instanceof Intersection);
+        assertTrue(iter.next() instanceof Union);
+        
     }
     
     private Intersection buildIntersectionOfShards() {
@@ -1067,6 +1136,6 @@ public class IntersectionTest {
             elements.add(new Tuple2<>(shard, info));
         }
         
-        return ScannerStream.variable(elements.iterator(), node);
+        return ScannerStream.withData(elements.iterator(), node);
     }
 }

@@ -457,6 +457,6 @@ public class UnionTest {
             elements.add(new Tuple2<>(shard, info));
         }
         
-        return ScannerStream.variable(elements.iterator(), node);
+        return ScannerStream.withData(elements.iterator(), node);
     }
 }

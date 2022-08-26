@@ -285,8 +285,8 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 initializeTimers();
             }
             startAsync();
-//            while (state() != State.RUNNING)
-                awaitRunning();
+             while (state() != State.RUNNING)
+            awaitRunning();
             
         }
         
