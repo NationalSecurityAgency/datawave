@@ -596,5 +596,12 @@ public class IndexInfo implements Writable, UidIntersector {
     
     public void setNode(JexlNode currNode) {
         myNode = currNode;
+        
+        // need to update the nodes for the underlying index matches in order
+        // to persist delayed terms. In the case of a document specific range
+        // the query plan is pulled from indexMatch.getNode()
+        for (IndexMatch uid : uids) {
+            uid.set(myNode);
+        }
     }
 }
