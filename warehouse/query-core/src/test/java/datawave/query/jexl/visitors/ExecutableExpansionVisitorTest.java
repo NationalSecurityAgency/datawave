@@ -49,6 +49,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -67,6 +68,8 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 public abstract class ExecutableExpansionVisitorTest {
+    
+    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class ShardRangeExecutableExpansion extends ExecutableExpansionVisitorTest {
         protected static Connector connector = null;
@@ -91,6 +94,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
     }
     
+    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends ExecutableExpansionVisitorTest {
         protected static Connector connector = null;

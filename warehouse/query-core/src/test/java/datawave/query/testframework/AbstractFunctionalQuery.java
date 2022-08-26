@@ -56,8 +56,12 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import java.io.File;
 import java.io.IOException;
@@ -91,7 +95,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <li>hadoop.home.dir => target directory</li>
  * </ul>
  */
-
+@Execution(ExecutionMode.SAME_THREAD)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.TestResultParser {
     
     @TempDir
@@ -102,7 +107,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     private static final Logger log = Logger.getLogger(AbstractFunctionalQuery.class);
     
-    static {
+    @BeforeAll
+    public static void ubersetup() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", StandardCharsets.UTF_8.name());
         System.setProperty(DnUtils.NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");

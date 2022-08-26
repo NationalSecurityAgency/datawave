@@ -31,6 +31,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -66,6 +67,7 @@ public abstract class CompositeFunctionsTest {
     @TempDir
     public static File tempDir2 = new File("/tmp/test/TempDirForCompositeFunctionsTestDocumentRange");
     
+    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends CompositeFunctionsTest {
         protected static Connector connector = null;
@@ -104,6 +106,7 @@ public abstract class CompositeFunctionsTest {
         }
     }
     
+    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends CompositeFunctionsTest {
         protected static Connector connector = null;

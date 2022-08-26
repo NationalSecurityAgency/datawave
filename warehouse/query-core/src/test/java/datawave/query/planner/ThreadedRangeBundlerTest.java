@@ -80,15 +80,15 @@ public class ThreadedRangeBundlerTest {
     }
     
     @Test
-    public void whenIteratorIsCalledMoreThanOnce_thenExceptionIsThrown() {
+    public void whenIteratorIsCalledMoreThanOnce_thenExceptionIsThrown() throws NoSuchFieldException, IllegalAccessException {
         ThreadedRangeBundler bundler = ThreadedRangeBundler.builder().build();
         
-        // Set the iterator field to a non-null mock to mimic iterator() being previously called.
         ThreadedRangeBundlerIterator iterator = mock(ThreadedRangeBundlerIterator.class);
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> setIterator(bundler, iterator));
+        // Set the iterator field to a non-null mock to mimic iterator() being previously called.
+        setIterator(bundler, iterator);
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> bundler.iterator());
         
         assertEquals("iterator() was already called once", e.getMessage());
-        bundler.iterator();
     }
     
     @Test

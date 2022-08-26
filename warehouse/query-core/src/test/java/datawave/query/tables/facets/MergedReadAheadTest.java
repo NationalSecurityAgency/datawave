@@ -45,12 +45,11 @@ public class MergedReadAheadTest {
         testMergedReadAhead(Arrays.asList("a", "b", "c", "d", "e"), false, lowercaseFunction, Collections.singletonList(uppercaseVowelFilterPredicate));
     }
     
-    public void testMergedReadAhead(List<String> expected, boolean streaming, java.util.function.Function<String,String> functionalMerge,
-                    List<Predicate<String>> filters) {
+    public void testMergedReadAhead(List<String> expected, boolean streaming, Function<String,String> functionalMerge, List<Predicate<String>> filters) {
         final List<String> input = Arrays.asList("A", "B", "C", "D", "E");
         final List<String> output = new ArrayList<>();
         
-        MergedReadAhead<String> mra = new MergedReadAhead<>(streaming, input.iterator(), functionalMerge::apply, filters);
+        MergedReadAhead<String> mra = new MergedReadAhead<>(streaming, input.iterator(), functionalMerge, filters);
         while (mra.hasNext()) {
             output.add(mra.next());
         }
@@ -58,7 +57,7 @@ public class MergedReadAheadTest {
         assertArrayEquals(expected.toArray(), output.toArray(), "Expected input and output arrays to be equal (streaming=" + streaming + ")");
     }
     
-    static final java.util.function.Function<String,String> lowercaseFunction = new Function<String,String>() {
+    static final Function<String,String> lowercaseFunction = new Function<String,String>() {
         @Nullable
         @Override
         public String apply(@Nullable String s) {

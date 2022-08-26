@@ -165,7 +165,6 @@ public class AllTermsIndexedVisitorTest {
     public void testGreaterThanEqualsWithExtraTerm() throws ParseException {
         String query = "FOO >= '+aE1' || FOO == 'bar'";
         assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
-        testIsIndexed(query);
     }
     
     private void testIsIndexed(String query) throws ParseException {

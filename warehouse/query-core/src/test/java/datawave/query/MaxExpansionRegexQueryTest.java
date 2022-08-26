@@ -11,6 +11,7 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.MaxExpandCityFields;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -297,6 +298,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
      * still complete.
      *
      */
+    @Disabled
     @Test
     public void testMaxIvaratorResults() throws Exception {
         log.info("------  testMaxIvaratorResults  ------");

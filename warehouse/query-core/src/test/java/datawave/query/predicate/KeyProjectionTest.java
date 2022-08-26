@@ -51,20 +51,20 @@ public class KeyProjectionTest {
     public void testTooMuchConfiguration() {
         KeyProjection projection = new KeyProjection();
         projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
+        assertThrows(RuntimeException.class, () -> projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y")));
         
         Iterator<Entry<Key,String>> iter = fiData.iterator();
-        assertThrows(RuntimeException.class, () -> assertTrue(projection.apply(iter.next())));
+        assertTrue(projection.apply(iter.next()));
     }
     
     @Test
     public void testTooMuchOfTheSameConfiguration() {
         KeyProjection projection = new KeyProjection();
         projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
+        assertThrows(RuntimeException.class, () -> projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y")));
         
         Iterator<Entry<Key,String>> iter = fiData.iterator();
-        assertThrows(RuntimeException.class, () -> assertTrue(projection.apply(iter.next())));
+        assertTrue(projection.apply(iter.next()));
     }
     
     @Test

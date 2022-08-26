@@ -16,6 +16,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -33,6 +34,7 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 /**
  * Tests for different types of string and numeric range specifications.
  */
+@Disabled
 public class RangeQueryTest extends AbstractFunctionalQuery {
     
     @RegisterExtension

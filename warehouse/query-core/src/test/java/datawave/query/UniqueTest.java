@@ -31,6 +31,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -57,6 +58,7 @@ public abstract class UniqueTest {
     
     private static final Logger log = Logger.getLogger(UniqueTest.class);
     
+    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends UniqueTest {
         protected static Connector connector = null;
@@ -85,6 +87,7 @@ public abstract class UniqueTest {
         }
     }
     
+    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends UniqueTest {
         protected static Connector connector = null;

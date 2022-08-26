@@ -102,7 +102,7 @@ public class EventDataQueryExpressionVisitorTest {
                 b.append(" Expected entries that were not found: ").append(output);
             }
             
-            assertTrue(b.length() > 0, "Output did not match expected output for '" + input[0] + ":" + input[1] + "';" + b);
+            assertFalse(b.length() > 0, "Output did not match expected output for '" + input[0] + ":" + input[1] + "';" + b);
         }
     }
     

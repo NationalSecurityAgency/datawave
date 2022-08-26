@@ -34,8 +34,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class QueryAuthsTest extends AbstractFunctionalQuery {
     
@@ -203,7 +203,12 @@ public class QueryAuthsTest extends AbstractFunctionalQuery {
             if (log.isDebugEnabled()) {
                 log.debug("field: '" + fieldName + "' value: '" + attr.getData().toString() + "' visibility:" + cv.toString());
             }
-            assertThrows(VisibilityParseException.class, () -> assertTrue(filter.evaluate(cv), "Should not filter visibility: " + cv.toString()));
+            
+            try {
+                assertTrue(filter.evaluate(cv), "Should not filter visibility: " + cv.toString());
+            } catch (VisibilityParseException vpe) {
+                fail("Could not parse visibility for field: " + fieldName + " visibility: " + cv.toString() + " exception: " + vpe.getMessage());
+            }
         }
     }
 }

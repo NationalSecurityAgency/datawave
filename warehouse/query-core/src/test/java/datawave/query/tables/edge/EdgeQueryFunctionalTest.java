@@ -21,6 +21,7 @@ import java.util.Set;
 
 @ExtendWith(ArquillianExtension.class)
 public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
+    
     @Inject
     @SpringBean(name = "RewriteEdgeQuery")
     EdgeQueryLogic logic;

@@ -2103,7 +2103,7 @@ public class RangeStreamTestX {
         
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
-        for (int ii = 0; ii <= 5; ii++) {
+        for (int ii = 1; ii <= 5; ii++) {
             expectedRanges.add(makeDayRange("2020010" + ii));
             if (ii == 0) {
                 expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day'))");
@@ -2122,7 +2122,7 @@ public class RangeStreamTestX {
         
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
-        for (int ii = 0; ii <= 5; ii++) {
+        for (int ii = 1; ii <= 5; ii++) {
             expectedRanges.add(makeDayRange("2020010" + ii));
             if (ii == 0) {
                 expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day'))");
@@ -2641,7 +2641,7 @@ public class RangeStreamTestX {
         
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
-        for (int ii = 0; ii <= 5; ii++) {
+        for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
                 if (ii == 0) {
@@ -2663,7 +2663,7 @@ public class RangeStreamTestX {
         
         List<Range> expectedRanges = new ArrayList<>();
         List<String> expectedQueryStrings = new ArrayList<>();
-        for (int ii = 0; ii <= 5; ii++) {
+        for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
                 if (ii == 0) {

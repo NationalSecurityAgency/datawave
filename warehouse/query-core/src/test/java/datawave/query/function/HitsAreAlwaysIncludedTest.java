@@ -32,6 +32,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -65,6 +66,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public abstract class HitsAreAlwaysIncludedTest {
     
+    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends HitsAreAlwaysIncludedTest {
         protected static Connector connector = null;
@@ -89,6 +91,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         }
     }
     
+    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends HitsAreAlwaysIncludedTest {
         protected static Connector connector = null;

@@ -104,7 +104,7 @@ public class PushdownLargeFieldedListsVisitorTest {
     private void testSimple(String query, String expected, ShardQueryConfiguration config) throws Throwable {
         String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(config,
                         TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query)), null, null));
-        assertEquals("EXPECTED: " + expected + "\nACTUAL: " + rewritten, expected, rewritten);
+        assertEquals(expected, rewritten, "EXPECTED: " + expected + "\nACTUAL: " + rewritten);
     }
     
     private void testSingleId(String query, String left, String right) throws Throwable {

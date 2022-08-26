@@ -49,6 +49,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -100,6 +101,7 @@ public abstract class GroupingTestWithModel {
     private static final List<RebuildingScannerTestHelper.INTERRUPT> INTERRUPTS = Arrays.asList(RebuildingScannerTestHelper.INTERRUPT.values());
     // @formatter:on
     
+    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends GroupingTestWithModel {
         
@@ -129,6 +131,7 @@ public abstract class GroupingTestWithModel {
         }
     }
     
+    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends GroupingTestWithModel {
         

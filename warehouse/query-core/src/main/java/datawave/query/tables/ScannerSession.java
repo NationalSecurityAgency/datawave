@@ -274,7 +274,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     public boolean hasNext() {
         
         /**
-         * Let's take a moment to look through all states S
+         * Let's take a moment to look through all states Sf
          */
         
         // if we are new, let's start and wait
@@ -284,10 +284,17 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             if (null != stats) {
                 initializeTimers();
             }
-            startAsync();
-             while (state() != State.RUNNING)
-            awaitRunning();
             
+            this.startAsync();
+            while (state() == State.STARTING) {
+                // This while loop does the same thing as calling .awaitRunning() on the service would do and should
+                // not affect production behavior. If the state changes, either to RUNNING, TERMINATED or anything else
+                // this loop will break, so there's no risk of getting infinitely stuck.
+                
+                // For test purposes this loop keeps execution down to a single thread, preventing a race
+                // condition between the main test thread and the thread that runs the startUp and then invokes
+                // the running listener.
+            }
         }
         
         // isFlushNeeded is only in the case of when we are finished

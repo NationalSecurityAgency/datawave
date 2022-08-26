@@ -250,7 +250,7 @@ public class RangeStreamScannerTest {
         int documentCount = 0;
         while (scannerStream.hasNext()) {
             Tuple2<String,IndexInfo> entry = scannerStream.next();
-            assertEquals("Expected shard to start with '20190314' but was: " + entry.first(), "20190314", entry.first());
+            assertEquals("20190314", entry.first(), "Expected shard to start with '20190314' but was: " + entry.first());
             assertEquals(2, entry.second().count());
             shardCount++;
             documentCount += entry.second().count();

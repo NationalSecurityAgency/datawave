@@ -19,16 +19,17 @@ public class ProjectionTest {
     public void testTooMuchConfiguration() {
         Projection projection = new Projection();
         projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
-        assertThrows(RuntimeException.class, () -> assertTrue(projection.apply("FIELD_A")));
+        assertThrows(RuntimeException.class, () -> projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y")));
+        assertTrue(projection.apply("FIELD_A"));
+        
     }
     
     @Test
     public void testTooMuchOfTheSameConfiguration() {
         Projection projection = new Projection();
         projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-        assertThrows(RuntimeException.class, () -> assertTrue(projection.apply("FIELD_A")));
+        assertThrows(RuntimeException.class, () -> projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B")));
+        assertTrue(projection.apply("FIELD_A"));
     }
     
     @Test

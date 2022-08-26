@@ -85,8 +85,7 @@ public class QueryStatsdDClientTest {
         Set<String> messages = new HashSet<>(server.getMessages());
         System.out.println(messages);
         Assertions.assertFalse(messages.isEmpty(), "Did not receive messages");
-        Assertions.assertEquals(Float.parseFloat("Did not receive 8 messages"), 8, messages.size());
-        
+        Assertions.assertEquals(8, messages.size(), "Did not receive 8 messages");
         Assertions.assertTrue(messages.contains("queryid1.dwquery.seek_calls:1|c"), "Did not receive correct seek message");
         Assertions.assertTrue(messages.contains("queryid1.dwquery.next_calls:2|c"), "Did not receive correct next message");
         Assertions.assertTrue(messages.contains("queryid1.dwquery.sources:3|c"), "Did not receive correct sources message");

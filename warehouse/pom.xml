@@ -459,7 +459,7 @@
                         <threadCount>1</threadCount>
                         <threadCountClasses>1</threadCountClasses>
                         <threadCountMethods>0</threadCountMethods>
-                        <threadCountSuites>0</threadCountSuites>
+                        <threadCountSuites>0</threadCountSuites> 
                         <!-- BT_ROOT is for the tests that use basis tokenization -->
                         <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
@@ -486,6 +486,9 @@
                                 <excludes>
                                     <exclude>${tests.to.skip}</exclude>
                                 </excludes>
+				<!-- using junit5 @Tag -->
+				<excludedGroups>IntegrationTest</excludedGroups>
+				<!-- using junit4 @Category. Phasing this out in favor of junit5 -->
                                 <excludedGroups>datawave.common.test.integration.IntegrationTest</excludedGroups>
                             </configuration>
                         </execution>
