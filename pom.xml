@@ -1083,6 +1083,13 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <!-- old version of bytebuddy was making it onto the classpath and was incompatible with mockito -->
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.10.5</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-test</artifactId>
                 <version>${version.curator}</version>
@@ -1123,13 +1130,6 @@
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
                 <version>${version.junit.jupiter}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <!-- old version of bytebuddy was making it onto the classpath and was incompatible with mockito -->
-                <groupId>net.bytebuddy</groupId>
-                <artifactId>byte-buddy</artifactId>
-                <version>1.10.5</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
