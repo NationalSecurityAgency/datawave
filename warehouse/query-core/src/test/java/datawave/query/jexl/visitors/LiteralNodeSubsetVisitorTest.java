@@ -104,6 +104,67 @@ public class LiteralNodeSubsetVisitorTest {
         test(queryString, literals);
     }
     
+    @Test
+    public void testExcludeRegex1() throws ParseException {
+        String query = "filter:excludeRegex(FOO,'ba.*')";
+        Multimap<String,String> literals = ArrayListMultimap.create();
+        
+        test(query, literals);
+    }
+    
+    @Test
+    public void testExcludeRegex2() throws ParseException {
+        String query = "FOO == 'bar' && filter:excludeRegex(FOO,'ba.*')";
+        Multimap<String,String> literals = ArrayListMultimap.create();
+        literals.put("FOO", "bar");
+        
+        test(query, literals);
+    }
+    
+    @Test
+    public void testExcludeRegex3() throws ParseException {
+        String query = "FOO == 'bar' || filter:excludeRegex(FOO,'ba.*')";
+        Multimap<String,String> literals = ArrayListMultimap.create();
+        literals.put("FOO", "bar");
+        
+        test(query, literals);
+    }
+    
+    @Test
+    public void testIncludeRegex1() throws ParseException {
+        String query = "filter:includeRegex(FOO,'ba.*')";
+        Multimap<String,String> literals = ArrayListMultimap.create();
+        
+        test(query, literals);
+    }
+    
+    @Test
+    public void testIncludeRegex2() throws ParseException {
+        String query = "FOO == 'bar' && filter:includeRegex(FOO,'ba.*')";
+        Multimap<String,String> literals = ArrayListMultimap.create();
+        literals.put("FOO", "bar");
+        
+        test(query, literals);
+    }
+    
+    @Test
+    public void testIncludeRegex3() throws ParseException {
+        String query = "FOO == 'bar' || filter:includeRegex(FOO,'ba.*')";
+        Multimap<String,String> literals = ArrayListMultimap.create();
+        literals.put("FOO", "bar");
+        
+        test(query, literals);
+    }
+    
+    @Test
+    public void testFunctionInsideQueryPropertyMarker() throws ParseException {
+        String query = "((_Delayed_ = true) && FOO == 'bar')";
+        Multimap<String,String> literals = ArrayListMultimap.create();
+        literals.put("FOO", "bar");
+        
+        test(query, literals);
+    }
+    
     private void test(String query, Multimap<String,String> expected) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Set<String> expectedLiterals = new HashSet<>(expected.keySet());
