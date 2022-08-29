@@ -58,10 +58,7 @@ import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import java.io.File;
 import java.io.IOException;
@@ -95,8 +92,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <li>hadoop.home.dir => target directory</li>
  * </ul>
  */
-@Execution(ExecutionMode.SAME_THREAD)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+
 public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.TestResultParser {
     
     @TempDir

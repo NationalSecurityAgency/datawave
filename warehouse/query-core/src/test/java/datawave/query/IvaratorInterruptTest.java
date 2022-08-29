@@ -30,8 +30,6 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -118,8 +116,25 @@ public abstract class IvaratorInterruptTest {
         }
     }
     
-    @BeforeEach
-    public void setup() throws IOException {
+    @ExtendWith(ArquillianExtension.class)
+    public static class ShardRange extends IvaratorInterruptTest {
+        
+        @BeforeAll
+        public static void init() throws Exception {
+            init(ShardRange.class.getSimpleName(), WiseGuysIngest.WhatKindaRange.SHARD);
+        }
+    }
+    
+    @ExtendWith(ArquillianExtension.class)
+    public static class DocumentRange extends IvaratorInterruptTest {
+        
+        @BeforeAll
+        public static void init() throws Exception {
+            init(DocumentRange.class.getSimpleName(), WiseGuysIngest.WhatKindaRange.DOCUMENT);
+        }
+    }
+    
+    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         logic.setFullTableScanEnabled(true);
@@ -133,33 +148,10 @@ public abstract class IvaratorInterruptTest {
         
         // setup a directory for cache results
         File tmpDir = temporaryFolder;
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
-        logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
-        
+        IvaratorCacheDirConfig iConfig = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
+        logic.setIvaratorCacheDirConfigs(Collections.singletonList(iConfig));
         deserializer = new KryoDocumentDeserializer();
-    }
-    
-    @Disabled
-    @ExtendWith(ArquillianExtension.class)
-    public static class ShardRange extends IvaratorInterruptTest {
         
-        @BeforeAll
-        public static void init() throws Exception {
-            init(ShardRange.class.getSimpleName(), WiseGuysIngest.WhatKindaRange.SHARD);
-        }
-    }
-    
-    @Disabled
-    @ExtendWith(ArquillianExtension.class)
-    public static class DocumentRange extends IvaratorInterruptTest {
-        
-        @BeforeAll
-        public static void init() throws Exception {
-            init(DocumentRange.class.getSimpleName(), WiseGuysIngest.WhatKindaRange.DOCUMENT);
-        }
-    }
-    
-    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();

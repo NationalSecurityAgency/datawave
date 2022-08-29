@@ -30,8 +30,6 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -56,7 +54,6 @@ import java.util.UUID;
  */
 public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends HitsAreAlwaysIncludedCommonalityTokenTest {
         protected static Connector connector = null;
@@ -72,6 +69,7 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @Override
@@ -81,7 +79,6 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
         }
     }
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends HitsAreAlwaysIncludedCommonalityTokenTest {
         protected static Connector connector = null;
@@ -97,6 +94,7 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @Override
@@ -141,19 +139,13 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
         TypeRegistry.reset();
     }
     
-    @BeforeEach
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
-        logic.setFullTableScanEnabled(true);
-        deserializer = new KryoDocumentDeserializer();
-    }
-    
     protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                     throws Exception;
     
     protected void runTestQuery(Connector connector, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
                     Collection<String> goodResults) throws Exception {
+        logic.setFullTableScanEnabled(true);
+        deserializer = new KryoDocumentDeserializer();
         
         QueryImpl settings = new QueryImpl();
         settings.setBeginDate(startDate);

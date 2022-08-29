@@ -28,8 +28,6 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -54,7 +52,6 @@ import java.util.UUID;
  */
 public abstract class FunctionalSetTest {
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends FunctionalSetTest {
         protected static Connector connector = null;
@@ -69,6 +66,7 @@ public abstract class FunctionalSetTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @Override
@@ -77,7 +75,6 @@ public abstract class FunctionalSetTest {
         }
     }
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends FunctionalSetTest {
         protected static Connector connector = null;
@@ -92,6 +89,7 @@ public abstract class FunctionalSetTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @Override
@@ -135,19 +133,13 @@ public abstract class FunctionalSetTest {
         TypeRegistry.reset();
     }
     
-    @BeforeEach
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
-        logic.setFullTableScanEnabled(true);
-        
-        deserializer = new KryoDocumentDeserializer();
-    }
-    
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
                     throws Exception {
+        logic.setFullTableScanEnabled(true);
+        deserializer = new KryoDocumentDeserializer();
+        
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();

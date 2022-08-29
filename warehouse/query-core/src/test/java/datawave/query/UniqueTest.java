@@ -30,8 +30,6 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -58,7 +56,6 @@ public abstract class UniqueTest {
     
     private static final Logger log = Logger.getLogger(UniqueTest.class);
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends UniqueTest {
         protected static Connector connector = null;
@@ -78,6 +75,12 @@ public abstract class UniqueTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        }
+        
+        @AfterAll
+        public static void teardown() {
+            TypeRegistry.reset();
         }
         
         @Override
@@ -87,7 +90,6 @@ public abstract class UniqueTest {
         }
     }
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends UniqueTest {
         protected static Connector connector = null;
@@ -108,6 +110,12 @@ public abstract class UniqueTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        }
+        
+        @AfterAll
+        public static void teardown() {
+            TypeRegistry.reset();
         }
         
         @Override
@@ -145,24 +153,14 @@ public abstract class UniqueTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @AfterAll
-    public static void teardown() {
-        TypeRegistry.reset();
-    }
-    
-    @BeforeEach
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
-        logic.setFullTableScanEnabled(true);
-        deserializer = new KryoDocumentDeserializer();
-    }
-    
     protected abstract void runTestQueryWithUniqueness(Set<Set<String>> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
                     throws Exception;
     
     protected void runTestQueryWithUniqueness(Set<Set<String>> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
                     Connector connector) throws Exception {
+        logic.setFullTableScanEnabled(true);
+        deserializer = new KryoDocumentDeserializer();
+        
         log.debug("runTestQueryWithUniqueness");
         
         QueryImpl settings = new QueryImpl();
@@ -322,12 +320,10 @@ public abstract class UniqueTest {
         Date endDate = format.parse("20150101");
         
         String queryString = "UUID:/^[CS].*/ AND #UNIQUE(FOO_BAR,$MAGIC)";
-        runTestQueryWithUniqueness(new HashSet(), queryString, startDate, endDate, extraParameters);
+        Assertions.assertThrows(InvalidQueryException.class, () -> runTestQueryWithUniqueness(new HashSet(), queryString, startDate, endDate, extraParameters));
         
         String queryString2 = "UUID:/^[CS].*/ AND #UNIQUE(foo_bar,$magic)";
-        Assertions.assertThrows(InvalidQueryException.class, () -> {
-            runTestQueryWithUniqueness(new HashSet(), queryString2, startDate, endDate, extraParameters);
-        });
+        Assertions.assertThrows(InvalidQueryException.class, () -> runTestQueryWithUniqueness(new HashSet(), queryString2, startDate, endDate, extraParameters));
     }
     
     @Test

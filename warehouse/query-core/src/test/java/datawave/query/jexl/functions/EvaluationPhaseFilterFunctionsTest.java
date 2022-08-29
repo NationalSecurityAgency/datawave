@@ -10,7 +10,6 @@ import datawave.query.collections.FunctionalSet;
 import org.apache.accumulo.core.data.Key;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -233,15 +232,14 @@ public class EvaluationPhaseFilterFunctionsTest {
         }
         
         // Verify comparison for operator <.
-        @Disabled
         @Test
         public void testLessThanOperator() {
             givenOperator(" < ");
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertTrue(resultForOperator(1));
-            assertFalse(resultForOperator(2));
+            assertFalse(resultForOperator(1));
+            assertTrue(resultForOperator(2));
             
             // Results in total count of indexed fields: 3.
             givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);

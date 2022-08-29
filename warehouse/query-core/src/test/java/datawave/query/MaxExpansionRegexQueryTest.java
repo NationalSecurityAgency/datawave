@@ -11,7 +11,6 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.MaxExpandCityFields;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -298,7 +297,6 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
      * still complete.
      *
      */
-    @Disabled
     @Test
     public void testMaxIvaratorResults() throws Exception {
         log.info("------  testMaxIvaratorResults  ------");
@@ -325,8 +323,6 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         // clear list before new set is added
         dirs.clear();
         
-        // now get a new set of ivarator directories
-        dirs = ivaratorConfig();
         // set the max ivarator results to 1
         this.logic.setMaxIvaratorResults(1);
         // verify we still get our expected results

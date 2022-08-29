@@ -30,8 +30,6 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -67,7 +65,6 @@ public abstract class CompositeFunctionsTest {
     @TempDir
     public static File tempDir2 = new File("/tmp/test/TempDirForCompositeFunctionsTestDocumentRange");
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends CompositeFunctionsTest {
         protected static Connector connector = null;
@@ -87,6 +84,7 @@ public abstract class CompositeFunctionsTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @AfterAll
@@ -106,7 +104,6 @@ public abstract class CompositeFunctionsTest {
         }
     }
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends CompositeFunctionsTest {
         protected static Connector connector = null;
@@ -126,6 +123,7 @@ public abstract class CompositeFunctionsTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @AfterAll
@@ -179,17 +177,6 @@ public abstract class CompositeFunctionsTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @BeforeEach
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
-        eventQueryLogic.setFullTableScanEnabled(true);
-        eventQueryLogic.setMaxDepthThreshold(7);
-        tldEventQueryLogic.setFullTableScanEnabled(true);
-        tldEventQueryLogic.setMaxDepthThreshold(7);
-        deserializer = new KryoDocumentDeserializer();
-    }
-    
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
@@ -197,6 +184,13 @@ public abstract class CompositeFunctionsTest {
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector,
                     ShardQueryLogic logic) throws Exception {
+        
+        eventQueryLogic.setFullTableScanEnabled(true);
+        eventQueryLogic.setMaxDepthThreshold(7);
+        tldEventQueryLogic.setFullTableScanEnabled(true);
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+        deserializer = new KryoDocumentDeserializer();
+        
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();

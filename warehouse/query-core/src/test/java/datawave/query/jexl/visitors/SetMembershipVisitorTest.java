@@ -13,7 +13,6 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -365,7 +364,6 @@ public class SetMembershipVisitorTest {
      * Given that index fields should be tagged, and a query that contains matches in a filter function, but given that the LAZY_SET mechanism is disabled,
      * verify that {@link SetMembershipVisitor#getMembers(Set, ShardQueryConfiguration, JexlNode, boolean)} throws an exception.
      */
-    @Disabled
     public void testIndexOnlyFieldTaggingWhenLazySetMechanismIsDisabled() throws ParseException {
         givenFields("CITY", "NAME", "COUNTY");
         givenQuery("CITY == 'bar' && filter:includeRegex(NAME, 'aaa|bbb')");

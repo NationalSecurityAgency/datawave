@@ -31,15 +31,13 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -52,6 +50,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -66,7 +65,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public abstract class HitsAreAlwaysIncludedTest {
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends HitsAreAlwaysIncludedTest {
         protected static Connector connector = null;
@@ -82,6 +80,12 @@ public abstract class HitsAreAlwaysIncludedTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        }
+        
+        @AfterAll
+        public static void teardown() {
+            TypeRegistry.reset();
         }
         
         @Override
@@ -91,7 +95,6 @@ public abstract class HitsAreAlwaysIncludedTest {
         }
     }
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends HitsAreAlwaysIncludedTest {
         protected static Connector connector = null;
@@ -107,6 +110,12 @@ public abstract class HitsAreAlwaysIncludedTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        }
+        
+        @AfterAll
+        public static void teardown() {
+            TypeRegistry.reset();
         }
         
         @Override
@@ -146,24 +155,13 @@ public abstract class HitsAreAlwaysIncludedTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @AfterAll
-    public static void teardown() {
-        TypeRegistry.reset();
-    }
-    
-    @BeforeEach
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
-        logic.setFullTableScanEnabled(true);
-        deserializer = new KryoDocumentDeserializer();
-    }
-    
     protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> expectedHits,
                     Collection<String> goodResults) throws Exception;
     
     protected void runTestQuery(Connector connector, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
                     Collection<String> expectedHits, Collection<String> goodResults) throws Exception {
+        logic.setFullTableScanEnabled(true);
+        deserializer = new KryoDocumentDeserializer();
         
         QueryImpl settings = new QueryImpl();
         settings.setBeginDate(startDate);
@@ -423,8 +421,16 @@ public abstract class HitsAreAlwaysIncludedTest {
         Assertions.assertNotNull(hdfsConfig);
         this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
         
+        int leftLimit = 97; // letter 'a'
+        int rightLimit = 122; // letter 'z'
+        int targetStringLength = 10;
+        Random random = new Random();
+        
+        String randomFileNAme = random.ints(leftLimit, rightLimit + 1).limit(targetStringLength)
+                        .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
+        
         final List<String> dirs = new ArrayList<>();
-        Path ivCache = Files.createTempDirectory("/tmp/test/HitsAreAlwaysIncludedTest");
+        Path ivCache = new File("/tmp/test/" + randomFileNAme).toPath();
         dirs.add(ivCache.toUri().toString());
         String uriList = String.join(",", dirs);
         log.info("hdfs dirs(" + uriList + ")");

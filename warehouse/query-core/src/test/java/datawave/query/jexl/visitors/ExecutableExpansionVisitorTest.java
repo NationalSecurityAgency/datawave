@@ -48,8 +48,6 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -69,7 +67,6 @@ import java.util.UUID;
 
 public abstract class ExecutableExpansionVisitorTest {
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class ShardRangeExecutableExpansion extends ExecutableExpansionVisitorTest {
         protected static Connector connector = null;
@@ -86,6 +83,7 @@ public abstract class ExecutableExpansionVisitorTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @Override
@@ -94,7 +92,6 @@ public abstract class ExecutableExpansionVisitorTest {
         }
     }
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends ExecutableExpansionVisitorTest {
         protected static Connector connector = null;
@@ -111,6 +108,7 @@ public abstract class ExecutableExpansionVisitorTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @Override
@@ -153,21 +151,13 @@ public abstract class ExecutableExpansionVisitorTest {
         TypeRegistry.reset();
     }
     
-    @BeforeEach
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
-        logic.setFullTableScanEnabled(false);
-        logic.setMaxDepthThreshold(11);
-        logic.setInitialMaxTermThreshold(12);
-        logic.setFinalMaxTermThreshold(12);
-        deserializer = new KryoDocumentDeserializer();
-    }
-    
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
                     throws Exception {
+        logic.setFullTableScanEnabled(false);
+        deserializer = new KryoDocumentDeserializer();
+        
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
@@ -230,6 +220,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testMixedIndexOnly() {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -250,6 +244,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -288,7 +286,6 @@ public abstract class ExecutableExpansionVisitorTest {
         String expandedQuery = JexlStringBuildingVisitor.buildQuery(FunctionIndexQueryExpansionVisitor.expandFunctions(logic.getConfig(), helper, null,
                         JexlASTHelper.parseJexlQuery(query)));
         String[] queryStrings = {expandedQuery};
-        @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {Collections.emptyList(), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
@@ -306,6 +303,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testNestedOrExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -323,6 +324,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testMethodNoExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -340,6 +345,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testMethodExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -357,6 +366,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testNonEventExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -374,6 +387,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testFilterExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -391,6 +408,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testDisableExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -410,6 +431,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testDelayedBridgeExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -428,6 +453,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testMultipleExpansionsRequired() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -445,6 +474,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testMinimumExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -462,6 +495,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testMinimumExpansionParse() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -491,6 +528,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testArbitraryNodeExpansionFailNoFlatten() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -520,6 +561,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testArbitraryNodeExpansionFlatten() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -551,6 +596,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testNestedExpansionWithFailures() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'A' && (QUOTE == 'kind' || BIRTH_DATE == '234'|| (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE =='555' )))");
@@ -583,6 +632,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testExceededThresholdExpansionExternal() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -631,6 +684,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testExceededThresholdExpansionInternal() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -684,6 +741,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testExceededOrThresholdExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -750,6 +811,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testExceededOrThresholdCannotExpand() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))");
@@ -799,6 +864,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testDelayed() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery("UUID == 'capone' && (QUOTE == 'kind' || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
@@ -841,6 +910,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testDelayedDoubleExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery("UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || "
                         + "((_Delayed_ = true) && BIRTH_DATE == '123'))");
@@ -885,6 +958,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testSingleOr() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery("UUID == 'capone' && (QUOTE =='kind' || BIRTH_DATE == '123')");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
@@ -927,6 +1004,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testSingleOrNonExecutableCantFix() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery("BIRTH_DATE =='123' && (filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '234')");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
@@ -969,6 +1050,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testNoReferenceOrReferenceExpressions() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -1007,6 +1092,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testIndexOnlyNoType() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -1021,6 +1110,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testTypedAndNotIndexed() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
