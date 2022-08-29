@@ -8,8 +8,9 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
+import datawave.data.type.HitTermType;
+import datawave.query.attributes.TypeAttribute;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
@@ -187,14 +188,12 @@ public abstract class HitsAreAlwaysIncludedTest {
             if (hitAttribute instanceof Attributes) {
                 Attributes attributes = (Attributes) hitAttribute;
                 for (Attribute attr : attributes.getAttributes()) {
-                    if (attr instanceof Content) {
-                        Content content = (Content) attr;
-                        Assert.assertTrue(expectedHits.remove(content.getContent()));
+                    if (TypeAttribute.matches(attr, HitTermType.class)) {
+                        Assert.assertTrue(expectedHits.remove(((TypeAttribute) attr).getType().getDelegateAsString()));
                     }
                 }
-            } else if (hitAttribute instanceof Content) {
-                Content content = (Content) hitAttribute;
-                Assert.assertTrue(content.getContent() + " is not an expected hit", expectedHits.remove(content.getContent()));
+            } else if (hitAttribute instanceof TypeAttribute) {
+                Assert.assertTrue(hitAttribute + " is not an expected hit", expectedHits.remove(((TypeAttribute) hitAttribute).getType().getDelegateAsString()));
             } else {
                 Assert.fail("Did not find hit term field");
             }

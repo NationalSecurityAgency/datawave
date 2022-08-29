@@ -4,10 +4,8 @@ import com.google.common.collect.Sets;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
-import datawave.query.attributes.Document;
+import datawave.query.attributes.*;
+import datawave.data.type.HitTermType;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
@@ -178,14 +176,13 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
             if (hitAttribute instanceof Attributes) {
                 Attributes attributes = (Attributes) hitAttribute;
                 for (Attribute attr : attributes.getAttributes()) {
-                    if (attr instanceof Content) {
-                        Content content = (Content) attr;
-                        Assert.assertTrue(goodResults.contains(content.getContent()));
+                    if (TypeAttribute.matches(attr, HitTermType.class)) {
+                        String content = ((TypeAttribute) attr).getType().getDelegateAsString();
+                        Assert.assertTrue(goodResults.contains(content));
                     }
                 }
-            } else if (hitAttribute instanceof Content) {
-                Content content = (Content) hitAttribute;
-                Assert.assertTrue(goodResults.contains(content.getContent()));
+            } else if (hitAttribute instanceof TypeAttribute && ((TypeAttribute) hitAttribute).getType() instanceof HitTermType) {
+                Assert.assertTrue(goodResults.contains(((TypeAttribute) hitAttribute).getType().getDelegateAsString()));
             }
             
             // remove from goodResults as we find the expected return fields
