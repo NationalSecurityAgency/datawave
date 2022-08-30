@@ -1,0 +1,17 @@
+#################################
+# Core Helm Chart Configuration #
+#################################
+
+apiVersion: v2
+name: dwv-web
+type: application
+version: 3.40.0
+
+#################################
+# Basic Metadata for this Chart #
+#################################
+
+appVersion: 3.40.0-SNAPSHOT
+description: Deploys an Entire DataWave Web Stack w/ Dependencies
+home: https://gitlab.evoforge.org/datawave/cloud_deploy/datawave_query/helm
+icon: https://code.nsa.gov/datawave/images/datawave-logo.png

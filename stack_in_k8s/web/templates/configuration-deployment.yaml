@@ -1,0 +1,120 @@
+####################################
+# Core Helm Template Configuration #
+####################################
+
+apiVersion: apps/v1
+kind: Deployment
+
+######################################
+# Basic Metadata for this Deployment #
+######################################
+
+metadata:
+  name: "{{ .Chart.Name }}-{{ .Values.web.configurationDeployment.meta.name }}"
+  labels:
+    application: "{{ .Chart.Name }}-{{ .Values.web.configurationDeployment.meta.name }}"
+
+#####################################
+# Complete Deployment Specification #
+#####################################
+
+spec:
+
+  ######################################
+  # Replication / Update Configuration #
+  ######################################
+
+  replicas: {{ .Values.web.configurationDeployment.replication.replicaCount }}
+  revisionHistoryLimit: {{ .Values.web.configurationDeployment.replication.revisionHistoryLimit }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.web.configurationDeployment.replication.maxSurge }}
+      maxUnavailable: {{ .Values.web.configurationDeployment.replication.maxUnavailable }}
+
+  ###################################
+  # Resource Selector Configuration #
+  ###################################
+
+  selector:
+    matchLabels:
+      application: "{{ .Chart.Name }}-{{ .Values.web.configurationDeployment.meta.name }}"
+  
+  #####################################
+  # Deployment Template Configuration #
+  #####################################
+
+  template:
+
+    ##################################################
+    # Basic Metadata for this Deployment's Resources #
+    ##################################################
+
+    metadata:
+      labels:
+        application: "{{ .Chart.Name }}-{{ .Values.web.configurationDeployment.meta.name }}"
+
+    #######################################
+    # Deployment Resources Specifications #
+    #######################################
+
+    spec:
+      restartPolicy: "{{ .Values.web.configurationDeployment.restartPolicy }}"
+
+      ##############################################
+      # Containers Associated with this Deployment #
+      ##############################################
+
+      containers:
+
+        - name: "{{ .Chart.Name }}-{{ .Values.web.configurationDeployment.meta.name }}"
+          args:
+            - "--spring.cloud.config.server.native.searchLocations=file:///microservice-config"
+            - "--spring.output.ansi.enabled=ALWAYS"
+            - "--spring.profiles.active=native,open_actuator"
+          env:
+            - name: KEY_ALIAS
+              value: "{{ .Values.web.secrets.keystore.alias }}"
+            - name: KEYSTORE_LOCATION
+              value: "{{ .Values.web.secrets.keystore.path }}"
+            - name: KEYSTORE_PASSWORD
+              value: "{{ .Values.web.secrets.keystore.password }}"
+            - name: MESSAGING_SERVER_HOSTNAME
+              value: "{{ .Chart.Name }}-{{ .Values.web.messagingService.meta.name }}"
+          image: "{{ .Values.web.dockerRegistry.url }}/{{ .Values.web.configurationDeployment.image.name }}:{{ .Values.web.configurationDeployment.image.tag }}"
+          imagePullPolicy: "{{ .Values.web.configurationDeployment.image.pullPolicy }}"
+          ports:
+            - containerPort: 8888
+          resources: {}
+          volumeMounts:
+            - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.certificates.name }}"
+              mountPath: "{{ .Values.web.volumes.certificates.destination }}"
+            - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.microserviceConfig.name }}"
+              mountPath: "{{ .Values.web.volumes.microserviceConfig.destination }}"
+              readOnly: true
+
+      #############################################################
+      # Initialization Containers Associated with this Deployment #
+      #############################################################
+
+      initContainers:
+
+
+        - name: "{{ .Chart.Name }}-init-messaging"
+          image: "{{ .Values.web.initialization.image.name }}:{{ .Values.web.initialization.image.tag }}"
+          command: [ "sh", "-c", " until nslookup {{ .Chart.Name }}-{{ .Values.web.messagingService.meta.name }}; do echo 'Waiting for Cache...'; sleep 2; done" ]
+
+      ###########################################
+      # Volumes Associated with this Deployment #
+      ###########################################
+
+      volumes:
+        
+        - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.certificates.name }}"
+          secret:
+            secretName: "{{ .Chart.Name }}-{{ .Values.web.certificatesSecret.meta.name }}"
+            optional: false
+
+        - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.microserviceConfig.name }}"
+          configMap:
+            name: "{{ .Chart.Name }}-{{ .Values.web.configurationMap.meta.name }}"

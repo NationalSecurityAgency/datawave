@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "hadoop.fullname" . }}-yarn-nm
+  annotations:
+    checksum/config: {{ include (print $.Template.BasePath "/hadoop-configmap.yaml") . | sha256sum }}
+  labels:
+    app: {{ include "hadoop.name" . }}
+    chart: {{ include "hadoop.chart" . }}
+    release: {{ .Release.Name }}
+    component: yarn-nm
+spec:
+  serviceName: {{ include "hadoop.fullname" . }}-yarn-nm
+  replicas: {{ .Values.hadoop.yarn.nodeManager.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "hadoop.name" . }}
+      release: {{ .Release.Name }}
+      component: yarn-nm
+{{- if .Values.hadoop.yarn.nodeManager.parallelCreate }}
+  podManagementPolicy: Parallel
+{{- end }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "hadoop.name" . }}
+        release: {{ .Release.Name }}
+        component: yarn-nm
+    spec:
+      affinity:
+        podAntiAffinity:
+        {{- if eq .Values.hadoop.antiAffinity "hard" }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: "kubernetes.io/hostname"
+            labelSelector:
+              matchLabels:
+                app:  {{ include "hadoop.name" . }}
+                release: {{ .Release.Name | quote }}
+                component: yarn-nm
+        {{- else if eq .Values.hadoop.antiAffinity "soft" }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 5
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  app:  {{ include "hadoop.name" . }}
+                  release: {{ .Release.Name | quote }}
+                  component: yarn-nm
+        {{- end }}
+      terminationGracePeriodSeconds: 0
+      initContainers:
+      - name: init-yarn-rm
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup yarn-rm; do echo waiting for yarn-rm; sleep 2; done"]
+      containers:
+      - name: yarn-nm
+        image: "{{ .Values.hadoop.image.repository }}:{{ .Values.hadoop.image.tag }}"
+        imagePullPolicy: {{ .Values.hadoop.image.pullPolicy | quote }}
+        ports:
+        - containerPort: 8088
+          name: web
+        command:
+           - "/bin/bash"
+           - "/tmp/hadoop-config/bootstrap.sh"
+           - "-d"
+        resources:
+{{ toYaml .Values.hadoop.yarn.nodeManager.resources | indent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /node
+            port: 8042
+          initialDelaySeconds: 10
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /node
+            port: 8042
+          initialDelaySeconds: 10
+          timeoutSeconds: 2
+        env:
+        - name: MY_CPU_LIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: yarn-nm
+              resource: limits.cpu
+              divisor: 1
+        - name: MY_MEM_LIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: yarn-nm
+              resource: limits.memory
+              divisor: 1M
+        volumeMounts:
+        - name: hadoop-config
+          mountPath: /tmp/hadoop-config
+      volumes:
+      - name: hadoop-config
+        configMap:
+          name: {{ include "hadoop.fullname" . }}

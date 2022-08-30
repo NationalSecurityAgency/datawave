@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "hadoop.fullname" . }}-hdfs-nn
+  annotations:
+    checksum/config: {{ include (print $.Template.BasePath "/hadoop-configmap.yaml") . | sha256sum }}
+  labels:
+    app: {{ include "hadoop.name" . }}
+    chart: {{ include "hadoop.chart" . }}
+    release: {{ .Release.Name }}
+    component: hdfs-nn
+spec:
+  serviceName: {{ include "hadoop.fullname" . }}-hdfs-nn
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "hadoop.name" . }}
+      release: {{ .Release.Name }}
+      component: hdfs-nn
+  template:
+    metadata:
+      labels:
+        app: {{ include "hadoop.name" . }}
+        release: {{ .Release.Name }}
+        component: hdfs-nn
+    spec:
+      initContainers:
+      - name: init-zookeeper
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup zookeeper; do echo waiting for zookeeper; sleep 2; done"]
+
+      affinity:
+        podAntiAffinity:
+        {{- if eq .Values.hadoop.antiAffinity "hard" }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: "kubernetes.io/hostname"
+            labelSelector:
+              matchLabels:
+                app:  {{ include "hadoop.name" . }}
+                release: {{ .Release.Name | quote }}
+                component: hdfs-nn
+        {{- else if eq .Values.hadoop.antiAffinity "soft" }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 5
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  app:  {{ include "hadoop.name" . }}
+                  release: {{ .Release.Name | quote }}
+                  component: hdfs-nn
+        {{- end }}
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: hdfs-nn
+        image: "{{ .Values.hadoop.image.repository }}:{{ .Values.hadoop.image.tag }}"
+        imagePullPolicy: {{ .Values.hadoop.image.pullPolicy | quote }}
+        command:
+        - "/bin/sh"
+        - "/tmp/hadoop-config/bootstrap.sh"
+        - "-d"
+        resources:
+{{ toYaml .Values.hadoop.hdfs.nameNode.resources | indent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 9870
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 9870
+          initialDelaySeconds: 10
+          timeoutSeconds: 2
+        volumeMounts:
+        - name: hadoop-config
+          mountPath: /tmp/hadoop-config
+        - name: dfs
+          mountPath: /root/hdfs/namenode
+      volumes:
+      - name: hadoop-config
+        configMap:
+          name: {{ include "hadoop.fullname" . }}
+      - name: dfs
+      {{- if .Values.hadoop.persistence.nameNode.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "hadoop.fullname" . }}-hdfs-nn
+      {{- else }}
+        emptyDir: {}
+      {{- end }}

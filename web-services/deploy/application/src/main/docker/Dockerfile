@@ -1,4 +1,5 @@
-FROM azul/zulu-openjdk-centos:11.0.18-11.62.17
+FROM azul/zulu-openjdk-centos:11.0.19-11.64.19-x86
+
 
 RUN yum -y install deltarpm centos-release-sc && \
     chmod -R 777 /usr/lib/jvm/zulu11/bin/* && \
@@ -10,7 +11,7 @@ RUN yum -y install deltarpm centos-release-sc && \
     chmod -R ug+rX,o-rx /opt/datawave /opt/jboss
 
 ENV JAVA_VERSION=11 \
-    JAVA_BUILD=11.0.18 \
+    JAVA_BUILD=11.0.19 \
     JAVA_HOME=/usr/lib/jvm/zulu11
 LABEL version="11"
 

@@ -1,0 +1,42 @@
+####################################
+# Core Helm Template Configuration #
+####################################
+
+apiVersion: v1
+kind: Service
+
+######################################
+# Basic Metadata for this Deployment #
+######################################
+
+metadata:
+  name: "{{ .Chart.Name }}-{{ .Values.web.auditService.meta.name }}"
+  labels:
+    application: "{{ .Chart.Name }}-{{ .Values.web.auditService.meta.name }}"
+
+##################################
+# Complete Service Specification #
+##################################
+
+spec:
+
+  ###############################
+  # Pod Selection Configuration #
+  ###############################
+
+  selector:
+    application: "{{ .Chart.Name }}-{{ .Values.web.auditDeployment.meta.name }}"
+
+  ##############################
+  # Service Port Configuration #
+  ##############################
+
+  ports:
+
+    - name: http
+      port: {{ .Values.web.auditService.ports.http }}
+      targetPort: 8080
+
+    - name: https
+      port: {{ .Values.web.auditService.ports.https }}
+      targetPort: 8443

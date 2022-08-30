@@ -1,0 +1,29 @@
+{{- if .Values.zookeeper.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "common.names.fullname" . }}-metrics
+  namespace: {{ template "zookeeper.namespace" . }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: metrics
+    {{- if .Values.zookeeper.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if or .Values.zookeeper.metrics.service.annotations .Values.zookeeper.commonAnnotations }}
+  annotations:
+    {{- if .Values.zookeeper.metrics.service.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.metrics.service.annotations "context" $) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.zookeeper.commonAnnotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.zookeeper.metrics.service.type }}
+  ports:
+    - name: tcp-metrics
+      port: {{ .Values.zookeeper.metrics.service.port }}
+      targetPort: metrics
+  selector: {{- include "common.labels.matchLabels" . | nindent 4 }}
+    app.kubernetes.io/component: zookeeper
+{{- end }}

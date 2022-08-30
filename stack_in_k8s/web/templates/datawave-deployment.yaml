@@ -1,0 +1,97 @@
+####################################
+# Core Helm Template Configuration #
+####################################
+
+apiVersion: apps/v1
+kind: Deployment
+
+######################################
+# Basic Metadata for this Deployment #
+######################################
+
+metadata:
+  name: "{{ .Chart.Name }}-{{ .Values.web.datawaveDeployment.meta.name }}"
+  labels:
+    application: "{{ .Chart.Name }}-{{ .Values.web.datawaveDeployment.meta.name }}"
+
+#####################################
+# Complete Deployment Specification #
+#####################################
+
+spec:
+
+  ######################################
+  # Replication / Update Configuration #
+  ######################################
+
+  replicas: {{ .Values.web.datawaveDeployment.replication.replicaCount }}
+  revisionHistoryLimit: {{ .Values.web.datawaveDeployment.replication.revisionHistoryLimit }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.web.datawaveDeployment.replication.maxSurge }}
+      maxUnavailable: {{ .Values.web.datawaveDeployment.replication.maxUnavailable }}
+
+  ###################################
+  # Resource Selector Configuration #
+  ###################################
+
+  selector:
+    matchLabels:
+      application: "{{ .Chart.Name }}-{{ .Values.web.datawaveDeployment.meta.name }}"
+  
+  #####################################
+  # Deployment Template Configuration #
+  #####################################
+
+  template:
+
+    ##################################################
+    # Basic Metadata for this Deployment's Resources #
+    ##################################################
+
+    metadata:
+      labels:
+        application: "{{ .Chart.Name }}-{{ .Values.web.datawaveDeployment.meta.name }}"
+
+    #######################################
+    # Deployment Resources Specifications #
+    #######################################
+
+    spec:
+      restartPolicy: "{{ .Values.web.datawaveDeployment.restartPolicy }}"
+
+      ##############################################
+      # Containers Associated with this Deployment #
+      ##############################################
+      initContainers:
+        - name: init-authorization
+          image: busybox:1.28
+          command: ['sh', '-c', "until nslookup dwv-web-authorization; do echo waiting for auth service; sleep 2; done"]
+      containers:
+
+        - name: "{{ .Chart.Name }}-{{ .Values.web.datawaveDeployment.meta.name }}"
+          image: "{{ .Values.web.dockerRegistry.url }}/{{ .Values.web.datawaveDeployment.image.name }}:{{ .Values.web.datawaveDeployment.image.tag }}"
+          imagePullPolicy: "{{ .Values.web.datawaveDeployment.image.pullPolicy }}"
+          ports:
+            - containerPort: 8443
+          resources: {}
+          volumeMounts:
+            - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.certificates.name }}"
+              mountPath: "{{ .Values.web.volumes.certificates.destination }}"
+              readOnly: true
+            - name: hadoop-config
+              mountPath: /etc/hadoop/conf
+      ###########################################
+      # Volumes Associated with this Deployment #
+      ###########################################
+
+      volumes:
+        
+        - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.certificates.name }}"
+          secret:
+            secretName: "{{ .Chart.Name }}-{{ .Values.web.certificatesSecret.meta.name }}"
+            optional: false
+        - name: hadoop-config
+          configMap:
+            name: dwv-dwv-hadoop
