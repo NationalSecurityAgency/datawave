@@ -45,8 +45,6 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -64,6 +62,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -102,9 +101,13 @@ public abstract class GroupingTest {
     private static final List<RebuildingScannerTestHelper.INTERRUPT> INTERRUPTS = Arrays.asList(RebuildingScannerTestHelper.INTERRUPT.values());
     // @formatter:on
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends GroupingTest {
+        
+        @AfterAll
+        public static void teardown() {
+            TypeRegistry.reset();
+        }
         
         @Override
         protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
@@ -116,13 +119,25 @@ public abstract class GroupingTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+            
+            logic.setFullTableScanEnabled(true);
+            logic.setMaxEvaluationPipelines(1);
+            logic.setQueryExecutionForPageTimeout(300000000000000L);
+            deserializer = new KryoDocumentDeserializer();
+            
             return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
     
-    @Disabled
     @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends GroupingTest {
+        
+        @AfterAll
+        public static void teardown() {
+            TypeRegistry.reset();
+        }
         
         @Override
         protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
@@ -134,6 +149,14 @@ public abstract class GroupingTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+            
+            logic.setFullTableScanEnabled(true);
+            logic.setMaxEvaluationPipelines(1);
+            logic.setQueryExecutionForPageTimeout(300000000000000L);
+            deserializer = new KryoDocumentDeserializer();
+            
             return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
@@ -163,21 +186,6 @@ public abstract class GroupingTest {
                         .addAsManifestResource(
                                         new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
                                                         + "</alternatives>"), "beans.xml");
-    }
-    
-    @AfterAll
-    public static void teardown() {
-        TypeRegistry.reset();
-    }
-    
-    @BeforeEach
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
-        logic.setFullTableScanEnabled(true);
-        logic.setMaxEvaluationPipelines(1);
-        logic.setQueryExecutionForPageTimeout(300000000000000L);
-        deserializer = new KryoDocumentDeserializer();
     }
     
     protected abstract BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
@@ -212,10 +220,19 @@ public abstract class GroupingTest {
         
         BaseQueryResponse response = transformer.createResponse(eventList);
         
+        int leftLimit = 97; // letter 'a'
+        int rightLimit = 122; // letter 'z'
+        int targetStringLength = 10;
+        Random random = new Random();
+        
+        String generatedFileName = random.ints(leftLimit, rightLimit + 1).limit(targetStringLength)
+                        .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
+        
         // un-comment to look at the json output
         ObjectMapper mapper = new ObjectMapper();
         mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-        mapper.writeValue(temporaryFolder, response);
+        File responseFile = new File(temporaryFolder, generatedFileName);
+        mapper.writeValue(responseFile, response);
         
         Assertions.assertTrue(response instanceof DefaultEventQueryResponse);
         DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;

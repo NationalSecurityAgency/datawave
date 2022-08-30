@@ -22,7 +22,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -552,7 +551,6 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         }
     }
     
-    @Disabled
     @Test
     public void testRegexWithFIAndRI() throws Exception {
         String phrase = RE_OP + "'.*iss.*'";
@@ -569,7 +567,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         
         // test running the query
         String expect = this.dataManager.convertAnyField(EQ_OP + "'nothing'");
-        runTest(query, expect);
+        Assertions.assertThrows(DatawaveFatalQueryException.class, () -> runTest(query, expect));
     }
     
     @Test
