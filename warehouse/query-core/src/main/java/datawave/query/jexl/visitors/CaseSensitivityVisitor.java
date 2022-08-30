@@ -18,7 +18,6 @@ import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTMethodNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
@@ -143,11 +142,6 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
     }
     
     // Do not descend through these nodes
-    @Override
-    public Object visit(ASTNotNode node, Object data) {
-        return data;
-    }
-    
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return data;
