@@ -75,6 +75,10 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setPrincipal(other.getPrincipal());
         setRoleManager(other.getRoleManager());
         setSelectorExtractor(other.getSelectorExtractor());
+        
+        // query plans
+        setShardSpecificPlan(other.getShardSpecificPlan());
+        setDocumentSpecificPlan(other.getDocumentSpecificPlan());
     }
     
     public GenericQueryConfiguration getConfig() {
@@ -99,7 +103,27 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public void setMarkingFunctions(MarkingFunctions markingFunctions) {
         this.markingFunctions = markingFunctions;
     }
-    
+
+    @Override
+    public void setDocumentSpecificPlan(String documentSpecificPlan) {
+
+    }
+
+    @Override
+    public String getDocumentSpecificPlan() {
+        return null;
+    }
+
+    @Override
+    public void setShardSpecificPlan(String shardSpecificPlan) {
+
+    }
+
+    @Override
+    public String getShardSpecificPlan() {
+        return null;
+    }
+
     public ResponseObjectFactory getResponseObjectFactory() {
         return responseObjectFactory;
     }

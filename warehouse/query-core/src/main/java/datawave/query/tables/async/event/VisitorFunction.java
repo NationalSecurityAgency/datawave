@@ -5,6 +5,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -28,6 +29,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
@@ -293,6 +295,15 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     // only recompile the script if changes were made to the query
                     if (madeChange) {
                         newQuery = JexlStringBuildingVisitor.buildQuery(script);
+                        BaseQueryMetric m = new BaseQueryMetric() {
+                            @Override
+                            public void populate(Query query) {
+                                
+                            }
+                        };
+                        m.setShardSpecificPlan(newQuery);
+                        
+                        System.out.printf("New Query (SHARD S PLAN): %s\n", m.getShardSpecificPlan());
                     }
                     
                     try {
