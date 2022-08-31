@@ -6,7 +6,6 @@
 
 DataWave is a Java-based ingest and query framework that leverages [Apache Accumulo](http://accumulo.apache.org/) to provide fast, secure access to your data. DataWave supports a wide variety of use cases, including but not limited to...
 
-* Data fusion across structured and unstructured datasets
 * Construction and analysis of distributed graphs
 * Multi-tenant data architectures, with tenants having distinct security requirements and data access patterns
 * Fine-grained control over data access, integrated easily with existing user-authorization services and PKI
