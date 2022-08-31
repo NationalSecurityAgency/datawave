@@ -21,7 +21,7 @@ public class QueryLogicFilterByAuth implements FilteredQueryLogic.QueryLogicFilt
     private ColumnVisibility visibility;
     
     // Default is to only require the user visibilities to match
-    private MatchType matchType = MatchType.FIRST;
+    private MatchType matchType = MatchType.ALL;
     
     // if negated than the negation of the match is returned
     private boolean negated = false;
