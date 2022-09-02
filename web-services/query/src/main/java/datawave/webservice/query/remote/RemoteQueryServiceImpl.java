@@ -4,6 +4,7 @@ import com.codahale.metrics.Counter;
 import com.fasterxml.jackson.databind.ObjectReader;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
+import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
 import datawave.webservice.common.remote.RemoteQueryService;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
@@ -50,31 +51,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     
     private ObjectReader eventQueryResponseReader;
     
-    private boolean useSrvDNS = false;
-    
-    private List<String> srvDnsServers = Collections.singletonList("127.0.0.1");
-    
-    private int srvDnsPort = 8600;
-    
-    private String queryServiceScheme = "https";
-    
-    private String queryServiceHost = "localhost";
-    
-    private int queryServicePort = 8443;
-    
-    private String queryServiceURI = "/query/v1/";
-    
-    private int maxConnections = 100;
-    
-    private int retryCount = 5;
-    
-    private int unavailableRetryCount = 15;
-    
-    private int unavailableRetryDelay = 2000;
-    
-    private Counter retryCounter = new Counter();
-    
-    private Counter failureCounter = new Counter();
+    private RemoteHttpServiceConfiguration config = new RemoteHttpServiceConfiguration();
     
     private boolean initialized = false;
     
@@ -246,7 +223,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         } catch (URISyntaxException e) {
             throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
         } catch (IOException e) {
-            failureCounter.inc();
+            config.getFailureCounter().inc();
             throw new RuntimeException(e.getMessage(), e);
         }
     }
@@ -259,112 +236,112 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         } catch (URISyntaxException e) {
             throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
         } catch (IOException e) {
-            failureCounter.inc();
+            config.getFailureCounter().inc();
             throw new RuntimeException(e.getMessage(), e);
         }
     }
     
     @Override
     protected String serviceHost() {
-        return queryServiceHost;
+        return config.getServiceHost();
     }
     
     @Override
     protected int servicePort() {
-        return queryServicePort;
+        return config.getServicePort();
     }
     
     @Override
     protected String serviceURI() {
-        return queryServiceURI;
+        return config.getServiceURI();
     }
     
     @Override
     protected boolean useSrvDns() {
-        return useSrvDNS;
+        return config.isUseSrvDNS();
     }
     
     @Override
     protected List<String> srvDnsServers() {
-        return srvDnsServers;
+        return config.getSrvDnsServers();
     }
     
     @Override
     protected int srvDnsPort() {
-        return srvDnsPort;
+        return config.getSrvDnsPort();
     }
     
     @Override
     protected String serviceScheme() {
-        return queryServiceScheme;
+        return config.getServiceScheme();
     }
     
     @Override
     protected int maxConnections() {
-        return maxConnections;
+        return config.getMaxConnections();
     }
     
     @Override
     protected int retryCount() {
-        return retryCount;
+        return config.getRetryCount();
     }
     
     @Override
     protected int unavailableRetryCount() {
-        return unavailableRetryCount;
+        return config.getUnavailableRetryCount();
     }
     
     @Override
     protected int unavailableRetryDelay() {
-        return unavailableRetryDelay;
+        return config.getUnavailableRetryDelay();
     }
     
     @Override
     protected Counter retryCounter() {
-        return retryCounter;
+        return config.getRetryCounter();
     }
     
     public void setUseSrvDNS(boolean useSrvDNS) {
-        this.useSrvDNS = useSrvDNS;
+        config.setUseSrvDNS(useSrvDNS);
     }
     
     public void setSrvDnsServers(List<String> srvDnsServers) {
-        this.srvDnsServers = srvDnsServers;
+        config.setSrvDnsServers(srvDnsServers);
     }
     
     public void setSrvDnsPort(int srvDnsPort) {
-        this.srvDnsPort = srvDnsPort;
+        config.setSrvDnsPort(srvDnsPort);
     }
     
     public void setQueryServiceScheme(String queryServiceScheme) {
-        this.queryServiceScheme = queryServiceScheme;
+        config.setServiceScheme(queryServiceScheme);
     }
     
     public void setQueryServiceHost(String queryServiceHost) {
-        this.queryServiceHost = queryServiceHost;
+        config.setServiceHost(queryServiceHost);
     }
     
     public void setQueryServicePort(int queryServicePort) {
-        this.queryServicePort = queryServicePort;
+        config.setServicePort(queryServicePort);
     }
     
     public void setQueryServiceURI(String queryServiceURI) {
-        this.queryServiceURI = queryServiceURI;
+        config.setServiceURI(queryServiceURI);
     }
     
     public void setMaxConnections(int maxConnections) {
-        this.maxConnections = maxConnections;
+        config.setMaxConnections(maxConnections);
     }
     
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        config.setRetryCount(retryCount);
     }
     
     public void setUnavailableRetryCount(int unavailableRetryCount) {
-        this.unavailableRetryCount = unavailableRetryCount;
+        config.setUnavailableRetryCount(unavailableRetryCount);
     }
     
     public void setUnavailableRetryDelay(int unavailableRetryDelay) {
-        this.unavailableRetryDelay = unavailableRetryDelay;
+        config.setUnavailableRetryDelay(unavailableRetryDelay);
     }
 }
