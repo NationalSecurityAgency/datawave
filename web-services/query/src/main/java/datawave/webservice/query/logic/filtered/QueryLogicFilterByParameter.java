@@ -2,17 +2,16 @@ package datawave.webservice.query.logic.filtered;
 
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.predicate.QueryParameterPredicate;
 import org.apache.accumulo.core.security.Authorizations;
 
 import java.util.Set;
 
-public class QueryLogicFilterByParameter implements FilteredQueryLogic.QueryLogicFilter {
-    
-    // The parameter to match against
-    private String parameter;
-    
-    // The value to match against. If empty then boolean value of parameter is used.
-    private String value;
+/**
+ * This is a filter for the FilteredQueryLogic that will run the delegate query logic if a specified query parameter matches a specified value. If no value is
+ * specified then the parameter is treated as a boolean parameter (i.e. the value is "true"). One can also negate the matching of the parameter.
+ */
+public class QueryLogicFilterByParameter extends QueryParameterPredicate implements FilteredQueryLogic.QueryLogicFilter {
     
     // if negated than the negation of the match is returned
     private boolean negated = false;
@@ -40,36 +39,11 @@ public class QueryLogicFilterByParameter implements FilteredQueryLogic.QueryLogi
     
     @Override
     public boolean canRunQuery(Query settings, Set<Authorizations> auths) {
-        boolean canRunQuery = matches(settings.findParameter(getParameter()));
+        boolean canRunQuery = test(settings);
         if (negated) {
             canRunQuery = !canRunQuery;
         }
         return canRunQuery;
-    }
-    
-    private boolean matches(QueryImpl.Parameter parameter) {
-        String parameterValue = (parameter == null ? null : parameter.getParameterValue());
-        if (value == null) {
-            return Boolean.valueOf(parameterValue);
-        } else {
-            return value.equals(parameterValue);
-        }
-    }
-    
-    public String getParameter() {
-        return parameter;
-    }
-    
-    public void setParameter(String parameter) {
-        this.parameter = parameter;
-    }
-    
-    public String getValue() {
-        return value;
-    }
-    
-    public void setValue(String value) {
-        this.value = value;
     }
     
     public boolean isNegated() {

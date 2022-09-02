@@ -817,7 +817,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                 throw new RuntimeException("Error formatting date", e);
             }
         }
-        p.set("pageTimeout", Integer.toString(this.pageTimeout));
+        p.set(QueryParameters.QUERY_PAGETIMEOUT, Integer.toString(this.pageTimeout));
         
         if (this.parameters != null) {
             for (Parameter parameter : parameters) {

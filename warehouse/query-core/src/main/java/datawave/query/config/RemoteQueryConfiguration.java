@@ -10,7 +10,7 @@ import java.util.Objects;
 
 /**
  * <p>
- * A GenericQueryConfiguration implementation that provides the additional logic on top of the traditional query that is needed to run a remote query logikc
+ * A GenericQueryConfiguration implementation that provides the additional logic on top of the traditional query that is needed to run a remote query logic
  *
  */
 public class RemoteQueryConfiguration extends GenericQueryConfiguration implements Serializable {
@@ -146,8 +146,4 @@ public class RemoteQueryConfiguration extends GenericQueryConfiguration implemen
         return Objects.hash(super.hashCode(), getRemoteId(), getRemoteQueryLogic(), getQuery());
     }
     
-    // Part of the Serializable interface used to initialize any transient members during deserialization
-    protected Object readResolve() throws ObjectStreamException {
-        return this;
-    }
 }

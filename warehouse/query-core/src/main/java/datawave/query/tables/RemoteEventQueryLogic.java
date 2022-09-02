@@ -34,13 +34,15 @@ import java.util.Set;
  * <h1>Overview</h1> This is a query logic implementation that can handle delegating to a remote event query logic (i.e. one that returns an extension of
  * EventQueryResponseBase).
  */
-public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements RemoteQueryLogic {
+public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements RemoteQueryLogic<EventBase> {
     
     protected static final Logger log = ThreadConfigurableLogger.getLogger(RemoteEventQueryLogic.class);
     
     private RemoteQueryConfiguration config;
     
     private RemoteQueryService remoteQueryService;
+    
+    private QueryLogicTransformer transformerInstance = null;
     
     /**
      * Basic constructor
@@ -111,25 +113,17 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
         config = (RemoteQueryConfiguration) genericConfig;
         
         // Create an iterator that returns a stream of EventBase objects
-        this.iterator = new RemoteQueryLogicIterator();
+        iterator = new RemoteQueryLogicIterator();
     }
-    
-    private QueryLogicTransformer transformerInstance = null;
     
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         // a transformer that turns EventBase objects into a response
-        if (this.transformerInstance != null) {
-            addConfigBasedTransformers();
-            return this.transformerInstance;
+        if (transformerInstance == null) {
+            transformerInstance = new EventBaseTransformer(settings, getMarkingFunctions(), getResponseObjectFactory());
         }
         
-        MarkingFunctions markingFunctions = this.getMarkingFunctions();
-        EventBaseTransformer transformer = new EventBaseTransformer(settings, markingFunctions, getResponseObjectFactory());
-        
-        this.transformerInstance = transformer;
-        addConfigBasedTransformers();
-        return this.transformerInstance;
+        return transformerInstance;
     }
     
     /**
