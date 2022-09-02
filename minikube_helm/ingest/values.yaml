@@ -1,0 +1,15 @@
+nameOverride: ""
+fullnameOverride: ""
+labels: {}
+image:
+  repository: warehouses/minikube/datawave-ingest
+  tag: 3.28.0
+  pullPolicy: Always
+  pullSecrets: []
+ingest:
+  replicaCount: 1
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  datawaveVersion: 3.28.0

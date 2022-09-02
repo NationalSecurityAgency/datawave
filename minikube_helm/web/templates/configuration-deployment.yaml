@@ -1,0 +1,119 @@
+####################################
+# Core Helm Template Configuration #
+####################################
+
+apiVersion: apps/v1
+kind: Deployment
+
+######################################
+# Basic Metadata for this Deployment #
+######################################
+
+metadata:
+  name: "{{ .Chart.Name }}-{{ .Values.configurationDeployment.meta.name }}"
+  labels:
+    application: "{{ .Chart.Name }}-{{ .Values.configurationDeployment.meta.name }}"
+
+#####################################
+# Complete Deployment Specification #
+#####################################
+
+spec:
+
+  ######################################
+  # Replication / Update Configuration #
+  ######################################
+
+  replicas: {{ .Values.configurationDeployment.replication.replicaCount }}
+  revisionHistoryLimit: {{ .Values.configurationDeployment.replication.revisionHistoryLimit }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.configurationDeployment.replication.maxSurge }}
+      maxUnavailable: {{ .Values.configurationDeployment.replication.maxUnavailable }}
+
+  ###################################
+  # Resource Selector Configuration #
+  ###################################
+
+  selector:
+    matchLabels:
+      application: "{{ .Chart.Name }}-{{ .Values.configurationDeployment.meta.name }}"
+  
+  #####################################
+  # Deployment Template Configuration #
+  #####################################
+
+  template:
+
+    ##################################################
+    # Basic Metadata for this Deployment's Resources #
+    ##################################################
+
+    metadata:
+      labels:
+        application: "{{ .Chart.Name }}-{{ .Values.configurationDeployment.meta.name }}"
+
+    #######################################
+    # Deployment Resources Specifications #
+    #######################################
+
+    spec:
+      restartPolicy: "{{ .Values.configurationDeployment.restartPolicy }}"
+
+      ##############################################
+      # Containers Associated with this Deployment #
+      ##############################################
+
+      containers:
+
+        - name: "{{ .Chart.Name }}-{{ .Values.configurationDeployment.meta.name }}"
+          args:
+            - "--spring.cloud.config.server.native.searchLocations=file:///microservice-config"
+            - "--spring.output.ansi.enabled=ALWAYS"
+            - "--spring.profiles.active=native,open_actuator"
+          env:
+            - name: KEY_ALIAS
+              value: "{{ .Values.secrets.keystore.alias }}"
+            - name: KEYSTORE_LOCATION
+              value: "{{ .Values.secrets.keystore.path }}"
+            - name: KEYSTORE_PASSWORD
+              value: "{{ .Values.secrets.keystore.password }}"
+            - name: MESSAGING_SERVER_HOSTNAME
+              value: "{{ .Chart.Name }}-{{ .Values.messagingService.meta.name }}"
+          image: "{{ .Values.dockerRegistry.url }}/{{ .Values.configurationDeployment.image.name }}:{{ .Values.configurationDeployment.image.tag }}"
+          imagePullPolicy: "{{ .Values.configurationDeployment.image.pullPolicy }}"
+          ports:
+            - containerPort: 8888
+          resources: {}
+          volumeMounts:
+            - name: "{{ .Chart.Name }}-{{ .Values.volumes.certificates.name }}"
+              mountPath: "{{ .Values.volumes.certificates.destination }}"
+            - name: "{{ .Chart.Name }}-{{ .Values.volumes.microserviceConfig.name }}"
+              mountPath: "{{ .Values.volumes.microserviceConfig.destination }}"
+              readOnly: true
+
+      #############################################################
+      # Initialization Containers Associated with this Deployment #
+      #############################################################
+
+      initContainers:
+
+        - name: "{{ .Chart.Name }}-init-messaging"
+          image: "{{ .Values.initialization.image.name }}:{{ .Values.initialization.image.tag }}"
+          command: [ "sh", "-c", "{{ .Values.scripts.init.messaging }}" ]
+      
+      ###########################################
+      # Volumes Associated with this Deployment #
+      ###########################################
+
+      volumes:
+        
+        - name: "{{ .Chart.Name }}-{{ .Values.volumes.certificates.name }}"
+          secret:
+            secretName: "{{ .Chart.Name }}-{{ .Values.certificatesSecret.meta.name }}"
+            optional: false
+
+        - name: "{{ .Chart.Name }}-{{ .Values.volumes.microserviceConfig.name }}"
+          configMap:
+            name: "{{ .Chart.Name }}-{{ .Values.configurationMap.meta.name }}"

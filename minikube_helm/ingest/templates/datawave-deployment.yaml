@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "datawave.fullname" . }}-ingest
+  labels:
+    {{- include "datawave.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingest
+spec:
+  replicas: {{ .Values.ingest.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: ingest
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: ingest
+    spec:
+      hostname: ingestmaster
+      initContainers:
+      - name: accumulo-classpath-loader
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        command: ["/bin/bash", "/cmds/run.sh"]
+        volumeMounts:
+        - name: init-container-cmds
+          mountPath: /cmds
+          readOnly: true
+        - name: yumrepo
+          mountPath: /secrets
+          readOnly: true
+        - name: hadoop-config
+          mountPath: /tmp/hadoop-config
+      - name: init-accumulo
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup accumulo-master.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for accumulo; sleep 2; done"]
+ 
+      containers:
+      - name: ingest
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        resources:
+          {{- toYaml .Values.ingest.resources | nindent 10 }}
+        command: ["/bin/bash", "/cmds/run.sh"]
+        volumeMounts:
+        - name: cmds
+          mountPath: /cmds
+          readOnly: true
+        - name: yumrepo
+          mountPath: /secrets
+          readOnly: true
+        - name: hadoop-config
+          mountPath: /tmp/hadoop-config
+      volumes:
+      - name: hadoop-config
+        configMap:
+          name: hadoop-hadoop-minikube
+      - name: cmds
+        secret:
+          secretName: {{ include "datawave.fullname" . }}-cmds
+          optional: false
+      - name: init-container-cmds
+        secret:
+          secretName: {{ include "datawave.fullname" . }}-initconatiner-cmds
+          optional: false
+      - name: yumrepo
+        secret:
+          secretName: {{ include "datawave.fullname" . }}-repo
+          optional: false
+      {{- with .Values.ingest.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ingest.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ingest.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range . }}
+      - name: {{ . }}
+      {{- end }}
+      {{- end }}

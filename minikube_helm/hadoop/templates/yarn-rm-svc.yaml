@@ -1,0 +1,21 @@
+# A headless service to create DNS records
+apiVersion: v1
+kind: Service
+metadata:
+  name: yarn-rm
+  labels:
+    app: {{ include "hadoop.name" . }}
+    chart: {{ include "hadoop.chart" . }}
+    release: {{ .Release.Name }}
+    component: yarn-rm
+spec:
+  ports:
+  - port: 8088
+    name: web
+  - port: 10020
+    name: history-server
+  clusterIP: None
+  selector:
+    app: {{ include "hadoop.name" . }}
+    release: {{ .Release.Name }}
+    component: yarn-rm

@@ -1,0 +1,4 @@
+apiVersion: v1
+name: ingest-minikube
+version: 1.0.0
+appVersion: 3.28.0

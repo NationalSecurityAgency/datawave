@@ -1,0 +1,126 @@
+####################################
+# Core Helm Template Configuration #
+####################################
+
+apiVersion: apps/v1
+kind: Deployment
+
+######################################
+# Basic Metadata for this Deployment #
+######################################
+
+metadata:
+  name: "{{ .Chart.Name }}-{{ .Values.dictionaryDeployment.meta.name }}"
+  labels:
+    application: "{{ .Chart.Name }}-{{ .Values.dictionaryDeployment.meta.name }}"
+
+#####################################
+# Complete Deployment Specification #
+#####################################
+
+spec:
+
+  ######################################
+  # Replication / Update Configuration #
+  ######################################
+
+  replicas: {{ .Values.dictionaryDeployment.replication.replicaCount }}
+  revisionHistoryLimit: {{ .Values.dictionaryDeployment.replication.revisionHistoryLimit }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.dictionaryDeployment.replication.maxSurge }}
+      maxUnavailable: {{ .Values.dictionaryDeployment.replication.maxUnavailable }}
+
+  ###################################
+  # Resource Selector Configuration #
+  ###################################
+
+  selector:
+    matchLabels:
+      application: "{{ .Chart.Name }}-{{ .Values.dictionaryDeployment.meta.name }}"
+  
+  #####################################
+  # Deployment Template Configuration #
+  #####################################
+
+  template:
+
+    ##################################################
+    # Basic Metadata for this Deployment's Resources #
+    ##################################################
+
+    metadata:
+      labels:
+        application: "{{ .Chart.Name }}-{{ .Values.dictionaryDeployment.meta.name }}"
+
+    #######################################
+    # Deployment Resources Specifications #
+    #######################################
+
+    spec:
+      restartPolicy: "{{ .Values.dictionaryDeployment.restartPolicy }}"
+
+      ##############################################
+      # Containers Associated with this Deployment #
+      ##############################################
+
+      containers:
+
+        - name: "{{ .Chart.Name }}-{{ .Values.dictionaryDeployment.meta.name }}"
+          args:
+            - "--spring.output.ansi.enabled=ALWAYS"
+            - "--spring.profiles.active=default,greybox,k8s,remoteauth"
+          env:
+            - name: CONFIG_SERVER_URL
+              value: "http://{{ .Chart.Name }}-{{ .Values.configurationDeployment.meta.name }}:{{ .Values.configurationService.ports.default }}/configserver"
+          image: "{{ .Values.dockerRegistry.url }}/{{ .Values.dictionaryDeployment.image.name }}:{{ .Values.dictionaryDeployment.image.tag }}"
+          imagePullPolicy: "{{ .Values.dictionaryDeployment.image.pullPolicy }}"
+          livenessProbe:
+            httpGet:
+              path: "{{ .Values.dictionaryDeployment.livenessProbe.uri }}"
+              port: {{ .Values.dictionaryDeployment.livenessProbe.port }}
+              scheme: "{{ .Values.dictionaryDeployment.livenessProbe.scheme }}"
+            initialDelaySeconds: {{ .Values.dictionaryDeployment.livenessProbe.delaySeconds }}
+            periodSeconds: {{ .Values.dictionaryDeployment.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.auditDeployment.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: "{{ .Values.dictionaryDeployment.readinessProbe.uri }}"
+              port: {{ .Values.dictionaryDeployment.readinessProbe.port }}
+              scheme: "{{ .Values.dictionaryDeployment.readinessProbe.scheme }}"
+            initialDelaySeconds: {{ .Values.dictionaryDeployment.readinessProbe.delaySeconds }}
+            periodSeconds: {{ .Values.dictionaryDeployment.readinessProbe.periodSeconds }}
+          ports:
+            - containerPort: 8080
+            - containerPort: 8443
+          resources: {}
+          volumeMounts:
+            - name: "{{ .Chart.Name }}-{{ .Values.volumes.certificates.name }}"
+              mountPath: "{{ .Values.volumes.certificates.destination }}"
+              readOnly: true
+
+      #############################################################
+      # Initialization Containers Associated with this Deployment #
+      #############################################################
+
+      initContainers:
+
+        - name: "{{ .Chart.Name }}-init-cache"
+          image: "{{ .Values.initialization.image.name }}:{{ .Values.initialization.image.tag }}"
+          command: [ "sh", "-c", "{{ .Values.scripts.init.cache }}" ]
+
+        - name: "{{ .Chart.Name }}-init-configuration"
+          image: "{{ .Values.initialization.image.name }}:{{ .Values.initialization.image.tag }}"
+          command: [ "sh", "-c", "{{ .Values.scripts.init.configuration }}" ]
+      
+      ###########################################
+      # Volumes Associated with this Deployment #
+      ###########################################
+
+      volumes:
+        
+        - name: "{{ .Chart.Name }}-{{ .Values.volumes.certificates.name }}"
+          secret:
+            secretName: "{{ .Chart.Name }}-{{ .Values.certificatesSecret.meta.name }}"
+            optional: false

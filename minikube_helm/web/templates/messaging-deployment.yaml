@@ -1,0 +1,90 @@
+####################################
+# Core Helm Template Configuration #
+####################################
+
+apiVersion: apps/v1
+kind: Deployment
+
+######################################
+# Basic Metadata for this Deployment #
+######################################
+
+metadata:
+  name: "{{ .Chart.Name }}-{{ .Values.messagingDeployment.meta.name }}"
+  labels:
+    application: "{{ .Chart.Name }}-{{ .Values.messagingDeployment.meta.name }}"
+
+#####################################
+# Complete Deployment Specification #
+#####################################
+
+spec:
+
+  ######################################
+  # Replication / Update Configuration #
+  ######################################
+
+  replicas: {{ .Values.messagingDeployment.replication.replicaCount }}
+  revisionHistoryLimit: {{ .Values.messagingDeployment.replication.revisionHistoryLimit }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.messagingDeployment.replication.maxSurge }}
+      maxUnavailable: {{ .Values.messagingDeployment.replication.maxUnavailable }}
+
+  ###################################
+  # Resource Selector Configuration #
+  ###################################
+
+  selector:
+    matchLabels:
+      application: "{{ .Chart.Name }}-{{ .Values.messagingDeployment.meta.name }}"
+  
+  #####################################
+  # Deployment Template Configuration #
+  #####################################
+
+  template:
+
+    ##################################################
+    # Basic Metadata for this Deployment's Resources #
+    ##################################################
+
+    metadata:
+      labels:
+        application: "{{ .Chart.Name }}-{{ .Values.messagingDeployment.meta.name }}"
+
+    #######################################
+    # Deployment Resources Specifications #
+    #######################################
+
+    spec:
+      restartPolicy: "{{ .Values.messagingDeployment.restartPolicy }}"
+
+      ##############################################
+      # Containers Associated with this Deployment #
+      ##############################################
+
+      containers:
+
+        - name: "{{ .Chart.Name }}-{{ .Values.messagingDeployment.meta.name }}"
+          image: "{{ .Values.messagingDeployment.image.name }}:{{ .Values.messagingDeployment.image.tag }}"
+          imagePullPolicy: "{{ .Values.messagingDeployment.image.pullPolicy }}"
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
+          resources: {}
+          volumeMounts:
+            - name: "{{ .Chart.Name }}-{{ .Values.volumes.rabbitmq.name }}"
+              mountPath: "{{ .Values.volumes.rabbitmq.destination }}"
+              readOnly: true
+      
+      ###########################################
+      # Volumes Associated with this Deployment #
+      ###########################################
+
+      volumes:
+        
+        - name: "{{ .Chart.Name }}-{{ .Values.volumes.rabbitmq.name }}"
+          configMap:
+            name: "{{ .Chart.Name }}-{{ .Values.messagingMap.meta.name }}"

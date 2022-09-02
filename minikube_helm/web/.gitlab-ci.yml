@@ -1,0 +1,6 @@
+include:
+  - project: "datawave/cloud_deploy/gitlab-ci"
+    ref: master
+    file: "/helm.yml"
+
+
