@@ -126,15 +126,6 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
         return transformerInstance;
     }
     
-    /**
-     * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
-     */
-    private void addConfigBasedTransformers() {
-        if (getConfig() != null) {
-            // @TODO update transformer config
-        }
-    }
-    
     @Override
     public RemoteEventQueryLogic clone() {
         return new RemoteEventQueryLogic(this);
