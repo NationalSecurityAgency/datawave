@@ -123,15 +123,11 @@ public class SequentialScheduler extends Scheduler {
                 } else if (null != this.currentBS && null != this.currentIter) {
                     if (this.currentIter.hasNext()) {
                         this.currentEntry = this.currentIter.next();
-                        
-                        return hasNext();
+                        continue;
                     } else {
-                        // return an empty entry to mark the end of this scan
                         this.currentBS.close();
                         this.currentBS = null;
                         this.currentIter = null;
-                        this.currentEntry = new Result(this.currentQuery, null, null);
-                        return true;
                     }
                 }
                 
