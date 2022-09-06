@@ -15,17 +15,16 @@ import java.util.concurrent.TimeUnit;
 public class TypeMetadataConfiguration {
     private static final org.apache.log4j.Logger log = Logger.getLogger(TypeMetadataConfiguration.class);
     
-    @Bean(name = "pcagbuMetadataTypeCacheThingy")
+    @Bean(name = "evictionMetadataCache")
     public CacheManager typeMetadataCacheManager() {
         log.warn("*** TypeMetadataConfiguration: Initializing caches! *** ");
-        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager("getTypeDescription");
+        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager("getAllDatatypes");
         caffeineCacheManager.setCaffeine(caffeineCacheBuilder());
         return caffeineCacheManager;
     }
     
     @Bean(name = "caffeineCacheBuilder")
     Caffeine<Object,Object> caffeineCacheBuilder() {
-        return Caffeine.newBuilder().initialCapacity(100).maximumSize(500).expireAfterAccess(10, TimeUnit.MINUTES).expireAfterWrite(10, TimeUnit.MINUTES)
-                        .recordStats();
+        return Caffeine.newBuilder().initialCapacity(50).maximumSize(100).expireAfterWrite(3, TimeUnit.MINUTES).weakKeys().recordStats();
     }
 }
