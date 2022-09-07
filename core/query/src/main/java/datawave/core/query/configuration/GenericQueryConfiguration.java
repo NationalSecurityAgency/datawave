@@ -113,7 +113,7 @@ public abstract class GenericQueryConfiguration implements Serializable {
      * @return An iterator of query ranges
      */
     public Iterator<QueryData> getQueriesIter() {
-        if (queriesIter == null && queries != null) {
+        if ((queriesIter == null || !queriesIter.hasNext()) && queries != null) {
             return Iterators.unmodifiableIterator(queries.iterator());
         } else {
             return Iterators.unmodifiableIterator(this.queriesIter);

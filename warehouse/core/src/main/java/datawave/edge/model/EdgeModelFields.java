@@ -150,7 +150,7 @@ public class EdgeModelFields implements Serializable {
     public FieldKey parse(String internalFieldName) {
         FieldKey key = reverseMap.get(internalFieldName);
         // if not specified in the maps, then try it as the enum name
-        if (key == null) {
+        if (key == null && internalFieldName != null) {
             key = FieldKey.valueOf(internalFieldName);
         }
         return key;

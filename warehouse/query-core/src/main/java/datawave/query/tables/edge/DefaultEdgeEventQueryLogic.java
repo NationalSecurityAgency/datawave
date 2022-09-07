@@ -39,8 +39,6 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     
     protected EdgeDictionaryProvider edgeDictionaryProvider;
     
-    protected EdgeModelFieldsFactory edgeModelFieldsFactory = new DefaultEdgeModelFieldsFactory();
-    
     protected EdgeModelFields edgeFields;
     
     public DefaultEdgeEventQueryLogic() {}
@@ -160,18 +158,11 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
         this.edgeDictionaryProvider = edgeDictionaryProvider;
     }
     
-    public EdgeModelFieldsFactory getEdgeModelFieldsFactory() {
-        return edgeModelFieldsFactory;
-    }
-    
     public void setEdgeModelFieldsFactory(EdgeModelFieldsFactory edgeModelFieldsFactory) {
-        this.edgeModelFieldsFactory = edgeModelFieldsFactory;
+        this.edgeFields = edgeModelFieldsFactory.createFields();
     }
     
     public EdgeModelFields getEdgeFields() {
-        if (edgeFields == null && edgeModelFieldsFactory != null) {
-            setEdgeFields(edgeModelFieldsFactory.createFields());
-        }
         return edgeFields;
     }
     

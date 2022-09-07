@@ -90,8 +90,6 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     
     protected MetadataHelperFactory metadataHelperFactory = null;
     
-    protected EdgeModelFieldsFactory edgeModelFieldsFactory = new DefaultEdgeModelFieldsFactory();
-    
     protected EdgeModelFields edgeFields;
     
     public EdgeQueryLogic() {
@@ -845,12 +843,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         getConfig().setDateFilterScanLimit(dateFilterScanLimit);
     }
     
-    public EdgeModelFieldsFactory getEdgeModelFieldsFactory() {
-        return edgeModelFieldsFactory;
-    }
-    
     public void setEdgeModelFieldsFactory(EdgeModelFieldsFactory edgeModelFieldsFactory) {
-        this.edgeModelFieldsFactory = edgeModelFieldsFactory;
+        this.edgeFields = edgeModelFieldsFactory.createFields();
     }
     
     public void setEdgeFields(EdgeModelFields edgeFields) {
@@ -858,9 +852,6 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     }
     
     public EdgeModelFields getEdgeFields() {
-        if (edgeFields == null && edgeModelFieldsFactory != null) {
-            setEdgeFields(edgeModelFieldsFactory.createFields());
-        }
         return edgeFields;
     }
     
