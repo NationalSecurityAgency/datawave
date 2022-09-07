@@ -1,14 +1,5 @@
 package datawave.resteasy.interceptor;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
-
-import java.lang.annotation.Annotation;
-
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
-
 import datawave.annotation.GenerateQuerySessionId;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
@@ -16,14 +7,22 @@ import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
 import org.easymock.MockType;
 import org.jboss.resteasy.core.ResourceMethodInvoker;
-import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
-import org.jboss.resteasy.core.interception.ResponseContainerRequestContext;
+import org.jboss.resteasy.core.interception.jaxrs.ContainerResponseContextImpl;
+import org.jboss.resteasy.core.interception.jaxrs.ResponseContainerRequestContext;
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.jboss.resteasy.mock.MockHttpResponse;
 import org.jboss.resteasy.specimpl.BuiltResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.Response;
+import java.lang.annotation.Annotation;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  *

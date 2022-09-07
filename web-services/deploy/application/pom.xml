@@ -563,6 +563,23 @@
                                     <outputDirectory>${project.build.directory}/wildfly/overlay/modules/org/apache/hadoop/common/main</outputDirectory>
                                     <artifactItems>
                                         <artifactItem>
+                                            <groupId>com.fasterxml.jackson.core</groupId>
+                                            <artifactId>jackson-annotations</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>com.fasterxml.jackson.core</groupId>
+                                            <artifactId>jackson-core</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>com.fasterxml.jackson.core</groupId>
+                                            <artifactId>jackson-databind</artifactId>
+                                        </artifactItem>
+                                        <!-- Pretty sure only need the datatype-guava.  Come ack and remove the other jackson deps if that's true -->
+                                        <artifactItem>
+                                            <groupId>com.fasterxml.jackson.datatype</groupId>
+                                            <artifactId>jackson-datatype-guava</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
                                             <groupId>org.apache.hadoop</groupId>
                                             <artifactId>hadoop-auth</artifactId>
                                         </artifactItem>
@@ -625,10 +642,12 @@
                                         <artifactItem>
                                             <groupId>javax.enterprise</groupId>
                                             <artifactId>cdi-api</artifactId>
+                                            <version>2.0</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.resteasy</groupId>
                                             <artifactId>resteasy-jaxrs</artifactId>
+                                            <version>3.9.3.Final</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.annotation</groupId>
@@ -661,6 +680,7 @@
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.transaction</groupId>
                                             <artifactId>jboss-transaction-api_1.2_spec</artifactId>
+                                            <version>1.1.1.Final</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>xerces</groupId>

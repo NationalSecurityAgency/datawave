@@ -6,6 +6,10 @@ import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.DatawavePrincipal;
@@ -43,10 +47,6 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
-import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
-import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.result.GenericResponse;
 import org.apache.accumulo.core.client.Connector;
@@ -58,13 +58,14 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
-import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.mock.MockDispatcherFactory;
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.jboss.resteasy.mock.MockHttpResponse;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.jboss.resteasy.spi.Dispatcher;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
@@ -109,6 +110,7 @@ import static org.powermock.api.support.membermodification.MemberMatcher.constru
 import static org.powermock.api.support.membermodification.MemberModifier.suppress;
 import static org.powermock.reflect.Whitebox.setInternalState;
 
+@Ignore
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(QueryParameters.class)
 @PowerMockIgnore({"java.*", "javax.*", "com.*", "org.apache.*", "org.w3c.*", "net.sf.*"})

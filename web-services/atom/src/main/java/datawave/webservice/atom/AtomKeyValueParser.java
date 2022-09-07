@@ -1,20 +1,20 @@
 package datawave.webservice.atom;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Date;
-
 import org.apache.abdera.Abdera;
 import org.apache.abdera.i18n.iri.IRI;
 import org.apache.abdera.model.Entry;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.LongCombiner;
-import org.jboss.resteasy.util.Base64;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Date;
 
 public class AtomKeyValueParser {
     
@@ -123,13 +123,13 @@ public class AtomKeyValueParser {
     }
     
     public static String encodeId(String id) throws UnsupportedEncodingException {
-        String key64 = Base64.encodeBytes(id.getBytes());
+        String key64 = Base64.getEncoder().encodeToString(id.getBytes());
         return URLEncoder.encode(key64, "UTF-8");
     }
     
     public static String decodeId(String encodedId) throws IOException {
         String key64 = URLDecoder.decode(encodedId, "UTF-8");
-        byte[] bKey = Base64.decode(key64);
+        byte[] bKey = Base64.getDecoder().decode(key64);
         return new String(bKey);
     }
 }

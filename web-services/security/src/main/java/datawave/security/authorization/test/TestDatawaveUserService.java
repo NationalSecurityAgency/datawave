@@ -184,14 +184,13 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
         encodedTestUsers.forEach(u -> {
             try {
                 DatawaveUser user = objectMapper.readValue(u, DatawaveUser.class);
-                
                 // Strip off any authorizations not held by the designated Accumulo user.
                 ArrayList<String> auths = new ArrayList<>(user.getAuths());
                 HashMultimap<String,String> authMapping = HashMultimap.create(user.getRoleToAuthMapping());
                 auths.removeIf(a -> !accumuloAuthorizations.contains(a));
                 authMapping.entries().removeIf(e -> !accumuloAuthorizations.contains(e.getValue()));
                 
-                user = new DatawaveUser(user.getDn(), user.getUserType(), auths, user.getRoles(), authMapping, user.getCreationTime(), user.getExpirationTime());
+                user = new DatawaveUser(user.getDn(), user.getUserType(), auths, user.getRoles(), authMapping, user.getCreationTime());
                 
                 cannedUsers.put(user.getDn(), user);
             } catch (IOException e) {

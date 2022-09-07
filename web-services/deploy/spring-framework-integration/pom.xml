@@ -96,8 +96,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -107,7 +107,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
+            <artifactId>arquillian-weld-embedded</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -148,7 +148,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.transaction</groupId>
-            <artifactId>jboss-transaction-api_1.2_spec</artifactId>
+            <artifactId>jboss-transaction-api_1.3_spec</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

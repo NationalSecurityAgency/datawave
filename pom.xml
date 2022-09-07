@@ -30,14 +30,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
         <version.accumulo>1.10.2</version.accumulo>
-        <version.arquillian>1.4.1.Final</version.arquillian>
-        <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
+        <version.arquillian>1.6.0.Final</version.arquillian>
+        <version.arquillian-weld-embedded>2.0.0.Final</version.arquillian-weld-embedded>
         <version.assertj>3.20.2</version.assertj>
         <version.avro>1.8.2</version.avro>
         <version.caffeine>2.7.0</version.caffeine>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
-        <version.commons-codec>1.12</version.commons-codec>
+        <version.commons-codec>1.15</version.commons-codec>
         <version.commons-collections>4.3</version.commons-collections>
         <version.commons-configuration>1.10</version.commons-configuration>
         <version.commons-configuration2>2.7</version.commons-configuration2>
@@ -47,7 +47,7 @@
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
         <version.curator>2.13.0</version.curator>
-        <version.deltaspike>1.9.0</version.deltaspike>
+        <version.deltaspike>1.9.6</version.deltaspike>
         <version.easymock>4.0.2</version.easymock>
         <version.geoserver>2.14.2</version.geoserver>
         <version.geotools>20.1</version.geotools>
@@ -56,20 +56,22 @@
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <!-- Can download cdh binary from https://www.cloudera.com/documentation/enterprise/release-notes/topics/cdh_vd_cdh_package_tarball_59.html#tarball_59x -->
-        <version.hadoop>3.0.0-cdh6.2.0</version.hadoop>
+        <version.hadoop>3.1.2</version.hadoop>
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>1.9.2.3</version.in-memory-accumulo>
+        <version.in-memory-accumulo>1.10.2</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
-        <version.jackson>2.10.0.pr1</version.jackson>
+        <!-- This version of jackson ships with Wildfly 24. Trying to override the provided version with a more recent version (2.13.3) might be more trouble than its worth if we're
+             leaving WildFly and 2.12.3 is already an upgrade that should resolve some vulnerabilities -->
+        <version.jackson>2.12.3</version.jackson>
+        <version.jakarta-validation>2.0.2</version.jakarta-validation>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
-        <version.javax-validation>2.0.1.Final</version.javax-validation>
         <version.jcommander>1.72</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
-        <version.jjwt>0.9.1</version.jjwt>
+        <version.jjwt>0.11.5</version.jjwt>
         <version.junit>4.13.1</version.junit>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
@@ -79,7 +81,7 @@
         <version.microservice.accumulo-api>1.1</version.microservice.accumulo-api>
         <version.microservice.accumulo-utils>1.4</version.microservice.accumulo-utils>
         <version.microservice.audit-api>1.4</version.microservice.audit-api>
-        <version.microservice.authorization-api>1.4</version.microservice.authorization-api>
+        <version.microservice.authorization-api>api-TEST-1.14</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>1.2</version.microservice.base-rest-responses>
         <version.microservice.common-utils>1.0</version.microservice.common-utils>
         <version.microservice.dictionary-api>1.0</version.microservice.dictionary-api>
@@ -88,13 +90,13 @@
         <version.microservice.query-metric-api>1.5.4</version.microservice.query-metric-api>
         <version.microservice.type-utils>1.8</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
-        <version.mysql-connector>8.0.16</version.mysql-connector>
-        <version.netty>4.1.42.Final</version.netty>
+        <version.mysql-connector>8.0.29</version.mysql-connector>
+        <version.netty>4.1.66.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.2</version.powermock>
         <version.protobuf>2.5.0</version.protobuf>
-        <version.protostuff>1.6.2</version.protostuff>
+        <version.protostuff>1.8.0</version.protostuff>
         <version.reload4j>1.2.19</version.reload4j>
         <version.slf4j>1.7.35</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
@@ -102,12 +104,10 @@
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
         <version.surefire.plugin>3.0.0-M5</version.surefire.plugin>
-        <version.thrift>0.9.3</version.thrift>
-        <version.weld>3.1.1.Final</version.weld>
-        <version.weld-se>3.1.1.Final</version.weld-se>
-        <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
-        <version.weld-test>2.3.5.Final</version.weld-test>
-        <version.wildfly>17.0.1.Final</version.wildfly>
+        <version.thrift>0.13.0</version.thrift>
+        <!-- This version of weld ships with Wildfly 24. -->
+        <version.weld>3.1.7.SP1</version.weld>
+        <version.wildfly>24.0.1.Final</version.wildfly>
         <version.woodstox-core>5.0.3</version.woodstox-core>
         <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.12.2</version.xerces>
@@ -316,6 +316,12 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>authorization-api</artifactId>
                 <version>${version.microservice.authorization-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.jsonwebtoken</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -377,7 +383,12 @@
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt</artifactId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${version.jjwt}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
                 <version>${version.jjwt}</version>
             </dependency>
             <dependency>
@@ -592,7 +603,7 @@
                         <artifactId>hadoop-aws</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>org.codehaus.jackson</groupId>
+                        <groupId>com.fasterxml.jackson</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
@@ -847,10 +858,39 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <!--
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-container-spi</artifactId>
+                <version>${version.arquillian}</version>
+            </dependency>
+-->
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-container-test-spi</artifactId>
+                <version>${version.arquillian}</version>
+            </dependency>
+            <!--
+	    <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-container-test-impl-base</artifactId>
+                <version>${version.arquillian}</version>
+            </dependency>
+-->
+            <dependency>
+                <groupId>org.jboss.arquillian.junit</groupId>
+                <artifactId>arquillian-junit-container</artifactId>
+                <version>${version.arquillian}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-core</artifactId>
+                <version>4.7.6.Final</version>
+            </dependency>
             <dependency>
                 <groupId>org.jboss.weld.se</groupId>
                 <artifactId>weld-se-core</artifactId>
-                <version>${version.weld-se}</version>
+                <version>${version.weld}</version>
             </dependency>
             <dependency>
                 <groupId>org.jgroups</groupId>
@@ -939,6 +979,12 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${version.jjwt}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.deltaspike.core</groupId>
                 <artifactId>deltaspike-core-impl</artifactId>
                 <version>${version.deltaspike}</version>
@@ -953,7 +999,7 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.bom</groupId>
-                <artifactId>wildfly-javaee8-with-tools</artifactId>
+                <artifactId>wildfly-jakartaee8</artifactId>
                 <version>${version.wildfly}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -973,9 +1019,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${version.javax-validation}</version>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>${version.jakarta-validation}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1011,14 +1057,8 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
-                <version>${version.arquillian-weld-ee-embedded}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-core</artifactId>
-                <version>${version.weld-test}</version>
+                <artifactId>arquillian-weld-embedded</artifactId>
+                <version>${version.arquillian-weld-embedded}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1713,7 +1753,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.jboss.spec.javax.ejb</groupId>
-                    <artifactId>jboss-ejb-api_3.1_spec</artifactId>
+                    <artifactId>jboss-ejb-api_3.2_spec</artifactId>
                 </dependency>
             </dependencies>
         </profile>

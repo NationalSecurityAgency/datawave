@@ -15,8 +15,8 @@
             <artifactId>commons-configuration</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
@@ -44,6 +44,10 @@
             <version>4.1.0</version>
             <type>jar</type>
             <exclusions>
+                <exclusion>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>*</artifactId>
@@ -119,11 +123,13 @@
             <artifactId>commons-configuration2</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!--
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>
             <scope>provided</scope>
         </dependency>
+	-->
         <dependency>
             <groupId>org.jboss.spec.javax.annotation</groupId>
             <artifactId>jboss-annotations-api_1.3_spec</artifactId>
@@ -146,14 +152,13 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.transaction</groupId>
-            <artifactId>jboss-transaction-api_1.2_spec</artifactId>
+            <artifactId>jboss-transaction-api_1.3_spec</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <!-- This is needed in order to submit MapReduce jobs. -->
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-mapper-asl</artifactId>
-            <version>1.9.13</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
