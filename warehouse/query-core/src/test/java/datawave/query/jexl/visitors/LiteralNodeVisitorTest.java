@@ -5,12 +5,14 @@ import com.google.common.collect.Multimap;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class LiteralNodeVisitorTest {
     
@@ -106,7 +108,7 @@ public class LiteralNodeVisitorTest {
     }
     
     @Test
-    public void testFunctionInsideQueryPropertyMarker() throws ParseException {
+    public void testEqNodeInsideQueryPropertyMarker() throws ParseException {
         String query = "((_Delayed_ = true) && FOO == 'bar')";
         Multimap<String,String> literals = ArrayListMultimap.create();
         literals.put("FOO", "bar");
@@ -120,9 +122,9 @@ public class LiteralNodeVisitorTest {
         expectedLiterals.addAll(expected.values());
         Multimap<String,String> actualLiterals = LiteralNodeVisitor.getLiterals(script);
         
-        Assert.assertEquals(expected.size(), actualLiterals.size());
+        assertEquals(expected.size(), actualLiterals.size());
         for (Map.Entry<String,String> entry : expected.entries()) {
-            Assert.assertTrue(actualLiterals.containsEntry(entry.getKey(), entry.getValue()));
+            assertTrue(actualLiterals.containsEntry(entry.getKey(), entry.getValue()));
         }
     }
     
