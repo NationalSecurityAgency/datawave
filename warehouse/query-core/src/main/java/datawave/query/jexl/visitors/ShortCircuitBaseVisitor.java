@@ -100,7 +100,6 @@ public class ShortCircuitBaseVisitor extends BaseVisitor {
         return data;
     }
     
-    // Arithmetic Nodes
     @Override
     public Object visit(ASTAdditiveNode node, Object data) {
         return data;
@@ -130,8 +129,6 @@ public class ShortCircuitBaseVisitor extends BaseVisitor {
     public Object visit(ASTUnaryMinusNode node, Object data) {
         return data;
     }
-    
-    // Arithmetic Nodes
     
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
