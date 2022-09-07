@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>3.30.1</version>
+        <version>3.30.2-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-cached-results</artifactId>
     <packaging>ejb</packaging>
