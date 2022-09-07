@@ -162,9 +162,9 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-jaxrs</artifactId>
-            <version>1.8.8</version>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <version>2.13.3</version>
         </dependency>
         <dependency>
             <groupId>org.wildfly</groupId>
