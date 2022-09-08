@@ -36,7 +36,7 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
         return delegate;
     }
     
-    public void setDelegate(BaseQueryLogic<Object> delegate) {
+    public void setDelegate(QueryLogic<Object> delegate) {
         this.delegate = delegate;
     }
     
