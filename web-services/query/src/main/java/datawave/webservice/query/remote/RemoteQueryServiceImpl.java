@@ -6,8 +6,9 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
 import datawave.webservice.common.remote.RemoteQueryService;
+import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
 import org.apache.http.HttpEntity;
@@ -26,7 +27,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -51,6 +51,8 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     
     private ObjectReader eventQueryResponseReader;
     
+    private ResponseObjectFactory responseObjectFactory = new DefaultResponseObjectFactory();
+    
     private RemoteHttpServiceConfiguration config = new RemoteHttpServiceConfiguration();
     
     private boolean initialized = false;
@@ -63,7 +65,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
             voidResponseReader = objectMapper.readerFor(VoidResponse.class);
             genericResponseReader = objectMapper.readerFor(GenericResponse.class);
             baseQueryResponseReader = objectMapper.readerFor(BaseQueryResponse.class);
-            eventQueryResponseReader = objectMapper.readerFor(DefaultEventQueryResponse.class);
+            eventQueryResponseReader = objectMapper.readerFor(responseObjectFactory.getEventQueryResponse().getClass());
             initialized = true;
         }
     }
@@ -343,5 +345,21 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     
     public void setUnavailableRetryDelay(int unavailableRetryDelay) {
         config.setUnavailableRetryDelay(unavailableRetryDelay);
+    }
+    
+    public ResponseObjectFactory getResponseObjectFactory() {
+        return responseObjectFactory;
+    }
+    
+    public void setResponseObjectFactory(ResponseObjectFactory responseObjectFactory) {
+        this.responseObjectFactory = responseObjectFactory;
+    }
+    
+    public RemoteHttpServiceConfiguration getConfig() {
+        return config;
+    }
+    
+    public void setConfig(RemoteHttpServiceConfiguration config) {
+        this.config = config;
     }
 }
