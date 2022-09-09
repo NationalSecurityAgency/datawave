@@ -254,7 +254,8 @@ public class QueryExecutorBean implements QueryExecutor {
     
     private final int PAGE_TIMEOUT_MIN = 1;
     private final int PAGE_TIMEOUT_MAX = QueryExpirationConfiguration.PAGE_TIMEOUT_MIN_DEFAULT;
-    
+    private final String UUID_REGEX_RULE = "[a-fA-F\\d-]+";
+
     @Inject
     private QueryParameters qp;
     
@@ -1933,7 +1934,12 @@ public class QueryExecutorBean implements QueryExecutor {
         RunningQuery query = null;
         Query contentLookupSettings = null;
         try {
-            
+            if (!id.matches(UUID_REGEX_RULE)) {
+                log.error("Invalid query id: " + id);
+                GenericResponse<String> genericResponse = new GenericResponse<>();
+                throwBadRequest(DatawaveErrorCode.INVALID_QUERY_ID, genericResponse);
+            }
+
             ctx.getUserTransaction().begin();
             
             // Not calling getQueryById() here. We don't want to pull the persisted definition.
@@ -2134,6 +2140,11 @@ public class QueryExecutorBean implements QueryExecutor {
         try {
             boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id, principal);
             Pair<QueryLogic<?>,AccumuloClient> tuple = qlCache.pollIfOwnedBy(id, ((DatawavePrincipal) principal).getShortName());
+            if (!id.matches(UUID_REGEX_RULE)) {
+                log.error("Invalid query id: " + id);
+                GenericResponse<String> genericResponse = new GenericResponse<>();
+                throwBadRequest(DatawaveErrorCode.INVALID_QUERY_ID, genericResponse);
+            }
             if (tuple == null) {
                 try {
                     RunningQuery query = getQueryById(id, principal);
