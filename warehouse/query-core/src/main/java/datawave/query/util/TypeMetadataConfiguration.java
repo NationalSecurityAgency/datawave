@@ -18,7 +18,7 @@ public class TypeMetadataConfiguration {
     @Bean(name = "evictionMetadataCache")
     public CacheManager typeMetadataCacheManager() {
         log.warn("*** TypeMetadataConfiguration: Initializing caches! *** ");
-        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager("getAllDatatypes");
+        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager("loadAllFields");
         caffeineCacheManager.setCaffeine(caffeineCacheBuilder());
         return caffeineCacheManager;
     }
