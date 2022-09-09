@@ -944,11 +944,11 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
         this.connectionRequestBean.requestBegin(queryId.toString());
-        expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        expect(this.connectionFactory.getClient("connPool1", Priority.NORMAL, null)).andReturn(this.client);
         this.connectionRequestBean.requestEnd(queryId.toString());
         expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
         expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
-        expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).andReturn(true);
+        expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.client)).andReturn(true);
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(true);
         expect(this.principal.getPrimaryUser()).andReturn(dwUser);
         expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations));
@@ -972,7 +972,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
         expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
-        expect(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
+        expect(this.queryLogic1.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         expect(this.queryLogic1.getTransformIterator(this.query)).andReturn(this.transformIterator);
         cache.put(eq(queryId.toString()), isA(RunningQuery.class));
