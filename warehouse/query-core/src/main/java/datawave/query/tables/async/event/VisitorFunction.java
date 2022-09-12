@@ -3,7 +3,6 @@ package datawave.query.tables.async.event;
 import com.google.common.base.Function;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Lists;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -50,6 +49,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -174,9 +174,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         madeChange = true;
                     }
                     
-                    List<String> debug = null;
+                    LinkedList<String> debug = null;
                     if (log.isTraceEnabled()) {
-                        debug = Lists.newArrayList();
+                        debug = new LinkedList<>();
                     }
                     
                     if (!config.isDisableWhindexFieldMappings() && !evaluatedPreviously) {

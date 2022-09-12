@@ -256,6 +256,7 @@ public class QueryExecutorBean implements QueryExecutor {
     
     private final int PAGE_TIMEOUT_MIN = 1;
     private final int PAGE_TIMEOUT_MAX = 60;
+    private final String UUID_REGEX_RULE = "[a-fA-F\\d-]+";
     
     @Inject
     private QueryParameters qp;
@@ -1953,6 +1954,11 @@ public class QueryExecutorBean implements QueryExecutor {
         RunningQuery query = null;
         Query contentLookupSettings = null;
         try {
+            if (!id.matches(UUID_REGEX_RULE)) {
+                log.error("Invalid query id: " + id);
+                GenericResponse<String> genericResponse = new GenericResponse<>();
+                throwBadRequest(DatawaveErrorCode.INVALID_QUERY_ID, genericResponse);
+            }
             
             ctx.getUserTransaction().begin();
             
@@ -2154,6 +2160,11 @@ public class QueryExecutorBean implements QueryExecutor {
             QueryData qd = setUserData(ctx.getCallerPrincipal(), new QueryData());
             boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id, qd.userDn);
             Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, qd.userid);
+            if (!id.matches(UUID_REGEX_RULE)) {
+                log.error("Invalid query id: " + id);
+                GenericResponse<String> genericResponse = new GenericResponse<>();
+                throwBadRequest(DatawaveErrorCode.INVALID_QUERY_ID, genericResponse);
+            }
             if (tuple == null) {
                 try {
                     RunningQuery query = getQueryById(id, principal);

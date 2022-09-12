@@ -395,6 +395,9 @@ public class QueryModelVisitor extends RebuildingVisitor {
     
     public void setNoExpansionFields(Set<String> noExpansionFields) {
         this.noExpansionFields = noExpansionFields;
+        if (this.simpleQueryModelVisitor != null) {
+            this.simpleQueryModelVisitor.setNoExpansionFields(noExpansionFields);
+        }
     }
     
     /**
@@ -405,16 +408,25 @@ public class QueryModelVisitor extends RebuildingVisitor {
         
         private final QueryModel queryModel;
         private final Set<String> validFields;
+        private Set<String> noExpansionFields;
         
         public SimpleQueryModelVisitor(QueryModel queryModel, Set<String> validFields) {
             this.queryModel = queryModel;
             this.validFields = validFields;
         }
         
+        public void setNoExpansionFields(Set<String> noExpansionFields) {
+            this.noExpansionFields = noExpansionFields;
+        }
+        
         @Override
         public Object visit(ASTIdentifier node, Object data) {
             JexlNode newNode;
             String fieldName = JexlASTHelper.getIdentifier(node);
+            
+            if (noExpansionFields != null && noExpansionFields.contains(fieldName)) {
+                return node;
+            }
             
             Collection<String> aliases = Sets.newLinkedHashSet(getAliasesForField(fieldName)); // de-dupe
             

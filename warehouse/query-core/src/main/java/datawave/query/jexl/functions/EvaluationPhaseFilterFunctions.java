@@ -768,8 +768,9 @@ public class EvaluationPhaseFilterFunctions {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null) {
             try {
+                long startDate = getTime(start, true);
                 for (Object o : fieldValue) {
-                    if (betweenInclusive(getTime(o), getTime(start, true), Long.MAX_VALUE)) {
+                    if (betweenInclusive(getTime(o), startDate, Long.MAX_VALUE)) {
                         matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
@@ -825,8 +826,9 @@ public class EvaluationPhaseFilterFunctions {
             try {
                 DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
                 int granularity = getGranularity(rangePattern);
+                long startDate = getNextTime(start, rangeFormat, granularity);
                 for (Object o : fieldValue) {
-                    if (betweenInclusive(getTime(o), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
+                    if (betweenInclusive(getTime(o), startDate, Long.MAX_VALUE)) {
                         matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
@@ -922,7 +924,7 @@ public class EvaluationPhaseFilterFunctions {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null) {
             try {
-                if (betweenInclusive(getTime(fieldValue), 0, getTime(end) - 1)) {
+                if (betweenInclusive(getTime(fieldValue), Long.MIN_VALUE, getTime(end) - 1)) {
                     matches = FunctionalSet.singleton(getHitTerm(fieldValue));
                 }
             } catch (ParseException pe) {
@@ -945,8 +947,10 @@ public class EvaluationPhaseFilterFunctions {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null) {
             try {
+                long endDate = getTime(end) - 1; // calculate once outside the loop
                 for (Object o : fieldValue) {
-                    if (betweenInclusive(getTime(o), 0, getTime(end) - 1)) {
+                    long date = getTime(o);
+                    if (betweenInclusive(date, Long.MIN_VALUE, endDate)) {
                         matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
@@ -974,7 +978,7 @@ public class EvaluationPhaseFilterFunctions {
         if (fieldValue != null) {
             try {
                 DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-                if (betweenInclusive(getTime(fieldValue), 0, getTime(end, rangeFormat) - 1)) {
+                if (betweenInclusive(getTime(fieldValue), Long.MIN_VALUE, getTime(end, rangeFormat) - 1)) {
                     matches = FunctionalSet.singleton(getHitTerm(fieldValue));
                 }
             } catch (ParseException pe) {
@@ -1000,8 +1004,10 @@ public class EvaluationPhaseFilterFunctions {
         if (fieldValue != null) {
             try {
                 DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                long endDate = getTime(end, rangeFormat) - 1;
                 for (Object o : fieldValue) {
-                    if (betweenInclusive(getTime(o), 0, getTime(end, rangeFormat) - 1)) {
+                    long date = getTime(o);
+                    if (betweenInclusive(date, Long.MIN_VALUE, endDate)) {
                         matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
@@ -1033,9 +1039,8 @@ public class EvaluationPhaseFilterFunctions {
             try {
                 DateFormat format = newSimpleDateFormat(pattern);
                 DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-                long lStart = 0;
                 long lEnd = getTime(end, rangeFormat) - 1;
-                if (betweenInclusive(getTime(fieldValue, format), lStart, lEnd)) {
+                if (betweenInclusive(getTime(fieldValue, format), Long.MIN_VALUE, lEnd)) {
                     matches = FunctionalSet.singleton(getHitTerm(fieldValue));
                 }
             } catch (ParseException pe) {
@@ -1066,10 +1071,9 @@ public class EvaluationPhaseFilterFunctions {
             try {
                 DateFormat format = newSimpleDateFormat(pattern);
                 DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-                long lStart = 0;
                 long lEnd = getTime(end, rangeFormat) - 1;
                 for (Object o : fieldValue) {
-                    if (betweenInclusive(getTime(o, format), lStart, lEnd)) {
+                    if (betweenInclusive(getTime(o, format), Long.MIN_VALUE, lEnd)) {
                         matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }

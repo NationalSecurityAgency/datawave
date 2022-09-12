@@ -38,7 +38,13 @@ import org.junit.Test;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
@@ -1105,9 +1111,13 @@ public class RangeStreamTest {
         
         RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
-        // streamPlans(script) to populate the StreamContext.
+        
+        assertEquals(IndexStream.StreamContext.VARIABLE, rangeStream.context());
+        Iterator<QueryPlan> iter = queryPlans.iterator();
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
-        for (QueryPlan queryPlan : queryPlans) {
+        
+        while (iter.hasNext()) {
+            QueryPlan queryPlan = iter.next();
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
                                 expectedRanges.remove(range));
@@ -1161,8 +1171,9 @@ public class RangeStreamTest {
         RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
         rangeStream.streamPlans(script);
         // streamPlans(script) to populate the StreamContext.
-        assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
-        assertTrue(rangeStream.iterator().hasNext());
+        assertFalse(rangeStream.iterator().hasNext());
+        assertEquals(IndexStream.StreamContext.ABSENT, rangeStream.context());
+        // a non-existent field in a top level union means we cannot run this query. Logic changes if this union is nested within an intersection
     }
     
     @Test
@@ -1186,8 +1197,8 @@ public class RangeStreamTest {
         RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
         rangeStream.streamPlans(script);
         // streamPlans(script) to populate the StreamContext.
-        assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
         assertFalse(rangeStream.iterator().hasNext());
+        assertEquals(IndexStream.StreamContext.ABSENT, rangeStream.context());
     }
     
     @Test
@@ -1576,8 +1587,8 @@ public class RangeStreamTest {
         // Create expected ranges verbosely, so it is obvious which shards contribute to the results.
         Range range1 = makeTestRange("20190310_21", "datatype1\u0000a.b.c");
         // Fun story. It's hard to roll up to a day range when you seek most of the way through the day and don't have all the shards for the day.
-        // Range range2 = makeTestRange("20190315_51", "datatype1\u0000a.b.c");
-        Set<Range> expectedRanges = Sets.newHashSet(range1);
+        Range range2 = makeTestRange("20190315_51", "datatype1\u0000a.b.c");
+        Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
         
         RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
         rangeStream.setLimitScanners(true);
