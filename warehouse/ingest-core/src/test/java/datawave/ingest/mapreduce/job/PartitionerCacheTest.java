@@ -1,7 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
 import datawave.ingest.mapreduce.partition.DelegatePartitioner;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;

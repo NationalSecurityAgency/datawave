@@ -2,7 +2,7 @@ package datawave.webservice.mr.configuration;
 
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.Auditor;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.slf4j.Logger;

@@ -46,7 +46,6 @@
         <!-- default value - override on command-line to skip tests -->
         <version.basis-rlp>7.5.0</version.basis-rlp>
         <version.dropwizard-metrics>3.2.6</version.dropwizard-metrics>
-        <version.hadoop.processors>2.2.3</version.hadoop.processors>
         <version.hamcrest>1.3</version.hamcrest>
     </properties>
     <dependencyManagement>
