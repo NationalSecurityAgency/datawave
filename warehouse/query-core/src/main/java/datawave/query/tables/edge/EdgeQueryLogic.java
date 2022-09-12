@@ -153,7 +153,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         String normalizedQuery = null;
         String statsNormalizedQuery = null;
         
-        queryString = fixQueryString(queryString);
+        config.setQueryString(queryString = fixQueryString(queryString));
         Set<Range> ranges = configureRanges(queryString);
         
         VisitationContext context = null;
