@@ -2,6 +2,7 @@ package datawave.webservice.query.logic;
 
 import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -200,7 +201,15 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            base iterator priority
      */
     void setBaseIteratorPriority(final int priority);
-    
+
+    /**
+     * Sets the query metric
+     *
+     * @param metric
+     *            query metric
+     */
+    void setQueryMetric(BaseQueryMetric metric);
+
     /**
      * @param logicName
      *            name of the query logic

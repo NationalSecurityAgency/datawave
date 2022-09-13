@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ShardQueryLogic;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -58,6 +59,10 @@ public class PushdownScheduler extends Scheduler {
      */
     protected final ShardQueryConfiguration config;
     /**
+     * Query Metric reference.
+     */
+    protected final BaseQueryMetric metric;
+    /**
      * Scanner factory reference.
      */
     protected final ScannerFactory scannerFactory;
@@ -81,14 +86,15 @@ public class PushdownScheduler extends Scheduler {
     
     protected MetadataHelper metadataHelper;
     
-    public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory) {
-        this(config, scannerFactory, metaFactory.createMetadataHelper(config.getConnector(), config.getMetadataTableName(), config.getAuthorizations()));
+    public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory, BaseQueryMetric metric) {
+        this(config, scannerFactory, metaFactory.createMetadataHelper(config.getConnector(), config.getMetadataTableName(), config.getAuthorizations()), metric);
     }
     
-    protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
+    protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, BaseQueryMetric metric) {
         this.config = config;
         this.metadataHelper = helper;
         this.scannerFactory = scannerFactory;
+        this.metric = metric;
         customizedFunctionList = Lists.newArrayList();
         Preconditions.checkNotNull(config.getConnector());
     }

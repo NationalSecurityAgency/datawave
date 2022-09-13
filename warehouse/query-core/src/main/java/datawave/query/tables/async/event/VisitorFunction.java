@@ -328,6 +328,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         }
         
         newSettings.setOptions(newOptions);
+        // - This is the area where it is necessary to go through the ranges
+        //        and then call the addSubPlan method for each one into the query metric object.
+        // - Will need to create a method to convert a range object to a string (needed for the addSubPlan method)
+        //        the Range.getStartKey will contain the essential information to complete this
         return newSettings;
     }
     

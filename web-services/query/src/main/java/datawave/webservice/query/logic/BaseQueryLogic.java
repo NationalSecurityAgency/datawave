@@ -2,6 +2,7 @@ package datawave.webservice.query.logic;
 
 import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -46,7 +47,8 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected SelectorExtractor selectorExtractor;
     
     public static final String BYPASS_ACCUMULO = "rfile.debug";
-    
+    private BaseQueryMetric metric;
+
     public BaseQueryLogic() {
         getConfig().setBaseIteratorPriority(100);
     }
@@ -114,6 +116,12 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     public void setPrincipal(Principal principal) {
         this.principal = principal;
+    }
+    
+    public void setQueryMetric(BaseQueryMetric metric) { this.metric = metric;}
+
+    public BaseQueryMetric getQueryMetric() {
+        return metric;
     }
     
     @Override
