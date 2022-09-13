@@ -73,7 +73,7 @@
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.11.5</version.jjwt>
-        <version.junit>4.13.1</version.junit>
+        <version.junit>4.13.2</version.junit>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
         <version.log4j-extras>1.0</version.log4j-extras>
@@ -82,7 +82,7 @@
         <version.microservice.accumulo-api>1.1</version.microservice.accumulo-api>
         <version.microservice.accumulo-utils>1.4</version.microservice.accumulo-utils>
         <version.microservice.audit-api>1.4</version.microservice.audit-api>
-        <version.microservice.authorization-api>1.4</version.microservice.authorization-api>
+        <version.microservice.authorization-api>1.13</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>1.2</version.microservice.base-rest-responses>
         <version.microservice.common-utils>1.0</version.microservice.common-utils>
         <version.microservice.dictionary-api>1.0</version.microservice.dictionary-api>
