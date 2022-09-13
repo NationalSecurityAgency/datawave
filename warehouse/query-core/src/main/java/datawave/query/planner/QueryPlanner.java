@@ -46,10 +46,6 @@ public abstract class QueryPlanner implements PushDownPlanner {
      * @return
      */
     public abstract String getPlannedScript();
-
-    public abstract void setShardSpecificPlan(String shardSpecificPlan);
-
-    public abstract void setDocumentSpecificPlan(String documentSpecificPlan);
     
     public abstract QueryPlanner clone();
     

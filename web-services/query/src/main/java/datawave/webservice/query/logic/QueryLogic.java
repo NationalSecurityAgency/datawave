@@ -2,7 +2,6 @@ package datawave.webservice.query.logic;
 
 import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
-import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -157,32 +156,6 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     int getBaseIteratorPriority();
     
-    /**
-     * Returns the Document Specific Plan.
-     *
-     * @return document specific plan
-     */
-    String getDocumentSpecificPlan();
-    
-    /**
-     * Returns the Shard Specific Plan.
-     *
-     * @return shard specific plan
-     */
-    String getShardSpecificPlan();
-
-    /**
-     * @param documentSpecificPlan
-     *            the document specific plan
-     */
-    void setDocumentSpecificPlan(String documentSpecificPlan);
-
-    /**
-     * @param shardSpecificPlan
-     *            the shard specific plan
-     */
-    void setShardSpecificPlan(String shardSpecificPlan);
-
     /**
      * @param tableName
      *            the name of the table

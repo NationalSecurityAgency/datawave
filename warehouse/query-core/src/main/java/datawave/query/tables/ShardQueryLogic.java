@@ -402,8 +402,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         QueryPlanner queryPlanner = getQueryPlanner();
         if (queryPlanner instanceof DefaultQueryPlanner) {
             DefaultQueryPlanner currentQueryPlanner = (DefaultQueryPlanner) queryPlanner;
+            
             currentQueryPlanner.setMetadataHelper(metadataHelper);
-            currentQueryPlanner.setShardSpecificPlan(getShardSpecificPlan());
             currentQueryPlanner.setDateIndexHelper(dateIndexHelper);
             
             QueryModelProvider queryModelProvider = currentQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
@@ -558,7 +558,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // Instantiate the scheduler for the queries
         this.scheduler = getScheduler(config, scannerFactory);
-
+        
         this.scanner = null;
         this.iterator = this.scheduler.iterator();
         
@@ -1218,7 +1218,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setBlacklistedFields(Set<String> blacklistedFields) {
         getConfig().setBlacklistedFields(blacklistedFields);
     }
-
+    
     public Set<String> getLimitFields() {
         return getConfig().getLimitFields();
     }

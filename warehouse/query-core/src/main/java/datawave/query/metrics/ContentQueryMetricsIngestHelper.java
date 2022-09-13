@@ -135,12 +135,6 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             if (updatedQueryMetric.getPlan() != null) {
                 fields.put("PLAN", updatedQueryMetric.getPlan());
             }
-            if (updatedQueryMetric.getShardSpecificPlan() != null) {
-                fields.put("SHARD_SPECIFIC_PLAN", updatedQueryMetric.getShardSpecificPlan());
-            }
-            if (updatedQueryMetric.getDocumentSpecificPlan() != null) {
-                fields.put("DOCUMENT_SPECIFIC_PLAN", updatedQueryMetric.getDocumentSpecificPlan());
-            }
             if (updatedQueryMetric.getQueryId() != null) {
                 fields.put("QUERY_ID", updatedQueryMetric.getQueryId());
             }
