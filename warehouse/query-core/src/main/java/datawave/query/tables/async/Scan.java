@@ -280,16 +280,8 @@ public class Scan implements Callable<Scan> {
                     if (log.isTraceEnabled())
                         log.trace("last seen key is " + lastSeenKey);
                 }
-                if (!iter.hasNext()) {
-                    // send the final result denoting the end of the scan
-                    myEntry = new Result(myScan.getContext(), null, null);
-                    while (!caller.isShutdown() && !results.offer(myEntry, 25, TimeUnit.MILLISECONDS)) {
-                        if (log.isTraceEnabled())
-                            log.trace("offering");
-                    }
-                    
+                if (!iter.hasNext())
                     lastSeenKey = null;
-                }
                 
                 // close early
                 delegatorReference.close(delegatedResource);
