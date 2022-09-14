@@ -1,14 +1,13 @@
 package datawave.query.function.deserializer;
 
-import java.io.InputStream;
-import java.io.Serializable;
-
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.function.KryoCVAwareSerializableSerializer;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
+import java.io.InputStream;
+import java.io.Serializable;
 
 /**
  * Transform Kryo-serialized bytes back into a Document. Ordering of Attributes is <b>not</b> guaranteed across serialization.
@@ -22,6 +21,7 @@ public class KryoDocumentDeserializer extends DocumentDeserializer implements Se
     final transient Kryo kryo = new Kryo();
     
     public KryoDocumentDeserializer() {
+        kryo.register(Document.class);
         kryo.addDefaultSerializer(Attribute.class, new KryoCVAwareSerializableSerializer(true));
     }
     

@@ -15,7 +15,7 @@
             <artifactId>stream</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.esotericsoftware.kryo</groupId>
+            <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
         </dependency>
         <dependency>

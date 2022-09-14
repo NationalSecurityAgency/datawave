@@ -1,13 +1,15 @@
 package datawave.core.iterators;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.google.common.base.Stopwatch;
+import com.google.common.base.Ticker;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Sets;
 import datawave.marking.MarkingFunctions;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -21,15 +23,11 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.log4j.Logger;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.KryoSerializable;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import com.google.common.base.Stopwatch;
-import com.google.common.base.Ticker;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Sets;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>
@@ -80,6 +78,7 @@ public class ResultCountingIterator extends WrappingIterator {
         if (log.isTraceEnabled()) {
             log.trace(threadName + ": init");
         }
+        kryo.register(ResultCountingIterator.ResultCountTuple.class);
         setSource(source.deepCopy(env));
         this.count = 0;
     }

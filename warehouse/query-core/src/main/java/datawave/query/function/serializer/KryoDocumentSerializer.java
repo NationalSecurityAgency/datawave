@@ -1,15 +1,13 @@
 package datawave.query.function.serializer;
 
-import java.io.ByteArrayOutputStream;
-
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.function.KryoCVAwareSerializableSerializer;
-
 import org.apache.log4j.Logger;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Output;
+import java.io.ByteArrayOutputStream;
 
 /**
  * Transform the Document into a Kryo-serialized version. Ordering of Attributes is <b>not</b> guaranteed across serialization.
@@ -32,6 +30,7 @@ public class KryoDocumentSerializer extends DocumentSerializer {
     
     public KryoDocumentSerializer(boolean reducedResponse, boolean compress) {
         super(reducedResponse, compress);
+        kryo.register(Document.class);
         kryo.addDefaultSerializer(Attribute.class, new KryoCVAwareSerializableSerializer(reducedResponse));
     }
     

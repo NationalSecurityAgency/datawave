@@ -1,13 +1,11 @@
 package datawave.query.tables.shard;
 
-import java.io.ByteArrayInputStream;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Set;
-
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import datawave.core.iterators.ResultCountingIterator;
 import datawave.marking.MarkingFunctions;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -15,10 +13,10 @@ import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import java.io.ByteArrayInputStream;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * 
@@ -37,6 +35,7 @@ public class CountAggregatingIterator extends TransformIterator {
     
     public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer) {
         super(iterator, transformer);
+        kryo.register(ResultCountingIterator.ResultCountTuple.class);
     }
     
     @Override

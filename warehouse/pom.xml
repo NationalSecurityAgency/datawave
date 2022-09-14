@@ -67,14 +67,9 @@
                 <version>${version.stream}</version>
             </dependency>
             <dependency>
-                <groupId>com.esotericsoftware.kryo</groupId>
+                <groupId>com.esotericsoftware</groupId>
                 <artifactId>kryo</artifactId>
                 <version>${version.kryo}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.esotericsoftware.kryonet</groupId>
-                <artifactId>kryonet</artifactId>
-                <version>${version.kryonet}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -85,6 +80,11 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.crykn</groupId>
+                <artifactId>kryonet</artifactId>
+                <version>${version.kryonet}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
