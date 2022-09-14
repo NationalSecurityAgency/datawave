@@ -20,6 +20,7 @@ import java.util.List;
  *     2. The tree is flattened
  *     3. Junctions have two or more children
  *     4. Minimal reference expressions necessary
+ *     5. Query property markers are properly structured
  * </pre>
  */
 public class ASTValidator {
@@ -72,9 +73,10 @@ public class ASTValidator {
         boolean isTreeFlattened = isTreeFlattened(root);
         boolean areJunctionsValid = areJunctionsValid(root);
         boolean areReferenceExpressionsValid = areReferenceExpressionsValid(root);
+        boolean areQueryPropertyMarkersValid = areQueryPropertyMarkersValid(root);
         
         //  @formatter:off
-        boolean isValid = isLineageValid && isTreeFlattened && areJunctionsValid && areReferenceExpressionsValid;
+        boolean isValid = isLineageValid && isTreeFlattened && areJunctionsValid && areReferenceExpressionsValid && areQueryPropertyMarkersValid;
         //  @formatter:on
         
         if (!isValid) {
@@ -91,6 +93,9 @@ public class ASTValidator {
             }
             if (!areReferenceExpressionsValid) {
                 reasons.add("RefExpr");
+            }
+            if (!areQueryPropertyMarkersValid) {
+                reasons.add("Markers");
             }
             
             String joined = "[" + Joiner.on(',').join(reasons) + "]";
@@ -152,6 +157,17 @@ public class ASTValidator {
      */
     private static boolean areReferenceExpressionsValid(JexlNode node) {
         return MinimalReferenceExpressionsVisitor.validate(node);
+    }
+    
+    /**
+     * Validate that all query property markers in this AST are properly structured
+     * 
+     * @param node
+     *            an arbitrary JexlNode
+     * @return true if the tree is valid
+     */
+    private static boolean areQueryPropertyMarkersValid(JexlNode node) {
+        return ValidQueryPropertyMarkerVisitor.validate(node).isValid();
     }
     
 }
