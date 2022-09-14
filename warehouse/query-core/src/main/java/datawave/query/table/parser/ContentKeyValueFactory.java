@@ -46,7 +46,7 @@ public class ContentKeyValueFactory {
             byte[] contents = value.get();
             try {
                 contents = decompress(Base64.getMimeDecoder().decode(contents));
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
                 // Thrown when data is not Base64 encoded. Try GZIP
                 try {
                     contents = decompress(contents);
