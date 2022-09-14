@@ -168,7 +168,7 @@
         <dependency>
             <groupId>org.jboss.arquillian.junit5</groupId>
             <artifactId>arquillian-junit5-container</artifactId>
-            <version>1.7.0.Alpha11</version>
+            <version>1.7.0.Alpha12</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
