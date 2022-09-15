@@ -446,7 +446,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                     log.trace(when + " got " + cacheName);
                     Object nativeCache = cacheManager.getCache(cacheName).getNativeCache();
                     log.trace("nativeCache is a " + nativeCache);
-                    Cache cache = (Cache) nativeCache;
+                    com.github.benmanes.caffeine.cache.Cache cache = (com.github.benmanes.caffeine.cache.Cache) nativeCache;
                     Map map = cache.asMap();
                     log.trace("cache map is " + map);
                     log.trace("cache map size is " + map.size());
