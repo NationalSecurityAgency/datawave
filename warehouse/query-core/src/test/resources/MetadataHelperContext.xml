@@ -34,8 +34,6 @@
         <constructor-arg name="allMetadataAuths" ref="allMetadataAuths" />
     </bean>
 
-    <bean id="typeMetadataCacheManager" scope="prototype" class="datawave.query.util.TypeMetadataConfiguration" />
-
     <bean id="compositeMetadataHelper" scope="prototype" class="datawave.query.composite.CompositeMetadataHelper" />
 
     <util:set id="allMetadataAuths" scope="prototype" value-type="org.apache.accumulo.core.security.Authorizations" >
