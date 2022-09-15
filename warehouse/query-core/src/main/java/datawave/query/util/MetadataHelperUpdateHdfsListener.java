@@ -9,6 +9,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.state.ConnectionState;
@@ -35,21 +36,93 @@ public class MetadataHelperUpdateHdfsListener {
     private final String instance;
     private final String username;
     private final String password;
+    private final String passwordEnv;
     private final long lockWaitTime;
     
+    /**
+     * Default constructor
+     *
+     * @param zookeepers
+     *            the zookeepers
+     * @param typeMetadataHelperFactory
+     *            the typeMetadataHelperFactory
+     * @param metadataTableNames
+     *            the metadata table names
+     * @param allMetadataAuths
+     *            metadata auths
+     * @param instance
+     *            the accumulo instance
+     * @param username
+     *            the username
+     * @param password
+     *            the password
+     * @param lockWaitTime
+     *            lock wait time
+     */
     public MetadataHelperUpdateHdfsListener(String zookeepers, TypeMetadataHelper.Factory typeMetadataHelperFactory, String[] metadataTableNames,
                     Set<Authorizations> allMetadataAuths, String instance, String username, String password, long lockWaitTime) {
+        this(zookeepers, typeMetadataHelperFactory, metadataTableNames, allMetadataAuths, instance, username, password, lockWaitTime, null);
+    }
+    
+    /**
+     * Constructor that allows pulling the accumulo password from the environment
+     *
+     * @param zookeepers
+     *            the zookeepers
+     * @param typeMetadataHelperFactory
+     *            the typeMetadataHelperFactory
+     * @param metadataTableNames
+     *            the metadata table names
+     * @param allMetadataAuths
+     *            metadata auths
+     * @param instance
+     *            the accumulo instance
+     * @param username
+     *            the username
+     * @param password
+     *            the password
+     * @param lockWaitTime
+     *            lock wait time
+     * @param passwordEnv
+     *            the environment target for the password
+     */
+    public MetadataHelperUpdateHdfsListener(String zookeepers, TypeMetadataHelper.Factory typeMetadataHelperFactory, String[] metadataTableNames,
+                    Set<Authorizations> allMetadataAuths, String instance, String username, String password, long lockWaitTime, String passwordEnv) {
         this.zookeepers = zookeepers;
         this.typeMetadataHelperFactory = typeMetadataHelperFactory;
         this.allMetadataAuths = allMetadataAuths;
         this.instance = instance;
         this.username = username;
-        this.password = password;
+        this.passwordEnv = passwordEnv;
+        this.password = resolvePassword(password);
         this.lockWaitTime = lockWaitTime;
         
         for (String metadataTableName : metadataTableNames) {
             registerCacheListener(metadataTableName);
         }
+    }
+    
+    /**
+     * Gets a password, either hard coded or from the environment
+     *
+     * @param password
+     *            a hard coded password
+     * @return the password
+     */
+    private String resolvePassword(String password) {
+        if (StringUtils.isNotBlank(passwordEnv)) {
+            if (log.isTraceEnabled()) {
+                log.trace("env target is: " + passwordEnv);
+            }
+            String env = System.getenv(passwordEnv);
+            if (StringUtils.isNotBlank(env)) {
+                log.trace("env target was resolved");
+                return env;
+            }
+            
+            log.error("failed to resolve value from env target: " + passwordEnv);
+        }
+        return password;
     }
     
     private void registerCacheListener(final String metadataTableName) {
