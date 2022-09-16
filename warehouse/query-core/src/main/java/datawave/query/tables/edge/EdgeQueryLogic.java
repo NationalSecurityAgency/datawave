@@ -14,7 +14,6 @@ import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.data.type.Type;
-import datawave.edge.model.DefaultEdgeModelFieldsFactory;
 import datawave.edge.model.EdgeModelFields;
 import datawave.edge.model.EdgeModelFieldsFactory;
 import datawave.query.Constants;
@@ -86,7 +85,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     
     protected HashMultimap<EdgeModelFields.FieldKey,String> prefilterValues = null;
     
-    private VisitationContext visitationContext;
+    protected VisitationContext visitationContext;
     
     protected MetadataHelperFactory metadataHelperFactory = null;
     
@@ -689,7 +688,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      * @param priority
      *            the priority for the first of iterator filters
      */
-    protected void addCustomFilters(QueryData data, int priority) {}
+    protected void addCustomFilters(QueryData data, int priority)  throws Exception {}
     
     @Override
     public Priority getConnectionPriority() {
