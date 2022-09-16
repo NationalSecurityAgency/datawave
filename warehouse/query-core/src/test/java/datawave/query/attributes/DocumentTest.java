@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class DocumentTest {
-    private final Text row = new Text("20000101_69");
+    private final Text row = new Text("20000101_12345");
     private final Text cf = new Text(); // empty column family
     private final Text cq = new Text(); // empty column qualifier
     private final ColumnVisibility cv = new ColumnVisibility("ALL");
@@ -23,12 +23,12 @@ public class DocumentTest {
     private final Key testKeyFoo = new Key(row, new Text("foo%00;d8zay2.-3pnndm.-anolok"), cq, cq, ts);
     private final Key testKeyBar = new Key(row, new Text("bar%00;d8zay2.-3pnndm.-anolok"), cq, cq, ts);
     private final Key testKeyBaz = new Key(row, new Text("baz%00;d8zay2.-3pnndm.-anolok"), cq, cq, ts);
-    private final Key testKeyIp = new Key(new Text("192.168.1.1"), new Text("barf"), cq, cq, ts);
+    private final Key testKeyIp = new Key(new Text("192.168.1.1"), new Text("someText"), cq, cq, ts);
     private final Key testKeyEmpty = new Key(row, cf, cq, cq, ts);
     private final Key testKey8 = new Key(new Text("foo"));
-    private final Key testKey9 = new Key(new Text("lulz"));
+    private final Key testKey9 = new Key(new Text("someKeyText"));
     private final Key testKey10 = new Key(new Text("9001"));
-    private final Key testKeyIpDifferentAuths = new Key(new Text("192.168.1.1"), new Text("barf"), cq, new ColumnVisibility("A&E"), ts);
+    private final Key testKeyIpDifferentAuths = new Key(new Text("192.168.1.1"), new Text("someText"), cq, new ColumnVisibility("A&E"), ts);
     
     private final Content content1 = new Content("foo", testKeyEmpty, true);
     private final Content content2 = new Content("bar", testKeyEmpty, true);

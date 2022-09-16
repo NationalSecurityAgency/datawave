@@ -23,7 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class AttributeComparatorTest {
-    private final Text row = new Text("20000101_69");
+    private final Text row = new Text("20000101_12345");
     private final Text cf = new Text(); // empty column family
     private final Text cq = new Text(); // empty column qualifier
     private final ColumnVisibility cv = new ColumnVisibility("ALL");
@@ -32,7 +32,7 @@ public class AttributeComparatorTest {
     private final Key testKeyFoo = new Key(row, new Text("foo%00;d8zay2.-3pnndm.-anolok"), cq, cv, ts);
     private final Key testKeyBar = new Key(row, new Text("bar%00;d8zay2.-3pnndm.-anolok"), cq, cv, ts);
     private final Key testKeyBaz = new Key(row, new Text("baz%00;d8zay2.-3pnndm.-anolok"), cq, cv, ts);
-    private final Key testKeyIp = new Key(new Text("192.168.1.1"), new Text("barf"), cq, cv, ts);
+    private final Key testKeyIp = new Key(new Text("192.168.1.1"), new Text("someText"), cq, cv, ts);
     private final Key testKeyEmpty = new Key(row, cf, cq, cv, ts);
     
     private final Content content1 = new Content("foo", testKeyEmpty, true);
