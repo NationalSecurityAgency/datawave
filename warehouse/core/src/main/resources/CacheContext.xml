@@ -14,7 +14,7 @@
     </bean>
     
     <bean id="metadataHelperCacheManager" class="org.springframework.cache.caffeine.CaffeineCacheManager" >
-    	<property name="cacheSpecification" value="maximumSize=100, expireAfterWrite=10m, recordStats" />
+    	<property name="cacheSpecification" value="maximumSize=100, expireAfterWrite=1h, recordStats" />
     </bean>
 
     <bean id="dateIndexHelperCacheManager" class="org.springframework.cache.caffeine.CaffeineCacheManager" >
