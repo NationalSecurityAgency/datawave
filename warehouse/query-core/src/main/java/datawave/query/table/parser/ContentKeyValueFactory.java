@@ -46,15 +46,15 @@ public class ContentKeyValueFactory {
             byte[] contents = value.get();
             try {
                 contents = decompress(Base64.getMimeDecoder().decode(contents));
-            } catch (IllegalArgumentException | ArrayIndexOutOfBoundsException e) {
+            } catch (IOException e) {
+                log.error("Error decompressing Base64 encoded GZIPInputStream", e);
+            } catch (Exception e) {
                 // Thrown when data is not Base64 encoded. Try GZIP
                 try {
                     contents = decompress(contents);
                 } catch (IOException ioe) {
                     log.error("Error decompressing GZIPInputStream", e);
                 }
-            } catch (IOException e) {
-                log.error("Error decompressing Base64 encoded GZIPInputStream", e);
             }
             
             c.setContents(contents);
