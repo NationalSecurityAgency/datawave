@@ -118,7 +118,7 @@
 
     <bean id="responseObjectFactory" class="datawave.core.query.result.event.DefaultResponseObjectFactory" />
 
-    <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
+    <bean id="baseQueryLogic" class="datawave.core.query.logic.BaseQueryLogic" abstract="true" >
         <property name="markingFunctions" ref="markingFunctions" />
         <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>

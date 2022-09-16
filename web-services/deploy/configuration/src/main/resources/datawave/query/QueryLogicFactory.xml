@@ -125,7 +125,7 @@
     <!-- End SelectorExtractors -->
     <bean id="responseObjectFactory" class="datawave.core.query.result.event.DefaultResponseObjectFactory" />
 
-    <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
+    <bean id="baseQueryLogic" class="datawave.core.query.logic.BaseQueryLogic" abstract="true" >
         <property name="markingFunctions" ref="markingFunctions" />
         <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
@@ -403,7 +403,7 @@
       <property name="logicDescription" value="Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml" />
       <property name="auditType" value="NONE" />
       <property name="queryLogics">
-        <map key-type="java.lang.String" value-type="datawave.webservice.query.logic.BaseQueryLogic">
+        <map key-type="java.lang.String" value-type="datawave.core.query.logic.BaseQueryLogic">
             <entry key="EventQuery">
               <bean scope="prototype" parent="BaseEventQuery">
                 <property name="auditType" value="NONE" />
