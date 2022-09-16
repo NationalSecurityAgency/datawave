@@ -28,6 +28,7 @@ public class KryoDocumentDeserializer extends DocumentDeserializer implements Se
     @Override
     public Document deserialize(InputStream data) {
         Input input = new Input(data);
+        kryo.register(Document.class);
         Document document = kryo.readObject(input, Document.class);
         
         if (null == document) {

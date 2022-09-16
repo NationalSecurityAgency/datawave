@@ -38,6 +38,8 @@ public class KryoDocumentSerializer extends DocumentSerializer {
     public byte[] serialize(Document doc) {
         baos.reset();
         
+        kryo.register(Document.class);
+
         Output output = new Output(baos);
         
         kryo.writeObject(output, doc);
