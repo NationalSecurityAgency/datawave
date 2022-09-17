@@ -62,4 +62,39 @@ public class PushdownLowSelectivityNodesVisitorTest {
         String result = JexlStringBuildingVisitor.buildQuery(PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(script, config, helper));
         Assert.assertEquals("FOO == 'jsub' && (((_Delayed_ = true) && (FOO == 'ca11')) || UNINDEXED == 'ca11')", result);
     }
+    
+    @Test
+    public void testDelayEquality3() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO == 'ca2' || UNINDEXED == 'ca2')");
+        
+        String result = JexlStringBuildingVisitor.buildQuery(PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(script, config, helper));
+        Assert.assertEquals("FOO == 'jsub' && (((_Delayed_ = true) && (FOO == 'ca2')) || UNINDEXED == 'ca2')", result);
+    }
+    
+    @Test
+    public void testDelayEquality4() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO == 'ca21' || UNINDEXED == 'ca21')");
+        
+        String result = JexlStringBuildingVisitor.buildQuery(PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(script, config, helper));
+        Assert.assertEquals("FOO == 'jsub' && (FOO == 'ca21' || UNINDEXED == 'ca21')", result);
+    }
+    
+    @Test
+    public void testDelayEquality5() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO == 'ca1' || UNINDEXED == 'ca1')");
+        config.setMinSelectivity(0.01);
+        String result = JexlStringBuildingVisitor.buildQuery(PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(script, config, helper));
+        Assert.assertEquals("FOO == 'jsub' && (FOO == 'ca1' || UNINDEXED == 'ca1')", result);
+    }
+    
+    @Test
+    public void testDelayMultipleHoles() throws Exception {
+        ASTJexlScript script = JexlASTHelper
+                        .parseJexlQuery("FOO == 'jsub' && (FOO == 'ca1' || FOO == 'ca2' || FOO == 'ca3' || FOO == 'ca4' || UNINDEXED == 'ca1')");
+        
+        String result = JexlStringBuildingVisitor.buildQuery(PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(script, config, helper));
+        Assert.assertEquals(
+                        "FOO == 'jsub' && (((_Delayed_ = true) && (FOO == 'ca1')) || ((_Delayed_ = true) && (FOO == 'ca2')) || ((_Delayed_ = true) && (FOO == 'ca3')) || ((_Delayed_ = true) && (FOO == 'ca4')) || UNINDEXED == 'ca1')",
+                        result);
+    }
 }
