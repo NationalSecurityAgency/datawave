@@ -20,7 +20,8 @@ import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
-import org.apache.accumulo.core.crypto.CryptoServiceFactory;
+import org.apache.accumulo.core.conf.SiteConfiguration;
+import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -30,6 +31,8 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
+import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.junit.Before;
@@ -359,7 +362,8 @@ public class SourceManagerTest {
         public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
             Configuration conf = new Configuration();
             FileSystem fs = FileSystem.get(conf);
-            return RFileOperations.getInstance().newReaderBuilder().forFile(mapFileName, fs, conf, CryptoServiceFactory.newDefaultInstance())
+            CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, DefaultConfiguration.getInstance().getAllCryptoProperties());
+            return RFileOperations.getInstance().newReaderBuilder().forFile(mapFileName, fs, conf, cs)
                             .withTableConfiguration(DefaultConfiguration.getInstance()).seekToBeginning().build();
         }
         

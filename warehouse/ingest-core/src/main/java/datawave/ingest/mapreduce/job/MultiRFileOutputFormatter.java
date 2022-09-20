@@ -23,7 +23,7 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.conf.Property;
-import org.apache.accumulo.core.crypto.CryptoServiceFactory;
+import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -32,7 +32,8 @@ import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.accumulo.core.file.FileSKVWriter;
 import org.apache.accumulo.core.file.rfile.RFile;
-import org.apache.accumulo.core.file.rfile.bcfile.Compression;
+import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
+import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.accumulo.core.spi.file.rfile.compression.NoCompression;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.mutable.MutableInt;
@@ -53,6 +54,8 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+
+import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
 public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
     
@@ -243,7 +246,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     
     protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf) throws IOException {
         startWriteTime = System.currentTimeMillis();
-        return new SizeTrackingWriter(FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf, CryptoServiceFactory.newDefaultInstance())
+        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, tableConf.getAllCryptoProperties());
+        return new SizeTrackingWriter(FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf, cs)
                         .withTableConfiguration(tableConf).build());
     }
     
@@ -553,7 +557,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     Path path = entry.getValue();
                     String table = writerTableNames.get(entry.getKey());
                     try {
-                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf, CryptoServiceFactory.newDefaultInstance())
+                        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
+                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf, cs)
                                         .withTableConfiguration(tableConfigs.get(table)).build();
                         FileStatus fileStatus = fs.getFileStatus(path);
                         long fileSize = fileStatus.getLen();

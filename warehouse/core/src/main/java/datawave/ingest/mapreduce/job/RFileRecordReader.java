@@ -1,9 +1,13 @@
 package datawave.ingest.mapreduce.job;
 
+import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
+
 import java.io.IOException;
 
 import org.apache.accumulo.core.conf.DefaultConfiguration;
-import org.apache.accumulo.core.crypto.CryptoServiceFactory;
+import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
+import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
+import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -36,7 +40,8 @@ public class RFileRecordReader extends RecordReader<Key,Value> {
         FileOperations ops = RFileOperations.getInstance();
         String file = fileSplit.getPath().toString();
         FileSystem fs = fileSplit.getPath().getFileSystem(context.getConfiguration());
-        fileIterator = ops.newReaderBuilder().forFile(file, fs, context.getConfiguration(), CryptoServiceFactory.newDefaultInstance())
+        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
+        fileIterator = ops.newReaderBuilder().forFile(file, fs, context.getConfiguration(), cs)
                         .withTableConfiguration(DefaultConfiguration.getInstance()).seekToBeginning().build();
     }
     

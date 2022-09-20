@@ -29,8 +29,7 @@ import org.apache.accumulo.core.iteratorsImpl.IteratorBuilder;
 import org.apache.accumulo.core.iteratorsImpl.IteratorConfigUtil;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.conf.SiteConfiguration;
-import org.apache.accumulo.core.crypto.CryptoServiceFactory;
-import org.apache.accumulo.core.crypto.CryptoServiceFactory.ClassloaderType;
+import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -49,6 +48,7 @@ import org.apache.accumulo.core.iteratorsImpl.system.MultiIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -67,6 +67,8 @@ import datawave.mr.bulk.BulkInputFormat.AccumuloIteratorOption;
 import datawave.mr.bulk.split.FileRangeSplit;
 import datawave.mr.bulk.split.RangeSplit;
 import datawave.mr.bulk.split.TabletSplitSplit;
+
+import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
 public class RecordIterator extends RangeSplit implements SortedKeyValueIterator<Key,Value>, Closeable {
     
@@ -87,7 +89,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         if (System.getProperty("accumulo.properties") == null) {
             System.setProperty("accumulo.properties", "accumulo-default.properties");
         }
-        CRYPTO_SERVICE = CryptoServiceFactory.newInstance(SiteConfiguration.fromEnv().build(), ClassloaderType.ACCUMULO);
+        CRYPTO_SERVICE = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, SiteConfiguration.fromEnv().build().getAllCryptoProperties());
     }
     
     protected TabletSplitSplit fileSplit;
