@@ -688,7 +688,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      * @param priority
      *            the priority for the first of iterator filters
      */
-    protected void addCustomFilters(QueryData data, int priority)  throws Exception {}
+    protected void addCustomFilters(QueryData data, int priority) throws Exception {}
     
     @Override
     public Priority getConnectionPriority() {
