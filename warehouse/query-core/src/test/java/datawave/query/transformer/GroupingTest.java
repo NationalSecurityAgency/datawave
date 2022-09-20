@@ -536,8 +536,8 @@ public abstract class GroupingTest {
         // @formatter:off
         // The expected counts correspond to the listed UIDs and contexts
         Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
-                .put("FEMALE-2", 1) // female w/2 dependents: sopranoUID 1
-                .put("MALE-2", 4) // male w/2 dependents: corleoneUID 1, 5, caponeUID 1, 3
+                .put("FEMALE-2", 2) // female w/2 dependents: sopranoUID 1
+                .put("MALE-2", 3) // male w/2 dependents: corleoneUID 1, 5, caponeUID 1, 3
                 .put("MALE-3", 2) // male w/3 dependents: corleoneUID 2, caponeUID 2
                 .put("MALE-4", 3) // male w/4 dependents: corleoneUID 4, sopranoUID 0, caponeUID 0
                 .build();
