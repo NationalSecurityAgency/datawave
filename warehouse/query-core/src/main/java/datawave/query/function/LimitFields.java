@@ -180,7 +180,8 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                         String[] commonalityAndGroupingContext = LimitFields.getCommonalityAndGroupingContext(key);
                         if (commonalityAndGroupingContext != null) {
                             String hitTermKeyCommonality = commonalityAndGroupingContext[0];
-                            if (hitTermKeyCommonality.equals(keyWithGroupingCommonality) && key.endsWith(keyWithGroupingSuffix)) {
+                            String hitTermGroup = commonalityAndGroupingContext[1];
+                            if (hitTermKeyCommonality.equals(keyWithGroupingCommonality) && keyWithGroupingSuffix.equals(hitTermGroup)) {
                                 mapOfHits.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
                             } else {
                                 mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);

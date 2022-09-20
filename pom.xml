@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>3.31.0-SNAPSHOT</version>
+    <version>3.33.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -73,7 +73,8 @@
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.11.5</version.jjwt>
-        <version.junit>4.13.1</version.junit>
+        <version.junit>4.13.2</version.junit>
+	<version.jupiter></version.jupiter>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
         <version.log4j-extras>1.0</version.log4j-extras>
@@ -82,7 +83,7 @@
         <version.microservice.accumulo-api>1.1</version.microservice.accumulo-api>
         <version.microservice.accumulo-utils>1.4</version.microservice.accumulo-utils>
         <version.microservice.audit-api>1.4</version.microservice.audit-api>
-        <version.microservice.authorization-api>1.4</version.microservice.authorization-api>
+        <version.microservice.authorization-api>1.13</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>1.2</version.microservice.base-rest-responses>
         <version.microservice.common-utils>1.0</version.microservice.common-utils>
         <version.microservice.dictionary-api>1.0</version.microservice.dictionary-api>
@@ -946,12 +947,6 @@
                 <version>${version.xerces}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-core-impl</artifactId>
-                <version>${version.weld}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.picketbox</groupId>
                 <artifactId>picketbox</artifactId>
                 <version>${version.picketbox}</version>
@@ -1085,28 +1080,6 @@
         </dependencies>
     </dependencyManagement>
     <repositories>
-        <!--
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>todo-public</id>
-            <url>https://todo/nexus/content/groups/public</url>
-        </repository>
-        <repository>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>todo-public-snapshots</id>
-            <url>https://todo/nexus/content/groups/public-snapshots</url>
-        </repository>
-        -->
         <repository>
             <!--
                 This repository is a temporary work-around until we can public artifacts to maven central.
@@ -1388,14 +1361,12 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${version.surefire.plugin}</version>
                     <configuration>
-                        <!--
                         <reuseForks>false</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
                         <threadCount>1</threadCount>
                         <threadCountClasses>1</threadCountClasses>
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
-			-->
                         <groups>datawave.common.test.integration.IntegrationTest</groups>
                     </configuration>
                     <executions>
