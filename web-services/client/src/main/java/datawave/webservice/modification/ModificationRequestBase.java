@@ -1,5 +1,6 @@
 package datawave.webservice.modification;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -20,6 +21,7 @@ import java.util.Map;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 @XmlSeeAlso({DefaultModificationRequest.class, DefaultUUIDModificationRequest.class})
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 public class ModificationRequestBase implements Serializable {
     
     private static String COLUMN_VISIBILITY = "columnVisibility";

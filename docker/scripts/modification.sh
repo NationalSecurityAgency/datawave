@@ -48,6 +48,11 @@ curl -s -D headers_1.txt -k -E ${TMP_PEM} \
     -H "Accept: application/json" \
     ${MODIFICATION_ENDPOINT}/listConfigurations -o modificationConfigurationResponse.txt -w '%{http_code}\n'
 
+echo "$(date): reloading modification service fields"
+curl -s -D headers_2.txt -k -E ${TMP_PEM} \
+    -H "Accept: application/json" \
+    ${MODIFICATION_ENDPOINT}/reloadCache -o modificationReloadCacheResponse.txt -w '%{http_code}\n'
+
 echo "$(date): polling modification service fields"
 curl -s -D headers_2.txt -k -E ${TMP_PEM} \
     -H "Accept: application/json" \

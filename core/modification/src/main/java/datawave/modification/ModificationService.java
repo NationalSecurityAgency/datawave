@@ -96,7 +96,7 @@ public class ModificationService {
             ModificationServiceConfiguration service = modificationConfiguration.getConfiguration(modificationServiceName);
             if (!request.getClass().equals(service.getRequestClass())) {
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_REQUEST_CLASS,
-                                MessageFormat.format("Requires: {0}", service.getRequestClass().getName()));
+                                MessageFormat.format("Requires: {0} but got {1}", service.getRequestClass().getName(), request.getClass().getName()));
                 throw new DatawaveModificationException(qe);
             }
             

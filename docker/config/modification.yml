@@ -4,6 +4,7 @@ logging:
     root: INFO
     datawave.modification: DEBUG
     datawave.microservice.modification: DEBUG
+    datawave.microservice.modification.query: DEBUG
 
 datawave:
   swagger:
@@ -12,13 +13,10 @@ datawave:
 
   modification:
     query:
-      queryHost: query
-      queryPort: 8443
-      queryPool: default
+      queryURI: https://query:8443/query/v1
+      queryPool: pool1
       remoteQueryTimeout: 1
       remoteQueryTimeUnit: MINUTES
-      authHost: authorization
-      authPort: 8343
     data:
       tableName: ${warehouse.tables.metadata.name}
       poolName: "default"

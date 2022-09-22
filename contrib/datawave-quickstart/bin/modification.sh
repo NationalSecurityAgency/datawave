@@ -1,3 +1,10 @@
+#
+# if using feature/queryMicroservices quickstart webserver:
+#    DW_MODIFICATION_URI=https://localhost:9443/DataWave/Modification
+#
+# if using feature/queryMicroservices deployed modification service
+#    DW_MODIFICATION_URI=https://localhost:9343/modification/v1
+#
 
 DW_BASE_URI=${DW_BASE_URI:-https://localhost:8443/DataWave}
 DW_MODIFICATION_URI=${DW_MODIFICATION_URI:-${DW_BASE_URI}/Modification}
@@ -114,7 +121,7 @@ function configureModification() {
    [ -z "${DW_MODIFICATION_UUID_TYPE}" ] && error "Uuid type (field) is required" && return 1
    [ -z "${DW_MODIFICATION_FIELD}" ] && error "Field is required" && return 1
    [ -z "${DW_MODIFICATION_VIZ}" ] && error "Visibility is required" && return 1
-   BODY="<DefaultUUIDModificationRequest xmlns=\"http://webservice.datawave/v1\"><Events><Event><id>${DW_MODIFICATION_UUID}</id><idType>${DW_MODIFICATION_UUID_TYPE}</idType><operations><operation><operationMode>${DW_MODIFICATION_COMMAND}</operationMode><fieldName>${DW_MODIFICATION_FIELD}</fieldName><fieldValue>${DW_MODIFICATION_NEW_VALUE}</fieldValue><columnVisibility>$( xmlencode ${DW_MODIFICATION_VIZ} )</columnVisibility></operation></operations><user>testUser</user></Event></Events><mode>INSERT</mode><fieldName>TEST</fieldName><fieldValue>ABC</fieldValue><columnVisibility>PUBLIC</columnVisibility></DefaultUUIDModificationRequest>"
+   BODY="<DefaultUUIDModificationRequest xmlns=\"http://webservice.datawave/v1\" _class=\"datawave.webservice.modification.DefaultUUIDModificationRequest\"><Events><Event><id>${DW_MODIFICATION_UUID}</id><idType>${DW_MODIFICATION_UUID_TYPE}</idType><operations><operation><operationMode>${DW_MODIFICATION_COMMAND}</operationMode><fieldName>${DW_MODIFICATION_FIELD}</fieldName><fieldValue>${DW_MODIFICATION_NEW_VALUE}</fieldValue><columnVisibility>$( xmlencode ${DW_MODIFICATION_VIZ} )</columnVisibility></operation></operations><user>testUser</user></Event></Events><mode>INSERT</mode><fieldName>TEST</fieldName><fieldValue>ABC</fieldValue><columnVisibility>PUBLIC</columnVisibility></DefaultUUIDModificationRequest>"
    if [ "${DW_MODIFICATION_COMMAND}" == "INSERT" ] ; then
        [ -z "${DW_MODIFICATION_NEW_VALUE}" ] && error "New field value is required" && return 1
    elif [ "${DW_MODIFICATION_COMMAND}" == "REPLACE" ] ; then
@@ -122,10 +129,10 @@ function configureModification() {
    elif [ "${DW_MODIFICATION_COMMAND}" == "UPDATE" ] ; then
        [ -z "${DW_MODIFICATION_NEW_VALUE}" ] && error "New field value is required" && return 1
        [ -z "${DW_MODIFICATION_OLD_VALUE}" ] && error "Old field value is required" && return 1
-       BODY="<DefaultUUIDModificationRequest xmlns=\"http://webservice.datawave/v1\"><Events><Event><id>${DW_MODIFICATION_UUID}</id><idType>${DW_MODIFICATION_UUID_TYPE}</idType><operations><operation><operationMode>${DW_MODIFICATION_COMMAND}</operationMode><fieldName>${DW_MODIFICATION_FIELD}</fieldName><fieldValue>${DW_MODIFICATION_NEW_VALUE}</fieldValue><oldFieldValue>${DW_MODIFICATION_OLD_VALUE}</oldFieldValue><columnVisibility>$( xmlencode ${DW_MODIFICATION_VIZ} )</columnVisibility></operation></operations><user>testUser</user></Event></Events><mode>INSERT</mode><fieldName>TEST</fieldName><fieldValue>ABC</fieldValue><columnVisibility>PUBLIC</columnVisibility></DefaultUUIDModificationRequest>"
+       BODY="<DefaultUUIDModificationRequest xmlns=\"http://webservice.datawave/v1\" _class=\"datawave.webservice.modification.DefaultUUIDModificationRequest\"><Events><Event><id>${DW_MODIFICATION_UUID}</id><idType>${DW_MODIFICATION_UUID_TYPE}</idType><operations><operation><operationMode>${DW_MODIFICATION_COMMAND}</operationMode><fieldName>${DW_MODIFICATION_FIELD}</fieldName><fieldValue>${DW_MODIFICATION_NEW_VALUE}</fieldValue><oldFieldValue>${DW_MODIFICATION_OLD_VALUE}</oldFieldValue><columnVisibility>$( xmlencode ${DW_MODIFICATION_VIZ} )</columnVisibility></operation></operations><user>testUser</user></Event></Events><mode>INSERT</mode><fieldName>TEST</fieldName><fieldValue>ABC</fieldValue><columnVisibility>PUBLIC</columnVisibility></DefaultUUIDModificationRequest>"
    elif [ "${DW_MODIFICATION_COMMAND}" == "DELETE" ] ; then
        [ -z "${DW_MODIFICATION_OLD_VALUE}" ] && error "Old field value is required" && return 1
-       BODY="<DefaultUUIDModificationRequest xmlns=\"http://webservice.datawave/v1\"><Events><Event><id>${DW_MODIFICATION_UUID}</id><idType>${DW_MODIFICATION_UUID_TYPE}</idType><operations><operation><operationMode>${DW_MODIFICATION_COMMAND}</operationMode><fieldName>${DW_MODIFICATION_FIELD}</fieldName><oldFieldValue>${DW_MODIFICATION_OLD_VALUE}</oldFieldValue><columnVisibility>$( xmlencode ${DW_MODIFICATION_VIZ} )</columnVisibility></operation></operations><user>testUser</user></Event></Events><mode>INSERT</mode><fieldName>TEST</fieldName><fieldValue>ABC</fieldValue><columnVisibility>PUBLIC</columnVisibility></DefaultUUIDModificationRequest>"
+       BODY="<DefaultUUIDModificationRequest xmlns=\"http://webservice.datawave/v1\" _class=\"datawave.webservice.modification.DefaultUUIDModificationRequest\"><Events><Event><id>${DW_MODIFICATION_UUID}</id><idType>${DW_MODIFICATION_UUID_TYPE}</idType><operations><operation><operationMode>${DW_MODIFICATION_COMMAND}</operationMode><fieldName>${DW_MODIFICATION_FIELD}</fieldName><oldFieldValue>${DW_MODIFICATION_OLD_VALUE}</oldFieldValue><columnVisibility>$( xmlencode ${DW_MODIFICATION_VIZ} )</columnVisibility></operation></operations><user>testUser</user></Event></Events><mode>INSERT</mode><fieldName>TEST</fieldName><fieldValue>ABC</fieldValue><columnVisibility>PUBLIC</columnVisibility></DefaultUUIDModificationRequest>"
    else
        error "Command set to ${DW_MODIFICATION_COMMAND}.  Command must be one of INSERT, UPDATE, DELETE, or REPLACE." && return 1
    fi
@@ -139,10 +146,15 @@ function modificationHelp() {
     echo " Rest API and to inspect the results. It automatically configures curl and sets"
     echo " reasonable defaults for most required query parameters"
     echo
-    echo "       $( printGreen datawaveModification ) --uuid 09aa3d46-8aa0-49fb-8859-f3add48859b0 --type UUID --field REVIEW --newvalue 'I liked this one'"
-    echo "       $( printGreen datawaveModification ) --uuid 09aa3d46-8aa0-49fb-8859-f3add48859b0 --type UUID --field DELETE --oldvalue 'I liked this one'"
-    echo "       $( printGreen datawaveModification ) --uuid 09aa3d46-8aa0-49fb-8859-f3add48859b0 --type UUID --field REPLACE --newvalue 'I really liked this one'"
-    echo "       $( printGreen datawaveModification ) --uuid 09aa3d46-8aa0-49fb-8859-f3add48859b0 --type UUID --field UPDATE --oldvalue 'I liked this one' --newvalue 'I really liked this one'"
+    echo " Assuming the following modification entries are in the datawave.metadata:"
+    echo "   REVIEW m:csv []"
+    echo "   REVIEW m:enwiki []"
+    echo "   REVIEW m:tvmaze []"
+    echo
+    echo "       $( printGreen datawaveModification ) --uuid 09aa3d46-8aa0-49fb-8859-f3add48859b0 --type UUID --field REVIEW -c INSERT --newvalue 'I liked this one'"
+    echo "       $( printGreen datawaveModification ) --uuid 09aa3d46-8aa0-49fb-8859-f3add48859b0 --type UUID --field REVIEW -c DELETE --oldvalue 'I liked this one'"
+    echo "       $( printGreen datawaveModification ) --uuid 09aa3d46-8aa0-49fb-8859-f3add48859b0 --type UUID --field REVIEW -c REPLACE --newvalue 'I really liked this one'"
+    echo "       $( printGreen datawaveModification ) --uuid 09aa3d46-8aa0-49fb-8859-f3add48859b0 --type UUID --field REVIEW -c UPDATE --oldvalue 'I liked this one' --newvalue 'I really liked this one'"
     echo
     echo " Required:"
     echo
@@ -216,16 +228,38 @@ function listMutableFields() {
 
 function reloadMutableFieldCache() {
 
-    reloadDataWaveTableCache
+   local curlcmd="/usr/bin/curl \
+   --silent --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
+   --insecure --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA}" \
+   -X GET ${DW_MODIFICATION_URI}/AccumuloTableCache/reload/datawave.metadata"
+   local response="$( eval "${curlcmd}" )"
+   local exitStatus=$?
 
-    local curlcmd="/usr/bin/curl --silent --insecure --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA}" -X GET ${DW_MODIFICATION_URI}/reloadCache"
-    local response="$( eval "${curlcmd}" )"
-    local exitStatus=$?
+   if [ "${exitStatus}" != "0" ] ; then
+       error "Curl command exited with non-zero status: ${exitStatus}. Failed to update table cache: ${dwtable}"
+       return 1
+   fi
 
-    if [ "${exitStatus}" != "0" ] ; then
-        error "Curl command exited with non-zero status: ${exitStatus}. Failed to update mutable fields cache: ${dwtable}"
-        return 1
-    fi
+   parseQueryResponse
+   prettyPrintResponse
+   printCurlSummary
+
+   local curlcmd="/usr/bin/curl \
+   --silent --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
+   --insecure --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA}" \
+   -X GET ${DW_MODIFICATION_URI}/reloadCache"
+
+   local response="$( eval "${curlcmd}" )"
+   local exitStatus=$?
+
+   if [ "${exitStatus}" != "0" ] ; then
+       error "Curl command exited with non-zero status: ${exitStatus}. Failed to update mutable fields cache: ${dwtable}"
+       return 1
+   fi
+
+   parseQueryResponse
+   prettyPrintResponse
+   printCurlSummary
 }
 
 function listModificationConfiguration() {
