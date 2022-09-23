@@ -1,6 +1,7 @@
 package datawave.query.map;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.GeoFeatureVisitor;
 import datawave.query.language.parser.ParseException;
@@ -11,7 +12,6 @@ import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.map.QueryGeometry;
 import datawave.webservice.query.map.QueryGeometryHandler;
 import datawave.webservice.query.map.QueryGeometryResponse;
-import datawave.webservice.query.metric.BaseQueryMetric;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;

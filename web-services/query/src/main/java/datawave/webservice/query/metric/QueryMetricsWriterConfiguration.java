@@ -8,6 +8,7 @@ public class QueryMetricsWriterConfiguration {
     private String timelyHost = null;
     private int timelyPort = 0;
     private Set<String> timelyMetricTags = new HashSet<>();
+    private boolean useRemoteService = false;
     
     public String getTimelyHost() {
         return timelyHost;
@@ -31,5 +32,13 @@ public class QueryMetricsWriterConfiguration {
     
     public void setTimelyMetricTags(Set<String> timelyMetricTags) {
         this.timelyMetricTags = timelyMetricTags;
+    }
+    
+    public boolean getUseRemoteService() {
+        return useRemoteService;
+    }
+    
+    public void setUseRemoteService(boolean useRemoteService) {
+        this.useRemoteService = useRemoteService;
     }
 }

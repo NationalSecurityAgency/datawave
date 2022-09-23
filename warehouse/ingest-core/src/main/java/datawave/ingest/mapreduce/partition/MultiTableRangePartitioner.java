@@ -2,8 +2,10 @@ package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.SplitsFile;
-import datawave.ingest.mapreduce.job.TableSplitsCache;
 
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 
@@ -19,7 +21,6 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -116,6 +117,38 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
     }
     
     @Override
+    // <<<<<<< HEAD
+    // =======
+    // public void initializeJob(Job job) {
+    // try {
+    // Configuration conf = job.getConfiguration();
+    // // only create the splits file if we haven't already created it, possibly for another table
+    // if (null == NonShardedSplitsFile.findSplitsFile(job.getConfiguration(), job.getLocalCacheFiles(), isTrimmed())) {
+    // URI splitsFileUri = createTheSplitsFile(conf);
+    // job.addCacheFile(splitsFileUri);
+    // }
+    // } catch (Exception e) {
+    // log.error(e);
+    // throw new RuntimeException("Failed to initialize partitioner for job", e);
+    // }
+    // }
+    //
+    // private URI createTheSplitsFile(Configuration conf) throws IOException, URISyntaxException, TableNotFoundException, TableExistsException {
+    // int reduceTasks = conf.getInt("splits.num.reduce", 1);
+    // String[] tableNames = conf.get(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES).split(",");
+    // Path workDirPath = new Path(conf.get("ingest.work.dir.qualified"));
+    // FileSystem outputFs = FileSystem.get(new URI(conf.get("output.fs.uri")), conf);
+    // NonShardedSplitsFile.Writer writer = new NonShardedSplitsFile.Writer(conf, reduceTasks, workDirPath, outputFs, tableNames, isTrimmed());
+    // writer.createFile(isTrimmed());
+    // return writer.getUri();
+    // }
+    //
+    // protected boolean isTrimmed() {
+    // return true;
+    // }
+    //
+    // @Override
+    // >>>>>>> integration
     public void setConf(Configuration conf) {
         this.conf = conf;
         partitionLimiter = new PartitionLimiter(conf);

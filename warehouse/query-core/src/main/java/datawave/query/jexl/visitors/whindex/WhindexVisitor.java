@@ -10,10 +10,12 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.functions.GeoFunctionsDescriptor;
 import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
@@ -40,6 +42,7 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -70,6 +73,7 @@ public class WhindexVisitor extends RebuildingVisitor {
     
     private final Set<String> mappingFields;
     private final Map<String,Map<String,String>> valueSpecificFieldMappings;
+    private final Multimap<String,String> fieldValueMappings;
     private final MetadataHelper metadataHelper;
     
     private final HashMap<JexlNode,WhindexTerm> jexlNodeToWhindexMap = new HashMap<>();
@@ -93,6 +97,7 @@ public class WhindexVisitor extends RebuildingVisitor {
     private WhindexVisitor(Set<String> mappingFields, Map<String,Map<String,String>> fieldMappings, Date beginDate, MetadataHelper metadataHelper) {
         this.mappingFields = mappingFields;
         this.metadataHelper = metadataHelper;
+        this.fieldValueMappings = LinkedHashMultimap.create();
         this.valueSpecificFieldMappings = pruneFieldMappings(fieldMappings, beginDate);
     }
     
@@ -160,8 +165,11 @@ public class WhindexVisitor extends RebuildingVisitor {
                     String newField = mapping.get(origField);
                     // if the new field predates the query begin date, we can use this mapping
                     if (fieldPredatesBeginDate(newField, beginDate)) {
-                        Map<String,String> newMapping = prunedFieldMappings.computeIfAbsent(fieldValue, k -> new HashMap<>());
+                        Map<String,String> newMapping = prunedFieldMappings.computeIfAbsent(fieldValue.toLowerCase(), k -> new HashMap<>());
                         newMapping.put(origField, newField);
+                        
+                        // save the new field-value mappings
+                        fieldValueMappings.put(newField, fieldValue);
                     }
                 }
             }
@@ -264,12 +272,13 @@ public class WhindexVisitor extends RebuildingVisitor {
         ExpandData parentData = (ExpandData) data;
         
         // only process delayed and bounded range predicates
-        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, BoundedRange.class)) {
+        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class,
+                        BoundedRange.class)) {
             return copy(node);
         }
         
         // if we only have one child, just pass through
-        // this shouldn't ever really happen, but it could/
+        // this shouldn't ever really happen, but it could
         if (node.jjtGetNumChildren() == 1)
             return super.visit(node, data);
         
@@ -288,7 +297,16 @@ public class WhindexVisitor extends RebuildingVisitor {
             JexlNode rebuiltNode = (JexlNode) distributedNode.jjtAccept(this, parentData);
             
             // only return the distributed version of this node if whindexes were found
-            return (parentData.foundWhindex) ? rebuiltNode : node;
+            if (parentData.foundWhindex) {
+                // attempt to reduce the rebuilt node before returning
+                if (rebuiltNode instanceof ASTOrNode) {
+                    rebuiltNode = reduceOrNode((ASTOrNode) rebuiltNode);
+                }
+                
+                return rebuiltNode;
+            } else {
+                return node;
+            }
         } else {
             // if this is a 'leaf' range node, check to see if a whindex can be made
             if (leafNodes.size() == 1 && leafNodes.containsValue(node)) {
@@ -323,11 +341,12 @@ public class WhindexVisitor extends RebuildingVisitor {
                         // remove any leaf nodes that are still present in whindex form
                         List<JexlNode> leafNodesToDistribute = usedLeafNodes.values().stream().map(this::getLeafNode).collect(Collectors.toList());
                         
-                        // remove all of the nodes that were turned into whindex nodes
+                        // remove all of the child leaf nodes converted to whindex nodes. they still belong to this AND node, and don't need to be distributed
                         leafNodesToDistribute.removeAll(whindexTerms.stream().map(x -> JexlASTHelper.dereference(x.getMappableNode()))
                                         .collect(Collectors.toList()));
                         
-                        rebuiltNode = DistributeAndedNodesVisitor.distributeAndedNode(rebuiltNode, leafNodesToDistribute, jexlNodeToWhindexMap);
+                        rebuiltNode = DistributeAndedNodesVisitor.distributeAndedNode(rebuiltNode, leafNodesToDistribute, jexlNodeToWhindexMap,
+                                        fieldValueMappings);
                     }
                     
                     return rebuiltNode;
@@ -382,6 +401,62 @@ public class WhindexVisitor extends RebuildingVisitor {
         }
         
         return createUnwrappedAndNode(newOrNodes);
+    }
+    
+    private JexlNode reduceOrNode(ASTOrNode node) {
+        Multimap<String,JexlNode> grandchildToChildMap = LinkedHashMultimap.create();
+        Multimap<String,JexlNode> stringToGrandchildMap = LinkedHashMultimap.create();
+        
+        Set<JexlNode> children = new LinkedHashSet<>(Arrays.asList(JexlNodes.children(node)));
+        
+        // create a map of grandchildren to children based on the node string
+        for (JexlNode child : children) {
+            if (child instanceof ASTAndNode) {
+                for (JexlNode grandchild : JexlNodes.children(child)) {
+                    String jexlString = JexlStringBuildingVisitor.buildQuery(grandchild);
+                    grandchildToChildMap.put(jexlString, child);
+                    stringToGrandchildMap.put(jexlString, grandchild);
+                }
+            }
+        }
+        
+        // find the shared grandchildren
+        Multimap<String,JexlNode> sharedGrandchildMap = LinkedHashMultimap.create();
+        for (String grandchildString : grandchildToChildMap.keySet()) {
+            // is this grandchild shared by all children?
+            if (grandchildToChildMap.get(grandchildString).containsAll(children)) {
+                sharedGrandchildMap.putAll(grandchildString, stringToGrandchildMap.get(grandchildString));
+            }
+        }
+        
+        // if we have shared grandchildren, reduce to an AND node, or else return the original node
+        if (!sharedGrandchildMap.isEmpty()) {
+            
+            // remove the shared grandchildren from each child
+            List<JexlNode> reducedChildren = new ArrayList<>();
+            for (JexlNode child : children) {
+                Set<JexlNode> grandchildren = new HashSet<>(Arrays.asList(JexlNodes.children(child)));
+                grandchildren.removeAll(sharedGrandchildMap.values());
+                reducedChildren.add(createUnwrappedAndNode(grandchildren));
+            }
+            
+            // OR the reduced children, and AND them with the shared grandchildren
+            List<JexlNode> andedChildren = new ArrayList<>();
+            for (String grandchildString : sharedGrandchildMap.keySet()) {
+                JexlNode sharedGrandchild = sharedGrandchildMap.get(grandchildString).stream().findFirst().orElse(null);
+                if (sharedGrandchild != null) {
+                    andedChildren.add(sharedGrandchild);
+                } else {
+                    // this shouldn't be possible
+                    return node;
+                }
+            }
+            andedChildren.add(createUnwrappedOrNode(reducedChildren));
+            
+            return createUnwrappedAndNode(andedChildren);
+        } else {
+            return node;
+        }
     }
     
     @Override
@@ -439,7 +514,8 @@ public class WhindexVisitor extends RebuildingVisitor {
     // if the node is marked, only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Lists.newArrayList(ASTDelayedPredicate.class, BoundedRange.class))) {
+        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(
+                        Lists.newArrayList(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class, BoundedRange.class))) {
             return RebuildingVisitor.copy(node);
         }
         
@@ -449,7 +525,8 @@ public class WhindexVisitor extends RebuildingVisitor {
     // if the node is marked, only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Lists.newArrayList(ASTDelayedPredicate.class, BoundedRange.class))) {
+        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(
+                        Lists.newArrayList(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class, BoundedRange.class))) {
             return RebuildingVisitor.copy(node);
         }
         
@@ -553,7 +630,7 @@ public class WhindexVisitor extends RebuildingVisitor {
             if (!whindexNodes.isEmpty()) {
                 parentData.foundWhindex = true;
                 
-                whindexLeafNodes.add(createUnwrappedAndNode(whindexNodes));
+                whindexLeafNodes.addAll(whindexNodes);
             }
         }
         
@@ -663,10 +740,12 @@ public class WhindexVisitor extends RebuildingVisitor {
         // for each of the leaf nodes, what can we make?
         for (Map.Entry<String,JexlNode> leafEntry : leafNodes.entries()) {
             // is it a field/value match?
-            if (leafEntry.getValue() instanceof ASTEQNode && isFieldValueTerm((ASTEQNode) leafEntry.getValue())) {
+            if (isFieldValueTerm(leafEntry.getValue())) {
                 String value = getStringValue(leafEntry.getValue());
                 
                 if (value != null) {
+                    value = value.toLowerCase();
+                    
                     // do we have the required field we need?
                     Set<String> requiredFields = valueSpecificFieldMappings.get(value).keySet();
                     
@@ -695,17 +774,15 @@ public class WhindexVisitor extends RebuildingVisitor {
             else if (mappableFields.contains(leafEntry.getKey())) {
                 // if it's a mappable field, do we have the term/value match needed to map it?
                 List<Map.Entry<String,JexlNode>> fieldValueMatches = new ArrayList<>();
-                remainingLeafNodes.entries().stream()
-                                .filter(x -> x.getValue() instanceof ASTEQNode && isFieldValueMatch((ASTEQNode) x.getValue(), leafEntry.getKey()))
-                                .forEach(fieldValueMatches::add);
-                remainingAndedNodes.entries().stream()
-                                .filter(x -> x.getValue() instanceof ASTEQNode && isFieldValueMatch((ASTEQNode) x.getValue(), leafEntry.getKey()))
-                                .forEach(fieldValueMatches::add);
+                remainingLeafNodes.entries().stream().filter(x -> isFieldValueMatch(x.getValue(), leafEntry.getKey())).forEach(fieldValueMatches::add);
+                remainingAndedNodes.entries().stream().filter(x -> isFieldValueMatch(x.getValue(), leafEntry.getKey())).forEach(fieldValueMatches::add);
                 
                 for (Map.Entry<String,JexlNode> fieldValueMatch : fieldValueMatches) {
                     String value = getStringValue(fieldValueMatch.getValue());
                     
                     if (value != null) {
+                        value = value.toLowerCase();
+                        
                         whindexTerms.add(new WhindexTerm(fieldValueMatch.getValue(), leafEntry.getValue(), valueSpecificFieldMappings.get(value).get(
                                         leafEntry.getKey())));
                         
@@ -727,19 +804,40 @@ public class WhindexVisitor extends RebuildingVisitor {
         return whindexTerms;
     }
     
-    private boolean isFieldValueMatch(ASTEQNode eqNode, String mappableField) {
-        String field = getStringField(eqNode);
-        String value = getStringValue(eqNode);
-        // if this is a term/value match
-        return mappingFields.contains(field) && valueSpecificFieldMappings.containsKey(value)
-                        && valueSpecificFieldMappings.get(value).containsKey(mappableField);
+    private boolean isFieldValueMatch(JexlNode node, String mappableField) {
+        boolean isFieldValueMatch = false;
+        JexlNode dereferencedNode = JexlASTHelper.dereference(node);
+        
+        if (dereferencedNode instanceof ASTEQNode) {
+            ASTEQNode eqNode = (ASTEQNode) dereferencedNode;
+            String field = getStringField(eqNode);
+            String value = getStringValue(eqNode);
+            if (value != null) {
+                value = value.toLowerCase();
+            }
+            // if this is a term/value match
+            isFieldValueMatch = mappingFields.contains(field) && valueSpecificFieldMappings.containsKey(value)
+                            && valueSpecificFieldMappings.get(value).containsKey(mappableField);
+        }
+        return isFieldValueMatch;
     }
     
-    private boolean isFieldValueTerm(ASTEQNode eqNode) {
-        String field = getStringField(eqNode);
-        String value = getStringValue(eqNode);
-        // if this is a term/value match
-        return mappingFields.contains(field) && valueSpecificFieldMappings.containsKey(value);
+    private boolean isFieldValueTerm(JexlNode node) {
+        boolean isFieldValueTerm = false;
+        JexlNode dereferencedNode = JexlASTHelper.dereference(node);
+        
+        if (dereferencedNode instanceof ASTEQNode) {
+            ASTEQNode eqNode = (ASTEQNode) dereferencedNode;
+            String field = getStringField(eqNode);
+            String value = getStringValue(eqNode);
+            if (value != null) {
+                value = value.toLowerCase();
+            }
+            
+            // if this is a term/value match
+            isFieldValueTerm = mappingFields.contains(field) && valueSpecificFieldMappings.containsKey(value);
+        }
+        return isFieldValueTerm;
     }
     
     /**
@@ -780,7 +878,8 @@ public class WhindexVisitor extends RebuildingVisitor {
                             kidFieldNames.add(JexlASTHelper.getIdentifier(leafKid));
                         } else if (leafKid instanceof ASTFunctionNode) {
                             JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor((ASTFunctionNode) leafKid);
-                            if (descriptor instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
+                            if (descriptor instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor
+                                            || descriptor instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
                                 kidFieldNames.addAll(descriptor.fields(metadataHelper, Collections.emptySet()));
                             } else {
                                 if (otherNodes != null) {

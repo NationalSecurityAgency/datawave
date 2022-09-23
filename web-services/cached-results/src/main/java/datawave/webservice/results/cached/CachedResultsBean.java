@@ -10,6 +10,9 @@ import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.QueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.AuditBean;
@@ -29,7 +32,6 @@ import datawave.webservice.query.cache.CachedResultsQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.cache.QueryExpirationConfiguration;
-import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.cachedresults.CacheableLogic;
@@ -45,8 +47,6 @@ import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
@@ -88,7 +88,6 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
-import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 import javax.sql.DataSource;
@@ -197,9 +196,6 @@ public class CachedResultsBean {
     
     @Inject
     private CreatedQueryLogicCacheBean qlCache;
-    
-    @Resource
-    private ManagedExecutorService executor;
     
     @Inject
     private QueryPredictor predictor;
@@ -479,7 +475,7 @@ public class CachedResultsBean {
                 
                 try {
                     query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(
-                                    queryExpirationConf, q.getPageTimeout()), executor, predictor, metricFactory);
+                                    queryExpirationConf, q.getPageTimeout()), predictor, metricFactory);
                     query.setActiveCall(true);
                     // queryMetric was duplicated from the original earlier
                     query.setMetric(queryMetric);
@@ -2178,7 +2174,7 @@ public class CachedResultsBean {
                 QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), p);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(queryExpirationConf,
-                                q.getPageTimeout()), executor, predictor, metricFactory);
+                                q.getPageTimeout()), predictor, metricFactory);
                 query.setActiveCall(true);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 runningQueryCache.put(q.getId().toString(), query);

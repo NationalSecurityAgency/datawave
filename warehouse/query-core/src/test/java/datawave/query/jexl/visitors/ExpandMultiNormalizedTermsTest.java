@@ -11,14 +11,22 @@ import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 public class ExpandMultiNormalizedTermsTest {
     
@@ -451,6 +459,70 @@ public class ExpandMultiNormalizedTermsTest {
         
         JexlNodeAssert.assertThat(script).isEqualTo(smashed).isEqualTo(queryTree).hasValidLineage();
         JexlNodeAssert.assertThat(queryTree).isEqualTo(query).hasValidLineage();
+    }
+    
+    @Test
+    public void testDelayedPredicates() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        List<String> markers = Arrays.asList(new String[] {IndexHoleMarkerJexlNode.label(), ASTDelayedPredicate.label(), ASTEvaluationOnly.label(),
+                ExceededOrThresholdMarkerJexlNode.label()});
+        for (String marker : markers) {
+            String original = "((" + marker + " = true) && (FOO == 'Bar'))";
+            String expected = "((" + marker + " = true) && (FOO == 'bar'))";
+            expandTerms(original, expected);
+        }
+        
+        markers = Arrays.asList(new String[] {ExceededTermThresholdMarkerJexlNode.label(), ExceededValueThresholdMarkerJexlNode.label()});
+        for (String marker : markers) {
+            String original = "((" + marker + " = true) && (FOO == 'Bar'))";
+            String expected = "((" + marker + " = true) && (FOO == 'Bar'))";
+            expandTerms(original, expected);
+        }
+    }
+    
+    @Test
+    public void testFailedRegexNormalizersAndNRNodes() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType()));
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        // this tests for the successful normalization as a simple number can be normalized as a regex
+        String original = "FOO =~ '32' && FOO !~ '42'";
+        String expected = "(FOO =~ '32' || FOO =~ '\\Q+bE3.2\\E') && (FOO !~ '\\Q+bE4.2\\E' && FOO !~ '42')";
+        expandTerms(original, expected);
+        
+        // in this case the numeric normalization fails, so we need to mark as evaluation only
+        original = "FOO =~ '3.*2' && FOO !~ '3.*22'";
+        expected = "((_Eval_ = true) && (FOO =~ '3.*2')) && ((_Eval_ = true) && (FOO !~ '3.*22'))";
+        expandTerms(original, expected);
+    }
+    
+    @Test
+    public void testNENodes() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType()));
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        // this tests for the successful normalization as a simple number can be normalized as a regex
+        String original = "FOO != '32' && FOO != '42'";
+        String expected = "(FOO != '+bE3.2' && FOO != '32') && (FOO != '42' && FOO != '+bE4.2')";
+        expandTerms(original, expected);
     }
     
     private void expandTerms(String original, String expected) throws ParseException {

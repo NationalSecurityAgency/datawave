@@ -10,6 +10,8 @@ on:
     - 'feature/hadoop3'
   pull_request:
     paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+  workflow_dispatch:
+  
 
 jobs:
   # Runs the pom sorter and code formatter to ensure that the code

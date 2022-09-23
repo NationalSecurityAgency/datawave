@@ -24,7 +24,6 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
@@ -722,13 +721,12 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             onlyRetainFieldNamesInTheModelForwardMapping(fieldsToTerms);
             if (isNegativeNode(currentNode)) {
                 // for a negative node, we want negative equalities in an AND
-                newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.AND_NODE,
-                                new ASTNENode(ParserTreeConstants.JJTNENODE), currentNode, fieldsToTerms, expandFields, expandValues,
-                                futureJexlNode.isKeepOriginalNode());
+                newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.AND_NODE, true, currentNode, fieldsToTerms,
+                                expandFields, expandValues, futureJexlNode.isKeepOriginalNode());
             } else {
                 // for a positive node, we want equalities in a OR
-                newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTEQNODE),
-                                currentNode, fieldsToTerms, expandFields, expandValues, futureJexlNode.isKeepOriginalNode());
+                newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, currentNode, fieldsToTerms,
+                                expandFields, expandValues, futureJexlNode.isKeepOriginalNode());
             }
         }
         

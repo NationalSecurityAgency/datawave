@@ -23,7 +23,7 @@ public class QueryParameters {
     /**
      * Override the transformation of the content fields to contain the UID.
      */
-    public static final String TRANFORM_CONTENT_TO_UID = "transform.content.to.uid";
+    public static final String TRANSFORM_CONTENT_TO_UID = "transform.content.to.uid";
     
     /**
      * Allows user to specify query syntax (i.e. JEXL or LUCENE)
@@ -141,6 +141,12 @@ public class QueryParameters {
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+    
+    /**
+     * Used to specify fields which are excluded from QueryModel expansion
+     */
+    public static final String NO_EXPANSION_FIELDS = "no.expansion.fields";
+    
     /**
      * Used to cause Documents to contain a list of selectors that hit;
      */
@@ -159,4 +165,9 @@ public class QueryParameters {
      * Used to specify a SHARDS_AND_DAYS hint within the options function.
      */
     public static final String SHARDS_AND_DAYS = "shards.and.days";
+    
+    /**
+     * Used to specify phrase excerpts that should be returned.
+     */
+    public static final String EXCERPT_FIELDS = "excerpt.fields";
 }

@@ -1,6 +1,7 @@
 package datawave.webservice.query.runner;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -8,7 +9,6 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.DatawaveRoleManager;
@@ -109,6 +109,7 @@ public class RunningQueryTest {
         TransformIterator iter = new TransformIterator();
         expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
         expect(logic.getTransformIterator(settings)).andReturn(iter);
+        expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
         replay(logic);
@@ -129,6 +130,7 @@ public class RunningQueryTest {
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         
         expect(logic.getCollectQueryMetrics()).andReturn(false);
+        expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
         replay(logic);

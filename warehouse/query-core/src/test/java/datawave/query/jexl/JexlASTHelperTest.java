@@ -3,6 +3,7 @@ package datawave.query.jexl;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
@@ -21,14 +22,12 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
@@ -687,5 +686,38 @@ public class JexlASTHelperTest {
         ASTAndNode conjunction = (ASTAndNode) JexlNodeFactory.createAndNode(Collections.singletonList(eqNode));
         RuntimeException exception = Assert.assertThrows(RuntimeException.class, () -> JexlASTHelper.validateJunctionChildren(conjunction, true));
         assertEquals("Instance of AND/OR node found with less than 2 children", exception.getMessage());
+    }
+    
+    @Test
+    public void testGetFunctionIdentifiers() {
+        // single term
+        String query = "AGE > '+bE1'";
+        testIdentifierParse(query, Sets.newHashSet("AGE"));
+        
+        // union of two terms
+        query = "(AGE > '+bE1' || ETA > '+bE1')";
+        testIdentifierParse(query, Sets.newHashSet("AGE", "ETA"));
+        
+        // complex function
+        query = "(grouping:getGroupsForMatchesInGroup((NOME || NAME), 'MEADOW', (GENERE || GENDER), 'FEMALE')) == MAGIC";
+        testIdentifierParse(query, Sets.newHashSet("GENDER", "GENERE", "MAGIC", "NAME", "NOME"));
+        
+        // function output feeds method
+        query = "((AGE || ETA).getValuesForGroups(grouping:getGroupsForMatchesInGroup((NOME || NAME), 'MEADOW', (GENERE || GENDER), 'FEMALE')) == MAGIC)";
+        testIdentifierParse(query, Sets.newHashSet("AGE", "ETA", "GENDER", "GENERE", "MAGIC", "NAME", "NOME"));
+        
+        // original full query
+        query = "(AGE > '+bE1' || ETA > '+bE1') && (AGE < '+cE1' || ETA < '+cE1') && ((_Eval_ = true) && ((AGE || ETA).getValuesForGroups(grouping:getGroupsForMatchesInGroup((NOME || NAME), 'MEADOW', (GENERE || GENDER), 'FEMALE')) == MAGIC))";
+        testIdentifierParse(query, Sets.newHashSet("AGE", "ETA", "GENDER", "GENERE", "MAGIC", "NAME", "NOME"));
+    }
+    
+    private void testIdentifierParse(String query, Set<String> expectedIdentifiers) {
+        try {
+            ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+            Set<String> fields = JexlASTHelper.getIdentifierNames(script);
+            assertEquals("Expected fields but was", expectedIdentifiers, fields);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
     }
 }

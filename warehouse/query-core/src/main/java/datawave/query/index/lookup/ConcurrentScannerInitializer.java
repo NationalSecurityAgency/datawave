@@ -35,7 +35,7 @@ public class ConcurrentScannerInitializer implements Callable<BaseIndexStream> {
     public BaseIndexStream call() throws Exception {
         if (stream.context() == StreamContext.INITIALIZED) {
             if (stream.hasNext()) {
-                return ScannerStream.variable(stream, stream.currentNode());
+                return ScannerStream.withData(stream, stream.currentNode());
             } else {
                 return ScannerStream.noData(stream.currentNode());
             }

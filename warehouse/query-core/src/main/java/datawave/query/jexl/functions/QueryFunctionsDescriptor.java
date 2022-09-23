@@ -137,7 +137,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             }
         } else if (name.equals(QueryFunctions.UNIQUE_FUNCTION) || name.equals(QueryFunctions.UNIQUE_BY_DAY_FUNCTION)
                         || name.equals(QueryFunctions.UNIQUE_BY_HOUR_FUNCTION) || name.equals(QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION)
-                        || name.equals(QueryFunctions.GROUPBY_FUNCTION)) {
+                        || name.equals(QueryFunctions.GROUPBY_FUNCTION) || name.equals(QueryFunctions.EXCERPT_FIELDS_FUNCTION)) {
             if (numArgs == 0) {
                 throw new IllegalArgumentException("Expected at least one argument to the " + name + " function");
             }

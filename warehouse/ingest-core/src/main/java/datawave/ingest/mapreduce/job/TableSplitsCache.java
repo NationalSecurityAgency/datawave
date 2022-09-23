@@ -171,7 +171,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     }
     
     private Set<String> getIngestTableNames() {
-        Set<String> tableNames = TableConfigurationUtil.getTables(conf);
+        Set<String> tableNames = TableConfigurationUtil.extractTableNames(conf);
         if (tableNames.isEmpty()) {
             log.error("Missing data types or one of the following helperClass,readerClass,handlerClassNames,filterClassNames");
             throw new IllegalArgumentException("Missing data types or one of the following helperClass,readerClass,handlerClassNames,filterClassNames");
@@ -207,7 +207,9 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                     log.info("Writing " + splits.size() + " splits.");
                     tmpSplitLocations.put(table, splitLocations);
                     for (Text split : splits) {
-                        out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())) + "\t" + splitLocations.get(split));
+                        
+                        out.println(table + this.delimiter + new String(Base64.encodeBase64(split.getBytes())) + "\t" + splitLocations.get(split));
+                        
                     }
                 }
                 if (null != getFileStatus() && exceedsMaxSplitsDeviation(splitsPerTable)) {
@@ -266,7 +268,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      * @throws IOException
      */
     @Override
-    protected void readCache(BufferedReader in, String delimiter) throws IOException {
+    protected void readCache(BufferedReader in) throws IOException {
         this.splits = new HashMap<>();
         this.splitLocations = new HashMap<>();
         String line;
@@ -274,7 +276,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         List<Text> splits = null;
         SortedMap<Text,String> tmpSplitLocations = null;
         while ((line = in.readLine()) != null) {
-            String[] parts = StringUtils.split(line, delimiter);
+            String[] parts = StringUtils.split(line, this.delimiter);
             if (tableName == null || !tableName.equals(parts[0])) {
                 if (null == tmpSplitLocations || tmpSplitLocations.isEmpty()) {
                     this.splitLocations.remove(tableName);

@@ -1,5 +1,6 @@
 package datawave.webservice.query.cache;
 
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.logic.QueryLogic;
@@ -120,6 +121,7 @@ public class QueryCacheBeanTest {
         q.setDnList(Collections.singletonList("some user"));
         
         expect(logic.getCollectQueryMetrics()).andReturn(false);
+        expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(q.getDnList())).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
         
