@@ -21,6 +21,7 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -47,8 +48,8 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         Document document = entry.getValue();
         Map<String,String> hitTermMap = this.getHitTermMap(document);
         
-        Multimap<String,Attribute<? extends Comparable<?>>> reducedMap = LinkedListMultimap.create();
         Map<String,Integer> countForFieldMap = Maps.newHashMap();
+        Map<String,Integer> countMissesForFieldMap = Maps.newHashMap();
         
         // maps from the key with NO grouping context to a multimap of
         // key WITH grouping context to attributes:
@@ -93,11 +94,13 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                     Attributes attrs = (Attributes) attr;
                     Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
                     for (Attribute<? extends Comparable<?>> value : attrSet) {
-                        manageHitsAndMisses(keyWithGrouping, keyNoGrouping, value, hitTermMap, hits, misses, countForFieldMap);
+                        value.setToKeep(false);
+                        manageHitsAndMisses(keyWithGrouping, keyNoGrouping, value, hitTermMap, hits, misses, countForFieldMap, countMissesForFieldMap, limit);
                     }
                     
                 } else {
-                    manageHitsAndMisses(keyWithGrouping, keyNoGrouping, attr, hitTermMap, hits, misses, countForFieldMap);
+                    attr.setToKeep(false);
+                    manageHitsAndMisses(keyWithGrouping, keyNoGrouping, attr, hitTermMap, hits, misses, countForFieldMap, countMissesForFieldMap, limit);
                 }
             }
         }
@@ -107,7 +110,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             for (String keyWithGrouping : hitMap.keySet()) {
                 for (Attribute<? extends Comparable<?>> value : hitMap.get(keyWithGrouping)) {
                     // if(limit <= 0) break; // comment this line if you want to get ALL hits even if the limit is exceeded
-                    reducedMap.put(keyWithGrouping, value);
+                    value.setToKeep(true);
                     limit--;
                 }
             }
@@ -116,12 +119,11 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 for (Attribute<? extends Comparable<?>> value : missMap.get(keyWithGrouping)) {
                     if (limit <= 0)
                         break;
-                    reducedMap.put(keyWithGrouping, value);
+                    value.setToKeep(true);
                     limit--;
                 }
             }
             if (log.isTraceEnabled()) {
-                log.trace("reducedMap:" + reducedMap);
                 log.trace("mapOfHits:" + hits.asMap());
                 log.trace("mapOfMisses:" + misses.asMap());
             }
@@ -134,20 +136,19 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         }
         
         // mutate the document with the changes collected in the above loop
+        document.reduceToKeep();
         applyCounts(document, limitedFieldCounts);
-        Map<String,Multimap<String,Attribute<? extends Comparable<?>>>> toRemove = Maps.newLinkedHashMap();
-        toRemove.putAll(hits.asMap());
-        toRemove.putAll(misses.asMap());
-        makeReduction(document, toRemove, reducedMap);
         return entry;
     }
     
     private void manageHitsAndMisses(String keyWithGrouping, String keyNoGrouping, Attribute<?> attr, Map<String,String> hitTermMap,
                     LoadingCache<String,Multimap<String,Attribute<? extends Comparable<?>>>> mapOfHits,
-                    LoadingCache<String,Multimap<String,Attribute<? extends Comparable<?>>>> mapOfMisses, Map<String,Integer> countForFieldMap) {
+                    LoadingCache<String,Multimap<String,Attribute<? extends Comparable<?>>>> mapOfMisses, Map<String,Integer> countForFieldMap,
+                    Map<String,Integer> countMissesForFieldMap, int limit) {
         if (log.isTraceEnabled())
             log.trace("in - manageHitsAndMisses(" + keyWithGrouping + "," + keyNoGrouping + "," + attr + "," + hitTermMap + "," + mapOfHits.asMap() + ","
-                            + mapOfMisses.asMap() + "," + countForFieldMap);
+                            + mapOfMisses.asMap() + "," + countForFieldMap + "," + countMissesForFieldMap + "," + limit);
+        int missesCount = (countMissesForFieldMap.containsKey(keyNoGrouping) ? countMissesForFieldMap.get(keyNoGrouping) : 0);
         if (hitTermMap.containsKey(keyWithGrouping)) {
             
             Object s = attr.getData();
@@ -161,8 +162,9 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 } // otherwise, s is not a Type, just compare to value in hitTermMap using 'equals'
                 if (s.equals(hitValue)) {
                     mapOfHits.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
-                } else {
+                } else if (limit < 0 || missesCount < limit) {
                     mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+                    missesCount++;
                 }
             } catch (InstantiationException | IllegalAccessException e) {
                 log.error(e);
@@ -183,32 +185,42 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                             String hitTermGroup = commonalityAndGroupingContext[1];
                             if (hitTermKeyCommonality.equals(keyWithGroupingCommonality) && keyWithGroupingSuffix.equals(hitTermGroup)) {
                                 mapOfHits.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
-                            } else {
+                            } else if (limit < 0 || missesCount < limit) {
                                 mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+                                missesCount++;
                             }
-                        } else {
+                        } else if (limit < 0 || missesCount < limit) {
                             mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+                            missesCount++;
                         }
                     }
-                } else {
+                } else if (limit < 0 || missesCount < limit) {
                     mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+                    missesCount++;
                 }
                 
             } catch (Throwable ex) {
                 // if ANYTHING went wrong here, just put it into the misses
-                mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+                if (limit < 0 || missesCount < limit) {
+                    mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+                    missesCount++;
+                }
             }
-        } else {
+        } else if (limit < 0 || missesCount < limit) {
             mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+            missesCount++;
         }
         if (countForFieldMap.get(keyNoGrouping) == null) {
             countForFieldMap.put(keyNoGrouping, 1);
         } else {
             countForFieldMap.put(keyNoGrouping, countForFieldMap.get(keyNoGrouping) + 1);
         }
+        if (missesCount > 0) {
+            countMissesForFieldMap.put(keyNoGrouping, missesCount);
+        }
         if (log.isTraceEnabled())
             log.trace("out - manageHitsAndMisses(" + keyWithGrouping + "," + keyNoGrouping + "," + attr + "," + hitTermMap + "," + mapOfHits.asMap() + ","
-                            + mapOfMisses.asMap() + "," + countForFieldMap);
+                            + mapOfMisses.asMap() + "," + countForFieldMap + "," + countMissesForFieldMap + "," + limit);
     }
     
     static String[] getCommonalityAndGroupingContext(String in) {
@@ -257,32 +269,4 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         }
     }
     
-    /**
-     * for any field that should be limited, change the document's collection of those fields by emptying it, then adding back the ones that should be kept. For
-     * example, if LOAD_DATE should be limited to 2, get the document's collection LOAD_DATE attribute, if it is an Attributes, then replace s, and replace it
-     * with the (smaller) collection in the reducedSetMap
-     * 
-     * @param document
-     */
-    private void makeReduction(Document document, Map<String,Multimap<String,Attribute<? extends Comparable<?>>>> toRemove,
-                    Multimap<String,Attribute<? extends Comparable<?>>> reducedMap) {
-        
-        if (log.isTraceEnabled())
-            log.trace("reducedMap:" + reducedMap);
-        if (log.isTraceEnabled())
-            log.trace("toRemove:" + toRemove);
-        for (Multimap<String,Attribute<? extends Comparable<?>>> toRemoveMultimap : toRemove.values()) {
-            for (Entry<String,Attribute<? extends Comparable<?>>> entry : toRemoveMultimap.entries()) {
-                document.remove(entry.getKey());
-                if (log.isTraceEnabled())
-                    log.trace("removed " + entry.getKey() + " and its value " + entry.getValue() + " from document");
-            }
-        }
-        
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : reducedMap.entries()) {
-            document.put(entry, true);
-            if (log.isTraceEnabled())
-                log.trace("put " + entry + " into document");
-        }
-    }
 }

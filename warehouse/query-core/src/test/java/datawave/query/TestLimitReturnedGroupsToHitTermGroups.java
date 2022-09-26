@@ -286,4 +286,36 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
     
+    @Test
+    public void testLimiting() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "false");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "CANINE=1,BIRD=1");
+        extraParameters.put("return.fields", "CANINE,BIRD");
+        
+        String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
+        
+        // CANINE is the hit, so that stays in. Only 1 bird is returned.
+        Set<String> goodResults = Sets.newHashSet("BIRD:parakeet", "CANINE:beagle");
+        
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+    
+    @Test
+    public void testLimitingToZero() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "false");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "CANINE=0,BIRD=0");
+        extraParameters.put("return.fields", "CANINE,BIRD");
+        
+        String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
+        
+        // CANINE is the hit, so that stays in. Only 1 bird is returned.
+        Set<String> goodResults = Sets.newHashSet("CANINE:beagle");
+        
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+    
 }
