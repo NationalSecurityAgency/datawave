@@ -1,5 +1,16 @@
 package datawave.ingest.mapreduce.job;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import datawave.common.test.logging.CommonTestAppender;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.TableName;
@@ -34,15 +45,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 @Disabled
 @ExtendWith(EasyMockExtension.class)
@@ -384,9 +386,8 @@ public class MultiRFileOutputFormatterTest {
                 tableConfigs = new HashMap<>();
                 tableConfigs.put(TableName.SHARD, null);
                 tableConfigs.put(TableName.SHARD_INDEX, null);
-                tableIds = new HashMap<>();
-                tableIds.put(TableName.SHARD, "1");
-                tableIds.put(TableName.SHARD_INDEX, "2");
+                tableIds = new HashSet<>(Arrays.asList(TableName.SHARD, TableName.SHARD_INDEX));
+                
             }
             
             @Override
