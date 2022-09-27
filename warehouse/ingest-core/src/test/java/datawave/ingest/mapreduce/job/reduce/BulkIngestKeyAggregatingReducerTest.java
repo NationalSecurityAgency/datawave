@@ -3,6 +3,9 @@ package datawave.ingest.mapreduce.job.reduce;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
+import datawave.ingest.config.TableConfigCache;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
@@ -13,6 +16,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.math3.analysis.function.Pow;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Counter;
@@ -21,10 +25,13 @@ import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.counters.GenericCounter;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
+import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -32,6 +39,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -39,6 +47,14 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import static datawave.ingest.config.TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY;
+import static datawave.ingest.config.TableConfigCache.DEFAULT_ACCUMULO_CONFIG_CACHE_PATH;
+import static datawave.ingest.data.config.ingest.AccumuloHelper.INSTANCE_NAME;
+import static datawave.ingest.data.config.ingest.AccumuloHelper.PASSWORD;
+import static datawave.ingest.data.config.ingest.AccumuloHelper.USERNAME;
+import static datawave.ingest.data.config.ingest.AccumuloHelper.ZOOKEEPERS;
+import static datawave.ingest.mapreduce.job.TableConfigurationUtil.ITERATOR_CLASS_MARKER;
+import static datawave.ingest.mapreduce.job.reduce.AggregatingReducer.INGEST_VALUE_DEDUP_AGGREGATION_KEY;
 import static datawave.ingest.mapreduce.job.reduce.AggregatingReducer.MILLISPERDAY;
 import static datawave.ingest.mapreduce.job.reduce.AggregatingReducer.USE_AGGREGATOR_PROPERTY;
 import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.CONTEXT_WRITER_CLASS;
@@ -48,17 +64,18 @@ import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReduc
 import static org.junit.Assert.assertEquals;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({TableConfigurationUtil.class})
+@PrepareForTest({AggregatingReducer.class, TableConfigurationUtil.class})
 public class BulkIngestKeyAggregatingReducerTest {
     
     private Set<String> tables = ImmutableSet.of("table1", "table2", "table3", "table4");
-    private Map<String,String> confMap = null;
-    private Multimap<BulkIngestKey,Value> output = null;
-    private Multimap<BulkIngestKey,Value> expected = null;
+    private Map<String,String> confMap;
+    private Multimap<BulkIngestKey,Value> output;
+    private Multimap<BulkIngestKey,Value> expected;
     private BulkIngestKeyAggregatingReducer<BulkIngestKey,Value> reducer;
-    private Configuration conf = null;
-    private ContextWriter<Key,Value> contextWriter = null;
-    private TaskInputOutputContext<BulkIngestKey,Value,BulkIngestKey,Value> context = null;
+    private Configuration conf;
+    private ContextWriter<Key,Value> contextWriter;
+    private TaskInputOutputContext<BulkIngestKey,Value,BulkIngestKey,Value> context;
+    private TableConfigurationUtil tcu;
     private Random rand = new Random();
     
     private Counter duplicateKey;
@@ -120,10 +137,17 @@ public class BulkIngestKeyAggregatingReducerTest {
         PowerMockito.when(conf.getBoolean(Mockito.eq(CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS), Mockito.eq(false))).thenReturn(false);
         PowerMockito.doReturn(BulkContextWriter.class).when(conf).getClass(Mockito.eq(CONTEXT_WRITER_CLASS), Mockito.any(), Mockito.any());
         
+        tcu = PowerMockito.mock(TableConfigurationUtil.class);
+        PowerMockito.whenNew(TableConfigurationUtil.class).withAnyArguments().thenReturn(tcu);
+        PowerMockito.doNothing().when(tcu).setTableItersPrioritiesAndOpts();
+        
         PowerMockito.mockStatic(TableConfigurationUtil.class, new Class[0]);
-        PowerMockito.when(TableConfigurationUtil.getTables((Configuration) Mockito.any(Configuration.class))).thenReturn(tables);
+        PowerMockito.when(TableConfigurationUtil.getJobOutputTableNames((Configuration) Mockito.any(Configuration.class))).thenReturn(tables);
         
         context = (TaskInputOutputContext<BulkIngestKey,Value,BulkIngestKey,Value>) PowerMockito.mock(TaskInputOutputContext.class);
+        if (null != context.getCounter(IngestOutput.DUPLICATE_KEY)) {
+            context.getCounter(IngestOutput.DUPLICATE_KEY).setValue(0L);
+        }
         PowerMockito.doAnswer(invocation -> {
             BulkIngestKey k = invocation.getArgument(0);
             Value v = invocation.getArgument(1);
@@ -180,15 +204,20 @@ public class BulkIngestKeyAggregatingReducerTest {
         PowerMockito.when(context.getCounter(IngestOutput.TIMESTAMP_DUPLICATE)).thenReturn(dupCounter);
         
         reducer.TSDedupTables.addAll(Arrays.asList(new Text("table1"), new Text("table2"), new Text("table3")));
-        confMap.put("combiner.table1", "");
-        confMap.put("combiner.table1.1.iterClazz", "datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducerTest$testCombiner");
-        confMap.put("combiner.table2", "");
-        confMap.put("combiner.table2.1.iterClazz", "datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducerTest$testCombiner");
-        PowerMockito.doAnswer(invocation -> {
-            Iterator<Map.Entry<String,String>> iter = confMap.entrySet().iterator();
-            return iter;
-        }).when(conf).iterator();
         
+        Map<String,String> optMap;
+        optMap = new HashMap<>();
+        optMap.put(ITERATOR_CLASS_MARKER, "datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducerTest$testCombiner");
+        
+        Map<Integer,Map<String,String>> table1CombinerMap = new HashMap<>();
+        table1CombinerMap.put(1, optMap);
+        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
+        
+        Map<Integer,Map<String,String>> table2CombinerMap = new HashMap<>();
+        optMap.put(ITERATOR_CLASS_MARKER, "datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducerTest$testCombiner");
+        table2CombinerMap.put(1, optMap);
+        
+        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table2"))).thenReturn(table2CombinerMap);
     }
     
     private void setupUsingCombiner() {
@@ -200,14 +229,19 @@ public class BulkIngestKeyAggregatingReducerTest {
         PowerMockito.when(conf.getBoolean(Mockito.eq(BulkIngestKeyDedupeCombiner.USING_COMBINER), Mockito.eq(false))).thenReturn(true);
         PowerMockito.when(context.getCounter(IngestOutput.MERGED_VALUE)).thenReturn(combinerCounter);
         
-        confMap.put("combiner.table1", "");
-        confMap.put("combiner.table1.1.iterClazz", "datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducerTest$testCombiner");
-        confMap.put("combiner.table3", "");
-        confMap.put("combiner.table3.1.iterClazz", "datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducerTest$testCombiner");
-        PowerMockito.doAnswer(invocation -> {
-            Iterator<Map.Entry<String,String>> iter = confMap.entrySet().iterator();
-            return iter;
-        }).when(conf).iterator();
+        Map<String,String> optMap;
+        optMap = new HashMap<>();
+        optMap.put("combiner", "");
+        optMap.put(ITERATOR_CLASS_MARKER, "datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducerTest$testCombiner");
+        
+        Map<Integer,Map<String,String>> table1CombinerMap = new HashMap<>();
+        table1CombinerMap.put(1, optMap);
+        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
+        
+        Map<Integer,Map<String,String>> table3CombinerMap = new HashMap<>();
+        table3CombinerMap.put(1, optMap);
+        
+        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table3"))).thenReturn(table3CombinerMap);
     }
     
     private void checkCounterValues() {
@@ -232,7 +266,7 @@ public class BulkIngestKeyAggregatingReducerTest {
         performDoReduce("table1", "r4", 0, ExpectedValueType.ALL_VALUES);
         performDoReduce("table2", "r1", 2, ExpectedValueType.ALL_VALUES);
         performDoReduce("table2", "r2", 5, ExpectedValueType.ALL_VALUES);
-        performDoReduce("table2", "r2", 3, ExpectedValueType.ALL_VALUES);
+        performDoReduce("table2", "r3", 3, ExpectedValueType.ALL_VALUES);
         
         expectedDuplicateKey = 2;
         checkCounterValues();
