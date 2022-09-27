@@ -1,7 +1,9 @@
 package datawave.query.function;
 
 import com.google.common.base.Function;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -10,7 +12,6 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;
@@ -32,38 +33,13 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             log.trace("limitFieldsMap set to:" + limitFieldsMap);
     }
     
-    protected void increment(String key, Map<String,Integer> map) {
-        if (map.containsKey(key)) {
-            map.put(key, map.get(key) + 1);
-        } else {
-            map.put(key, 1);
-        }
-    }
-    
-    protected void decrement(String key, Map<String,Integer> map) {
-        int value = get(key, map);
-        if (value > 0) {
-            value = value - 1;
-            if (value > 0) {
-                map.put(key, value);
-            } else {
-                map.remove(key);
-            }
-        }
-    }
-    
-    protected int get(String key, Map<String,Integer> map) {
-        Integer value = map.get(key);
-        return (value != null ? value : 0);
-    }
-    
     @Override
     public Entry<Key,Document> apply(Entry<Key,Document> entry) {
         // key is the limited field name with _ORIGINAL_COUNT appended,
         // value will be set to the original count of that field in the document
         Map<String,Integer> limitedFieldCounts = new HashMap<>();
         Document document = entry.getValue();
-        Map<String,String> hitTermMap = this.getHitTermMap(document);
+        Multimap<String,String> hitTermMap = this.getHitTermMap(document);
         
         Map<String,Integer> countForFieldMap = Maps.newHashMap();
         Map<String,Integer> countMissesRemainingForFieldMap = Maps.newHashMap();
@@ -72,11 +48,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         // first pass is to set all of the hits to be kept, the misses to drop, and count em all
         for (Map.Entry<String,Attribute<? extends Comparable<?>>> de : document.entrySet()) {
             String keyWithGrouping = de.getKey();
-            String keyNoGrouping = keyWithGrouping;
-            // if we have grouping context on, remove the grouping context
-            if (keyNoGrouping.indexOf('.') != -1) {
-                keyNoGrouping = keyNoGrouping.substring(0, keyNoGrouping.indexOf('.'));
-            }
+            String keyNoGrouping = removeGrouping(keyWithGrouping);
             
             // if there is an _ANYFIELD_ entry in the limitFieldsMap, then insert every key that is not yet in the map, using the
             // limit value for _ANYFIELD_
@@ -90,78 +62,90 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                     log.trace("limitFieldsMap contains " + keyNoGrouping);
                 
                 Attribute<?> attr = de.getValue();
+                int keepers = get(keyNoGrouping, countKeepersForFieldMap);
+                int missesRemaining = get(keyNoGrouping, countMissesRemainingForFieldMap);
+                int total = get(keyNoGrouping, countForFieldMap);
                 if (attr instanceof Attributes) {
                     Attributes attrs = (Attributes) attr;
                     Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
                     for (Attribute<? extends Comparable<?>> value : attrSet) {
                         if (isHit(keyWithGrouping, value, hitTermMap)) {
-                            increment(keyNoGrouping, countKeepersForFieldMap);
+                            keepers++;
                         } else {
                             value.setToKeep(false);
-                            increment(keyNoGrouping, countMissesRemainingForFieldMap);
+                            missesRemaining++;
                         }
-                        increment(keyNoGrouping, countForFieldMap);
+                        total++;
                     }
                 } else {
                     if (isHit(keyWithGrouping, attr, hitTermMap)) {
-                        increment(keyNoGrouping, countKeepersForFieldMap);
+                        keepers++;
                     } else {
                         attr.setToKeep(false);
-                        increment(keyNoGrouping, countMissesRemainingForFieldMap);
+                        missesRemaining++;
                     }
-                    increment(keyNoGrouping, countForFieldMap);
+                    total++;
                 }
+                set(keyNoGrouping, countKeepersForFieldMap, keepers);
+                set(keyNoGrouping, countMissesRemainingForFieldMap, missesRemaining);
+                set(keyNoGrouping, countForFieldMap, total);
             }
         }
         
         // second pass is to set any misses back to be kept if the limit allows
         for (Map.Entry<String,Attribute<? extends Comparable<?>>> de : document.entrySet()) {
             String keyWithGrouping = de.getKey();
-            String keyNoGrouping = keyWithGrouping;
-            // if we have grouping context on, remove the grouping context
-            if (keyNoGrouping.indexOf('.') != -1) {
-                keyNoGrouping = keyNoGrouping.substring(0, keyNoGrouping.indexOf('.'));
-            }
+            String keyNoGrouping = removeGrouping(keyWithGrouping);
             
-            if (this.limitFieldsMap.containsKey(keyNoGrouping)) { // look for the key without the grouping context
-                int limit = this.limitFieldsMap.get(keyNoGrouping); // used below if you un-comment to get all hits
+            // look for the key without the grouping context
+            if (this.limitFieldsMap.containsKey(keyNoGrouping)) {
+                int limit = this.limitFieldsMap.get(keyNoGrouping);
                 
                 // short circuit if we are not actually limiting this field.
                 // this is keeping with the original logic where a negative limit means to keep only hits
-                if (limit < 0) {
+                if (limit <= 0) {
                     continue;
                 }
                 
-                int missesToSet = Math.min(limit - get(keyNoGrouping, countKeepersForFieldMap), get(keyNoGrouping, countMissesRemainingForFieldMap));
+                int keepers = get(keyNoGrouping, countKeepersForFieldMap);
+                int missesRemaining = get(keyNoGrouping, countMissesRemainingForFieldMap);
+                int missesToSet = Math.min(limit - keepers, missesRemaining);
                 
                 // if we have misses yet to keep
                 if (missesToSet > 0) {
-                    
+                    boolean foundMiss = false;
                     Attribute<?> attr = de.getValue();
                     if (attr instanceof Attributes) {
                         Attributes attrs = (Attributes) attr;
                         Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
                         
                         for (Attribute<? extends Comparable<?>> value : attrSet) {
-                            // if this was a miss previously set to not keep
+                            // if this was an attribute previously set to not keep, then it is one of the misses (not a hit)
                             if (!value.isToKeep()) {
                                 value.setToKeep(true);
-                                increment(keyNoGrouping, countKeepersForFieldMap);
-                                decrement(keyNoGrouping, countMissesRemainingForFieldMap);
+                                keepers++;
+                                missesRemaining--;
                                 missesToSet--;
+                                foundMiss = true;
                                 if (missesToSet == 0) {
                                     break;
                                 }
                             }
                         }
                     } else {
-                        // if this was a miss previously set to not keep
+                        // if this was an attribute previously set to not keep, then it is one of the misses (not a hit)
                         if (!attr.isToKeep()) {
                             attr.setToKeep(true);
-                            increment(keyNoGrouping, countKeepersForFieldMap);
-                            decrement(keyNoGrouping, countMissesRemainingForFieldMap);
+                            keepers++;
+                            missesRemaining--;
                             missesToSet--;
+                            foundMiss = true;
                         }
+                    }
+                    
+                    if (foundMiss) {
+                        set(keyNoGrouping, countKeepersForFieldMap, keepers);
+                        set(keyNoGrouping, countMissesRemainingForFieldMap, missesRemaining);
                     }
                 }
             }
@@ -172,8 +156,9 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         
         for (String keyNoGrouping : countForFieldMap.keySet()) {
             // only generate an original count if a field was reduced
-            if (get(keyNoGrouping, countForFieldMap) > get(keyNoGrouping, countKeepersForFieldMap)) {
-                ColumnVisibility docVisibility = document.getColumnVisibility();
+            int keepers = get(keyNoGrouping, countKeepersForFieldMap);
+            int originalCount = get(keyNoGrouping, countForFieldMap);
+            if (originalCount > keepers) {
                 document.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX,
                                 new Numeric(get(keyNoGrouping, countForFieldMap), document.getMetadata(), document.isToKeep()), true, false);
             }
@@ -191,64 +176,65 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * @param hitTermMap
      * @return true if a hit
      */
-    private boolean isHit(String keyWithGrouping, Attribute<?> attr, Map<String,String> hitTermMap) {
-        try {
-            
-            if (hitTermMap.containsKey(keyWithGrouping)) {
-                Object s = attr.getData();
-                Class<?> clazz = attr.getData().getClass();
-                Object hitValue = hitTermMap.get(keyWithGrouping);
-                if (Type.class.isAssignableFrom(clazz)) {
-                    Type<?> thing = (Type<?>) clazz.newInstance();
-                    thing.setDelegateFromString(hitTermMap.get(keyWithGrouping));
-                    hitValue = thing;
-                } // otherwise, s is not a Type, just compare to value in hitTermMap using 'equals'
-                if (s.equals(hitValue)) {
-                    return true;
-                }
+    private boolean isHit(String keyWithGrouping, Attribute<?> attr, Multimap<String,String> hitTermMap) {
+        if (hitTermMap.containsKey(keyWithGrouping)) {
+            Object s = attr.getData();
+            Class<?> clazz = attr.getData().getClass();
+            for (Object hitValue : hitTermMap.get(keyWithGrouping)) {
+                try {
+                    if (Type.class.isAssignableFrom(clazz)) {
+                        Type<?> thing = (Type<?>) clazz.newInstance();
+                        thing.setDelegateFromString(String.valueOf(hitValue));
+                        hitValue = thing;
+                    } // otherwise, s is not a Type, just compare to value in hitTermMap using 'equals'
+                    if (s.equals(hitValue)) {
+                        return true;
+                    }
+                } catch (Exception e) {}
             }
-            
-            if (!hitTermMap.isEmpty()) {
-                String[] keyTokens = LimitFields.getCommonalityAndGroupingContext(keyWithGrouping);
-                if (keyTokens != null) {
-                    String keyWithGroupingCommonality = keyTokens[0];
-                    String keyWithGroupingSuffix = keyTokens[1];
-                    
-                    for (String key : hitTermMap.keySet()) {
-                        // get the commonality from the hit term key
-                        String[] commonalityAndGroupingContext = LimitFields.getCommonalityAndGroupingContext(key);
-                        if (commonalityAndGroupingContext != null) {
-                            String hitTermKeyCommonality = commonalityAndGroupingContext[0];
-                            String hitTermGroup = commonalityAndGroupingContext[1];
-                            if (hitTermKeyCommonality.equals(keyWithGroupingCommonality) && keyWithGroupingSuffix.equals(hitTermGroup)) {
-                                return true;
-                            }
+        }
+        
+        // if not already returned as a value match, then lets include those that are
+        // part of the same group and instance as some other hit.
+        if (!hitTermMap.isEmpty()) {
+            String[] keyTokens = LimitFields.getCommonalityAndGroupingContext(keyWithGrouping);
+            if (keyTokens != null) {
+                String keyWithGroupingCommonality = keyTokens[0];
+                String keyWithGroupingSuffix = keyTokens[1];
+                
+                for (String key : hitTermMap.keySet()) {
+                    // get the commonality from the hit term key
+                    String[] commonalityAndGroupingContext = LimitFields.getCommonalityAndGroupingContext(key);
+                    if (commonalityAndGroupingContext != null) {
+                        String hitTermKeyCommonality = commonalityAndGroupingContext[0];
+                        String hitTermGroup = commonalityAndGroupingContext[1];
+                        if (hitTermKeyCommonality.equals(keyWithGroupingCommonality) && keyWithGroupingSuffix.equals(hitTermGroup)) {
+                            return true;
                         }
                     }
                 }
             }
-            
-        } catch (Exception e) {
-            return false;
         }
+        
         return false;
     }
     
     static String[] getCommonalityAndGroupingContext(String in) {
         String[] splits = StringUtils.split(in, '.');
         if (splits.length >= 3) {
+            // return the first group and last group (a.k.a the instance in the first group)
             return new String[] {splits[1], splits[splits.length - 1]};
         }
         return null;
     }
     
-    private Map<String,String> getHitTermMap(Document document) {
-        Map<String,String> attrMap = new HashMap<>();
+    private Multimap<String,String> getHitTermMap(Document document) {
+        Multimap<String,String> attrMap = HashMultimap.create();
         fillHitTermMap(document.get(JexlEvaluation.HIT_TERM_FIELD), attrMap);
         return attrMap;
     }
     
-    private void fillHitTermMap(Attribute<?> attr, Map<String,String> attrMap) {
+    private void fillHitTermMap(Attribute<?> attr, Multimap<String,String> attrMap) {
         if (attr != null) {
             if (attr instanceof Attributes) {
                 Attributes attrs = (Attributes) attr;
@@ -262,6 +248,28 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 attrMap.put(contentString.substring(0, contentString.indexOf(":")), contentString.substring(contentString.indexOf(":") + 1));
             }
         }
+    }
+    
+    protected void set(String key, Map<String,Integer> map, int value) {
+        if (value > 0) {
+            map.put(key, value);
+        } else {
+            map.remove(key);
+        }
+    }
+    
+    protected int get(String key, Map<String,Integer> map) {
+        Integer value = map.get(key);
+        return (value != null ? value : 0);
+    }
+    
+    protected String removeGrouping(String key) {
+        // if we have grouping context on, remove the grouping context
+        int index = key.indexOf('.');
+        if (index != -1) {
+            key = key.substring(0, index);
+        }
+        return key;
     }
     
 }
