@@ -10,6 +10,7 @@ import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.Map;
@@ -18,7 +19,7 @@ import java.util.NoSuchElementException;
 /**
  * Visitor meant to 'push down' predicates for expressions that reference low selectable fields.
  */
-public class PushdownLowSelectivityNodesVisitor extends BaseVisitor {
+public class PushdownLowSelectivityNodesVisitor extends ShortCircuitBaseVisitor {
     
     protected MetadataHelper helper;
     protected ShardQueryConfiguration config;

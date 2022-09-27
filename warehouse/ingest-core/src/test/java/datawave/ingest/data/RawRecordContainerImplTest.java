@@ -175,8 +175,9 @@ public class RawRecordContainerImplTest {
         e1.setRawData(csv.getBytes());
         e1.generateId(null);
         e1.validate();
+        assertEquals(-1, e1.getDataOutputSize());
         e1.write(out);
-        
+        assertEquals(151, e1.getDataOutputSize());
         out.close();
         
         // Read in the event
@@ -186,7 +187,9 @@ public class RawRecordContainerImplTest {
         // Read in the event
         e2 = new ValidatingRawRecordContainerImpl();
         e2.setConf(conf);
+        assertEquals(-1, e2.getDataOutputSize());
         e2.readFields(in);
+        assertEquals(151, e2.getDataOutputSize());
         
         // Check to see if they are equal
         assertEquals(e1, e2);
