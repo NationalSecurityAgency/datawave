@@ -2,7 +2,6 @@ package datawave.query.function;
 
 import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
@@ -35,15 +34,14 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     
     @Override
     public Entry<Key,Document> apply(Entry<Key,Document> entry) {
-        // key is the limited field name with _ORIGINAL_COUNT appended,
-        // value will be set to the original count of that field in the document
-        Map<String,Integer> limitedFieldCounts = new HashMap<>();
         Document document = entry.getValue();
         Multimap<String,String> hitTermMap = this.getHitTermMap(document);
         
-        Map<String,Integer> countForFieldMap = Maps.newHashMap();
-        Map<String,Integer> countMissesRemainingForFieldMap = Maps.newHashMap();
-        Map<String,Integer> countKeepersForFieldMap = Maps.newHashMap();
+        CountMap countForFieldMap = new CountMap();
+        CountMap countMissesRemainingForFieldMap = new CountMap();
+        CountMap countKeepersForFieldMap = new CountMap();
+        
+        int attributesToDrop = 0;
         
         // first pass is to set all of the hits to be kept, the misses to drop, and count em all
         for (Map.Entry<String,Attribute<? extends Comparable<?>>> de : document.entrySet()) {
@@ -62,9 +60,9 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                     log.trace("limitFieldsMap contains " + keyNoGrouping);
                 
                 Attribute<?> attr = de.getValue();
-                int keepers = get(keyNoGrouping, countKeepersForFieldMap);
-                int missesRemaining = get(keyNoGrouping, countMissesRemainingForFieldMap);
-                int total = get(keyNoGrouping, countForFieldMap);
+                int keepers = countKeepersForFieldMap.get(keyNoGrouping);
+                int missesRemaining = countMissesRemainingForFieldMap.get(keyNoGrouping);
+                int total = countForFieldMap.get(keyNoGrouping);
                 if (attr instanceof Attributes) {
                     Attributes attrs = (Attributes) attr;
                     Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
@@ -74,6 +72,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                         } else {
                             value.setToKeep(false);
                             missesRemaining++;
+                            attributesToDrop++;
                         }
                         total++;
                     }
@@ -83,12 +82,13 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                     } else {
                         attr.setToKeep(false);
                         missesRemaining++;
+                        attributesToDrop++;
                     }
                     total++;
                 }
-                set(keyNoGrouping, countKeepersForFieldMap, keepers);
-                set(keyNoGrouping, countMissesRemainingForFieldMap, missesRemaining);
-                set(keyNoGrouping, countForFieldMap, total);
+                countKeepersForFieldMap.put(keyNoGrouping, keepers);
+                countMissesRemainingForFieldMap.put(keyNoGrouping, missesRemaining);
+                countForFieldMap.put(keyNoGrouping, total);
             }
         }
         
@@ -107,8 +107,8 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                     continue;
                 }
                 
-                int keepers = get(keyNoGrouping, countKeepersForFieldMap);
-                int missesRemaining = get(keyNoGrouping, countMissesRemainingForFieldMap);
+                int keepers = countKeepersForFieldMap.get(keyNoGrouping);
+                int missesRemaining = countMissesRemainingForFieldMap.get(keyNoGrouping);
                 int missesToSet = Math.min(limit - keepers, missesRemaining);
                 
                 // if we have misses yet to keep
@@ -126,7 +126,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                                 keepers++;
                                 missesRemaining--;
                                 missesToSet--;
-                                foundMiss = true;
+                                attributesToDrop--;
                                 if (missesToSet == 0) {
                                     break;
                                 }
@@ -139,28 +139,31 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                             keepers++;
                             missesRemaining--;
                             missesToSet--;
+                            attributesToDrop--;
                             foundMiss = true;
                         }
                     }
                     
                     if (foundMiss) {
-                        set(keyNoGrouping, countKeepersForFieldMap, keepers);
-                        set(keyNoGrouping, countMissesRemainingForFieldMap, missesRemaining);
+                        countKeepersForFieldMap.put(keyNoGrouping, keepers);
+                        countMissesRemainingForFieldMap.put(keyNoGrouping, missesRemaining);
                     }
                 }
             }
         }
         
-        // reduce the document to those to keep
-        document.reduceToKeep();
-        
-        for (String keyNoGrouping : countForFieldMap.keySet()) {
-            // only generate an original count if a field was reduced
-            int keepers = get(keyNoGrouping, countKeepersForFieldMap);
-            int originalCount = get(keyNoGrouping, countForFieldMap);
-            if (originalCount > keepers) {
-                document.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX,
-                                new Numeric(get(keyNoGrouping, countForFieldMap), document.getMetadata(), document.isToKeep()), true, false);
+        if (attributesToDrop > 0) {
+            // reduce the document to those to keep
+            document.reduceToKeep();
+            
+            // generate fields for original counts
+            for (String keyNoGrouping : countForFieldMap.keySet()) {
+                // only generate an original count if a field was reduced
+                int keepers = countKeepersForFieldMap.get(keyNoGrouping);
+                int originalCount = countForFieldMap.get(keyNoGrouping);
+                if (originalCount > keepers) {
+                    document.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX, new Numeric(originalCount, document.getMetadata(), document.isToKeep()), true, false);
+                }
             }
         }
         
@@ -250,19 +253,6 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         }
     }
     
-    protected void set(String key, Map<String,Integer> map, int value) {
-        if (value > 0) {
-            map.put(key, value);
-        } else {
-            map.remove(key);
-        }
-    }
-    
-    protected int get(String key, Map<String,Integer> map) {
-        Integer value = map.get(key);
-        return (value != null ? value : 0);
-    }
-    
     protected String removeGrouping(String key) {
         // if we have grouping context on, remove the grouping context
         int index = key.indexOf('.');
@@ -270,6 +260,29 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             key = key.substring(0, index);
         }
         return key;
+    }
+    
+    /**
+     * A map that assumes a value for missing keys.
+     */
+    public static class CountMap extends HashMap<String,Integer> {
+        private static final Integer ZERO = Integer.valueOf(0);
+        
+        @Override
+        public Integer get(Object key) {
+            return getOrDefault(key, ZERO);
+        }
+        
+        @Override
+        public Integer put(String key, Integer value) {
+            if (value > 0) {
+                return super.put(key, value);
+            } else {
+                value = get(key);
+                remove(key);
+                return value;
+            }
+        }
     }
     
 }
