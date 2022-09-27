@@ -446,7 +446,7 @@ public class QueryModelVisitorTest {
         model.addTermToModel("FIELD_A", "FIELD_B");
         model.addTermToModel("FIELD_A", "FIELD_C");
         
-        String query = "filter:includeRegex(FIELD_A, 'ba.*') && filter:noExpansion(FIELD_A)";
+        String query = "filter:includeRegex(FIELD_A, 'ba.*') && f:noExpansion(FIELD_A)";
         String expected = "filter:includeRegex(FIELD_A, 'ba.*')";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A"));
     }
