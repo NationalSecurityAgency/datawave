@@ -4,10 +4,10 @@ import datawave.ingest.mapreduce.job.IngestJob;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -26,15 +26,16 @@ public class StatsJobTest {
     
     private StatsJobWrapper wrapper;
     
-    @Before
+    @BeforeEach
     public void setup() {
         wrapper = new StatsJobWrapper();
         
     }
     
+    @Disabled
     @Test
     public void testParseArguments() throws Exception {
-        Assume.assumeTrue(null != System.getenv("DATAWAVE_INGEST_HOME"));
+        Assertions.assertNotNull(System.getenv("DATAWAVE_INGEST_HOME"));
         log.info("======  testParseArguments  =====");
         Map<String,Object> mapArgs = new HashMap<>();
         
@@ -109,11 +110,11 @@ public class StatsJobTest {
                     Boolean bool = (Boolean) entry.getValue();
                     val = conf.getBoolean(entry.getKey(), !bool);
                 } else {
-                    Assert.fail("add instance handler for " + entry.getValue().getClass().getSimpleName());
+                    Assertions.fail("add instance handler for " + entry.getValue().getClass().getSimpleName());
                 }
                 
-                Assert.assertNotNull(val);
-                Assert.assertEquals(entry.getValue(), val);
+                Assertions.assertNotNull(val);
+                Assertions.assertEquals(entry.getValue(), val);
             }
         }
     }

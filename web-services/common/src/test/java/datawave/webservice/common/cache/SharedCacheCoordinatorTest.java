@@ -1,9 +1,5 @@
 package datawave.webservice.common.cache;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-
-import datawave.common.test.integration.IntegrationTest;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.shared.SharedCount;
@@ -15,11 +11,14 @@ import org.apache.curator.retry.BoundedExponentialBackoffRetry;
 import org.apache.curator.test.InstanceSpec;
 import org.apache.curator.test.QuorumConfigBuilder;
 import org.apache.curator.test.TestingZooKeeperServer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.powermock.reflect.Whitebox;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests functionality in the {@link SharedCacheCoordinator}.
@@ -29,7 +28,7 @@ public class SharedCacheCoordinatorTest {
     private SharedCacheCoordinator cacheCoordinator;
     private CuratorFramework curatorClient;
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         InstanceSpec spec = new InstanceSpec(null, -1, -1, -1, true, -1);
         testingZooKeeperServer = new TestingZooKeeperServer(new QuorumConfigBuilder(spec));
@@ -39,12 +38,12 @@ public class SharedCacheCoordinatorTest {
         
         curatorClient = CuratorFrameworkFactory.builder().namespace("CredentialsCacheBeanTest").retryPolicy(new BoundedExponentialBackoffRetry(100, 200, 3))
                         .connectionTimeoutMs(200).sessionTimeoutMs(100).connectString(spec.getConnectString()).build();
-        Whitebox.setInternalState(cacheCoordinator, CuratorFramework.class, curatorClient);
+        ReflectionTestUtils.setField(cacheCoordinator, "curatorClient", curatorClient);
         
         cacheCoordinator.start();
     }
     
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         cacheCoordinator.stop();
         testingZooKeeperServer.close();
@@ -52,9 +51,9 @@ public class SharedCacheCoordinatorTest {
     
     @Test
     public void testEphemeralNodeReconnect() throws Exception {
-        String ephemeralNodePath = Whitebox.getInternalState(cacheCoordinator, "serverIdentifierPath");
+        String ephemeralNodePath = (String) ReflectionTestUtils.getField(cacheCoordinator, "serverIdentifierPath");
         boolean exists = curatorClient.checkExists().forPath(ephemeralNodePath) != null;
-        assertTrue("Ephemeral server node " + ephemeralNodePath + " doesn't exist before a zookeeper restart", exists);
+        assertTrue(exists, "Ephemeral server node " + ephemeralNodePath + " doesn't exist before a zookeeper restart");
         
         final ConnectionState[] state = new ConnectionState[] {ConnectionState.CONNECTED};
         curatorClient.getConnectionStateListenable().addListener((client, newState) -> state[0] = newState);
@@ -66,7 +65,7 @@ public class SharedCacheCoordinatorTest {
                 break;
             Thread.sleep(200L);
         }
-        assertEquals("Client never reconnected.", ConnectionState.RECONNECTED, state[0]);
+        assertEquals(ConnectionState.RECONNECTED, state[0], "Client never reconnected.");
         
         for (int i = 0; i < 50; ++i) {
             exists = curatorClient.checkExists().forPath(ephemeralNodePath) != null;
@@ -74,7 +73,7 @@ public class SharedCacheCoordinatorTest {
                 break;
             Thread.sleep(200L);
         }
-        assertTrue("Ephemeral node " + ephemeralNodePath + " was not recreated.", exists);
+        assertTrue(exists, "Ephemeral node " + ephemeralNodePath + " was not recreated.");
     }
     
     @Test
@@ -110,8 +109,8 @@ public class SharedCacheCoordinatorTest {
                     break;
                 Thread.sleep(1000L);
             }
-            assertEquals("Counter never updated.", newCount, count[0]);
-            assertTrue("Counter never updated.", cacheCoordinator.checkCounter(COUNTER, newCount));
+            assertEquals(newCount, count[0], "Counter never updated.");
+            assertTrue(cacheCoordinator.checkCounter(COUNTER, newCount), "Counter never updated.");
             
             testingZooKeeperServer.restart();
             
@@ -120,7 +119,7 @@ public class SharedCacheCoordinatorTest {
                     break;
                 Thread.sleep(200L);
             }
-            assertEquals("Client never reconnected.", ConnectionState.RECONNECTED, state[0]);
+            assertEquals(ConnectionState.RECONNECTED, state[0], "Client never reconnected.");
             
             newCount = 42;
             oldCount = counter.getVersionedValue();
@@ -131,21 +130,21 @@ public class SharedCacheCoordinatorTest {
                     break;
                 Thread.sleep(200L);
             }
-            assertEquals("Counter never updated after restart.", newCount, count[0]);
-            assertTrue("Counter never updated.", cacheCoordinator.checkCounter(COUNTER, newCount));
+            assertEquals(newCount, count[0], "Counter never updated after restart.");
+            assertTrue(cacheCoordinator.checkCounter(COUNTER, newCount), "Counter never updated.");
         } finally {
             counter.close();
         }
     }
     
     @Test
-    @Category(IntegrationTest.class)
+    @Tag("IntegrationTest")
     public void testSharedCounterUpdateAfterConnectionLost() throws Exception {
         final String COUNTER = "testCounter";
         final ConnectionState[] state = new ConnectionState[] {ConnectionState.CONNECTED};
         final int[] count = new int[] {1};
         
-        CuratorFramework curatorFramework = Whitebox.getInternalState(cacheCoordinator, CuratorFramework.class);
+        CuratorFramework curatorFramework = (CuratorFramework) ReflectionTestUtils.getField(cacheCoordinator, "curatorClient");
         curatorFramework.getConnectionStateListenable().addListener((client, newState) -> state[0] = newState);
         cacheCoordinator.registerCounter(COUNTER, new SharedCountListener() {
             @Override
@@ -172,8 +171,8 @@ public class SharedCacheCoordinatorTest {
                     break;
                 Thread.sleep(200L);
             }
-            assertEquals("Counter never updated.", newCount, count[0]);
-            assertTrue("Counter never updated.", cacheCoordinator.checkCounter(COUNTER, newCount));
+            assertEquals(newCount, count[0], "Counter never updated.");
+            assertTrue(cacheCoordinator.checkCounter(COUNTER, newCount), "Counter never updated.");
             
             testingZooKeeperServer.kill();
             
@@ -182,7 +181,7 @@ public class SharedCacheCoordinatorTest {
                     break;
                 Thread.sleep(3000L);
             }
-            assertEquals("Client never lost connection.", ConnectionState.LOST, state[0]);
+            assertEquals(ConnectionState.LOST, state[0], "Client never lost connection.");
             
             testingZooKeeperServer.restart();
             
@@ -191,7 +190,7 @@ public class SharedCacheCoordinatorTest {
                     break;
                 Thread.sleep(3000L);
             }
-            assertEquals("Client never reconnected.", ConnectionState.RECONNECTED, state[0]);
+            assertEquals(ConnectionState.RECONNECTED, state[0], "Client never reconnected.");
             
             newCount = 42;
             oldCount = counter.getVersionedValue();
@@ -202,8 +201,8 @@ public class SharedCacheCoordinatorTest {
                     break;
                 Thread.sleep(200L);
             }
-            assertEquals("Counter never updated after restart.", newCount, count[0]);
-            assertTrue("Counter never updated.", cacheCoordinator.checkCounter(COUNTER, newCount));
+            assertEquals(newCount, count[0], "Counter never updated after restart.");
+            assertTrue(cacheCoordinator.checkCounter(COUNTER, newCount), "Counter never updated.");
         } finally {
             counter.close();
         }

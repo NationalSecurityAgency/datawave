@@ -33,8 +33,8 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -48,7 +48,10 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class FacetHandlerTest {
     
@@ -66,7 +69,7 @@ public class FacetHandlerTest {
     private ContentBaseIngestHelper helper;
     private ColumnVisibility colVis;
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         Configuration conf = new Configuration();
         conf.addResource("config/all-config.xml");
@@ -229,7 +232,7 @@ public class FacetHandlerTest {
     private void processEvent(RawRecordContainer event, Multimap<String,NormalizedContentInterface> eventFields,
                     ExtendedDataTypeHandler<Text,BulkIngestKey,Value> handler) {
         
-        assertNotNull("Event was null", event);
+        assertNotNull(event, "Event was null");
         
         try {
             handler.process(null, event, eventFields, context, contextWriter);
@@ -339,18 +342,18 @@ public class FacetHandlerTest {
         }
         
         if (evaluateExpectedFacetMetadata) {
-            assertTrue("Did not observe expected facet metadata: " + expectedFacetMetadata, expectedFacetMetadata.isEmpty());
-            assertTrue("Observed unexpected facet metadata: " + unexpectedFacetMetadata, unexpectedFacetMetadata.isEmpty());
+            assertTrue(expectedFacetMetadata.isEmpty(), "Did not observe expected facet metadata: " + expectedFacetMetadata);
+            assertTrue(unexpectedFacetMetadata.isEmpty(), "Observed unexpected facet metadata: " + unexpectedFacetMetadata);
         }
         
         if (evaluateExpectedFacets) {
-            assertTrue("Did not observe expected facets: " + expectedFacets, expectedFacets.isEmpty());
-            assertTrue("Observed unexpected facets: " + unexpectedFacets, unexpectedFacets.isEmpty());
+            assertTrue(expectedFacets.isEmpty(), "Did not observe expected facets: " + expectedFacets);
+            assertTrue(unexpectedFacets.isEmpty(), "Observed unexpected facets: " + unexpectedFacets);
         }
         
         if (evaluateExpectedFacetHashes) {
-            assertTrue("Did not observe expected facet hashes: " + expectedFacetHashes, expectedFacetHashes.isEmpty());
-            assertTrue("Observed unexpected facet hashes: " + unexpectedFacetHashes, unexpectedFacetHashes.isEmpty());
+            assertTrue(expectedFacetHashes.isEmpty(), "Did not observe expected facet hashes: " + expectedFacetHashes);
+            assertTrue(unexpectedFacetHashes.isEmpty(), "Observed unexpected facet hashes: " + unexpectedFacetHashes);
         }
         
         if (!totallyUnexpected.isEmpty()) {
@@ -361,7 +364,7 @@ public class FacetHandlerTest {
         facetMetadataKeyCounts.forEach((k, v) -> {
             log.debug(DATAWAVE_FACET_METADATA + " " + k + " " + v);
             if (metadataItemCount > 0) {
-                assertEquals("Metadata count equals itemCount " + metadataItemCount, metadataItemCount, v.intValue());
+                assertEquals(metadataItemCount, v.intValue(), "Metadata count equals itemCount " + metadataItemCount);
             }
         });
         
@@ -379,12 +382,12 @@ public class FacetHandlerTest {
                 if (found == 0 || expected == 0) {
                     fail("Neither found or expected key count should be zero for: " + k + "; expected: " + expected + ", found: " + found);
                 }
-                assertEquals("Facet key count mismatch: expected for: " + k + "; expected: " + expected + ", found: " + found, expected, found);
+                assertEquals(expected, found, "Facet key count mismatch: expected for: " + k + "; expected: " + expected + ", found: " + found);
                 finalExpectedFacetKeyCounts.remove(k, expected);
             }
         });
         
-        assertEquals("Did not observe expected facets: " + finalExpectedFacetKeyCounts, 0, finalExpectedFacetKeyCounts.size());
+        assertEquals(0, finalExpectedFacetKeyCounts.size(), "Did not observe expected facets: " + finalExpectedFacetKeyCounts);
         
     }
     

@@ -11,9 +11,9 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -24,7 +24,7 @@ public class MultiTableRangePartitionerTest {
     Configuration configuration;
     Job mockJob;
     
-    @Before
+    @BeforeEach
     public void before() throws IOException {
         mockJob = new Job();
         configuration = mockJob.getConfiguration();
@@ -34,16 +34,16 @@ public class MultiTableRangePartitionerTest {
     @Test
     public void testGoodSplitsFile() throws IOException, URISyntaxException {
         mockContextForLocalCacheFile(createUrl("trimmed_splits.txt"));
-        Assert.assertEquals(5, getPartition());
+        Assertions.assertEquals(5, getPartition());
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testEmptySplitsThrowsException() throws IOException, URISyntaxException {
         mockContextForLocalCacheFile(createUrl("trimmed_empty_splits.txt"));
-        getPartition();
+        Assertions.assertThrows(RuntimeException.class, () -> getPartition());
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testProblemGettingLocalCacheFiles() throws IOException, URISyntaxException {
         final URL url = createUrl("trimmed_splits.txt");
         
@@ -54,7 +54,7 @@ public class MultiTableRangePartitionerTest {
             }
         });
         
-        getPartition();
+        Assertions.assertThrows(RuntimeException.class, () -> getPartition());
     }
     
     private URL createUrl(String fileName) {

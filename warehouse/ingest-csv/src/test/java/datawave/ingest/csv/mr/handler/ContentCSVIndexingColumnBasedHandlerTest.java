@@ -1,16 +1,8 @@
 package datawave.ingest.csv.mr.handler;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Enumeration;
-import java.util.TimeZone;
-
-import datawave.ingest.csv.mr.input.CSVRecordReader;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
+import datawave.ingest.csv.mr.input.CSVRecordReader;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
@@ -18,7 +10,6 @@ import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-
 import datawave.util.TableName;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -32,11 +23,19 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Enumeration;
+import java.util.TimeZone;
 
 public class ContentCSVIndexingColumnBasedHandlerTest {
     
@@ -45,7 +44,7 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
     private static Logger log = Logger.getLogger(ContentCSVIndexingColumnBasedHandlerTest.class);
     private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
     
-    @BeforeClass
+    @BeforeAll
     public static void setupSystemSettings() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", "UTF8");
@@ -57,7 +56,7 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         }
     }
     
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         Logger.getRootLogger().removeAllAppenders();
         while (rootAppenders.hasMoreElements()) {
@@ -98,7 +97,7 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         Logger.getLogger(ContentBaseIngestHelper.class).setLevel(Level.OFF);
     }
     
-    @Before
+    @BeforeEach
     public void setup() {
         TypeRegistry.reset();
         conf = new Configuration();
@@ -133,10 +132,10 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         
         // ----------------------------------------------------------------------
         // EVENT 1
-        Assert.assertTrue("First Record did not read properly?", reader.nextKeyValue());
+        Assertions.assertTrue(reader.nextKeyValue(), "First Record did not read properly?");
         RawRecordContainer event = reader.getEvent();
-        Assert.assertNotNull("Event 1 was null.", event);
-        Assert.assertTrue("Event 1 has parsing errors", event.getErrors().isEmpty());
+        Assertions.assertNotNull(event, "Event 1 was null.");
+        Assertions.assertTrue(event.getErrors().isEmpty(), "Event 1 has parsing errors");
         
         // Set up the edge
         ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
@@ -146,10 +145,10 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         
         // ----------------------------------------------------------------------
         // EVENT 2
-        Assert.assertTrue("Second Record did not read properly?", reader.nextKeyValue());
+        Assertions.assertTrue(reader.nextKeyValue(), "Second Record did not read properly?");
         event = reader.getEvent();
-        Assert.assertNotNull("Event 2 was null.", event);
-        Assert.assertTrue("Event 2 has parsing errors", event.getErrors().isEmpty());
+        Assertions.assertNotNull(event, "Event 2 was null.");
+        Assertions.assertTrue(event.getErrors().isEmpty(), "Event 2 has parsing errors");
         
         edgeHandler = new ProtobufEdgeDataTypeHandler<>();
         edgeHandler.setup(context);

@@ -8,10 +8,10 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
-import org.powermock.reflect.Whitebox;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -26,25 +26,29 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
     @Test
     public void testGetLoadDatesLocalityGroupParsing() throws Exception {
         String localityGroups = "LACS:LAC\u0000shard;LAC\u0000protobufedge;LAC\u0000knowledgeShard;LAC\u0000errorShard";
-        
-        Map<String,Set<Text>> actual = Whitebox.invokeMethod(new LoadDateTableConfigHelper(), "createMapOfLocalityGroups",
+        Class<LoadDateTableConfigHelper> clazz = LoadDateTableConfigHelper.class;
+        Method method = clazz.getDeclaredMethod("createMapOfLocalityGroups", Configuration.class);
+        method.setAccessible(true);
+        Map<String,Set<Text>> actual = (Map<String,Set<Text>>) method.invoke(new LoadDateTableConfigHelper(),
                         createConfigurationWithLocalityGroups(localityGroups));
         
         assertKeyAndColFamilies(actual, "LACS", EXPECTED_LAC_COL_FAMILIES);
         
-        Assert.assertEquals("Incorrect number of keys (expected 1) in " + actual, actual.size(), 1);
+        Assertions.assertEquals(actual.size(), 1, "Incorrect number of keys (expected 1) in " + actual);
     }
     
     @Test
     public void testGetLoadDatesLocalityGroupsParsing() throws Exception {
         String localityGroups = "LACS:LAC\u0000shard;LAC\u0000protobufedge;LAC\u0000knowledgeShard;LAC\u0000errorShard," + "JAM:band;es;mies";
-        
-        Map<String,Set<Text>> actual = Whitebox.invokeMethod(new LoadDateTableConfigHelper(), "createMapOfLocalityGroups",
+        Class<LoadDateTableConfigHelper> clazz = LoadDateTableConfigHelper.class;
+        Method method = clazz.getDeclaredMethod("createMapOfLocalityGroups", Configuration.class);
+        method.setAccessible(true);
+        Map<String,Set<Text>> actual = (Map<String,Set<Text>>) method.invoke(new LoadDateTableConfigHelper(),
                         createConfigurationWithLocalityGroups(localityGroups));
         
         assertKeyAndColFamilies(actual, "LACS", EXPECTED_LAC_COL_FAMILIES);
         
-        Assert.assertEquals("Incorrect number of keys (expected 2) in " + actual, actual.size(), 2);
+        Assertions.assertEquals(actual.size(), 2, "Incorrect number of keys (expected 2) in " + actual);
         
         assertKeyAndColFamilies(actual, "JAM", Sets.newHashSet(new Text("band"), new Text("es"), new Text("mies")));
     }
@@ -54,12 +58,15 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
     public void testGetLoadDatesLocalityGroupParsingWithParsedNullByte() throws Exception {
         String localityGroups = "LACS:LAC\\u0000shard;LAC\\u0000protobufedge;LAC\\u0000knowledgeShard;LAC\\u0000errorShard";
         
-        Map<String,Set<Text>> actual = Whitebox.invokeMethod(new LoadDateTableConfigHelper(), "createMapOfLocalityGroups",
+        Class<LoadDateTableConfigHelper> clazz = LoadDateTableConfigHelper.class;
+        Method method = clazz.getDeclaredMethod("createMapOfLocalityGroups", Configuration.class);
+        method.setAccessible(true);
+        Map<String,Set<Text>> actual = (Map<String,Set<Text>>) method.invoke(new LoadDateTableConfigHelper(),
                         createConfigurationWithLocalityGroups(localityGroups));
         
         assertKeyAndColFamilies(actual, "LACS", EXPECTED_LAC_COL_FAMILIES);
         
-        Assert.assertEquals("Incorrect number of keys (expected 1) in " + actual, actual.size(), 1);
+        Assertions.assertEquals(actual.size(), 1, "Incorrect number of keys (expected 1) in " + actual);
     }
     
     @Test
@@ -73,17 +80,17 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
         
         String actual = tableOperations.getLocalityGroups(TABLE_NAME).toString();
         String errorMessage = "Incorrect result (possibly the null character): " + actual;
-        Assert.assertTrue(errorMessage, actual.contains("LAC\u0000protobufEdge"));
-        Assert.assertTrue(errorMessage, actual.contains("LAC\u0000errorShard"));
-        Assert.assertTrue(errorMessage, actual.contains("LAC\u0000shard"));
-        Assert.assertTrue(errorMessage, actual.contains("LAC\u0000knowledgeShard"));
+        Assertions.assertTrue(actual.contains("LAC\u0000protobufEdge"), errorMessage);
+        Assertions.assertTrue(actual.contains("LAC\u0000errorShard"), errorMessage);
+        Assertions.assertTrue(actual.contains("LAC\u0000shard"), errorMessage);
+        Assertions.assertTrue(actual.contains("LAC\u0000knowledgeShard"), errorMessage);
     }
     
     public void assertKeyAndColFamilies(Map<String,Set<Text>> actual, final String expectedKey, HashSet<Text> expectedColFamilies) {
-        Assert.assertTrue("missing expected key '" + expectedKey + "' in " + actual, actual.containsKey(expectedKey));
+        Assertions.assertTrue(actual.containsKey(expectedKey), "missing expected key '" + expectedKey + "' in " + actual);
         
-        Assert.assertTrue("Somethin isn't right with the " + expectedKey + ": " + actual.get(expectedKey),
-                        actual.get(expectedKey).containsAll(expectedColFamilies));
+        Assertions.assertTrue(actual.get(expectedKey).containsAll(expectedColFamilies),
+                        "Somethin isn't right with the " + expectedKey + ": " + actual.get(expectedKey));
     }
     
     public Configuration createConfigurationWithLocalityGroups(String localityGroups) {

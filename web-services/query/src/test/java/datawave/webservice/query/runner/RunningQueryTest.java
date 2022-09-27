@@ -20,9 +20,8 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -42,7 +41,9 @@ import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class RunningQueryTest {
     
@@ -61,7 +62,7 @@ public class RunningQueryTest {
     private SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of("userDn", "issuerDn");
     private final QueryLogic<?> logic = createMock(BaseQueryLogic.class);
     
-    @Before
+    @BeforeEach
     public void setup() throws MalformedURLException, IllegalArgumentException, IllegalAccessException {
         
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
@@ -140,7 +141,7 @@ public class RunningQueryTest {
         assertEquals(connector, query.getConnection());
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstructorShouldNotMergeAuths() throws Exception {
         // setup
         Connector connector = null;
@@ -154,9 +155,10 @@ public class RunningQueryTest {
         
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
-        RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
-        
-        assertEquals(expected, query.getCalculatedAuths());
+        assertThrows(IllegalArgumentException.class, () -> {
+            RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
+            assertEquals(expected, query.getCalculatedAuths());
+        });
     }
     
     @Test
@@ -190,7 +192,7 @@ public class RunningQueryTest {
         try {
             RunningQuery query = new RunningQuery(connector, connectionPriority, compositeQueryLogic, settings, null, principal, new QueryMetricFactoryImpl());
         } catch (NullPointerException npe) {
-            Assert.fail("NullPointer encountered. This could be caused by configuration being null. Check logic.initialize() ");
+            fail("NullPointer encountered. This could be caused by configuration being null. Check logic.initialize() ");
         }
     }
 }

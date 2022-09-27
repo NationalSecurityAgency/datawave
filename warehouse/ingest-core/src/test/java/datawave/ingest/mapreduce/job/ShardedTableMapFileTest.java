@@ -21,11 +21,11 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.StringUtils;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,10 +37,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ShardedTableMapFileTest {
     private static final Log LOG = LogFactory.getLog(ShardedTableMapFileTest.class);
@@ -51,10 +48,10 @@ public class ShardedTableMapFileTest {
     private static final int SHARDS_PER_DAY = 10;
     private static Configuration conf;
     
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder = new File("/tmp/test/ShardedTableMapFileTest");
     
-    @BeforeClass
+    @BeforeAll
     public static void defineShardLocationsFile() throws IOException {
         conf = new Configuration();
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
@@ -79,11 +76,12 @@ public class ShardedTableMapFileTest {
         conf.set(ShardedTableMapFile.SHARDED_MAP_FILE_PATHS_RAW, TABLE_NAME + "=" + file);
         ShardedTableMapFile.setupFile(conf);
         TreeMap<Text,String> result = ShardedTableMapFile.getShardIdToLocations(conf, TABLE_NAME);
-        Assert.assertEquals("location2_1234", result.get(new Text("zEndRow")).toString());
-        Assert.assertEquals(1, result.size());
+        assertEquals("location2_1234", result.get(new Text("zEndRow")).toString());
+        assertEquals(1, result.size());
     }
     
-    @Test(timeout = 240000)
+    @Test
+    @Timeout(240000)
     public void testWriteSplitsToAccumuloAndReadThem() throws Exception {
         
         // Added timeout to this test b/c it could hang infinitely without failing, e.g., whenever
@@ -116,16 +114,15 @@ public class ShardedTableMapFileTest {
         }
         
         TreeMap<Text,String> result = ShardedTableMapFile.getShardIdToLocations(conf, TABLE_NAME);
-        Assert.assertNotNull(result.get(new Text(today)).toString());
-        Assert.assertEquals(1, result.size());
+        Assertions.assertNotNull(result.get(new Text(today)).toString());
+        assertEquals(1, result.size());
     }
     
     private MiniAccumuloCluster createMiniAccumuloWithTestTableAndSplits(SortedSet<Text> sortedSet) throws IOException, InterruptedException,
                     AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
         MiniAccumuloCluster accumuloCluster;
-        File clusterDir = temporaryFolder.newFolder();
-        LOG.info("Created local directory for MiniAccumuloCluster: " + clusterDir.getAbsolutePath());
-        accumuloCluster = new MiniAccumuloCluster(clusterDir, PASSWORD);
+        LOG.info("Created local directory for MiniAccumuloCluster: " + temporaryFolder.getAbsolutePath());
+        accumuloCluster = new MiniAccumuloCluster(temporaryFolder, PASSWORD);
         accumuloCluster.start();
         
         Connector connector = accumuloCluster.getConnector(USERNAME, PASSWORD);
@@ -158,27 +155,25 @@ public class ShardedTableMapFileTest {
         Map<String,Path> shardedTableMapFiles = new HashMap<>();
         shardedTableMapFiles.put(tableName, path);
         ShardedTableMapFile.addToConf(conf, shardedTableMapFiles);
-        Assert.assertEquals("IngestJob#writeSplitsFile failed to create the expected number of rows", expectedNumRows, actualCount);
+        assertEquals(expectedNumRows, actualCount, "IngestJob#writeSplitsFile failed to create the expected number of rows");
         
-        Assert.assertTrue(fs.exists(file));
+        Assertions.assertTrue(fs.exists(file));
         return file;
     }
     
     private FileSystem setWorkingDirectory(Configuration conf) throws IOException {
         FileSystem fs = FileSystem.getLocal(conf);
-        File tempWorkDir = temporaryFolder.newFolder();
-        fs.setWorkingDirectory(new Path(tempWorkDir.toString()));
-        conf.set(ShardedTableMapFile.SPLIT_WORK_DIR, tempWorkDir.toString());
+        fs.setWorkingDirectory(new Path(temporaryFolder.toString()));
+        conf.set(ShardedTableMapFile.SPLIT_WORK_DIR, temporaryFolder.toString());
         return fs;
     }
     
-    @Test(expected = IOException.class)
+    @Test
     public void testGetAllShardedTableMapFilesWithoutPath() throws Exception {
         Configuration conf = new Configuration();
-        File tempWorkDir = temporaryFolder.newFolder();
-        conf.set(FileSystem.FS_DEFAULT_NAME_KEY, tempWorkDir.toURI().toString());
-        FileSystem fs = FileSystem.get(tempWorkDir.toURI(), conf);
-        fs.setWorkingDirectory(new Path(tempWorkDir.toString()));
+        conf.set(FileSystem.FS_DEFAULT_NAME_KEY, temporaryFolder.toURI().toString());
+        FileSystem fs = FileSystem.get(temporaryFolder.toURI(), conf);
+        fs.setWorkingDirectory(new Path(temporaryFolder.toString()));
         Path workDir = fs.makeQualified(new Path("work"));
         conf.set(ShardedTableMapFile.SPLIT_WORK_DIR, workDir.toString());
         
@@ -187,7 +182,7 @@ public class ShardedTableMapFileTest {
         String[] tableNames = new String[] {TABLE_NAME};
         conf.set(ShardedTableMapFile.TABLE_NAMES, StringUtils.join(",", tableNames));
         ShardedTableMapFile.setupFile(conf);
-        ShardedTableMapFile.getShardIdToLocations(conf, TABLE_NAME);
+        Assertions.assertThrows(IOException.class, () -> ShardedTableMapFile.getShardIdToLocations(conf, TABLE_NAME));
     }
     
     @Test
@@ -199,7 +194,7 @@ public class ShardedTableMapFileTest {
         Text key = new Text();
         Text val = new Text();
         boolean valid = reader.next(key, val);
-        Assert.assertFalse(valid);
+        Assertions.assertFalse(valid);
         reader.close();
     }
     
@@ -211,16 +206,16 @@ public class ShardedTableMapFileTest {
         
         Path file = createSplitsFile(splits, conf, 1);
         SequenceFile.Reader reader = new SequenceFile.Reader(conf, SequenceFile.Reader.file(file));
-        Assert.assertEquals(Text.class, reader.getKeyClass());
-        Assert.assertEquals(Text.class, reader.getValueClass());
+        assertEquals(Text.class, reader.getKeyClass());
+        assertEquals(Text.class, reader.getValueClass());
         Text key = new Text();
         Text val = new Text();
         boolean valid = reader.next(key, val);
-        Assert.assertTrue(valid);
-        Assert.assertEquals("", key.toString());
-        Assert.assertEquals("hello, world!", val.toString());
+        Assertions.assertTrue(valid);
+        assertEquals("", key.toString());
+        assertEquals("hello, world!", val.toString());
         valid = reader.next(key, val);
-        Assert.assertFalse(valid);
+        Assertions.assertFalse(valid);
         reader.close();
     }
     
@@ -233,16 +228,16 @@ public class ShardedTableMapFileTest {
         Path file = createSplitsFile(splits, conf, 1);
         
         SequenceFile.Reader reader = new SequenceFile.Reader(conf, SequenceFile.Reader.file(file));
-        Assert.assertEquals(Text.class, reader.getKeyClass());
-        Assert.assertEquals(Text.class, reader.getValueClass());
+        assertEquals(Text.class, reader.getKeyClass());
+        assertEquals(Text.class, reader.getValueClass());
         Text key = new Text();
         Text val = new Text();
         boolean valid = reader.next(key, val);
-        Assert.assertTrue(valid);
-        Assert.assertEquals("zEndRow", key.toString());
-        Assert.assertEquals("location2_1234", val.toString());
+        Assertions.assertTrue(valid);
+        assertEquals("zEndRow", key.toString());
+        assertEquals("location2_1234", val.toString());
         valid = reader.next(key, val);
-        Assert.assertFalse(valid);
+        Assertions.assertFalse(valid);
         reader.close();
     }
     
@@ -258,43 +253,41 @@ public class ShardedTableMapFileTest {
         ShardedTableMapFile.validateShardIdLocations(conf, tableName, 2, locations);
     }
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testMissingAllOfTodaysSplits() throws Exception {
         String tableName = "missingTodaysSplits";
         SortedMap<Text,String> splits = simulateMissingSplitsForDay(0, tableName);
         createSplitsFile(splits, conf, splits.size(), tableName);
         Map<Text,String> locations = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
         // three days of splits, today should be invalid, which makes the rest bad too
-        ShardedTableMapFile.validateShardIdLocations(conf, tableName, 0, locations);
-        // shouldn't make it here
-        fail();
+        Assertions.assertThrows(IllegalStateException.class, () -> ShardedTableMapFile.validateShardIdLocations(conf, tableName, 0, locations));
     }
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testUnbalancedTodaysSplits() throws Exception {
         String tableName = "unbalancedTodaysSplits";
         SortedMap<Text,String> splits = simulateUnbalancedSplitsForDay(0, tableName);
         createSplitsFile(splits, conf, splits.size(), tableName);
         Map<Text,String> locations = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
         // three days of splits, today should be invalid, which makes the rest bad too
-        ShardedTableMapFile.validateShardIdLocations(conf, tableName, 0, locations);
+        Assertions.assertThrows(IllegalStateException.class, () -> ShardedTableMapFile.validateShardIdLocations(conf, tableName, 0, locations));
     }
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testMissingAllOfYesterdaysSplits() throws Exception {
         String tableName = "missingYesterdaysSplits";
         SortedMap<Text,String> splits = simulateMissingSplitsForDay(1, tableName);
         createSplitsFile(splits, conf, splits.size(), tableName);
         Map<Text,String> locations = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
-        assertThat(splits.size(), is(equalTo(locations.size())));
+        assertEquals(splits.size(), locations.size());
         // three days of splits, today should be valid
         // yesterday and all other days invalid
         ShardedTableMapFile.validateShardIdLocations(conf, tableName, 0, locations);
         // this should cause the exception
-        ShardedTableMapFile.validateShardIdLocations(conf, tableName, 1, locations);
+        Assertions.assertThrows(IllegalStateException.class, () -> ShardedTableMapFile.validateShardIdLocations(conf, tableName, 1, locations));
     }
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testUnbalancedYesterdaysSplits() throws Exception {
         String tableName = "unbalancedYesterdaysSplits";
         SortedMap<Text,String> splits = simulateUnbalancedSplitsForDay(1, tableName);
@@ -304,10 +297,10 @@ public class ShardedTableMapFileTest {
         // yesterday and all other days invalid
         ShardedTableMapFile.validateShardIdLocations(conf, tableName, 0, locations);
         // this should cause the exception
-        ShardedTableMapFile.validateShardIdLocations(conf, tableName, 1, locations);
+        Assertions.assertThrows(IllegalStateException.class, () -> ShardedTableMapFile.validateShardIdLocations(conf, tableName, 1, locations));
     }
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testUnbalancedMaxMoreThanConfigured() throws Exception {
         String tableName = "unbalancedMoreSplitsThenMaxPer";
         SortedMap<Text,String> splits = simulateMultipleShardsPerTServer(tableName, 3);
@@ -316,7 +309,7 @@ public class ShardedTableMapFileTest {
         createSplitsFile(splits, conf, splits.size(), tableName);
         Map<Text,String> locations = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
         // this should cause the exception
-        ShardedTableMapFile.validateShardIdLocations(conf, tableName, 0, locations);
+        Assertions.assertThrows(IllegalStateException.class, () -> ShardedTableMapFile.validateShardIdLocations(conf, tableName, 0, locations));
     }
     
     @Test

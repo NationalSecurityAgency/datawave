@@ -3,8 +3,8 @@ package datawave.edge.util;
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Extracted from datawave.edge.util.EdgeKeyTest for code reuse.
@@ -73,45 +73,45 @@ public class EdgeTableTestKeyHelper {
     }
     
     public void verifyStandardRow(String errorMessage, EdgeKey edgeKey) {
-        assertEquals(errorMessage, EdgeKey.EDGE_FORMAT.STANDARD, edgeKey.getFormat());
-        assertEquals(errorMessage, SOURCE_DATA, edgeKey.getSourceData());
-        assertEquals(errorMessage, SINK_DATA, edgeKey.getSinkData());
+        assertEquals(EdgeKey.EDGE_FORMAT.STANDARD, edgeKey.getFormat(), errorMessage);
+        assertEquals(SOURCE_DATA, edgeKey.getSourceData(), errorMessage);
+        assertEquals(SINK_DATA, edgeKey.getSinkData(), errorMessage);
         verifyRelationships(errorMessage, edgeKey);
         verifyAttributes(errorMessage, edgeKey);
     }
     
     public void verifyStatsRow(String errorMessage, EdgeKey edgeKey) {
-        assertEquals(errorMessage, EdgeKey.EDGE_FORMAT.STATS, edgeKey.getFormat());
-        assertEquals(errorMessage, SOURCE_DATA, edgeKey.getSourceData());
-        assertEquals(errorMessage, SOURCEREL, edgeKey.getSourceRelationship());
-        assertEquals(errorMessage, SOURCE_ATTR_1, edgeKey.getSourceAttribute1());
+        assertEquals(EdgeKey.EDGE_FORMAT.STATS, edgeKey.getFormat(), errorMessage);
+        assertEquals(SOURCE_DATA, edgeKey.getSourceData(), errorMessage);
+        assertEquals(SOURCEREL, edgeKey.getSourceRelationship(), errorMessage);
+        assertEquals(SOURCE_ATTR_1, edgeKey.getSourceAttribute1(), errorMessage);
     }
     
     public void verifyDate(String errorMessage, EdgeKey edgeKey) {
-        assertEquals(errorMessage, DATE, edgeKey.getYyyymmdd());
+        assertEquals(DATE, edgeKey.getYyyymmdd(), errorMessage);
     }
     
     public void verifyType(String errorMessage, EdgeKey edgeKey) {
-        assertEquals(errorMessage, TYPE, edgeKey.getType());
+        assertEquals(TYPE, edgeKey.getType(), errorMessage);
     }
     
     public void verifyRelationships(String errorMessage, EdgeKey edgeKey) {
-        assertEquals(errorMessage, SOURCEREL + "-" + SINKREL, edgeKey.getRelationship());
-        assertEquals(errorMessage, SINKREL, edgeKey.getSinkRelationship());
-        assertEquals(errorMessage, SOURCEREL, edgeKey.getSourceRelationship());
+        assertEquals(SOURCEREL + "-" + SINKREL, edgeKey.getRelationship(), errorMessage);
+        assertEquals(SINKREL, edgeKey.getSinkRelationship(), errorMessage);
+        assertEquals(SOURCEREL, edgeKey.getSourceRelationship(), errorMessage);
     }
     
     public void verifyColVis(String errorMessage, EdgeKey edgeKey) {
-        assertEquals(errorMessage, COL_VIS, edgeKey.getColvis());
+        assertEquals(COL_VIS, edgeKey.getColvis(), errorMessage);
     }
     
     public void verifyAttributes(String errorMessage, EdgeKey edgeKey) {
-        assertEquals(errorMessage, SOURCE_ATTR_1, edgeKey.getSourceAttribute1());
-        assertEquals(errorMessage, SINK_ATTR_1, edgeKey.getSinkAttribute1());
+        assertEquals(SOURCE_ATTR_1, edgeKey.getSourceAttribute1(), errorMessage);
+        assertEquals(SINK_ATTR_1, edgeKey.getSinkAttribute1(), errorMessage);
     }
     
     private void verifyRemaining(String errorMessage, EdgeKey edgeKey) {
-        assertEquals(errorMessage, 814l, edgeKey.getTimestamp());
+        assertEquals(814l, edgeKey.getTimestamp(), errorMessage);
         assertFalse(edgeKey.isDeleted());
     }
     

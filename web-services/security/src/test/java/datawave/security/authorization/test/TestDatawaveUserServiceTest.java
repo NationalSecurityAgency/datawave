@@ -14,31 +14,30 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.annotation.Priority;
 import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(Enclosed.class)
 public class TestDatawaveUserServiceTest {
     
-    @RunWith(Arquillian.class)
+    @Nested
+    @ExtendWith(ArquillianExtension.class)
     public static class TestDatawaveUserServiceDisabled {
         @Inject
         private DatawaveUserService userService;
@@ -64,7 +63,8 @@ public class TestDatawaveUserServiceTest {
         
     }
     
-    @RunWith(Arquillian.class)
+    @Nested
+    @ExtendWith(ArquillianExtension.class)
     public static class TestWithOnlyNonCachedAlternatives {
         @Inject
         private DatawaveUserService userService;
@@ -98,7 +98,8 @@ public class TestDatawaveUserServiceTest {
         
     }
     
-    @RunWith(Arquillian.class)
+    @Nested
+    @ExtendWith(ArquillianExtension.class)
     public static class TestWithOnlCachedAlternatives {
         @Inject
         private DatawaveUserService userService;

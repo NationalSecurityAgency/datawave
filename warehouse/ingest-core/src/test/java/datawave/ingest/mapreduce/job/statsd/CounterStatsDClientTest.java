@@ -3,8 +3,8 @@ package datawave.ingest.mapreduce.job.statsd;
 import com.timgroup.statsd.StatsDClient;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Counters;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,11 +30,11 @@ public class CounterStatsDClientTest {
         CounterToStatsDConfiguration config = new CounterToStatsDConfiguration(conf);
         
         TestCounterStatsDClient client = new TestCounterStatsDClient(config);
-        Assert.assertEquals(TestCounterStatsDClient.MyStatsDClient.class, client.client.getClass());
-        Assert.assertEquals("queue1.dwingest", client.prefix);
-        Assert.assertEquals("localhost", client.host);
-        Assert.assertEquals(8125, client.port);
-        Assert.assertFalse(client.stopped);
+        Assertions.assertEquals(TestCounterStatsDClient.MyStatsDClient.class, client.client.getClass());
+        Assertions.assertEquals("queue1.dwingest", client.prefix);
+        Assertions.assertEquals("localhost", client.host);
+        Assertions.assertEquals(8125, client.port);
+        Assertions.assertFalse(client.stopped);
         
         client.sendLiveStat("CounterGroup1", new CounterToStatsDConfigurationTest.TestCounter("Counter1"), 1);
         client.sendLiveStat("CounterGroup2", new CounterToStatsDConfigurationTest.TestCounter("Counter1"), 1);
@@ -42,7 +42,7 @@ public class CounterStatsDClientTest {
         client.sendLiveStat("CounterGroup3", new CounterToStatsDConfigurationTest.TestCounter("Counter2"), 1);
         client.sendLiveStat("CounterGroup3", new CounterToStatsDConfigurationTest.TestCounter("Counter3"), 1);
         
-        Assert.assertEquals(new ArrayList(Arrays.asList("time(MyGroup3_MyCounter2,1)")), client.messages);
+        Assertions.assertEquals(new ArrayList(Arrays.asList("time(MyGroup3_MyCounter2,1)")), client.messages);
         client.messages.clear();
         
         Counters counters = new Counters();
@@ -54,13 +54,13 @@ public class CounterStatsDClientTest {
         counters.findCounter("CounterGroup3", "Counter2").setValue(13);
         client.sendFinalStats(counters);
         
-        Assert.assertEquals(new ArrayList(Arrays.asList("gauge(MyGroup1_Counter1,10)", "gauge(MyGroup1_Counter2,10)", "count(MyGroup2_Counter1,11)")),
+        Assertions.assertEquals(new ArrayList(Arrays.asList("gauge(MyGroup1_Counter1,10)", "gauge(MyGroup1_Counter2,10)", "count(MyGroup2_Counter1,11)")),
                         client.messages);
         client.messages.clear();
         
-        Assert.assertFalse(client.stopped);
+        Assertions.assertFalse(client.stopped);
         client.close();
-        Assert.assertTrue(client.stopped);
+        Assertions.assertTrue(client.stopped);
     }
     
     public static class TestCounterStatsDClient extends CounterStatsDClient {

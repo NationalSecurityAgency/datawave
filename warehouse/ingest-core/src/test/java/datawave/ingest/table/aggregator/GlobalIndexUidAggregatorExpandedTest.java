@@ -3,15 +3,15 @@ package datawave.ingest.table.aggregator;
 import datawave.ingest.protobuf.Uid;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GlobalIndexUidAggregatorExpandedTest {
     
@@ -37,7 +37,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     private boolean isFullCompactionOnlyTest = false;
     private boolean isPartialCompactionOnlyTest = false;
     
-    @Before
+    @BeforeEach
     public void setup() {
         agg.reset();
     }
@@ -1278,23 +1278,23 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
     
     private void verify(String label, Uid.List expectation, Uid.List result) {
-        assertEquals("getIGNORE differs - " + label, expectation.getIGNORE(), result.getIGNORE());
+        assertEquals(expectation.getIGNORE(), result.getIGNORE(), "getIGNORE differs - " + label);
         
         for (String expectedUid : expectation.getUIDList()) {
-            assertTrue("UID list missing " + expectedUid + " - " + label, result.getUIDList().contains(expectedUid));
+            assertTrue(result.getUIDList().contains(expectedUid), "UID list missing " + expectedUid + " - " + label);
         }
-        assertEquals("UID count differs - " + label + " " + result.getUIDList(), expectation.getCOUNT(), result.getCOUNT());
-        assertEquals("UID list size differs - " + label, expectation.getUIDList().size(), result.getUIDList().size());
+        assertEquals(expectation.getCOUNT(), result.getCOUNT(), "UID count differs - " + label + " " + result.getUIDList());
+        assertEquals(expectation.getUIDList().size(), result.getUIDList().size(), "UID list size differs - " + label);
         // The count and UID List sizes should match unless seenIgnore = true
         if (!expectation.getIGNORE()) {
-            assertEquals("Invalid test state: expected variable's Uid.List size and getCount differ - " + label, expectation.getCOUNT(), expectation
-                            .getUIDList().size());
+            assertEquals(expectation.getCOUNT(), expectation.getUIDList().size(),
+                            "Invalid test state: expected variable's Uid.List size and getCount differ - " + label);
         }
         
         for (String expectedRemovalUid : expectation.getREMOVEDUIDList()) {
-            assertTrue("Remove UID list missing " + expectedRemovalUid + " - " + label, result.getREMOVEDUIDList().contains(expectedRemovalUid));
+            assertTrue(result.getREMOVEDUIDList().contains(expectedRemovalUid), "Remove UID list missing " + expectedRemovalUid + " - " + label);
         }
-        assertEquals("Removed count differs - " + label, expectation.getREMOVEDUIDCount(), result.getREMOVEDUIDCount());
-        assertEquals("Removed UID list size differs - " + label, expectation.getREMOVEDUIDList().size(), result.getREMOVEDUIDList().size());
+        assertEquals(expectation.getREMOVEDUIDCount(), result.getREMOVEDUIDCount(), "Removed count differs - " + label);
+        assertEquals(expectation.getREMOVEDUIDList().size(), result.getREMOVEDUIDList().size(), "Removed UID list size differs - " + label);
     }
 }

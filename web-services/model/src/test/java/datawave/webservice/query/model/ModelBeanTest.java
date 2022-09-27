@@ -1,21 +1,6 @@
 package datawave.webservice.query.model;
 
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.createStrictMock;
-
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.ejb.EJBContext;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
-
+import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -26,10 +11,8 @@ import datawave.webservice.common.cache.AccumuloTableCache;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.model.ModelList;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -37,51 +20,66 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.easymock.EasyMockExtension;
+import org.easymock.Mock;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ModelBean.class, ModelKeyParser.class})
-@PowerMockIgnore({"org.apache.*", "com.sun.xml.*", "javax.xml.bind.*", "com.google.*"})
+import javax.ejb.EJBContext;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map.Entry;
+import java.util.Set;
+
+@Disabled
+@ExtendWith(EasyMockExtension.class)
 public class ModelBeanTest {
     
     private static final String userDN = "CN=Guy Some Other soguy, OU=ou1, OU=ou2, OU=ou3, O=o1, C=US";
     private static final String issuerDN = "CN=CA1, OU=ou3, O=o1, C=US";
     private static final String[] auths = new String[] {"PRIVATE", "PUBLIC"};
     
-    private ModelBean bean = null;
-    private AccumuloConnectionFactory connectionFactory = null;
-    private EJBContext ctx;
-    private AccumuloTableCache cache;
+    private ModelBean bean;
     
-    private InMemoryInstance instance = null;
-    private Connector connector = null;
-    private DatawavePrincipal principal = null;
+    @Mock
+    private AccumuloConnectionFactory connectionFactory;
+    
+    @Mock
+    EJBContext ctx;
+    
+    @Mock
+    AccumuloTableCache cache;
+    
+    private InMemoryInstance instance;
+    private Connector connector;
+    private DatawavePrincipal principal;
     
     private static long TIMESTAMP = System.currentTimeMillis();
     
     private datawave.webservice.model.Model MODEL_ONE = null;
     private datawave.webservice.model.Model MODEL_TWO = null;
     
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         bean = new ModelBean();
-        connectionFactory = createStrictMock(AccumuloConnectionFactory.class);
-        ctx = createMock(EJBContext.class);
-        cache = createMock(AccumuloTableCache.class);
-        Whitebox.setInternalState(bean, EJBContext.class, ctx);
-        Whitebox.setInternalState(bean, AccumuloConnectionFactory.class, connectionFactory);
-        Whitebox.setInternalState(bean, AccumuloTableCache.class, cache);
+        
+        ReflectionTestUtils.setField(bean, "ctx", ctx);
+        ReflectionTestUtils.setField(bean, "connectionFactory", connectionFactory);
+        ReflectionTestUtils.setField(bean, "cache", cache);
         
         instance = new InMemoryInstance("test");
         connector = instance.getConnector("root", new PasswordToken(""));
@@ -97,7 +95,7 @@ public class ModelBeanTest {
         MODEL_TWO = (datawave.webservice.model.Model) u.unmarshal(m2Url);
         
         Logger.getLogger(ModelBean.class).setLevel(Level.OFF);
-        PowerMock.mockStatic(System.class, System.class.getMethod("currentTimeMillis"));
+        // PowerMock.mockStatic(System.class, System.class.getMethod("currentTimeMillis"));
     }
     
     public void printTable(String tableName) throws Exception {
@@ -107,24 +105,24 @@ public class ModelBeanTest {
         }
     }
     
-    @After
+    @AfterEach
     public void tearDown() {
         try {
             connector.tableOperations().delete(ModelBean.DEFAULT_MODEL_TABLE_NAME);
         } catch (Exception e) {}
     }
     
-    @Test(expected = DatawaveWebApplicationException.class)
+    @Test
     public void testModelImportNoTable() throws Exception {
         HashMap<String,String> trackingMap = new HashMap<>();
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
         connectionFactory.returnConnection(connector);
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
-        PowerMock.replayAll();
+        EasyMock.replay();
         
         bean.importModel(MODEL_ONE, (String) null);
-        PowerMock.verifyAll();
+        EasyMock.verify();
     }
     
     private void importModels() throws Exception {
@@ -142,11 +140,11 @@ public class ModelBeanTest {
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
-        PowerMock.replayAll();
+        EasyMock.replay();
         
         bean.importModel(MODEL_ONE, (String) null);
-        PowerMock.verifyAll();
-        PowerMock.resetAll();
+        EasyMock.verify();
+        EasyMock.reset();
         
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
@@ -160,55 +158,55 @@ public class ModelBeanTest {
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
-        PowerMock.replayAll();
+        EasyMock.replay();
         
         bean.importModel(MODEL_TWO, (String) null);
         
-        PowerMock.verifyAll();
+        EasyMock.verify();
     }
     
     @Test
     public void testListModels() throws Exception {
         importModels();
-        PowerMock.resetAll();
+        EasyMock.reset();
         
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
         connectionFactory.returnConnection(connector);
-        PowerMock.replayAll();
+        EasyMock.replay();
         
         ModelList list = bean.listModelNames((String) null);
-        PowerMock.verifyAll();
+        EasyMock.verify();
         
-        Assert.assertEquals(2, list.getNames().size());
-        Assert.assertTrue(list.getNames().contains(MODEL_ONE.getName()));
-        Assert.assertTrue(list.getNames().contains(MODEL_TWO.getName()));
+        Assertions.assertEquals(2, list.getNames().size());
+        Assertions.assertTrue(list.getNames().contains(MODEL_ONE.getName()));
+        Assertions.assertTrue(list.getNames().contains(MODEL_TWO.getName()));
     }
     
     @Test
     public void testModelGet() throws Exception {
         importModels();
-        PowerMock.resetAll();
+        EasyMock.reset();
         
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
         connectionFactory.returnConnection(connector);
-        PowerMock.replayAll();
+        EasyMock.replay();
         
         datawave.webservice.model.Model model = bean.getModel(MODEL_ONE.getName(), (String) null);
-        PowerMock.verifyAll();
+        EasyMock.verify();
         
-        Assert.assertEquals(MODEL_ONE, model);
+        Assertions.assertEquals(MODEL_ONE, model);
     }
     
     @Test
     public void testModelDelete() throws Exception {
         importModels();
-        PowerMock.resetAll();
+        EasyMock.reset();
         
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
@@ -229,60 +227,55 @@ public class ModelBeanTest {
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        PowerMock.replayAll();
+        EasyMock.replay();
         
         bean.deleteModel(MODEL_TWO.getName(), (String) null);
-        PowerMock.verifyAll();
-        PowerMock.resetAll();
+        EasyMock.verify();
+        EasyMock.reset();
         
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
         connectionFactory.returnConnection(connector);
-        PowerMock.replayAll();
-        try {
-            bean.getModel(MODEL_TWO.getName(), (String) null);
-            Assert.fail("getModel should have failed");
-        } catch (DatawaveWebApplicationException e) {
-            if (e.getResponse().getStatus() == 404) {
-                // success
-            } else {
-                Assert.fail("getModel did not return a 404, returned: " + e.getResponse().getStatus());
-            }
-        } catch (Exception ex) {
-            Assert.fail("getModel did not throw a DatawaveWebApplicationException");
-        }
-        PowerMock.verifyAll();
-        PowerMock.resetAll();
+        EasyMock.replay();
+        
+        DatawaveWebApplicationException e = Assertions.assertThrows(DatawaveWebApplicationException.class,
+                        () -> bean.getModel(MODEL_TWO.getName(), (String) null));
+        Assertions.assertEquals(404, e.getResponse().getStatus(), "getModel did not return a 404, returned: " + e.getResponse().getStatus());
+        Assertions.fail("getModel should have failed");
+        
+        EasyMock.verify();
+        EasyMock.reset();
         // Ensure model one still intact
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
         connectionFactory.returnConnection(connector);
-        PowerMock.replayAll();
+        EasyMock.replay();
+        
         datawave.webservice.model.Model model1 = bean.getModel(MODEL_ONE.getName(), (String) null);
-        PowerMock.verifyAll();
-        Assert.assertEquals(MODEL_ONE, model1);
+        EasyMock.verify();
+        Assertions.assertEquals(MODEL_ONE, model1);
         
     }
     
-    @Test(expected = DatawaveWebApplicationException.class)
+    @Test
     public void testModelGetInvalidModelName() throws Exception {
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
         connectionFactory.returnConnection(connector);
-        PowerMock.replayAll();
+        EasyMock.replay();
         
         bean.getModel(MODEL_ONE.getName(), (String) null);
-        PowerMock.verifyAll();
+        EasyMock.verify();
     }
     
     @Test
     public void testCloneModel() throws Exception {
         importModels();
-        PowerMock.resetAll();
+        EasyMock.reset();
         
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
@@ -300,32 +293,37 @@ public class ModelBeanTest {
         connectionFactory.returnConnection(connector);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        PowerMock.replayAll();
+        EasyMock.replay();
         
         bean.cloneModel(MODEL_ONE.getName(), "MODEL2", (String) null);
-        PowerMock.verifyAll();
-        PowerMock.resetAll();
+        EasyMock.verify();
+        
+        EasyMock.reset();
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
         connectionFactory.returnConnection(connector);
-        PowerMock.replayAll();
+        EasyMock.replay();
         
         datawave.webservice.model.Model model = bean.getModel("MODEL2", (String) null);
-        PowerMock.verifyAll();
+        EasyMock.verify();
         
         MODEL_ONE.setName("MODEL2");
-        Assert.assertEquals(MODEL_ONE, model);
+        Assertions.assertEquals(MODEL_ONE, model);
         
     }
     
     @Test
     public void testCheckModelName() throws Exception {
-        String modelTableName = Whitebox.invokeMethod(bean, "checkModelTableName", (String) null);
-        Assert.assertEquals(ModelBean.DEFAULT_MODEL_TABLE_NAME, modelTableName);
+        Class<ModelBean> clazz = ModelBean.class;
+        Method method = clazz.getDeclaredMethod("checkModelTableName", String.class);
+        method.setAccessible(true);
+        
+        String modelTableName = (String) method.invoke(bean, (String) null);
+        Assertions.assertEquals(ModelBean.DEFAULT_MODEL_TABLE_NAME, modelTableName);
         modelTableName = "foo";
-        String response = Whitebox.invokeMethod(bean, "checkModelTableName", modelTableName);
-        Assert.assertEquals(modelTableName, response);
+        String response = (String) method.invoke(bean, modelTableName);
+        Assertions.assertEquals(modelTableName, response);
         
     }
     

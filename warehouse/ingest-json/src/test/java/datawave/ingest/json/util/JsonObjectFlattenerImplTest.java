@@ -5,9 +5,10 @@ import com.google.common.collect.TreeMultimap;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -17,8 +18,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-
-import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 
 public class JsonObjectFlattenerImplTest {
     
@@ -51,10 +50,10 @@ public class JsonObjectFlattenerImplTest {
     
     protected JsonObjectFlattener.MapKeyValueNormalizer noOpNormalizer = new JsonObjectFlattener.MapKeyValueNormalizer.NoOp();
     
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws URISyntaxException, IOException {
         URL data = JsonObjectFlattenerImplTest.class.getResource(jsonFile);
-        Assert.assertNotNull(data);
+        Assertions.assertNotNull(data);
         json = new String(Files.readAllBytes(Paths.get(data.toURI())));
     }
     
@@ -69,9 +68,9 @@ public class JsonObjectFlattenerImplTest {
         // printJson(json);
         // printMap(fieldMap);
         
-        Assert.assertEquals(25, fieldMap.keySet().size());
-        Assert.assertEquals(29, fieldMap.values().size());
-        Assert.assertEquals(3, fieldMap.get("ROOTOBJECT.DATE").size());
+        Assertions.assertEquals(25, fieldMap.keySet().size());
+        Assertions.assertEquals(29, fieldMap.values().size());
+        Assertions.assertEquals(3, fieldMap.get("ROOTOBJECT.DATE").size());
     }
     
     @Test
@@ -86,10 +85,10 @@ public class JsonObjectFlattenerImplTest {
         // printJson(json);
         // printMap(fieldMap);
         
-        Assert.assertEquals(25, fieldMap.keySet().size());
-        Assert.assertEquals(29, fieldMap.values().size());
-        Assert.assertEquals(3, fieldMap.get("rootobject.date").size());
-        Assert.assertEquals(1, fieldMap.get("rootobject.string1").size());
+        Assertions.assertEquals(25, fieldMap.keySet().size());
+        Assertions.assertEquals(29, fieldMap.values().size());
+        Assertions.assertEquals(3, fieldMap.get("rootobject.date").size());
+        Assertions.assertEquals(1, fieldMap.get("rootobject.string1").size());
     }
     
     @Test
@@ -105,10 +104,10 @@ public class JsonObjectFlattenerImplTest {
         // printJson(json);
         // printMap(fieldMap);
         
-        Assert.assertEquals(23, fieldMap.keySet().size());
-        Assert.assertEquals(27, fieldMap.values().size());
-        Assert.assertEquals(3, fieldMap.get("ROOTOBJECT.DATE").size());
-        Assert.assertFalse(fieldMap.containsKey("ROOTOBJECT.NUMBER2") || fieldMap.containsKey("ROOTOBJECT.STRING22"));
+        Assertions.assertEquals(23, fieldMap.keySet().size());
+        Assertions.assertEquals(27, fieldMap.values().size());
+        Assertions.assertEquals(3, fieldMap.get("ROOTOBJECT.DATE").size());
+        Assertions.assertFalse(fieldMap.containsKey("ROOTOBJECT.NUMBER2") || fieldMap.containsKey("ROOTOBJECT.STRING22"));
     }
     
     @Test
@@ -124,9 +123,9 @@ public class JsonObjectFlattenerImplTest {
         // printJson(json);
         // printMap(fieldMap);
         
-        Assert.assertEquals(2, fieldMap.keySet().size());
-        Assert.assertEquals(2, fieldMap.values().size());
-        Assert.assertTrue(fieldMap.containsKey("ROOTOBJECT.NUMBER2") && fieldMap.containsKey("ROOTOBJECT.STRING2"));
+        Assertions.assertEquals(2, fieldMap.keySet().size());
+        Assertions.assertEquals(2, fieldMap.values().size());
+        Assertions.assertTrue(fieldMap.containsKey("ROOTOBJECT.NUMBER2") && fieldMap.containsKey("ROOTOBJECT.STRING2"));
     }
     
     @Test
@@ -143,7 +142,7 @@ public class JsonObjectFlattenerImplTest {
         // printJson(json);
         // printMap(fieldMap);
         
-        Assert.assertTrue(fieldMap.containsKey("ROOTOBJECT.STRING2") && fieldMap.keySet().size() == 1);
+        Assertions.assertTrue(fieldMap.containsKey("ROOTOBJECT.STRING2") && fieldMap.keySet().size() == 1);
     }
     
     @Test
@@ -157,9 +156,9 @@ public class JsonObjectFlattenerImplTest {
         // printJson(json);
         // printMap(fieldMap);
         
-        Assert.assertEquals(25, fieldMap.keySet().size());
-        Assert.assertEquals(29, fieldMap.values().size());
-        Assert.assertTrue(fieldMap.containsKey("rootobject_sTrInG1"));
+        Assertions.assertEquals(25, fieldMap.keySet().size());
+        Assertions.assertEquals(29, fieldMap.values().size());
+        Assertions.assertTrue(fieldMap.containsKey("rootobject_sTrInG1"));
     }
     
     @Test
@@ -173,13 +172,13 @@ public class JsonObjectFlattenerImplTest {
         // printJson(json);
         // printMap(fieldMap);
         
-        Assert.assertEquals(4, fieldMap.keySet().size());
-        Assert.assertEquals(6, fieldMap.values().size());
-        Assert.assertTrue(fieldMap.containsKey("rootarray"));
-        Assert.assertTrue(fieldMap.containsKey("rootdate"));
-        Assert.assertTrue(fieldMap.containsKey("rootid"));
-        Assert.assertTrue(fieldMap.containsKey("rootnumber"));
-        Assert.assertEquals(3, fieldMap.get("rootarray").size());
+        Assertions.assertEquals(4, fieldMap.keySet().size());
+        Assertions.assertEquals(6, fieldMap.values().size());
+        Assertions.assertTrue(fieldMap.containsKey("rootarray"));
+        Assertions.assertTrue(fieldMap.containsKey("rootdate"));
+        Assertions.assertTrue(fieldMap.containsKey("rootid"));
+        Assertions.assertTrue(fieldMap.containsKey("rootnumber"));
+        Assertions.assertEquals(3, fieldMap.get("rootarray").size());
     }
     
     @Test
@@ -194,12 +193,12 @@ public class JsonObjectFlattenerImplTest {
         // printJson(json);
         // printMap(fieldMap);
         
-        Assert.assertEquals(27, fieldMap.keySet().size());
-        Assert.assertEquals(29, fieldMap.values().size());
-        Assert.assertEquals(1, fieldMap.get("date.rootobject#0.date#0").size());
-        Assert.assertEquals(1, fieldMap.get("date.rootobject#0.date#1").size());
-        Assert.assertEquals(1, fieldMap.get("date.rootobject#0.date#2").size());
-        Assert.assertEquals(1, fieldMap.get("name.rootobject#0.properties#0.array#0.name#0").size());
+        Assertions.assertEquals(27, fieldMap.keySet().size());
+        Assertions.assertEquals(29, fieldMap.values().size());
+        Assertions.assertEquals(1, fieldMap.get("date.rootobject#0.date#0").size());
+        Assertions.assertEquals(1, fieldMap.get("date.rootobject#0.date#1").size());
+        Assertions.assertEquals(1, fieldMap.get("date.rootobject#0.date#2").size());
+        Assertions.assertEquals(1, fieldMap.get("name.rootobject#0.properties#0.array#0.name#0").size());
         
     }
     
@@ -215,24 +214,24 @@ public class JsonObjectFlattenerImplTest {
         // printJson(json);
         // printMap(fieldMap);
         
-        Assert.assertEquals(41, fieldMap.keySet().size());
-        Assert.assertEquals(52, fieldMap.values().size());
+        Assertions.assertEquals(41, fieldMap.keySet().size());
+        Assertions.assertEquals(52, fieldMap.values().size());
         
-        Assert.assertEquals(1, fieldMap.get("date.rootobject_0.date_0").size());
-        Assert.assertTrue(fieldMap.containsKey("rootobject.date"));
-        Assert.assertEquals(3, fieldMap.get("rootobject.date").size());
+        Assertions.assertEquals(1, fieldMap.get("date.rootobject_0.date_0").size());
+        Assertions.assertTrue(fieldMap.containsKey("rootobject.date"));
+        Assertions.assertEquals(3, fieldMap.get("rootobject.date").size());
         
-        Assert.assertEquals(1, fieldMap.get("date.rootobject_0.date_1").size());
-        Assert.assertEquals(1, fieldMap.get("date.rootobject_0.date_2").size());
+        Assertions.assertEquals(1, fieldMap.get("date.rootobject_0.date_1").size());
+        Assertions.assertEquals(1, fieldMap.get("date.rootobject_0.date_2").size());
         
-        Assert.assertEquals(1, fieldMap.get("name.rootobject_0.properties_0.array_0.name_0").size());
-        Assert.assertTrue(fieldMap.containsKey("rootobject.properties.array.name"));
-        Assert.assertEquals(4, fieldMap.get("rootobject.properties.array.name").size());
-        Assert.assertEquals(4, fieldMap.get("rootobject.properties.array.value").size());
+        Assertions.assertEquals(1, fieldMap.get("name.rootobject_0.properties_0.array_0.name_0").size());
+        Assertions.assertTrue(fieldMap.containsKey("rootobject.properties.array.name"));
+        Assertions.assertEquals(4, fieldMap.get("rootobject.properties.array.name").size());
+        Assertions.assertEquals(4, fieldMap.get("rootobject.properties.array.value").size());
         
     }
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testGroupingContextWithBadJson() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().flattenMode(FlattenMode.GROUPED).occurrenceInGroupDelimiter("#").build();
         
@@ -241,29 +240,24 @@ public class JsonObjectFlattenerImplTest {
         JsonObject job = jsonElement.getAsJsonObject();
         job.addProperty("illegal.key.format", "key name already has our path delimiter!");
         
-        try {
-            flattener.flatten(job);
-        } catch (IllegalStateException ill) {
-            Assert.assertTrue(ill.getMessage().lastIndexOf("delimiter found in json element") > -1);
-            throw ill;
-        }
+        IllegalStateException ill = Assertions.assertThrows(IllegalStateException.class, () -> flattener.flatten(job));
+        Assertions.assertTrue(ill.getMessage().lastIndexOf("delimiter found in json element") > -1);
     }
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testGroupingContextWithBadDelimiterConfig() throws Exception {
-        JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().pathDelimiter(".").occurrenceInGroupDelimiter(".")
-                        .flattenMode(FlattenMode.GROUPED).build();
-        
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
-        JsonObject job = jsonElement.getAsJsonObject();
-        
-        try {
-            flattener.flatten(job);
-        } catch (IllegalStateException ill) {
-            Assert.assertEquals("path delimiter and occurrence delimiter cannot be the same", ill.getMessage());
-            throw ill;
-        }
+        IllegalStateException ill = Assertions.assertThrows(IllegalStateException.class,
+                        () -> {
+                            JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().pathDelimiter(".").occurrenceInGroupDelimiter(".")
+                                            .flattenMode(FlattenMode.GROUPED).build();
+                            
+                            JsonParser parser = new JsonParser();
+                            JsonElement jsonElement = parser.parse(json);
+                            JsonObject job = jsonElement.getAsJsonObject();
+                            
+                            flattener.flatten(job);
+                        });
+        Assertions.assertEquals("path delimiter and occurrence delimiter cannot be the same", ill.getMessage());
     }
     
     private void printMap(Multimap<String,String> fieldMap) {

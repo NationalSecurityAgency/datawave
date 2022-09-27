@@ -12,15 +12,15 @@ import datawave.security.system.AuthorizationCache;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.Connector;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.security.CacheableManager;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Default;
@@ -33,11 +33,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-@RunWith(Arquillian.class)
+@Disabled
+@ExtendWith(ArquillianExtension.class)
 public class CredentialsCacheBeanTest {
     
     private CredentialsCacheBean ccb;
@@ -59,7 +60,7 @@ public class CredentialsCacheBeanTest {
         // @formatter:on
     }
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         // With Arquillian we would normally inject this bean into the test class. However there seems to be
         // an incompatibility with Arquillian and the @Singleton annotation on the bean where any method
@@ -84,9 +85,6 @@ public class CredentialsCacheBeanTest {
         cache.put(dp2, dp2);
         cache.put(dp3, dp3);
     }
-    
-    @After
-    public void tearDown() throws Exception {}
     
     @Test
     public void testFlushAll() {

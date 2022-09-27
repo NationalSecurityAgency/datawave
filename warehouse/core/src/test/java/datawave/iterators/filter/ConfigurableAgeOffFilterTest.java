@@ -8,12 +8,12 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.net.URL;
@@ -26,11 +26,12 @@ import java.util.Map;
 
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
     
     private static long MILLIS_IN_DAY = 1000L * 60 * 60 * 24L;
@@ -44,7 +45,7 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
     
     private DefaultConfiguration conf = new DefaultConfiguration();
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         expect(env.getConfig()).andReturn(conf).anyTimes();
         // These two are only for the disabled test
@@ -61,9 +62,9 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         
         filter.init(source, options, env);
         
-        assertThat(filter.accept(new Key(), VALUE), is(true));
+        assertTrue(filter.accept(new Key(), VALUE));
         // 1970 is older than 30 days, but filter is disable so should be true
-        assertThat(filter.accept(getKey(0), VALUE), is(true));
+        assertTrue(filter.accept(getKey(0), VALUE));
     }
     
     @Test
@@ -74,9 +75,9 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         // no file or other delegate filters configured, so only the ttl are used
         filter.init(source, options, env);
         
-        assertThat(filter.accept(getKey(daysAgo(10)), VALUE), is(true));
+        assertTrue(filter.accept(getKey(daysAgo(10)), VALUE));
         // 100 is older than 30 days
-        assertThat(filter.accept(getKey(daysAgo(100)), VALUE), is(false));
+        assertFalse(filter.accept(getKey(daysAgo(100)), VALUE));
     }
     
     @Test
@@ -88,8 +89,8 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         
         // the file uses TestFilter which always returns false for accept and filter applied
         // so only ttl is uses for acceptance
-        assertThat(filter.accept(getKey(daysAgo(15)), VALUE), is(true));
-        assertThat(filter.accept(getKey(daysAgo(123)), VALUE), is(false));
+        assertTrue(filter.accept(getKey(daysAgo(15)), VALUE));
+        assertFalse(filter.accept(getKey(daysAgo(123)), VALUE));
     }
     
     @Test
@@ -107,22 +108,22 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         filter.initialize(wrapper);
         
         // brand new key should be good
-        assertThat(filter.accept(new Key(), VALUE), is(true));
+        assertTrue(filter.accept(new Key(), VALUE));
         // first five will hit the ttl short circuit
-        assertThat(filter.accept(getKey(daysAgo(1)), VALUE), is(true));
-        assertThat(filter.accept(getKey(daysAgo(2)), VALUE), is(true));
-        assertThat(filter.accept(getKey(daysAgo(3)), VALUE), is(true));
-        assertThat(filter.accept(getKey(daysAgo(4)), VALUE), is(true));
-        assertThat("If this fails it may be an edge case due to date rollover, try again in a minute", //
-                        filter.accept(getKey(daysAgo(5)), VALUE), is(true));
+        assertTrue(filter.accept(getKey(daysAgo(1)), VALUE));
+        assertTrue(filter.accept(getKey(daysAgo(2)), VALUE));
+        assertTrue(filter.accept(getKey(daysAgo(3)), VALUE));
+        assertTrue(filter.accept(getKey(daysAgo(4)), VALUE));
+        assertTrue(filter.accept(getKey(daysAgo(5)), VALUE), //
+                        "If this fails it may be an edge case due to date rollover, try again in a minute");
         
         // these will not hit the ttl short circuit and the single applied rule
-        assertThat(filter.accept(getKey("foo", daysAgo(6)), VALUE), is(true));
+        assertTrue(filter.accept(getKey("foo", daysAgo(6)), VALUE));
         // will not match so should be true
-        assertThat(filter.accept(getKey("bar", daysAgo(7)), VALUE), is(true));
-        assertThat(filter.accept(getKey("foo", daysAgo(8)), VALUE), is(true));
+        assertTrue(filter.accept(getKey("bar", daysAgo(7)), VALUE));
+        assertTrue(filter.accept(getKey("foo", daysAgo(8)), VALUE));
         // this is really old and matches so should not be accepted
-        assertThat(filter.accept(getKey("foo", daysAgo(365)), VALUE), is(false));
+        assertFalse(filter.accept(getKey("foo", daysAgo(365)), VALUE));
         
     }
     
@@ -160,24 +161,24 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         Key oldBarTab = getKey("bar", "tab", daysAgo(100));
         Key lowBar = getKey("low", "bar", daysAgo(32));
         
-        assertThat(filter.accept(fooWee, VALUE), is(true));
-        assertThat(filter.accept(newBarTab, VALUE), is(true));
-        assertThat(filter.accept(oldBarTab, VALUE), is(false));
-        assertThat(filter.accept(lowBar, VALUE), is(false));
+        assertTrue(filter.accept(fooWee, VALUE));
+        assertTrue(filter.accept(newBarTab, VALUE));
+        assertFalse(filter.accept(oldBarTab, VALUE));
+        assertFalse(filter.accept(lowBar, VALUE));
     }
     
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testInitWithNoTtl() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
-        filter.init(source, new HashMap<>(), env);
+        assertThrows(NullPointerException.class, () -> filter.init(source, new HashMap<>(), env));
     }
     
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testInitWithNoTtlUnits() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
         HashMap<String,String> options = new HashMap<>();
         options.put(AgeOffConfigParams.TTL, "31");
-        filter.init(source, options, env);
+        assertThrows(NullPointerException.class, () -> filter.init(source, options, env));
     }
     
     @Test
@@ -191,14 +192,14 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         // @formatter:on
         for (String unit : allUnits) {
             options.put(AgeOffConfigParams.TTL_UNITS, unit);
-            assertThat(filter.validateOptions(options), is(true));
+            assertTrue(filter.validateOptions(options));
         }
         options.put(AgeOffConfigParams.TTL_UNITS, "parsecs");
-        assertThat(filter.validateOptions(options), is(false));
+        assertFalse(filter.validateOptions(options));
         
         options.put(AgeOffConfigParams.TTL, "0x143");
         options.put(AgeOffConfigParams.TTL_UNITS, AgeOffTtlUnits.DAYS);
-        assertThat(filter.validateOptions(options), is(false));
+        assertFalse(filter.validateOptions(options));
     }
     
     // --------------------------------------------
@@ -251,7 +252,7 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
     
     private String pathFromClassloader(String name) {
         URL resource = this.getClass().getResource(name);
-        assertNotNull("Unable to get resource with name: " + name, resource);
+        assertNotNull(resource, "Unable to get resource with name: " + name);
         return resource.getPath();
     }
     

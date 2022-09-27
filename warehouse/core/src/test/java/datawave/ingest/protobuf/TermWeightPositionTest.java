@@ -1,9 +1,9 @@
 package datawave.ingest.protobuf;
 
 import com.google.common.collect.Lists;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
@@ -12,7 +12,7 @@ public class TermWeightPositionTest {
     
     private List<TermWeightPosition> termWeightPositionList = Lists.newArrayList();
     
-    @Before
+    @BeforeEach
     public void setup() {
         TermWeightPosition.Builder twpBuilder = new TermWeightPosition.Builder();
         
@@ -67,7 +67,7 @@ public class TermWeightPositionTest {
         
         List<TermWeightPosition> result = Lists.newArrayList(termWeightPositionList);
         Collections.sort(result, new TermWeightPosition.MaxOffsetComparator());
-        Assert.assertEquals(listExpected, result);
+        Assertions.assertEquals(listExpected, result);
         
     }
     
@@ -99,7 +99,7 @@ public class TermWeightPositionTest {
         
         List<TermWeightPosition> result = Lists.newArrayList(termWeightPositionList);
         Collections.sort(result);
-        Assert.assertEquals(listExpected, result);
+        Assertions.assertEquals(listExpected, result);
     }
     
     @Test
@@ -108,6 +108,6 @@ public class TermWeightPositionTest {
         Integer twScore = TermWeightPosition.positionScoreToTermWeightScore(positionScore);
         Float result = TermWeightPosition.termWeightScoreToPositionScore(twScore);
         
-        Assert.assertEquals(result + "!=" + positionScore, positionScore, result);
+        Assertions.assertEquals(positionScore, result, result + "!=" + positionScore);
     }
 }

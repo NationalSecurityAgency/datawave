@@ -1,30 +1,29 @@
 package datawave.webservice.query.configuration;
 
-import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertEquals;
+import com.google.common.collect.Lists;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.data.Range;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.data.Range;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-import com.google.common.collect.Lists;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 /**
  * 
  */
-@RunWith(PowerMockRunner.class)
+@Disabled
+@ExtendWith(MockitoExtension.class)
 public class QueryDataTest {
     @Mock
     QueryData copy;
@@ -38,27 +37,25 @@ public class QueryDataTest {
     @Test
     public void testCopyConstructor() {
         // Set expectations
-        expect(this.copy.getQuery()).andReturn("TEST");
-        expect(this.copy.getRanges()).andReturn(Arrays.asList(this.range));
-        expect(this.copy.getSettings()).andReturn(Arrays.asList(this.setting));
+        when(this.copy.getQuery()).thenReturn("TEST");
+        when(this.copy.getRanges()).thenReturn(Arrays.asList(this.range));
+        when(this.copy.getSettings()).thenReturn(Arrays.asList(this.setting));
         
         // Run the test
-        PowerMock.replayAll();
         QueryData subject = new QueryData(this.copy);
         String result1 = subject.getQuery();
         Collection<Range> result2 = subject.getRanges();
         subject.addIterator(this.setting);
         Collection<IteratorSetting> result3 = subject.getSettings();
         String result4 = subject.toString();
-        PowerMock.verifyAll();
         
         // Verify results
-        assertNotNull("Query should not be null", result1);
-        assertNotNull("Ranges should not be null", result2);
-        assertTrue("Ranges should not be empty", !result2.isEmpty());
-        assertNotNull("Settings should not be null", result3);
-        assertTrue("Settings should not be empty", !result3.isEmpty());
-        assertEquals("Settings should have a size of 2", 2, result3.size());
+        assertNotNull(result1, "Query should not be null");
+        assertNotNull(result2, "Ranges should not be null");
+        assertTrue(!result2.isEmpty(), "Ranges should not be empty");
+        assertNotNull(result3, "Settings should not be null");
+        assertTrue(!result3.isEmpty(), "Settings should not be empty");
+        assertEquals(2, result3.size(), "Settings should have a size of 2");
         assertNotNull("toString should not be null", result4);
     }
     
@@ -82,20 +79,20 @@ public class QueryDataTest {
             if (null == prevSettings) {
                 prevSettings = qd.getSettings();
             } else {
-                Assert.assertEquals(prevSettings, qd.getSettings());
+                assertEquals(prevSettings, qd.getSettings());
             }
             
             if (null == prevQuery) {
                 prevQuery = qd.getQuery();
             } else {
-                Assert.assertEquals(prevQuery, qd.getQuery());
+                assertEquals(prevQuery, qd.getQuery());
             }
             
-            Assert.assertEquals(1, qd.getRanges().size());
+            assertEquals(1, qd.getRanges().size());
             
             Range r = qd.getRanges().iterator().next();
             
-            Assert.assertEquals(count.toString(), r.getStartKey().getRow().toString());
+            assertEquals(count.toString(), r.getStartKey().getRow().toString());
             
             count++;
         }
@@ -125,20 +122,20 @@ public class QueryDataTest {
             if (null == prevSettings) {
                 prevSettings = qd.getSettings();
             } else {
-                Assert.assertTrue(equals(prevSettings, qd.getSettings()));
+                assertTrue(equals(prevSettings, qd.getSettings()));
             }
             
             if (null == prevQuery) {
                 prevQuery = qd.getQuery();
             } else {
-                Assert.assertEquals(prevQuery, qd.getQuery());
+                assertEquals(prevQuery, qd.getQuery());
             }
             
-            Assert.assertEquals(1, qd.getRanges().size());
+            assertEquals(1, qd.getRanges().size());
             
             Range r = qd.getRanges().iterator().next();
             
-            Assert.assertEquals(count.toString(), r.getStartKey().getRow().toString());
+            assertEquals(count.toString(), r.getStartKey().getRow().toString());
             
             count++;
         }

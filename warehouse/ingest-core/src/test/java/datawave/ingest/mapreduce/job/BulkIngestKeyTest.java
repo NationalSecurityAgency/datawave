@@ -1,20 +1,19 @@
 package datawave.ingest.mapreduce.job;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.hadoop.io.Text;
+import org.junit.jupiter.api.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-
-import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.hadoop.io.Text;
-import org.junit.Test;
-
-import org.apache.accumulo.core.data.Key;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BulkIngestKeyTest {
     

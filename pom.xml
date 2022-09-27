@@ -31,6 +31,7 @@
         <surefire.forkCount>1C</surefire.forkCount>
         <version.accumulo>1.10.2</version.accumulo>
         <version.arquillian>1.6.0.Final</version.arquillian>
+        <version.arquillian-junit5>1.7.0.Alpha12</version.arquillian-junit5>
         <version.arquillian-weld-embedded>2.0.0.Final</version.arquillian-weld-embedded>
         <version.assertj>3.20.2</version.assertj>
         <version.avro>1.8.2</version.avro>
@@ -73,8 +74,7 @@
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.11.5</version.jjwt>
-        <version.junit>4.13.2</version.junit>
-	<version.jupiter></version.jupiter>
+        <version.jupiter>5.9.0</version.jupiter>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
         <version.log4j-extras>1.0</version.log4j-extras>
@@ -92,11 +92,11 @@
         <version.microservice.query-metric-api>1.5.4</version.microservice.query-metric-api>
         <version.microservice.type-utils>1.8</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
+        <version.mockito>4.6.1</version.mockito>
         <version.mysql-connector>8.0.29</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
-        <version.powermock>2.0.2</version.powermock>
         <version.protobuf>2.5.0</version.protobuf>
         <version.protostuff>1.8.0</version.protostuff>
         <version.reload4j>1.2.19</version.reload4j>
@@ -1023,12 +1023,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${version.junit}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-test</artifactId>
                 <version>${version.curator}</version>
@@ -1060,21 +1054,39 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-easymock</artifactId>
-                <version>${version.powermock}</version>
+                <groupId>org.jboss.arquillian.junit5</groupId>
+                <artifactId>arquillian-junit5-container</artifactId>
+                <version>${version.arquillian-junit5}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito2</artifactId>
-                <version>${version.powermock}</version>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${version.jupiter}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-junit4</artifactId>
-                <version>${version.powermock}</version>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${version.jupiter}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${version.jupiter}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-inline</artifactId>
+                <version>${version.mockito}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>${version.mockito}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

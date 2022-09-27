@@ -4,8 +4,8 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class LocalityGroupPartitionerTest {
     
@@ -27,10 +27,12 @@ public class LocalityGroupPartitionerTest {
         for (int i = 0; i < 10; ++i) {
             String shard = "" + i;
             for (int j = 0; j < 2; ++j) {
-                Assert.assertEquals(" failed on row " + shard + " column family CITY", expectedReducerCity,
-                                partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "CITY", Integer.toHexString(j))), null, NUM_REDUCERS));
-                Assert.assertEquals(" failed on row " + shard + " column family STATE", expectedReducerState,
-                                partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "STATE", Integer.toHexString(j))), null, NUM_REDUCERS));
+                Assertions.assertEquals(expectedReducerCity,
+                                partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "CITY", Integer.toHexString(j))), null, NUM_REDUCERS),
+                                " failed on row " + shard + " column family CITY");
+                Assertions.assertEquals(expectedReducerState,
+                                partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "STATE", Integer.toHexString(j))), null, NUM_REDUCERS),
+                                " failed on row " + shard + " column family STATE");
             }
         }
     }
@@ -52,12 +54,15 @@ public class LocalityGroupPartitionerTest {
         for (int i = 0; i < 10; ++i) {
             String shard = "" + i;
             for (int j = 0; j < 2; ++j) {
-                Assert.assertEquals(" failed on row " + shard + " column family CITY", expectedReducerCity,
-                                partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "CITY", Integer.toHexString(j))), null, NUM_REDUCERS));
-                Assert.assertEquals(" failed on row " + shard + " column family STATE", expectedReducerState,
-                                partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "STATE", Integer.toHexString(j))), null, NUM_REDUCERS));
-                Assert.assertEquals(" failed on row " + shard + " column family JAM", expectedReducerJam,
-                                partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "JAM", Integer.toHexString(j))), null, NUM_REDUCERS));
+                Assertions.assertEquals(expectedReducerCity,
+                                partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "CITY", Integer.toHexString(j))), null, NUM_REDUCERS),
+                                " failed on row " + shard + " column family CITY");
+                Assertions.assertEquals(expectedReducerState,
+                                partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "STATE", Integer.toHexString(j))), null, NUM_REDUCERS),
+                                " failed on row " + shard + " column family STATE");
+                Assertions.assertEquals(expectedReducerJam,
+                                partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "JAM", Integer.toHexString(j))), null, NUM_REDUCERS),
+                                " failed on row " + shard + " column family JAM");
             }
         }
     }

@@ -38,11 +38,11 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -71,7 +71,7 @@ public class ProtobufEdgeDeleteModeTest {
     private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
     private static final Now now = Now.getInstance();
     
-    @BeforeClass
+    @BeforeAll
     public static void setupSystemSettings() throws Exception {
         
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -108,7 +108,7 @@ public class ProtobufEdgeDeleteModeTest {
         fields.put("MD5", new BaseNormalizedContent("MD5", "715555845289dd6ba0f4cbb8a02e5052"));
     }
     
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         Logger.getRootLogger().removeAllAppenders();
         while (rootAppenders.hasMoreElements()) {
@@ -122,7 +122,7 @@ public class ProtobufEdgeDeleteModeTest {
         }
     }
     
-    @Before
+    @BeforeEach
     public void setup() {
         TypeRegistry.reset();
         conf = new Configuration();
@@ -405,7 +405,7 @@ public class ProtobufEdgeDeleteModeTest {
         public static void processEvent(Multimap<String,NormalizedContentInterface> eventFields, ExtendedDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler,
                         RawRecordContainer event, int expectedEdgeKeys, boolean printKeysOnlyOnFail, boolean edgeDeleteMode) {
             
-            Assert.assertNotNull("Event was null.", event);
+            Assertions.assertNotNull(event, "Event was null.");
             Set<Key> edgeKeys = new HashSet<>();
             Map<Text,Integer> countMap = Maps.newHashMap();
             
@@ -453,7 +453,7 @@ public class ProtobufEdgeDeleteModeTest {
                         log.info(keyString.trim());
                     }
                 }
-                Assert.assertEquals((int) countMap.get(edgeTableName), expectedEdgeKeys);
+                Assertions.assertEquals((int) countMap.get(edgeTableName), expectedEdgeKeys);
             } catch (AssertionError ae) {
                 if (printKeysOnlyOnFail) {
                     for (String keyString : keyPrint) {
@@ -461,7 +461,7 @@ public class ProtobufEdgeDeleteModeTest {
                     }
                 }
                 final Text shardTableName = new Text(TableName.SHARD);
-                Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(shardTableName), countMap.get(edgeTableName)));
+                Assertions.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(shardTableName), countMap.get(edgeTableName)));
             }
         }
         

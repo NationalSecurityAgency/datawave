@@ -8,8 +8,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInput;
@@ -111,7 +111,7 @@ public class StatsHyperLogReducerTest {
         
         List<MRPair<BulkIngestKey,Value>> fullResults = driver.run();
         log.debug("=====  RESULTS  =====");
-        Assert.assertEquals("result size does not match expected", output.size(), fullResults.size());
+        Assertions.assertEquals(output.size(), fullResults.size(), "result size does not match expected");
         for (MRPair<BulkIngestKey,Value> result : fullResults) {
             BulkIngestKey rKey = result.key;
             // reset timestamp to 0
@@ -132,7 +132,7 @@ public class StatsHyperLogReducerTest {
             for (BulkIngestKey oKey : output.keySet()) {
                 // equals will work with correctly
                 if (oKey.equals(rKey)) {
-                    Assert.assertEquals(output.get(oKey), counts);
+                    Assertions.assertEquals(output.get(oKey), counts);
                     break;
                 }
             }

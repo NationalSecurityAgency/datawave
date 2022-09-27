@@ -1,9 +1,12 @@
 package datawave.ingest.data;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import datawave.data.hash.UID;
+import datawave.ingest.config.IngestConfigurationFactory;
+import datawave.ingest.config.RawRecordContainerImpl;
+import datawave.ingest.data.config.MarkingsHelper;
+import org.apache.hadoop.conf.Configuration;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -14,14 +17,10 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.UUID;
 
-import datawave.data.hash.UID;
-import datawave.ingest.config.IngestConfigurationFactory;
-import datawave.ingest.config.RawRecordContainerImpl;
-import datawave.ingest.data.config.MarkingsHelper;
-
-import org.apache.hadoop.conf.Configuration;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RawRecordContainerImplTest {
     
@@ -45,7 +44,7 @@ public class RawRecordContainerImplTest {
     
     private String csv = "20150101121500,field2,field3";
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource("config/all-config.xml"));

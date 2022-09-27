@@ -1,34 +1,29 @@
 package datawave.ingest.wikipedia;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Map.Entry;
-
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.VirtualIngest;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
-
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.util.TableName;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * 
  */
-@RunWith(JUnit4.class)
 public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
     
     protected static WikipediaDataTypeHandler<Text,BulkIngestKey,Value> handler = null;
@@ -49,7 +44,7 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         }
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void before() throws Exception {
         handler = new WikipediaDataTypeHandler<>();
         System.setProperty("LOADDATES_TABLE_ENABLED", "true");
@@ -62,7 +57,7 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         reader.initialize(split, ctx);
         reader.setInputDate(System.currentTimeMillis());
         
-        Assert.assertTrue(reader.nextKeyValue());
+        Assertions.assertTrue(reader.nextKeyValue());
         
         RawRecordContainer e = reader.getEvent();
         
@@ -97,22 +92,22 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
             tableToKey.put(biKey.getTableName().toString(), biKey);
         }
         
-        Assert.assertEquals(82, tableToKey.get(TableName.SHARD).size());
-        Assert.assertEquals(38, tableToKey.get(TableName.SHARD_INDEX).size());
-        Assert.assertEquals(25, tableToKey.get(TableName.SHARD_RINDEX).size());
+        Assertions.assertEquals(82, tableToKey.get(TableName.SHARD).size());
+        Assertions.assertEquals(38, tableToKey.get(TableName.SHARD_INDEX).size());
+        Assertions.assertEquals(25, tableToKey.get(TableName.SHARD_RINDEX).size());
         
         // These are only the *_TERM_COUNT things. The rest are handled via EventMapper's EventMetadata instance
         int numberOfLoadDateEntries = 14;
         int numberOfDatawaveMetadataEntries = 18;
-        Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get(TableName.METADATA).size());
+        Assertions.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get(TableName.METADATA).size());
         
-        Assert.assertEquals(137 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries, results.size());
+        Assertions.assertEquals(137 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries, results.size());
         
         contextWriter = new MyCachingContextWriter();
         
         // ///////////////
         
-        Assert.assertTrue(reader.nextKeyValue());
+        Assertions.assertTrue(reader.nextKeyValue());
         
         e = reader.getEvent();
         
@@ -140,14 +135,14 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
             tableToKey.put(biKey.getTableName().toString(), biKey);
         }
         
-        Assert.assertEquals(9785, tableToKey.get(TableName.SHARD).size());
-        Assert.assertEquals(4890, tableToKey.get(TableName.SHARD_INDEX).size());
-        Assert.assertEquals(4877, tableToKey.get(TableName.SHARD_RINDEX).size());
+        Assertions.assertEquals(9785, tableToKey.get(TableName.SHARD).size());
+        Assertions.assertEquals(4890, tableToKey.get(TableName.SHARD_INDEX).size());
+        Assertions.assertEquals(4877, tableToKey.get(TableName.SHARD_RINDEX).size());
         
         // These are only the *_TERM_COUNT things. The rest are handled via EventMapper's EventMetadata instance
-        Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get(TableName.METADATA).size());
+        Assertions.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get(TableName.METADATA).size());
         
-        Assert.assertEquals(22766 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries, results.size());
+        Assertions.assertEquals(22766 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries, results.size());
     }
     
 }

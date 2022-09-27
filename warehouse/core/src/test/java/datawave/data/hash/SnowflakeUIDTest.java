@@ -1,10 +1,9 @@
 package datawave.data.hash;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import org.apache.curator.test.TestingServer;
+import org.apache.hadoop.conf.Configuration;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -16,10 +15,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.apache.curator.test.TestingServer;
-import org.apache.hadoop.conf.Configuration;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SnowflakeUIDTest {
     
@@ -29,7 +29,7 @@ public class SnowflakeUIDTest {
     private String data2 = "20100831: the quick brown fox jumped over the lazy dog";
     private Configuration conf = new Configuration();
     
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         conf.set(UIDConstants.CONFIG_UID_TYPE_KEY, SnowflakeUID.class.getSimpleName());
         conf.set(UIDConstants.CONFIG_MACHINE_ID_KEY, "" + SnowflakeUID.MAX_MACHINE_ID);
@@ -527,7 +527,7 @@ public class SnowflakeUIDTest {
             storedTimestamp = expectedTimestamp;
             
             assertEquals(myMachineId, uid.getMachineId());
-            assertTrue("Not initialized", ZkSnowflakeCache.isInitialized());
+            assertTrue(ZkSnowflakeCache.isInitialized(), "Not initialized");
             assertEquals(expectedTimestamp, uid.getTimestamp());
             assertEquals(expectedSequence, uid.getSequenceId());
             assertEquals(storedTimestamp, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(uid.getMachineId()))));

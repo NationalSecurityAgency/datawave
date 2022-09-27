@@ -4,8 +4,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.counters.CounterGroupBase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -38,42 +38,42 @@ public class CounterToStatsDConfigurationTest {
         conf.set("statsd.live.time.MyGroup9.MyCounter9", "CounterGroup9");
         CounterToStatsDConfiguration config = new CounterToStatsDConfiguration(conf);
         
-        Assert.assertTrue(config.isConfigured());
-        Assert.assertEquals("localhost", config.getHost());
-        Assert.assertEquals(8125, config.getPort());
-        Assert.assertEquals("queue1", config.getQueueName());
-        Assert.assertEquals("job1", config.getJobName());
-        Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.GAUGE, "MyGroup1", null),
+        Assertions.assertTrue(config.isConfigured());
+        Assertions.assertEquals("localhost", config.getHost());
+        Assertions.assertEquals(8125, config.getPort());
+        Assertions.assertEquals("queue1", config.getQueueName());
+        Assertions.assertEquals("job1", config.getJobName());
+        Assertions.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.GAUGE, "MyGroup1", null),
                         config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup1", (String) null));
-        Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.GAUGE, "MyGroup1", null),
+        Assertions.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.GAUGE, "MyGroup1", null),
                         config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, new TestCounterGroup("CounterGroup1"), (Counter) null));
-        Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.GAUGE, "MyGroup1", null),
+        Assertions.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.GAUGE, "MyGroup1", null),
                         config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup1", "Counter1"));
-        Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.GAUGE, "MyGroup1", null),
+        Assertions.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.GAUGE, "MyGroup1", null),
                         config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup1", new TestCounter("Counter1")));
-        Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.GAUGE, "MyGroup1", null), config.getAspect(
-                        CounterToStatsDConfiguration.StatsDOutputType.FINAL, new TestCounterGroup("CounterGroup1"), new TestCounter("Counter1")));
-        Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.COUNTER, "MyGroup2", null),
+        Assertions.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.GAUGE, "MyGroup1", null), config
+                        .getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, new TestCounterGroup("CounterGroup1"), new TestCounter("Counter1")));
+        Assertions.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.COUNTER, "MyGroup2", null),
                         config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup2", "Counter1"));
-        Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.TIME, "MyGroup3", "MyCounter2"),
+        Assertions.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.TIME, "MyGroup3", "MyCounter2"),
                         config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup3", "Counter2"));
-        Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.TIME, "MyGroup3", "MyCounter2"),
+        Assertions.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.TIME, "MyGroup3", "MyCounter2"),
                         config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup3", "Counter2"));
         
-        Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup1", (String) null));
-        Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup2", "Counter1"));
-        Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup2", (String) null));
-        Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup2", "Counter2"));
-        Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup3", "Counter2"));
-        Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup3", "Counter3"));
-        Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup3", (String) null));
+        Assertions.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup1", (String) null));
+        Assertions.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup2", "Counter1"));
+        Assertions.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup2", (String) null));
+        Assertions.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup2", "Counter2"));
+        Assertions.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup3", "Counter2"));
+        Assertions.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup3", "Counter3"));
+        Assertions.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup3", (String) null));
         
-        Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup4", (String) null));
-        Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup5", (String) null));
-        Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup6", (String) null));
-        Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup7", (String) null));
-        Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup8", (String) null));
-        Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup9", (String) null));
+        Assertions.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup4", (String) null));
+        Assertions.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup5", (String) null));
+        Assertions.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup6", (String) null));
+        Assertions.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup7", (String) null));
+        Assertions.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup8", (String) null));
+        Assertions.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup9", (String) null));
     }
     
     public static class TestCounterGroup implements CounterGroup {

@@ -1,24 +1,23 @@
 package datawave.query.iterator;
 
-import java.util.EnumSet;
-import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Assert;
-import org.junit.Test;
-
+import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.security.Authorizations;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import java.util.EnumSet;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 public class QueriesTableAgeOffIteratorTest {
     
@@ -54,12 +53,12 @@ public class QueriesTableAgeOffIteratorTest {
         Scanner scanner = connector.createScanner(TABLE_NAME, new Authorizations());
         for (Entry<Key,Value> entry : scanner) {
             if (entry.getKey().getRow().toString().equals("row1"))
-                Assert.fail("We saw row1 when it should be expired.");
+                Assertions.fail("We saw row1 when it should be expired.");
             if (entry.getKey().getRow().toString().equals("row2"))
                 sawRow2 = true;
         }
         if (!sawRow2)
-            Assert.fail("We did not see row2 and we should have");
+            Assertions.fail("We did not see row2 and we should have");
     }
     
 }

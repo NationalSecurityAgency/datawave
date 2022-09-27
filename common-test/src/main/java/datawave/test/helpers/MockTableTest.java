@@ -1,5 +1,6 @@
 package datawave.test.helpers;
 
+import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -9,11 +10,10 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.concurrent.TimeUnit;
 
@@ -23,7 +23,7 @@ public abstract class MockTableTest {
     protected BatchWriter writer;
     protected TableOperations tableOperations;
     
-    @Before
+    @BeforeEach
     public void setup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
         InMemoryInstance i = new InMemoryInstance(this.getClass().toString());
         connector = i.getConnector("root", new PasswordToken(""));
@@ -34,7 +34,7 @@ public abstract class MockTableTest {
         tableOperations = connector.tableOperations();
     }
     
-    @After
+    @AfterEach
     public void cleanup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         tableOperations.delete(TABLE_NAME);
     }

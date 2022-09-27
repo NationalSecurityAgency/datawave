@@ -1,19 +1,10 @@
 package datawave.ingest.metadata;
 
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.IdentityDataType;
-import datawave.TestBaseIngestHelper;
 import datawave.TestAbstractContentIngestHelper;
+import datawave.TestBaseIngestHelper;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -26,9 +17,18 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.io.Text;
 import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 
 // currently this only tests LoadDate counts
 public class EventMetadataTest {
@@ -51,7 +51,7 @@ public class EventMetadataTest {
     private RawRecordContainer event = EasyMock.createMock(RawRecordContainer.class);
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
     
-    @Before
+    @BeforeEach
     public void setupIngestHelper() {
         helper = new TestBaseIngestHelper(createEventFields()) {
             @Override
@@ -100,11 +100,11 @@ public class EventMetadataTest {
         eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
         
         assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
-        Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
+        Assertions.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
         assertNonIndexedFieldNameIsMissing(eventMetadata);
         
-        Assert.assertTrue(assertEExists(FIELD_TO_COUNT, eventMetadata));
-        Assert.assertTrue(assertIExists(FIELD_TO_COUNT, eventMetadata));
+        Assertions.assertTrue(assertEExists(FIELD_TO_COUNT, eventMetadata));
+        Assertions.assertTrue(assertIExists(FIELD_TO_COUNT, eventMetadata));
         
         EasyMock.verify(event);
     }
@@ -121,8 +121,8 @@ public class EventMetadataTest {
         assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
         assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_WITH_TOKEN_TO_COUNT, eventMetadata);
         assertTfCountEquals(0L, FIELD_WITH_TOKEN_TO_COUNT, eventMetadata);
-        Assert.assertTrue(assertTExists(FIELD_WITH_TOKEN_TO_COUNT, eventMetadata));
-        Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
+        Assertions.assertTrue(assertTExists(FIELD_WITH_TOKEN_TO_COUNT, eventMetadata));
+        Assertions.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
         assertNonIndexedFieldNameIsMissing(eventMetadata);
         
         EasyMock.verify(event);
@@ -137,10 +137,10 @@ public class EventMetadataTest {
         eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
         
         assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
-        Assert.assertFalse(assertContainsKey(eventMetadata, INDEX_TABLE_NAME, FIELD_WITH_TOKEN_TO_COUNT));
+        Assertions.assertFalse(assertContainsKey(eventMetadata, INDEX_TABLE_NAME, FIELD_WITH_TOKEN_TO_COUNT));
         assertTfCountEquals(0L, FIELD_TO_COUNT, eventMetadata);
         assertTCountEquals(0L, FIELD_TO_COUNT, eventMetadata);
-        Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
+        Assertions.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
         assertNonIndexedFieldNameIsMissing(eventMetadata);
         
         EasyMock.verify(event);
@@ -155,7 +155,7 @@ public class EventMetadataTest {
         eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
         
         assertFieldNameCountEquals(1L, RINDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
-        Assert.assertFalse(assertContainsKey(eventMetadata, INDEX_TABLE_NAME, FIELD_TO_COUNT));
+        Assertions.assertFalse(assertContainsKey(eventMetadata, INDEX_TABLE_NAME, FIELD_TO_COUNT));
         assertNonIndexedFieldNameIsMissing(eventMetadata);
         
         EasyMock.verify(event);
@@ -200,7 +200,7 @@ public class EventMetadataTest {
         RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
         eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
         
-        Assert.assertFalse(assertEExists(FIELD_TO_COUNT, eventMetadata));
+        Assertions.assertFalse(assertEExists(FIELD_TO_COUNT, eventMetadata));
         
         EasyMock.verify(event);
     }
@@ -244,16 +244,16 @@ public class EventMetadataTest {
     private void assertCountEquals(long expectedCount, String rowId, RawRecordMetadata eventMetadata, Text tableName, Text expectedColumnFamily,
                     Text expectedColumnQualifier) {
         BulkIngestKey expectedBulkIngestKey = createExpectedBulkIngestKey(expectedColumnFamily, tableName, rowId, expectedColumnQualifier);
-        Assert.assertTrue("Didn't have entry for " + expectedColumnFamily + ", " + rowId, assertContainsKey(eventMetadata, expectedBulkIngestKey));
+        Assertions.assertTrue(assertContainsKey(eventMetadata, expectedBulkIngestKey), "Didn't have entry for " + expectedColumnFamily + ", " + rowId);
         Iterator<Value> values = getCorrespondingValue(eventMetadata, expectedBulkIngestKey).iterator();
-        Assert.assertTrue(values.hasNext());
+        Assertions.assertTrue(values.hasNext());
         
         byte[] value = values.next().get();
         if (expectedCount > 0) {
-            Assert.assertEquals(expectedCount, (long) SummingCombiner.VAR_LEN_ENCODER.decode(value));
+            Assertions.assertEquals(expectedCount, (long) SummingCombiner.VAR_LEN_ENCODER.decode(value));
         }
         
-        Assert.assertFalse(values.hasNext());
+        Assertions.assertFalse(values.hasNext());
     }
     
     private boolean assertExists(String rowId, RawRecordMetadata eventMetadata, Text tableName, Text expectedColumnFamily, Text expectedColumnQualifier) {
@@ -262,8 +262,8 @@ public class EventMetadataTest {
     }
     
     private void assertNonIndexedFieldNameIsMissing(RawRecordMetadata eventMetadata) {
-        Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_NAME_FOR_LOAD_DATE));
-        Assert.assertFalse(assertContainsKey(eventMetadata, INDEX_TABLE_NAME, FIELD_NAME_FOR_LOAD_DATE));
+        Assertions.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_NAME_FOR_LOAD_DATE));
+        Assertions.assertFalse(assertContainsKey(eventMetadata, INDEX_TABLE_NAME, FIELD_NAME_FOR_LOAD_DATE));
     }
     
     private boolean assertContainsKey(RawRecordMetadata eventMetadata, Text columnFamily, String fieldName) {

@@ -1,19 +1,19 @@
 package datawave.webservice.query.logic;
 
+import com.google.common.collect.Lists;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils.NpeUtils;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import java.security.Principal;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.google.common.collect.Lists;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser.UserType;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils.NpeUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 public class DatawaveRoleManagerTest {
     
@@ -21,7 +21,7 @@ public class DatawaveRoleManagerTest {
     private DatawavePrincipal datawavePrincipal;
     private Principal p;
     
-    @Before
+    @BeforeEach
     public void beforeEachTest() {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
@@ -80,13 +80,13 @@ public class DatawaveRoleManagerTest {
         drm = new DatawaveRoleManager();
         
         Set<String> gottenRoles = drm.getRequiredRoles();
-        Assert.assertNull(gottenRoles);
+        Assertions.assertNull(gottenRoles);
         
         drm.setRequiredRoles(getFirstRole());
         gottenRoles = drm.getRequiredRoles();
         
-        Assert.assertTrue(gottenRoles.contains("REQ_ROLE_1"));
-        Assert.assertFalse(gottenRoles.contains("REQ_ROLE_2"));
+        Assertions.assertTrue(gottenRoles.contains("REQ_ROLE_1"));
+        Assertions.assertFalse(gottenRoles.contains("REQ_ROLE_2"));
     }
     
     @Test
@@ -95,8 +95,8 @@ public class DatawaveRoleManagerTest {
         drm = new DatawaveRoleManager(getFirstRole());
         
         Set<String> gottenRoles = drm.getRequiredRoles();
-        Assert.assertTrue(gottenRoles.contains("REQ_ROLE_1"));
-        Assert.assertFalse(gottenRoles.contains("REQ_ROLE_2"));
+        Assertions.assertTrue(gottenRoles.contains("REQ_ROLE_1"));
+        Assertions.assertFalse(gottenRoles.contains("REQ_ROLE_2"));
     }
     
     @Test
@@ -106,32 +106,32 @@ public class DatawaveRoleManagerTest {
         
         // Expect false when passing in a null Principal object
         boolean canRun = drm.canRunQuery(null, null);
-        Assert.assertFalse(canRun);
+        Assertions.assertFalse(canRun);
         
         // Modify the principal and set the required roles to null
         p = datawavePrincipal;
-        Assert.assertNotEquals(null, p);
+        Assertions.assertNotEquals(null, p);
         drm.setRequiredRoles(null);
         
         // This test should pass when setting requiredRoles to null
         canRun = drm.canRunQuery(null, p);
-        Assert.assertTrue(canRun);
+        Assertions.assertTrue(canRun);
         
         // Now set up a test that requires roles to run
         drm.setRequiredRoles(getFirstRole());
         canRun = drm.canRunQuery(null, p);
-        Assert.assertTrue(canRun);
+        Assertions.assertTrue(canRun);
         
         // Now add a second required role check
         drm.setRequiredRoles(getAllRoles());
         canRun = drm.canRunQuery(null, p);
-        Assert.assertFalse(canRun);
+        Assertions.assertFalse(canRun);
         
         // Recreate the principal with two roles and check
         createAndSetWithTwoRoles();
         p = datawavePrincipal;
         drm.setRequiredRoles(getFirstRole());
         canRun = drm.canRunQuery(null, p);
-        Assert.assertTrue(canRun);
+        Assertions.assertTrue(canRun);
     }
 }

@@ -83,10 +83,6 @@
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-        <dependency>
             <groupId>net.sf.opencsv</groupId>
             <artifactId>opencsv</artifactId>
             <version>2.3</version>
@@ -140,6 +136,11 @@
             <artifactId>htrace-core4</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
         </dependency>
@@ -183,6 +184,11 @@
             <artifactId>easymock</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <resources>
@@ -202,14 +208,12 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${version.surefire.plugin}</version>
                 <configuration>
-                    <!--
                     <reuseForks>false</reuseForks>
                     <forkCount>${surefire.forkCount}</forkCount>
                     <threadCount>1</threadCount>
                     <threadCountClasses>0</threadCountClasses>
                     <threadCountMethods>1</threadCountMethods>
                     <threadCountSuites>0</threadCountSuites>
-		    -->
                     <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <!-- write temporary files to the target directory.

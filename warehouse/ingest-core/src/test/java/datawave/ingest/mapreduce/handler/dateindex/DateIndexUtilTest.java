@@ -1,11 +1,11 @@
 package datawave.ingest.mapreduce.handler.dateindex;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
  * 
@@ -16,11 +16,11 @@ public class DateIndexUtilTest {
     public void testGetBits() {
         BitSet bits = DateIndexUtil.getBits(20);
         for (int i = 0; i < 20; i++) {
-            Assert.assertFalse(bits.get(i));
+            Assertions.assertFalse(bits.get(i));
         }
-        Assert.assertTrue(bits.get(20));
+        Assertions.assertTrue(bits.get(20));
         for (int i = 21; i < bits.size(); i++) {
-            Assert.assertFalse(bits.get(i));
+            Assertions.assertFalse(bits.get(i));
         }
     }
     
@@ -48,9 +48,9 @@ public class DateIndexUtilTest {
         
         for (int i = 0; i < 40 * 4; i++) {
             if (bits.contains(i)) {
-                Assert.assertTrue(bitSet.get(i));
+                Assertions.assertTrue(bitSet.get(i));
             } else {
-                Assert.assertFalse(bitSet.get(i));
+                Assertions.assertFalse(bitSet.get(i));
             }
         }
     }

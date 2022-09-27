@@ -1,24 +1,17 @@
 package datawave.security.login;
 
-import static org.junit.Assert.assertTrue;
-import static org.powermock.api.easymock.PowerMock.replayAll;
-import static org.powermock.api.easymock.PowerMock.resetAll;
-import static org.powermock.api.easymock.PowerMock.verifyAll;
+import org.jboss.logging.Logger;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 
-import org.jboss.logging.Logger;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(DatawaveCertVerifier.class)
-@PowerMockIgnore("javax.security.auth.*")
+@ExtendWith(MockitoExtension.class)
 public class DatawaveCertVerifierTest {
     
     private DatawaveCertVerifier verifier;
@@ -27,7 +20,7 @@ public class DatawaveCertVerifierTest {
     private KeyStore keystore;
     private X509Certificate testUserCert;
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         verifier = new DatawaveCertVerifier();
         
@@ -37,22 +30,13 @@ public class DatawaveCertVerifierTest {
         keystore.load(getClass().getResourceAsStream("/testUser.pkcs12"), "secret".toCharArray());
         testUserCert = (X509Certificate) keystore.getCertificate("testuser");
         
-        replayAll();
-        
         verifier.setLogger(Logger.getLogger(DatawaveCertVerifier.class));
-        
-        verifyAll();
-        resetAll();
     }
     
     @Test
     public void testVerifyNoOCSP() throws Exception {
-        replayAll();
-        
         verifier.setOcspLevel(DatawaveCertVerifier.OcspLevel.OFF.name());
         boolean valid = verifier.verify(testUserCert, testUserCert.getSubjectDN().getName(), keystore, truststore);
-        assertTrue("Verify failed unexpectedly.", valid);
-        
-        verifyAll();
+        assertTrue(valid, "Verify failed unexpectedly.");
     }
 }

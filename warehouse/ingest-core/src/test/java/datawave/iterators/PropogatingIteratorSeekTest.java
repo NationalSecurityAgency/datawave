@@ -2,14 +2,16 @@ package datawave.iterators;
 
 import datawave.ingest.table.aggregator.PropogatingCombiner;
 import org.apache.accumulo.core.client.impl.BaseIteratorEnvironment;
-import org.apache.accumulo.core.data.*;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -27,7 +29,7 @@ public class PropogatingIteratorSeekTest {
     private PropogatingIterator iterator;
     private TreeMap<Key,Value> expected;
     
-    @Before
+    @BeforeEach
     public void before() throws IOException {
         SortedMap<Key,Value> map = new TreeMap<>();
         map.put(new Key("row", FIELD_NO_AGGREGATION, COL_QUAL, "", 3), new Value(new Text("magnolia")));
@@ -77,10 +79,10 @@ public class PropogatingIteratorSeekTest {
         Range range = new Range(startKey, true, endKey, false);
         
         // don't expect the key that precedes the start key
-        Assert.assertNotNull(expected.remove(new Key("row", FIELD_NO_AGGREGATION, COL_QUAL, "", 3)));
+        Assertions.assertNotNull(expected.remove(new Key("row", FIELD_NO_AGGREGATION, COL_QUAL, "", 3)));
         
         // the existing behavior - when starting partway through timestamps, skip key
-        Assert.assertNotNull(expected.remove(new Key("row", FIELD_TO_AGGREGATE, COL_QUAL, "", 4)));
+        Assertions.assertNotNull(expected.remove(new Key("row", FIELD_TO_AGGREGATE, COL_QUAL, "", 4)));
         
         // try both with the reseek and the next approaches
         verifyAllDataFound(expected, new TestData(iterator, range, false).data);
@@ -95,7 +97,7 @@ public class PropogatingIteratorSeekTest {
         Range range = new Range(startKey, true, endKey, false);
         
         // don't expect the key that precedes the start key
-        Assert.assertNotNull(expected.remove(new Key("row", FIELD_NO_AGGREGATION, COL_QUAL, "", 3)));
+        Assertions.assertNotNull(expected.remove(new Key("row", FIELD_NO_AGGREGATION, COL_QUAL, "", 3)));
         
         // try both with the reseek and the next approaches
         verifyAllDataFound(expected, new TestData(iterator, range, false).data);
@@ -103,7 +105,7 @@ public class PropogatingIteratorSeekTest {
     }
     
     private void verifyAllDataFound(TreeMap<Key,Value> expected, SortedMap<Key,Value> actual) {
-        Assert.assertEquals(expected, actual);
+        Assertions.assertEquals(expected, actual);
     }
     
     public static class TestCombiner extends PropogatingCombiner {

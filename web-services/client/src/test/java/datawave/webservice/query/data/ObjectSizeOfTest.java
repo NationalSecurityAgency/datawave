@@ -1,30 +1,16 @@
 package datawave.webservice.query.data;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test that object sizeof mechanism
  */
 public class ObjectSizeOfTest {
-    
-    /**
-     * @throws java.lang.Exception
-     */
-    @Before
-    public void setUp() throws Exception {}
-    
-    /**
-     * @throws java.lang.Exception
-     */
-    @After
-    public void tearDown() throws Exception {}
     
     @Test
     public void testPrimitives() {

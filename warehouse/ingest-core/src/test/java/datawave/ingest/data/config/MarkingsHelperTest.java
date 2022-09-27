@@ -3,8 +3,8 @@ package datawave.ingest.data.config;
 import datawave.ingest.data.Type;
 import datawave.marking.MarkingFunctions;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
@@ -22,7 +22,7 @@ public class MarkingsHelperTest {
         MarkingsHelper markingsHelper = new MarkingsHelper.NoOp(conf, typeWithLongName);
         
         // the lengthy type name has no associated field marking. This previously threw an exception
-        Assert.assertNull(markingsHelper.getFieldMarking(FIELD_NAME));
+        Assertions.assertNull(markingsHelper.getFieldMarking(FIELD_NAME));
     }
     
     @Test
@@ -37,8 +37,8 @@ public class MarkingsHelperTest {
         MarkingsHelper markingsHelper = new MarkingsHelper.NoOp(conf, createType(typeName));
         Map<String,String> fieldMarkingMap = markingsHelper.getFieldMarking(FIELD_NAME);
         
-        Assert.assertNotNull(fieldMarkingMap);
-        Assert.assertEquals(FIELD_MARKING_VALUE, fieldMarkingMap.get(MarkingFunctions.Default.COLUMN_VISIBILITY));
+        Assertions.assertNotNull(fieldMarkingMap);
+        Assertions.assertEquals(FIELD_MARKING_VALUE, fieldMarkingMap.get(MarkingFunctions.Default.COLUMN_VISIBILITY));
     }
     
     private Configuration createConfWithFieldMarking(String typeName) {

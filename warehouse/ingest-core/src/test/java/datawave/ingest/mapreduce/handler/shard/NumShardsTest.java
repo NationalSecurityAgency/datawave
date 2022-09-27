@@ -1,15 +1,7 @@
 package datawave.ingest.mapreduce.handler.shard;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -22,10 +14,17 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.conf.Configuration;
 import org.easymock.EasyMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class NumShardsTest {
     @Test

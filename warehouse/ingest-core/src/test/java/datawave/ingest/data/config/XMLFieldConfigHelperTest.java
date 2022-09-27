@@ -12,8 +12,8 @@ import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.mapreduce.SimpleDataTypeHandler;
 import datawave.policy.IngestPolicyEnforcer;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -22,17 +22,16 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Scanner;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class XMLFieldConfigHelperTest {
     
     private final BaseIngestHelper ingestHelper = new TestBaseIngestHelper();
     
-    @Before
+    @BeforeEach
     public void setUp() {
         Configuration conf = new Configuration();
         conf.set(DataTypeHelper.Properties.DATA_NAME, "test");
@@ -56,8 +55,8 @@ public class XMLFieldConfigHelperTest {
         try {
             FieldConfigHelper helper = XMLFieldConfigHelper.load(requestUrl, ingestHelper);
             
-            assertThat(helper.isIndexedField("A"), is(true));
-            assertThat(helper.isIndexedField("B"), is(false));
+            assertTrue(helper.isIndexedField("A"));
+            assertFalse(helper.isIndexedField("B"));
             
         } finally {
             server.stop(0);
@@ -94,7 +93,7 @@ public class XMLFieldConfigHelperTest {
         return sb.toString();
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBadTag() throws Exception {
         String input = "<?xml version=\"1.0\"?>\n"
                         + "<fieldConfig>\n"
@@ -104,10 +103,10 @@ public class XMLFieldConfigHelperTest {
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n"
                         + "    <orange name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
         
-        XMLFieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+        assertThrows(IllegalArgumentException.class, () -> new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDuplicateField() throws Exception {
         String input = "<?xml version=\"1.0\"?>\n"
                         + "<fieldConfig>\n"
@@ -117,20 +116,20 @@ public class XMLFieldConfigHelperTest {
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n"
                         + "    <field name=\"H\" indexType=\"datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
         
-        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+        assertThrows(IllegalArgumentException.class, () -> new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper));
     }
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testMissingDefault() throws Exception {
         String input = "<?xml version=\"1.0\"?>\n"
                         + "<fieldConfig>\n"
                         + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
                         + "    <field name=\"A\" indexed=\"true\"/>\n" + "</fieldConfig>";
         
-        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+        assertThrows(IllegalStateException.class, () -> new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIncompleteDefault() throws Exception {
         String input = "<?xml version=\"1.0\"?>\n"
                         + "<fieldConfig>\n"
@@ -141,7 +140,7 @@ public class XMLFieldConfigHelperTest {
                         
                         "</fieldConfig>";
         
-        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+        assertThrows(IllegalArgumentException.class, () -> new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper));
     }
     
     @Test
@@ -156,7 +155,7 @@ public class XMLFieldConfigHelperTest {
         // ok.
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIncompleteNomatch() throws Exception {
         String input = "<?xml version=\"1.0\"?>\n"
                         + "<fieldConfig>\n"
@@ -165,7 +164,7 @@ public class XMLFieldConfigHelperTest {
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
         
-        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+        assertThrows(IllegalArgumentException.class, () -> new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper));
     }
     
     @Test
@@ -266,7 +265,7 @@ public class XMLFieldConfigHelperTest {
                 count++;
             }
         }
-        assertEquals("Expected a single type to match " + expected.getName() + ", but " + count + " types matched; List was: " + observedList, 1, count);
+        assertEquals(1, count, "Expected a single type to match " + expected.getName() + ", but " + count + " types matched; List was: " + observedList);
     }
     
     @Test

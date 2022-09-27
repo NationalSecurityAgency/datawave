@@ -1,12 +1,6 @@
 package datawave.data.hash;
 
-import static datawave.data.hash.UIDConstants.TIME_SEPARATOR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotEquals;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -15,7 +9,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Date;
 
-import org.junit.Test;
+import static datawave.data.hash.UIDConstants.TIME_SEPARATOR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SuppressWarnings("deprecation")
 public class HashUIDTest {

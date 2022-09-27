@@ -11,24 +11,25 @@ import datawave.webservice.query.logic.RoleManager;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
+@Disabled
+@ExtendWith(MockitoExtension.class)
 public class TestBaseQueryLogic {
     
     @Mock
@@ -40,37 +41,35 @@ public class TestBaseQueryLogic {
     @Test
     public void testConstructor_Copy() throws Exception {
         // Set expectations
-        expect(this.copy.getMarkingFunctions()).andReturn(null);
-        expect(this.copy.getResponseObjectFactory()).andReturn(null);
-        expect(this.copy.getLogicName()).andReturn("logicName");
-        expect(this.copy.getLogicDescription()).andReturn("logicDescription");
-        expect(this.copy.getAuditType(null)).andReturn(Auditor.AuditType.ACTIVE);
-        expect(this.copy.getTableName()).andReturn("tableName");
-        expect(this.copy.getMaxResults()).andReturn(Long.MAX_VALUE);
-        expect(this.copy.getMaxWork()).andReturn(10L);
-        expect(this.copy.getMaxPageSize()).andReturn(25);
-        expect(this.copy.getPageByteTrigger()).andReturn(1024L);
-        expect(this.copy.getCollectQueryMetrics()).andReturn(false);
-        expect(this.copy.getConnPoolName()).andReturn("connPool1");
-        expect(this.copy.getBaseIteratorPriority()).andReturn(100);
-        expect(this.copy.getPrincipal()).andReturn(null);
+        when(this.copy.getMarkingFunctions()).thenReturn(null);
+        when(this.copy.getResponseObjectFactory()).thenReturn(null);
+        when(this.copy.getLogicName()).thenReturn("logicName");
+        when(this.copy.getLogicDescription()).thenReturn("logicDescription");
+        when(this.copy.getAuditType(null)).thenReturn(Auditor.AuditType.ACTIVE);
+        when(this.copy.getTableName()).thenReturn("tableName");
+        when(this.copy.getMaxResults()).thenReturn(Long.MAX_VALUE);
+        when(this.copy.getMaxWork()).thenReturn(10L);
+        when(this.copy.getMaxPageSize()).thenReturn(25);
+        when(this.copy.getPageByteTrigger()).thenReturn(1024L);
+        when(this.copy.getCollectQueryMetrics()).thenReturn(false);
+        when(this.copy.getConnPoolName()).thenReturn("connPool1");
+        when(this.copy.getBaseIteratorPriority()).thenReturn(100);
+        when(this.copy.getPrincipal()).thenReturn(null);
         RoleManager roleManager = new EasyRoleManager();
-        expect(this.copy.getRoleManager()).andReturn(roleManager);
-        expect(this.copy.getSelectorExtractor()).andReturn(null);
-        expect(this.copy.getBypassAccumulo()).andReturn(false);
+        when(this.copy.getRoleManager()).thenReturn(roleManager);
+        when(this.copy.getSelectorExtractor()).thenReturn(null);
+        when(this.copy.getBypassAccumulo()).thenReturn(false);
         
         // Run the test
-        PowerMock.replayAll();
         BaseQueryLogic<Object> subject = new TestQueryLogic<>(this.copy);
         int result1 = subject.getMaxPageSize();
         long result2 = subject.getPageByteTrigger();
         TransformIterator result3 = subject.getTransformIterator(this.query);
-        PowerMock.verifyAll();
         
         // Verify results
-        assertEquals("Incorrect max page size", 25, result1);
-        assertEquals("Incorrect page byte trigger", 1024L, result2);
-        assertNotNull("Iterator should not be null", result3);
+        assertEquals(25, result1, "Incorrect max page size");
+        assertEquals(1024L, result2, "Incorrect page byte trigger");
+        assertNotNull(result3, "Iterator should not be null");
     }
     
     @Test

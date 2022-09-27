@@ -1,19 +1,15 @@
 package datawave.webservice.query.configuration;
 
+import datawave.query.data.UUIDType;
+import org.junit.jupiter.api.Test;
+
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 
-import datawave.query.data.UUIDType;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-@RunWith(PowerMockRunner.class)
 public class TestLookupUUIDConfiguration {
     
     @Test
@@ -25,10 +21,10 @@ public class TestLookupUUIDConfiguration {
         subject.setUuidTypes(Arrays.asList(new UUIDType()));
         
         // Verify results
-        assertNotNull("Test subject should not be null", subject);
-        assertNotNull("Begin date should not be null", subject.getBeginDate());
-        assertNotNull("ColumnVisibility should not be null", subject.getColumnVisibility());
-        assertNotNull("UUID types should not be null", subject.getUuidTypes());
-        assertEquals("UUID types should include 1 item", 1, subject.getUuidTypes().size());
+        assertNotNull(subject, "Test subject should not be null");
+        assertNotNull(subject.getBeginDate(), "Begin date should not be null");
+        assertNotNull(subject.getColumnVisibility(), "ColumnVisibility should not be null");
+        assertNotNull(subject.getUuidTypes(), "UUID types should not be null");
+        assertEquals(1, subject.getUuidTypes().size(), "UUID types should include 1 item");
     }
 }

@@ -4,22 +4,21 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.edge.protobuf.EdgeData;
 import datawave.edge.util.EdgeKey.EDGE_FORMAT;
 import datawave.edge.util.EdgeKey.EdgeKeyBuilder;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.ValueFormatException;
 import org.apache.accumulo.core.iterators.user.SummingArrayCombiner;
 import org.apache.hadoop.io.Text;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class EdgeValueHelperTest {
     
@@ -31,7 +30,7 @@ public class EdgeValueHelperTest {
     private List<Long> activity = new ArrayList<>();
     private List<Long> duration = new ArrayList<>();
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         // create 3 reference keys
         EdgeKeyBuilder builder = EdgeKey.newBuilder(EDGE_FORMAT.STANDARD);
@@ -80,7 +79,7 @@ public class EdgeValueHelperTest {
         durationValue = EdgeValueHelper.encodeDurationHistogram(duration);
     }
     
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         activity.clear();
         duration.clear();
@@ -122,28 +121,28 @@ public class EdgeValueHelperTest {
         
         List<Long> hourList = EdgeValueHelper.getLongListForHour(1, false);
         hourList = EdgeValueHelper.decodeActivityHistogram(EdgeValueHelper.encodeActivityHistogram(hourList));
-        assertTrue("Hour List doesn't have correct bit set", (hourList.get(1) == 1l));
-        assertTrue("Hour List has incorrect bit set", allButOneSet(hourList, 1));
-        assertEquals("Doesn't exceed expected size", hourList.size(), EdgeValueHelper.ACTIVITY_HISTOGRAM_LENGTH);
+        assertTrue((hourList.get(1) == 1l), "Hour List doesn't have correct bit set");
+        assertTrue(allButOneSet(hourList, 1), "Hour List has incorrect bit set");
+        assertEquals(hourList.size(), EdgeValueHelper.ACTIVITY_HISTOGRAM_LENGTH, "Doesn't exceed expected size");
         
         hourList = EdgeValueHelper.getLongListForHour(0, false);
         hourList = EdgeValueHelper.decodeActivityHistogram(EdgeValueHelper.encodeActivityHistogram(hourList));
-        assertTrue("Hour List doesn't have bit set", (hourList.get(0) == 1l));
-        assertTrue("Hour List has incorrect bit set", allButOneSet(hourList, 0));
+        assertTrue((hourList.get(0) == 1l), "Hour List doesn't have bit set");
+        assertTrue(allButOneSet(hourList, 0), "Hour List has incorrect bit set");
         
         hourList = EdgeValueHelper.getLongListForHour(23, false);
         hourList = EdgeValueHelper.decodeActivityHistogram(EdgeValueHelper.encodeActivityHistogram(hourList));
-        assertTrue("Hour List doesn't have bit set", (hourList.get(23) == 1l));
-        assertTrue("Hour List has incorrect bit set", allButOneSet(hourList, 23));
+        assertTrue((hourList.get(23) == 1l), "Hour List doesn't have bit set");
+        assertTrue(allButOneSet(hourList, 23), "Hour List has incorrect bit set");
         
         hourList = EdgeValueHelper.getLongListForHour(14, false);
         hourList = EdgeValueHelper.decodeActivityHistogram(EdgeValueHelper.encodeActivityHistogram(hourList));
-        assertTrue("Hour List doesn't have bit set", (hourList.get(14) == 1l));
-        assertTrue("Hour List has incorrect bit set", allButOneSet(hourList, 14));
+        assertTrue((hourList.get(14) == 1l), "Hour List doesn't have bit set");
+        assertTrue(allButOneSet(hourList, 14), "Hour List has incorrect bit set");
         
         hourList = EdgeValueHelper.getLongListForHour(8, true);
         hourList = EdgeValueHelper.decodeActivityHistogram(EdgeValueHelper.encodeActivityHistogram(hourList));
-        assertTrue("Hour List doesn't have bit set", (hourList.get(8) == -1l));
+        assertTrue((hourList.get(8) == -1l), "Hour List doesn't have bit set");
         
     }
     
@@ -236,12 +235,12 @@ public class EdgeValueHelperTest {
     }
     
     private void verifyValuesInIncompleteHistogram(List<Long> histogram, int expectedLength) {
-        assertEquals("Doesn't exceed expected size", expectedLength, histogram.size());
-        assertEquals("Hour List doesn't have correct bit set " + histogram.get(0), 0L, (long) histogram.get(0));
-        assertEquals("Hour List doesn't have correct bit set " + histogram.get(1), 1L, (long) histogram.get(1));
-        assertEquals("Hour List doesn't have correct bit set " + histogram.get(2), 2L, (long) histogram.get(2));
+        assertEquals(expectedLength, histogram.size(), "Doesn't exceed expected size");
+        assertEquals(0L, (long) histogram.get(0), "Hour List doesn't have correct bit set " + histogram.get(0));
+        assertEquals(1L, (long) histogram.get(1), "Hour List doesn't have correct bit set " + histogram.get(1));
+        assertEquals(2L, (long) histogram.get(2), "Hour List doesn't have correct bit set " + histogram.get(2));
         for (int i = 3; i < expectedLength; i++) {
-            assertEquals("Hour List's missing hours weren't correctly filled with zeros " + i + " " + expectedLength, 0, (long) histogram.get(i));
+            assertEquals(0, (long) histogram.get(i), "Hour List's missing hours weren't correctly filled with zeros " + i + " " + expectedLength);
         }
     }
     
