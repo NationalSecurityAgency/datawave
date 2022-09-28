@@ -58,7 +58,9 @@
         <version.google-guava>31.0.1-jre</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
-        <version.hadoop>3.0.3</version.hadoop>
+        <version.hadoop>3.3.3</version.hadoop>
+        <version.hadoop.guava>1.1.1</version.hadoop.guava>
+        <version.hadoop.protobuf>1.1.1</version.hadoop.protobuf>
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
@@ -721,6 +723,16 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop.thirdparty</groupId>
+                <artifactId>hadoop-shaded-guava</artifactId>
+                <version>${version.hadoop.guava}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop.thirdparty</groupId>
+                <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
+                <version>${version.hadoop.protobuf}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.htrace</groupId>
