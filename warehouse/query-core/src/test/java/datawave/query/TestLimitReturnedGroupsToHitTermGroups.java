@@ -298,7 +298,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         
         String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
         
-        // Only CANINE hits, 1 bird, and all fish and cats
+        // Only CANINE hits, 1 bird, and all fish, cats, dog, and reptile
         Set<String> goodResults = Sets.newHashSet("BIRD:parakeet", "CANINE:beagle", "CANINE:coyote", "CANINE:basset", "CANINE:shepherd", "CANINE:bernese",
                         "FISH:tuna", "CAT:tabby", "CAT:tom", "FISH:swordtail", "FISH:angelfish", "CAT:siamese", "FISH:goldfish", "CAT:himalayan",
                         "CAT:leopard", "CAT:cougar", "CAT:calico", "CAT:tiger", "FISH:tetra", "FISH:mackerel", "FISH:shark", "CAT:puma", "CAT:ragdoll",
@@ -316,7 +316,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         
         String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
         
-        // Only CANINE hits, 0 birds, and all fish and cats
+        // Only CANINE hits, 0 birds, and all fish and cats and reptile. The dog was not a hit.
         Set<String> goodResults = Sets.newHashSet("CANINE:beagle", "CANINE:coyote", "CANINE:basset", "CANINE:shepherd", "CANINE:bernese", "FISH:tuna",
                         "CAT:tabby", "CAT:tom", "FISH:swordtail", "FISH:angelfish", "CAT:siamese", "FISH:goldfish", "CAT:himalayan", "CAT:leopard",
                         "CAT:cougar", "CAT:calico", "CAT:tiger", "FISH:tetra", "FISH:mackerel", "FISH:shark", "CAT:puma", "CAT:ragdoll", "FISH:beta",
@@ -334,7 +334,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         
         String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
         
-        // CANINE hits along with the associated birds, all fish and cats
+        // CANINE hits along with the associated birds, all fish and cats and related dog and reptile
         Set<String> goodResults = Sets.newHashSet("CANINE.PET.0:beagle", "BIRD.PET.0:parakeet", "CANINE.PET.1:basset", "BIRD.PET.1:canary",
                         "CANINE.PET.12:bernese", "BIRD.PET.12:cockatiel", "CANINE.PET.13:shepherd", "BIRD.PET.13:lovebird", "CANINE.WILD.1:coyote",
                         "BIRD.WILD.1:hawk", "FISH.PET.12:swordtail", "CAT.PET.13:ragdoll", "FISH.WILD.0:shark", "CAT.PET.1:calico", "FISH.PET.0:beta",
@@ -354,7 +354,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         
         String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
         
-        // CANINE hits along with the associated birds, all fish and cats
+        // CANINE hits along with the associated birds, all fish and cats and related dog and reptile
         Set<String> goodResults = Sets.newHashSet("CANINE.PET.0:beagle", "BIRD.PET.0:parakeet", "CANINE.PET.1:basset", "BIRD.PET.1:canary",
                         "CANINE.PET.12:bernese", "BIRD.PET.12:cockatiel", "CANINE.PET.13:shepherd", "BIRD.PET.13:lovebird", "CANINE.WILD.1:coyote",
                         "BIRD.WILD.1:hawk", "FISH.PET.12:swordtail", "CAT.PET.13:ragdoll", "FISH.WILD.0:shark", "CAT.PET.1:calico", "FISH.PET.0:beta",
