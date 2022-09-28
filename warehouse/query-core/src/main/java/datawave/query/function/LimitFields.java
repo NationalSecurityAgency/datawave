@@ -125,8 +125,9 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                                 value.setToKeep(true);
                                 keepers++;
                                 missesRemaining--;
-                                missesToSet--;
                                 attributesToDrop--;
+                                foundMiss = true;
+                                missesToSet--;
                                 if (missesToSet == 0) {
                                     break;
                                 }
@@ -138,7 +139,6 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                             attr.setToKeep(true);
                             keepers++;
                             missesRemaining--;
-                            missesToSet--;
                             attributesToDrop--;
                             foundMiss = true;
                         }
@@ -163,6 +163,16 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 int originalCount = countForFieldMap.get(keyNoGrouping);
                 if (originalCount > keepers) {
                     document.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX, new Numeric(originalCount, document.getMetadata(), document.isToKeep()), true, false);
+                    
+                    // some sanity checks
+                    int missesRemaining = countMissesRemainingForFieldMap.get(keyNoGrouping);
+                    int limit = this.limitFieldsMap.get(keyNoGrouping);
+                    int missesToSet = Math.min(limit - keepers, missesRemaining);
+                    if (missesToSet > 0) {
+                        log.error("Failed to limit fields correctly, " + missesToSet + " attributes failed to be included");
+                        throw new RuntimeException("Failed to limit fields correctly, " + missesToSet + ' ' + keyNoGrouping
+                                        + " attributes failed to be included");
+                    }
                 }
             }
         }
