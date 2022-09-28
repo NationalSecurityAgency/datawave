@@ -1,6 +1,7 @@
 package datawave.query.jexl.functions;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
@@ -145,6 +146,29 @@ public class EvaluationPhaseFilterFunctions {
                 return FunctionalSet.singleton(getHitTerm(fieldValue));
             }
         }
+
+        return FunctionalSet.emptySet();
+    }
+
+    /**
+     * Returns a {@link FunctionalSet} of hit terms found for {@code fieldValue1}. If {@code fieldValue1} is a singular value tuple, a singleton
+     * {@link FunctionalSet} with the hit term from it will be returned. If {@code fieldValue1} and {@code fieldValue2} are non-empty collections of value tuples, a
+     * {@link FunctionalSet} containing the hit terms from each value in the {@code fieldValue1} collection will be returned. Otherwise, an empty {@link FunctionalSet} will be
+     * returned.
+     *
+     * @param fieldValue1
+     *            1st field value to evaluate.
+     * @param fieldValue2
+     *            2nd field value to evaluate.
+     * @return the {@link FunctionalSet} of hit terms found
+     */
+    public static FunctionalSet<ValueTuple> isNotNull(Object fieldValue1, Object fieldValue2){
+        FunctionalSet<ValueTuple> matches = isNotNull(fieldValue1);
+
+        if (matches != FunctionalSet.EMPTY_SET && !((FunctionalSet)isNotNull(fieldValue2)).isEmpty()) {
+            return matches;
+        }
+
         return FunctionalSet.emptySet();
     }
     
@@ -158,7 +182,26 @@ public class EvaluationPhaseFilterFunctions {
     public static boolean isNull(Object fieldValue) {
         return fieldValue instanceof Collection ? ((Collection<?>) fieldValue).isEmpty() : fieldValue == null;
     }
-    
+
+    /**
+     * Returns whether {@code fieldValue1} or {@code fieldValue2} is considered an equivalently null field value.
+     *
+     * @param fieldValue1
+     *            the 1st fieldValue
+     * @param fieldValue2
+     *            the 2nd fieldValue
+     * @return true if {@code fieldValue1} or {@code fieldValue2} is a null {@link Object} or an empty {@link Collection}, or false otherwise
+     */
+    public static boolean isNull(Object fieldValue1, Object fieldValue2) {
+        if (isNull(fieldValue1)){
+            return true;
+        } else if(isNull(fieldValue2)){
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * Return whether no match was found for the given regex against the value of the field value. If the regex string contains case-insensitive flags, e.g.
      * {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field value.
