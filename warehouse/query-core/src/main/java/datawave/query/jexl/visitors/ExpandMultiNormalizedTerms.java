@@ -49,12 +49,9 @@ import java.util.Set;
 /**
  * When more than one normalizer exists for a field, we want to transform the single term into a conjunction of the term with each normalizer applied to it. If
  * there is no difference between normalized versions of the term, only one term will be retained.
- *
+ * <p>
  * This class will also normalize terms that have only 1 normalizer associated with their fields. For instance, if `TEXT` is associated with the
  * `LcNoDiacriticsType`, then a subtree of the form `TEXT == 'goOfBAlL'` will be transformed into `TEXT == 'goofball'`.
- *
- * 
- *
  */
 public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ExpandMultiNormalizedTerms.class);
@@ -188,7 +185,21 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                 continue;
             }
             
-            aliasedBounds.add(new BoundedRange(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right)));
+            // check to ensure we're not adding duplicate ranges with identical values
+            BoundedRange newAliasedBound = new BoundedRange(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right));
+            if (aliasedBounds.isEmpty()) {
+                aliasedBounds.add(newAliasedBound);
+            } else {
+                boolean foundUnique = false;
+                for (BoundedRange existingRange : aliasedBounds) {
+                    String existingRangeString = JexlStringBuildingVisitor.buildQuery(existingRange);
+                    if (!JexlStringBuildingVisitor.buildQuery(newAliasedBound).equals(existingRangeString)) {
+                        foundUnique = true;
+                    }
+                }
+                if (foundUnique)
+                    aliasedBounds.add(newAliasedBound);
+            }
         }
         
         if (aliasedBounds.isEmpty()) {
@@ -200,6 +211,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             if (1 == aliasedBounds.size()) {
                 return aliasedBounds.get(0);
             } else {
+                for (BoundedRange foo : aliasedBounds) {
+                    System.out.println(JexlStringBuildingVisitor.buildQuery(foo));
+                }
+                
                 List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(aliasedBounds);
                 return JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[var.size()])));
             }
@@ -207,7 +222,6 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     }
     
     /**
-     * 
      * @param node
      * @param data
      * @return
@@ -221,7 +235,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             final String fieldName = op.deconstructIdentifier();
             final Object literal = op.getLiteralValue();
             
-            // Get all of the indexed or normalized dataTypes for the field name
+            // Get all the indexed or normalized dataTypes for the field name
             Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(fieldName));
             dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(fieldName));
             
