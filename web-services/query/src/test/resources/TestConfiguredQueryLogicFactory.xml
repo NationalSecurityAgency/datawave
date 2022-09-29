@@ -22,7 +22,25 @@
 	</bean>
 
 
-	<bean id="QueryLogicFactoryConfiguration" class="datawave.webservice.query.logic.QueryLogicFactoryConfiguration" />
+	<bean id="QueryLogicFactoryConfiguration" class="datawave.webservice.query.logic.QueryLogicFactoryConfiguration">
+		<property name="logicMap" ref="MYMAP"/>
+	</bean>
+
+	<bean id="DEFAULT" class="org.springframework.beans.factory.config.MapFactoryBean">
+		<property name="sourceMap">
+			<map>
+				<entry key="TestQuery" value="TestQuery"/>
+			</map>
+		</property>
+	</bean>
+
+	<bean id="MYMAP" parent="DEFAULT" class="org.springframework.beans.factory.config.MapFactoryBean">
+		<property name="sourceMap">
+			<map merge="true">
+				<entry key="TestQuery" value="TestQuery2"/>
+			</map>
+		</property>
+	</bean>
 
 	<bean id="TestQuery" class="datawave.webservice.query.logic.TestQueryLogic">
 		<property name="tableName" value="${metadata.table.name}" />

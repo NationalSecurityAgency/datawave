@@ -17,7 +17,8 @@ public abstract class BaseHdfsFileCacheUtil {
     protected Path cacheFilePath;
     protected final Configuration conf;
     protected AccumuloHelper accumuloHelper;
-    private static String delimiter = "\t";
+    protected String delimiter = "\t";
+    protected short cacheReplicas = 3;
     
     private static final Logger log = Logger.getLogger(BaseHdfsFileCacheUtil.class);
     
@@ -33,9 +34,14 @@ public abstract class BaseHdfsFileCacheUtil {
     
     public abstract void setCacheFilePath(Configuration conf);
     
+    public void setDelimiter(String delimiter) {
+        this.delimiter = delimiter;
+    }
+    
     public void read() throws IOException {
+        log.info("Reading cache at " + this.cacheFilePath);
         try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(this.cacheFilePath.toUri(), conf).open(this.cacheFilePath)))) {
-            readCache(in, delimiter);
+            readCache(in);
         } catch (IOException ex) {
             if (shouldRefreshCache(this.conf)) {
                 update();
@@ -78,7 +84,6 @@ public abstract class BaseHdfsFileCacheUtil {
             if (!fs.rename(tmpCacheFile, this.cacheFilePath)) {
                 throw new IOException("Failed to rename temporary cache file");
             }
-            
         } catch (Exception e) {
             log.warn("Unable to rename " + tmpCacheFile + " to " + this.cacheFilePath + "probably because somebody else replaced it ", e);
             cleanup(fs, tmpCacheFile);
@@ -95,10 +100,10 @@ public abstract class BaseHdfsFileCacheUtil {
         }
     }
     
-    protected void readCache(BufferedReader in, String delimiter) throws IOException {
+    protected void readCache(BufferedReader in) throws IOException {
         String line;
         while ((line = in.readLine()) != null) {
-            String[] parts = StringUtils.split(line, delimiter);
+            String[] parts = StringUtils.split(line, this.delimiter);
             if (parts.length == 2) {
                 conf.set(parts[0], parts[1]);
             }

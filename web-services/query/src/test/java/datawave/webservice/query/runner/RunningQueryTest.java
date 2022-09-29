@@ -169,7 +169,7 @@ public class RunningQueryTest {
         String[] auths = new String[2];
         auths[0] = "A";
         auths[1] = "C";
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("NONTESTROLE");
