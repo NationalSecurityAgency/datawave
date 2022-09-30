@@ -6,6 +6,7 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockExtension;
+import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -19,10 +20,11 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Disabled
 @ExtendWith(EasyMockExtension.class)
-public class TestLegacyBaseQueryLogicTransformer {
+public class TestLegacyBaseQueryLogicTransformer extends EasyMockSupport {
     
     @Mock
     BaseQueryResponse response;
@@ -33,13 +35,7 @@ public class TestLegacyBaseQueryLogicTransformer {
     @Test
     public void testConstructor_NullVisibilityInterpreter() throws Exception {
         // Run the test
-        Exception result1 = null;
-        try {
-            new TestTransformer(null, this.response);
-        } catch (IllegalArgumentException e) {
-            result1 = e;
-        }
-        
+        IllegalArgumentException result1 = assertThrows(IllegalArgumentException.class, () -> new TestTransformer(null, this.response));
         // Verify results
         assertNotNull(result1, "Expected an exception to be thrown due to null param");
     }
