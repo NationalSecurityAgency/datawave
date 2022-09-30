@@ -211,10 +211,6 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             if (1 == aliasedBounds.size()) {
                 return aliasedBounds.get(0);
             } else {
-                for (BoundedRange foo : aliasedBounds) {
-                    System.out.println(JexlStringBuildingVisitor.buildQuery(foo));
-                }
-                
                 List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(aliasedBounds);
                 return JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[var.size()])));
             }
