@@ -152,6 +152,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private int pointMaxExpansion = 32;
     /**
+     * Used to determine the maximum number of query ranges to generate when performing a geo query against a GeoType field.
+     */
+    private int geoMaxExpansion = 32;
+    /**
      * Used during geowave range optimization to determine the minimum number of sub-ranges we should split a range into.
      */
     private int geoWaveRangeSplitThreshold = 16;
@@ -450,6 +454,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRangeBufferPollMillis(other.getRangeBufferPollMillis());
         this.setGeometryMaxExpansion(other.getGeometryMaxExpansion());
         this.setPointMaxExpansion(other.getPointMaxExpansion());
+        this.setGeoMaxExpansion(other.getGeoMaxExpansion());
         this.setGeoWaveRangeSplitThreshold(other.getGeoWaveRangeSplitThreshold());
         this.setGeoWaveMaxRangeOverlap(other.getGeoWaveMaxRangeOverlap());
         this.setOptimizeGeoWaveRanges(other.isOptimizeGeoWaveRanges());
@@ -940,6 +945,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setPointMaxExpansion(int pointMaxExpansion) {
         this.pointMaxExpansion = pointMaxExpansion;
+    }
+    
+    public int getGeoMaxExpansion() {
+        return geoMaxExpansion;
+    }
+    
+    public void setGeoMaxExpansion(int geoMaxExpansion) {
+        this.geoMaxExpansion = geoMaxExpansion;
     }
     
     public int getGeoWaveRangeSplitThreshold() {
