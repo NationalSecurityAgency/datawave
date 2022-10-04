@@ -30,7 +30,6 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -52,7 +51,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This is the FileOutputCommitterTest from after YARN-3027 and YARN-3079 was applied, with some added tests for the SafeFileOutputCommitterTest. Note that this
  * set of tests will also work with the non-patched FileOutputCommitterTest.
  */
-@Disabled
 public class SafeFileOutputCommitterTest {
     
     private static final String FILEOUTPUTCOMMITTER_ALGORITHM_VERSION = "mapreduce.fileoutputcommitter.algorithm.version";
@@ -91,6 +89,7 @@ public class SafeFileOutputCommitterTest {
     public void tearDown() throws IOException {
         Configuration conf = new Configuration();
         FileSystem fs = outDir.getFileSystem(conf);
+//        fs.deleteOnExit(outDir);
         fs.delete(outDir, true);
         
         // now determine if we have YARN-3027 and YARN-3079 patches applied
@@ -328,10 +327,10 @@ public class SafeFileOutputCommitterTest {
     public void testFirstAttemptFailsV1_V2BackwardsCompatible() throws Exception {
         assertThrows(FileExistsException.class, () -> failFirstAttemptPassSecond(1, 2, true, false));
     }
-    
+
     @Test
     public void testFirstAttemptFailsV1_V2BackwardsCompatibleDifferentName() throws Exception {
-        failFirstAttemptPassSecond(1, 2, true, true);
+        assertThrows(FileExistsException.class, () -> failFirstAttemptPassSecond(1, 2, true, true));
     }
     
     @Test

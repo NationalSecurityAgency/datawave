@@ -6,7 +6,6 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
@@ -17,22 +16,17 @@ import java.util.Map;
 
 public class StatsJobTest {
     private static final Logger log = Logger.getLogger(StatsJobTest.class);
-    
-    static {
-        Logger.getLogger(IngestJob.class).setLevel(Level.DEBUG);
-        Logger.getLogger(StatsJob.class).setLevel(Level.DEBUG);
-        Logger.getLogger(StatsJobTest.class).setLevel(Level.DEBUG);
-    }
-    
+
     private StatsJobWrapper wrapper;
     
     @BeforeEach
     public void setup() {
         wrapper = new StatsJobWrapper();
-        
+        Logger.getLogger(IngestJob.class).setLevel(Level.DEBUG);
+        Logger.getLogger(StatsJob.class).setLevel(Level.DEBUG);
+        Logger.getLogger(StatsJobTest.class).setLevel(Level.DEBUG);
     }
     
-    @Disabled
     @Test
     public void testParseArguments() throws Exception {
         Assertions.assertNotNull(System.getenv("DATAWAVE_INGEST_HOME"));

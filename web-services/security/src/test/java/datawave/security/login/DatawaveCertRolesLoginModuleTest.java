@@ -4,8 +4,8 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.MockCallbackHandler;
 import datawave.security.util.MockDatawaveCertVerifier;
 import org.jboss.security.SimplePrincipal;
+import org.jboss.security.auth.spi.BaseCertLoginModule;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import javax.security.auth.Subject;
@@ -27,16 +27,16 @@ public class DatawaveCertRolesLoginModuleTest {
     @BeforeEach
     public void setUp() throws Exception {
         callbackHandler = new MockCallbackHandler("Alias: ", "Certificate: ");
-        
+
         HashMap<String,String> sharedState = new HashMap<>();
         HashMap<String,String> options = new HashMap<>();
         options.put("rolesProperties", "roles.properties");
         options.put("principalClass", "datawave.security.authorization.DatawavePrincipal");
         options.put("verifier", MockDatawaveCertVerifier.class.getName());
-        
+
         loginModule = new DatawaveCertRolesLoginModule();
         loginModule.initialize(new Subject(), callbackHandler, sharedState, options);
-        
+
         KeyStore truststore = KeyStore.getInstance("PKCS12");
         truststore.load(getClass().getResourceAsStream("/ca.pkcs12"), "secret".toCharArray());
         KeyStore keystore = KeyStore.getInstance("PKCS12");
@@ -44,7 +44,6 @@ public class DatawaveCertRolesLoginModuleTest {
         testUserCert = (X509Certificate) keystore.getCertificate("testuser");
     }
     
-    @Disabled
     @Test
     public void testSuccessfulLogin() throws Exception {
         String name = testUserCert.getSubjectDN().getName() + "<" + testUserCert.getIssuerDN().getName() + ">";
@@ -53,7 +52,8 @@ public class DatawaveCertRolesLoginModuleTest {
         
         boolean success = loginModule.login();
         assertTrue(success, "Login didn't succeed for alias in roles.properties");
-        Field f = loginModule.getClass().getDeclaredField("identity");
+        Class<BaseCertLoginModule> clazz = BaseCertLoginModule.class;
+        Field f = clazz.getDeclaredField("identity");
         f.setAccessible(true);
         DatawavePrincipal principal = (DatawavePrincipal) f.get(loginModule);
         assertEquals(name.toLowerCase(), principal.getName());
@@ -68,7 +68,6 @@ public class DatawaveCertRolesLoginModuleTest {
         assertFalse(success, "Login succeed for alias not in roles.properties");
     }
     
-    @Disabled
     @Test
     public void testSuccessfulLoginNoIssuer() throws Exception {
         HashMap<String,String> sharedState = new HashMap<>();
@@ -86,7 +85,8 @@ public class DatawaveCertRolesLoginModuleTest {
         
         boolean success = loginModule.login();
         assertTrue(success, "Login didn't succeed for alias in rolesNoIssuer.properties");
-        Field f = loginModule.getClass().getDeclaredField("identity");
+        Class<BaseCertLoginModule> clazz = BaseCertLoginModule.class;
+        Field f = clazz.getDeclaredField("identity");
         f.setAccessible(true);
         SimplePrincipal principal = (SimplePrincipal) f.get(loginModule);
         assertEquals(testUserCert.getSubjectDN().getName().toLowerCase(), principal.getName());

@@ -3,8 +3,8 @@ package datawave.security.login;
 import datawave.security.auth.DatawaveCredential;
 import datawave.security.authorization.DatawavePrincipal;
 import org.jboss.security.SimplePrincipal;
+import org.jboss.security.auth.spi.UsernamePasswordLoginModule;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.picketbox.plugins.PicketBoxCallbackHandler;
 
@@ -53,7 +53,6 @@ public class DatawaveUsersRolesLoginModuleTest {
         testUserCert = (X509Certificate) keystore.getCertificate("testuser");
     }
     
-    @Disabled
     @Test
     public void testSuccessfulLogin() throws Exception {
         String name = testUserCert.getSubjectDN().getName() + "<" + testUserCert.getIssuerDN().getName() + ">";
@@ -62,13 +61,13 @@ public class DatawaveUsersRolesLoginModuleTest {
         
         boolean success = loginModule.login();
         assertTrue(success, "Login didn't succeed for alias in users/roles.properties");
-        Field f = loginModule.getClass().getField("identity");
+        Class<UsernamePasswordLoginModule> clazz = UsernamePasswordLoginModule.class;
+        Field f = clazz.getDeclaredField("identity");
         f.setAccessible(true);
         DatawavePrincipal principal = (DatawavePrincipal) f.get(loginModule);
         assertEquals(NORMALIZED_SUBJECT_DN_WITH_ISSUER_DN, principal.getName());
     }
     
-    @Disabled
     @Test
     public void testReverseDnSuccessfulLogin() throws Exception {
         String name = SUBJECT_DN_WITH_CN_LAST + "<" + ISSUER_DN_WITH_CN_LAST + ">";
@@ -77,21 +76,22 @@ public class DatawaveUsersRolesLoginModuleTest {
         
         boolean success = loginModule.login();
         assertTrue(success, "Login didn't succeed for alias in users/roles.properties");
-        Field f = loginModule.getClass().getField("identity");
+        Class<UsernamePasswordLoginModule> clazz = UsernamePasswordLoginModule.class;
+        Field f = clazz.getDeclaredField("identity");
         f.setAccessible(true);
         DatawavePrincipal principal = (DatawavePrincipal) f.get(loginModule);
         assertEquals(NORMALIZED_SUBJECT_DN_WITH_ISSUER_DN, principal.getName());
     }
     
-    @Disabled
     @Test
     public void testFailedLoginBadPassword() throws Exception {
-        FailedLoginException e = assertThrows(FailedLoginException.class, () -> callbackHandler.setSecurityInfo(new SimplePrincipal("testUser<testIssuer>"),
-                        new DatawaveCredential("testUser", "testIssuer", null, null).toString()));
-        assertEquals("Password invalid/Password required", e.getMessage());
-        
-        boolean success = loginModule.login();
-        assertFalse(success, "Login succeed for alias in users.properties with bad password");
+        callbackHandler.setSecurityInfo(new SimplePrincipal("testUser<testIssuer>"), new DatawaveCredential("testUser", "testIssuer", null, null).toString());
+
+        FailedLoginException e = assertThrows(FailedLoginException.class, () -> {
+            boolean success = loginModule.login();
+            assertFalse(success, "Login succeed for alias in users.properties with bad password");
+        });
+        assertTrue(e.getMessage().contains("Password invalid/Password required"));
     }
     
     @Test

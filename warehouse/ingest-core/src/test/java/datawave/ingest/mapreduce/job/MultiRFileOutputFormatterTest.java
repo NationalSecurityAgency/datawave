@@ -1,16 +1,5 @@
 package datawave.ingest.mapreduce.job;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import datawave.common.test.logging.CommonTestAppender;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.TableName;
@@ -36,23 +25,24 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockExtension;
-import org.easymock.Mock;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-@Disabled
-@ExtendWith(EasyMockExtension.class)
 public class MultiRFileOutputFormatterTest {
-    
-    @Mock
-    Configuration mocked;
-    
+
     private static final String JOB_ID = "job_201109071404_1";
     private List<String> filenames = new ArrayList<>();
     protected static final Logger logger = Logger.getLogger(MultiRFileOutputFormatterTest.class);
@@ -85,59 +75,61 @@ public class MultiRFileOutputFormatterTest {
         
         return results;
     }
-    
+
     protected Configuration createMockConfiguration() {
-        
+
         MultiRFileOutputFormatterTest.mockedConfiguration.clear();
-        
-        MultiRFileOutputFormatterTest.logger.info(String.format("createMockConfiguration: %d", mocked.hashCode()));
-        
-        mocked.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
+
+        Configuration mockedConfig = EasyMock.createMock(Configuration.class);
+
+        MultiRFileOutputFormatterTest.logger.info(String.format("createMockConfiguration: %d", mockedConfig.hashCode()));
+
+        mockedConfig.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             String value = (String) EasyMock.getCurrentArguments()[1];
-            
+
             MultiRFileOutputFormatterTest.mockedConfiguration.put(key, value);
-            
+
             return null;
         }).anyTimes();
-        
-        mocked.setStrings(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
+
+        mockedConfig.setStrings(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             if (2 <= EasyMock.getCurrentArguments().length) {
-                
+
                 String key = (String) EasyMock.getCurrentArguments()[0];
                 String[] values = new String[EasyMock.getCurrentArguments().length - 1];
-                
+
                 for (int index = 1; index <= values.length; index++) {
-                    
+
                     values[index - 1] = (String) EasyMock.getCurrentArguments()[index];
                 }
-                
+
                 MultiRFileOutputFormatterTest.mockedConfiguration.put(key, StringUtils.arrayToString(values));
             }
             return null;
         }).anyTimes();
-        
-        mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
+
+        mockedConfig.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             String value = (String) EasyMock.getCurrentArguments()[1];
-            
+
             if (MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(key)) {
-                
+
                 value = MultiRFileOutputFormatterTest.mockedConfiguration.get(key);
             }
-            
+
             return value;
         }).anyTimes();
-        
-        // PowerMock.replay(mocked);
-        
-        return mocked;
+
+        EasyMock.replay(mockedConfig);
+
+        return mockedConfig;
     }
     
     @BeforeEach

@@ -16,15 +16,11 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.ZooKeeper;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockExtension;
-import org.easymock.Mock;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,16 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Disabled
-@ExtendWith(EasyMockExtension.class)
-public class TableSplitsCacheTest {
-    
-    @Mock
-    JobConf mocked;
-    
-    @Mock
-    Configuration confMock;
-    
+public class TableSplitsCacheTest { ;
+
     public static final String PASSWORD = "passw0rd";
     public static final String HOST_NAME = "localhost";
     public static final String USER_NAME = "staff";
@@ -54,7 +42,7 @@ public class TableSplitsCacheTest {
     protected static Level uutLevel;
     protected static Level zooCacheLevel;
     protected static Level zooKeeperLevel;
-    
+
     protected static long FILE_STATUS_LENGTH = 1000l;
     protected static boolean FILE_STATUS_IS_DIRECTORY = true;
     protected static int FILE_STATUS_REPLICATION = 3;
@@ -63,409 +51,421 @@ public class TableSplitsCacheTest {
     protected static long FILE_STATUS_ACCESS_TIME;
     protected static String FILE_STATUS_USER;
     protected static String FILE_STATUS_GROUP;
-    
+
     public static class WrappedLocalFileSystem extends RawLocalFileSystem {
-        
+
         @Override
         public FileStatus getFileStatus(Path f) throws IOException {
-            
+
             String path = f.toString();
             if (new File(path).exists()) {
                 return new FileStatus(TableSplitsCacheTest.FILE_STATUS_LENGTH, TableSplitsCacheTest.FILE_STATUS_IS_DIRECTORY,
-                                TableSplitsCacheTest.FILE_STATUS_REPLICATION, TableSplitsCacheTest.FILE_STATUS_BLOCK_SIZE,
-                                TableSplitsCacheTest.FILE_STATUS_MODIFICATION_TIME, TableSplitsCacheTest.FILE_STATUS_ACCESS_TIME, null,
-                                TableSplitsCacheTest.FILE_STATUS_USER, TableSplitsCacheTest.FILE_STATUS_GROUP, f);
+                        TableSplitsCacheTest.FILE_STATUS_REPLICATION, TableSplitsCacheTest.FILE_STATUS_BLOCK_SIZE,
+                        TableSplitsCacheTest.FILE_STATUS_MODIFICATION_TIME, TableSplitsCacheTest.FILE_STATUS_ACCESS_TIME, null,
+                        TableSplitsCacheTest.FILE_STATUS_USER, TableSplitsCacheTest.FILE_STATUS_GROUP, f);
             } else {
                 return null;
             }
-            
+
         }
-        
+
         @Override
         public void setConf(Configuration conf) {
-            
+
             TableSplitsCacheTest.logger.debug("TableSplitsCacheTest.WrappedDistributedFileSystem.setConfig called....");
-            
+
             super.setConf(conf);
         }
-        
+
         @Override
         protected int getDefaultPort() {
             return 8080;
         }
-        
+
         @Override
         public URI getUri() {
-            
+
             return URI.create("file:///localhost");
-            
+
         }
-        
+
         @Override
         public void initialize(URI uri, Configuration conf) throws IOException {
-            
+
             TableSplitsCacheTest.logger.debug("TableSplitsCacheTest.WrappedDistributedFileSystem.initialize called....");
             super.initialize(uri, conf);
         }
-        
+
         @Override
         public void close() throws IOException {
-            
+
             TableSplitsCacheTest.logger.debug("TableSplitsCacheTest.WrappedDistributedFileSystem.close called....");
-            
+
             try {
                 super.close();
             } catch (Throwable t) {
                 TableSplitsCacheTest.logger.debug(String.format(
-                                "DistributedFileSystem handled base class excpetion: %s with messge %s (caused by the missing DfsClient instance...)", t
-                                                .getClass().getName(), t.getMessage()));
+                        "DistributedFileSystem handled base class excpetion: %s with messge %s (caused by the missing DfsClient instance...)", t
+                                .getClass().getName(), t.getMessage()));
             }
         }
     }
-    
+
     protected void createMockFileSystem() throws Exception {
-        
+
         FileSystem fs = new TableSplitsCacheTest.WrappedLocalFileSystem();
-        
+
         mockConfiguration.put(FileSystem.FS_DEFAULT_NAME_KEY, "file:///localhost");
-        
+
         // Lifted from DfsMonitorTest
         mockConfiguration.put("fs.file.impl", TableSplitsCacheTest.WrappedLocalFileSystem.class.getName());
         mockConfiguration.put("fs.automatic.close", "false");
         mockConfiguration.put(MRJobConfig.CACHE_FILES, ".");
-        
+
         Configuration conf = createMockConfiguration();
         fs.setConf(conf);
         fs.initialize(URI.create("file:///localhost"), conf);
-        
-        Class<FileSystem> clazz = FileSystem.class;
-        Method method = clazz.getDeclaredMethod("addFileSystemForTesting", URI.class, Configuration.class, FileSystem.class);
-        method.setAccessible(true);
-        method.invoke(null, FileSystem.getDefaultUri(conf), conf, fs);
+
+        Method m = FileSystem.class.getDeclaredMethod("addFileSystemForTesting", URI.class, Configuration.class, // NON-NLS
+                FileSystem.class);
+        m.setAccessible(true);
+        m.invoke(FileSystem.class, FileSystem.getDefaultUri(conf), conf, fs);
     }
-    
+
     @BeforeEach
     public void setup() throws Exception {
-        
+
         mockConfiguration.clear();
         mockConfiguration.put(TableSplitsCache.REFRESH_SPLITS, "false");
         testDriverLevel = logger.getLevel();
         logger.setLevel(Level.ALL);
-        
+
         Logger uutLog = Logger.getLogger(TableSplitsCache.class);
         uutLevel = uutLog.getLevel();
         uutLog.setLevel(Level.ALL);
-        
+
         Logger zcLog = Logger.getLogger(ZooCache.class);
         zooCacheLevel = zcLog.getLevel();
         zcLog.setLevel(Level.ALL);
-        
+
         Logger zkLog = Logger.getLogger(ZooKeeper.class);
         zooKeeperLevel = zkLog.getLevel();
         zkLog.setLevel(Level.ALL);
-        
+
         createMockFileSystem();
-        
+
         TableSplitsCacheTest.FILE_STATUS_MODIFICATION_TIME = TableSplitsCacheTest.FILE_STATUS_ACCESS_TIME = 0l;
-        
+
         TableSplitsCacheTest.FILE_STATUS_USER = TableSplitsCacheTest.USER_NAME;
         TableSplitsCacheTest.FILE_STATUS_GROUP = TableSplitsCacheTest.USER_NAME;
     }
-    
+
+
     public void setSplitsCacheDir() {
         URL url = TableSplitsCacheTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
         Assertions.assertNotNull(url, "TableSplitsCacheTest#setup failed to load test cache directory.");
         mockConfiguration.put(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf(Path.SEPARATOR)));
     }
-    
+
     public void setSplitsCacheDir(String splitsCacheDir) {
         mockConfiguration.put(TableSplitsCache.SPLITS_CACHE_DIR, splitsCacheDir);
     }
-    
+
     @AfterEach
     public void teardown() {
+
         logger.setLevel(testDriverLevel);
         Logger.getLogger(TableSplitsCache.class).setLevel(uutLevel);
         Logger.getLogger(ZooCache.class).setLevel(zooCacheLevel);
         Logger.getLogger(ZooKeeper.class).setLevel(zooKeeperLevel);
+
     }
-    
+
     @AfterAll
     public static void teardownClass() throws Exception {
-        Class<FileSystem> clazz = FileSystem.class;
-        Method method = clazz.getDeclaredMethod("addFileSystemForTesting", URI.class, Configuration.class, FileSystem.class);
-        method.setAccessible(true);
-        method.invoke(null, URI.create("file:///localhost"), null, null);
+        Method m = FileSystem.class.getDeclaredMethod("addFileSystemForTesting", URI.class, Configuration.class, // NON-NLS
+                FileSystem.class);
+        m.setAccessible(true);
+        m.invoke(FileSystem.class, URI.create("file:///localhost"), null, null);
     }
-    
+
     protected Map<String,String> mockConfiguration = new HashMap<>();
-    
+
     protected void setupConfiguration() {
-        
+
         mockConfiguration.put(AccumuloHelper.USERNAME, USER_NAME);
         mockConfiguration.put(AccumuloHelper.INSTANCE_NAME, HOST_NAME);
         mockConfiguration.put(AccumuloHelper.PASSWORD, Base64.encodeBase64String(PASSWORD.getBytes()));
         mockConfiguration.put(AccumuloHelper.ZOOKEEPERS, HOST_NAME);
         mockConfiguration.put(FileSystem.FS_DEFAULT_NAME_KEY, "file:///");
-        
+
         TableSplitsCacheTest.FILE_STATUS_MODIFICATION_TIME = Long.MAX_VALUE;
         TableSplitsCacheTest.FILE_STATUS_ACCESS_TIME = 0l;
-        
+
     }
-    
+
     protected JobConf createMockJobConf() {
+        JobConf mocked = EasyMock.createMock(JobConf.class);
+
         mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             String results = (String) EasyMock.getCurrentArguments()[1];
-            
+
             if (mockConfiguration.containsKey(key)) {
-                
+
                 results = mockConfiguration.get(key);
             }
-            
+
             return results;
         }).anyTimes();
-        
+
         mocked.getLong(EasyMock.anyObject(String.class), EasyMock.anyLong());
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             long results = (Long) EasyMock.getCurrentArguments()[1];
-            
+
             if (mockConfiguration.containsKey(key)) {
-                
+
                 try {
-                    
+
                     results = Long.parseLong(mockConfiguration.get(key));
-                    
+
                 } catch (Throwable t) {
-                    
+
                     logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
                 }
             }
-            
+
             return results;
         }).anyTimes();
-        
+
         mocked.get(EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
-            
+
             return mockConfiguration.get(key);
         }).anyTimes();
-        
+
         mocked.getBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
         EasyMock.expectLastCall().andAnswer(() -> {
             String key = (String) EasyMock.getCurrentArguments()[0];
             boolean results = (Boolean) EasyMock.getCurrentArguments()[1];
-            
+
             if (mockConfiguration.containsKey(key)) {
-                
+
                 try {
-                    
+
                     results = Boolean.parseBoolean(mockConfiguration.get(key));
-                    
+
                 } catch (Throwable t) {
-                    
+
                     logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
                 }
             }
-            
+
             return results;
         }).anyTimes();
-        
+
         mocked.getInt(EasyMock.anyObject(String.class), EasyMock.anyInt());
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             int results = (Integer) EasyMock.getCurrentArguments()[1];
-            
+
             if (mockConfiguration.containsKey(key)) {
-                
+
                 try {
-                    
+
                     results = Integer.parseInt(mockConfiguration.get(key));
-                    
+
                 } catch (Throwable t) {
-                    
+
                     logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
                 }
             }
-            
+
             return results;
         }).anyTimes();
-        
+
         mocked.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             String value = (String) EasyMock.getCurrentArguments()[1];
-            
+
             mockConfiguration.put(key, value);
-            
+
             return null;
         }).anyTimes();
-        
+
         mocked.getStrings(EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
             String key = (String) EasyMock.getCurrentArguments()[0];
             String[] results = null;
-            
+
             if (mockConfiguration.containsKey(key)) {
                 results = StringUtils.getStrings(mockConfiguration.get(key));
             }
-            
+
             return results;
         }).anyTimes();
-        
+
+        EasyMock.replay(mocked);
+
         return mocked;
     }
-    
+
     protected Configuration createMockConfiguration() {
-        confMock.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
+
+        Configuration mocked = EasyMock.createMock(Configuration.class);
+
+        mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             String results = (String) EasyMock.getCurrentArguments()[1];
-            
+
             if (mockConfiguration.containsKey(key)) {
-                
+
                 results = mockConfiguration.get(key);
             }
-            
+
             return results;
         }).anyTimes();
-        
-        confMock.getLong(EasyMock.anyObject(String.class), EasyMock.anyLong());
+
+        mocked.getLong(EasyMock.anyObject(String.class), EasyMock.anyLong());
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             long results = (Long) EasyMock.getCurrentArguments()[1];
-            
+
             if (mockConfiguration.containsKey(key)) {
-                
+
                 try {
-                    
+
                     results = Long.parseLong(mockConfiguration.get(key));
-                    
+
                 } catch (Throwable t) {
-                    
+
                     logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
                 }
             }
-            
+
             return results;
         }).anyTimes();
-        
-        confMock.get(EasyMock.anyObject(String.class));
+
+        mocked.get(EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
-            
+
             return mockConfiguration.get(key);
         }).anyTimes();
-        
-        confMock.getBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
+
+        mocked.getBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
         EasyMock.expectLastCall().andAnswer(() -> {
             String key = (String) EasyMock.getCurrentArguments()[0];
             boolean results = (Boolean) EasyMock.getCurrentArguments()[1];
-            
+
             if (mockConfiguration.containsKey(key)) {
-                
+
                 try {
-                    
+
                     results = Boolean.parseBoolean(mockConfiguration.get(key));
-                    
+
                 } catch (Throwable t) {
-                    
+
                     logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
                 }
             }
-            
+
             return results;
         }).anyTimes();
-        
-        confMock.getInt(EasyMock.anyObject(String.class), EasyMock.anyInt());
+
+        mocked.getInt(EasyMock.anyObject(String.class), EasyMock.anyInt());
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             int results = (Integer) EasyMock.getCurrentArguments()[1];
-            
+
             if (mockConfiguration.containsKey(key)) {
-                
+
                 try {
-                    
+
                     results = Integer.parseInt(mockConfiguration.get(key));
-                    
+
                 } catch (Throwable t) {
-                    
+
                     logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
                 }
             }
-            
+
             return results;
         }).anyTimes();
-        
-        confMock.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
+
+        mocked.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             String value = (String) EasyMock.getCurrentArguments()[1];
-            
+
             mockConfiguration.put(key, value);
-            
+
             return null;
         }).anyTimes();
-        
-        confMock.getStrings(EasyMock.anyObject(String.class));
+
+        mocked.getStrings(EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
             String key = (String) EasyMock.getCurrentArguments()[0];
             String[] results = null;
-            
+
             if (mockConfiguration.containsKey(key)) {
-                
+
                 results = StringUtils.getStrings(mockConfiguration.get(key));
             }
-            
+
             return results;
         }).anyTimes();
-        
-        return confMock;
+
+        EasyMock.replay(mocked);
+
+        return mocked;
     }
-    
+
     @Test
     public void testCtorWithNullArgument() {
         logger.info("testCtorWithNullArgument called...");
         setSplitsCacheDir();
-        
+
         Assertions.assertThrows(IllegalArgumentException.class, () -> new TableSplitsCache(null));
         logger.info("testCtorWithNullArgument completed.");
     }
-    
+
     @Test
     public void testCtorWithValidArgument() throws IOException {
         logger.info("testCtorWithValidArgument called...");
         setSplitsCacheDir();
-        
+
         try {
-            
+
             TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
-            
+
             Assertions.assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
-            
+
         } finally {
             logger.info("testCtorWithValidArgument completed.");
         }
     }
-    
+
     @Test
     public void testGetSplitsNoFile() throws IOException {
         logger.info("testGetSplitsNoFile called...");
         setupConfiguration();
-        
+
         try {
             Assertions.assertThrows(IOException.class, () -> {
                 TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
@@ -473,28 +473,23 @@ public class TableSplitsCacheTest {
                 Assertions.assertNull(uut.getSplits(), "TableSplitsCache#getSplits() created a map of tables and their splits when no file should exist");
             });
         } finally {
-            
+
             logger.info("testGetSplitsNoFile completed.");
         }
     }
-    
+
     @Test
     public void testUpdateNoFile() throws IOException {
         logger.info("testUpdateNoFile called...");
         setupConfiguration();
         setSplitsCacheDir(String.format("/random/dir%s/must/not/exist", (int) (Math.random() * 100) + 1));
-        try {
             TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
-            Assertions.assertThrows(IOException.class, () -> uut.update());
+            uut.update();
             Assertions.assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
-            Assertions.assertNull(uut.getSplits(), "TableSplitsCache should have no splits");
-        } finally {
-            
+        Assertions.assertThrows(IOException.class, () -> Assertions.assertNull(uut.getSplits(), "TableSplitsCache should have no splits"));
             logger.info("testUpdateNoFile completed.");
-        }
-        
     }
-    
+
     @Test
     public void testGetFileStatus() {
         logger.info("testGetFileStatus called...");
@@ -505,140 +500,140 @@ public class TableSplitsCacheTest {
             FileStatus fileStatus = uut.getFileStatus();
             Assertions.assertNotNull(fileStatus, "FileStatus");
         } finally {
-            
+
             logger.info("testGetFileStatus completed.");
         }
-        
+
     }
-    
+
     @Test
     public void testGetSplitsNoArgument() throws IOException {
         logger.info("testGetSplitsNoArgument called...");
         setSplitsCacheDir();
         setupConfiguration();
-        
+
         try {
-            
+
             TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
-            
+
             Assertions.assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
-            
+
             Map<String,List<Text>> resultsSet = uut.getSplits();
-            
+
             Assertions.assertNotNull(resultsSet, "TableSplitsCache#getSplits() failed created a map of tables and their splits");
             Assertions.assertFalse(resultsSet.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated map of tables and their splits");
             Assertions.assertEquals(3, resultsSet.size(), "TableSplitsCache#getSplits() incorrectly populated map of tables and their splits");
-            
+
             List<Text> listings = resultsSet.get("shard");
             Assertions.assertNotNull(listings, "TableSplitsCache#getSplits() failed to a list of splits");
             Assertions.assertFalse(listings.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
             Assertions.assertEquals(5, listings.size(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
-            
+
             listings = resultsSet.get("shard1");
             Assertions.assertNotNull(listings, "TableSplitsCache#getSplits() failed to a list of splits");
             Assertions.assertFalse(listings.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
             Assertions.assertEquals(1, listings.size(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
-            
+
         } finally {
-            
+
             logger.info("testGetSplitsNoArgument completed.");
         }
     }
-    
+
     @Test
     public void testGetSplitsWithArgumentThatMatches() throws IOException {
         logger.info("testGetSplitsWithArgumentThatMatches called...");
         setSplitsCacheDir();
         setupConfiguration();
-        
+
         try {
-            
+
             TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
-            
+
             Assertions.assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
-            
+
             List<Text> resultsSet = uut.getSplits("shard");
-            
+
             Assertions.assertNotNull(resultsSet, "TableSplitsCache#getSplits() failed to a list of splits");
             Assertions.assertFalse(resultsSet.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
             Assertions.assertEquals(5, resultsSet.size(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
         } finally {
-            
+
             logger.info("testGetSplitsWithArgumentThatMatches completed.");
         }
     }
-    
+
     @Test
     public void testGetSplitsWithArgumentThatDoesNotMatch() throws IOException {
         logger.info("testGetSplitsWithArgumentThatDoesNotMatch called...");
         setSplitsCacheDir();
         setupConfiguration();
-        
+
         try {
-            
+
             TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
-            
+
             Assertions.assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
-            
+
             List<Text> resultsSet = uut.getSplits("bad-table");
-            
+
             Assertions.assertNotNull(resultsSet, "TableSplitsCache#getSplits() failed to a list of splits");
             Assertions.assertTrue(resultsSet.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
-            
+
         } finally {
-            
+
             logger.info("testGetSplitsWithArgumentThatDoesNotMatch completed.");
         }
     }
-    
+
     @Test
     public void testGetSplitsTrimByPassed() throws IOException {
         logger.info("testGetSplitsTrimByPassed called...");
         setSplitsCacheDir();
         setupConfiguration();
-        
+
         try {
-            
+
             TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
-            
+
             Assertions.assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
-            
+
             List<Text> resultsSet = uut.getSplits("shard", Integer.MAX_VALUE);
-            
+
             Assertions.assertNotNull(resultsSet, "TableSplitsCache#getSplits() failed to a list of splits");
             Assertions.assertFalse(resultsSet.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
             Assertions.assertEquals(5, resultsSet.size(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
-            
+
         } finally {
-            
+
             logger.info("testGetSplitsTrimByPassed completed.");
         }
     }
-    
+
     @Test
     public void testGetSplitsTrimmed() throws IOException {
         logger.info("testGetSplitsTrimmed called...");
         setSplitsCacheDir();
         setupConfiguration();
-        
+
         try {
-            
+
             TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
-            
+
             Assertions.assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
-            
+
             List<Text> resultsSet = uut.getSplits("shard", 2);
-            
+
             Assertions.assertNotNull(resultsSet, "TableSplitsCache#getSplits() failed to a list of splits");
             Assertions.assertFalse(resultsSet.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
             Assertions.assertEquals(2, resultsSet.size(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
-            
+
         } finally {
-            
+
             logger.info("testGetSplitsTrimmed completed.");
         }
     }
-    
+
     @Test
     public void testTrimTableSplits() {
         setSplitsCacheDir();
@@ -661,5 +656,5 @@ public class TableSplitsCacheTest {
             lastsplit = split;
         }
     }
-    
+
 }

@@ -24,14 +24,10 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockExtension;
-import org.easymock.Mock;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.net.URL;
@@ -40,8 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Disabled
-@ExtendWith(EasyMockExtension.class)
 public class CBMutationOutputFormatterTest {
     
     protected static final Logger logger = Logger.getLogger(CBMutationOutputFormatterTest.class);
@@ -49,12 +43,6 @@ public class CBMutationOutputFormatterTest {
     protected Level testDriverLevel;
     protected Level uutLevel;
     protected CommonTestAppender uutAppender;
-    
-    @Mock
-    Configuration mocked;
-    
-    @Mock
-    Job jobMocked;
     
     protected static Map<String,String> mockedConfiguration = new HashMap<>();
     
@@ -96,70 +84,76 @@ public class CBMutationOutputFormatterTest {
         
         return results;
     }
-    
+
     protected Configuration createMockConfiguration() {
+
+        Configuration mocked = EasyMock.createMock(Configuration.class);
+
         mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             String value = (String) EasyMock.getCurrentArguments()[1];
-            
+
             if (CBMutationOutputFormatterTest.mockedConfiguration.containsKey(key)) {
-                
+
                 value = CBMutationOutputFormatterTest.mockedConfiguration.get(key);
             }
-            
+
             return value;
         }).anyTimes();
-        
+
         mocked.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             String value = (String) EasyMock.getCurrentArguments()[1];
-            
+
             CBMutationOutputFormatterTest.mockedConfiguration.put(key, value);
-            
+
             return null;
         }).anyTimes();
-        
+
         mocked.getBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             boolean value = (Boolean) EasyMock.getCurrentArguments()[1];
-            
+
             if (CBMutationOutputFormatterTest.mockedConfiguration.containsKey(key)) {
-                
+
                 value = Boolean.parseBoolean(CBMutationOutputFormatterTest.mockedConfiguration.get(key));
             }
-            
+
             return value;
         }).anyTimes();
-        
+
         mocked.setBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
         EasyMock.expectLastCall().andAnswer(() -> {
-            
+
             String key = (String) EasyMock.getCurrentArguments()[0];
             String value = EasyMock.getCurrentArguments()[1].toString();
-            
+
             CBMutationOutputFormatterTest.mockedConfiguration.put(key, value);
-            
+
             return null;
         }).anyTimes();
-        
+
         EasyMock.replay(mocked);
-        
+
         return mocked;
     }
-    
+
     protected Job createMockJob() {
-        jobMocked.getConfiguration();
+
+        Job mocked = EasyMock.createMock(Job.class);
+
+        mocked.getConfiguration();
         EasyMock.expectLastCall().andAnswer(this::createMockConfiguration).anyTimes();
-        
-        EasyMock.replay(jobMocked);
-        
-        return jobMocked;
+
+        EasyMock.replay(mocked);
+
+        return mocked;
     }
     
     @BeforeEach

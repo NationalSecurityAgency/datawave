@@ -517,11 +517,16 @@
                 <optional>true</optional>
             </dependency>
             <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-junit4-rule-agent</artifactId>
-                <version>1.6.1</version>
+                <groupId>org.jboss.arquillian.junit5</groupId>
+                <artifactId>arquillian-junit5-container</artifactId>
+                <version>${version.arquillian-junit5}</version>
                 <scope>test</scope>
-                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${version.jupiter}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
