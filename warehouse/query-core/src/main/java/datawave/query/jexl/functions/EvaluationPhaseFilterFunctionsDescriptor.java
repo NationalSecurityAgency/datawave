@@ -44,6 +44,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
     public static final String INCLUDE_TEXT = "includeText";
     public static final String COMPARE = "compare";
     public static final String NO_EXPANSION = "noExpansion";
+    public static final String GET_ALL_MATCHES = "getAllMatches";
     
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
@@ -54,7 +55,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
     public static class EvaluationPhaseFilterJexlArgumentDescriptor implements JexlArgumentDescriptor {
         private static final Logger log = Logger.getLogger(EvaluationPhaseFilterJexlArgumentDescriptor.class);
         
-        public static final ImmutableSet<String> regexFunctions = ImmutableSet.of(EXCLUDE_REGEX, INCLUDE_REGEX);
+        public static final ImmutableSet<String> regexFunctions = ImmutableSet.of(EXCLUDE_REGEX, INCLUDE_REGEX, GET_ALL_MATCHES);
         public static final ImmutableSet<String> andExpansionFunctions = ImmutableSet.of(IS_NULL);
         public static final ImmutableSet<String> dateBetweenFunctions = ImmutableSet.of(BETWEEN_DATES, BETWEEN_LOAD_DATES);
         public static final String MATCHCOUNTOF = MATCHES_AT_LEAST_COUNT_OF;
