@@ -91,7 +91,6 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             }
         }
         
-    
         private JexlNode getTextIndexQuery() {
             JexlNode node0 = args.get(0);
             final String value = args.get(1).image;

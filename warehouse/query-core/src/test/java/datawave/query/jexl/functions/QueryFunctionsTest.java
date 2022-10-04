@@ -88,7 +88,6 @@ public class QueryFunctionsTest {
         }
     }
     
-    
     /**
      * Tests for {@link QueryFunctions#includeText(Object, String)}.
      */
@@ -211,7 +210,6 @@ public class QueryFunctionsTest {
             return QueryFunctions.matchRegex(fieldValues, regex);
         }
     }
-    
     
     /**
      * Tests for {@link QueryFunctions#includeText(Iterable, String)}.
