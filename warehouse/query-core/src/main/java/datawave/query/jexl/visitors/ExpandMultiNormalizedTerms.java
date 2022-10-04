@@ -1,7 +1,6 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
@@ -45,6 +44,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * When more than one normalizer exists for a field, we want to transform the single term into a conjunction of the term with each normalizer applied to it. If
@@ -153,7 +153,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     }
     
     private Object expandRangeForNormalizers(LiteralRange<?> range, JexlNode node) {
-        List<BoundedRange> aliasedBounds = Lists.newArrayList();
+        Set<BoundedRange> aliasedBounds = new HashSet<BoundedRange>();
         String field = range.getFieldName();
         
         // Get all of the indexed or normalized dataTypes for the field name
@@ -185,21 +185,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                 continue;
             }
             
-            // check to ensure we're not adding duplicate ranges with identical values
-            BoundedRange newAliasedBound = new BoundedRange(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right));
-            if (aliasedBounds.isEmpty()) {
-                aliasedBounds.add(newAliasedBound);
-            } else {
-                boolean foundUnique = false;
-                for (BoundedRange existingRange : aliasedBounds) {
-                    String existingRangeString = JexlStringBuildingVisitor.buildQuery(existingRange);
-                    if (!JexlStringBuildingVisitor.buildQuery(newAliasedBound).equals(existingRangeString)) {
-                        foundUnique = true;
-                    }
-                }
-                if (foundUnique)
-                    aliasedBounds.add(newAliasedBound);
-            }
+            aliasedBounds.add(new BoundedRange(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right)));
         }
         
         if (aliasedBounds.isEmpty()) {
@@ -209,9 +195,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             
             // Avoid extra parens around the expansion
             if (1 == aliasedBounds.size()) {
-                return aliasedBounds.get(0);
+                // we assume the Optional container is not empty as we have already created a new BoundedRange from the node
+                return Arrays.stream(aliasedBounds.toArray()).findFirst().get();
             } else {
-                List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(aliasedBounds);
+                List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(aliasedBounds.stream().collect(Collectors.toList()));
                 return JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[var.size()])));
             }
         }
