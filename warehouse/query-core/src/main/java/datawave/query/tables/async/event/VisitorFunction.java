@@ -31,8 +31,10 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
+import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -137,7 +139,19 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         }
         return minDate;
     }
-    
+
+    public String getRangeKey(Range range) {
+        Key key = range.getStartKey();
+        StringBuilder builder = new StringBuilder();
+        builder.append(key.getRow());
+        String cf = key.getColumnFamily().toString();
+        if (cf.length() > 0) {
+            String[] parts = StringUtils.split(cf, '\0');
+            builder.append('/').append(parts[0]).append('/').append(parts[1]);
+        }
+        return builder.toString();
+    }
+
     @Override
     @Nullable
     public ScannerChunk apply(@Nullable ScannerChunk input) {
@@ -329,9 +343,20 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         
         newSettings.setOptions(newOptions);
         // - This is the area where it is necessary to go through the ranges
-        //        and then call the addSubPlan method for each one into the query metric object.
+        // and then call the addSubPlan method for each one into the query metric object.
         // - Will need to create a method to convert a range object to a string (needed for the addSubPlan method)
-        //        the Range.getStartKey will contain the essential information to complete this
+        // the Range.getStartKey will contain the essential information to complete this
+
+        // So the range is going to be a shard range or a document range.  The shard range will only have the shard id
+        // filled in which is in the row of the start key.  A document range will also include the datatype and uid in
+        // the columnfamily of the start key.
+        // a null byte will be in between the datatype and uid. in the column family
+
+
+        for (Range range : newSettings.getRanges()) {
+            String rangeKey = getRangeKey(range);
+         //add the <rangeKey, subPlan> to the metrics
+        }
         return newSettings;
     }
     

@@ -201,7 +201,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            base iterator priority
      */
     void setBaseIteratorPriority(final int priority);
-
+    
     /**
      * Sets the query metric
      *
@@ -209,7 +209,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            query metric
      */
     void setQueryMetric(BaseQueryMetric metric);
-
+    
     /**
      * @param logicName
      *            name of the query logic

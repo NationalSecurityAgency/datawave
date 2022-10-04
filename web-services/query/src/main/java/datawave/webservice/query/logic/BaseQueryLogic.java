@@ -48,7 +48,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     public static final String BYPASS_ACCUMULO = "rfile.debug";
     private BaseQueryMetric metric;
-
+    
     public BaseQueryLogic() {
         getConfig().setBaseIteratorPriority(100);
     }
@@ -118,8 +118,10 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         this.principal = principal;
     }
     
-    public void setQueryMetric(BaseQueryMetric metric) { this.metric = metric;}
-
+    public void setQueryMetric(BaseQueryMetric metric) {
+        this.metric = metric;
+    }
+    
     public BaseQueryMetric getQueryMetric() {
         return metric;
     }
