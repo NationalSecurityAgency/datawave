@@ -57,7 +57,7 @@ public class TestLuceneToJexlParser {
     public void testParseFunction_NoExpansion() throws ParseException {
         LuceneToJexlQueryParser parser = getQueryParser();
         QueryNode node = parser.parse("FIELD:SOMETHING AND #NOEXPANSION(FIELD)");
-        Assertions.assertEquals("FIELD == 'SOMETHING' && filter:noExpansion(FIELD)", node.getOriginalQuery());
+        Assertions.assertEquals("FIELD == 'SOMETHING' && f:noExpansion(FIELD)", node.getOriginalQuery());
     }
     
     @Test

@@ -343,46 +343,6 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     /**
-     * Returns a set that contains the hit term if the non-normalized value of the field value matches the given string.
-     *
-     * @param fieldValue
-     *            the field value to evaluate
-     * @param valueToMatch
-     *            the string to match
-     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
-     */
-    public static FunctionalSet<ValueTuple> includeText(Object fieldValue, String valueToMatch) {
-        if (fieldValue != null && ValueTuple.getStringValue(fieldValue).equals(valueToMatch)) {
-            return FunctionalSet.singleton(getHitTerm(fieldValue));
-        }
-        return FunctionalSet.emptySet();
-    }
-    
-    /**
-     * Returns a set that contains the hit term for the first field value where the non-normalized value matches the given string.
-     *
-     * @param values
-     *            the values to evaluate
-     * @param valueToMatch
-     *            the string to match
-     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
-     */
-    public static FunctionalSet<ValueTuple> includeText(Iterable<?> values, String valueToMatch) {
-        if (values != null) {
-            // @formatter:off
-            return StreamSupport.stream(values.spliterator(), false)
-                            .filter(Objects::nonNull)
-                            .filter((value) -> ValueTuple.getStringValue(value).equals(valueToMatch))
-                            .findFirst()
-                            .map(EvaluationPhaseFilterFunctions::getHitTerm)
-                            .map(FunctionalSet::singleton)
-                            .orElseGet(FunctionalSet::emptySet);
-            // @formatter:on
-        }
-        return FunctionalSet.emptySet();
-    }
-    
-    /**
      * Searches for a load date after start (exclusively)
      *
      * @param fieldValue

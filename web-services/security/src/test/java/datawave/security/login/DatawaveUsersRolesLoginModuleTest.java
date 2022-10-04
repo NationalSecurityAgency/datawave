@@ -86,7 +86,7 @@ public class DatawaveUsersRolesLoginModuleTest {
     @Test
     public void testFailedLoginBadPassword() throws Exception {
         callbackHandler.setSecurityInfo(new SimplePrincipal("testUser<testIssuer>"), new DatawaveCredential("testUser", "testIssuer", null, null).toString());
-
+        
         FailedLoginException e = assertThrows(FailedLoginException.class, () -> {
             boolean success = loginModule.login();
             assertFalse(success, "Login succeed for alias in users.properties with bad password");

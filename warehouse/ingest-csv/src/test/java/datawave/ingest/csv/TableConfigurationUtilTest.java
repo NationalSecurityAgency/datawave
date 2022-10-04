@@ -170,7 +170,7 @@ public class TableConfigurationUtilTest {
         tcu.serializeTableConfgurationIntoConf(conf);
         TableConfigCache.getCurrentCache(conf).clear();
         tcu.addOutputTables("audit", conf);
-
+        
         Assertions.assertThrows(IOException.class, () -> tcu.deserializeTableConfigs(conf));
         
     }
@@ -255,13 +255,15 @@ public class TableConfigurationUtilTest {
         
         Map<Integer,Map<String,String>> metaCombiners = tcu.getTableCombiners("datawave.metadata");
         Assertions.assertEquals(3, metaCombiners.size());
-        Assertions.assertEquals("org.apache.accumulo.core.iterators.user.SummingCombiner", metaCombiners.get(10).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
+        Assertions.assertEquals("org.apache.accumulo.core.iterators.user.SummingCombiner",
+                        metaCombiners.get(10).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
         Assertions.assertEquals("datawave.iterators.CountMetadataCombiner", metaCombiners.get(15).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
         Assertions.assertEquals("datawave.iterators.EdgeMetadataCombiner", metaCombiners.get(19).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
         
         Map<Integer,Map<String,String>> loadCombiners = tcu.getTableCombiners("datawave.loadDates");
         Assertions.assertEquals(1, loadCombiners.size());
-        Assertions.assertEquals("org.apache.accumulo.core.iterators.user.SummingCombiner", loadCombiners.get(18).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
+        Assertions.assertEquals("org.apache.accumulo.core.iterators.user.SummingCombiner",
+                        loadCombiners.get(18).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
         
         Map<String,Integer> priorities = TableConfigurationUtil.getTablePriorities(conf);
         Assertions.assertEquals((Integer) 30, priorities.get("datawave.shard"));

@@ -27,16 +27,16 @@ public class DatawaveCertRolesLoginModuleTest {
     @BeforeEach
     public void setUp() throws Exception {
         callbackHandler = new MockCallbackHandler("Alias: ", "Certificate: ");
-
+        
         HashMap<String,String> sharedState = new HashMap<>();
         HashMap<String,String> options = new HashMap<>();
         options.put("rolesProperties", "roles.properties");
         options.put("principalClass", "datawave.security.authorization.DatawavePrincipal");
         options.put("verifier", MockDatawaveCertVerifier.class.getName());
-
+        
         loginModule = new DatawaveCertRolesLoginModule();
         loginModule.initialize(new Subject(), callbackHandler, sharedState, options);
-
+        
         KeyStore truststore = KeyStore.getInstance("PKCS12");
         truststore.load(getClass().getResourceAsStream("/ca.pkcs12"), "secret".toCharArray());
         KeyStore keystore = KeyStore.getInstance("PKCS12");

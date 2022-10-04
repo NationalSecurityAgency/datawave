@@ -89,7 +89,7 @@ public class SafeFileOutputCommitterTest {
     public void tearDown() throws IOException {
         Configuration conf = new Configuration();
         FileSystem fs = outDir.getFileSystem(conf);
-//        fs.deleteOnExit(outDir);
+        // fs.deleteOnExit(outDir);
         fs.delete(outDir, true);
         
         // now determine if we have YARN-3027 and YARN-3079 patches applied
@@ -327,7 +327,7 @@ public class SafeFileOutputCommitterTest {
     public void testFirstAttemptFailsV1_V2BackwardsCompatible() throws Exception {
         assertThrows(FileExistsException.class, () -> failFirstAttemptPassSecond(1, 2, true, false));
     }
-
+    
     @Test
     public void testFirstAttemptFailsV1_V2BackwardsCompatibleDifferentName() throws Exception {
         assertThrows(FileExistsException.class, () -> failFirstAttemptPassSecond(1, 2, true, true));
