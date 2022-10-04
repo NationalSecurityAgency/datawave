@@ -33,6 +33,7 @@ public class QueryFunctions {
     public static final String GROUPBY_FUNCTION = "groupby";
     public static final String EXCERPT_FIELDS_FUNCTION = "excerpt_fields";
     public static final String MATCH_REGEX = "matchRegex";
+    public static final String INCLUDE_TEXT = "includeText";
     
     protected static Logger log = Logger.getLogger(QueryFunctions.class);
     
@@ -202,6 +203,22 @@ public class QueryFunctions {
     }
     
     /**
+     * Returns a set that contains the hit term if the non-normalized value of the field value matches the given string.
+     *
+     * @param fieldValue
+     *            the field value to evaluate
+     * @param valueToMatch
+     *            the string to match
+     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
+     */
+    public static FunctionalSet<ValueTuple> includeText(Object fieldValue, String valueToMatch) {
+        if (fieldValue != null && ValueTuple.getStringValue(fieldValue).equals(valueToMatch)) {
+            return FunctionalSet.singleton(ValueTuple.toValueTuple(fieldValue));
+        }
+        return FunctionalSet.emptySet();
+    }
+    
+    /**
      * Returns a set that contains the hit term for the first field value where the regex matches against the value of the field value. If the regex string
      * contains case-insensitive flags, e.g. {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field value.
      * <p>
@@ -224,6 +241,30 @@ public class QueryFunctions {
                             .filter((value) -> isMatchForPattern(pattern, caseInsensitive, value))
                             .findFirst()
                             .map(EvaluationPhaseFilterFunctions::getHitTerm)
+                            .map(FunctionalSet::singleton)
+                            .orElseGet(FunctionalSet::emptySet);
+            // @formatter:on
+        }
+        return FunctionalSet.emptySet();
+    }
+    
+    /**
+     * Returns a set that contains the hit term for the first field value where the non-normalized value matches the given string.
+     *
+     * @param values
+     *            the values to evaluate
+     * @param valueToMatch
+     *            the string to match
+     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
+     */
+    public static FunctionalSet<ValueTuple> includeText(Iterable<?> values, String valueToMatch) {
+        if (values != null) {
+            // @formatter:off
+            return StreamSupport.stream(values.spliterator(), false)
+                            .filter(Objects::nonNull)
+                            .filter((value) -> ValueTuple.getStringValue(value).equals(valueToMatch))
+                            .findFirst()
+                            .map(ValueTuple::toValueTuple)
                             .map(FunctionalSet::singleton)
                             .orElseGet(FunctionalSet::emptySet);
             // @formatter:on
