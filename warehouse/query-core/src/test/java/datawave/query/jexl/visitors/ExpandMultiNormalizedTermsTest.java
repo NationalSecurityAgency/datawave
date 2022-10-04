@@ -256,6 +256,22 @@ public class ExpandMultiNormalizedTermsTest {
     }
     
     @Test
+    public void testBoundedMultiNormalizedBounds3() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new LcNoDiacriticsType(), new TrimLeadingZerosType()));
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        String original = "((_Bounded_ = true) && (FOO > 1 && FOO < 10))";
+        String expected = "((((_Bounded_ = true) && (FOO > '+aE1' && FOO < '+bE1'))) || (((_Bounded_ = true) && (FOO > '1' && FOO < '10'))))";
+        expandTerms(original, expected);
+    }
+    
+    @Test
     public void testUnNormalizedBoundsCase() throws ParseException {
         Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NEW", new LcNoDiacriticsType());
