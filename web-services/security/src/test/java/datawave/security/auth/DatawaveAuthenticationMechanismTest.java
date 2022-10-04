@@ -9,13 +9,13 @@ import io.undertow.server.SSLSessionInfo;
 import io.undertow.server.ServerConnection;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.HttpString;
-import org.easymock.Capture;
-import org.easymock.EasyMockExtension;
-import org.easymock.Mock;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -33,16 +33,13 @@ import java.util.Enumeration;
 
 import static datawave.security.util.DnUtils.normalizeDN;
 import static io.undertow.security.api.AuthenticationMechanism.AuthenticationMechanismOutcome;
-import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
-import static org.easymock.EasyMock.newCapture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.when;
 
-@Disabled
-@ExtendWith(EasyMockExtension.class)
+@ExtendWith(MockitoExtension.class)
 public class DatawaveAuthenticationMechanismTest {
     private static final HttpString PROXIED_ENTITIES_HEADER = new HttpString(DatawaveAuthenticationMechanism.PROXIED_ENTITIES_HEADER);
     private static final HttpString PROXIED_ISSUERS_HEADER = new HttpString(DatawaveAuthenticationMechanism.PROXIED_ISSUERS_HEADER);
@@ -57,6 +54,7 @@ public class DatawaveAuthenticationMechanismTest {
     @Mock
     private SecurityContext securityContext;
     
+    @Mock
     private HttpServerExchange httpServerExchange;
     
     @Mock
@@ -70,6 +68,9 @@ public class DatawaveAuthenticationMechanismTest {
     
     @Mock
     private Account account;
+    
+    @Captor
+    ArgumentCaptor<DatawaveCredential> credentialCapture;
     
     private KeyStore truststore;
     private KeyStore keystore;
@@ -115,56 +116,54 @@ public class DatawaveAuthenticationMechanismTest {
             }
         }
         
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders).times(2);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders); // .times(2);
     }
     
     @Test
     public void testSSLSimpleLogin() throws Exception {
-        String expectedID = normalizeDN(testUserCert.getSubjectDN().getName()) + "<" + normalizeDN(testUserCert.getIssuerDN().getName()) + ">";
+        String whenedID = normalizeDN(testUserCert.getSubjectDN().getName()) + "<" + normalizeDN(testUserCert.getIssuerDN().getName()) + ">";
         
-        Capture<DatawaveCredential> credentialCapture = newCapture();
-        expect(httpServerExchange.getConnection()).andReturn(serverConnection);
-        expect(serverConnection.getSslSessionInfo()).andReturn(sslSessionInfo);
-        expect(sslSessionInfo.getPeerCertificates()).andReturn(new X509Certificate[] {testUserCert});
-        expect(securityContext.getIdentityManager()).andReturn(identityManager);
-        expect(identityManager.verify(eq(expectedID), capture(credentialCapture))).andReturn(account);
+        when(httpServerExchange.getConnection()).thenReturn(serverConnection);
+        when(serverConnection.getSslSessionInfo()).thenReturn(sslSessionInfo);
+        when(sslSessionInfo.getPeerCertificates()).thenReturn(new X509Certificate[] {testUserCert});
+        when(securityContext.getIdentityManager()).thenReturn(identityManager);
+        when(identityManager.verify(eq(whenedID), credentialCapture.capture())).thenReturn(account);
         securityContext.authenticationComplete(account, "DATAWAVE-AUTH", false);
         long requestStartTime = System.nanoTime();
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
-        expect(httpServerExchange.getRequestStartTime()).andReturn(requestStartTime);
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestStartTime()).thenReturn(requestStartTime);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
         
         AuthenticationMechanismOutcome outcome = datawaveAuthenticationMechanism.authenticate(httpServerExchange, securityContext);
         assertEquals(AuthenticationMechanismOutcome.AUTHENTICATED, outcome);
         assertEquals(testUserCert, credentialCapture.getValue().getCertificate());
         assertFalse(httpResponseHeaders.contains(DatawaveAuthenticationMechanism.HEADER_PROXIED_ENTITIES_ACCEPTED));
+        
     }
     
     @Test
     public void testSSLProxiedLogin() throws Exception {
-        String expectedID = normalizeDN(testUserCert.getSubjectDN().getName()) + "<" + normalizeDN(testUserCert.getIssuerDN().getName()) + "><"
+        String whenedID = normalizeDN(testUserCert.getSubjectDN().getName()) + "<" + normalizeDN(testUserCert.getIssuerDN().getName()) + "><"
                         + normalizeDN(testServerCert.getSubjectDN().getName()) + "><" + normalizeDN(testServerCert.getIssuerDN().getName()) + ">";
         httpRequestHeaders.add(PROXIED_ENTITIES_HEADER, testUserCert.getSubjectDN().toString());
         httpRequestHeaders.add(PROXIED_ISSUERS_HEADER, testUserCert.getIssuerDN().toString());
         
-        Capture<DatawaveCredential> credentialCapture = newCapture();
-        expect(httpServerExchange.getConnection()).andReturn(serverConnection);
-        expect(serverConnection.getSslSessionInfo()).andReturn(sslSessionInfo);
-        expect(sslSessionInfo.getPeerCertificates()).andReturn(new X509Certificate[] {testServerCert});
-        expect(securityContext.getIdentityManager()).andReturn(identityManager);
-        expect(identityManager.verify(eq(expectedID), capture(credentialCapture))).andReturn(account);
+        when(httpServerExchange.getConnection()).thenReturn(serverConnection);
+        when(serverConnection.getSslSessionInfo()).thenReturn(sslSessionInfo);
+        when(sslSessionInfo.getPeerCertificates()).thenReturn(new X509Certificate[] {testServerCert});
+        when(securityContext.getIdentityManager()).thenReturn(identityManager);
+        when(identityManager.verify(eq(whenedID), credentialCapture.capture())).thenReturn(account);
         securityContext.authenticationComplete(account, "DATAWAVE-AUTH", false);
         long requestStartTime = System.nanoTime();
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
-        expect(httpServerExchange.getResponseHeaders()).andReturn(httpResponseHeaders);
-        expect(httpServerExchange.getRequestStartTime()).andReturn(requestStartTime);
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
+        when(httpServerExchange.getResponseHeaders()).thenReturn(httpResponseHeaders);
+        when(httpServerExchange.getRequestStartTime()).thenReturn(requestStartTime);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
         
         AuthenticationMechanismOutcome outcome = datawaveAuthenticationMechanism.authenticate(httpServerExchange, securityContext);
         assertEquals(AuthenticationMechanismOutcome.AUTHENTICATED, outcome);
         assertEquals(testServerCert, credentialCapture.getValue().getCertificate());
         assertEquals("true", httpResponseHeaders.getFirst(DatawaveAuthenticationMechanism.HEADER_PROXIED_ENTITIES_ACCEPTED));
-        
     }
     
     @Test
@@ -172,19 +171,19 @@ public class DatawaveAuthenticationMechanismTest {
         httpRequestHeaders.add(SUBJECT_DN_HEADER, testUserCert.getSubjectDN().toString());
         httpRequestHeaders.add(ISSUER_DN_HEADER, testUserCert.getIssuerDN().toString());
         
-        String expectedID = normalizeDN(testUserCert.getSubjectDN().getName()) + "<" + normalizeDN(testUserCert.getIssuerDN().getName()) + ">";
+        String whenedID = normalizeDN(testUserCert.getSubjectDN().getName()) + "<" + normalizeDN(testUserCert.getIssuerDN().getName()) + ">";
         
-        expect(httpServerExchange.getConnection()).andReturn(serverConnection);
-        expect(serverConnection.getSslSessionInfo()).andReturn(sslSessionInfo);
-        expect(sslSessionInfo.getPeerCertificates()).andThrow(new SSLPeerUnverifiedException("no client cert"));
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
-        expect(securityContext.getIdentityManager()).andReturn(identityManager);
-        expect(identityManager.verify(eq(expectedID), isA(Credential.class))).andReturn(account);
+        when(httpServerExchange.getConnection()).thenReturn(serverConnection);
+        when(serverConnection.getSslSessionInfo()).thenReturn(sslSessionInfo);
+        when(sslSessionInfo.getPeerCertificates()).thenThrow(new SSLPeerUnverifiedException("no client cert"));
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
+        when(securityContext.getIdentityManager()).thenReturn(identityManager);
+        when(identityManager.verify(eq(whenedID), isA(Credential.class))).thenReturn(account);
         securityContext.authenticationComplete(account, "DATAWAVE-AUTH", false);
         long requestStartTime = System.nanoTime();
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
-        expect(httpServerExchange.getRequestStartTime()).andReturn(requestStartTime);
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestStartTime()).thenReturn(requestStartTime);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
         
         AuthenticationMechanismOutcome outcome = datawaveAuthenticationMechanism.authenticate(httpServerExchange, securityContext);
         assertEquals(AuthenticationMechanismOutcome.AUTHENTICATED, outcome);
@@ -219,16 +218,15 @@ public class DatawaveAuthenticationMechanismTest {
             }
         };
         
-        expect(httpServerExchange.getConnection()).andReturn(serverConnection);
-        expect(serverConnection.getSslSessionInfo()).andReturn(sslSessionInfo);
-        expect(sslSessionInfo.getPeerCertificates()).andReturn(new Certificate[] {cert});
+        when(httpServerExchange.getConnection()).thenReturn(serverConnection);
+        when(serverConnection.getSslSessionInfo()).thenReturn(sslSessionInfo);
+        when(sslSessionInfo.getPeerCertificates()).thenReturn(new Certificate[] {cert});
         long requestStartTime = System.nanoTime();
-        expect(httpServerExchange.getRequestStartTime()).andReturn(requestStartTime);
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestStartTime()).thenReturn(requestStartTime);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
         
         AuthenticationMechanismOutcome outcome = datawaveAuthenticationMechanism.authenticate(httpServerExchange, securityContext);
         assertEquals(AuthenticationMechanismOutcome.NOT_ATTEMPTED, outcome);
-        
     }
     
     @Test
@@ -236,8 +234,8 @@ public class DatawaveAuthenticationMechanismTest {
         httpRequestHeaders.add(PROXIED_ENTITIES_HEADER, "foo");
         
         securityContext.authenticationFailed("X-ProxiedEntitiesChain supplied, but missing X-ProxiedIssuersChain is missing!", "DATAWAVE-AUTH");
-        expect(httpServerExchange.getRequestStartTime()).andReturn(System.nanoTime());
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestStartTime()).thenReturn(System.nanoTime());
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
         
         AuthenticationMechanismOutcome outcome = datawaveAuthenticationMechanism.authenticate(httpServerExchange, securityContext);
         assertEquals(AuthenticationMechanismOutcome.NOT_AUTHENTICATED, outcome);
@@ -248,22 +246,21 @@ public class DatawaveAuthenticationMechanismTest {
         httpRequestHeaders.add(SUBJECT_DN_HEADER, testUserCert.getSubjectDN().toString());
         httpRequestHeaders.add(ISSUER_DN_HEADER, testUserCert.getIssuerDN().toString());
         
-        String expectedID = normalizeDN(testUserCert.getSubjectDN().getName()) + "<" + normalizeDN(testUserCert.getIssuerDN().getName()) + ">";
+        String whenedID = normalizeDN(testUserCert.getSubjectDN().getName()) + "<" + normalizeDN(testUserCert.getIssuerDN().getName()) + ">";
         
-        expect(httpServerExchange.getConnection()).andReturn(serverConnection);
-        expect(serverConnection.getSslSessionInfo()).andReturn(null);
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
-        expect(securityContext.getIdentityManager()).andReturn(identityManager);
-        expect(identityManager.verify(eq(expectedID), isA(Credential.class))).andReturn(account);
+        when(httpServerExchange.getConnection()).thenReturn(serverConnection);
+        when(serverConnection.getSslSessionInfo()).thenReturn(null);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
+        when(securityContext.getIdentityManager()).thenReturn(identityManager);
+        when(identityManager.verify(eq(whenedID), isA(Credential.class))).thenReturn(account);
         securityContext.authenticationComplete(account, "DATAWAVE-AUTH", false);
         long requestStartTime = System.nanoTime();
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
-        expect(httpServerExchange.getRequestStartTime()).andReturn(requestStartTime);
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestStartTime()).thenReturn(requestStartTime);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
         
         AuthenticationMechanismOutcome outcome = datawaveAuthenticationMechanism.authenticate(httpServerExchange, securityContext);
         assertEquals(AuthenticationMechanismOutcome.AUTHENTICATED, outcome);
-        
     }
     
     @Test
@@ -273,59 +270,56 @@ public class DatawaveAuthenticationMechanismTest {
         httpRequestHeaders.add(SUBJECT_DN_HEADER, testServerCert.getSubjectDN().toString());
         httpRequestHeaders.add(ISSUER_DN_HEADER, testServerCert.getIssuerDN().toString());
         
-        String expectedID = normalizeDN(testUserCert.getSubjectDN().getName()) + "<" + normalizeDN(testUserCert.getIssuerDN().getName()) + "><"
+        String whenedID = normalizeDN(testUserCert.getSubjectDN().getName()) + "<" + normalizeDN(testUserCert.getIssuerDN().getName()) + "><"
                         + normalizeDN(testServerCert.getSubjectDN().getName()) + "><" + normalizeDN(testServerCert.getIssuerDN().getName()) + ">";
         
-        expect(httpServerExchange.getConnection()).andReturn(serverConnection);
-        expect(serverConnection.getSslSessionInfo()).andReturn(null);
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
-        expect(securityContext.getIdentityManager()).andReturn(identityManager);
-        expect(identityManager.verify(eq(expectedID), isA(Credential.class))).andReturn(account);
+        when(httpServerExchange.getConnection()).thenReturn(serverConnection);
+        when(serverConnection.getSslSessionInfo()).thenReturn(null);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
+        when(securityContext.getIdentityManager()).thenReturn(identityManager);
+        when(identityManager.verify(eq(whenedID), isA(Credential.class))).thenReturn(account);
         securityContext.authenticationComplete(account, "DATAWAVE-AUTH", false);
         long requestStartTime = System.nanoTime();
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
-        expect(httpServerExchange.getResponseHeaders()).andReturn(httpResponseHeaders);
-        expect(httpServerExchange.getRequestStartTime()).andReturn(requestStartTime);
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
+        when(httpServerExchange.getResponseHeaders()).thenReturn(httpResponseHeaders);
+        when(httpServerExchange.getRequestStartTime()).thenReturn(requestStartTime);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
         
         AuthenticationMechanismOutcome outcome = datawaveAuthenticationMechanism.authenticate(httpServerExchange, securityContext);
         assertEquals(AuthenticationMechanismOutcome.AUTHENTICATED, outcome);
         assertEquals("true", httpResponseHeaders.getFirst(DatawaveAuthenticationMechanism.HEADER_PROXIED_ENTITIES_ACCEPTED));
-        
     }
     
     @Test
     public void testNonSSLoginWithoutIssuerHeaderFails() throws Exception {
         httpRequestHeaders.add(SUBJECT_DN_HEADER, testUserCert.getSubjectDN().toString());
         
-        expect(httpServerExchange.getConnection()).andReturn(serverConnection);
-        expect(serverConnection.getSslSessionInfo()).andReturn(null);
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        when(httpServerExchange.getConnection()).thenReturn(serverConnection);
+        when(serverConnection.getSslSessionInfo()).thenReturn(null);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
         securityContext.authenticationFailed("Missing trusted subject DN (" + testUserCert.getSubjectDN()
                         + ") or issuer DN (null) for trusted header authentication.", "DATAWAVE-AUTH");
-        expect(httpServerExchange.getRequestStartTime()).andReturn(System.nanoTime());
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestStartTime()).thenReturn(System.nanoTime());
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
         
         AuthenticationMechanismOutcome outcome = datawaveAuthenticationMechanism.authenticate(httpServerExchange, securityContext);
         assertEquals(AuthenticationMechanismOutcome.NOT_AUTHENTICATED, outcome);
-        
     }
     
     @Test
     public void testNonSSLoginWithoutSubjectHeaderFails() throws Exception {
         httpRequestHeaders.add(ISSUER_DN_HEADER, testUserCert.getIssuerDN().toString());
         
-        expect(httpServerExchange.getConnection()).andReturn(serverConnection);
-        expect(serverConnection.getSslSessionInfo()).andReturn(null);
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        when(httpServerExchange.getConnection()).thenReturn(serverConnection);
+        when(serverConnection.getSslSessionInfo()).thenReturn(null);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
         securityContext.authenticationFailed("Missing trusted subject DN (null) or issuer DN (" + testUserCert.getIssuerDN()
                         + ") for trusted header authentication.", "DATAWAVE-AUTH");
-        expect(httpServerExchange.getRequestStartTime()).andReturn(System.nanoTime());
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestStartTime()).thenReturn(System.nanoTime());
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
         
         AuthenticationMechanismOutcome outcome = datawaveAuthenticationMechanism.authenticate(httpServerExchange, securityContext);
         assertEquals(AuthenticationMechanismOutcome.NOT_AUTHENTICATED, outcome);
-        
     }
     
     @Test
@@ -336,11 +330,11 @@ public class DatawaveAuthenticationMechanismTest {
         httpRequestHeaders.add(SUBJECT_DN_HEADER, testUserCert.getSubjectDN().toString());
         httpRequestHeaders.add(ISSUER_DN_HEADER, testUserCert.getIssuerDN().toString());
         
-        expect(httpServerExchange.getConnection()).andReturn(serverConnection);
-        expect(serverConnection.getSslSessionInfo()).andReturn(null);
+        when(httpServerExchange.getConnection()).thenReturn(serverConnection);
+        when(serverConnection.getSslSessionInfo()).thenReturn(null);
         long requestStartTime = System.nanoTime();
-        expect(httpServerExchange.getRequestStartTime()).andReturn(requestStartTime);
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestStartTime()).thenReturn(requestStartTime);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
         
         AuthenticationMechanismOutcome outcome = datawaveAuthenticationMechanism.authenticate(httpServerExchange, securityContext);
         assertEquals(AuthenticationMechanismOutcome.NOT_ATTEMPTED, outcome);
@@ -353,17 +347,17 @@ public class DatawaveAuthenticationMechanismTest {
         
         httpRequestHeaders.add(new HttpString("Authorization"), "Bearer 1234");
         
-        String expectedID = "1234";
+        String whenedID = "1234";
         
-        expect(httpServerExchange.getConnection()).andReturn(serverConnection);
-        expect(serverConnection.getSslSessionInfo()).andReturn(null);
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
-        expect(securityContext.getIdentityManager()).andReturn(identityManager);
-        expect(identityManager.verify(eq(expectedID), isA(Credential.class))).andReturn(account);
+        when(httpServerExchange.getConnection()).thenReturn(serverConnection);
+        when(serverConnection.getSslSessionInfo()).thenReturn(null);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
+        when(securityContext.getIdentityManager()).thenReturn(identityManager);
+        when(identityManager.verify(eq(whenedID), isA(Credential.class))).thenReturn(account);
         securityContext.authenticationComplete(account, "DATAWAVE-AUTH", false);
-        expect(httpServerExchange.getRequestStartTime()).andReturn(System.nanoTime());
-        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        when(httpServerExchange.getRequestStartTime()).thenReturn(System.nanoTime());
+        when(httpServerExchange.getRequestHeaders()).thenReturn(httpRequestHeaders);
         
         AuthenticationMechanismOutcome outcome = datawaveAuthenticationMechanism.authenticate(httpServerExchange, securityContext);
         assertEquals(AuthenticationMechanismOutcome.AUTHENTICATED, outcome);
