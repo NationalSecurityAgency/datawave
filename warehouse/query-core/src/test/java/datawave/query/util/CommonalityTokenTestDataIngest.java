@@ -104,6 +104,10 @@ public class CommonalityTokenTestDataIngest {
             mutation.put(datatype + "\u0000" + myUID, "FISH.WILD.3" + "\u0000" + "salmon", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "BIRD.WILD.3" + "\u0000" + "buzzard", columnVisibility, timeStamp, emptyValue);
             
+            // need some single attribute instances as well
+            mutation.put(datatype + "\u0000" + myUID, "DOG.WILD.1" + "\u0000" + "coyote", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "REPTILE.PET.1" + "\u0000" + "snake", columnVisibility, timeStamp, emptyValue);
+            
             bw.addMutation(mutation);
             
         } finally {
