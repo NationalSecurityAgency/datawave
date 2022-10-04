@@ -64,7 +64,7 @@ import org.apache.log4j.Logger;
 import java.util.Set;
 
 import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.NO_EXPANSION;
+import static datawave.query.jexl.functions.QueryFunctions.NO_EXPANSION;
 
 /**
  * Verifies that no filter function is run against an index-only field
