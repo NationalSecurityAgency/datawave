@@ -111,7 +111,7 @@ public class QueryModelVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO1 == 'baz' && filter:isNull(FOO1)");
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery("($1BAR == 'baz' || $2BAR == 'baz') && (filter:isNull($1BAR||$2BAR))");
         
-        ASTJexlScript groomed = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(script);
+        ASTJexlScript groomed = InvertNodeVisitor.invertSwappedNodes(script);
         ASTJexlScript actualScript = QueryModelVisitor.applyModel(groomed, model, allFields);
         
         assertScriptEquality(expectedScript, actualScript);
@@ -124,7 +124,7 @@ public class QueryModelVisitorTest {
         ASTJexlScript script = JexlASTHelper
                         .parseJexlQuery("ID1 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' || ID2 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' && "
                                         + "((_Bounded_ = true) && (DATE <= '2013-04-10 12:01:24' && DATE >= '2013-04-10 03:01:24'))");
-        ASTJexlScript groomed = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(script);
+        ASTJexlScript groomed = InvertNodeVisitor.invertSwappedNodes(script);
         ASTJexlScript result = QueryModelVisitor.applyModel(groomed, model, allFields);
         
         String expected = "ID1 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' || (ID2 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' && "
