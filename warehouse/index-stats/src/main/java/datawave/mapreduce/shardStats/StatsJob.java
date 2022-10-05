@@ -1,8 +1,7 @@
 package datawave.mapreduce.shardStats;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardStatsDataTypeHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.NumShards;
 import datawave.ingest.mapreduce.job.IngestJob;
 import datawave.ingest.mapreduce.job.MultiRFileOutputFormatter;
 import datawave.mr.bulk.BulkInputFormat;
@@ -201,10 +200,9 @@ public class StatsJob extends IngestJob {
             // if shard is actualy a day, split into shards
             if (shard.indexOf('_') < 0) {
                 // shard should be a day
-                int numShards = conf.getInt(ShardedDataTypeHandler.NUM_SHARDS, -1);
+                int numShards = new NumShards(conf).getNumShards(shard);
                 if (numShards < 0) {
-                    throw new IllegalArgumentException("Cannot determine the number of shards from the configuration.get(" + ShardedDataTypeHandler.NUM_SHARDS
-                                    + ")");
+                    throw new IllegalArgumentException("Cannot determine the number of shards. See: " + NumShards.class.getName());
                 }
                 
                 // create a range for each shard

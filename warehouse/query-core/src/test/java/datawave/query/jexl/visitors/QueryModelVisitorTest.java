@@ -17,6 +17,7 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -91,6 +92,46 @@ public class QueryModelVisitorTest {
         allFields.add("GEN");
         allFields.add("GENDER");
         allFields.add("GENERE");
+    }
+    
+    private void assertScriptEquality(ASTJexlScript expectedScript, ASTJexlScript actualScript) {
+        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedScript, actualScript);
+        if (!comparison.isEqual()) {
+            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
+            log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
+        }
+        Assert.assertTrue(comparison.getReason(), comparison.isEqual());
+    }
+    
+    @Test
+    public void testSpecialCharAppliedToNumericFunctionQuery() throws Exception {
+        model.addTermToModel("FOO1", "1BAR");
+        model.addTermToModel("FOO1", "2BAR");
+        
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO1 == 'baz' && filter:isNull(FOO1)");
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery("($1BAR == 'baz' || $2BAR == 'baz') && (filter:isNull($1BAR||$2BAR))");
+        
+        ASTJexlScript groomed = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(script);
+        ASTJexlScript actualScript = QueryModelVisitor.applyModel(groomed, model, allFields);
+        
+        assertScriptEquality(expectedScript, actualScript);
+    }
+    
+    @Test
+    public void testEmptyExpansion() throws Exception {
+        this.model = new QueryModel();
+        
+        ASTJexlScript script = JexlASTHelper
+                        .parseJexlQuery("ID1 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' || ID2 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' && "
+                                        + "((_Bounded_ = true) && (DATE <= '2013-04-10 12:01:24' && DATE >= '2013-04-10 03:01:24'))");
+        ASTJexlScript groomed = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(script);
+        ASTJexlScript result = QueryModelVisitor.applyModel(groomed, model, allFields);
+        
+        String expected = "ID1 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' || (ID2 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' && "
+                        + "((_Bounded_ = true) && (DATE >= '2013-04-10 03:01:24' && DATE <= '2013-04-10 12:01:24')))";
+        String actual = JexlStringBuildingVisitor.buildQuery(result);
+        
+        assertResult(expected, actual);
     }
     
     @Test
@@ -344,7 +385,7 @@ public class QueryModelVisitorTest {
     
     @Test
     public void testModelExpansionWithNoExpansionFunction() {
-        // model contains expansions for both FIELD_A and FIELD_B, presence of filter:noExpansion(FIELD_B) prevents
+        // model contains expansions for both FIELD_A and FIELD_B, presence of f:noExpansion(FIELD_B) prevents
         // that portion of the model expansion.
         QueryModel model = new QueryModel();
         model.addTermToModel("FIELD_A", "FIELD_AA");
@@ -358,30 +399,30 @@ public class QueryModelVisitorTest {
         testNoExpansion(query, expected, model, Collections.emptySet());
         
         // only FIELD_B is expanded
-        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_A)";
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_A)";
         expected = "FIELD_A == 'bar' && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A"));
         
         // only FIELD_A is expanded
-        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_B)";
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_B)";
         expected = "(FIELD_AB == 'bar' || FIELD_AA == 'bar') && FIELD_B == 'baz'";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_B"));
         
         // neither field is expanded
-        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_A,FIELD_B)";
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_A,FIELD_B)";
         expected = "FIELD_A == 'bar' && FIELD_B == 'baz'";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_B"));
         
         // both fields are expanded, NoExpansion function specified a field that does not exist in the query
-        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_X,FIELD_Y)";
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_X,FIELD_Y)";
         expected = "(FIELD_AA == 'bar' || FIELD_AB == 'bar') && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_X", "FIELD_Y"));
         
-        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_X,FIELD_Y,FIELD_A)";
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_X,FIELD_Y,FIELD_A)";
         expected = "FIELD_A == 'bar' && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_X", "FIELD_Y"));
         
-        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_A,FIELD_X,FIELD_Y)";
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_A,FIELD_X,FIELD_Y)";
         expected = "FIELD_A == 'bar' && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_X", "FIELD_Y"));
     }
@@ -393,9 +434,20 @@ public class QueryModelVisitorTest {
         model.addTermToModel("FIELD_A", "FIELD_B");
         model.addTermToModel("FIELD_A", "FIELD_C");
         
-        String query = "FIELD_A == 'bar' && filter:noExpansion(FIELD_C)";
+        String query = "FIELD_A == 'bar' && f:noExpansion(FIELD_C)";
         String expected = "(FIELD_B == 'bar' || FIELD_C == 'bar')";
         testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_C"));
+    }
+    
+    @Test
+    public void testNoExpansionWithFunctions() {
+        QueryModel model = new QueryModel();
+        model.addTermToModel("FIELD_A", "FIELD_B");
+        model.addTermToModel("FIELD_A", "FIELD_C");
+        
+        String query = "filter:includeRegex(FIELD_A, 'ba.*') && f:noExpansion(FIELD_A)";
+        String expected = "filter:includeRegex(FIELD_A, 'ba.*')";
+        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A"));
     }
     
     private void testNoExpansion(String query, String expected, QueryModel model, Set<String> expectedFields) {

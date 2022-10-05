@@ -55,6 +55,7 @@
             <property name="parser" ref="LuceneToJexlQueryParser"/>
         </bean>
         <bean class="datawave.query.language.functions.jexl.ExcerptFields"/>
+        <bean class="datawave.query.language.functions.jexl.Matches"/>
     </util:list>
 
     <!-- Fields we should not tokenize in a tokenized query. In non-tokenized 
@@ -127,6 +128,24 @@
     <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
         <property name="roleManager" ref="easyRoleManager" />
         <property name="markingFunctions" ref="markingFunctions" />
+    </bean>
+
+    <!-- Here is an example of configuring a remote query service and a remote event query -->
+    <bean id="RemoteQueryService" class="datawave.webservice.query.remote.RemoteQueryServiceImpl">
+        <property name="queryServiceScheme" value="https" />
+        <property name="queryServiceHost" value="localhost" />
+        <property name="queryServicePort" value="9443" />
+	<property name="queryServiceURI" value="/DataWave/Query/" />
+    </bean>
+
+    <bean id="RemoteEventQuery" parent="baseQueryLogic" class="datawave.query.tables.RemoteEventQueryLogic">
+        <property name="tableName" value="${shard.table.name}" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Retrieve sharded events/documents, leveraging the global index tables as needed" />
+        <property name="maxResults" value="${event.query.max.results}" />
+        <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
+        <property name="remoteQueryService" ref="RemoteQueryService" />
+        <property name="remoteQueryLogic" value="EventQuery" />
     </bean>
 
     <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.tables.ShardQueryLogic" abstract="true">
