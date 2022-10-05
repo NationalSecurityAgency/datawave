@@ -27,12 +27,12 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 
 public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
     
-    private static final String BETWEEN = "between";
-    private static final String LENGTH = "length";
+    public static final String BETWEEN = "between";
+    public static final String LENGTH = "length";
+    public static final String INCLUDE_TEXT = "includeText";
     
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
-     *
      */
     public static class QueryJexlArgumentDescriptor implements JexlArgumentDescriptor {
         private final ASTFunctionNode node;
@@ -61,6 +61,9 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 case QueryFunctions.MATCH_REGEX:
                     // Return an index query.
                     return getIndexQuery();
+                case INCLUDE_TEXT:
+                    // Return the appropriate index query.
+                    return getTextIndexQuery();
                 default:
                     // Return the true node if unable to parse arguments.
                     return TRUE_NODE;
@@ -88,6 +91,27 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             }
         }
         
+        private JexlNode getTextIndexQuery() {
+            JexlNode node0 = args.get(0);
+            final String value = args.get(1).image;
+            if (node0 instanceof ASTIdentifier) {
+                final String field = JexlASTHelper.deconstructIdentifier(node0.image);
+                return JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
+            } else {
+                // node0 is an Or node or an And node
+                // copy it
+                JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
+                int i = 0;
+                for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
+                    String field = JexlASTHelper.deconstructIdentifier(identifier.image);
+                    JexlNode kid = JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
+                    kid.jjtSetParent(newParent);
+                    newParent.jjtAddChild(kid, i++);
+                }
+                return newParent;
+            }
+        }
+        
         @Override
         public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
             // noop, covered by getIndexQuery (see comments on interface)
@@ -95,9 +119,12 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         
         @Override
         public Set<String> fieldsForNormalization(MetadataHelper helper, Set<String> datatypeFilter, int arg) {
-            // all functions use the fields in the first argument for normalization
-            if (arg > 0) {
-                return fields(helper, datatypeFilter);
+            // Do not normalize fields for the includeText function.
+            if (!name.equalsIgnoreCase(INCLUDE_TEXT)) {
+                // All other functions use the fields in the first argument for normalization.
+                if (arg > 0) {
+                    return fields(helper, datatypeFilter);
+                }
             }
             return Collections.emptySet();
         }
@@ -130,10 +157,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
     
     @Override
     public JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node) {
-        FunctionJexlNodeVisitor fvis = new FunctionJexlNodeVisitor();
-        fvis.visit(node, null);
-        
-        Class<?> functionClass = (Class<?>) ArithmeticJexlEngines.functions().get(fvis.namespace());
+        FunctionJexlNodeVisitor visitor = FunctionJexlNodeVisitor.eval(node);
+        Class<?> functionClass = (Class<?>) ArithmeticJexlEngines.functions().get(visitor.namespace());
         
         if (!QueryFunctions.QUERY_FUNCTION_NAMESPACE.equals(node.jjtGetChild(0).image))
             throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of "
@@ -142,9 +167,9 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in "
                             + functionClass);
         
-        verify(fvis.name(), fvis.args().size());
+        verify(visitor.name(), visitor.args().size());
         
-        return new QueryJexlArgumentDescriptor(node, fvis.namespace(), fvis.name(), fvis.args());
+        return new QueryJexlArgumentDescriptor(node, visitor.namespace(), visitor.name(), visitor.args());
     }
     
     private static void verify(String name, int numArgs) {
@@ -171,6 +196,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             case QueryFunctions.GROUPBY_FUNCTION:
             case QueryFunctions.EXCERPT_FIELDS_FUNCTION:
             case QueryFunctions.MATCH_REGEX:
+            case QueryFunctions.INCLUDE_TEXT:
+            case QueryFunctions.NO_EXPANSION:
                 if (numArgs == 0) {
                     throw new IllegalArgumentException("Expected at least one argument to the " + name + " function");
                 }
