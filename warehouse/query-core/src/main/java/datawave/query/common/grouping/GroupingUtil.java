@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -84,7 +85,7 @@ public class GroupingUtil {
                                 countKeyMap.put(countKey, count);
                             });
             
-            Multimap<String,String> fieldToFieldWithContextMap = getFieldToFieldWithGroupingContextMap(entry.getValue(), expandedGroupFieldsList, fieldMap,
+            TreeMultimap<String,String> fieldToFieldWithContextMap = (TreeMultimap<String, String>) getFieldToFieldWithGroupingContextMap(entry.getValue(), expandedGroupFieldsList, fieldMap,
                             groupFieldsSet, reverseModelMapping);
             log.trace("got a new fieldToFieldWithContextMap: {}", fieldToFieldWithContextMap);
             int longest = longestValueList(fieldToFieldWithContextMap);
@@ -93,13 +94,13 @@ public class GroupingUtil {
                 String currentGroupingContext = convertGroupingContext(i);
                 for (String fieldListItem : expandedGroupFieldsList) {
                     log.trace("fieldListItem: {}", fieldListItem);
-                    Collection<String> gtNames = fieldToFieldWithContextMap.get(fieldListItem);
+                    NavigableSet<String> gtNames = fieldToFieldWithContextMap.get(fieldListItem);
                     if (gtNames == null || gtNames.isEmpty()) {
                         log.trace("gtNames: {}", gtNames);
                         log.trace("fieldToFieldWithContextMap: {} did not contain: {}", fieldToFieldWithContextMap, fieldListItem);
                     } else {
                         String nameWithGrouping = fieldListItem + "." + currentGroupingContext;
-                        final String gtName = gtNames.stream().filter(name -> nameWithGrouping.equals(name)).findAny().orElse(null);
+                        final String gtName = gtNames.contains(nameWithGrouping) ? nameWithGrouping : null;
                         if (gtName == null || gtName.isEmpty()) {
                             continue;
                         }
