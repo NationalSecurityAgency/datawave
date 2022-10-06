@@ -63,6 +63,7 @@ import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
+import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
@@ -1158,7 +1159,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Handle case when input field value pairs are swapped
      */
     protected ASTJexlScript timedInvertSwappedNodes(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Invert Swapped Nodes", () -> (JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(script)));
+        return visitorManager.timedVisit(timers, "Invert Swapped Nodes", () -> (InvertNodeVisitor.invertSwappedNodes(script)));
     }
     
     /**
