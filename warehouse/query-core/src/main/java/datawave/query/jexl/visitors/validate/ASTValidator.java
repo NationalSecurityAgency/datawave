@@ -66,7 +66,7 @@ public class ASTValidator {
     }
     
     /**
-     * Determines if the AST meets all basic assumptions of validity. Throws an exception if the AST if not valid.
+     * Determines if the AST meets all basic assumptions of validity. Throws an exception if the AST is not valid.
      *
      * @param root
      *            an arbitrary JexlNode
