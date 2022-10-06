@@ -196,7 +196,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
     
     @Override
-    public QueryLogicTransformer getEnrichedTransformer(Query settings) {
+    public final QueryLogicTransformer getEnrichedTransformer(Query settings) {
         QueryLogicTransformer transformer = this.getTransformer(settings);
         if (responseEnricherBuilder != null) {
             transformer.setResponseEnricher(responseEnricherBuilder.withConfig(getConfig()).withMarkingFunctions(getMarkingFunctions())

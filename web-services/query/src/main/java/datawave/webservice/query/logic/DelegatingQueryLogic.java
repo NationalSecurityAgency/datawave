@@ -84,7 +84,7 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     }
     
     @Override
-    public QueryLogicTransformer getEnrichedTransformer(Query settings) {
+    public final QueryLogicTransformer getEnrichedTransformer(Query settings) {
         return delegate.getEnrichedTransformer(settings);
     }
     
