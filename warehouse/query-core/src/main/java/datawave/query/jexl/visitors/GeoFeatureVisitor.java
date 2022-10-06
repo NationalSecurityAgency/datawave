@@ -7,6 +7,9 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.map.QueryGeometry;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 import org.geotools.geojson.geom.GeometryJSON;
@@ -18,7 +21,7 @@ import java.util.Set;
 /**
  * This visitor will traverse the query tree, and extract both the geo function and associated query geometry (as GeoJSON).
  */
-public class GeoFeatureVisitor extends BaseVisitor {
+public class GeoFeatureVisitor extends ShortCircuitBaseVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(GeoFeatureVisitor.class);
     
     private Set<QueryGeometry> geoFeatures;
@@ -84,5 +87,24 @@ public class GeoFeatureVisitor extends BaseVisitor {
         }
         
         return node;
+    }
+    
+    // Descend through these nodes
+    @Override
+    public Object visit(ASTJexlScript node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTReferenceExpression node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
     }
 }

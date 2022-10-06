@@ -1,17 +1,11 @@
 package datawave.query.jexl.visitors;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
-
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.MetadataHelper;
-
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -23,18 +17,27 @@ import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.ASTNotNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
+
 /**
  * Class to check that each query node contains a field which exists in the schema.
- * 
+ *
  * <pre>
  * 1. If a datatype filter was specified, then the existence check is limited to only those datatypes
  * 2. If a datatype filter is NOT specified (null or empty), this implies ALL datatypes.
  * </pre>
  */
-public class FieldMissingFromSchemaVisitor extends BaseVisitor {
+public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
     
     private static final Logger log = Logger.getLogger(FieldMissingFromSchemaVisitor.class);
     
@@ -66,7 +69,6 @@ public class FieldMissingFromSchemaVisitor extends BaseVisitor {
     }
     
     /**
-     *
      * @param node
      *            Jexl node
      * @param data
@@ -157,4 +159,36 @@ public class FieldMissingFromSchemaVisitor extends BaseVisitor {
         
         return nonExistentFieldNames;
     }
+    
+    // Descend through these nodes
+    @Override
+    public Object visit(ASTJexlScript node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTAndNode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTNotNode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTReferenceExpression node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
 }

@@ -4,6 +4,7 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.annotation.Metric;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectReader;
 import datawave.configuration.RefreshableScope;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
@@ -118,6 +119,7 @@ public class RemoteQueryMetricService extends RemoteHttpService {
     @PostConstruct
     public void init() {
         super.init();
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         voidResponseReader = objectMapper.readerFor(VoidResponse.class);
         baseQueryMetricListResponseReader = objectMapper.readerFor(BaseQueryMetricListResponse.class);
         queryGeometryResponseReader = objectMapper.readerFor(QueryGeometryResponse.class);

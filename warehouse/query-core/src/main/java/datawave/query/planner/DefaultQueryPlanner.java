@@ -30,7 +30,6 @@ import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.function.JexlEvaluation;
-import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
@@ -64,6 +63,7 @@ import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
+import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
@@ -1164,7 +1164,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Handle case when input field value pairs are swapped
      */
     protected ASTJexlScript timedInvertSwappedNodes(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Invert Swapped Nodes", () -> (JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(script)));
+        return visitorManager.timedVisit(timers, "Invert Swapped Nodes", () -> (InvertNodeVisitor.invertSwappedNodes(script)));
     }
     
     /**
@@ -2414,29 +2414,36 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.trace("query stream is " + stream.context());
             }
             
-            // if a term threshold is exceeded and we cannot handle that, then
-            // force a full table scan
-            boolean thresholdExceeded = StreamContext.EXCEEDED_TERM_THRESHOLD.equals(stream.context());
-            if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && thresholdExceeded && !config.canHandleExceededTermThreshold()) {
-                log.debug("Needs full table scan because we exceeded the term threshold and config.canHandleExceededTermThreshold() is false");
-                needsFullTable = true;
+            switch (stream.context()) {
+                case EXCEEDED_TERM_THRESHOLD:
+                    // throw an unsupported exception if the planner cannot handle term threshold exceeded
+                    if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededTermThreshold()) {
+                        log.debug("Needs full table scan because we exceeded the term threshold and config.canHandleExceededTermThreshold() is false");
+                    } else {
+                        throw new UnsupportedOperationException(EXCEED_TERM_EXPANSION_ERROR);
+                    }
+                    needsFullTable = true;
+                    break;
+                case UNINDEXED:
+                    if (log.isDebugEnabled()) {
+                        log.debug("Full table scan required because of unindexed fields");
+                    }
+                    needsFullTable = true;
+                    break;
+                case DELAYED_FIELD:
+                    if (log.isDebugEnabled()) {
+                        log.debug("Full table scan required because query consists of only delayed expressions");
+                    }
+                    needsFullTable = true;
+                    break;
+                default:
+                    // the context is good and does not prevent a query from executing
             }
             
-            if (StreamContext.UNINDEXED.equals(stream.context())) {
+            // check for the case where we cannot handle an ivarator but the query requires an ivarator
+            if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
+                log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
                 needsFullTable = true;
-                fullTableScanReason = "Needs full table scan because of unindexed fields";
-                log.debug(fullTableScanReason);
-            } else if (StreamContext.DELAYED_FIELD.equals(stream.context())) {
-                fullTableScanReason = "Needs full table scan because query consists of only delayed expressions";
-                needsFullTable = true;
-                log.debug(fullTableScanReason);
-            }
-            // if a value threshold is exceeded and we cannot handle that, then
-            // force a full table scan
-            else if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
-                fullTableScanReason = "Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false";
-                needsFullTable = true;
-                log.debug(fullTableScanReason);
             }
             
             stopwatch.stop();
