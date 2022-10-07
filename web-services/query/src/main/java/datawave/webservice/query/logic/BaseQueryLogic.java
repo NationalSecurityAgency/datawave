@@ -199,8 +199,15 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public final QueryLogicTransformer getEnrichedTransformer(Query settings) {
         QueryLogicTransformer transformer = this.getTransformer(settings);
         if (responseEnricherBuilder != null) {
-            transformer.setResponseEnricher(responseEnricherBuilder.withConfig(getConfig()).withMarkingFunctions(getMarkingFunctions())
-                            .withResponseObjectFactory(responseObjectFactory).withPrincipal(getPrincipal()).build());
+            //@formatter:off
+            ResponseEnricher enricher = responseEnricherBuilder
+                    .withConfig(getConfig())
+                    .withMarkingFunctions(getMarkingFunctions())
+                    .withResponseObjectFactory(responseObjectFactory)
+                    .withPrincipal(getPrincipal())
+                    .build();
+            //@formatter:on
+            transformer.setResponseEnricher(enricher);
         }
         return transformer;
     }
