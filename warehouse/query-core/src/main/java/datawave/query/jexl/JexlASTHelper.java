@@ -19,8 +19,8 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
+import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.validate.JunctionValidatingVisitor;
 import datawave.query.postprocessing.tf.Function;
@@ -546,7 +546,7 @@ public class JexlASTHelper {
                 // this should no longer happen after the fix to groom the query by reordering binary expressions that
                 // have the literal on the left side
                 // if this is a range op, i must reverse the logic:
-                node = (JexlNode) node.jjtAccept(new InvertNodeVisitor(), null);
+                node = InvertNodeVisitor.invertSwappedNodes(node);
                 return new IdentifierOpLiteral((ASTIdentifier) child2, node, child1);
             }
         }
@@ -1683,115 +1683,5 @@ public class JexlASTHelper {
             }
             return data;
         }
-    }
-    
-    public static class InvertNodeVisitor extends RebuildingVisitor {
-        
-        public static <T extends JexlNode> T invertSwappedNodes(T script) {
-            InvertNodeVisitor visitor = new InvertNodeVisitor();
-            
-            return (T) script.jjtAccept(visitor, null);
-        }
-        
-        private JexlNode reparent(JexlNode in, JexlNode out) {
-            int j = 0;
-            for (int i = in.jjtGetNumChildren() - 1; i >= 0; i--) {
-                JexlNode kid = in.jjtGetChild(i);
-                kid = (JexlNode) kid.jjtAccept(this, null);
-                out.jjtAddChild(kid, j++);
-                kid.jjtSetParent(out);
-            }
-            return out;
-        }
-        
-        @Override
-        public Object visit(ASTGENode node, Object data) {
-            
-            if (node.jjtGetNumChildren() == 2) {
-                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
-                if (isLiteral(child1)) {
-                    return reparent(node, new ASTLENode(ParserTreeConstants.JJTLENODE));
-                }
-            }
-            return super.visit(node, data);
-        }
-        
-        @Override
-        public Object visit(ASTLENode node, Object data) {
-            if (node.jjtGetNumChildren() == 2) {
-                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
-                if (isLiteral(child1)) {
-                    return reparent(node, new ASTGENode(ParserTreeConstants.JJTGENODE));
-                }
-            }
-            return super.visit(node, data);
-        }
-        
-        @Override
-        public Object visit(ASTGTNode node, Object data) {
-            if (node.jjtGetNumChildren() == 2) {
-                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
-                if (isLiteral(child1)) {
-                    return reparent(node, new ASTLTNode(ParserTreeConstants.JJTLTNODE));
-                }
-            }
-            return super.visit(node, data);
-        }
-        
-        @Override
-        public Object visit(ASTLTNode node, Object data) {
-            if (node.jjtGetNumChildren() == 2) {
-                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
-                if (isLiteral(child1)) {
-                    return reparent(node, new ASTGTNode(ParserTreeConstants.JJTGTNODE));
-                }
-            }
-            return super.visit(node, data);
-        }
-        
-        @Override
-        public Object visit(ASTEQNode node, Object data) {
-            if (node.jjtGetNumChildren() == 2) {
-                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
-                if (isLiteral(child1)) {
-                    return reparent(node, new ASTEQNode(ParserTreeConstants.JJTEQNODE));
-                }
-            }
-            return super.visit(node, data);
-        }
-        
-        @Override
-        public Object visit(ASTERNode node, Object data) {
-            if (node.jjtGetNumChildren() == 2) {
-                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
-                if (isLiteral(child1)) {
-                    return reparent(node, new ASTERNode(ParserTreeConstants.JJTERNODE));
-                }
-            }
-            return super.visit(node, data);
-        }
-        
-        @Override
-        public Object visit(ASTNENode node, Object data) {
-            if (node.jjtGetNumChildren() == 2) {
-                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
-                if (isLiteral(child1)) {
-                    return reparent(node, new ASTNENode(ParserTreeConstants.JJTNENODE));
-                }
-            }
-            return super.visit(node, data);
-        }
-        
-        @Override
-        public Object visit(ASTNRNode node, Object data) {
-            if (node.jjtGetNumChildren() == 2) {
-                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
-                if (isLiteral(child1)) {
-                    return reparent(node, new ASTNRNode(ParserTreeConstants.JJTNRNODE));
-                }
-            }
-            return super.visit(node, data);
-        }
-        
     }
 }
