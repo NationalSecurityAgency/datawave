@@ -18,7 +18,7 @@ public abstract class BaseHdfsFileCacheUtil {
     protected final Configuration conf;
     protected AccumuloHelper accumuloHelper;
     
-    protected static String delimiter = "\t";
+    protected String delimiter = "\t";
     private static final int MAX_RETRIES = 3;
     protected short cacheReplicas = 3;
     
