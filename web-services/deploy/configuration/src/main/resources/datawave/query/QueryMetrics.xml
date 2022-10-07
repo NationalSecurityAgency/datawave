@@ -20,8 +20,6 @@
 	<property>
 		<name>AccumuloRecordWriter.password</name>
 		<value>${accumulo.user.password}</value>
-		<!--	unset to use environment variable	-->
-		<!--	<value>${DW_ACCUMULO_PASSWORD}</value>-->
 	</property>
 
 	<property>

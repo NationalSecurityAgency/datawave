@@ -150,8 +150,6 @@
 
     <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.tables.ShardQueryLogic" abstract="true">
         <property name="accumuloPassword" value="${accumulo.user.password}" />
-        <!--   unset to pull the password from the environment     -->
-        <!--   <property name="accumuloPasswordEnv" value="${accumulo.user.password.env}" />-->
         <property name="tableName" value="${shard.table.name}" />
         <property name="dateIndexTableName" value="${date.index.table.name}" />
         <property name="dateIndexHelperFactory" ref="dateIndexHelperFactory" />

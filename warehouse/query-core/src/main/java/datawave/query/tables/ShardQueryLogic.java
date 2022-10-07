@@ -2041,14 +2041,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setAccumuloPassword(password);
     }
     
-    public String getAccumuloPasswordEnv() {
-        return getConfig().getAccumuloPasswordEnv();
-    }
-    
-    public void setAccumuloPasswordEnv(String accumuloPasswordEnv) {
-        getConfig().setAccumuloPasswordEnv(accumuloPasswordEnv);
-    }
-    
     public boolean isExpansionLimitedToModelContents() {
         return getConfig().isExpansionLimitedToModelContents();
     }

@@ -60,7 +60,6 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(1000, config.getMaxIndexBatchSize());
         Assert.assertFalse(config.isAllTermsIndexOnly());
         Assert.assertEquals("", config.getAccumuloPassword());
-        Assert.assertEquals("", config.getAccumuloPasswordEnv());
         Assert.assertEquals(Long.MAX_VALUE, config.getMaxIndexScanTimeMillis());
         Assert.assertFalse(config.getCollapseUids());
         Assert.assertFalse(config.getParseTldUids());
@@ -295,9 +294,6 @@ public class ShardQueryConfigurationTest {
         other.setNoExpansionFields(noExpansionFields);
         other.setDisallowedRegexPatterns(disallowedRegexPatterns);
         other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
-        
-        // order of operations matters here
-        other.setAccumuloPasswordEnv("PASSWORD");
         other.setAccumuloPassword("ChangeIt");
         
         // Copy 'other' ShardQueryConfiguration into a new config
@@ -384,7 +380,6 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
         Assert.assertEquals("ChangeIt", config.getAccumuloPassword());
-        Assert.assertEquals("PASSWORD", config.getAccumuloPasswordEnv());
         
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
@@ -485,7 +480,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 189;
+        int expectedObjectCount = 188;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

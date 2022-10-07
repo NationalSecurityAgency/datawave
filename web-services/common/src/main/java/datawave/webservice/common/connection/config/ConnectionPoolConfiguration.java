@@ -1,7 +1,7 @@
 package datawave.webservice.common.connection.config;
 
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import org.apache.commons.lang3.StringUtils;
+import datawave.webservice.util.EnvProvider;
 import org.apache.deltaspike.core.api.config.ConfigResolver;
 import org.apache.log4j.Logger;
 
@@ -37,24 +37,8 @@ public class ConnectionPoolConfiguration {
      * @return the resolved password
      */
     protected String resolvePassword(String poolName) {
-        String pw = ConfigResolver.getPropertyValue("dw." + poolName + ".accumulo.password");
-        String envTarget = ConfigResolver.getPropertyValue("dw." + poolName + ".accumulo.password.env");
-        if (StringUtils.isNotBlank(envTarget)) {
-            if (log.isTraceEnabled()) {
-                log.trace("env target is: " + envTarget);
-            }
-            
-            // only set use the value from the environment if it is not blank
-            String envPass = System.getenv(envTarget);
-            if (StringUtils.isNotBlank(envPass)) {
-                log.trace("env target was resolved");
-                pw = envPass;
-            } else {
-                log.error("failed to resolve value from env target: " + envTarget);
-            }
-        }
-        
-        return pw;
+        String value = ConfigResolver.getPropertyValue("dw." + poolName + ".accumulo.password");
+        return EnvProvider.resolve(value);
     }
     
     public String getUsername() {

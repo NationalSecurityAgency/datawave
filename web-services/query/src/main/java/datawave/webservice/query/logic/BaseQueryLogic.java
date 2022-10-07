@@ -59,7 +59,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setBaseIteratorPriority(other.getBaseIteratorPriority());
         setBypassAccumulo(other.getBypassAccumulo());
         setAccumuloPassword(other.getAccumuloPassword());
-        setAccumuloPasswordEnv(other.getAccumuloPasswordEnv());
         
         // Other variables
         setMaxResults(other.maxResults);
@@ -224,14 +223,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     public void setAccumuloPassword(String accumuloPassword) {
         getConfig().setAccumuloPassword(accumuloPassword);
-    }
-    
-    public String getAccumuloPasswordEnv() {
-        return getConfig().getAccumuloPasswordEnv();
-    }
-    
-    public void setAccumuloPasswordEnv(String accumuloPasswordEnv) {
-        getConfig().setAccumuloPasswordEnv(accumuloPasswordEnv);
     }
     
     @Override

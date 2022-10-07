@@ -36,8 +36,6 @@
 		<constructor-arg name="typeMetadataHelperFactory" ref="typeMetadataHelperFactory" />
 		<constructor-arg name="instance" value="${accumulo.instance.name}" />
 		<constructor-arg name="password" value="${accumulo.user.password}" />
-		<!--	uncomment to pull the password from the environment	-->
-		<!--	<constructor-arg name="passwordEnv" value="${accumulo.user.password.env}" /> -->
 		<constructor-arg name="username" value="${accumulo.user.name}" />
 		<constructor-arg name="allMetadataAuths" ref="allMetadataAuths" />
 		<constructor-arg name="lockWaitTime" value="1000" />
