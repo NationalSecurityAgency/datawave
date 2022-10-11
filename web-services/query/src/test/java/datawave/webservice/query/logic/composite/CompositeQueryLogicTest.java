@@ -534,7 +534,7 @@ public class CompositeQueryLogicTest {
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
-        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer((Query) settings).createResponse(page);
+        TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
         assertEquals(8, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             assertNotNull(r);
@@ -601,7 +601,8 @@ public class CompositeQueryLogicTest {
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
-        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer((Query) settings).createResponse(page);
+        
+        TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
         assertEquals(4, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             assertNotNull(r);
@@ -664,7 +665,7 @@ public class CompositeQueryLogicTest {
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
-        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer((Query) settings).createResponse(page);
+        TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
         assertEquals(8, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             assertNotNull(r);
@@ -727,7 +728,7 @@ public class CompositeQueryLogicTest {
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
-        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer((Query) settings).createResponse(page);
+        TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
         assertEquals(8, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             assertNotNull(r);

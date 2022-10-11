@@ -223,7 +223,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setQueryModel(other.getQueryModel());
         this.setScannerFactory(other.getScannerFactory());
         this.setScheduler(other.getScheduler());
-        this.setEventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer());
         
         log.trace("copy CTOR setting metadataHelperFactory to " + other.getMetadataHelperFactory());
         this.setMetadataHelperFactory(other.getMetadataHelperFactory());
@@ -235,7 +234,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setPrimaryToSecondaryFieldMap(other.getPrimaryToSecondaryFieldMap());
         
         if (other.eventQueryDataDecoratorTransformer != null) {
-            this.eventQueryDataDecoratorTransformer = new EventQueryDataDecoratorTransformer(other.eventQueryDataDecoratorTransformer);
+            this.setEventQueryDataDecoratorTransformer(new EventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer()));
         }
     }
     
@@ -604,6 +603,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         transformer.setQm(queryModel);
         this.transformerInstance = transformer;
         addConfigBasedTransformers();
+        
         return this.transformerInstance;
     }
     

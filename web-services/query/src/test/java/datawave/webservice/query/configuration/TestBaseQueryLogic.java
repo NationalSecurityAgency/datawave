@@ -59,6 +59,7 @@ public class TestBaseQueryLogic {
         when(this.copy.getRoleManager()).thenReturn(roleManager);
         when(this.copy.getSelectorExtractor()).thenReturn(null);
         when(this.copy.getBypassAccumulo()).thenReturn(false);
+        when(this.copy.getResponseEnricherBuilder()).thenReturn(null);
         
         // Run the test
         BaseQueryLogic<Object> subject = new TestQueryLogic<>(this.copy);

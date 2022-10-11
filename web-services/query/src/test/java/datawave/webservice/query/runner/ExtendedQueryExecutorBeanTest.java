@@ -519,7 +519,7 @@ public class ExtendedQueryExecutorBeanTest {
         assertThrows(DatawaveWebApplicationException.class, () -> subject.cancel(queryId.toString()));
         
     }
-
+    
     @Disabled
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
@@ -531,7 +531,7 @@ public class ExtendedQueryExecutorBeanTest {
             UUID queryId = UUID.randomUUID();
             String userSid = "userSid";
             String queryAuthorizations = "AUTH_1";
-
+            
             // Set expectations of the create logic
             when(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).thenReturn(false);
             when(this.context.getCallerPrincipal()).thenReturn(this.principal);
@@ -760,9 +760,10 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.runningQuery.getLastPageNumber()).thenReturn(pageNumber);
         when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
         when(this.runningQuery.getSettings()).thenReturn(this.query);
-        when(this.queryLogic1.getTransformer(this.query)).thenReturn(this.transformer);
+        when(this.queryLogic1.getEnrichedTransformer(this.query)).thenReturn(this.transformer);
         when(this.transformer.createResponse(this.resultsPage)).thenReturn(this.baseResponse);
         when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.COMPLETE);
+        
         this.baseResponse.setHasResults(true);
         this.baseResponse.setPageNumber(pageNumber);
         when(this.queryLogic1.getLogicName()).thenReturn(queryLogicName);
@@ -1078,9 +1079,10 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.runningQuery.getLastPageNumber()).thenReturn(pageNumber);
         when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
         when(this.runningQuery.getSettings()).thenReturn(this.query);
-        when(this.queryLogic1.getTransformer(this.query)).thenReturn(this.transformer);
+        when(this.queryLogic1.getEnrichedTransformer(this.query)).thenReturn(this.transformer);
         when(this.transformer.createResponse(this.resultsPage)).thenReturn(this.baseResponse);
         when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.COMPLETE);
+        
         this.baseResponse.setHasResults(true);
         this.baseResponse.setPageNumber(pageNumber);
         when(this.queryLogic1.getLogicName()).thenReturn(queryLogicName);
@@ -1351,7 +1353,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.runningQuery.next()).thenReturn(this.resultsPage);
         when(this.runningQuery.getLastPageNumber()).thenReturn(pageNumber);
         when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
-        when(this.queryLogic1.getTransformer(this.query)).thenReturn(this.transformer);
+        when(this.queryLogic1.getEnrichedTransformer(this.query)).thenReturn(this.transformer);
         when(this.transformer.createResponse(this.resultsPage)).thenReturn(this.baseResponse);
         when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.NONE);
         this.baseResponse.setHasResults(false);
@@ -3064,7 +3066,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
         when(this.httpHeaders.getAcceptableMediaTypes()).thenReturn(mediaTypes);
         when(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).thenReturn((QueryLogic) this.queryLogic1);
-        when(this.queryLogic1.getTransformer(isA(Query.class))).thenReturn(this.transformer);
+        when(this.queryLogic1.getEnrichedTransformer(isA(Query.class))).thenReturn(this.transformer);
         when(this.transformer.createResponse(isA(ResultsPage.class))).thenReturn(this.baseResponse);
         when(subject.createQuery(queryLogicName, params, httpHeaders)).thenReturn(createResponse);
         when(this.cache.get(eq(queryId.toString()))).thenReturn(this.runningQuery);
