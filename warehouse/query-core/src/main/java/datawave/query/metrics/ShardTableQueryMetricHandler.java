@@ -473,7 +473,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 }
             }
             
-            BaseQueryResponse queryResponse = queryLogic.getTransformer(query).createResponse(new ResultsPage(objectList));
+            BaseQueryResponse queryResponse = queryLogic.getEnrichedTransformer(query).createResponse(new ResultsPage(objectList));
             List<QueryExceptionType> exceptions = queryResponse.getExceptions();
             
             if (queryResponse.getExceptions() != null && !queryResponse.getExceptions().isEmpty()) {
