@@ -27,8 +27,19 @@ public class ASTValidator {
     
     private static final Logger log = Logger.getLogger(ASTValidator.class);
     
-    // this is a static utility class
-    private ASTValidator() {}
+    private boolean isValid;
+    private final List<String> reasons = new ArrayList<>();
+    
+    // toggles
+    private boolean validateLineage;
+    private boolean validateFlatten;
+    private boolean validateJunctions;
+    private boolean validateReferenceExpressions;
+    private boolean validateQueryPropertyMarkers;
+    
+    public ASTValidator() {
+        // empty constructor
+    }
     
     /**
      * Determines if the provided AST meets all basic assumptions. Intended to be called outside of normal visitor validation
@@ -37,7 +48,7 @@ public class ASTValidator {
      *            an arbitrary JexlNode
      * @return true if the tree is valid, otherwise throws an exception
      */
-    public static boolean isValid(JexlNode root) throws InvalidQueryTreeException {
+    public boolean isValid(JexlNode root) throws InvalidQueryTreeException {
         return isValid(root, null, true);
     }
     
@@ -50,12 +61,12 @@ public class ASTValidator {
      *            the visitor calling this method
      * @return true if the AST is valid, otherwise
      */
-    public static boolean isValid(JexlNode root, String sourceVisitor) throws InvalidQueryTreeException {
+    public boolean isValid(JexlNode root, String sourceVisitor) throws InvalidQueryTreeException {
         return isValid(root, sourceVisitor, true);
     }
     
     /**
-     * Determines if the AST meets all basic assumptions of validity. Throws an exception if the AST if not valid.
+     * Determines if the AST meets all basic assumptions of validity. Throws an exception if the AST is not valid.
      *
      * @param root
      *            an arbitrary JexlNode
@@ -65,39 +76,20 @@ public class ASTValidator {
      *            boolean to throw an exception if the tree fails validation
      * @return true if the AST is valid, otherwise throws an exception
      */
-    public static boolean isValid(JexlNode root, String sourceVisitor, boolean failHard) throws InvalidQueryTreeException {
+    public boolean isValid(JexlNode root, String sourceVisitor, boolean failHard) throws InvalidQueryTreeException {
         
         log.info("Validating tree after visiting " + sourceVisitor);
         
-        boolean isLineageValid = isLineageValid(root);
-        boolean isTreeFlattened = isTreeFlattened(root);
-        boolean areJunctionsValid = areJunctionsValid(root);
-        boolean areReferenceExpressionsValid = areReferenceExpressionsValid(root);
-        boolean areQueryPropertyMarkersValid = areQueryPropertyMarkersValid(root);
+        isValid = true;
+        reasons.clear();
         
-        //  @formatter:off
-        boolean isValid = isLineageValid && isTreeFlattened && areJunctionsValid && areReferenceExpressionsValid && areQueryPropertyMarkersValid;
-        //  @formatter:on
+        validateLineage(root);
+        validateFlatten(root);
+        validateJunctions(root);
+        validateReferenceExpressionsValid(root);
+        validateQueryPropertyMarkers(root);
         
         if (!isValid) {
-            
-            List<String> reasons = new ArrayList<>();
-            if (!isLineageValid) {
-                reasons.add("Lineage");
-            }
-            if (!isTreeFlattened) {
-                reasons.add("Flatten");
-            }
-            if (!areJunctionsValid) {
-                reasons.add("Junctions");
-            }
-            if (!areReferenceExpressionsValid) {
-                reasons.add("RefExpr");
-            }
-            if (!areQueryPropertyMarkersValid) {
-                reasons.add("Markers");
-            }
-            
             String joined = "[" + Joiner.on(',').join(reasons) + "]";
             log.error(sourceVisitor + " produced an invalid query tree for reasons " + joined);
             if (failHard) {
@@ -116,11 +108,13 @@ public class ASTValidator {
      *
      * @param root
      *            an arbitrary JexlNode
-     * @return true if all parent-child relationships are valid
      */
-    private static boolean isLineageValid(JexlNode root) {
-        // Do not fail hard
-        return JexlASTHelper.validateLineage(root, false);
+    private void validateLineage(JexlNode root) {
+        // do not fail hard
+        if (validateLineage && !JexlASTHelper.validateLineage(root, false)) {
+            isValid = false;
+            reasons.add("Lineage");
+        }
     }
     
     /**
@@ -128,13 +122,17 @@ public class ASTValidator {
      *
      * @param root
      *            an arbitrary JexlNode
-     * @return true if the tree is flattened
      */
-    private static boolean isTreeFlattened(JexlNode root) {
-        JexlNode copy = RebuildingVisitor.copy(root);
-        String original = JexlStringBuildingVisitor.buildQueryWithoutParse(copy);
-        String flattened = JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(copy));
-        return original.equals(flattened);
+    private void validateFlatten(JexlNode root) {
+        if (validateFlatten) {
+            JexlNode copy = RebuildingVisitor.copy(root);
+            String original = JexlStringBuildingVisitor.buildQueryWithoutParse(copy);
+            String flattened = JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(copy));
+            if (!original.equals(flattened)) {
+                isValid = false;
+                reasons.add("Flatten");
+            }
+        }
     }
     
     /**
@@ -142,10 +140,12 @@ public class ASTValidator {
      *
      * @param node
      *            an arbitrary JexlNode
-     * @return true if the tree is valid
      */
-    private static boolean areJunctionsValid(JexlNode node) {
-        return JunctionValidatingVisitor.validate(node);
+    private void validateJunctions(JexlNode node) {
+        if (validateJunctions && !JunctionValidatingVisitor.validate(node)) {
+            isValid = false;
+            reasons.add("Junctions");
+        }
     }
     
     /**
@@ -153,10 +153,12 @@ public class ASTValidator {
      *
      * @param node
      *            an arbitrary JexlNode
-     * @return true if the tree is valid
      */
-    private static boolean areReferenceExpressionsValid(JexlNode node) {
-        return MinimalReferenceExpressionsVisitor.validate(node);
+    private void validateReferenceExpressionsValid(JexlNode node) {
+        if (validateReferenceExpressions && !MinimalReferenceExpressionsVisitor.validate(node)) {
+            isValid = false;
+            reasons.add("RefExpr");
+        }
     }
     
     /**
@@ -164,10 +166,51 @@ public class ASTValidator {
      * 
      * @param node
      *            an arbitrary JexlNode
-     * @return true if the tree is valid
      */
-    private static boolean areQueryPropertyMarkersValid(JexlNode node) {
-        return ValidQueryPropertyMarkerVisitor.validate(node).isValid();
+    private void validateQueryPropertyMarkers(JexlNode node) {
+        if (validateQueryPropertyMarkers && !ValidQueryPropertyMarkerVisitor.validate(node).isValid()) {
+            isValid = false;
+            reasons.add("Markers");
+        }
     }
     
+    public boolean isValidateLineage() {
+        return validateLineage;
+    }
+    
+    public void setValidateLineage(boolean validateLineage) {
+        this.validateLineage = validateLineage;
+    }
+    
+    public boolean getValidateFlatten() {
+        return validateFlatten;
+    }
+    
+    public void setValidateFlatten(boolean validateFlatten) {
+        this.validateFlatten = validateFlatten;
+    }
+    
+    public boolean getValidateJunctions() {
+        return validateJunctions;
+    }
+    
+    public void setValidateJunctions(boolean validateJunctions) {
+        this.validateJunctions = validateJunctions;
+    }
+    
+    public boolean getValidateReferenceExpressions() {
+        return validateReferenceExpressions;
+    }
+    
+    public void setValidateReferenceExpressions(boolean validateReferenceExpressions) {
+        this.validateReferenceExpressions = validateReferenceExpressions;
+    }
+    
+    public boolean getValidateQueryPropertyMarkers() {
+        return validateQueryPropertyMarkers;
+    }
+    
+    public void setValidateQueryPropertyMarkers(boolean validateQueryPropertyMarkers) {
+        this.validateQueryPropertyMarkers = validateQueryPropertyMarkers;
+    }
 }
