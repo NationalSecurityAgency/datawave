@@ -365,6 +365,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             
             @Override
             public boolean hasNext() {
+                next = null;
                 if (in.hasNext()) {
                     next = ExcerptTransform.this.apply(in.next());
                 }
