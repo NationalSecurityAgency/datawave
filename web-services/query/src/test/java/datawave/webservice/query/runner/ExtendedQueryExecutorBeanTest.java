@@ -87,112 +87,112 @@ public class ExtendedQueryExecutorBeanTest {
     private static final Throwable ILLEGAL_STATE_EXCEPTION = new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION");
     @Mock
     AuditBean auditor;
-
+    
     @Mock
     BaseQueryResponse baseResponse;
-
+    
     @Mock
     QueryCache cache;
-
+    
     @Mock
     ClosedQueryCache closedCache;
-
+    
     @Mock
     AccumuloConnectionFactory connectionFactory;
-
+    
     @Mock
     Connector connector;
-
+    
     @Mock
     EJBContext context;
-
+    
     @Mock
     GenericQueryConfiguration genericConfiguration;
-
+    
     @Mock
     LookupUUIDConfiguration lookupUUIDConfiguration;
-
+    
     @Mock
     LookupUUIDUtil lookupUUIDUtil;
-
+    
     @Mock
     QueryMetricsBean metrics;
-
+    
     @Mock
     Persister persister;
-
+    
     @Mock
     DatawavePrincipal principal;
-
+    
     @Mock
     DatawaveUser dwUser;
-
+    
     @Mock
     CreatedQueryLogicCacheBean qlCache;
-
+    
     @Mock
     Query query;
-
+    
     @Mock
     QueryUncaughtExceptionHandler exceptionHandler;
-
+    
     @Mock
     QueryLogicFactoryImpl queryLogicFactory;
-
+    
     @Mock
     QueryLogic<?> queryLogic1;
-
+    
     @Mock
     QuerySyntaxParserQueryLogic<?> queryLogic2;
-
+    
     @Mock
     QueryMetric queryMetric;
-
+    
     @Mock
     ResultsPage resultsPage;
-
+    
     @Mock
     RunningQuery runningQuery;
-
+    
     @Mock
     Span span;
-
+    
     @Mock
     QueryTraceCache traceCache;
-
+    
     @Mock
     TInfo traceInfo;
-
+    
     @Mock
     Multimap<String,PatternWrapper> traceInfos;
-
+    
     @Mock
     Tracer tracer;
-
+    
     @Mock
     QueryLogicTransformer transformer;
-
+    
     @Mock
     TransformIterator transformIterator;
-
+    
     @Mock
     UserTransaction transaction;
-
+    
     @Mock
     Pair<QueryLogic<?>,Connector> tuple;
-
+    
     @Mock
     HttpHeaders httpHeaders;
-
+    
     @Mock
     ResponseObjectFactory responseObjectFactory;
-
+    
     @Mock
     AccumuloConnectionRequestBean connectionRequestBean;
-
+    
     @Mock
     UriInfo uriInfo;
-
+    
     QueryExpirationConfiguration queryExpirationConf;
     
     @BeforeEach
@@ -215,7 +215,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.queryLogic1.close();
         when(this.tuple.getSecond()).thenReturn(this.connector);
         this.connectionFactory.returnConnection(this.connector);
-
+        
         // Run the test
         QueryExecutorBean subject = new QueryExecutorBean();
         ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
@@ -225,1221 +225,1221 @@ public class ExtendedQueryExecutorBeanTest {
         ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
         ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
         VoidResponse result1 = subject.adminCancel(queryId.toString());
-
+        
         // Verify results
         assertNotNull(result1, "Expected a non-null response");
     }
     
-
-     @SuppressWarnings({"unchecked", "rawtypes"})
-     @Test
-     public void testAdminCancel_NullTupleReturnedAndQueryExceptionThrown() throws Exception {
-     // Set local test input
-     UUID queryId = UUID.randomUUID();
-
-     // Set expectations of the create logic
-         when(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).thenReturn(false);
-         when(this.qlCache.poll(queryId.toString())).thenReturn(null);
-         when(this.cache.get(queryId.toString())).thenReturn(null);
-         when(this.persister.adminFindById(queryId.toString())).thenReturn(Arrays.asList(this.query, this.query));
-
-     // Run the test
-     QueryExecutorBean subject = new QueryExecutorBean();
-     ReflectionTestUtils.setField(subject, "ctx", context);
-     ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-     ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-     ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-         ReflectionTestUtils.setField(subject, "queryCache", cache);
-         ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-         ReflectionTestUtils.setField(subject, "persister", persister);
-     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-     ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-     ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-
-      assertThrows(DatawaveWebApplicationException.class, () -> subject.adminCancel(queryId.toString()));
-
-     }
-
-     @SuppressWarnings({"unchecked", "rawtypes"})
-     @Test
-     public void testAdminCancel_RunningQueryFoundInCache() throws Exception {
-     // Set local test input
-     UUID queryId = UUID.randomUUID();
-
-     // Set expectations of the create logic
-         try (MockedStatic<Trace> traceMock = Mockito.mockStatic(Trace.class)) {
-             traceMock.when(() -> Trace.trace(this.traceInfo, "query:close")).thenReturn(this.span);
-
-             when(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).thenReturn(false);
-     when(this.qlCache.poll(queryId.toString())).thenReturn(null);
-     when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
-     when(this.runningQuery.getSettings()).thenReturn(this.query);
-     this.runningQuery.cancel();
-     this.runningQuery.closeConnection(this.connectionFactory);
-     when(this.query.getId()).thenReturn(queryId);
-     cache.remove(queryId.toString());
-     when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
-     this.span.data(eq("closedAt"), isA(String.class));
-     this.span.stop();
-     // TODO: 1.8.1: no longer done
-     // PowerMock.mockStaticPartial(Tracer.class, "getInstance");
-     // when(Tracer.getInstance()).thenReturn(this.tracer);
-     // this.tracer.flush();
-
-     // Run the test
-     QueryExecutorBean subject = new QueryExecutorBean();
-         ReflectionTestUtils.setField(subject, "ctx", context);
-     ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-     ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-     ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-         ReflectionTestUtils.setField(subject, "queryCache", cache);
-         ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-     ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-     ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-
-     VoidResponse result1 = subject.adminCancel(queryId.toString());
-
-     // Verify results
-     assertNotNull(result1, "Expected a non-null response");
-         }
-     }
-
-     @SuppressWarnings({"unchecked", "rawtypes"})
-     @Test
-     public void testAdminCancel_LookupAccumuloQuery() throws Exception {
-     // Set local test input
-     UUID queryId = UUID.randomUUID();
-     List<String> dnList = Collections.singletonList("qwe");
-
-     // Set expectations of the create logic
-         when(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).thenReturn(false);
-         when(this.qlCache.poll(queryId.toString())).thenReturn(null);
-         when(this.cache.get(queryId.toString())).thenReturn(null);
-         when(this.persister.adminFindById(queryId.toString())).thenReturn(Lists.newArrayList(query));
-         when(this.query.getQueryAuthorizations()).thenReturn("AUTH_1,AUTH_2");
-         when(this.query.getQueryLogicName()).thenReturn("ql1");
-         when(this.query.getOwner()).thenReturn("qwe");
-         when(this.query.getUserDN()).thenReturn("qwe");
-         when(this.query.getDnList()).thenReturn(dnList);
-         when(this.query.getId()).thenReturn(queryId);
-         when(this.query.getQuery()).thenReturn("qwe");
-         when(this.query.getBeginDate()).thenReturn(null);
-         when(this.query.getEndDate()).thenReturn(null);
-         when(this.query.getColumnVisibility()).thenReturn(null);
-         when(this.query.getQueryName()).thenReturn(null);
-         when(this.query.getParameters()).thenReturn((Set) Collections.emptySet());
-         when(context.getCallerPrincipal()).thenReturn(principal);
-         when(this.queryLogicFactory.getQueryLogic("ql1", principal)).thenReturn((QueryLogic) this.queryLogic1);
-         when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
-         when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(false);
-         when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
-         when(this.queryLogic1.getResultLimit(dnList)).thenReturn(-1L);
-         when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
-     cache.put(eq(queryId.toString()), isA(RunningQuery.class));
-     cache.remove(queryId.toString());
-     this.queryLogic1.close();
-
-     // Run the test
-     QueryExecutorBean subject = new QueryExecutorBean();
-         ReflectionTestUtils.setField(subject, "ctx", context);
-     ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-     ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-     ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-         ReflectionTestUtils.setField(subject, "queryCache", cache);
-         ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-         ReflectionTestUtils.setField(subject, "persister", persister);
-         ReflectionTestUtils.setField(subject, "queryLogicFactory", queryLogicFactory);
-         ReflectionTestUtils.setField(subject, "queryExpirationConf", queryExpirationConf);
-         ReflectionTestUtils.setField(subject, "qp", new QueryParametersImpl());
-     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-     ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-     ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-
-     VoidResponse result1 = subject.adminCancel(queryId.toString());
-
-     // Verify results
-     assertNotNull(result1, "Expected a non-null response");
-     }
-
-     @SuppressWarnings({"unchecked", "rawtypes"})
-     @Test
-     public void testAdminClose_NonNullTupleReturned() throws Exception {
-     // Set local test input
-     UUID queryId = UUID.randomUUID();
-
-     // Set expectations
-     when(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).thenReturn(false);
-     when(this.qlCache.poll(queryId.toString())).thenReturn(this.tuple);
-     when(this.tuple.getFirst()).thenReturn((QueryLogic) this.queryLogic1);
-     this.queryLogic1.close();
-     when(this.tuple.getSecond()).thenReturn(this.connector);
-     this.connectionFactory.returnConnection(this.connector);
-
-     // Run the test
-     QueryExecutorBean subject = new QueryExecutorBean();
-     ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-     ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-     ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-     ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-     ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-     VoidResponse result1 = subject.adminClose(queryId.toString());
-
-     // Verify results
-     assertNotNull(result1, "Expected a non-null response performing an admin close");
-     }
-
-     @SuppressWarnings({"unchecked", "rawtypes"})
-     @Test
-     public void testAdminClose_NullTupleReturnedAndQueryExceptionThrown() throws Exception {
-     // Set local test input
-     UUID queryId = UUID.randomUUID();
-
-     // Set expectations
-     when(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).thenReturn(false);
-     when(this.qlCache.poll(queryId.toString())).thenReturn(null);
-     when(this.cache.get(queryId.toString())).thenReturn(null);
-     when(this.persister.adminFindById(queryId.toString())).thenReturn(null);
-
-     // Run the test
-     EasyMock.replay();
-     QueryExecutorBean subject = new QueryExecutorBean();
-         ReflectionTestUtils.setField(subject, "ctx", context);
-     ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-         ReflectionTestUtils.setField(subject, "queryCache", cache);
-         ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-         ReflectionTestUtils.setField(subject, "persister", persister);
-     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-     ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-     ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-     assertThrows(DatawaveWebApplicationException.class, () -> subject.adminClose(queryId.toString()));
-
-     }
-
-     @SuppressWarnings({"rawtypes", "unchecked"})
-     @Test
-     public void testCancel_HappyPath() throws Exception {
-     // Set local test input
-     String userName = "userName";
-     UUID queryId = UUID.randomUUID();
-
-     // Set expectations of the create logic
-     when(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).thenReturn(false);
-     when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-     when(this.principal.getName()).thenReturn(userName);
-     when(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).thenReturn(this.tuple);
-     this.closedCache.remove(queryId.toString());
-     when(this.tuple.getFirst()).thenReturn((QueryLogic) this.queryLogic1);
-     this.queryLogic1.close();
-     when(this.tuple.getSecond()).thenReturn(this.connector);
-     this.connectionFactory.returnConnection(this.connector);
-
-     // Run the test
-     EasyMock.replay();
-     QueryExecutorBean subject = new QueryExecutorBean();
-         ReflectionTestUtils.setField(subject, "ctx", context);
-     ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-     ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-     ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-     ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-     ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-         ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-     VoidResponse result1 = subject.cancel(queryId.toString());
-
-     // Verify results
-     assertNotNull(result1, "Expected a non-null response");
-     }
-
-     @SuppressWarnings({"unchecked", "rawtypes"})
-     @Test
-     public void testCancel_NullTupleReturnedAndQueryExceptionThrown() throws Exception {
-     // Set local test input
-     String userName = "userName";
-     UUID queryId = UUID.randomUUID();
-     String userSid = "userSid";
-     String queryAuthorizations = "AUTH_1";
-
-     // Set expectations of the create logic
-     when(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).thenReturn(false);
-     when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-     when(this.principal.getName()).thenReturn(userName);
-     when(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).thenReturn(null);
-     when(this.closedCache.exists(queryId.toString())).thenReturn(false);
-     when(this.principal.getName()).thenReturn(userName);
-     when(this.principal.getShortName()).thenReturn(userSid);
-     when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-     when(this.cache.get(queryId.toString())).thenReturn(null);
-     when(this.persister.findById(queryId.toString())).thenReturn(Arrays.asList((Query) this.query, this.query));
-
-     // Run the test
-     QueryExecutorBean subject = new QueryExecutorBean();
-         ReflectionTestUtils.setField(subject, "ctx", context);
-     ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-     ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-     ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-         ReflectionTestUtils.setField(subject, "queryCache", cache);
-         ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-         ReflectionTestUtils.setField(subject, "persister", persister);
-     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-     ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-     ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-
-     assertThrows( DatawaveWebApplicationException.class, () -> subject.cancel(queryId.toString()));
-
-     }
-
-     @Disabled
-     @SuppressWarnings({"unchecked", "rawtypes"})
-     @Test
-     public void testCancel_RunningQueryFoundInCache() throws Exception {
-         try (MockedStatic<Trace> traceMock = Mockito.mockStatic(Trace.class)) {
-             traceMock.when(() -> Trace.trace(this.traceInfo, "query:close")).thenReturn(this.span);
-     // Set local test input
-     String userName = "userName";
-     UUID queryId = UUID.randomUUID();
-     String userSid = "userSid";
-     String queryAuthorizations = "AUTH_1";
-
-     // Set expectations of the create logic
-             when(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).thenReturn(false);
-             when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-             when(this.principal.getName()).thenReturn(userName);
-             when(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).thenReturn(null);
-             when(this.principal.getName()).thenReturn(userName);
-             when(this.principal.getShortName()).thenReturn(userSid);
-             when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
-             when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-             this.closedCache.remove(queryId.toString());
-             when(this.runningQuery.getSettings()).thenReturn(this.query);
-             when(this.query.getOwner()).thenReturn(userSid);
-             this.runningQuery.cancel();
-             this.runningQuery.closeConnection(this.connectionFactory);
-             when(this.query.getId()).thenReturn(queryId);
-             cache.remove(queryId.toString());
-             when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
-             this.span.data(eq("closedAt"), isA(String.class));
-             this.span.stop();
-             // TODO: 1.8.1: no longer done
-             // PowerMock.mockStaticPartial(Tracer.class, "getInstance");
-             // when(Tracer.getInstance()).thenReturn(this.tracer);
-             // this.tracer.flush();
-
-             // Run the test
-             QueryExecutorBean subject = new QueryExecutorBean();
-             ReflectionTestUtils.setField(subject, "ctx", context);
-             ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-             ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-             ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-             ReflectionTestUtils.setField(subject, "queryCache", cache);
-             ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-             ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-             ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-             ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-             VoidResponse result1 = subject.cancel(queryId.toString());
-             // Verify results
-             assertNotNull(result1, "Expected a non-null response");
-         }
-     }
-
-     @SuppressWarnings({"unchecked", "rawtypes"})
-     @Test
-     public void testClose_NullTupleReturnedFromQueryLogicCache() throws Exception {
-         // Set local test input
-         String userName = "userName";
-         String userSid = "userSid";
-         UUID queryId = UUID.randomUUID();
-         String queryAuthorizations = "AUTH_1";
-
-         // Set expectations
-         when(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).thenReturn(false);
-         when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-         when(this.principal.getName()).thenReturn(userName);
-         when(this.principal.getShortName()).thenReturn(userSid);
-         when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-         when(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).thenReturn(null);
-         when(this.closedCache.exists(queryId.toString())).thenReturn(false);
-         when(this.cache.get(queryId.toString())).thenReturn(null);
-         when(this.persister.findById(queryId.toString())).thenReturn(new ArrayList<>(0));
-
-         // Run the te
-         QueryExecutorBean subject = new QueryExecutorBean();
-         ReflectionTestUtils.setField(subject, "ctx", context);
-         ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-         ReflectionTestUtils.setField(subject, "queryCache", cache);
-         ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-         ReflectionTestUtils.setField(subject, "persister", persister);
-         ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-         ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-         ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-
-         assertThrows(DatawaveWebApplicationException.class, () -> subject.close(queryId.toString()));
-     }
-//
-//     @SuppressWarnings({"unchecked", "rawtypes"})
-//     @Test
-//     public void testClose_UncheckedException() throws Exception {
-//     // Set local test input
-//     String userSid = "userSid";
-//     UUID queryId = UUID.randomUUID();
-//
-//     // Set expectations
-//     when(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).thenReturn(false);
-//     when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-//     when(this.principal.getShortName()).thenReturn(userSid);
-//     when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
-//     when(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).thenReturn(this.tuple);
-//     when(this.tuple.getFirst()).thenReturn((QueryLogic) this.queryLogic1);
-//     this.queryLogic1.close();
-//     PowerMock.expectLastCall().andThrow(ILLEGAL_STATE_EXCEPTION);
-//     when(this.tuple.getSecond()).thenThrow(ILLEGAL_STATE_EXCEPTION);
-//
-//     // Run the te
-//     QueryExecutorBean subject = new QueryExecutorBean();
-//     setInternalState(subject, EJBContext.class, context);
-//     ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-//     setInternalState(subject, QueryCache.class, cache);
-//     setInternalState(subject, ClosedQueryCache.class, closedCache);
-//     setInternalState(subject, Persister.class, persister);
-//     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-//     ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-//     ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-//
-//         assertThrows(DatawaveWebApplicationException.class, () -> subject.close(queryId.toString()));
-//
-//     }
-//
-//     @SuppressWarnings({"rawtypes", "unchecked"})
-//     @Test
-//     public void testCreateQueryAndNext_HappyPath() throws Exception {
-//     // Set local test input
-//     String queryLogicName = "queryLogicName";
-//     String query = "query";
-//     String queryName = "queryName";
-//     String queryVisibility = "A&B";
-//     long currentTime = System.currentTimeMillis();
-//     Date beginDate = new Date(currentTime - 5000);
-//     Date endDate = new Date(currentTime - 1000);
-//     String queryAuthorizations = "AUTH_1";
-//     Date expirationDate = new Date(currentTime + 999999);
-//     int pagesize = 10;
-//     int pageTimeout = -1;
-//     QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
-//     boolean trace = false;
-//     String userName = "userName";
-//     String userSid = "userSid";
-//     String userDN = "userdn";
-//     SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
-//     List<String> dnList = Collections.singletonList(userDN);
-//     UUID queryId = UUID.randomUUID();
-//     long pageNumber = 0L;
-//
-//     HashMap<String,Collection<String>> authsMap = new HashMap<>();
-//     authsMap.put("userdn", Arrays.asList(queryAuthorizations));
-//
-//     MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-//     queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
-//     queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-//     queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-//     queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-//     queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
-//     queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
-//     queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-//     queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
-//     queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
-//     queryParameters.putSingle("valid", "param");
-//
-//     ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
-//     marking.validate(queryParameters);
-//
-//     QueryParameters qp = new QueryParametersImpl();
-//     qp.validate(queryParameters);
-//
-//     MultivaluedMap<String,String> op = new MultivaluedMapImpl<>();
-//     op.putAll(qp.getUnknownParameters(queryParameters));
-//     // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
-//     op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-//     op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
-//     op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
-//
-//     // Set expectations of the create logic
-//     queryLogic1.validate(queryParameters);
-//     when(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).thenReturn((QueryLogic) this.queryLogic1);
-//     when(this.queryLogic1.getMaxPageSize()).thenReturn(1000);
-//     when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-//     when(this.principal.getName()).thenReturn(userName);
-//     when(this.principal.getShortName()).thenReturn(userSid);
-//     when(this.principal.getUserDN()).thenReturn(userDNpair);
-//     when(this.principal.getDNs()).thenReturn(new String[] {userDN});
-//     when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
-//     when(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).thenReturn(true);
-//     when(this.queryLogic1.getAuditType(null)).thenReturn(Auditor.AuditType.NONE);
-//     when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-//     when(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).thenReturn(this.query);
-//     when(this.queryLogic1.getAuditType(this.query)).thenReturn(Auditor.AuditType.NONE);
-//     when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
-//     when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
-//     when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
-//     when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
-//     this.connectionRequestBean.requestBegin(queryId.toString());
-//     when(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).thenReturn(this.connector);
-//     this.connectionRequestBean.requestEnd(queryId.toString());
-//     when(this.traceInfos.get(userSid)).thenReturn(new ArrayList<>(0));
-//     when(this.traceInfos.get(null)).thenReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
-//     when(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).thenReturn(true);
-//     when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(true);
-//     when(this.principal.getPrimaryUser()).thenReturn(dwUser);
-//     when(this.dwUser.getAuths()).thenReturn(Collections.singleton(queryAuthorizations));
-//     when(this.principal.getProxiedUsers()).thenReturn(Collections.singletonList(dwUser));
-//     when(this.query.getOwner()).thenReturn(userSid);
-//     when(this.query.getId()).thenReturn(queryId);
-//     when(this.query.getQuery()).thenReturn(queryName);
-//     when(this.query.getQueryLogicName()).thenReturn(queryLogicName);
-//     when(this.query.getBeginDate()).thenReturn(null);
-//     when(this.query.getEndDate()).thenReturn(null);
-//     when(this.query.getColumnVisibility()).thenReturn(null);
-//     when(this.query.getQueryAuthorizations()).thenReturn(queryAuthorizations);
-//     when(this.query.getQueryName()).thenReturn(null);
-//     when(this.query.getPagesize()).thenReturn(0);
-//     when(this.query.getExpirationDate()).thenReturn(null);
-//     when(this.query.getParameters()).thenReturn((Set) Collections.emptySet());
-//     when(this.query.getUncaughtExceptionHandler()).thenReturn(new QueryUncaughtExceptionHandler());
-//     this.metrics.updateMetric(isA(QueryMetric.class));
-//     when(this.query.getUserDN()).thenReturn(userDN);
-//     when(this.query.getDnList()).thenReturn(dnList);
-//     when(this.queryLogic1.getResultLimit(dnList)).thenReturn(-1L);
-//     when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
-//     when(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
-//     this.queryLogic1.setupQuery(this.genericConfiguration);
-//     when(this.queryLogic1.getTransformIterator(this.query)).thenReturn(this.transformIterator);
-//     cache.put(eq(queryId.toString()), isA(RunningQuery.class));
-//     when(this.genericConfiguration.getQueryString()).thenReturn(queryName).once();
-//     when(this.qlCache.poll(queryId.toString())).thenReturn(null);
-//
-//     // Set expectations of the next logic
-//     when(this.principal.getName()).thenReturn(userName);
-//     when(this.principal.getShortName()).thenReturn(userSid);
-//     when(this.context.getUserTransaction()).thenReturn(this.transaction);
-//
-//     this.transaction.begin();
-//     when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
-//     when(cache.lock(queryId.toString())).thenReturn(true);
-//     when(this.runningQuery.getSettings()).thenReturn(this.query);
-//     when(this.runningQuery.getConnection()).thenReturn(this.connector);
-//
-//     this.runningQuery.setActiveCall(true);
-//
-//     when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
-//     when(this.runningQuery.next()).thenReturn(this.resultsPage);
-//     when(this.runningQuery.getLastPageNumber()).thenReturn(pageNumber);
-//     when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
-//     when(this.runningQuery.getSettings()).thenReturn(this.query);
-//     when(this.queryLogic1.getTransformer(this.query)).thenReturn(this.transformer);
-//     when(this.transformer.createResponse(this.resultsPage)).thenReturn(this.baseResponse);
-//     when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.COMPLETE);
-//     this.baseResponse.setHasResults(true);
-//     this.baseResponse.setPageNumber(pageNumber);
-//     when(this.queryLogic1.getLogicName()).thenReturn(queryLogicName);
-//     this.baseResponse.setLogicName(queryLogicName);
-//     this.baseResponse.setQueryId(queryId.toString());
-//     when(this.runningQuery.getMetric()).thenReturn(this.queryMetric);
-//     this.runningQuery.setActiveCall(false);
-//     this.queryMetric.setProxyServers(eq(new ArrayList<>(0)));
-//     when(this.responseObjectFactory.getEventQueryResponse()).thenReturn(new DefaultEventQueryResponse());
-//
-//     cache.unlock(queryId.toString());
-//     when(this.transaction.getStatus()).thenReturn(Status.STATUS_ACTIVE);
-//     this.transaction.commit();
-//     // Run the te
-//     QueryExecutorBean subject = new QueryExecutorBean();
-//     setInternalState(subject, EJBContext.class, context);
-//     ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-//     ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-//     ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-//     setInternalState(subject, QueryCache.class, cache);
-//     setInternalState(subject, ClosedQueryCache.class, closedCache);
-//     setInternalState(subject, Persister.class, persister);
-//     setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
-//     setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
-//     setInternalState(subject, AuditBean.class, auditor);
-//     setInternalState(subject, QueryMetricsBean.class, metrics);
-//     setInternalState(subject, Multimap.class, traceInfos);
-//     setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-//     setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
-//     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-//     ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-//     ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-//     BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, queryParameters);
-//
-//     // Verify results
-//     assertNotNull(result1, "Expected a non-null response");
-//     }
-//
-//     @Test
-//     public void testCreateQueryAndNext_BadID() throws Exception {
-//     // Set local test input
-//     String queryLogicName = "queryLogicName";
-//     String query = "query";
-//     String queryName = "queryName";
-//     String queryVisibility = "A&B";
-//     long currentTime = System.currentTimeMillis();
-//     Date beginDate = new Date(currentTime - 5000);
-//     Date endDate = new Date(currentTime - 1000);
-//     String queryAuthorizations = "AUTH_1";
-//     Date expirationDate = new Date(currentTime + 999999);
-//     int pagesize = 10;
-//     int pageTimeout = -1;
-//     QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
-//     boolean trace = false;
-//     String userName = "userName";
-//     String userSid = "userSid";
-//     String userDN = "userdn";
-//     String errorCode = DatawaveErrorCode.INVALID_QUERY_ID.getErrorCode();
-//     SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
-//     List<String> dnList = Collections.singletonList(userDN);
-//     UUID queryId = UUID.randomUUID();
-//
-//     HashMap<String,Collection<String>> authsMap = new HashMap<>();
-//     authsMap.put("userdn", Arrays.asList(queryAuthorizations));
-//
-//     MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-//     queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
-//     queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-//     queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-//     queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-//     queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
-//     queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
-//     queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-//     queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
-//     queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
-//     queryParameters.putSingle("valid", "param");
-//
-//     ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
-//     marking.validate(queryParameters);
-//
-//     QueryParameters qp = new QueryParametersImpl();
-//     qp.validate(queryParameters);
-//
-//     MultivaluedMap<String,String> op = new MultivaluedMapImpl<>();
-//     op.putAll(qp.getUnknownParameters(queryParameters));
-//     op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-//     op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
-//     op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
-//
-//     // Set expectations of the create logic
-//     queryLogic1.validate(queryParameters);
-//     when(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).thenReturn((QueryLogic) this.queryLogic1);
-//     when(this.queryLogic1.getMaxPageSize()).thenReturn(1000).times(2);
-//     when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-//     when(this.principal.getName()).thenReturn(userName);
-//     when(this.principal.getShortName()).thenReturn(userSid);
-//     when(this.principal.getUserDN()).thenReturn(userDNpair);
-//     when(this.principal.getDNs()).thenReturn(new String[] {userDN});
-//     when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
-//     when(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).thenReturn(true);
-//     when(this.queryLogic1.getAuditType(null)).thenReturn(Auditor.AuditType.NONE);
-//     when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-//     when(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).thenReturn(this.query);
-//     when(this.queryLogic1.getAuditType(this.query)).thenReturn(Auditor.AuditType.NONE);
-//     when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
-//     when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
-//     when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
-//     when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
-//     this.connectionRequestBean.requestBegin(queryId.toString());
-//     when(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).thenReturn(this.connector);
-//     this.connectionRequestBean.requestEnd(queryId.toString());
-//     when(this.traceInfos.get(userSid)).thenReturn(new ArrayList<>(0));
-//     when(this.traceInfos.get(null)).thenReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
-//     when(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).thenReturn(true);
-//     when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(true);
-//     when(this.principal.getPrimaryUser()).thenReturn(dwUser);
-//     when(this.dwUser.getAuths()).thenReturn(Collections.singleton(queryAuthorizations));
-//     when(this.principal.getProxiedUsers()).thenReturn(Collections.singletonList(dwUser));
-//     when(this.query.getOwner()).thenReturn(userSid);
-//     when(this.query.getId()).thenReturn(queryId);
-//     when(this.query.getQuery()).thenReturn(queryName);
-//     when(this.query.getQueryLogicName()).thenReturn(queryLogicName);
-//     when(this.query.getBeginDate()).thenReturn(null);
-//     when(this.query.getEndDate()).thenReturn(null);
-//     when(this.query.getColumnVisibility()).thenReturn(null);
-//     when(this.query.getQueryAuthorizations()).thenReturn(queryAuthorizations);
-//     when(this.query.getQueryName()).thenReturn(null);
-//     when(this.query.getPagesize()).thenReturn(0);
-//     when(this.query.getExpirationDate()).thenReturn(null);
-//     when(this.query.getParameters()).thenReturn((Set) Collections.emptySet());
-//     when(this.query.getUncaughtExceptionHandler()).thenReturn(new QueryUncaughtExceptionHandler());
-//     this.metrics.updateMetric(isA(QueryMetric.class));
-//     when(this.query.getUserDN()).thenReturn(userDN);
-//     when(this.query.getDnList()).thenReturn(dnList);
-//     when(this.queryLogic1.getResultLimit(dnList)).thenReturn(-1L);
-//     when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
-//     when(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
-//     this.queryLogic1.setupQuery(this.genericConfiguration);
-//     when(this.queryLogic1.getTransformIterator(this.query)).thenReturn(this.transformIterator);
-//     cache.put(eq(queryId.toString()), isA(RunningQuery.class));
-//     when(this.genericConfiguration.getQueryString()).thenReturn(queryName).once();
-//     when(this.qlCache.poll(queryId.toString())).thenReturn(null);
-//
-//     // Set expectations of the next logic
-//     when(this.principal.getName()).thenReturn(userName);
-//     when(this.principal.getShortName()).thenReturn(userSid);
-//     when(this.context.getUserTransaction()).thenReturn(this.transaction);
-//     when(this.transaction.getStatus()).thenReturn(Status.STATUS_NO_TRANSACTION);
-//     cache.unlock("{id}");
-//     this.transaction.begin();
-//     this.transaction.setRollbackOnly();
-//
-//     when(this.responseObjectFactory.getEventQueryResponse()).thenReturn(new DefaultEventQueryResponse());
-//     this.transaction.commit();
-//     QueryExecutorBean subject = new QueryExecutorBean();
-//     // Run the te
-//
-//     setInternalState(subject, EJBContext.class, context);
-//     ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-//     ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-//     ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-//     setInternalState(subject, QueryCache.class, cache);
-//     setInternalState(subject, ClosedQueryCache.class, closedCache);
-//     setInternalState(subject, Persister.class, persister);
-//     setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
-//     setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
-//     setInternalState(subject, AuditBean.class, auditor);
-//     setInternalState(subject, QueryMetricsBean.class, metrics);
-//     setInternalState(subject, Multimap.class, traceInfos);
-//     setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-//     setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
-//     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-//     ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-//     ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-//     subject.createQuery(queryLogicName, queryParameters);
-//
-//     Throwable result1 = null;
-//     try {
-//     subject.next("{id}");
-//     } catch (Exception e) {
-//     result1 = e.getCause();
-//     assertTrue(e.getCause().toString().contains("BadRequestQueryException: Invalid query id."));
-//     assertEquals(e.getMessage(), "HTTP 400 Bad Request");
-//     assertTrue(((BadRequestQueryException) result1).getErrorCode().equals(errorCode));
-//     }
-//
-//     assertNotNull(result1, "Expected a non-null response");
-//     }
-//
-//     @SuppressWarnings({"rawtypes", "unchecked"})
-//     @Test
-//     public void testCreateQueryAndNext_DoubleAuditValues() throws Exception {
-//     // Set local test input
-//     String queryLogicName = "queryLogicName";
-//     String query = "query";
-//     String queryName = "queryName";
-//     String queryVisibility = "A&B";
-//     long currentTime = System.currentTimeMillis();
-//     Date beginDate = new Date(currentTime - 5000);
-//     Date endDate = new Date(currentTime - 1000);
-//     String queryAuthorizations = "AUTH_1";
-//     Date expirationDate = new Date(currentTime + 999999);
-//     int pagesize = 10;
-//     int pageTimeout = -1;
-//     QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
-//     boolean trace = false;
-//     String userName = "userName";
-//     String userSid = "userSid";
-//     String userDN = "userDN";
-//     SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
-//     List<String> dnList = Collections.singletonList(userDN);
-//     UUID queryId = UUID.randomUUID();
-//     long pageNumber = 0L;
-//
-//     HashMap<String,Collection<String>> authsMap = new HashMap<>();
-//     authsMap.put("userdn", Arrays.asList(queryAuthorizations));
-//
-//     MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-//     queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
-//     queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-//     queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-//     queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-//     queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
-//     queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
-//     queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-//     queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
-//     queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
-//
-//     queryParameters.putSingle(QueryParameters.QUERY_PARAMS, "auditType:NONE;auditColumnVisibility:A&B&C&D;auditUserDN:" + userDN);
-//
-//     queryParameters.putSingle("valid", "param");
-//
-//     ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
-//     marking.validate(queryParameters);
-//
-//     QueryParameters qp = new QueryParametersImpl();
-//     qp.validate(queryParameters);
-//
-//     MultivaluedMap<String,String> op = new MultivaluedMapImpl<>();
-//     op.putAll(qp.getUnknownParameters(queryParameters));
-//     // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
-//     op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-//     op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
-//     op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
-//
-//     // Set expectations of the create logic
-//     queryLogic1.validate(queryParameters);
-//     when(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).thenReturn((QueryLogic) this.queryLogic1);
-//     when(this.queryLogic1.getMaxPageSize()).thenReturn(1000).times(2);
-//     when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-//     when(this.principal.getName()).thenReturn(userName);
-//     when(this.principal.getShortName()).thenReturn(userSid);
-//     when(this.principal.getUserDN()).thenReturn(userDNpair);
-//     when(this.principal.getDNs()).thenReturn(new String[] {userDN});
-//     when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
-//     when(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).thenReturn(true);
-//     when(this.queryLogic1.getAuditType(null)).thenReturn(Auditor.AuditType.NONE);
-//     when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-//     when(this.principal.getPrimaryUser()).thenReturn(dwUser);
-//     when(this.dwUser.getAuths()).thenReturn(Collections.singleton(queryAuthorizations));
-//     when(this.principal.getProxiedUsers()).thenReturn(Collections.singletonList(dwUser));
-//     when(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).thenReturn(this.query);
-//     when(this.queryLogic1.getAuditType(this.query)).thenReturn(Auditor.AuditType.NONE);
-//     when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
-//     when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
-//     when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
-//     when(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).thenReturn(this.connector);
-//     when(this.traceInfos.get(userSid)).thenReturn(new ArrayList<>(0));
-//     when(this.traceInfos.get(null)).thenReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
-//     when(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).thenReturn(true);
-//     when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(true);
-//     when(this.query.getOwner()).thenReturn(userSid);
-//     when(this.query.getId()).thenReturn(queryId);
-//     when(this.query.getQuery()).thenReturn(queryName);
-//     when(this.query.getQueryLogicName()).thenReturn(queryLogicName);
-//     when(this.query.getBeginDate()).thenReturn(null);
-//     when(this.query.getEndDate()).thenReturn(null);
-//     when(this.query.getColumnVisibility()).thenReturn(null);
-//     when(this.query.getQueryAuthorizations()).thenReturn(queryAuthorizations);
-//     when(this.query.getQueryName()).thenReturn(null);
-//     when(this.query.getPagesize()).thenReturn(0);
-//     when(this.query.getPageTimeout()).thenReturn(-1);
-//     when(this.query.getExpirationDate()).thenReturn(null);
-//     when(this.query.getParameters()).thenReturn((Set) Collections.emptySet());
-//     when(this.query.getUncaughtExceptionHandler()).thenReturn(new QueryUncaughtExceptionHandler());
-//     this.metrics.updateMetric(isA(QueryMetric.class));
-//     when(this.query.getUserDN()).thenReturn(userDN);
-//     when(this.query.getDnList()).thenReturn(dnList);
-//     when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
-//     when(this.queryLogic1.getResultLimit(dnList)).thenReturn(-1L);
-//     when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
-//     when(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
-//     this.queryLogic1.setupQuery(this.genericConfiguration);
-//     when(this.queryLogic1.getTransformIterator(this.query)).thenReturn(this.transformIterator);
-//     when(this.genericConfiguration.getQueryString()).thenReturn(queryName).once();
-//     cache.put(eq(queryId.toString()), isA(RunningQuery.class));
-//     when(this.qlCache.poll(queryId.toString())).thenReturn(null);
-//
-//     // Set expectations of the next logic
-//     when(this.principal.getName()).thenReturn(userName);
-//     when(this.principal.getShortName()).thenReturn(userSid);
-//     when(this.context.getUserTransaction()).thenReturn(this.transaction);
-//
-//     this.transaction.begin();
-//     when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
-//     when(cache.lock(queryId.toString())).thenReturn(true);
-//     when(this.runningQuery.getSettings()).thenReturn(this.query);
-//     this.connectionRequestBean.requestBegin(queryId.toString());
-//     when(this.runningQuery.getConnection()).thenReturn(this.connector);
-//     this.connectionRequestBean.requestEnd(queryId.toString());
-//
-//     this.runningQuery.setActiveCall(true);
-//
-//     when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
-//     when(this.runningQuery.next()).thenReturn(this.resultsPage);
-//     when(this.runningQuery.getLastPageNumber()).thenReturn(pageNumber);
-//     when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1).times(2);
-//     when(this.runningQuery.getSettings()).thenReturn(this.query);
-//     when(this.queryLogic1.getTransformer(this.query)).thenReturn(this.transformer);
-//     when(this.transformer.createResponse(this.resultsPage)).thenReturn(this.baseResponse);
-//     when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.COMPLETE).times(2);
-//     this.baseResponse.setHasResults(true);
-//     this.baseResponse.setPageNumber(pageNumber);
-//     when(this.queryLogic1.getLogicName()).thenReturn(queryLogicName);
-//     this.baseResponse.setLogicName(queryLogicName);
-//     this.baseResponse.setQueryId(queryId.toString());
-//     when(this.runningQuery.getMetric()).thenReturn(this.queryMetric);
-//     this.runningQuery.setActiveCall(false);
-//     this.queryMetric.setProxyServers(eq(new ArrayList<>(0)));
-//     when(this.responseObjectFactory.getEventQueryResponse()).thenReturn(new DefaultEventQueryResponse());
-//
-//     cache.unlock(queryId.toString());
-//     when(this.transaction.getStatus()).thenReturn(Status.STATUS_ACTIVE);
-//     this.transaction.commit();
-//
-//     // Run the te
-//     QueryExecutorBean subject = new QueryExecutorBean();
-//     setInternalState(subject, EJBContext.class, context);
-//     ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-//     ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-//     ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-//     setInternalState(subject, QueryCache.class, cache);
-//     setInternalState(subject, ClosedQueryCache.class, closedCache);
-//     setInternalState(subject, Persister.class, persister);
-//     setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
-//     setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
-//     setInternalState(subject, AuditBean.class, auditor);
-//     setInternalState(subject, QueryMetricsBean.class, metrics);
-//     setInternalState(subject, Multimap.class, traceInfos);
-//     setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-//     setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
-//     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-//     ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-//     ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-//     BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, queryParameters);
-//     PowerMock.verifyAll();
-//
-//     // Verify results
-//     assertNotNull(result1, "Expected a non-null response");
-//     }
-//
-//     @SuppressWarnings({"rawtypes", "unchecked"})
-//     @Test
-//     public void testCreateQueryAndNext_AddToCacheException() throws Exception {
-//     // Set local test input
-//     String queryLogicName = "queryLogicName";
-//     String query = "query";
-//     String queryName = "queryName";
-//     String queryVisibility = "A&B";
-//     long currentTime = System.currentTimeMillis();
-//     Date beginDate = new Date(currentTime - 5000);
-//     Date endDate = new Date(currentTime - 1000);
-//     String queryAuthorizations = "AUTH_1";
-//     Date expirationDate = new Date(currentTime + 9999);
-//     int pagesize = 10;
-//     int pageTimeout = -1;
-//     QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
-//     boolean trace = false;
-//     String userName = "userName";
-//     String userSid = "userSid";
-//     String userDN = "userDN";
-//     SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
-//     List<String> dnList = Collections.singletonList(userDN);
-//     UUID queryId = UUID.randomUUID();
-//
-//     MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-//     queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
-//     queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-//     queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-//     queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-//     queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
-//     queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
-//     queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-//     queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
-//     queryParameters.putSingle("valid", "param");
-//     queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
-//
-//     ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
-//     marking.validate(queryParameters);
-//
-//     QueryParameters qp = new QueryParametersImpl();
-//     qp.validate(queryParameters);
-//
-//     MultivaluedMap<String,String> op = new MultivaluedMapImpl<>();
-//     op.putAll(qp.getUnknownParameters(queryParameters));
-//     // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.ACTIVE.name());
-//     op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-//     op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
-//     op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
-//
-//     // Set expectations
-//     when(context.getCallerPrincipal()).thenReturn(principal);
-//     queryLogic1.validate(queryParameters);
-//     when(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).thenReturn((QueryLogic) this.queryLogic1);
-//     when(this.queryLogic1.getMaxPageSize()).thenReturn(1000).times(2);
-//     when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-//     when(this.principal.getName()).thenReturn(userName);
-//     when(this.principal.getShortName()).thenReturn(userSid);
-//     when(this.principal.getUserDN()).thenReturn(userDNpair);
-//     when(this.principal.getDNs()).thenReturn(new String[] {userDN});
-//     when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
-//     when(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).thenReturn(true);
-//     when(this.queryLogic1.getAuditType(null)).thenReturn(Auditor.AuditType.ACTIVE);
-//     when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-//     when(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).thenReturn(this.query);
-//     when(this.queryLogic1.getAuditType(this.query)).thenReturn(Auditor.AuditType.ACTIVE);
-//     when(this.queryLogic1.getSelectors(this.query)).thenReturn(null);
-//     when(auditor.audit(eq(queryParameters))).thenReturn(null);
-//     when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
-//     when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
-//     when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
-//     this.connectionRequestBean.requestBegin(queryId.toString());
-//     when(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).thenReturn(this.connector);
-//     this.connectionRequestBean.requestEnd(queryId.toString());
-//     when(this.traceInfos.get(userSid)).thenReturn(Arrays.asList(PatternWrapper.wrap(query)));
-//     when(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).thenThrow(
-//     new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION: PROBLEM ADDING QUERY LOGIC TO CACHE"));
-//     this.queryLogic1.close();
-//     this.connectionFactory.returnConnection(this.connector);
-//     PowerMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 2ND-LEVEL TEST EXCEPTION"));
-//     this.persister.remove(this.query);
-//     PowerMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 3RD-LEVEL TEST EXCEPTION"));
-//     when(this.query.getId()).thenReturn(queryId);
-//     when(this.qlCache.poll(queryId.toString())).thenReturn(null);
-//
-//     // Run the te
-//     QueryExecutorBean subject = new QueryExecutorBean();
-//     setInternalState(subject, EJBContext.class, context);
-//     setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
-//     ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-//     ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-//     ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-//     setInternalState(subject, Persister.class, persister);
-//     setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-//     setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
-//     setInternalState(subject, AuditBean.class, auditor);
-//     setInternalState(subject, Multimap.class, traceInfos);
-//     setInternalState(subject, SecurityMarking.class, marking);
-//     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-//     ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-//     ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-//     Throwable result1 = null;
-//     try {
-//     subject.createQueryAndNext(queryLogicName, queryParameters);
-//     } catch (DatawaveWebApplicationException e) {
-//     result1 = e.getCause();
-//     }
-//
-//     // Verify results
-//     assertTrue(result1 instanceof QueryException, "QueryException expected to have been thrown");
-//     assertEquals("500-7", ((QueryException) result1).getErrorCode(), "Exception expected to have been caused by problem adding query logic to cache");
-//     }
-//
-//     @SuppressWarnings({"rawtypes", "unchecked"})
-//     @Test(expected = NoResultsException.class)
-//     public void testCreateQueryAndNext_ButNoResults() throws Exception {
-//     // Set local test input
-//     String queryLogicName = "queryLogicName";
-//     String query = "query";
-//     String queryName = "queryName";
-//     String queryVisibility = "A&B";
-//     long currentTime = System.currentTimeMillis();
-//     Date beginDate = new Date(currentTime - 5000);
-//     Date endDate = new Date(currentTime - 1000);
-//     String queryAuthorizations = "AUTH_1";
-//     Date expirationDate = new Date(currentTime + 999999);
-//     int pagesize = 10;
-//     int pageTimeout = -1;
-//     QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
-//     boolean trace = false;
-//     String userName = "userName";
-//     String userSid = "userSid";
-//     String userDN = "userdn";
-//     SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
-//     List<String> dnList = Collections.singletonList(userDN);
-//     UUID queryId = UUID.randomUUID();
-//     long pageNumber = 0L;
-//
-//     HashMap<String,Collection<String>> authsMap = new HashMap<>();
-//     authsMap.put("userdn", Arrays.asList(queryAuthorizations));
-//
-//     MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-//     queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
-//     queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-//     queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-//     queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
-//     queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-//     queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
-//     queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
-//     queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-//     queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
-//     queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
-//     queryParameters.putSingle("valid", "param");
-//
-//     ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
-//     marking.validate(queryParameters);
-//
-//     QueryParameters qp = new QueryParametersImpl();
-//     qp.validate(queryParameters);
-//
-//     MultivaluedMap<String,String> op = new MultivaluedMapImpl<>();
-//     op.putAll(qp.getUnknownParameters(queryParameters));
-//     op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-//     op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
-//     op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
-//
-//     // Set expectations of the create logic
-//     queryLogic1.validate(queryParameters);
-//     when(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).thenReturn((QueryLogic) this.queryLogic1);
-//     when(this.queryLogic1.getMaxPageSize()).thenReturn(1000);
-//     when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
-//     when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-//     when(this.principal.getName()).thenReturn(userName);
-//     when(this.principal.getShortName()).thenReturn(userSid);
-//     when(this.principal.getUserDN()).thenReturn(userDNpair);
-//     when(this.principal.getDNs()).thenReturn(new String[] {userDN});
-//     when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
-//     when(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).thenReturn(true);
-//     when(this.queryLogic1.getAuditType(null)).thenReturn(Auditor.AuditType.NONE);
-//     when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-//     when(this.principal.getPrimaryUser()).thenReturn(dwUser);
-//     when(this.dwUser.getAuths()).thenReturn(Collections.singleton(queryAuthorizations));
-//     when(this.principal.getProxiedUsers()).thenReturn(Collections.singletonList(dwUser));
-//     when(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).thenReturn(this.query);
-//     when(this.queryLogic1.getAuditType(this.query)).thenReturn(Auditor.AuditType.NONE);
-//     when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
-//     when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
-//     when(this.traceInfos.get(userSid)).thenReturn(new ArrayList<>(0));
-//     when(this.traceInfos.get(null)).thenReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
-//     when(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).thenReturn(true);
-//     when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(true);
-//     when(this.query.getOwner()).thenReturn(userSid);
-//     when(this.query.getId()).thenReturn(queryId);
-//     when(this.query.getQuery()).thenReturn(queryName);
-//     when(this.query.getQueryLogicName()).thenReturn(queryLogicName);
-//     when(this.query.getBeginDate()).thenReturn(null);
-//     when(this.query.getEndDate()).thenReturn(null);
-//     when(this.query.getQueryAuthorizations()).thenReturn(queryAuthorizations);
-//     when(this.query.getQueryName()).thenReturn(null);
-//     when(this.query.getColumnVisibility()).thenReturn(null);
-//     when(this.query.getPagesize()).thenReturn(0);
-//     when(this.query.getPageTimeout()).thenReturn(-1);
-//     when(this.query.getExpirationDate()).thenReturn(null);
-//     when(this.query.getParameters()).thenReturn((Set) Collections.emptySet());
-//     when(this.query.getUncaughtExceptionHandler()).thenReturn(new QueryUncaughtExceptionHandler());
-//     this.metrics.updateMetric(isA(QueryMetric.class));
-//     when(this.query.getUserDN()).thenReturn(userDN);
-//     when(this.query.getDnList()).thenReturn(dnList);
-//     when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
-//     when(this.queryLogic1.getResultLimit(dnList)).thenReturn(-1L);
-//     when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
-//     when(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
-//     this.queryLogic1.setupQuery(this.genericConfiguration);
-//     when(this.queryLogic1.getTransformIterator(this.query)).thenReturn(this.transformIterator);
-//     when(this.genericConfiguration.getQueryString()).thenReturn(queryName);
-//     this.cache.put(eq(queryId.toString()), isA(RunningQuery.class));
-//     when(this.qlCache.poll(queryId.toString())).thenReturn(null);
-//
-//     // Set expectations of the next logic
-//     when(this.principal.getName()).thenReturn(userName);
-//     when(this.principal.getShortName()).thenReturn(userSid);
-//     when(this.context.getUserTransaction()).thenReturn(this.transaction);
-//     this.transaction.begin();
-//     when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
-//     when(cache.lock(queryId.toString())).thenReturn(true);
-//     when(this.runningQuery.getSettings()).thenReturn(this.query);
-//     this.connectionRequestBean.requestBegin(queryId.toString());
-//     when(this.runningQuery.getConnection()).thenReturn(this.connector);
-//     this.connectionRequestBean.requestEnd(queryId.toString());
-//     this.runningQuery.setActiveCall(true);
-//     when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
-//     when(this.runningQuery.next()).thenReturn(this.resultsPage);
-//     when(this.runningQuery.getLastPageNumber()).thenReturn(pageNumber);
-//     when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1).times(2);
-//     when(this.queryLogic1.getTransformer(this.query)).thenReturn(this.transformer);
-//     when(this.transformer.createResponse(this.resultsPage)).thenReturn(this.baseResponse);
-//     when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.NONE).times(2);
-//     this.baseResponse.setHasResults(false);
-//     this.baseResponse.setPageNumber(pageNumber);
-//     when(this.queryLogic1.getLogicName()).thenReturn(queryLogicName);
-//     this.baseResponse.setLogicName(queryLogicName);
-//     this.baseResponse.setQueryId(queryId.toString());
-//     when(this.runningQuery.getMetric()).thenReturn(this.queryMetric).times(2);
-//     this.runningQuery.setActiveCall(false);
-//     this.queryMetric.setProxyServers(eq(new ArrayList<>(0)));
-//     this.baseResponse.addException(isA(NoResultsQueryException.class));
-//
-//     when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
-//     when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(true);
-//
-//     this.metrics.updateMetric(this.queryMetric);
-//     cache.unlock(queryId.toString());
-//     this.transaction.setRollbackOnly();
-//     when(this.transaction.getStatus()).thenReturn(Status.STATUS_ACTIVE);
-//     this.transaction.commit();
-//
-//     // Set expectations
-//     when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-//     when(this.principal.getName()).thenReturn(userName);
-//     when(this.principal.getShortName()).thenReturn(userSid).times(2);
-//     when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-//     when(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).thenReturn(false);
-//     when(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).thenReturn(null);
-//     when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
-//     when(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).thenReturn(this.connector);
-//     this.runningQuery.closeConnection(this.connectionFactory);
-//     this.cache.remove(queryId.toString());
-//     this.closedCache.add(queryId.toString());
-//     this.closedCache.remove(queryId.toString());
-//     when(this.runningQuery.getTraceInfo()).thenReturn(null);
-//     when(this.responseObjectFactory.getEventQueryResponse()).thenReturn(new DefaultEventQueryResponse());
-//
-//     // Run the te
-//     QueryExecutorBean subject = new QueryExecutorBean();
-//     setInternalState(subject, EJBContext.class, context);
-//     ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-//     ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-//     ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-//     setInternalState(subject, QueryCache.class, cache);
-//     setInternalState(subject, ClosedQueryCache.class, closedCache);
-//     setInternalState(subject, Persister.class, persister);
-//     setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-//     setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
-//     setInternalState(subject, AuditBean.class, auditor);
-//     setInternalState(subject, QueryMetricsBean.class, metrics);
-//     setInternalState(subject, Multimap.class, traceInfos);
-//     setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-//     setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
-//     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-//     ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-//     ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-//
-//     subject.createQueryAndNext(queryLogicName, queryParameters);
-//     }
-
-     @Test
-     public void testCreateQueryAndNext_InvalidExpirationDate() throws Exception {
-     // Set local test input
-     String queryLogicName = "queryLogicName";
-     String query = "query";
-     String queryName = "queryName";
-     String queryVisibility = "A&B";
-     long currentTime = System.currentTimeMillis();
-     Date beginDate = new Date(currentTime - 5000);
-     Date endDate = new Date(currentTime - 1000);
-     String queryAuthorizations = "AUTH_1";
-     Date expirationDate = new Date(currentTime - 500);
-     int pagesize = 1;
-     int pageTimeout = -1;
-     Long maxResultsOverride = null;
-     QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
-     String parameters = null;
-     boolean trace = false;
-
-     MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
-     p.putAll(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate,
-     pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
-
-     // Run the te
-     QueryExecutorBean subject = new QueryExecutorBean();
-     ReflectionTestUtils.setField(subject, "qp", new QueryParametersImpl());
-     ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-     Throwable result1  = assertThrows(DatawaveWebApplicationException.class, () -> subject.createQueryAndNext(queryLogicName, p));
-     // Verify results
-     assertTrue(result1 instanceof BadRequestException, "BadRequestException expected to have been thrown");
-     assertEquals("400-3", ((QueryException) result1.getCause()).getErrorCode(), "Thrown exception expected to have been due to invalid expiration date");
-     }
-
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void testAdminCancel_NullTupleReturnedAndQueryExceptionThrown() throws Exception {
+        // Set local test input
+        UUID queryId = UUID.randomUUID();
+        
+        // Set expectations of the create logic
+        when(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).thenReturn(false);
+        when(this.qlCache.poll(queryId.toString())).thenReturn(null);
+        when(this.cache.get(queryId.toString())).thenReturn(null);
+        when(this.persister.adminFindById(queryId.toString())).thenReturn(Arrays.asList(this.query, this.query));
+        
+        // Run the test
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "ctx", context);
+        ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+        ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+        ReflectionTestUtils.setField(subject, "queryCache", cache);
+        ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
+        ReflectionTestUtils.setField(subject, "persister", persister);
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+        ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+        
+        assertThrows(DatawaveWebApplicationException.class, () -> subject.adminCancel(queryId.toString()));
+        
+    }
+    
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void testAdminCancel_RunningQueryFoundInCache() throws Exception {
+        // Set local test input
+        UUID queryId = UUID.randomUUID();
+        
+        // Set expectations of the create logic
+        try (MockedStatic<Trace> traceMock = Mockito.mockStatic(Trace.class)) {
+            traceMock.when(() -> Trace.trace(this.traceInfo, "query:close")).thenReturn(this.span);
+            
+            when(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).thenReturn(false);
+            when(this.qlCache.poll(queryId.toString())).thenReturn(null);
+            when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
+            when(this.runningQuery.getSettings()).thenReturn(this.query);
+            this.runningQuery.cancel();
+            this.runningQuery.closeConnection(this.connectionFactory);
+            when(this.query.getId()).thenReturn(queryId);
+            cache.remove(queryId.toString());
+            when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
+            this.span.data(eq("closedAt"), isA(String.class));
+            this.span.stop();
+            // TODO: 1.8.1: no longer done
+            // PowerMock.mockStaticPartial(Tracer.class, "getInstance");
+            // when(Tracer.getInstance()).thenReturn(this.tracer);
+            // this.tracer.flush();
+            
+            // Run the test
+            QueryExecutorBean subject = new QueryExecutorBean();
+            ReflectionTestUtils.setField(subject, "ctx", context);
+            ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+            ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+            ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+            ReflectionTestUtils.setField(subject, "queryCache", cache);
+            ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
+            ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+            ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+            ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+            
+            VoidResponse result1 = subject.adminCancel(queryId.toString());
+            
+            // Verify results
+            assertNotNull(result1, "Expected a non-null response");
+        }
+    }
+    
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void testAdminCancel_LookupAccumuloQuery() throws Exception {
+        // Set local test input
+        UUID queryId = UUID.randomUUID();
+        List<String> dnList = Collections.singletonList("qwe");
+        
+        // Set expectations of the create logic
+        when(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).thenReturn(false);
+        when(this.qlCache.poll(queryId.toString())).thenReturn(null);
+        when(this.cache.get(queryId.toString())).thenReturn(null);
+        when(this.persister.adminFindById(queryId.toString())).thenReturn(Lists.newArrayList(query));
+        when(this.query.getQueryAuthorizations()).thenReturn("AUTH_1,AUTH_2");
+        when(this.query.getQueryLogicName()).thenReturn("ql1");
+        when(this.query.getOwner()).thenReturn("qwe");
+        when(this.query.getUserDN()).thenReturn("qwe");
+        when(this.query.getDnList()).thenReturn(dnList);
+        when(this.query.getId()).thenReturn(queryId);
+        when(this.query.getQuery()).thenReturn("qwe");
+        when(this.query.getBeginDate()).thenReturn(null);
+        when(this.query.getEndDate()).thenReturn(null);
+        when(this.query.getColumnVisibility()).thenReturn(null);
+        when(this.query.getQueryName()).thenReturn(null);
+        when(this.query.getParameters()).thenReturn((Set) Collections.emptySet());
+        when(context.getCallerPrincipal()).thenReturn(principal);
+        when(this.queryLogicFactory.getQueryLogic("ql1", principal)).thenReturn((QueryLogic) this.queryLogic1);
+        when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
+        when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(false);
+        when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic1.getResultLimit(dnList)).thenReturn(-1L);
+        when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
+        cache.put(eq(queryId.toString()), isA(RunningQuery.class));
+        cache.remove(queryId.toString());
+        this.queryLogic1.close();
+        
+        // Run the test
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "ctx", context);
+        ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+        ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+        ReflectionTestUtils.setField(subject, "queryCache", cache);
+        ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
+        ReflectionTestUtils.setField(subject, "persister", persister);
+        ReflectionTestUtils.setField(subject, "queryLogicFactory", queryLogicFactory);
+        ReflectionTestUtils.setField(subject, "queryExpirationConf", queryExpirationConf);
+        ReflectionTestUtils.setField(subject, "qp", new QueryParametersImpl());
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+        ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+        
+        VoidResponse result1 = subject.adminCancel(queryId.toString());
+        
+        // Verify results
+        assertNotNull(result1, "Expected a non-null response");
+    }
+    
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void testAdminClose_NonNullTupleReturned() throws Exception {
+        // Set local test input
+        UUID queryId = UUID.randomUUID();
+        
+        // Set expectations
+        when(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).thenReturn(false);
+        when(this.qlCache.poll(queryId.toString())).thenReturn(this.tuple);
+        when(this.tuple.getFirst()).thenReturn((QueryLogic) this.queryLogic1);
+        this.queryLogic1.close();
+        when(this.tuple.getSecond()).thenReturn(this.connector);
+        this.connectionFactory.returnConnection(this.connector);
+        
+        // Run the test
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+        ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+        ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+        VoidResponse result1 = subject.adminClose(queryId.toString());
+        
+        // Verify results
+        assertNotNull(result1, "Expected a non-null response performing an admin close");
+    }
+    
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void testAdminClose_NullTupleReturnedAndQueryExceptionThrown() throws Exception {
+        // Set local test input
+        UUID queryId = UUID.randomUUID();
+        
+        // Set expectations
+        when(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).thenReturn(false);
+        when(this.qlCache.poll(queryId.toString())).thenReturn(null);
+        when(this.cache.get(queryId.toString())).thenReturn(null);
+        when(this.persister.adminFindById(queryId.toString())).thenReturn(null);
+        
+        // Run the test
+        EasyMock.replay();
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "ctx", context);
+        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+        ReflectionTestUtils.setField(subject, "queryCache", cache);
+        ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
+        ReflectionTestUtils.setField(subject, "persister", persister);
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+        ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+        assertThrows(DatawaveWebApplicationException.class, () -> subject.adminClose(queryId.toString()));
+        
+    }
+    
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Test
+    public void testCancel_HappyPath() throws Exception {
+        // Set local test input
+        String userName = "userName";
+        UUID queryId = UUID.randomUUID();
+        
+        // Set expectations of the create logic
+        when(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).thenReturn(false);
+        when(this.context.getCallerPrincipal()).thenReturn(this.principal);
+        when(this.principal.getName()).thenReturn(userName);
+        when(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).thenReturn(this.tuple);
+        this.closedCache.remove(queryId.toString());
+        when(this.tuple.getFirst()).thenReturn((QueryLogic) this.queryLogic1);
+        this.queryLogic1.close();
+        when(this.tuple.getSecond()).thenReturn(this.connector);
+        this.connectionFactory.returnConnection(this.connector);
+        
+        // Run the test
+        EasyMock.replay();
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "ctx", context);
+        ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+        ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+        ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+        ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
+        VoidResponse result1 = subject.cancel(queryId.toString());
+        
+        // Verify results
+        assertNotNull(result1, "Expected a non-null response");
+    }
+    
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void testCancel_NullTupleReturnedAndQueryExceptionThrown() throws Exception {
+        // Set local test input
+        String userName = "userName";
+        UUID queryId = UUID.randomUUID();
+        String userSid = "userSid";
+        String queryAuthorizations = "AUTH_1";
+        
+        // Set expectations of the create logic
+        when(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).thenReturn(false);
+        when(this.context.getCallerPrincipal()).thenReturn(this.principal);
+        when(this.principal.getName()).thenReturn(userName);
+        when(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).thenReturn(null);
+        when(this.closedCache.exists(queryId.toString())).thenReturn(false);
+        when(this.principal.getName()).thenReturn(userName);
+        when(this.principal.getShortName()).thenReturn(userSid);
+        when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+        when(this.cache.get(queryId.toString())).thenReturn(null);
+        when(this.persister.findById(queryId.toString())).thenReturn(Arrays.asList((Query) this.query, this.query));
+        
+        // Run the test
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "ctx", context);
+        ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+        ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+        ReflectionTestUtils.setField(subject, "queryCache", cache);
+        ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
+        ReflectionTestUtils.setField(subject, "persister", persister);
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+        ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+        
+        assertThrows(DatawaveWebApplicationException.class, () -> subject.cancel(queryId.toString()));
+        
+    }
+    
+    @Disabled
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void testCancel_RunningQueryFoundInCache() throws Exception {
+        try (MockedStatic<Trace> traceMock = Mockito.mockStatic(Trace.class)) {
+            traceMock.when(() -> Trace.trace(this.traceInfo, "query:close")).thenReturn(this.span);
+            // Set local test input
+            String userName = "userName";
+            UUID queryId = UUID.randomUUID();
+            String userSid = "userSid";
+            String queryAuthorizations = "AUTH_1";
+            
+            // Set expectations of the create logic
+            when(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).thenReturn(false);
+            when(this.context.getCallerPrincipal()).thenReturn(this.principal);
+            when(this.principal.getName()).thenReturn(userName);
+            when(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).thenReturn(null);
+            when(this.principal.getName()).thenReturn(userName);
+            when(this.principal.getShortName()).thenReturn(userSid);
+            when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
+            when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+            this.closedCache.remove(queryId.toString());
+            when(this.runningQuery.getSettings()).thenReturn(this.query);
+            when(this.query.getOwner()).thenReturn(userSid);
+            this.runningQuery.cancel();
+            this.runningQuery.closeConnection(this.connectionFactory);
+            when(this.query.getId()).thenReturn(queryId);
+            cache.remove(queryId.toString());
+            when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
+            this.span.data(eq("closedAt"), isA(String.class));
+            this.span.stop();
+            // TODO: 1.8.1: no longer done
+            // PowerMock.mockStaticPartial(Tracer.class, "getInstance");
+            // when(Tracer.getInstance()).thenReturn(this.tracer);
+            // this.tracer.flush();
+            
+            // Run the test
+            QueryExecutorBean subject = new QueryExecutorBean();
+            ReflectionTestUtils.setField(subject, "ctx", context);
+            ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+            ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+            ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+            ReflectionTestUtils.setField(subject, "queryCache", cache);
+            ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
+            ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+            ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+            ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+            VoidResponse result1 = subject.cancel(queryId.toString());
+            // Verify results
+            assertNotNull(result1, "Expected a non-null response");
+        }
+    }
+    
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void testClose_NullTupleReturnedFromQueryLogicCache() throws Exception {
+        // Set local test input
+        String userName = "userName";
+        String userSid = "userSid";
+        UUID queryId = UUID.randomUUID();
+        String queryAuthorizations = "AUTH_1";
+        
+        // Set expectations
+        when(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).thenReturn(false);
+        when(this.context.getCallerPrincipal()).thenReturn(this.principal);
+        when(this.principal.getName()).thenReturn(userName);
+        when(this.principal.getShortName()).thenReturn(userSid);
+        when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+        when(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).thenReturn(null);
+        when(this.closedCache.exists(queryId.toString())).thenReturn(false);
+        when(this.cache.get(queryId.toString())).thenReturn(null);
+        when(this.persister.findById(queryId.toString())).thenReturn(new ArrayList<>(0));
+        
+        // Run the te
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "ctx", context);
+        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+        ReflectionTestUtils.setField(subject, "queryCache", cache);
+        ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
+        ReflectionTestUtils.setField(subject, "persister", persister);
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+        ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+        
+        assertThrows(DatawaveWebApplicationException.class, () -> subject.close(queryId.toString()));
+    }
+    
+    //
+    // @SuppressWarnings({"unchecked", "rawtypes"})
+    // @Test
+    // public void testClose_UncheckedException() throws Exception {
+    // // Set local test input
+    // String userSid = "userSid";
+    // UUID queryId = UUID.randomUUID();
+    //
+    // // Set expectations
+    // when(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).thenReturn(false);
+    // when(this.context.getCallerPrincipal()).thenReturn(this.principal);
+    // when(this.principal.getShortName()).thenReturn(userSid);
+    // when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
+    // when(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).thenReturn(this.tuple);
+    // when(this.tuple.getFirst()).thenReturn((QueryLogic) this.queryLogic1);
+    // this.queryLogic1.close();
+    // PowerMock.expectLastCall().andThrow(ILLEGAL_STATE_EXCEPTION);
+    // when(this.tuple.getSecond()).thenThrow(ILLEGAL_STATE_EXCEPTION);
+    //
+    // // Run the te
+    // QueryExecutorBean subject = new QueryExecutorBean();
+    // setInternalState(subject, EJBContext.class, context);
+    // ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+    // setInternalState(subject, QueryCache.class, cache);
+    // setInternalState(subject, ClosedQueryCache.class, closedCache);
+    // setInternalState(subject, Persister.class, persister);
+    // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+    // ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+    // ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+    //
+    // assertThrows(DatawaveWebApplicationException.class, () -> subject.close(queryId.toString()));
+    //
+    // }
+    //
+    // @SuppressWarnings({"rawtypes", "unchecked"})
+    // @Test
+    // public void testCreateQueryAndNext_HappyPath() throws Exception {
+    // // Set local test input
+    // String queryLogicName = "queryLogicName";
+    // String query = "query";
+    // String queryName = "queryName";
+    // String queryVisibility = "A&B";
+    // long currentTime = System.currentTimeMillis();
+    // Date beginDate = new Date(currentTime - 5000);
+    // Date endDate = new Date(currentTime - 1000);
+    // String queryAuthorizations = "AUTH_1";
+    // Date expirationDate = new Date(currentTime + 999999);
+    // int pagesize = 10;
+    // int pageTimeout = -1;
+    // QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+    // boolean trace = false;
+    // String userName = "userName";
+    // String userSid = "userSid";
+    // String userDN = "userdn";
+    // SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
+    // List<String> dnList = Collections.singletonList(userDN);
+    // UUID queryId = UUID.randomUUID();
+    // long pageNumber = 0L;
+    //
+    // HashMap<String,Collection<String>> authsMap = new HashMap<>();
+    // authsMap.put("userdn", Arrays.asList(queryAuthorizations));
+    //
+    // MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+    // queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
+    // queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+    // queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+    // queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+    // queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+    // queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
+    // queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+    // queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+    // queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+    // queryParameters.putSingle("valid", "param");
+    //
+    // ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+    // marking.validate(queryParameters);
+    //
+    // QueryParameters qp = new QueryParametersImpl();
+    // qp.validate(queryParameters);
+    //
+    // MultivaluedMap<String,String> op = new MultivaluedMapImpl<>();
+    // op.putAll(qp.getUnknownParameters(queryParameters));
+    // // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
+    // op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+    // op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+    // op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+    //
+    // // Set expectations of the create logic
+    // queryLogic1.validate(queryParameters);
+    // when(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).thenReturn((QueryLogic) this.queryLogic1);
+    // when(this.queryLogic1.getMaxPageSize()).thenReturn(1000);
+    // when(this.context.getCallerPrincipal()).thenReturn(this.principal);
+    // when(this.principal.getName()).thenReturn(userName);
+    // when(this.principal.getShortName()).thenReturn(userSid);
+    // when(this.principal.getUserDN()).thenReturn(userDNpair);
+    // when(this.principal.getDNs()).thenReturn(new String[] {userDN});
+    // when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
+    // when(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).thenReturn(true);
+    // when(this.queryLogic1.getAuditType(null)).thenReturn(Auditor.AuditType.NONE);
+    // when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+    // when(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).thenReturn(this.query);
+    // when(this.queryLogic1.getAuditType(this.query)).thenReturn(Auditor.AuditType.NONE);
+    // when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
+    // when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
+    // when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+    // when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
+    // this.connectionRequestBean.requestBegin(queryId.toString());
+    // when(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).thenReturn(this.connector);
+    // this.connectionRequestBean.requestEnd(queryId.toString());
+    // when(this.traceInfos.get(userSid)).thenReturn(new ArrayList<>(0));
+    // when(this.traceInfos.get(null)).thenReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
+    // when(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).thenReturn(true);
+    // when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(true);
+    // when(this.principal.getPrimaryUser()).thenReturn(dwUser);
+    // when(this.dwUser.getAuths()).thenReturn(Collections.singleton(queryAuthorizations));
+    // when(this.principal.getProxiedUsers()).thenReturn(Collections.singletonList(dwUser));
+    // when(this.query.getOwner()).thenReturn(userSid);
+    // when(this.query.getId()).thenReturn(queryId);
+    // when(this.query.getQuery()).thenReturn(queryName);
+    // when(this.query.getQueryLogicName()).thenReturn(queryLogicName);
+    // when(this.query.getBeginDate()).thenReturn(null);
+    // when(this.query.getEndDate()).thenReturn(null);
+    // when(this.query.getColumnVisibility()).thenReturn(null);
+    // when(this.query.getQueryAuthorizations()).thenReturn(queryAuthorizations);
+    // when(this.query.getQueryName()).thenReturn(null);
+    // when(this.query.getPagesize()).thenReturn(0);
+    // when(this.query.getExpirationDate()).thenReturn(null);
+    // when(this.query.getParameters()).thenReturn((Set) Collections.emptySet());
+    // when(this.query.getUncaughtExceptionHandler()).thenReturn(new QueryUncaughtExceptionHandler());
+    // this.metrics.updateMetric(isA(QueryMetric.class));
+    // when(this.query.getUserDN()).thenReturn(userDN);
+    // when(this.query.getDnList()).thenReturn(dnList);
+    // when(this.queryLogic1.getResultLimit(dnList)).thenReturn(-1L);
+    // when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
+    // when(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
+    // this.queryLogic1.setupQuery(this.genericConfiguration);
+    // when(this.queryLogic1.getTransformIterator(this.query)).thenReturn(this.transformIterator);
+    // cache.put(eq(queryId.toString()), isA(RunningQuery.class));
+    // when(this.genericConfiguration.getQueryString()).thenReturn(queryName).once();
+    // when(this.qlCache.poll(queryId.toString())).thenReturn(null);
+    //
+    // // Set expectations of the next logic
+    // when(this.principal.getName()).thenReturn(userName);
+    // when(this.principal.getShortName()).thenReturn(userSid);
+    // when(this.context.getUserTransaction()).thenReturn(this.transaction);
+    //
+    // this.transaction.begin();
+    // when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
+    // when(cache.lock(queryId.toString())).thenReturn(true);
+    // when(this.runningQuery.getSettings()).thenReturn(this.query);
+    // when(this.runningQuery.getConnection()).thenReturn(this.connector);
+    //
+    // this.runningQuery.setActiveCall(true);
+    //
+    // when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
+    // when(this.runningQuery.next()).thenReturn(this.resultsPage);
+    // when(this.runningQuery.getLastPageNumber()).thenReturn(pageNumber);
+    // when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
+    // when(this.runningQuery.getSettings()).thenReturn(this.query);
+    // when(this.queryLogic1.getTransformer(this.query)).thenReturn(this.transformer);
+    // when(this.transformer.createResponse(this.resultsPage)).thenReturn(this.baseResponse);
+    // when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.COMPLETE);
+    // this.baseResponse.setHasResults(true);
+    // this.baseResponse.setPageNumber(pageNumber);
+    // when(this.queryLogic1.getLogicName()).thenReturn(queryLogicName);
+    // this.baseResponse.setLogicName(queryLogicName);
+    // this.baseResponse.setQueryId(queryId.toString());
+    // when(this.runningQuery.getMetric()).thenReturn(this.queryMetric);
+    // this.runningQuery.setActiveCall(false);
+    // this.queryMetric.setProxyServers(eq(new ArrayList<>(0)));
+    // when(this.responseObjectFactory.getEventQueryResponse()).thenReturn(new DefaultEventQueryResponse());
+    //
+    // cache.unlock(queryId.toString());
+    // when(this.transaction.getStatus()).thenReturn(Status.STATUS_ACTIVE);
+    // this.transaction.commit();
+    // // Run the te
+    // QueryExecutorBean subject = new QueryExecutorBean();
+    // setInternalState(subject, EJBContext.class, context);
+    // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+    // ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+    // ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+    // setInternalState(subject, QueryCache.class, cache);
+    // setInternalState(subject, ClosedQueryCache.class, closedCache);
+    // setInternalState(subject, Persister.class, persister);
+    // setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
+    // setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+    // setInternalState(subject, AuditBean.class, auditor);
+    // setInternalState(subject, QueryMetricsBean.class, metrics);
+    // setInternalState(subject, Multimap.class, traceInfos);
+    // setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
+    // setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+    // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+    // ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+    // ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+    // BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, queryParameters);
+    //
+    // // Verify results
+    // assertNotNull(result1, "Expected a non-null response");
+    // }
+    //
+    // @Test
+    // public void testCreateQueryAndNext_BadID() throws Exception {
+    // // Set local test input
+    // String queryLogicName = "queryLogicName";
+    // String query = "query";
+    // String queryName = "queryName";
+    // String queryVisibility = "A&B";
+    // long currentTime = System.currentTimeMillis();
+    // Date beginDate = new Date(currentTime - 5000);
+    // Date endDate = new Date(currentTime - 1000);
+    // String queryAuthorizations = "AUTH_1";
+    // Date expirationDate = new Date(currentTime + 999999);
+    // int pagesize = 10;
+    // int pageTimeout = -1;
+    // QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+    // boolean trace = false;
+    // String userName = "userName";
+    // String userSid = "userSid";
+    // String userDN = "userdn";
+    // String errorCode = DatawaveErrorCode.INVALID_QUERY_ID.getErrorCode();
+    // SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
+    // List<String> dnList = Collections.singletonList(userDN);
+    // UUID queryId = UUID.randomUUID();
+    //
+    // HashMap<String,Collection<String>> authsMap = new HashMap<>();
+    // authsMap.put("userdn", Arrays.asList(queryAuthorizations));
+    //
+    // MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+    // queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
+    // queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+    // queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+    // queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+    // queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+    // queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
+    // queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+    // queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+    // queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+    // queryParameters.putSingle("valid", "param");
+    //
+    // ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+    // marking.validate(queryParameters);
+    //
+    // QueryParameters qp = new QueryParametersImpl();
+    // qp.validate(queryParameters);
+    //
+    // MultivaluedMap<String,String> op = new MultivaluedMapImpl<>();
+    // op.putAll(qp.getUnknownParameters(queryParameters));
+    // op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+    // op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+    // op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+    //
+    // // Set expectations of the create logic
+    // queryLogic1.validate(queryParameters);
+    // when(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).thenReturn((QueryLogic) this.queryLogic1);
+    // when(this.queryLogic1.getMaxPageSize()).thenReturn(1000).times(2);
+    // when(this.context.getCallerPrincipal()).thenReturn(this.principal);
+    // when(this.principal.getName()).thenReturn(userName);
+    // when(this.principal.getShortName()).thenReturn(userSid);
+    // when(this.principal.getUserDN()).thenReturn(userDNpair);
+    // when(this.principal.getDNs()).thenReturn(new String[] {userDN});
+    // when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
+    // when(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).thenReturn(true);
+    // when(this.queryLogic1.getAuditType(null)).thenReturn(Auditor.AuditType.NONE);
+    // when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+    // when(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).thenReturn(this.query);
+    // when(this.queryLogic1.getAuditType(this.query)).thenReturn(Auditor.AuditType.NONE);
+    // when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
+    // when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
+    // when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+    // when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
+    // this.connectionRequestBean.requestBegin(queryId.toString());
+    // when(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).thenReturn(this.connector);
+    // this.connectionRequestBean.requestEnd(queryId.toString());
+    // when(this.traceInfos.get(userSid)).thenReturn(new ArrayList<>(0));
+    // when(this.traceInfos.get(null)).thenReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
+    // when(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).thenReturn(true);
+    // when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(true);
+    // when(this.principal.getPrimaryUser()).thenReturn(dwUser);
+    // when(this.dwUser.getAuths()).thenReturn(Collections.singleton(queryAuthorizations));
+    // when(this.principal.getProxiedUsers()).thenReturn(Collections.singletonList(dwUser));
+    // when(this.query.getOwner()).thenReturn(userSid);
+    // when(this.query.getId()).thenReturn(queryId);
+    // when(this.query.getQuery()).thenReturn(queryName);
+    // when(this.query.getQueryLogicName()).thenReturn(queryLogicName);
+    // when(this.query.getBeginDate()).thenReturn(null);
+    // when(this.query.getEndDate()).thenReturn(null);
+    // when(this.query.getColumnVisibility()).thenReturn(null);
+    // when(this.query.getQueryAuthorizations()).thenReturn(queryAuthorizations);
+    // when(this.query.getQueryName()).thenReturn(null);
+    // when(this.query.getPagesize()).thenReturn(0);
+    // when(this.query.getExpirationDate()).thenReturn(null);
+    // when(this.query.getParameters()).thenReturn((Set) Collections.emptySet());
+    // when(this.query.getUncaughtExceptionHandler()).thenReturn(new QueryUncaughtExceptionHandler());
+    // this.metrics.updateMetric(isA(QueryMetric.class));
+    // when(this.query.getUserDN()).thenReturn(userDN);
+    // when(this.query.getDnList()).thenReturn(dnList);
+    // when(this.queryLogic1.getResultLimit(dnList)).thenReturn(-1L);
+    // when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
+    // when(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
+    // this.queryLogic1.setupQuery(this.genericConfiguration);
+    // when(this.queryLogic1.getTransformIterator(this.query)).thenReturn(this.transformIterator);
+    // cache.put(eq(queryId.toString()), isA(RunningQuery.class));
+    // when(this.genericConfiguration.getQueryString()).thenReturn(queryName).once();
+    // when(this.qlCache.poll(queryId.toString())).thenReturn(null);
+    //
+    // // Set expectations of the next logic
+    // when(this.principal.getName()).thenReturn(userName);
+    // when(this.principal.getShortName()).thenReturn(userSid);
+    // when(this.context.getUserTransaction()).thenReturn(this.transaction);
+    // when(this.transaction.getStatus()).thenReturn(Status.STATUS_NO_TRANSACTION);
+    // cache.unlock("{id}");
+    // this.transaction.begin();
+    // this.transaction.setRollbackOnly();
+    //
+    // when(this.responseObjectFactory.getEventQueryResponse()).thenReturn(new DefaultEventQueryResponse());
+    // this.transaction.commit();
+    // QueryExecutorBean subject = new QueryExecutorBean();
+    // // Run the te
+    //
+    // setInternalState(subject, EJBContext.class, context);
+    // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+    // ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+    // ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+    // setInternalState(subject, QueryCache.class, cache);
+    // setInternalState(subject, ClosedQueryCache.class, closedCache);
+    // setInternalState(subject, Persister.class, persister);
+    // setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
+    // setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+    // setInternalState(subject, AuditBean.class, auditor);
+    // setInternalState(subject, QueryMetricsBean.class, metrics);
+    // setInternalState(subject, Multimap.class, traceInfos);
+    // setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
+    // setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+    // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+    // ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+    // ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+    // subject.createQuery(queryLogicName, queryParameters);
+    //
+    // Throwable result1 = null;
+    // try {
+    // subject.next("{id}");
+    // } catch (Exception e) {
+    // result1 = e.getCause();
+    // assertTrue(e.getCause().toString().contains("BadRequestQueryException: Invalid query id."));
+    // assertEquals(e.getMessage(), "HTTP 400 Bad Request");
+    // assertTrue(((BadRequestQueryException) result1).getErrorCode().equals(errorCode));
+    // }
+    //
+    // assertNotNull(result1, "Expected a non-null response");
+    // }
+    //
+    // @SuppressWarnings({"rawtypes", "unchecked"})
+    // @Test
+    // public void testCreateQueryAndNext_DoubleAuditValues() throws Exception {
+    // // Set local test input
+    // String queryLogicName = "queryLogicName";
+    // String query = "query";
+    // String queryName = "queryName";
+    // String queryVisibility = "A&B";
+    // long currentTime = System.currentTimeMillis();
+    // Date beginDate = new Date(currentTime - 5000);
+    // Date endDate = new Date(currentTime - 1000);
+    // String queryAuthorizations = "AUTH_1";
+    // Date expirationDate = new Date(currentTime + 999999);
+    // int pagesize = 10;
+    // int pageTimeout = -1;
+    // QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+    // boolean trace = false;
+    // String userName = "userName";
+    // String userSid = "userSid";
+    // String userDN = "userDN";
+    // SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
+    // List<String> dnList = Collections.singletonList(userDN);
+    // UUID queryId = UUID.randomUUID();
+    // long pageNumber = 0L;
+    //
+    // HashMap<String,Collection<String>> authsMap = new HashMap<>();
+    // authsMap.put("userdn", Arrays.asList(queryAuthorizations));
+    //
+    // MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+    // queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
+    // queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+    // queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+    // queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+    // queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+    // queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
+    // queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+    // queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+    // queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+    //
+    // queryParameters.putSingle(QueryParameters.QUERY_PARAMS, "auditType:NONE;auditColumnVisibility:A&B&C&D;auditUserDN:" + userDN);
+    //
+    // queryParameters.putSingle("valid", "param");
+    //
+    // ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+    // marking.validate(queryParameters);
+    //
+    // QueryParameters qp = new QueryParametersImpl();
+    // qp.validate(queryParameters);
+    //
+    // MultivaluedMap<String,String> op = new MultivaluedMapImpl<>();
+    // op.putAll(qp.getUnknownParameters(queryParameters));
+    // // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
+    // op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+    // op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+    // op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+    //
+    // // Set expectations of the create logic
+    // queryLogic1.validate(queryParameters);
+    // when(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).thenReturn((QueryLogic) this.queryLogic1);
+    // when(this.queryLogic1.getMaxPageSize()).thenReturn(1000).times(2);
+    // when(this.context.getCallerPrincipal()).thenReturn(this.principal);
+    // when(this.principal.getName()).thenReturn(userName);
+    // when(this.principal.getShortName()).thenReturn(userSid);
+    // when(this.principal.getUserDN()).thenReturn(userDNpair);
+    // when(this.principal.getDNs()).thenReturn(new String[] {userDN});
+    // when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
+    // when(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).thenReturn(true);
+    // when(this.queryLogic1.getAuditType(null)).thenReturn(Auditor.AuditType.NONE);
+    // when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+    // when(this.principal.getPrimaryUser()).thenReturn(dwUser);
+    // when(this.dwUser.getAuths()).thenReturn(Collections.singleton(queryAuthorizations));
+    // when(this.principal.getProxiedUsers()).thenReturn(Collections.singletonList(dwUser));
+    // when(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).thenReturn(this.query);
+    // when(this.queryLogic1.getAuditType(this.query)).thenReturn(Auditor.AuditType.NONE);
+    // when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
+    // when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
+    // when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
+    // when(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).thenReturn(this.connector);
+    // when(this.traceInfos.get(userSid)).thenReturn(new ArrayList<>(0));
+    // when(this.traceInfos.get(null)).thenReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
+    // when(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).thenReturn(true);
+    // when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(true);
+    // when(this.query.getOwner()).thenReturn(userSid);
+    // when(this.query.getId()).thenReturn(queryId);
+    // when(this.query.getQuery()).thenReturn(queryName);
+    // when(this.query.getQueryLogicName()).thenReturn(queryLogicName);
+    // when(this.query.getBeginDate()).thenReturn(null);
+    // when(this.query.getEndDate()).thenReturn(null);
+    // when(this.query.getColumnVisibility()).thenReturn(null);
+    // when(this.query.getQueryAuthorizations()).thenReturn(queryAuthorizations);
+    // when(this.query.getQueryName()).thenReturn(null);
+    // when(this.query.getPagesize()).thenReturn(0);
+    // when(this.query.getPageTimeout()).thenReturn(-1);
+    // when(this.query.getExpirationDate()).thenReturn(null);
+    // when(this.query.getParameters()).thenReturn((Set) Collections.emptySet());
+    // when(this.query.getUncaughtExceptionHandler()).thenReturn(new QueryUncaughtExceptionHandler());
+    // this.metrics.updateMetric(isA(QueryMetric.class));
+    // when(this.query.getUserDN()).thenReturn(userDN);
+    // when(this.query.getDnList()).thenReturn(dnList);
+    // when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+    // when(this.queryLogic1.getResultLimit(dnList)).thenReturn(-1L);
+    // when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
+    // when(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
+    // this.queryLogic1.setupQuery(this.genericConfiguration);
+    // when(this.queryLogic1.getTransformIterator(this.query)).thenReturn(this.transformIterator);
+    // when(this.genericConfiguration.getQueryString()).thenReturn(queryName).once();
+    // cache.put(eq(queryId.toString()), isA(RunningQuery.class));
+    // when(this.qlCache.poll(queryId.toString())).thenReturn(null);
+    //
+    // // Set expectations of the next logic
+    // when(this.principal.getName()).thenReturn(userName);
+    // when(this.principal.getShortName()).thenReturn(userSid);
+    // when(this.context.getUserTransaction()).thenReturn(this.transaction);
+    //
+    // this.transaction.begin();
+    // when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
+    // when(cache.lock(queryId.toString())).thenReturn(true);
+    // when(this.runningQuery.getSettings()).thenReturn(this.query);
+    // this.connectionRequestBean.requestBegin(queryId.toString());
+    // when(this.runningQuery.getConnection()).thenReturn(this.connector);
+    // this.connectionRequestBean.requestEnd(queryId.toString());
+    //
+    // this.runningQuery.setActiveCall(true);
+    //
+    // when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
+    // when(this.runningQuery.next()).thenReturn(this.resultsPage);
+    // when(this.runningQuery.getLastPageNumber()).thenReturn(pageNumber);
+    // when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1).times(2);
+    // when(this.runningQuery.getSettings()).thenReturn(this.query);
+    // when(this.queryLogic1.getTransformer(this.query)).thenReturn(this.transformer);
+    // when(this.transformer.createResponse(this.resultsPage)).thenReturn(this.baseResponse);
+    // when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.COMPLETE).times(2);
+    // this.baseResponse.setHasResults(true);
+    // this.baseResponse.setPageNumber(pageNumber);
+    // when(this.queryLogic1.getLogicName()).thenReturn(queryLogicName);
+    // this.baseResponse.setLogicName(queryLogicName);
+    // this.baseResponse.setQueryId(queryId.toString());
+    // when(this.runningQuery.getMetric()).thenReturn(this.queryMetric);
+    // this.runningQuery.setActiveCall(false);
+    // this.queryMetric.setProxyServers(eq(new ArrayList<>(0)));
+    // when(this.responseObjectFactory.getEventQueryResponse()).thenReturn(new DefaultEventQueryResponse());
+    //
+    // cache.unlock(queryId.toString());
+    // when(this.transaction.getStatus()).thenReturn(Status.STATUS_ACTIVE);
+    // this.transaction.commit();
+    //
+    // // Run the te
+    // QueryExecutorBean subject = new QueryExecutorBean();
+    // setInternalState(subject, EJBContext.class, context);
+    // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+    // ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+    // ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+    // setInternalState(subject, QueryCache.class, cache);
+    // setInternalState(subject, ClosedQueryCache.class, closedCache);
+    // setInternalState(subject, Persister.class, persister);
+    // setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
+    // setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+    // setInternalState(subject, AuditBean.class, auditor);
+    // setInternalState(subject, QueryMetricsBean.class, metrics);
+    // setInternalState(subject, Multimap.class, traceInfos);
+    // setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
+    // setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+    // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+    // ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+    // ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+    // BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, queryParameters);
+    // PowerMock.verifyAll();
+    //
+    // // Verify results
+    // assertNotNull(result1, "Expected a non-null response");
+    // }
+    //
+    // @SuppressWarnings({"rawtypes", "unchecked"})
+    // @Test
+    // public void testCreateQueryAndNext_AddToCacheException() throws Exception {
+    // // Set local test input
+    // String queryLogicName = "queryLogicName";
+    // String query = "query";
+    // String queryName = "queryName";
+    // String queryVisibility = "A&B";
+    // long currentTime = System.currentTimeMillis();
+    // Date beginDate = new Date(currentTime - 5000);
+    // Date endDate = new Date(currentTime - 1000);
+    // String queryAuthorizations = "AUTH_1";
+    // Date expirationDate = new Date(currentTime + 9999);
+    // int pagesize = 10;
+    // int pageTimeout = -1;
+    // QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+    // boolean trace = false;
+    // String userName = "userName";
+    // String userSid = "userSid";
+    // String userDN = "userDN";
+    // SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
+    // List<String> dnList = Collections.singletonList(userDN);
+    // UUID queryId = UUID.randomUUID();
+    //
+    // MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+    // queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
+    // queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+    // queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+    // queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+    // queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+    // queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
+    // queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+    // queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+    // queryParameters.putSingle("valid", "param");
+    // queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+    //
+    // ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+    // marking.validate(queryParameters);
+    //
+    // QueryParameters qp = new QueryParametersImpl();
+    // qp.validate(queryParameters);
+    //
+    // MultivaluedMap<String,String> op = new MultivaluedMapImpl<>();
+    // op.putAll(qp.getUnknownParameters(queryParameters));
+    // // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.ACTIVE.name());
+    // op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+    // op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+    // op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+    //
+    // // Set expectations
+    // when(context.getCallerPrincipal()).thenReturn(principal);
+    // queryLogic1.validate(queryParameters);
+    // when(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).thenReturn((QueryLogic) this.queryLogic1);
+    // when(this.queryLogic1.getMaxPageSize()).thenReturn(1000).times(2);
+    // when(this.context.getCallerPrincipal()).thenReturn(this.principal);
+    // when(this.principal.getName()).thenReturn(userName);
+    // when(this.principal.getShortName()).thenReturn(userSid);
+    // when(this.principal.getUserDN()).thenReturn(userDNpair);
+    // when(this.principal.getDNs()).thenReturn(new String[] {userDN});
+    // when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
+    // when(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).thenReturn(true);
+    // when(this.queryLogic1.getAuditType(null)).thenReturn(Auditor.AuditType.ACTIVE);
+    // when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+    // when(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).thenReturn(this.query);
+    // when(this.queryLogic1.getAuditType(this.query)).thenReturn(Auditor.AuditType.ACTIVE);
+    // when(this.queryLogic1.getSelectors(this.query)).thenReturn(null);
+    // when(auditor.audit(eq(queryParameters))).thenReturn(null);
+    // when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
+    // when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
+    // when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
+    // this.connectionRequestBean.requestBegin(queryId.toString());
+    // when(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).thenReturn(this.connector);
+    // this.connectionRequestBean.requestEnd(queryId.toString());
+    // when(this.traceInfos.get(userSid)).thenReturn(Arrays.asList(PatternWrapper.wrap(query)));
+    // when(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).thenThrow(
+    // new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION: PROBLEM ADDING QUERY LOGIC TO CACHE"));
+    // this.queryLogic1.close();
+    // this.connectionFactory.returnConnection(this.connector);
+    // PowerMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 2ND-LEVEL TEST EXCEPTION"));
+    // this.persister.remove(this.query);
+    // PowerMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 3RD-LEVEL TEST EXCEPTION"));
+    // when(this.query.getId()).thenReturn(queryId);
+    // when(this.qlCache.poll(queryId.toString())).thenReturn(null);
+    //
+    // // Run the te
+    // QueryExecutorBean subject = new QueryExecutorBean();
+    // setInternalState(subject, EJBContext.class, context);
+    // setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+    // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+    // ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+    // ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+    // setInternalState(subject, Persister.class, persister);
+    // setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
+    // setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+    // setInternalState(subject, AuditBean.class, auditor);
+    // setInternalState(subject, Multimap.class, traceInfos);
+    // setInternalState(subject, SecurityMarking.class, marking);
+    // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+    // ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+    // ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+    // Throwable result1 = null;
+    // try {
+    // subject.createQueryAndNext(queryLogicName, queryParameters);
+    // } catch (DatawaveWebApplicationException e) {
+    // result1 = e.getCause();
+    // }
+    //
+    // // Verify results
+    // assertTrue(result1 instanceof QueryException, "QueryException expected to have been thrown");
+    // assertEquals("500-7", ((QueryException) result1).getErrorCode(), "Exception expected to have been caused by problem adding query logic to cache");
+    // }
+    //
+    // @SuppressWarnings({"rawtypes", "unchecked"})
+    // @Test(expected = NoResultsException.class)
+    // public void testCreateQueryAndNext_ButNoResults() throws Exception {
+    // // Set local test input
+    // String queryLogicName = "queryLogicName";
+    // String query = "query";
+    // String queryName = "queryName";
+    // String queryVisibility = "A&B";
+    // long currentTime = System.currentTimeMillis();
+    // Date beginDate = new Date(currentTime - 5000);
+    // Date endDate = new Date(currentTime - 1000);
+    // String queryAuthorizations = "AUTH_1";
+    // Date expirationDate = new Date(currentTime + 999999);
+    // int pagesize = 10;
+    // int pageTimeout = -1;
+    // QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+    // boolean trace = false;
+    // String userName = "userName";
+    // String userSid = "userSid";
+    // String userDN = "userdn";
+    // SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
+    // List<String> dnList = Collections.singletonList(userDN);
+    // UUID queryId = UUID.randomUUID();
+    // long pageNumber = 0L;
+    //
+    // HashMap<String,Collection<String>> authsMap = new HashMap<>();
+    // authsMap.put("userdn", Arrays.asList(queryAuthorizations));
+    //
+    // MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+    // queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
+    // queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+    // queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+    // queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+    // queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+    // queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+    // queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
+    // queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+    // queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+    // queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+    // queryParameters.putSingle("valid", "param");
+    //
+    // ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+    // marking.validate(queryParameters);
+    //
+    // QueryParameters qp = new QueryParametersImpl();
+    // qp.validate(queryParameters);
+    //
+    // MultivaluedMap<String,String> op = new MultivaluedMapImpl<>();
+    // op.putAll(qp.getUnknownParameters(queryParameters));
+    // op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+    // op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+    // op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+    //
+    // // Set expectations of the create logic
+    // queryLogic1.validate(queryParameters);
+    // when(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).thenReturn((QueryLogic) this.queryLogic1);
+    // when(this.queryLogic1.getMaxPageSize()).thenReturn(1000);
+    // when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
+    // when(this.context.getCallerPrincipal()).thenReturn(this.principal);
+    // when(this.principal.getName()).thenReturn(userName);
+    // when(this.principal.getShortName()).thenReturn(userSid);
+    // when(this.principal.getUserDN()).thenReturn(userDNpair);
+    // when(this.principal.getDNs()).thenReturn(new String[] {userDN});
+    // when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
+    // when(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).thenReturn(true);
+    // when(this.queryLogic1.getAuditType(null)).thenReturn(Auditor.AuditType.NONE);
+    // when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+    // when(this.principal.getPrimaryUser()).thenReturn(dwUser);
+    // when(this.dwUser.getAuths()).thenReturn(Collections.singleton(queryAuthorizations));
+    // when(this.principal.getProxiedUsers()).thenReturn(Collections.singletonList(dwUser));
+    // when(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).thenReturn(this.query);
+    // when(this.queryLogic1.getAuditType(this.query)).thenReturn(Auditor.AuditType.NONE);
+    // when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
+    // when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
+    // when(this.traceInfos.get(userSid)).thenReturn(new ArrayList<>(0));
+    // when(this.traceInfos.get(null)).thenReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
+    // when(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).thenReturn(true);
+    // when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(true);
+    // when(this.query.getOwner()).thenReturn(userSid);
+    // when(this.query.getId()).thenReturn(queryId);
+    // when(this.query.getQuery()).thenReturn(queryName);
+    // when(this.query.getQueryLogicName()).thenReturn(queryLogicName);
+    // when(this.query.getBeginDate()).thenReturn(null);
+    // when(this.query.getEndDate()).thenReturn(null);
+    // when(this.query.getQueryAuthorizations()).thenReturn(queryAuthorizations);
+    // when(this.query.getQueryName()).thenReturn(null);
+    // when(this.query.getColumnVisibility()).thenReturn(null);
+    // when(this.query.getPagesize()).thenReturn(0);
+    // when(this.query.getPageTimeout()).thenReturn(-1);
+    // when(this.query.getExpirationDate()).thenReturn(null);
+    // when(this.query.getParameters()).thenReturn((Set) Collections.emptySet());
+    // when(this.query.getUncaughtExceptionHandler()).thenReturn(new QueryUncaughtExceptionHandler());
+    // this.metrics.updateMetric(isA(QueryMetric.class));
+    // when(this.query.getUserDN()).thenReturn(userDN);
+    // when(this.query.getDnList()).thenReturn(dnList);
+    // when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+    // when(this.queryLogic1.getResultLimit(dnList)).thenReturn(-1L);
+    // when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
+    // when(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
+    // this.queryLogic1.setupQuery(this.genericConfiguration);
+    // when(this.queryLogic1.getTransformIterator(this.query)).thenReturn(this.transformIterator);
+    // when(this.genericConfiguration.getQueryString()).thenReturn(queryName);
+    // this.cache.put(eq(queryId.toString()), isA(RunningQuery.class));
+    // when(this.qlCache.poll(queryId.toString())).thenReturn(null);
+    //
+    // // Set expectations of the next logic
+    // when(this.principal.getName()).thenReturn(userName);
+    // when(this.principal.getShortName()).thenReturn(userSid);
+    // when(this.context.getUserTransaction()).thenReturn(this.transaction);
+    // this.transaction.begin();
+    // when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
+    // when(cache.lock(queryId.toString())).thenReturn(true);
+    // when(this.runningQuery.getSettings()).thenReturn(this.query);
+    // this.connectionRequestBean.requestBegin(queryId.toString());
+    // when(this.runningQuery.getConnection()).thenReturn(this.connector);
+    // this.connectionRequestBean.requestEnd(queryId.toString());
+    // this.runningQuery.setActiveCall(true);
+    // when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
+    // when(this.runningQuery.next()).thenReturn(this.resultsPage);
+    // when(this.runningQuery.getLastPageNumber()).thenReturn(pageNumber);
+    // when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1).times(2);
+    // when(this.queryLogic1.getTransformer(this.query)).thenReturn(this.transformer);
+    // when(this.transformer.createResponse(this.resultsPage)).thenReturn(this.baseResponse);
+    // when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.NONE).times(2);
+    // this.baseResponse.setHasResults(false);
+    // this.baseResponse.setPageNumber(pageNumber);
+    // when(this.queryLogic1.getLogicName()).thenReturn(queryLogicName);
+    // this.baseResponse.setLogicName(queryLogicName);
+    // this.baseResponse.setQueryId(queryId.toString());
+    // when(this.runningQuery.getMetric()).thenReturn(this.queryMetric).times(2);
+    // this.runningQuery.setActiveCall(false);
+    // this.queryMetric.setProxyServers(eq(new ArrayList<>(0)));
+    // this.baseResponse.addException(isA(NoResultsQueryException.class));
+    //
+    // when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
+    // when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(true);
+    //
+    // this.metrics.updateMetric(this.queryMetric);
+    // cache.unlock(queryId.toString());
+    // this.transaction.setRollbackOnly();
+    // when(this.transaction.getStatus()).thenReturn(Status.STATUS_ACTIVE);
+    // this.transaction.commit();
+    //
+    // // Set expectations
+    // when(this.context.getCallerPrincipal()).thenReturn(this.principal);
+    // when(this.principal.getName()).thenReturn(userName);
+    // when(this.principal.getShortName()).thenReturn(userSid).times(2);
+    // when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+    // when(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).thenReturn(false);
+    // when(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).thenReturn(null);
+    // when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
+    // when(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).thenReturn(this.connector);
+    // this.runningQuery.closeConnection(this.connectionFactory);
+    // this.cache.remove(queryId.toString());
+    // this.closedCache.add(queryId.toString());
+    // this.closedCache.remove(queryId.toString());
+    // when(this.runningQuery.getTraceInfo()).thenReturn(null);
+    // when(this.responseObjectFactory.getEventQueryResponse()).thenReturn(new DefaultEventQueryResponse());
+    //
+    // // Run the te
+    // QueryExecutorBean subject = new QueryExecutorBean();
+    // setInternalState(subject, EJBContext.class, context);
+    // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+    // ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+    // ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+    // setInternalState(subject, QueryCache.class, cache);
+    // setInternalState(subject, ClosedQueryCache.class, closedCache);
+    // setInternalState(subject, Persister.class, persister);
+    // setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
+    // setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+    // setInternalState(subject, AuditBean.class, auditor);
+    // setInternalState(subject, QueryMetricsBean.class, metrics);
+    // setInternalState(subject, Multimap.class, traceInfos);
+    // setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
+    // setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+    // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+    // ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+    // ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+    //
+    // subject.createQueryAndNext(queryLogicName, queryParameters);
+    // }
+    
+    @Test
+    public void testCreateQueryAndNext_InvalidExpirationDate() throws Exception {
+        // Set local test input
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime - 500);
+        int pagesize = 1;
+        int pageTimeout = -1;
+        Long maxResultsOverride = null;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String parameters = null;
+        boolean trace = false;
+        
+        MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
+        p.putAll(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate,
+                        pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
+        
+        // Run the te
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "qp", new QueryParametersImpl());
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        Throwable result1 = assertThrows(DatawaveWebApplicationException.class, () -> subject.createQueryAndNext(queryLogicName, p));
+        // Verify results
+        assertTrue(result1 instanceof BadRequestException, "BadRequestException expected to have been thrown");
+        assertEquals("400-3", ((QueryException) result1.getCause()).getErrorCode(), "Thrown exception expected to have been due to invalid expiration date");
+    }
+    
     // @Test
     // public void testCreateQueryAndNext_InvalidPageSize() throws Exception {
     // // Set local test input
@@ -1464,7 +1464,7 @@ public class ExtendedQueryExecutorBeanTest {
     // pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
     // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
@@ -1531,7 +1531,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.queryLogic1.getMaxPageSize()).thenReturn(10).times(4);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
@@ -1577,7 +1577,7 @@ public class ExtendedQueryExecutorBeanTest {
     // new IllegalArgumentException("INTENTIONALLY THROWN TEST EXCEPTION: UNDEFINED QUERY LOGIC"));
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
     // setInternalState(subject, EJBContext.class, context);
@@ -1623,7 +1623,7 @@ public class ExtendedQueryExecutorBeanTest {
     // boolean trace = false;
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
     // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
@@ -1666,7 +1666,7 @@ public class ExtendedQueryExecutorBeanTest {
     // boolean trace = false;
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
     // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
@@ -1687,44 +1687,44 @@ public class ExtendedQueryExecutorBeanTest {
     // assertEquals("400-2", ((QueryException) result1.getCause()).getErrorCode(), "Thrown exception expected to have been due to invalid page size");
     // }
     //
-     @SuppressWarnings({"unchecked", "rawtypes"})
-     @Test
-     public void testDefineQuery_UncheckedException() throws Exception {
-     // Set local test input
-     String queryLogicName = "queryLogicName";
-     String query = "query";
-     String queryName = "queryName";
-     String queryVisibility = "A&B";
-     long currentTime = System.currentTimeMillis();
-     Date beginDate = new Date(currentTime - 5000);
-     Date endDate = new Date(currentTime - 1000);
-     String queryAuthorizations = "AUTH_1";
-     Date expirationDate = new Date(currentTime + 10000);
-     int pagesize = 10;
-     int pageTimeout = -1;
-     Long maxResultsOverride = null;
-     QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
-     String userName = "userName";
-     String userSid = "userSid";
-     String userDN = "userdn";
-     SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
-     boolean trace = false;
-     List<String> dnList = Collections.singletonList(userDN);
-     UUID queryId = UUID.randomUUID();
-
-     MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-     queryParameters.putAll(QueryParametersImpl.paramsToMap(null, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
-     expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, null, trace));
-     queryParameters.putSingle("valid", "param");
-
-     ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
-     marking.validate(queryParameters);
-
-     QueryParameters qp = new QueryParametersImpl();
-         assertThrows(IllegalArgumentException.class, () -> qp.validate(queryParameters));
-
-     }
-
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void testDefineQuery_UncheckedException() throws Exception {
+        // Set local test input
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime + 10000);
+        int pagesize = 10;
+        int pageTimeout = -1;
+        Long maxResultsOverride = null;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String userName = "userName";
+        String userSid = "userSid";
+        String userDN = "userdn";
+        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
+        boolean trace = false;
+        List<String> dnList = Collections.singletonList(userDN);
+        UUID queryId = UUID.randomUUID();
+        
+        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putAll(QueryParametersImpl.paramsToMap(null, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
+                        expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, null, trace));
+        queryParameters.putSingle("valid", "param");
+        
+        ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+        marking.validate(queryParameters);
+        
+        QueryParameters qp = new QueryParametersImpl();
+        assertThrows(IllegalArgumentException.class, () -> qp.validate(queryParameters));
+        
+    }
+    
     // @Test
     // public void testDisableAllTracing_HappyPath() throws Exception {
     // // Set expectations
@@ -1732,7 +1732,7 @@ public class ExtendedQueryExecutorBeanTest {
     // this.traceCache.put("traceInfos", this.traceInfos);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, Multimap.class, traceInfos);
     // setInternalState(subject, QueryTraceCache.class, traceCache);
@@ -1757,7 +1757,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.traceInfos.remove(eq(user), notNull())).thenReturn(true);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, Multimap.class, traceInfos);
     // setInternalState(subject, QueryTraceCache.class, traceCache);
@@ -1877,7 +1877,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.qlCache.poll(newQuery1.getId().toString())).thenReturn(null);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
@@ -1933,7 +1933,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.persister.findById(queryId.toString())).thenReturn(null);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryCache.class, cache);
@@ -2006,7 +2006,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.qlCache.poll(newQuery1.getId().toString())).thenReturn(null);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
@@ -2055,7 +2055,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.context.getCallerPrincipal()).andThrow(uncheckedException);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
@@ -2089,7 +2089,7 @@ public class ExtendedQueryExecutorBeanTest {
     // UUID queryId = UUID.randomUUID();
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     //
     // Exception result1 = null;
@@ -2119,7 +2119,7 @@ public class ExtendedQueryExecutorBeanTest {
     // traceCache.put("traceInfos", traceInfos);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, Multimap.class, traceInfos);
     // setInternalState(subject, QueryTraceCache.class, traceCache);
@@ -2157,7 +2157,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.query.getOwner()).thenReturn(sid);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryCache.class, cache);
@@ -2189,7 +2189,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.runningQuery.getSettings()).andThrow(new IllegalStateException("INTENTIONALLY THROWN UNCHECKED TEST EXCEPTION"));
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryCache.class, cache);
@@ -2221,7 +2221,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.query.getOwner()).thenReturn("nonmatching_sid").times(2);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryCache.class, cache);
@@ -2250,7 +2250,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.lookupUUIDConfiguration.optionalParamsToMap()).andDelegateTo(tmpCfg);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryTraceCache.class, traceCache);
@@ -2313,7 +2313,7 @@ public class ExtendedQueryExecutorBeanTest {
     // this.cache.put(eq(queryId.toString()), isA(RunningQuery.class));
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryCache.class, cache);
@@ -2339,7 +2339,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.persister.findByUser(userSid)).thenReturn(Arrays.asList(this.query));
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, Persister.class, persister);
     // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
@@ -2359,7 +2359,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.persister.findByUser(userSid)).thenReturn(null);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, Persister.class, persister);
     // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
@@ -2380,7 +2380,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.persister.findByUser(userSid)).andThrow(ILLEGAL_STATE_EXCEPTION);
     //
     // // Run the test
-
+    
     // try {
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, Persister.class, persister);
@@ -2420,7 +2420,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.queryLogic2.getQuerySyntaxParsers()).thenReturn((Map) parsers);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
     // setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
@@ -2439,7 +2439,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.persister.findByUser()).thenReturn(Arrays.asList(this.query));
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, Persister.class, persister);
     // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
@@ -2457,7 +2457,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.persister.findByUser()).thenReturn(null);
     //
     // // Run the test
-
+    
     // Exception result1 = null;
     // try {
     // QueryExecutorBean subject = new QueryExecutorBean();
@@ -2480,7 +2480,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.persister.findByUser()).andThrow(uncheckedException);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, Persister.class, persister);
     // ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
@@ -2527,7 +2527,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.transaction.getStatus()).andThrow(ILLEGAL_STATE_EXCEPTION);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryCache.class, cache);
@@ -2579,7 +2579,7 @@ public class ExtendedQueryExecutorBeanTest {
     // PowerMock.expectLastCall().andThrow(new HeuristicMixedException("INTENTIONALLY THROWN TEST EXCEPTION"));
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryCache.class, cache);
@@ -2629,7 +2629,7 @@ public class ExtendedQueryExecutorBeanTest {
     // this.queryMetric.setError(isA(Throwable.class));
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryCache.class, cache);
@@ -2676,7 +2676,7 @@ public class ExtendedQueryExecutorBeanTest {
     // PowerMock.expectLastCall().andThrow(new HeuristicRollbackException("INTENTIONALLY THROWN TEST EXCEPTION"));
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryCache.class, cache);
@@ -2705,7 +2705,7 @@ public class ExtendedQueryExecutorBeanTest {
     // PowerMock.expectLastCall().andThrow(new IllegalStateException("INTENTIONALLY THROWN UNCHECKED TEST EXCEPTION"));
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, QueryCache.class, cache);
     // setInternalState(subject, ClosedQueryCache.class, closedCache);
@@ -2724,7 +2724,7 @@ public class ExtendedQueryExecutorBeanTest {
     // this.cache.clear();
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, QueryCache.class, cache);
     // setInternalState(subject, ClosedQueryCache.class, closedCache);
@@ -2855,7 +2855,7 @@ public class ExtendedQueryExecutorBeanTest {
     // this.transaction.commit();
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
@@ -2908,7 +2908,7 @@ public class ExtendedQueryExecutorBeanTest {
     // PowerMock.expectLastCall().andThrow(new IllegalStateException("INTENTIONALLY THROWN 3RD-LEVEL TEST EXCEPTION"));
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
@@ -2962,7 +2962,7 @@ public class ExtendedQueryExecutorBeanTest {
     // this.transaction.commit();
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
@@ -3073,7 +3073,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.queryLogic1.getAuditType(this.query)).thenReturn(AuditType.LOCALONLY);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryCache.class, cache);
@@ -3151,7 +3151,7 @@ public class ExtendedQueryExecutorBeanTest {
     // // return streaming response
     //
     // // Run the test
-
+    
     // setInternalState(subject, EJBContext.class, context);
     // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
     // ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
@@ -3208,7 +3208,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.httpHeaders.getAcceptableMediaTypes()).thenReturn(mediaTypes);
     //
     // // Run the test
-
+    
     // setInternalState(subject, EJBContext.class, context);
     // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
     // ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
@@ -3256,7 +3256,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(context.getCallerPrincipal()).thenReturn(principal);
     // when(executor.submit(isA(Runnable.class))).thenReturn(null);
     //
-
+    
     //
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
@@ -3291,7 +3291,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(executor.submit(isA(Runnable.class))).andThrow(new RejectedExecutionException("INTENTIONALLY THROWN TEST EXCEPTION: Async close rejected"));
     // when(subject.close("11111")).thenReturn(null);
     //
-
+    
     //
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryCache.class, cache);
@@ -3413,7 +3413,7 @@ public class ExtendedQueryExecutorBeanTest {
     // EasyMock.expectLastCall();
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
@@ -3555,7 +3555,7 @@ public class ExtendedQueryExecutorBeanTest {
     // EasyMock.expectLastCall();
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
@@ -3636,7 +3636,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(auditor.audit(queryParameters)).andThrow(new JMSRuntimeException("EXPECTED TESTING EXCEPTION"));
     // queryLogic1.close();
     //
-
+    
     //
     // QueryExecutorBean executor = new QueryExecutorBean();
     // setInternalState(executor, EJBContext.class, context);
@@ -3731,7 +3731,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.queryLogic1.getLogicName()).thenReturn(queryLogicName);
     //
     // // Run the test
-
+    
     //
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
@@ -3830,7 +3830,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.auditor.audit(eq(auditMap))).andThrow(new Exception("INTENTIONALLY THROWN EXCEPTION"));
     //
     // // Run the test
-
+    
     //
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
@@ -3893,7 +3893,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.queryLogic1.containsDNWithAccess(Collections.singletonList("userDN"))).thenReturn(false);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
@@ -3963,7 +3963,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.queryLogic1.containsDNWithAccess(Collections.singletonList("userDN"))).thenReturn(false);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
@@ -4033,7 +4033,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.queryLogic1.containsDNWithAccess(Collections.singletonList("userDN"))).thenReturn(false);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
@@ -4116,7 +4116,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).thenReturn(false);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
@@ -4210,7 +4210,7 @@ public class ExtendedQueryExecutorBeanTest {
     // when(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).thenReturn(false);
     //
     // // Run the test
-
+    
     // QueryExecutorBean subject = new QueryExecutorBean();
     // setInternalState(subject, EJBContext.class, context);
     // ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);

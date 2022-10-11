@@ -74,11 +74,11 @@ public class ValidPatternVisitorTest {
         });
     }
     
-    @Test(expected = PatternSyntaxException.class)
+    @Test
     public void testFilterFunctionGetAllMatches() throws ParseException {
         String queryString = "A == '1' && filter:getAllMatches(B,'*2*')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
-        ValidPatternVisitor.check(script);
+        Assertions.assertThrows(PatternSyntaxException.class, () -> ValidPatternVisitor.check(script));
     }
     
     @Test

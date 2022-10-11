@@ -5,16 +5,19 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.validate.ASTValidator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Assert that the {@link RewriteNegationsVisitor} functions correctly for queries that exercise all of the basic comparison operators including regex
  * operators.
  */
 public class RewriteNegationsVisitorTest {
+    
+    private final ASTValidator validator = new ASTValidator();
     
     // Test AST such that (A)
     @Test
@@ -129,12 +132,12 @@ public class RewriteNegationsVisitorTest {
         
         // assert script equality
         ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
-        Assertions.assertTrue(TreeEqualityVisitor.checkEquality(expectedScript, negatedScript).isEqual());
+        assertTrue(TreeEqualityVisitor.checkEquality(expectedScript, negatedScript).isEqual());
         
         try {
-            Assertions.assertTrue(ASTValidator.isValid(negatedScript, RewriteNegationsVisitorTest.class.getSimpleName(), false));
+            assertTrue(validator.isValid(negatedScript, RewriteNegationsVisitorTest.class.getSimpleName(), false));
         } catch (InvalidQueryTreeException e) {
-            Assertions.fail("Unexpected failure while validating query tree: " + e.getMessage());
+            fail("Unexpected failure while validating query tree: " + e.getMessage());
         }
     }
 }

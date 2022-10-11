@@ -5,13 +5,15 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.validate.ASTValidator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class InvertNodeVisitorTest {
+    
+    private final ASTValidator validator = new ASTValidator();
     
     @Test
     public void testInvertEq() {
@@ -91,7 +93,7 @@ public class InvertNodeVisitorTest {
             assertTrue(TreeEqualityVisitor.isEqual(expectedScript, inverted));
             
             // visited script is valid
-            assertTrue(ASTValidator.isValid(inverted));
+            assertTrue(validator.isValid(inverted));
             
         } catch (ParseException e) {
             fail("Could not parse query: " + query);

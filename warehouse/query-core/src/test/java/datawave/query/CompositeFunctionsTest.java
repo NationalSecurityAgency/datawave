@@ -30,6 +30,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -777,6 +778,7 @@ public abstract class CompositeFunctionsTest {
         }
     }
     
+    @Disabled
     @Test
     public void testDelayedExceededValueThresholdRegexTFField() throws Exception {
         Map<String,String> extraParameters = new HashMap();

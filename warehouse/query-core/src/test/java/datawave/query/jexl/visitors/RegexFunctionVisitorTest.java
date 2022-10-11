@@ -18,6 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RegexFunctionVisitorTest {
     
+    private final ASTValidator validator = new ASTValidator();
+    
     // expected base cases -- single fielded
     
     @Test
@@ -138,7 +140,7 @@ public class RegexFunctionVisitorTest {
         
         // assert that the result script is valid
         try {
-            ASTValidator.isValid(actual);
+            validator.isValid(actual);
         } catch (InvalidQueryTreeException e) {
             Assertions.fail("Invalid query tree detected for script: " + JexlStringBuildingVisitor.buildQueryWithoutParse(actual));
         }

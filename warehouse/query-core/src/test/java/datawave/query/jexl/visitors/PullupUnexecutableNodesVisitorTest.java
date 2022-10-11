@@ -8,11 +8,14 @@ import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class PullupUnexecutableNodesVisitorTest {
     
@@ -22,6 +25,8 @@ public class PullupUnexecutableNodesVisitorTest {
     
     private ShardQueryConfiguration config;
     private MockMetadataHelper helper;
+    
+    private final ASTValidator validator = new ASTValidator();
     
     @BeforeEach
     public void setup() {
@@ -149,13 +154,13 @@ public class PullupUnexecutableNodesVisitorTest {
             String visitedString = JexlStringBuildingVisitor.buildQuery(visitedScript);
             ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
             
-            Assertions.assertTrue(TreeEqualityVisitor.isEqual(expectedScript, visitedScript), "Expected " + expected + " but got " + visitedString);
-            Assertions.assertTrue(ASTValidator.isValid(visitedScript));
-            Assertions.assertEquals(expected, visitedString);
+            assertTrue(TreeEqualityVisitor.isEqual(expectedScript, visitedScript), "Expected " + expected + " but got " + visitedString);
+            assertTrue(validator.isValid(visitedScript));
+            assertEquals(expected, visitedString);
         } catch (ParseException e) {
-            Assertions.fail("Failed to parse query: " + query);
+            fail("Failed to parse query: " + query);
         } catch (InvalidQueryTreeException e) {
-            Assertions.fail("Failed to validate query: " + query);
+            fail("Failed to validate query: " + query);
         }
     }
     

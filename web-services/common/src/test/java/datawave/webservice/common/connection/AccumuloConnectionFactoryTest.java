@@ -33,22 +33,22 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(EasyMockExtension.class)
 public class AccumuloConnectionFactoryTest extends EasyMockSupport {
-
+    
     @TestSubject
     private AccumuloConnectionFactoryBean bean = createMockBuilder(AccumuloConnectionFactoryBean.class).addMockedMethods("getCurrentUserDN",
-            "getCurrentProxyServers").createStrictMock();
-
+                    "getCurrentProxyServers").createStrictMock();
+    
     @Mock(type = STRICT)
     private AccumuloTableCache cache;
-
+    
     private InMemoryInstance instance = new InMemoryInstance();
-
+    
     @Mock(type = STRICT)
     private WrappedConnector warehouseConnection;
-
+    
     @Mock(type = STRICT)
     private WrappedConnector metricsConnection;
-
+    
     @BeforeEach
     public void setup() throws Exception {
         MyAccumuloConnectionPoolFactory warehouseFactory = EasyMock.partialMockBuilder(MyAccumuloConnectionPoolFactory.class).createMock();
@@ -59,7 +59,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         ReflectionTestUtils.setField(metricsFactory, "password", "");
         warehouseFactory.setConnector(warehouseConnection);
         metricsFactory.setConnector(metricsConnection);
-
+        
         Map<String,ConnectionPoolConfiguration> configs = new HashMap<>();
         configs.put("WAREHOUSE", null);
         configs.put("METRICS", null);
@@ -67,7 +67,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         ReflectionTestUtils.setField(conf, "defaultPool", "WAREHOUSE");
         ReflectionTestUtils.setField(conf, "poolNames", Lists.newArrayList("WAREHOUSE", "METRICS"));
         ReflectionTestUtils.setField(conf, "pools", configs);
-
+        
         String defaultPoolName = conf.getDefaultPool();
         HashMap<String,Map<Priority,AccumuloConnectionPool>> pools = new HashMap<>();
         MyAccumuloConnectionPool warehousePool = new MyAccumuloConnectionPool(warehouseFactory);
@@ -95,12 +95,12 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         ReflectionTestUtils.setField(bean, "defaultPoolName", defaultPoolName);
         ReflectionTestUtils.setField(bean, "pools", pools);
     }
-
+    
     @AfterEach
     public void cleanup() throws Exception {
         System.clearProperty("dw.accumulo.classLoader.context");
     }
-
+    
     @Test
     public void testGetConnection() throws Exception {
         resetAll();
@@ -114,7 +114,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
         assertNull(ReflectionTestUtils.getField(con, "scannerClassLoaderContext"), "scannerClassLoaderContext was set when it shouldn't have been");
     }
-
+    
     @Test
     public void testGetWarehouseConnection() throws Exception {
         resetAll();
@@ -127,7 +127,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
     }
-
+    
     @Test
     public void testGetContextConnection() throws Exception {
         System.setProperty("dw.accumulo.classLoader.context", "alternateContext");
@@ -142,7 +142,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
         assertEquals("alternateContext", ReflectionTestUtils.getField(con, "scannerClassLoaderContext"));
     }
-
+    
     @Test
     public void testGetMetricsConnection() throws Exception {
         resetAll();
@@ -155,45 +155,45 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         assertNotNull(con);
         assertEquals(metricsConnection, ((WrappedConnector) con).getReal());
     }
-
+    
     public static class MyAccumuloConnectionPoolFactory extends AccumuloConnectionPoolFactory {
-
+        
         private Connector c = null;
-
+        
         public MyAccumuloConnectionPoolFactory(String username, String password, String zookeepers, String instanceName) {
             super(username, password, zookeepers, instanceName);
         }
-
+        
         public void setConnector(Connector c) {
             this.c = c;
         }
-
+        
         @Override
         public PooledObject<Connector> makeObject() throws Exception {
             return new DefaultPooledObject<>(c);
         }
-
+        
         @Override
         public boolean validateObject(PooledObject<Connector> arg0) {
             return true;
         }
-
+        
     }
-
+    
     public static class MyAccumuloConnectionPool extends AccumuloConnectionPool {
-
+        
         private AccumuloConnectionPoolFactory factory = null;
-
+        
         public MyAccumuloConnectionPool(AccumuloConnectionPoolFactory factory) {
             super(factory);
             this.factory = factory;
         }
-
+        
         @Override
         public Connector borrowObject() throws Exception {
             return this.factory.makeObject().getObject();
         }
-
+        
         @Override
         public void returnObject(Connector connector) {}
     }

@@ -12,6 +12,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class IsNotNullPruningVisitorTest {
     
+    private final ASTValidator validator = new ASTValidator();
+    
     // test pruning single 'is not null' term via single anchor field
     
     @Test
@@ -483,7 +485,7 @@ public class IsNotNullPruningVisitorTest {
             ASTJexlScript visited = (ASTJexlScript) IsNotNullPruningVisitor.prune(script);
             ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
             
-            assertTrue(ASTValidator.isValid(visited), "visit produced an invalid tree");
+            assertTrue(validator.isValid(visited), "visit produced an invalid tree");
             assertTrue(TreeEqualityVisitor.checkEquality(visited, expectedScript).isEqual(), JexlStringBuildingVisitor.buildQueryWithoutParse(visited));
             
         } catch (ParseException | InvalidQueryTreeException e) {

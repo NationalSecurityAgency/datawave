@@ -52,14 +52,6 @@
             <artifactId>datawave-ingest-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>net.bytebuddy</groupId>
-            <artifactId>byte-buddy</artifactId>
-            <version>1.12.12</version>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>query-metric-api</artifactId>
@@ -219,6 +211,12 @@
         <dependency>
             <groupId>gov.nsa.datawave.contrib</groupId>
             <artifactId>datawave-in-memory-accumulo</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>1.12.12</version>
             <scope>test</scope>
         </dependency>
         <dependency>
