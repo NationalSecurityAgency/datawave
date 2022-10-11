@@ -5,20 +5,18 @@ import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.runner.RunningQuery;
+import org.easymock.EasyMockExtension;
+import org.easymock.Mock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Date;
 import java.util.UUID;
 
-@Disabled
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(EasyMockExtension.class)
 public class QueryExpirationBeanTest {
     
     private static CreatedQueryLogicCacheBean qlCache;

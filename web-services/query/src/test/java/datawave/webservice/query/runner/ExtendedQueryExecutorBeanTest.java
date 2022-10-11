@@ -754,7 +754,6 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.runningQuery.getConnection()).thenReturn(this.connector);
         
         this.runningQuery.setActiveCall(true);
-        
         when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
         when(this.runningQuery.next()).thenReturn(this.resultsPage);
         when(this.runningQuery.getLastPageNumber()).thenReturn(pageNumber);
@@ -763,7 +762,6 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic1.getEnrichedTransformer(this.query)).thenReturn(this.transformer);
         when(this.transformer.createResponse(this.resultsPage)).thenReturn(this.baseResponse);
         when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.COMPLETE);
-        
         this.baseResponse.setHasResults(true);
         this.baseResponse.setPageNumber(pageNumber);
         when(this.queryLogic1.getLogicName()).thenReturn(queryLogicName);
@@ -1073,7 +1071,6 @@ public class ExtendedQueryExecutorBeanTest {
         this.connectionRequestBean.requestEnd(queryId.toString());
         
         this.runningQuery.setActiveCall(true);
-        
         when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
         when(this.runningQuery.next()).thenReturn(this.resultsPage);
         when(this.runningQuery.getLastPageNumber()).thenReturn(pageNumber);
@@ -1082,7 +1079,6 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic1.getEnrichedTransformer(this.query)).thenReturn(this.transformer);
         when(this.transformer.createResponse(this.resultsPage)).thenReturn(this.baseResponse);
         when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.COMPLETE);
-        
         this.baseResponse.setHasResults(true);
         this.baseResponse.setPageNumber(pageNumber);
         when(this.queryLogic1.getLogicName()).thenReturn(queryLogicName);

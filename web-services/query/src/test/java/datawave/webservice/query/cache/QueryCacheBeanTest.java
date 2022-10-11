@@ -7,11 +7,12 @@ import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.runner.RunningQuery;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.util.Pair;
+import org.easymock.EasyMockExtension;
+import org.easymock.EasyMockSupport;
+import org.easymock.Mock;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
@@ -21,13 +22,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.easymock.EasyMock.expect;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.when;
 
-@Disabled
-@ExtendWith(MockitoExtension.class)
-public class QueryCacheBeanTest {
+@ExtendWith(EasyMockExtension.class)
+public class QueryCacheBeanTest extends EasyMockSupport {
     
     @Mock
     QueryCache altCache;
@@ -54,17 +54,19 @@ public class QueryCacheBeanTest {
     @Test
     public void testListRunningQueries() {
         // Set expectations
-        when(altCache.iterator()).thenReturn((Iterator<RunningQuery>) new HashMap().values().iterator());
+        expect(altCache.iterator()).andReturn((Iterator<RunningQuery>) new HashMap().values().iterator());
         Map<String,Pair<QueryLogic<?>,Connector>> snapshot = new HashMap<>();
         snapshot.put("key", this.pair);
-        when(this.remoteCache.snapshot()).thenReturn(snapshot);
-        when(this.pair.getFirst()).thenReturn((QueryLogic) this.logic);
+        expect(this.remoteCache.snapshot()).andReturn(snapshot);
+        expect(this.pair.getFirst()).andReturn((QueryLogic) this.logic);
         
         // Run the test
+        replayAll();
         QueryCacheBean subject = new QueryCacheBean();
         ReflectionTestUtils.setField(subject, "cache", altCache);
         ReflectionTestUtils.setField(subject, "qlCache", remoteCache);
         String result1 = subject.listRunningQueries();
+        verifyAll();
         
         // Verify results
         assertNotNull(result1, "List of running queries should not be null");
@@ -74,12 +76,14 @@ public class QueryCacheBeanTest {
     public void testCancelUserQuery_CacheReturnsNonRunningQuery() throws Exception {
         // Set expectations
         UUID queryId = UUID.randomUUID();
-        when(this.altCache.get(queryId.toString())).thenReturn(runningQuery);
+        expect(this.altCache.get(queryId.toString())).andReturn(runningQuery);
         
         // Run the test
+        replayAll();
         QueryCacheBean subject = new QueryCacheBean();
         ReflectionTestUtils.setField(subject, "cache", altCache);
         String result1 = subject.cancelUserQuery(queryId.toString());
+        verifyAll();
         
         // Verify results
         assertNotNull("List of running queries should not be null", result1);
@@ -90,17 +94,20 @@ public class QueryCacheBeanTest {
         
         // Set expectations
         UUID queryId = UUID.randomUUID();
-        when(this.altCache.get(queryId.toString())).thenReturn(null);
+        expect(this.altCache.get(queryId.toString())).andReturn(null);
         
         // Run the test
+        replayAll();
         QueryCacheBean subject = new QueryCacheBean();
         ReflectionTestUtils.setField(subject, "cache", altCache);
         String result1 = subject.cancelUserQuery(queryId.toString());
+        verifyAll();
         
         // Verify results
         assertNotNull("List of running queries should not be null", result1);
     }
     
+    @Disabled
     @Test
     public void testGetRunningQueries() throws Exception {
         QueryImpl q = new QueryImpl();
@@ -116,10 +123,12 @@ public class QueryCacheBeanTest {
         q.setUserDN("some user");
         q.setDnList(Collections.singletonList("some user"));
         
-        when(logic.getCollectQueryMetrics()).thenReturn(false);
-        when(logic.isLongRunningQuery()).thenReturn(false);
-        when(logic.getResultLimit(q.getDnList())).thenReturn(-1L);
-        when(logic.getMaxResults()).thenReturn(-1L);
+        expect(logic.getCollectQueryMetrics()).andReturn(false);
+        expect(logic.isLongRunningQuery()).andReturn(false);
+        expect(logic.getResultLimit(q.getDnList())).andReturn(-1L);
+        expect(logic.getMaxResults()).andReturn(-1L);
+        
+        replayAll();
         
         RunningQuery query = new RunningQuery(null, AccumuloConnectionFactory.Priority.HIGH, logic, q, null, null, new QueryMetricFactoryImpl());
         QueryCacheBean bean = new QueryCacheBean();

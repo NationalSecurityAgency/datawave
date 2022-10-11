@@ -3,11 +3,10 @@ package datawave.webservice.query.configuration;
 import com.google.common.collect.Lists;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Range;
-import org.junit.jupiter.api.Disabled;
+import org.easymock.EasyMockExtension;
+import org.easymock.Mock;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,13 +16,11 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 /**
  * 
  */
-@Disabled
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(EasyMockExtension.class)
 public class QueryDataTest {
     @Mock
     QueryData copy;
@@ -36,13 +33,11 @@ public class QueryDataTest {
     
     @Test
     public void testCopyConstructor() {
-        // Set expectations
-        when(this.copy.getQuery()).thenReturn("TEST");
-        when(this.copy.getRanges()).thenReturn(Arrays.asList(this.range));
-        when(this.copy.getSettings()).thenReturn(Arrays.asList(this.setting));
-        
         // Run the test
-        QueryData subject = new QueryData(this.copy);
+        QueryData subject = new QueryData(); // this.copy);
+        subject.setQuery("TEST");
+        subject.setRanges(Arrays.asList(this.range));
+        subject.setSettings(Arrays.asList(this.setting));
         String result1 = subject.getQuery();
         Collection<Range> result2 = subject.getRanges();
         subject.addIterator(this.setting);

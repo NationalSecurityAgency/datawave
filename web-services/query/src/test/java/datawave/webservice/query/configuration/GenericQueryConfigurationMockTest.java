@@ -3,26 +3,25 @@ package datawave.webservice.query.configuration;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
+import org.easymock.EasyMockExtension;
+import org.easymock.EasyMockSupport;
+import org.easymock.Mock;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import static org.easymock.EasyMock.expect;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
-@Disabled
-@ExtendWith(MockitoExtension.class)
-public class GenericQueryConfigurationMockTest {
+@ExtendWith(EasyMockExtension.class)
+public class GenericQueryConfigurationMockTest extends EasyMockSupport {
     
     @Mock
     Authorizations authorizations;
@@ -54,12 +53,13 @@ public class GenericQueryConfigurationMockTest {
         oldConfig.setMaxWork(1000L);
         oldConfig.setBypassAccumulo(false);
         
-        when(this.baseQueryLogic.getConfig()).thenReturn(oldConfig);
+        expect(this.baseQueryLogic.getConfig()).andReturn(oldConfig).anyTimes();
         
         // Run the test
-        
+        replayAll();
         GenericQueryConfiguration subject = new GenericQueryConfiguration(this.baseQueryLogic) {};
         boolean result1 = subject.canRunQuery();
+        verifyAll();
         
         // Verify results
         assertFalse(result1, "Query should not be runnable");

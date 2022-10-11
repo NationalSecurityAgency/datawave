@@ -20,11 +20,12 @@ import org.jboss.resteasy.util.FindAnnotation;
 import org.jboss.resteasy.util.HttpResponseCodes;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -38,7 +39,6 @@ import javax.ws.rs.ext.WriterInterceptorContext;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.UUID;
@@ -50,7 +50,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 
-@Disabled
 @ExtendWith(MockitoExtension.class)
 public class QueryMetricsEnrichmentInterceptorTest {
     
@@ -148,238 +147,226 @@ public class QueryMetricsEnrichmentInterceptorTest {
     
     @Test
     public void testPostProcess_BaseQueryResponse() throws Exception {
-        QueryMetricsEnrichmentInterceptor subject = new QueryMetricsEnrichmentInterceptor();
-        
-        // Set expectations
-        when(responseContext.getHeaders()).thenReturn(writeHeaders);
-        when(writeHeaders.keySet()).thenReturn(new HashSet<>());
-        when(responseContext.getStatus()).thenReturn(HttpResponseCodes.SC_OK);
-        when(responseContext.getJaxrsResponse()).thenReturn(jaxrsResponse);
-        when(jaxrsResponse.getAnnotations()).thenReturn(new Annotation[] {enrichQueryMetrics});
-        when(FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).thenReturn(this.enrichQueryMetrics);
-        when(responseContext.getEntity()).thenReturn(baseQueryResponse);
-        when(enrichQueryMetrics.methodType()).thenReturn(EnrichQueryMetrics.MethodType.CREATE);
-        when(baseQueryResponse.getQueryId()).thenReturn(UUID.randomUUID().toString());
-        requestContext.setProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")), any());
-        requestContext.setProperty(eq(QueryCall.class.getName()), isA(QueryCall.class));
-        
-        // Run the test
-        subject.filter(requestContext, responseContext);
+        try (MockedStatic<FindAnnotation> findAnnotationMock = Mockito.mockStatic(FindAnnotation.class)) {
+            findAnnotationMock.when(() -> FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).thenReturn(
+                            this.enrichQueryMetrics);
+            QueryMetricsEnrichmentInterceptor subject = new QueryMetricsEnrichmentInterceptor();
+            
+            // Set expectations
+            when(responseContext.getHeaders()).thenReturn(writeHeaders);
+            when(writeHeaders.keySet()).thenReturn(new HashSet<>());
+            when(responseContext.getStatus()).thenReturn(HttpResponseCodes.SC_OK);
+            when(responseContext.getJaxrsResponse()).thenReturn(jaxrsResponse);
+            when(jaxrsResponse.getAnnotations()).thenReturn(new Annotation[] {enrichQueryMetrics});
+            when(responseContext.getEntity()).thenReturn(baseQueryResponse);
+            when(enrichQueryMetrics.methodType()).thenReturn(EnrichQueryMetrics.MethodType.CREATE);
+            when(baseQueryResponse.getQueryId()).thenReturn(UUID.randomUUID().toString());
+            requestContext.setProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")), any());
+            requestContext.setProperty(eq(QueryCall.class.getName()), isA(QueryCall.class));
+            
+            // Run the test
+            subject.filter(requestContext, responseContext);
+        }
     }
     
     @Test
-    @Disabled
     public void testWrite_UncheckedException() throws Exception {
-        QueryMetricsEnrichmentInterceptor subject = new QueryMetricsEnrichmentInterceptor();
-        
-        // Simulate the initial context
-        TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
-        
-        // final Capture<QueryCall> qcCapture = Capture.newInstance();
-        
-        // Set expectations for the postProcess
-        when(responseContext.getHeaders()).thenReturn(writeHeaders);
-        when(writeHeaders.keySet()).thenReturn(new HashSet<>());
-        when(responseContext.getStatus()).thenReturn(HttpResponseCodes.SC_OK);
-        when(responseContext.getJaxrsResponse()).thenReturn(jaxrsResponse);
-        requestContext.setProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")), any());
-        when(jaxrsResponse.getAnnotations()).thenReturn(new Annotation[] {enrichQueryMetrics});
-        when(FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).thenReturn(this.enrichQueryMetrics);
-        when(responseContext.getEntity()).thenReturn(baseQueryResponse);
-        when(enrichQueryMetrics.methodType()).thenReturn(EnrichQueryMetrics.MethodType.CREATE);
-        when(baseQueryResponse.getQueryId()).thenReturn(UUID.randomUUID().toString());
-        // requestContext.setProperty(eq(QueryCall.class.getName()), capture(qcCapture));
-        
-        // Set expectations for the write
-        when(writerContext.getOutputStream()).thenReturn(outputStream);
-        writerContext.setOutputStream(isA(CountingOutputStream.class));
-        writerContext.setOutputStream(outputStream);
-        when(writerContext.getHeaders()).thenReturn(writeHeaders);
-        when(writeHeaders.entrySet()).thenReturn(new HashSet<>());
-        writerContext.proceed();
-        when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")))).thenReturn(null);
-        when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "REQUEST_STATS_NAME")))).thenReturn(null);
-        // when(writerContext.getProperty(QueryCall.class.getName())).thenAnswer((Answer<QueryCall>) qcCapture::getValue);
-        when(queryCache.get(isA(String.class))).thenReturn(runningQuery);
-        when(runningQuery.getLogic()).thenReturn(queryLogic);
-        when(queryLogic.getCollectQueryMetrics()).thenReturn(true);
-        when(runningQuery.getMetric()).thenThrow(new IllegalStateException("INTENTIONALLY THROWN UNCHECKED TEST EXCEPTION"));
-        
-        // Run the test
-        // Set the initial context factory
-        System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
-        
-        // Create and test the test subject
-        ReflectionTestUtils.setField(subject, "queryCache", queryCache);
-        ReflectionTestUtils.setField(subject, "queryMetricsBean", queryMetrics);
-        subject.filter(requestContext, responseContext);
-        subject.aroundWriteTo(writerContext);
-        
+        try (MockedStatic<FindAnnotation> findAnnotationMock = Mockito.mockStatic(FindAnnotation.class)) {
+            findAnnotationMock.when(() -> FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).thenReturn(
+                            this.enrichQueryMetrics);
+            QueryMetricsEnrichmentInterceptor subject = new QueryMetricsEnrichmentInterceptor();
+            
+            // Simulate the initial context
+            TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
+            
+            // final Capture<QueryCall> qcCapture = Capture.newInstance();
+            
+            // Set expectations for the postProcess
+            when(responseContext.getHeaders()).thenReturn(writeHeaders);
+            when(writeHeaders.keySet()).thenReturn(new HashSet<>());
+            when(responseContext.getStatus()).thenReturn(HttpResponseCodes.SC_OK);
+            when(responseContext.getJaxrsResponse()).thenReturn(jaxrsResponse);
+            requestContext.setProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")), any());
+            when(jaxrsResponse.getAnnotations()).thenReturn(new Annotation[] {enrichQueryMetrics});
+            when(responseContext.getEntity()).thenReturn(baseQueryResponse);
+            when(enrichQueryMetrics.methodType()).thenReturn(EnrichQueryMetrics.MethodType.CREATE);
+            when(baseQueryResponse.getQueryId()).thenReturn(UUID.randomUUID().toString());
+            // requestContext.setProperty(eq(QueryCall.class.getName()), capture(qcCapture));
+            
+            // Set expectations for the write
+            when(writerContext.getOutputStream()).thenReturn(outputStream);
+            writerContext.setOutputStream(isA(CountingOutputStream.class));
+            writerContext.setOutputStream(outputStream);
+            when(writerContext.getHeaders()).thenReturn(writeHeaders);
+            when(writeHeaders.entrySet()).thenReturn(new HashSet<>());
+            writerContext.proceed();
+            when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")))).thenReturn(null);
+            when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "REQUEST_STATS_NAME")))).thenReturn(null);
+            
+            // Run the test
+            // Set the initial context factory
+            System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
+            
+            // Create and test the test subject
+            ReflectionTestUtils.setField(subject, "queryCache", queryCache);
+            ReflectionTestUtils.setField(subject, "queryMetricsBean", queryMetrics);
+            subject.filter(requestContext, responseContext);
+            subject.aroundWriteTo(writerContext);
+        }
     }
     
     @Test
-    @Disabled
     public void testWrite_CreateQidResponse() throws Exception {
-        QueryMetricsEnrichmentInterceptor subject = new QueryMetricsEnrichmentInterceptor();
-        
-        // Simulate the initial context
-        TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
-        
-        // final Capture<QueryCall> qcCapture = Capture.newInstance();
-        
-        // Set expectations for the postProcess
-        when(responseContext.getHeaders()).thenReturn(writeHeaders);
-        when(writeHeaders.keySet()).thenReturn(new HashSet<>());
-        when(responseContext.getStatus()).thenReturn(HttpResponseCodes.SC_OK);
-        when(responseContext.getJaxrsResponse()).thenReturn(jaxrsResponse);
-        requestContext.setProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")), any());
-        when(jaxrsResponse.getAnnotations()).thenReturn(new Annotation[] {enrichQueryMetrics});
-        when(FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).thenReturn(this.enrichQueryMetrics);
-        when(responseContext.getEntity()).thenReturn(baseQueryResponse);
-        when(enrichQueryMetrics.methodType()).thenReturn(EnrichQueryMetrics.MethodType.CREATE);
-        when(baseQueryResponse.getQueryId()).thenReturn(UUID.randomUUID().toString());
-        // requestContext.setProperty(eq(QueryCall.class.getName()), capture(qcCapture));
-        
-        // Set expectations for the write
-        when(writerContext.getOutputStream()).thenReturn(outputStream);
-        writerContext.setOutputStream(isA(CountingOutputStream.class));
-        writerContext.setOutputStream(outputStream);
-        when(writerContext.getHeaders()).thenReturn(writeHeaders);
-        when(writeHeaders.entrySet()).thenReturn(new HashSet<>());
-        writerContext.proceed();
-        when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")))).thenReturn(null);
-        when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "REQUEST_STATS_NAME")))).thenReturn(null);
-        // when(writerContext.getProperty(QueryCall.class.getName())).thenAnswer((Answer<QueryCall>) qcCapture::getValue);
-        when(queryCache.get(isA(String.class))).thenReturn(runningQuery);
-        when(runningQuery.getLogic()).thenReturn(queryLogic);
-        when(queryLogic.getCollectQueryMetrics()).thenReturn(true);
-        when(runningQuery.getMetric()).thenReturn(queryMetric);
-        queryMetric.setCreateCallTime(gt(-2L));
-        queryMetric.setLoginTime(-1L);
-        queryMetrics.updateMetric(queryMetric);
-        
-        // Run the test
-        // Set the initial context factory
-        System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
-        
-        // Create and test the test subject
-        ReflectionTestUtils.setField(subject, "queryCache", queryCache);
-        ReflectionTestUtils.setField(subject, "queryMetricsBean", queryMetrics);
-        subject.filter(requestContext, responseContext);
-        subject.aroundWriteTo(writerContext);
+        try (MockedStatic<FindAnnotation> findAnnotationMock = Mockito.mockStatic(FindAnnotation.class)) {
+            findAnnotationMock.when(() -> FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).thenReturn(
+                            this.enrichQueryMetrics);
+            QueryMetricsEnrichmentInterceptor subject = new QueryMetricsEnrichmentInterceptor();
+            
+            // Simulate the initial context
+            TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
+            
+            // final Capture<QueryCall> qcCapture = Capture.newInstance();
+            
+            // Set expectations for the postProcess
+            when(responseContext.getHeaders()).thenReturn(writeHeaders);
+            when(writeHeaders.keySet()).thenReturn(new HashSet<>());
+            when(responseContext.getStatus()).thenReturn(HttpResponseCodes.SC_OK);
+            when(responseContext.getJaxrsResponse()).thenReturn(jaxrsResponse);
+            requestContext.setProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")), any());
+            when(jaxrsResponse.getAnnotations()).thenReturn(new Annotation[] {enrichQueryMetrics});
+            when(responseContext.getEntity()).thenReturn(baseQueryResponse);
+            when(enrichQueryMetrics.methodType()).thenReturn(EnrichQueryMetrics.MethodType.CREATE);
+            when(baseQueryResponse.getQueryId()).thenReturn(UUID.randomUUID().toString());
+            
+            // Set expectations for the write
+            when(writerContext.getOutputStream()).thenReturn(outputStream);
+            writerContext.setOutputStream(isA(CountingOutputStream.class));
+            writerContext.setOutputStream(outputStream);
+            when(writerContext.getHeaders()).thenReturn(writeHeaders);
+            when(writeHeaders.entrySet()).thenReturn(new HashSet<>());
+            writerContext.proceed();
+            when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")))).thenReturn(null);
+            when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "REQUEST_STATS_NAME")))).thenReturn(null);
+            queryMetric.setCreateCallTime(gt(-2L));
+            queryMetric.setLoginTime(-1L);
+            queryMetrics.updateMetric(queryMetric);
+            
+            // Run the test
+            // Set the initial context factory
+            System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
+            
+            // Create and test the test subject
+            ReflectionTestUtils.setField(subject, "queryCache", queryCache);
+            ReflectionTestUtils.setField(subject, "queryMetricsBean", queryMetrics);
+            subject.filter(requestContext, responseContext);
+            subject.aroundWriteTo(writerContext);
+        }
     }
     
     @Test
-    @Disabled
     public void testWrite_CreateAndNextQidResponse() throws Exception {
-        QueryMetricsEnrichmentInterceptor subject = new QueryMetricsEnrichmentInterceptor();
-        
-        // Simulate the initial context
-        TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
-        
-        final ArgumentCaptor<QueryCall> qcCapture;
-        
-        // Set expectations for the postProcess
-        when(responseContext.getHeaders()).thenReturn(writeHeaders);
-        when(writeHeaders.keySet()).thenReturn(new HashSet<>());
-        when(responseContext.getStatus()).thenReturn(HttpResponseCodes.SC_OK);
-        when(responseContext.getJaxrsResponse()).thenReturn(jaxrsResponse);
-        requestContext.setProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")), any());
-        when(jaxrsResponse.getAnnotations()).thenReturn(new Annotation[] {enrichQueryMetrics});
-        when(FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).thenReturn(this.enrichQueryMetrics);
-        when(responseContext.getEntity()).thenReturn(baseQueryResponse);
-        when(enrichQueryMetrics.methodType()).thenReturn(EnrichQueryMetrics.MethodType.CREATE_AND_NEXT);
-        when(baseQueryResponse.getQueryId()).thenReturn(UUID.randomUUID().toString());
-        // requestContext.setProperty(eq(QueryCall.class.getName()), capture(qcCapture));
-        
-        // Set expectations for the write
-        when(writerContext.getOutputStream()).thenReturn(outputStream);
-        writerContext.setOutputStream(isA(CountingOutputStream.class));
-        writerContext.setOutputStream(outputStream);
-        when(writerContext.getHeaders()).thenReturn(writeHeaders);
-        when(writeHeaders.entrySet()).thenReturn(new HashSet<>());
-        writerContext.proceed();
-        // when(writerContext.getProperty(QueryCall.class.getName())).thenAnswer((Answer<QueryCall>) qcCapture::getValue);
-        when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")))).thenReturn(null);
-        when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "REQUEST_STATS_NAME")))).thenReturn(null);
-        when(queryCache.get(isA(String.class))).thenReturn(runningQuery);
-        when(runningQuery.getLogic()).thenReturn(queryLogic);
-        when(queryLogic.getCollectQueryMetrics()).thenReturn(true);
-        when(runningQuery.getMetric()).thenReturn(queryMetric);
-        when(queryMetric.getPageTimes()).thenReturn(Arrays.asList(pageTime));
-        queryMetric.setCreateCallTime(eq(-1L));
-        queryMetric.setLoginTime(-1L);
-        pageTime.setCallTime(-1L);
-        pageTime.setLoginTime(-1L);
-        pageTime.setSerializationTime(geq(0L));
-        pageTime.setBytesWritten(0L);
-        queryMetrics.updateMetric(queryMetric);
-        
-        // Run the test
-        // Set the initial context factory
-        System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
-        
-        // Create and test the test subject
-        ReflectionTestUtils.setField(subject, "queryCache", queryCache);
-        ReflectionTestUtils.setField(subject, "queryMetricsBean", queryMetrics);
-        subject.filter(requestContext, responseContext);
-        subject.aroundWriteTo(writerContext);
+        try (MockedStatic<FindAnnotation> findAnnotationMock = Mockito.mockStatic(FindAnnotation.class)) {
+            findAnnotationMock.when(() -> FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).thenReturn(
+                            this.enrichQueryMetrics);
+            QueryMetricsEnrichmentInterceptor subject = new QueryMetricsEnrichmentInterceptor();
+            
+            // Simulate the initial context
+            TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
+            
+            final ArgumentCaptor<QueryCall> qcCapture;
+            
+            // Set expectations for the postProcess
+            when(responseContext.getHeaders()).thenReturn(writeHeaders);
+            when(writeHeaders.keySet()).thenReturn(new HashSet<>());
+            when(responseContext.getStatus()).thenReturn(HttpResponseCodes.SC_OK);
+            when(responseContext.getJaxrsResponse()).thenReturn(jaxrsResponse);
+            requestContext.setProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")), any());
+            when(jaxrsResponse.getAnnotations()).thenReturn(new Annotation[] {enrichQueryMetrics});
+            when(responseContext.getEntity()).thenReturn(baseQueryResponse);
+            when(enrichQueryMetrics.methodType()).thenReturn(EnrichQueryMetrics.MethodType.CREATE_AND_NEXT);
+            when(baseQueryResponse.getQueryId()).thenReturn(UUID.randomUUID().toString());
+            // requestContext.setProperty(eq(QueryCall.class.getName()), capture(qcCapture));
+            
+            // Set expectations for the write
+            when(writerContext.getOutputStream()).thenReturn(outputStream);
+            writerContext.setOutputStream(isA(CountingOutputStream.class));
+            writerContext.setOutputStream(outputStream);
+            when(writerContext.getHeaders()).thenReturn(writeHeaders);
+            when(writeHeaders.entrySet()).thenReturn(new HashSet<>());
+            writerContext.proceed();
+            // when(writerContext.getProperty(QueryCall.class.getName())).thenAnswer((Answer<QueryCall>) qcCapture::getValue);
+            when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")))).thenReturn(null);
+            when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "REQUEST_STATS_NAME")))).thenReturn(null);
+            queryMetric.setCreateCallTime(eq(-1L));
+            queryMetric.setLoginTime(-1L);
+            pageTime.setCallTime(-1L);
+            pageTime.setLoginTime(-1L);
+            pageTime.setSerializationTime(geq(0L));
+            pageTime.setBytesWritten(0L);
+            queryMetrics.updateMetric(queryMetric);
+            
+            // Run the test
+            // Set the initial context factory
+            System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
+            
+            // Create and test the test subject
+            ReflectionTestUtils.setField(subject, "queryCache", queryCache);
+            ReflectionTestUtils.setField(subject, "queryMetricsBean", queryMetrics);
+            subject.filter(requestContext, responseContext);
+            subject.aroundWriteTo(writerContext);
+        }
     }
     
     @Test
-    @Disabled
     public void testWrite_NextQidResponse() throws Exception {
-        QueryMetricsEnrichmentInterceptor subject = new QueryMetricsEnrichmentInterceptor();
-        
-        // Simulate the initial context
-        TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
-        
-        // final Capture<QueryCall> qcCapture = Capture.newInstance();
-        
-        // Set expectations for the postProcess
-        when(responseContext.getHeaders()).thenReturn(writeHeaders);
-        when(writeHeaders.keySet()).thenReturn(new HashSet<>());
-        when(responseContext.getStatus()).thenReturn(HttpResponseCodes.SC_OK);
-        when(responseContext.getJaxrsResponse()).thenReturn(jaxrsResponse);
-        requestContext.setProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")), any());
-        when(jaxrsResponse.getAnnotations()).thenReturn(new Annotation[] {enrichQueryMetrics});
-        when(FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).thenReturn(this.enrichQueryMetrics);
-        when(responseContext.getEntity()).thenReturn(baseQueryResponse);
-        when(enrichQueryMetrics.methodType()).thenReturn(EnrichQueryMetrics.MethodType.NEXT);
-        when(baseQueryResponse.getQueryId()).thenReturn(UUID.randomUUID().toString());
-        // requestContext.setProperty(eq(QueryCall.class.getName()), capture(qcCapture));
-        
-        // Set expectations for the write
-        when(writerContext.getOutputStream()).thenReturn(outputStream);
-        writerContext.setOutputStream(isA(CountingOutputStream.class));
-        writerContext.setOutputStream(outputStream);
-        when(writerContext.getHeaders()).thenReturn(writeHeaders);
-        when(writeHeaders.entrySet()).thenReturn(new HashSet<>());
-        writerContext.proceed();
-        when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")))).thenReturn(null);
-        when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "REQUEST_STATS_NAME")))).thenReturn(null);
-        // when(writerContext.getProperty(QueryCall.class.getName())).thenAnswer((Answer<QueryCall>) qcCapture::getValue);
-        when(queryCache.get(isA(String.class))).thenReturn(runningQuery);
-        when(runningQuery.getLogic()).thenReturn(queryLogic);
-        when(queryLogic.getCollectQueryMetrics()).thenReturn(true);
-        when(runningQuery.getMetric()).thenReturn(queryMetric);
-        when(queryMetric.getPageTimes()).thenReturn(Arrays.asList(pageTime));
-        pageTime.setCallTime(-1L);
-        pageTime.setLoginTime(-1L);
-        pageTime.setSerializationTime(geq(0L));
-        pageTime.setBytesWritten(0L);
-        queryMetrics.updateMetric(queryMetric);
-        
-        // Run the test
-        
-        // Set the initial context factory
-        System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
-        
-        // Create and test the test subject
-        ReflectionTestUtils.setField(subject, "queryCache", queryCache);
-        ReflectionTestUtils.setField(subject, "queryMetricsBean", queryMetrics);
-        subject.filter(requestContext, responseContext);
-        subject.aroundWriteTo(writerContext);
+        try (MockedStatic<FindAnnotation> findAnnotationMock = Mockito.mockStatic(FindAnnotation.class)) {
+            findAnnotationMock.when(() -> FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).thenReturn(
+                            this.enrichQueryMetrics);
+            QueryMetricsEnrichmentInterceptor subject = new QueryMetricsEnrichmentInterceptor();
+            
+            // Simulate the initial context
+            TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
+            
+            // final Capture<QueryCall> qcCapture = Capture.newInstance();
+            
+            // Set expectations for the postProcess
+            when(responseContext.getHeaders()).thenReturn(writeHeaders);
+            when(writeHeaders.keySet()).thenReturn(new HashSet<>());
+            when(responseContext.getStatus()).thenReturn(HttpResponseCodes.SC_OK);
+            when(responseContext.getJaxrsResponse()).thenReturn(jaxrsResponse);
+            requestContext.setProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")), any());
+            when(jaxrsResponse.getAnnotations()).thenReturn(new Annotation[] {enrichQueryMetrics});
+            when(responseContext.getEntity()).thenReturn(baseQueryResponse);
+            when(enrichQueryMetrics.methodType()).thenReturn(EnrichQueryMetrics.MethodType.NEXT);
+            when(baseQueryResponse.getQueryId()).thenReturn(UUID.randomUUID().toString());
+            // requestContext.setProperty(eq(QueryCall.class.getName()), capture(qcCapture));
+            
+            // Set expectations for the write
+            when(writerContext.getOutputStream()).thenReturn(outputStream);
+            writerContext.setOutputStream(isA(CountingOutputStream.class));
+            writerContext.setOutputStream(outputStream);
+            when(writerContext.getHeaders()).thenReturn(writeHeaders);
+            when(writeHeaders.entrySet()).thenReturn(new HashSet<>());
+            writerContext.proceed();
+            when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME")))).thenReturn(null);
+            when(writerContext.getProperty(eq((String) ReflectionTestUtils.getField(subject, "REQUEST_STATS_NAME")))).thenReturn(null);
+            pageTime.setCallTime(-1L);
+            pageTime.setLoginTime(-1L);
+            pageTime.setSerializationTime(geq(0L));
+            pageTime.setBytesWritten(0L);
+            queryMetrics.updateMetric(queryMetric);
+            
+            // Run the test
+            
+            // Set the initial context factory
+            System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
+            
+            // Create and test the test subject
+            ReflectionTestUtils.setField(subject, "queryCache", queryCache);
+            ReflectionTestUtils.setField(subject, "queryMetricsBean", queryMetrics);
+            subject.filter(requestContext, responseContext);
+            subject.aroundWriteTo(writerContext);
+        }
     }
     
     public static class TestInitialContextFactory implements InitialContextFactory {
