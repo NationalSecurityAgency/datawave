@@ -3,41 +3,49 @@ package datawave.webservice.results.cached;
 import datawave.webservice.query.cachedresults.CacheableQueryRowImpl;
 import org.apache.commons.lang.StringUtils;
 import org.easymock.EasyMockExtension;
+import org.easymock.Mock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 @Disabled
 @ExtendWith(EasyMockExtension.class)
 public class CachedRunningQueryTest {
     
+    @Mock
     CachedRunningQuery crq;
     private String fixedColumns = StringUtils.join(CacheableQueryRowImpl.getFixedColumnSet(), ",");
     
     @BeforeEach
     public void setup() throws Exception {
-        // crq = PowerMock.createPartialMock(CachedRunningQuery.class, "initialize");
-        // PowerMock.field(CachedRunningQuery.class, "variableFields").set(crq, new TreeSet<>());
-        // List<String> columns = new ArrayList<>();
-        // columns.add("foo.bar");
-        // columns.add("hey.there");
-        // columns.add("hi.there");
-        // columns.add("ho.there");
-        // columns.add("test1");
-        // columns.add("UPTIME.0");
-        // Field f = crq.getClass().getField("viewColumnNames");
-        // f.setAccessible(true);
-        // PowerMock.field(CachedRunningQuery.class, ).set(crq, columns);
-        // // Add the fields we will be testing with
-        // crq.setVariableFields(Collections.singleton("foo.bar"));
+        // crq = EasyMock.partialMockBuilder(CachedRunningQuery.class).addMockedMethod("initialize").createMock();
+        Class<CachedRunningQuery> clazz = CachedRunningQuery.class;
+        Method method = clazz.getDeclaredMethod("initialize");
+        method.setAccessible(true);
+        method.invoke(crq);
+        ReflectionTestUtils.setField(crq, "variableFields", new TreeSet<>());
+        List<String> columns = new ArrayList<>();
+        columns.add("foo.bar");
+        columns.add("hey.there");
+        columns.add("hi.there");
+        columns.add("ho.there");
+        columns.add("test1");
+        columns.add("UPTIME.0");
+        ReflectionTestUtils.setField(crq, "viewColumnNames", columns);
+        // Add the fields we will be testing with
+        crq.setVariableFields(Collections.singleton("foo.bar"));
     }
     
     @Test
