@@ -823,7 +823,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.getLastPageNumber()).andReturn(pageNumber);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1).times(2);
         expect(this.runningQuery.getSettings()).andReturn(this.query).anyTimes();
-        expect(this.queryLogic1.getTransformer(this.query)).andReturn(this.transformer);
+        expect(this.queryLogic1.getEnrichedTransformer(this.query)).andReturn(this.transformer);
         expect(this.transformer.createResponse(this.resultsPage)).andReturn(this.baseResponse);
         expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.COMPLETE).times(2);
         this.baseResponse.setHasResults(true);
@@ -1159,7 +1159,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.getLastPageNumber()).andReturn(pageNumber);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1).times(2);
         expect(this.runningQuery.getSettings()).andReturn(this.query).anyTimes();
-        expect(this.queryLogic1.getTransformer(this.query)).andReturn(this.transformer);
+        expect(this.queryLogic1.getEnrichedTransformer(this.query)).andReturn(this.transformer);
         expect(this.transformer.createResponse(this.resultsPage)).andReturn(this.baseResponse);
         expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.COMPLETE).times(2);
         this.baseResponse.setHasResults(true);
@@ -1446,7 +1446,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.next()).andReturn(this.resultsPage);
         expect(this.runningQuery.getLastPageNumber()).andReturn(pageNumber);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1).times(2);
-        expect(this.queryLogic1.getTransformer(this.query)).andReturn(this.transformer);
+        expect(this.queryLogic1.getEnrichedTransformer(this.query)).andReturn(this.transformer);
         expect(this.transformer.createResponse(this.resultsPage)).andReturn(this.baseResponse);
         expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.NONE).times(2);
         this.baseResponse.setHasResults(false);
@@ -3303,7 +3303,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getProxyServers()).andReturn(new ArrayList<>(0)).anyTimes();
         expect(this.httpHeaders.getAcceptableMediaTypes()).andReturn(mediaTypes);
         expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn((QueryLogic) this.queryLogic1);
-        expect(this.queryLogic1.getTransformer(isA(Query.class))).andReturn(this.transformer);
+        expect(this.queryLogic1.getEnrichedTransformer(isA(Query.class))).andReturn(this.transformer);
         expect(this.transformer.createResponse(isA(ResultsPage.class))).andReturn(this.baseResponse);
         expect(subject.createQuery(queryLogicName, params, httpHeaders)).andReturn(createResponse);
         expect(this.cache.get(eq(queryId.toString()))).andReturn(this.runningQuery);
