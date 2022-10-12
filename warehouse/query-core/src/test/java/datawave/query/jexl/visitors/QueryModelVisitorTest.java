@@ -7,7 +7,6 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.language.functions.jexl.NoExpansion;
 import datawave.query.model.QueryModel;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
@@ -112,7 +111,7 @@ public class QueryModelVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO1 == 'baz' && filter:isNull(FOO1)");
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery("($1BAR == 'baz' || $2BAR == 'baz') && (filter:isNull($1BAR||$2BAR))");
         
-        ASTJexlScript groomed = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(script);
+        ASTJexlScript groomed = InvertNodeVisitor.invertSwappedNodes(script);
         ASTJexlScript actualScript = QueryModelVisitor.applyModel(groomed, model, allFields);
         
         assertScriptEquality(expectedScript, actualScript);
@@ -125,7 +124,7 @@ public class QueryModelVisitorTest {
         ASTJexlScript script = JexlASTHelper
                         .parseJexlQuery("ID1 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' || ID2 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' && "
                                         + "((_Bounded_ = true) && (DATE <= '2013-04-10 12:01:24' && DATE >= '2013-04-10 03:01:24'))");
-        ASTJexlScript groomed = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(script);
+        ASTJexlScript groomed = InvertNodeVisitor.invertSwappedNodes(script);
         ASTJexlScript result = QueryModelVisitor.applyModel(groomed, model, allFields);
         
         String expected = "ID1 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' || (ID2 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' && "
@@ -341,7 +340,7 @@ public class QueryModelVisitorTest {
         model.addTermToModel("FOO1", "2BAR");
         
         String original = "FOO == FOO1";
-        ASTJexlScript groomed = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(JexlASTHelper.parseJexlQuery(original));
+        ASTJexlScript groomed = InvertNodeVisitor.invertSwappedNodes(JexlASTHelper.parseJexlQuery(original));
         String expected = "(BAR1 == $1BAR || BAR2 == $1BAR || BAR1 == $2BAR || BAR2 == $2BAR)";
         assertResult(JexlStringBuildingVisitor.buildQuery(groomed), expected);
     }
@@ -351,7 +350,7 @@ public class QueryModelVisitorTest {
         model.addTermToModel("FOO1", "1BAR");
         
         String original = "FOO1 == 'baz'";
-        ASTJexlScript groomed = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(JexlASTHelper.parseJexlQuery(original));
+        ASTJexlScript groomed = InvertNodeVisitor.invertSwappedNodes(JexlASTHelper.parseJexlQuery(original));
         String expected = "$1BAR == 'baz'";
         ASTJexlScript actualScript = assertResult(JexlStringBuildingVisitor.buildQuery(groomed), expected);
         
@@ -368,7 +367,7 @@ public class QueryModelVisitorTest {
         model.addTermToModel("OTHER", "9_2");
         
         String original = "FOO1 == 'baz' and OTHER == null";
-        ASTJexlScript groomed = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(JexlASTHelper.parseJexlQuery(original));
+        ASTJexlScript groomed = InvertNodeVisitor.invertSwappedNodes(JexlASTHelper.parseJexlQuery(original));
         
         String expected = "BAR1 == 'baz' and $9_2 == null";
         ASTJexlScript actualScript = assertResult(JexlStringBuildingVisitor.buildQuery(groomed), expected);
