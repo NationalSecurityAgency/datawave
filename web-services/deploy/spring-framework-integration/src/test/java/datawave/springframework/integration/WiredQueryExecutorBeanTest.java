@@ -37,20 +37,20 @@ import datawave.webservice.results.cached.CachedResultsConfiguration;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.security.JSSESecurityDomain;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.context.ApplicationContext;
 
 /**
  * this test ensures that our various spring contexts can be deployed successfully to Wildfly
  */
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class WiredQueryExecutorBeanTest {
     
     private Logger log = Logger.getLogger(WiredQueryExecutorBeanTest.class);
@@ -84,7 +84,7 @@ public class WiredQueryExecutorBeanTest {
     @Test
     public void testCreatingContext() throws Exception {
         DefaultQueryPlanner defaultQueryPlanner = ctx.getBean("DefaultQueryPlanner", DefaultQueryPlanner.class);
-        Assert.assertNotNull(defaultQueryPlanner);
+        Assertions.assertNotNull(defaultQueryPlanner);
     }
     
     @Test
@@ -95,7 +95,7 @@ public class WiredQueryExecutorBeanTest {
             if (ql.getRoleManager() == null) {
                 log.error("role manager is null for " + name + " and " + ql + " named " + ql.getLogicName() + " and " + ql.getClass());
             }
-            Assert.assertNotNull(ql.getRoleManager());
+            Assertions.assertNotNull(ql.getRoleManager());
             log.debug("got " + ql);
         }
     }
