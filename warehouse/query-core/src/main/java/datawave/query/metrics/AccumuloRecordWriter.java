@@ -1,6 +1,7 @@
 package datawave.query.metrics;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -299,8 +300,10 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
      * string, and is not intended to be secure.
      */
     protected static byte[] getPassword(Configuration conf) {
-        String pw = EnvProvider.resolve(PASSWORD);
-        return Base64.decodeBase64(conf.get(pw, "").getBytes());
+        byte[] bytes = Base64.decodeBase64(conf.get(PASSWORD, "").getBytes());
+        String pw = new String(bytes);
+        pw = EnvProvider.resolve(pw);
+        return pw.getBytes(StandardCharsets.UTF_8);
     }
     
     protected static boolean canCreateTables(Configuration conf) {
