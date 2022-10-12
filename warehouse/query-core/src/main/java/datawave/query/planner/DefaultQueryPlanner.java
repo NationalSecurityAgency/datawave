@@ -300,13 +300,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected boolean showReducedQueryPrune = true;
     
-    /**
-     * Set flag to enable query tree validation during planning
-     */
-    protected boolean validateAST = false;
-    
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
-    protected TimedVisitorManager visitorManager;
+    private TimedVisitorManager visitorManager = new TimedVisitorManager();
     
     public DefaultQueryPlanner() {
         this(Long.MAX_VALUE);
@@ -319,7 +314,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     public DefaultQueryPlanner(long maxRangesPerQueryPiece, boolean limitScanners) {
         this.maxRangesPerQueryPiece = maxRangesPerQueryPiece;
         setLimitScanners(limitScanners);
-        this.visitorManager = new TimedVisitorManager(log.isDebugEnabled(), validateAST);
     }
     
     protected DefaultQueryPlanner(DefaultQueryPlanner other) {
@@ -342,7 +336,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setSourceLimit(other.sourceLimit);
         setDocsToCombineForEvaluation(other.getDocsToCombineForEvaluation());
         setPushdownThreshold(other.getPushdownThreshold());
-        this.visitorManager = other.visitorManager;
+        setVisitorManager(other.getVisitorManager());
     }
     
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
@@ -2785,12 +2779,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return showReducedQueryPrune;
     }
     
-    public boolean getValidateAST() {
-        return this.validateAST;
+    public TimedVisitorManager getVisitorManager() {
+        return visitorManager;
     }
     
-    public void setValidateAST(boolean validateAST) {
-        this.validateAST = validateAST;
+    public void setVisitorManager(TimedVisitorManager visitorManager) {
+        this.visitorManager = visitorManager;
     }
     
     public static int getMaxChildNodesToPrint() {

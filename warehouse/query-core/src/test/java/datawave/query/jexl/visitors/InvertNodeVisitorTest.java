@@ -13,6 +13,8 @@ import static org.junit.Assert.fail;
 
 public class InvertNodeVisitorTest {
     
+    private final ASTValidator validator = new ASTValidator();
+    
     @Test
     public void testInvertEq() {
         test("null == FOO", "FOO == null");
@@ -91,7 +93,7 @@ public class InvertNodeVisitorTest {
             assertTrue(TreeEqualityVisitor.isEqual(expectedScript, inverted));
             
             // visited script is valid
-            assertTrue(ASTValidator.isValid(inverted));
+            assertTrue(validator.isValid(inverted));
             
         } catch (ParseException e) {
             fail("Could not parse query: " + query);

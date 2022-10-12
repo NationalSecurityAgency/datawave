@@ -48,7 +48,7 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
                             e);
         }
         QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(QUERY_LOGIC_NAME);
-        t = logic.getTransformer(query);
+        t = logic.getEnrichedTransformer(query);
         
         this.tableName = new Text(context.getConfiguration().get(TABLE_NAME));
         this.format = SerializationFormat.valueOf(context.getConfiguration().get(BulkResultsFileOutputMapper.RESULT_SERIALIZATION_FORMAT));
