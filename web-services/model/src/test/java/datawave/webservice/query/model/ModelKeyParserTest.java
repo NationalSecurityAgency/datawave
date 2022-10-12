@@ -8,20 +8,27 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockExtension;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.util.Collections;
 import java.util.Set;
 
-@Disabled
-@ExtendWith(EasyMockExtension.class)
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
 public class ModelKeyParserTest {
-    
+
+    @Mock
+    Clock mockClock;
+
     private static final String MODEL_NAME = "MODEL";
     private static final String FIELD_NAME = "field1";
     private static final String MODEL_FIELD_NAME = "mappedField1";
@@ -41,7 +48,7 @@ public class ModelKeyParserTest {
     private static Mutation REVERSE_MUTATION = null;
     private static Mutation REVERSE_DELETE_MUTATION = null;
     
-    private static long TIMESTAMP = System.currentTimeMillis();
+    private static long TIMESTAMP = Clock.systemDefaultZone().millis();
     
     @BeforeEach
     public void setup() throws Exception {
@@ -84,8 +91,6 @@ public class ModelKeyParserTest {
         REVERSE_DELETE_MUTATION = new Mutation(FIELD_NAME);
         REVERSE_DELETE_MUTATION.putDelete(MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(),
                         new ColumnVisibility(COLVIZ), TIMESTAMP);
-        
-        // PowerMock.mockStatic(System.class, System.class.getMethod("currentTimeMillis"));
     }
     
     @Test
@@ -115,134 +120,118 @@ public class ModelKeyParserTest {
     
     @Test
     public void testForwardMappingParse() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.replay();
-        Key k = ModelKeyParser.createKey(FORWARD_FIELD_MAPPING, MODEL_NAME);
-        EasyMock.verify();
-        Assertions.assertEquals(FORWARD_KEY, k);
-        
-        // Test forwardMappingParse with null datatype
-        EasyMock.reset();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        FORWARD_FIELD_MAPPING.setDatatype(null);
-        EasyMock.replay();
-        k = ModelKeyParser.createKey(FORWARD_FIELD_MAPPING, MODEL_NAME);
-        EasyMock.verify();
-        FORWARD_KEY = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), COLVIZ, TIMESTAMP);
-        EasyMock.verify();
-        Assertions.assertEquals(FORWARD_KEY, k);
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(TIMESTAMP);
+
+            Key k = ModelKeyParser.createKey(FORWARD_FIELD_MAPPING, MODEL_NAME);
+            Assertions.assertEquals(FORWARD_KEY, k);
+
+            FORWARD_FIELD_MAPPING.setDatatype(null);
+            k = ModelKeyParser.createKey(FORWARD_FIELD_MAPPING, MODEL_NAME);
+            FORWARD_KEY = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), COLVIZ, TIMESTAMP);
+            Assertions.assertEquals(FORWARD_KEY, k);
+        }
     }
     
     @Test
     public void testReverseMappingParse() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.replay();
-        Key k = ModelKeyParser.createKey(REVERSE_FIELD_MAPPING, MODEL_NAME);
-        EasyMock.verify();
-        Assertions.assertEquals(REVERSE_KEY, k);
-        
-        // Test with null datatype
-        EasyMock.reset();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        REVERSE_FIELD_MAPPING.setDatatype(null);
-        EasyMock.replay();
-        REVERSE_KEY = new Key(FIELD_NAME, MODEL_NAME, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), COLVIZ, TIMESTAMP);
-        k = ModelKeyParser.createKey(REVERSE_FIELD_MAPPING, MODEL_NAME);
-        EasyMock.verify();
-        Assertions.assertEquals(REVERSE_KEY, k);
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(TIMESTAMP);
+
+            Key k = ModelKeyParser.createKey(REVERSE_FIELD_MAPPING, MODEL_NAME);
+            Assertions.assertEquals(REVERSE_KEY, k);
+
+            // Test with null datatype
+            REVERSE_FIELD_MAPPING.setDatatype(null);
+            REVERSE_KEY = new Key(FIELD_NAME, MODEL_NAME, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), COLVIZ, TIMESTAMP);
+            k = ModelKeyParser.createKey(REVERSE_FIELD_MAPPING, MODEL_NAME);
+            Assertions.assertEquals(REVERSE_KEY, k);
+        }
     }
     
     @Test
     public void testForwardCreateMutation() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.replay();
-        Mutation m = ModelKeyParser.createMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
-        EasyMock.verify();
-        m.getUpdates();
-        Assertions.assertEquals(FORWARD_MUTATION, m);
-        
-        // Test with null datatype
-        EasyMock.reset();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        FORWARD_FIELD_MAPPING.setDatatype(null);
-        EasyMock.replay();
-        m = ModelKeyParser.createMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
-        FORWARD_MUTATION = new Mutation(MODEL_FIELD_NAME);
-        FORWARD_MUTATION.put(MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP,
-                        ModelKeyParser.NULL_VALUE);
-        EasyMock.verify();
-        m.getUpdates();
-        Assertions.assertEquals(FORWARD_MUTATION, m);
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(TIMESTAMP);
+            Mutation m = ModelKeyParser.createMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
+            m.getUpdates();
+            Assertions.assertEquals(FORWARD_MUTATION, m);
+
+            // Test with null datatype
+            FORWARD_FIELD_MAPPING.setDatatype(null);
+            m = ModelKeyParser.createMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
+            FORWARD_MUTATION = new Mutation(MODEL_FIELD_NAME);
+            FORWARD_MUTATION.put(MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP,
+                    ModelKeyParser.NULL_VALUE);
+            m.getUpdates();
+            Assertions.assertEquals(FORWARD_MUTATION, m);
+        }
     }
     
     @Test
     public void testReverseCreateMutation() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.replay();
-        Mutation m = ModelKeyParser.createMutation(REVERSE_FIELD_MAPPING, MODEL_NAME);
-        EasyMock.verify();
-        m.getUpdates();
-        Assertions.assertEquals(REVERSE_MUTATION, m);
-        
-        // Test with null datatype
-        EasyMock.reset();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        REVERSE_FIELD_MAPPING.setDatatype(null);
-        EasyMock.replay();
-        m = ModelKeyParser.createMutation(REVERSE_FIELD_MAPPING, MODEL_NAME);
-        REVERSE_MUTATION = new Mutation(FIELD_NAME);
-        REVERSE_MUTATION.put(MODEL_NAME, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP,
-                        ModelKeyParser.NULL_VALUE);
-        EasyMock.verify();
-        m.getUpdates();
-        Assertions.assertEquals(REVERSE_MUTATION, m);
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(TIMESTAMP);
+
+            Mutation m = ModelKeyParser.createMutation(REVERSE_FIELD_MAPPING, MODEL_NAME);
+            m.getUpdates();
+            Assertions.assertEquals(REVERSE_MUTATION, m);
+
+            // Test with null datatype
+            REVERSE_FIELD_MAPPING.setDatatype(null);
+            m = ModelKeyParser.createMutation(REVERSE_FIELD_MAPPING, MODEL_NAME);
+            REVERSE_MUTATION = new Mutation(FIELD_NAME);
+            REVERSE_MUTATION.put(MODEL_NAME, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP,
+                    ModelKeyParser.NULL_VALUE);
+            m.getUpdates();
+            Assertions.assertEquals(REVERSE_MUTATION, m);
+        }
     }
     
     @Test
     public void testForwardCreateDeleteMutation() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP).times(2);
-        EasyMock.replay();
-        Mutation m = ModelKeyParser.createDeleteMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
-        EasyMock.verify();
-        m.getUpdates();
-        Assertions.assertEquals(FORWARD_DELETE_MUTATION, m);
-        
-        // Test with null datatype
-        EasyMock.reset();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP).times(2);
-        FORWARD_FIELD_MAPPING.setDatatype(null);
-        EasyMock.replay();
-        FORWARD_DELETE_MUTATION = new Mutation(MODEL_FIELD_NAME);
-        FORWARD_DELETE_MUTATION.putDelete(MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP);
-        FORWARD_DELETE_MUTATION.putDelete(MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + "index_only" + ModelKeyParser.NULL_BYTE + FORWARD.getValue(),
-                        new ColumnVisibility(COLVIZ), TIMESTAMP);
-        m = ModelKeyParser.createDeleteMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
-        EasyMock.verify();
-        m.getUpdates();
-        Assertions.assertEquals(FORWARD_DELETE_MUTATION, m);
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(TIMESTAMP);
+            Mutation m = ModelKeyParser.createDeleteMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
+            m.getUpdates();
+            Assertions.assertEquals(FORWARD_DELETE_MUTATION, m);
+
+            // Test with null datatype
+            FORWARD_FIELD_MAPPING.setDatatype(null);
+            FORWARD_DELETE_MUTATION = new Mutation(MODEL_FIELD_NAME);
+            FORWARD_DELETE_MUTATION.putDelete(MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP);
+            FORWARD_DELETE_MUTATION.putDelete(MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + "index_only" + ModelKeyParser.NULL_BYTE + FORWARD.getValue(),
+                    new ColumnVisibility(COLVIZ), TIMESTAMP);
+            m = ModelKeyParser.createDeleteMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
+            m.getUpdates();
+            Assertions.assertEquals(FORWARD_DELETE_MUTATION, m);
+        }
     }
     
     @Test
     public void testReverseCreateDeleteMutation() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.replay();
-        Mutation m = ModelKeyParser.createDeleteMutation(REVERSE_FIELD_MAPPING, MODEL_NAME);
-        EasyMock.verify();
-        m.getUpdates();
-        Assertions.assertEquals(REVERSE_DELETE_MUTATION, m);
-        
-        // Test with null datatype
-        EasyMock.reset();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        REVERSE_FIELD_MAPPING.setDatatype(null);
-        EasyMock.replay();
-        REVERSE_DELETE_MUTATION = new Mutation(FIELD_NAME);
-        REVERSE_DELETE_MUTATION
-                        .putDelete(MODEL_NAME, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP);
-        m = ModelKeyParser.createDeleteMutation(REVERSE_FIELD_MAPPING, MODEL_NAME);
-        EasyMock.verify();
-        m.getUpdates();
-        Assertions.assertEquals(REVERSE_DELETE_MUTATION, m);
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(TIMESTAMP);
+            Mutation m = ModelKeyParser.createDeleteMutation(REVERSE_FIELD_MAPPING, MODEL_NAME);
+            m.getUpdates();
+            Assertions.assertEquals(REVERSE_DELETE_MUTATION, m);
+
+            // Test with null datatype
+            REVERSE_FIELD_MAPPING.setDatatype(null);
+            REVERSE_DELETE_MUTATION = new Mutation(FIELD_NAME);
+            REVERSE_DELETE_MUTATION
+                    .putDelete(MODEL_NAME, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP);
+            m = ModelKeyParser.createDeleteMutation(REVERSE_FIELD_MAPPING, MODEL_NAME);
+            EasyMock.verify();
+            m.getUpdates();
+            Assertions.assertEquals(REVERSE_DELETE_MUTATION, m);
+        }
     }
     
     @Test
@@ -264,26 +253,26 @@ public class ModelKeyParserTest {
         
         Key expectedForwardKey = new Key(MODEL_FIELD_NAME, MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE, FIELD_NAME + ModelKeyParser.NULL_BYTE
                         + FORWARD.getValue(), COLVIZ, TIMESTAMP);
-        
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.replay();
-        Key k = ModelKeyParser.createKey(forwardMapping, MODEL_NAME);
-        Assertions.assertEquals(expectedForwardKey, k);
-        
-        // Test without datatype
-        EasyMock.reset();
-        forwardMapping = new FieldMapping();
-        forwardMapping.setColumnVisibility(COLVIZ);
-        forwardMapping.setDirection(FORWARD);
-        forwardMapping.setFieldName(FIELD_NAME);
-        forwardMapping.setModelFieldName(MODEL_FIELD_NAME);
-        
-        expectedForwardKey = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), COLVIZ, TIMESTAMP);
-        
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.replay();
-        k = ModelKeyParser.createKey(forwardMapping, MODEL_NAME);
-        Assertions.assertEquals(expectedForwardKey, k);
+
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(TIMESTAMP);
+
+            Key k = ModelKeyParser.createKey(forwardMapping, MODEL_NAME);
+            Assertions.assertEquals(expectedForwardKey, k);
+
+            // Test without datatype
+            forwardMapping = new FieldMapping();
+            forwardMapping.setColumnVisibility(COLVIZ);
+            forwardMapping.setDirection(FORWARD);
+            forwardMapping.setFieldName(FIELD_NAME);
+            forwardMapping.setModelFieldName(MODEL_FIELD_NAME);
+
+            expectedForwardKey = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), COLVIZ, TIMESTAMP);
+
+            k = ModelKeyParser.createKey(forwardMapping, MODEL_NAME);
+            Assertions.assertEquals(expectedForwardKey, k);
+        }
     }
     
     @Test
@@ -299,31 +288,30 @@ public class ModelKeyParserTest {
         Text cf = new Text(MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE);
         Text cq = new Text(FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue());
         expectedforwardMutation.put(cf, cq, new ColumnVisibility(COLVIZ), TIMESTAMP, ModelKeyParser.NULL_VALUE);
-        
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.replay();
-        Mutation m = ModelKeyParser.createMutation(forwardMapping, MODEL_NAME);
-        m.getUpdates();
-        Assertions.assertTrue(expectedforwardMutation.equals(m), "Expected true: expectedforwardMutation.equals(m)");
-        
-        // Without Datatype
-        EasyMock.reset();
-        forwardMapping = new FieldMapping();
-        forwardMapping.setColumnVisibility(COLVIZ);
-        forwardMapping.setDirection(FORWARD);
-        forwardMapping.setFieldName(FIELD_NAME);
-        forwardMapping.setModelFieldName(MODEL_FIELD_NAME);
-        
-        expectedforwardMutation = new Mutation(MODEL_FIELD_NAME);
-        cf = new Text(MODEL_NAME);
-        cq = new Text(FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue());
-        expectedforwardMutation.put(cf, cq, new ColumnVisibility(COLVIZ), TIMESTAMP, ModelKeyParser.NULL_VALUE);
-        
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.replay();
-        m = ModelKeyParser.createMutation(forwardMapping, MODEL_NAME);
-        m.getUpdates();
-        Assertions.assertTrue(expectedforwardMutation.equals(m), "Expected true: expectedforwardMutation.equals(m)");
+
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(TIMESTAMP);
+            Mutation m = ModelKeyParser.createMutation(forwardMapping, MODEL_NAME);
+            m.getUpdates();
+            Assertions.assertTrue(expectedforwardMutation.equals(m), "Expected true: expectedforwardMutation.equals(m)");
+
+            // Without Datatype
+            forwardMapping = new FieldMapping();
+            forwardMapping.setColumnVisibility(COLVIZ);
+            forwardMapping.setDirection(FORWARD);
+            forwardMapping.setFieldName(FIELD_NAME);
+            forwardMapping.setModelFieldName(MODEL_FIELD_NAME);
+
+            expectedforwardMutation = new Mutation(MODEL_FIELD_NAME);
+            cf = new Text(MODEL_NAME);
+            cq = new Text(FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue());
+            expectedforwardMutation.put(cf, cq, new ColumnVisibility(COLVIZ), TIMESTAMP, ModelKeyParser.NULL_VALUE);
+
+            m = ModelKeyParser.createMutation(forwardMapping, MODEL_NAME);
+            m.getUpdates();
+            Assertions.assertTrue(expectedforwardMutation.equals(m), "Expected true: expectedforwardMutation.equals(m)");
+        }
     }
     
     /**
