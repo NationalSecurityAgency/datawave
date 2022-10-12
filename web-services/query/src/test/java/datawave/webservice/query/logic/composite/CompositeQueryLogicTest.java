@@ -27,6 +27,7 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.logic.DatawaveRoleManager;
 import datawave.webservice.query.logic.EasyRoleManager;
+import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
@@ -364,7 +365,7 @@ public class CompositeQueryLogicTest {
     @Test(expected = RuntimeException.class)
     public void testInitializeWithSameQueryLogicAndTableNames() throws Exception {
         
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         logics.add(new TestQueryLogic());
         logics.add(new TestQueryLogic());
         
@@ -384,7 +385,7 @@ public class CompositeQueryLogicTest {
     @Test
     public void testInitializeWithSameQueryLogicAndDifferentTableNames() throws Exception {
         
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         logics.add(new TestQueryLogic() {
             @Override
             public String getTableName() {
@@ -414,7 +415,7 @@ public class CompositeQueryLogicTest {
     @Test
     public void testInitialize() throws Exception {
         
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         logics.add(new TestQueryLogic());
         logics.add(new TestQueryLogic2());
         
@@ -434,7 +435,7 @@ public class CompositeQueryLogicTest {
     @Test
     public void testInitializeWithDifferentResponseTypes() throws Exception {
         
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         logics.add(new TestQueryLogic());
         logics.add(new DifferentTestQueryLogic());
         
@@ -454,7 +455,7 @@ public class CompositeQueryLogicTest {
     @Test
     public void testCloseWithNoSetup() throws Exception {
         
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         logics.add(new TestQueryLogic());
         logics.add(new TestQueryLogic2());
         
@@ -478,7 +479,7 @@ public class CompositeQueryLogicTest {
         Logger.getLogger(CompositeQueryLogic.class).setLevel(Level.TRACE);
         Logger.getLogger(CompositeQueryLogicResults.class).setLevel(Level.TRACE);
         Logger.getLogger(CompositeQueryLogicTransformer.class).setLevel(Level.TRACE);
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logics.add(logic1);
@@ -529,7 +530,7 @@ public class CompositeQueryLogicTest {
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
-        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer((Query) settings).createResponse(page);
+        TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
         Assert.assertEquals(8, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             Assert.assertNotNull(r);
@@ -545,7 +546,7 @@ public class CompositeQueryLogicTest {
         Logger.getLogger(CompositeQueryLogic.class).setLevel(Level.TRACE);
         Logger.getLogger(CompositeQueryLogicResults.class).setLevel(Level.TRACE);
         Logger.getLogger(CompositeQueryLogicTransformer.class).setLevel(Level.TRACE);
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logics.add(logic1);
@@ -596,7 +597,7 @@ public class CompositeQueryLogicTest {
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
-        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer((Query) settings).createResponse(page);
+        TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
         Assert.assertEquals(4, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             Assert.assertNotNull(r);
@@ -608,7 +609,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoDataLogic1() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logics.add(logic1);
@@ -659,7 +660,7 @@ public class CompositeQueryLogicTest {
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
-        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer((Query) settings).createResponse(page);
+        TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
         Assert.assertEquals(8, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             Assert.assertNotNull(r);
@@ -671,7 +672,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoDataLogic2() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logics.add(logic1);
@@ -722,7 +723,7 @@ public class CompositeQueryLogicTest {
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
-        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer((Query) settings).createResponse(page);
+        TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
         Assert.assertEquals(8, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             Assert.assertNotNull(r);
@@ -734,7 +735,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoData() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logics.add(logic1);
@@ -774,7 +775,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCanRunQueryLogic() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
@@ -797,7 +798,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCanRunQueryLogic2() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
@@ -822,7 +823,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCannotRunQueryLogic2() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        List<QueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("NONTESTROLE");
