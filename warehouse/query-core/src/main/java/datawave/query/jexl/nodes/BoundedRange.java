@@ -72,11 +72,11 @@ public class BoundedRange extends QueryPropertyMarker {
         if (!(obj instanceof BoundedRange)) {
             return false;
         }
-        return JexlStringBuildingVisitor.buildQuery(this).equals(JexlStringBuildingVisitor.buildQuery((BoundedRange) obj));
+        return JexlStringBuildingVisitor.buildQuery(this).equals(JexlStringBuildingVisitor.buildQueryWithoutParse((BoundedRange) obj));
     }
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(JexlStringBuildingVisitor.buildQuery(this)).toHashCode();
+        return new HashCodeBuilder().append(JexlStringBuildingVisitor.buildQueryWithoutParse(this)).toHashCode();
     }
 }
