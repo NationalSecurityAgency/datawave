@@ -1,11 +1,15 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
+import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
 import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 
 import java.util.Collection;
@@ -14,7 +18,7 @@ import java.util.Collection;
  * Traverses the JexlNode tree, and extracts the highest and lowest granularity GeoWave tiers, assuming that this query contains GeoWave terms associated with
  * the supplied geoFields.
  */
-public class GeoWaveQueryInfoVisitor extends BaseVisitor {
+public class GeoWaveQueryInfoVisitor extends ShortCircuitBaseVisitor {
     
     private final Collection<String> geoFields;
     
@@ -123,4 +127,30 @@ public class GeoWaveQueryInfoVisitor extends BaseVisitor {
             return -(this.minTier - o.minTier);
         }
     }
+    
+    // Recurse through these nodes
+    @Override
+    public Object visit(ASTOrNode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTAndNode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTReferenceExpression node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
 }
