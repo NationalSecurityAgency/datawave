@@ -1,5 +1,7 @@
 package datawave.query.util;
 
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import org.apache.log4j.Logger;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
@@ -24,6 +26,8 @@ import java.util.stream.Collectors;
  * effectiveness or accuracy of these methods given any other configuration.
  */
 public class GeoUtils {
+    
+    private static final Logger log = ThreadConfigurableLogger.getLogger(GeoUtils.class);
     
     /**
      * Setting the precision too high is unnecessary, and will result in occasional computational errors within the JTS library.
@@ -213,7 +217,15 @@ public class GeoUtils {
     }
     
     private static double areaDifference(Geometry geom1, Geometry geom2) {
-        return geom1.getArea() - (geom1.intersection(geom2).getArea());
+        try {
+            return geom1.getArea() - (geom1.intersection(geom2).getArea());
+        } catch (Exception e) {
+            log.warn("Unable to compute area difference between polygons. ", e);
+            if (log.isTraceEnabled()) {
+                log.trace("Geometries: [" + geom1.toText() + "], [" + geom2.toText() + "]");
+            }
+            return 0;
+        }
     }
     
     /**
@@ -357,7 +369,7 @@ public class GeoUtils {
         coords[1] = new Coordinate(maxLon, minLat);
         coords[2] = new Coordinate(maxLon, maxLat);
         coords[3] = new Coordinate(minLon, maxLat);
-        coords[4] = new Coordinate(minLon, minLat);
+        coords[4] = coords[0];
         
         return gf.createPolygon(coords);
     }
@@ -415,7 +427,7 @@ public class GeoUtils {
             coords[1] = new Coordinate(maxLon, minLat);
             coords[2] = new Coordinate(maxLon, maxLat);
             coords[3] = new Coordinate(minLon, maxLat);
-            coords[4] = new Coordinate(minLon, minLat);
+            coords[4] = coords[0];
             geometries.add(gf.createPolygon(coords));
         }
         
