@@ -570,7 +570,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     public void activate(Connection connection, QueryLogic<?> queryLogic) throws SQLException {
         
         this.connection = connection;
-        this.transformer = queryLogic.getTransformer(this.query);
+        this.transformer = queryLogic.getEnrichedTransformer(this.query);
         if (this.transformer instanceof CacheableLogic) {
             this.cacheableLogic = (CacheableLogic) this.transformer;
             this.queryLogic = queryLogic;

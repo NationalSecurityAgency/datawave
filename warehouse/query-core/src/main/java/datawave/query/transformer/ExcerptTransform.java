@@ -1,5 +1,6 @@
 package datawave.query.transformer;
 
+import com.google.common.collect.Iterators;
 import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.common.util.ArgumentChecker;
 import datawave.ingest.protobuf.TermWeight;
@@ -359,23 +360,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * @return an iterator that will supply the enriched documents
      */
     public Iterator<Entry<Key,Document>> getIterator(final Iterator<Entry<Key,Document>> in) {
-        return new Iterator<Entry<Key,Document>>() {
-            
-            Entry<Key,Document> next;
-            
-            @Override
-            public boolean hasNext() {
-                if (in.hasNext()) {
-                    next = ExcerptTransform.this.apply(in.next());
-                }
-                return next != null;
-            }
-            
-            @Override
-            public Entry<Key,Document> next() {
-                return next;
-            }
-        };
+        return Iterators.transform(in, this);
     }
     
     /**
