@@ -65,36 +65,36 @@ public class QueryWebsocket {
         cancelActiveQuery(session);
     }
     
-//    @OnMessage
+    // @OnMessage
     public void handleMessage(final Session session) { // , QueryMessage message) {
-    // switch (message.getType()) {
-    // case CREATE: {
-    // if (session.getUserProperties().get(ACTIVE_QUERY_FUTURE) != null) {
-    // session.getAsyncRemote().sendObject(
-    // new QueryResponseMessage(ResponseType.CREATION_FAILURE, "Query already active. Only one query per websocket is allowed."));
-    // } else {
-    // CreateQueryMessage cqm = (CreateQueryMessage) message;
-    // String logicName = (String) session.getUserProperties().get(LOGIC_NAME);
-    // QueryObserver observer = new QueryObserver(log, session);
-    //
-    // Long startTime = System.nanoTime();
-    // Long loginTime = null;
-    // try {
-    // loginTime = Long.valueOf((String) session.getUserProperties().get(REQUEST_LOGIN_TIME_HEADER));
-    // } catch (Exception e) {
-    // // Ignore -- login time won't be available
-    // }
-    //
-    // Future<?> activeQuery = queryExecutorBean.executeAsync(logicName, cqm.getParameters(), startTime, loginTime, observer);
-    // session.getUserProperties().put(ACTIVE_QUERY_FUTURE, activeQuery);
-    // }
-    // }
-    // break;
-    // case CANCEL: {
-    // cancelActiveQuery(session);
-    // }
-    // break;
-    // }
+        // switch (message.getType()) {
+        // case CREATE: {
+        // if (session.getUserProperties().get(ACTIVE_QUERY_FUTURE) != null) {
+        // session.getAsyncRemote().sendObject(
+        // new QueryResponseMessage(ResponseType.CREATION_FAILURE, "Query already active. Only one query per websocket is allowed."));
+        // } else {
+        // CreateQueryMessage cqm = (CreateQueryMessage) message;
+        // String logicName = (String) session.getUserProperties().get(LOGIC_NAME);
+        // QueryObserver observer = new QueryObserver(log, session);
+        //
+        // Long startTime = System.nanoTime();
+        // Long loginTime = null;
+        // try {
+        // loginTime = Long.valueOf((String) session.getUserProperties().get(REQUEST_LOGIN_TIME_HEADER));
+        // } catch (Exception e) {
+        // // Ignore -- login time won't be available
+        // }
+        //
+        // Future<?> activeQuery = queryExecutorBean.executeAsync(logicName, cqm.getParameters(), startTime, loginTime, observer);
+        // session.getUserProperties().put(ACTIVE_QUERY_FUTURE, activeQuery);
+        // }
+        // }
+        // break;
+        // case CANCEL: {
+        // cancelActiveQuery(session);
+        // }
+        // break;
+        // }
     }
     
     protected void cancelActiveQuery(Session session) {

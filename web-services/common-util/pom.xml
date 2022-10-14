@@ -87,10 +87,6 @@
             <artifactId>hadoop-auth</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.hadoop.thirdparty</groupId>
-            <artifactId>hadoop-shaded-guava</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.htrace</groupId>
             <artifactId>htrace-core4</artifactId>
         </dependency>
@@ -139,8 +135,13 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>jakarta.enterprise</groupId>
-            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

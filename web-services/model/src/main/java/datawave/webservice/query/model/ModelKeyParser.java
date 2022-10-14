@@ -87,11 +87,13 @@ public class ModelKeyParser {
         if (Direction.REVERSE.equals(mapping.getDirection())) {
             // Reverse mappings should not have indexOnly designators. If they do, scrub it off.
             m = new Mutation(mapping.getFieldName());
-            m.put(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, Clock.systemDefaultZone().millis(), NULL_VALUE);
+            m.put(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, Clock.systemDefaultZone().millis(),
+                            NULL_VALUE);
             return m;
         } else {
             m = new Mutation(mapping.getModelFieldName());
-            m.put(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, Clock.systemDefaultZone().millis(), NULL_VALUE);
+            m.put(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, Clock.systemDefaultZone().millis(),
+                            NULL_VALUE);
             return m;
         }
     }
@@ -103,13 +105,14 @@ public class ModelKeyParser {
         
         if (Direction.REVERSE.equals(mapping.getDirection())) {
             m = new Mutation(mapping.getFieldName());
-            m.putDelete(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, Clock.systemDefaultZone().millis());
+            m.putDelete(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, Clock.systemDefaultZone()
+                            .millis());
             return m;
         } else {
             m = new Mutation(mapping.getModelFieldName());
             m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, Clock.systemDefaultZone().millis());
-            m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + "index_only" + NULL_BYTE + mapping.getDirection().getValue(), cv,
-                    Clock.systemDefaultZone().millis());
+            m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + "index_only" + NULL_BYTE + mapping.getDirection().getValue(), cv, Clock
+                            .systemDefaultZone().millis());
             return m;
         }
     }
