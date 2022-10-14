@@ -62,24 +62,6 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
     }
     
     @Override
-    public BaseQueryResponse createResponse(ResultsPage resultList) {
-        Exception lastFailure = null;
-        for (QueryLogicTransformer t : delegates) {
-            try {
-                log.trace("createResponse ResultsPage");
-                return t.createResponse(resultList);
-            } catch (Exception e) {
-                log.warn("Error calling createResponse on delegate, trying the next one...", e);
-                lastFailure = e;
-            }
-        }
-        if (lastFailure != null) {
-            Throwables.propagate(lastFailure);
-        }
-        return null;
-    }
-    
-    @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         Exception lastFailure = null;
         for (QueryLogicTransformer t : delegates) {
