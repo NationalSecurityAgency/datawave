@@ -1,4 +1,4 @@
-package datawave.webservice.query.util;
+package datawave.core.query.util;
 
 import java.util.List;
 

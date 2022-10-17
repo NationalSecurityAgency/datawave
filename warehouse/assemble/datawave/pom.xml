@@ -542,8 +542,9 @@
                                             <include>io.protostuff:protostuff-api</include>
                                             <include>io.protostuff:protostuff-core</include>
                                             <include>io.protostuff:protostuff-collectionschema</include>
-                                            <include>com.google.guava:guava</include>
-                                            <include>com.google.guava:failureaccess</include>
+                                            <!-- TODO: JWO: Is this inclusion still needed? -->
+                                            <!--                                            <include>com.google.guava:guava</include>-->
+                                            <!--                                            <include>com.google.guava:failureaccess</include>-->
                                         </includes>
                                     </dependency>
                                 </mapping>
@@ -569,6 +570,10 @@
                                             <include>${project.groupId}:datawave-edge-model-configuration-core</include>
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
                                             <include>${project.groupId}:datawave-ingest-nyctlc</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-common</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-common-util</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-query</include>
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
                                             <include>gov.nsa.datawave.microservice:metadata-utils</include>
                                             <include>gov.nsa.datawave.microservice:type-utils</include>
@@ -614,6 +619,9 @@
                                             <include>${project.groupId}:datawave-core</include>
                                             <include>${project.groupId}:datawave-query-core</include>
                                             <include>${project.groupId}:datawave-metrics-core</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-common</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-common-util</include>
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
                                             <include>gov.nsa.datawave.microservice:metadata-utils</include>
                                             <include>gov.nsa.datawave.microservice:type-utils</include>

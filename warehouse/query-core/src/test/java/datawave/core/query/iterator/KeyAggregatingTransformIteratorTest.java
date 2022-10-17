@@ -1,4 +1,4 @@
-package datawave.webservice.query.iterator;
+package datawave.core.query.iterator;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;

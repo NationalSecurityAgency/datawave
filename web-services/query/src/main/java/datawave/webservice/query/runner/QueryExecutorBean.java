@@ -23,6 +23,7 @@ import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.predict.QueryPredictor;
 import datawave.core.query.util.QueryUtil;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
