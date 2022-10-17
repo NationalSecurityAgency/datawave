@@ -124,15 +124,12 @@
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
-        <!-- The websocket project contains code that is currently not used. With the Wildfly upgrade, the configuration needs to change to make it
-	     compile/deploy correctly.  This code can be re-enabled when/if the websocket tasks are worked in the future.
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-query-websocket</artifactId>
             <version>${project.version}</version>
             <type>war</type>
         </dependency>
-	-->
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-rest-api</artifactId>
@@ -214,6 +211,11 @@
             <groupId>edu.ucar</groupId>
             <artifactId>netcdf</artifactId>
             <version>4.2.20-datawave</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>net.sf.jgrapht</groupId>
@@ -306,13 +308,11 @@
                             <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-dictionary</artifactId>
                         </ejbModule>
-                        <!--
                         <webModule>
                             <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-query-websocket</artifactId>
                             <contextRoot>/DataWave/Query/websocket</contextRoot>
                         </webModule>
-			-->
                         <webModule>
                             <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-rest-api</artifactId>
@@ -623,8 +623,8 @@
                                             <version>1</version>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>jakarta.enterprise</groupId>
-                                            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+                                            <groupId>javax.enterprise</groupId>
+                                            <artifactId>cdi-api</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.resteasy</groupId>
@@ -660,7 +660,7 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.transaction</groupId>
-                                            <artifactId>jboss-transaction-api_1.3_spec</artifactId>
+                                            <artifactId>jboss-transaction-api_1.2_spec</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>xerces</groupId>
