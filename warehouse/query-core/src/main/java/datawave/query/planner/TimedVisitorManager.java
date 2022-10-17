@@ -12,10 +12,12 @@ import static datawave.query.planner.DefaultQueryPlanner.logQuery;
 /**
  * Handles boilerplate code execution for operations like timing a visit call, logging the query tree, and eventualy validating the resulting query tree.
  */
-class TimedVisitorManager {
+public class TimedVisitorManager {
     
-    private boolean isDebugEnabled; // log query tree after visit?
+    private boolean debugEnabled; // log query tree after visit?
     private boolean validateAst; // validate the query tree after visit?
+    
+    private ASTValidator validator = new ASTValidator();
     
     // default, do not log, do not validate
     public TimedVisitorManager() {
@@ -31,7 +33,7 @@ class TimedVisitorManager {
      *            set this flag to validate the query
      */
     public TimedVisitorManager(boolean isDebugEnabled, boolean validateAst) {
-        this.isDebugEnabled = isDebugEnabled;
+        this.debugEnabled = isDebugEnabled;
         this.validateAst = validateAst;
     }
     
@@ -56,13 +58,13 @@ class TimedVisitorManager {
         try {
             script = visitorManager.apply();
             
-            if (isDebugEnabled) {
+            if (debugEnabled) {
                 logQuery(script, "Query after visit: " + stageName);
             }
             
             if (validateAst) {
                 try {
-                    ASTValidator.isValid(script, stageName);
+                    validator.isValid(script, stageName);
                 } catch (InvalidQueryTreeException e) {
                     throw new DatawaveQueryException(e);
                 }
@@ -79,12 +81,36 @@ class TimedVisitorManager {
         
         if (validateAst) {
             try {
-                ASTValidator.isValid(script);
+                validator.isValid(script);
             } catch (InvalidQueryTreeException e) {
                 throw new DatawaveQueryException(e);
             }
         }
         
         return script;
+    }
+    
+    public boolean isDebugEnabled() {
+        return debugEnabled;
+    }
+    
+    public void setDebugEnabled(boolean debugEnabled) {
+        this.debugEnabled = debugEnabled;
+    }
+    
+    public boolean isValidateAst() {
+        return validateAst;
+    }
+    
+    public void setValidateAst(boolean validateAst) {
+        this.validateAst = validateAst;
+    }
+    
+    public ASTValidator getValidator() {
+        return validator;
+    }
+    
+    public void setValidator(ASTValidator validator) {
+        this.validator = validator;
     }
 }

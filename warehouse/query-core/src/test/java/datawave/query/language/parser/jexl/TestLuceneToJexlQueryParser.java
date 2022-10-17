@@ -453,10 +453,10 @@ public class TestLuceneToJexlQueryParser {
                         "#exclude(OR, f1, see.*jane.*run, f2, test\\,escaping)");
         testFunction("(not(filter:includeRegex(f1, 'see.*jane.*run')) || not(filter:includeRegex(f2, 'test,escaping')))",
                         "#exclude(AND, f1, see.*jane.*run, f2, test\\,escaping)");
-        testFunction("filter:includeText(_ANYFIELD_, 'r1')", "#text(r1)");
-        testFunction("(filter:includeText(f1, 'r1') && filter:includeText(f2, 'r2'))", "#text(f1, r1, f2, r2)");
-        testFunction("(filter:includeText(f1, 'r1') && filter:includeText(f2, 'r2'))", "#text(AND, f1, r1, f2, r2)");
-        testFunction("(filter:includeText(f1, 'r1') || filter:includeText(f2, 'r2'))", "#text(OR, f1, r1, f2, r2)");
+        testFunction("f:includeText(_ANYFIELD_, 'r1')", "#text(r1)");
+        testFunction("(f:includeText(f1, 'r1') && f:includeText(f2, 'r2'))", "#text(f1, r1, f2, r2)");
+        testFunction("(f:includeText(f1, 'r1') && f:includeText(f2, 'r2'))", "#text(AND, f1, r1, f2, r2)");
+        testFunction("(f:includeText(f1, 'r1') || f:includeText(f2, 'r2'))", "#text(OR, f1, r1, f2, r2)");
         
         testFunction("filter:afterLoadDate(LOAD_DATE, '20140101')", "#loaded(after, 20140101)");
         testFunction("filter:afterLoadDate(LOAD_DATE, '20140101', 'yyyyMMdd')", "#loaded(after, 20140101, yyyyMMdd)");
