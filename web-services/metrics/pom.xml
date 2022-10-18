@@ -8,6 +8,7 @@
     </parent>
     <artifactId>datawave-ws-metrics</artifactId>
     <name>${project.artifactId}</name>
+    <packaging>ejb</packaging>
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>

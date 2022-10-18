@@ -138,6 +138,7 @@
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-metrics</artifactId>
             <version>${project.version}</version>
+            <type>ejb</type>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
