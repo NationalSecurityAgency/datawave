@@ -119,7 +119,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                 .build();
         // @formatter:on
     }
-    
     private Date getEarliestBeginDate(Collection<Range> ranges) {
         SimpleDateFormat sdf = new SimpleDateFormat(DateHelper.DATE_FORMAT_STRING_TO_DAY);
         Date minDate = null;
@@ -342,21 +341,17 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         }
         
         newSettings.setOptions(newOptions);
-        // - This is the area where it is necessary to go through the ranges
-        // and then call the addSubPlan method for each one into the query metric object.
-        // - Will need to create a method to convert a range object to a string (needed for the addSubPlan method)
-        // the Range.getStartKey will contain the essential information to complete this
-
-        // So the range is going to be a shard range or a document range.  The shard range will only have the shard id
-        // filled in which is in the row of the start key.  A document range will also include the datatype and uid in
-        // the columnfamily of the start key.
-        // a null byte will be in between the datatype and uid. in the column family
-
 
         for (Range range : newSettings.getRanges()) {
             String rangeKey = getRangeKey(range);
-         //add the <rangeKey, subPlan> to the metrics
+            // X.addSubPlan(rangeKey, subPlan);
+            // This is the area that was previously denoted to have to deal with
+            // adding the <rangeKey, subPlan> to the metrics.
+            // X.addSubPlan(rangeKey, newQuery);
         }
+
+
+
         return newSettings;
     }
     
