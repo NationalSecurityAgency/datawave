@@ -160,7 +160,7 @@ public class PushdownScheduler extends Scheduler {
                 session.setSpeculativeScanning(true);
             }
             
-            session.addVisitor(new VisitorFunction(config, metadataHelper));
+            session.addVisitor(new VisitorFunction(config, metadataHelper, metric));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

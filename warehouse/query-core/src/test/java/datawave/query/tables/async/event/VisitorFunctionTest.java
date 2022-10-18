@@ -1,5 +1,6 @@
 package datawave.query.tables.async.event;
 
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.QueryIterator;
@@ -35,11 +36,13 @@ public class VisitorFunctionTest extends EasyMockSupport {
     
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
+    private BaseQueryMetric metric;
     
     @Before
     public void setup() {
         config = new ShardQueryConfiguration();
         helper = createMock(MetadataHelper.class);
+        metric = createMock(BaseQueryMetric.class); // Is this the proper way of going about this? Look over this
     }
     
     private void setupExpects() throws TableNotFoundException, IOException, URISyntaxException {
@@ -97,7 +100,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         
         replayAll();
         
-        function = new VisitorFunction(config, helper);
+        function = new VisitorFunction(config, helper, metric);
         function.apply(chunk);
         
         verifyAll();
@@ -135,7 +138,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         
         replayAll();
         
-        function = new VisitorFunction(config, helper);
+        function = new VisitorFunction(config, helper, metric);
         ScannerChunk updatedChunk = function.apply(chunk);
         
         verifyAll();
@@ -181,7 +184,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         
         replayAll();
         
-        function = new VisitorFunction(config, helper);
+        function = new VisitorFunction(config, helper, metric);
         ScannerChunk updatedChunk = function.apply(chunk);
         
         verifyAll();
@@ -227,7 +230,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         
         replayAll();
         
-        function = new VisitorFunction(config, helper);
+        function = new VisitorFunction(config, helper, metric);
         ScannerChunk updatedChunk = function.apply(chunk);
         
         verifyAll();
@@ -274,7 +277,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         
         replayAll();
         
-        function = new VisitorFunction(config, helper);
+        function = new VisitorFunction(config, helper, metric);
         ScannerChunk updatedChunk = function.apply(chunk);
         
         verifyAll();
