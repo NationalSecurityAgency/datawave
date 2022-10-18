@@ -1,8 +1,8 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
+import datawave.query.jexl.functions.QueryFunctions;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -55,7 +55,7 @@ public class NoExpansionFunctionVisitor extends RebuildingVisitor {
         FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
         node.jjtAccept(visitor, null);
         
-        if (visitor.namespace().equals("filter") && visitor.name().equalsIgnoreCase(EvaluationPhaseFilterFunctionsDescriptor.NO_EXPANSION)) {
+        if (visitor.namespace().equals(QueryFunctions.QUERY_FUNCTION_NAMESPACE) && visitor.name().equalsIgnoreCase(QueryFunctions.NO_EXPANSION)) {
             
             noExpansionFields.addAll(visitor.args().stream().map(JexlASTHelper::getIdentifier).collect(Collectors.toSet()));
             
