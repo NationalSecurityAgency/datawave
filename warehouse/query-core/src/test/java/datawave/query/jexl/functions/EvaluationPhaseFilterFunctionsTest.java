@@ -16,9 +16,7 @@ import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 
 import java.text.ParseException;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -476,57 +474,61 @@ public class EvaluationPhaseFilterFunctionsTest {
      * Tests for {@link EvaluationPhaseFilterFunctions#isNotNull(Object)}.
      */
     public static class IsNotNullTests {
-        private Object fieldValue1;
-        private Object fieldValue2;
+        private Object fieldValue;
+        private List<Object> listOfValues;
         
         // Verify that a null object returns an empty set.
         @Test
         public void testNullValue() {
-            givenFieldValue1(null);
+            givenFieldValue(null);
             assertThat(result()).isEmpty();
         }
         
         // Verify that a null object returns an empty set with multiple filter fields.
         @Test
-        public void testNullValueWithMultipleFields() {
-            givenFieldValue1(null);
-            givenFieldValue2("FOO.1");
+        public void testNullListOfFilterFields() {
+            givenListOfValues(null);
             
-            assertThat(resultForMultipleFieldValues()).isEmpty();
+            boolean result = false;
+            for (FunctionalSet<ValueTuple> resultSet : resultForListOfFieldValues()) {
+                if (!resultSet.isEmpty()) {
+                    result = true;
+                    break;
+                }
+            }
+            
+            assertFalse(result);
         }
         
         // Verify that a non-null value tuple returns a set with that value tuple.
         @Test
         public void testNonNullValue() {
             ValueTuple valueTuple = toValueTuple("FOO.1,BAR,bar");
-            givenFieldValue1(valueTuple);
+            givenFieldValue(valueTuple);
             assertThat(result()).containsExactly(valueTuple);
-        }
-        
-        // Verify that a non-null value tuple returns a set with that value tuple with use of multiple filter fields.
-        @Test
-        public void testNonNullValuesWithMultipleFields() {
-            ValueTuple valueTuple = toValueTuple("F00.1,BAR,bar");
-            givenFieldValue1(valueTuple);
-            givenFieldValue2("F00.1");
-            
-            assertThat(resultForMultipleFieldValues()).containsExactly(valueTuple);
         }
         
         // Verify that an empty collection returns an empty set.
         @Test
         public void testEmptyCollection() {
-            givenFieldValue1(Collections.emptySet());
+            givenFieldValue(Collections.emptySet());
             assertThat(result()).isEmpty();
         }
         
         // Verify that an empty collection returns an empty set with use of multiple filter fields.
         @Test
-        public void testEmptyCollectionWithMultipleFields() {
-            givenFieldValue1("FOO.1");
-            givenFieldValue2(Collections.emptySet());
+        public void testEmptyListOfFilterFields() {
+            givenListOfValues(Arrays.asList(Collections.emptySet()));
             
-            assertThat(resultForMultipleFieldValues()).isEmpty();
+            boolean result = false;
+            for (FunctionalSet<ValueTuple> resultSet : resultForListOfFieldValues()) {
+                if (!resultSet.isEmpty()) {
+                    result = true;
+                    break;
+                }
+            }
+            
+            assertFalse(result);
         }
         
         // Verify that a non-empty collection of value tuples returns a set with the tuples.
@@ -534,39 +536,45 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void givenNonEmptyCollection() {
             ValueTuple valueTuple1 = toValueTuple("FOO.1,BAR,bar");
             ValueTuple valueTuple2 = toValueTuple("FOO.1,ZOOM,zoom");
-            givenFieldValue1(Sets.newHashSet(valueTuple1, valueTuple2));
+            givenFieldValue(Sets.newHashSet(valueTuple1, valueTuple2));
             assertThat(result()).containsExactlyInAnyOrder(valueTuple1, valueTuple2);
         }
         
         // Verify that a non-empty collection of value tuples returns a set of the provided tuples,
         // while utilizing multiple filter fields.
         @Test
-        public void givenNonEmptyCollectionWithMultipleFields() {
+        public void givenNonEmptyListOfFilterFields() {
             ValueTuple valueTuple1 = toValueTuple("FOO.1,BAR,bar");
             ValueTuple valueTuple2 = toValueTuple("FOO.1,ZOOM,zoom");
-            givenFieldValue1(Sets.newHashSet(valueTuple1, valueTuple2));
-            
             ValueTuple valueTuple3 = toValueTuple("FOO.2,BAT,bat");
             ValueTuple valueTuple4 = toValueTuple("FOO.2,ZAP,zap");
-            givenFieldValue2(Sets.newHashSet(valueTuple3, valueTuple4));
+            givenListOfValues(Arrays.asList(valueTuple1, valueTuple2, valueTuple3, valueTuple4));
             
-            assertThat(resultForMultipleFieldValues()).containsExactlyInAnyOrder(valueTuple1, valueTuple2);
+            boolean valueTuple3Found = false;
+            for (FunctionalSet<ValueTuple> resultSet : resultForListOfFieldValues()) {
+                if (resultSet.contains(valueTuple3)) {
+                    valueTuple3Found = true;
+                    break;
+                }
+            }
+            
+            assertTrue(valueTuple3Found);
         }
         
-        private void givenFieldValue1(Object fieldValue1) {
-            this.fieldValue1 = fieldValue1;
+        private void givenFieldValue(Object fieldValue) {
+            this.fieldValue = fieldValue;
         }
         
-        private void givenFieldValue2(Object fieldValue2) {
-            this.fieldValue2 = fieldValue2;
+        private void givenListOfValues(List<Object> listOfValues) {
+            this.listOfValues = listOfValues;
         }
         
         public Collection<ValueTuple> result() {
-            return EvaluationPhaseFilterFunctions.isNotNull(fieldValue1);
+            return EvaluationPhaseFilterFunctions.isNotNull(fieldValue);
         }
         
-        public Collection<ValueTuple> resultForMultipleFieldValues() {
-            return EvaluationPhaseFilterFunctions.isNotNull(fieldValue1, fieldValue2);
+        public List<FunctionalSet<ValueTuple>> resultForListOfFieldValues() {
+            return EvaluationPhaseFilterFunctions.isNotNull(listOfValues);
         }
     }
     
@@ -574,88 +582,80 @@ public class EvaluationPhaseFilterFunctionsTest {
      * Tests for {@link EvaluationPhaseFilterFunctions#isNull(Object)}
      */
     public static class IsNullTests {
-        
-        private Object fieldValue1;
-        private Object fieldValue2;
+        private Object fieldValue;
+        private List<Object> listOfValues;
         
         // Verify that a null object is considered null.
         @Test
         public void testNullObject() {
-            givenFieldValue1(null);
+            givenFieldValue(null);
             assertTrue(result());
         }
         
         // Verify that a null object is considered null with multiple filter fields.
         @Test
-        public void testNullWithMultipleFields() {
-            givenFieldValue1("FOO.1");
-            givenFieldValue2(null);
-            
+        public void testNullListOfFilterFields() {
+            givenListOfValues(null);
             assertTrue(resultForMultipleFieldValues());
         }
         
         // Verify that a non-null object that is not a collection is not considered null.
         @Test
         public void testNonNullNonCollection() {
-            givenFieldValue1(Sets.newHashSet(toValueTuple("FOO.1,BAR,bar")));
+            givenFieldValue(Sets.newHashSet(toValueTuple("FOO.1,BAR,bar")));
             assertFalse(result());
         }
         
-        // Verify that a non-null object that is not a collection is not considered null with multiple filter fields.
+        // Verify that a non-null list of objects is not considered null with multiple filter fields.
         @Test
-        public void testNonNullWithMultipleFields() {
-            givenFieldValue1("FOO.1");
-            givenFieldValue2("BAR");
-            
+        public void testNonNullListOfFilterFields() {
+            givenListOfValues(Arrays.asList("FOO.1", "FOO.2", "BAR"));
             assertFalse(resultForMultipleFieldValues());
         }
         
         // Verify that an empty collection is considered null.
         @Test
         public void testEmptyCollection() {
-            givenFieldValue1(Collections.emptySet());
+            givenFieldValue(Collections.emptySet());
             assertTrue(result());
         }
         
         // Verify that an empty collection is considered null with multiple filter fields.
         @Test
-        public void testEmptyCollectionWithMultipleFields() {
-            givenFieldValue1("FOO.1");
-            givenFieldValue2(Collections.emptySet());
-            
+        public void testEmptyListOfFilterFields() {
+            givenListOfValues(Arrays.asList(""));
             assertTrue(resultForMultipleFieldValues());
         }
         
         // Verify that non-empty collection is not considered null.
         @Test
         public void testNonEmptyCollection() {
-            givenFieldValue1(Sets.newHashSet(toValueTuple("FOO.1,BAR,bar")));
+            givenFieldValue(Sets.newHashSet(toValueTuple("FOO.1,BAR,bar")));
             assertFalse(result());
         }
         
         // Verify that non-empty collection is not considered null with multiple filter fields.
         @Test
-        public void testNonEmptyCollectionWithMultipleFields() {
-            givenFieldValue1("FOO.1");
-            givenFieldValue2(Sets.newHashSet(toValueTuple("FOO.1,BAR,bar")));
+        public void testNonEmptyListWithNullInFilterFields() {
+            givenListOfValues(Arrays.asList("FOO.1", "BAR", null, "FOO.2", "bar.2"));
             
-            assertFalse(resultForMultipleFieldValues());
+            assertTrue(resultForMultipleFieldValues());
         }
         
-        private void givenFieldValue1(Object fieldValue1) {
-            this.fieldValue1 = fieldValue1;
+        private void givenFieldValue(Object fieldValue) {
+            this.fieldValue = fieldValue;
         }
         
-        private void givenFieldValue2(Object fieldValue2) {
-            this.fieldValue2 = fieldValue2;
+        private void givenListOfValues(List<Object> listOfValues) {
+            this.listOfValues = listOfValues;
         }
         
         public boolean result() {
-            return EvaluationPhaseFilterFunctions.isNull(fieldValue1);
+            return EvaluationPhaseFilterFunctions.isNull(fieldValue);
         }
         
         public boolean resultForMultipleFieldValues() {
-            return EvaluationPhaseFilterFunctions.isNull(fieldValue1, fieldValue2);
+            return EvaluationPhaseFilterFunctions.isNull(listOfValues);
         }
     }
     

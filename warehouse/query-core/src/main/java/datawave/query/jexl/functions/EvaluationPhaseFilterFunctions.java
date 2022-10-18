@@ -1,7 +1,6 @@
 package datawave.query.jexl.functions;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
@@ -151,25 +150,26 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     /**
-     * Returns a {@link FunctionalSet} of hit terms found for {@code fieldValue1}. If {@code fieldValue1} is a singular value tuple, a singleton
-     * {@link FunctionalSet} with the hit term from it will be returned. If {@code fieldValue1} and {@code fieldValue2} are non-empty collections of value
-     * tuples, a {@link FunctionalSet} containing the hit terms from each value in the {@code fieldValue1} collection will be returned. Otherwise, an empty
-     * {@link FunctionalSet} will be returned.
+     * Behaves similarly to isNotNull(Object) except with multiple parameters. When evaluating multiple parameters, every parameter must meet the criteria or an
+     * emptySet will be returned. Returns List of {@link FunctionalSet} hit terms found foreach object in {@code iterable} collection. If {@code iterable} is
+     * non-empty collection of value tuples, a List of {@link FunctionalSet} containing the hit terms from each value in {@code iterable} collection will be
+     * returned.
      *
-     * @param fieldValue1
-     *            1st field value to evaluate.
-     * @param fieldValue2
-     *            2nd field value to evaluate.
-     * @return the {@link FunctionalSet} of hit terms found
+     * @param iterable
+     *            Collection of objects to iterate and utilize to populate return list of FunctionalSet objects.
+     * @return List of {@link FunctionalSet} of hit terms found.
      */
-    public static FunctionalSet<ValueTuple> isNotNull(Object fieldValue1, Object fieldValue2) {
-        FunctionalSet<ValueTuple> matches = isNotNull(fieldValue1);
-        
-        if (matches != FunctionalSet.EMPTY_SET && !((FunctionalSet) isNotNull(fieldValue2)).isEmpty()) {
-            return matches;
+    public static List<FunctionalSet<ValueTuple>> isNotNull(Iterable<?> iterable) {
+        List<FunctionalSet<ValueTuple>> resultSet = new ArrayList<>();
+        if (iterable != null) {
+            for (Object o : iterable) {
+                resultSet.add(isNotNull(o));
+            }
+        } else {
+            resultSet.add(FunctionalSet.emptySet());
         }
         
-        return FunctionalSet.emptySet();
+        return resultSet;
     }
     
     /**
@@ -184,22 +184,27 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     /**
-     * Returns whether {@code fieldValue1} or {@code fieldValue2} is considered an equivalently null field value.
+     * Returns whether {@code iterable} is considered an equivalently null field value.
      *
-     * @param fieldValue1
-     *            the 1st fieldValue
-     * @param fieldValue2
-     *            the 2nd fieldValue
-     * @return true if {@code fieldValue1} or {@code fieldValue2} is a null {@link Object} or an empty {@link Collection}, or false otherwise
+     * @param iterable
+     *            a iterable collection of objects.
+     * @return true if {@code iterable} contains a null {@link Object} or an empty {@link Collection}, or false otherwise.
      */
-    public static boolean isNull(Object fieldValue1, Object fieldValue2) {
-        if (isNull(fieldValue1)) {
-            return true;
-        } else if (isNull(fieldValue2)) {
-            return true;
+    public static boolean isNull(Iterable<?> iterable) {
+        boolean rslt = false;
+        
+        if (iterable == null) {
+            rslt = true;
+        } else {
+            for (Object o : iterable) {
+                rslt = isNull(o) || String.valueOf(o).isEmpty();
+                
+                if (rslt)
+                    break;
+            }
         }
         
-        return false;
+        return rslt;
     }
     
     /**
