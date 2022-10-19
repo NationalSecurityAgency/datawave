@@ -31,8 +31,11 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
             if (nextEntry != null)
                 return true;
             try {
-                while (nextEntry == null && (!results.isEmpty() || completionLatch.getCount() > 0)) {
+                while (nextEntry == null && failure == null && (!results.isEmpty() || completionLatch.getCount() > 0)) {
                     nextEntry = results.poll(1, TimeUnit.SECONDS);
+                }
+                if (failure != null) {
+                    throw new RuntimeException(failure);
                 }
                 return true;
             } catch (InterruptedException e) {
@@ -64,10 +67,9 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
     
     @Override
     public void uncaughtException(Thread t, Throwable e) {
-        synchronized (lock) {
-            if (this.failure != null) {
-                this.failure = e;
-            }
+        // keep the first one
+        if (this.failure == null) {
+            this.failure = e;
         }
     }
 }

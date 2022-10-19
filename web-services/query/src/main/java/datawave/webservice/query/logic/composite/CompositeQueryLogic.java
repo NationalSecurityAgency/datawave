@@ -103,6 +103,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             
             // the results queue is also an exception handler
             setUncaughtExceptionHandler(results);
+            boolean success = false;
             
             try {
                 Object last = new Object();
@@ -125,10 +126,12 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                     }
                     resultCount++;
                 }
-                
+                success = true;
             } finally {
-                completionLatch.countDown();
-                log.trace("Finished thread: " + this.getName());
+                if (success) {
+                    completionLatch.countDown();
+                }
+                log.trace("Finished thread: " + this.getName() + " with success = " + success);
             }
         }
         
