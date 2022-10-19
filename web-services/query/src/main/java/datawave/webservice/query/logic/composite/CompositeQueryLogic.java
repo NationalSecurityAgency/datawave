@@ -121,7 +121,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                             log.warn("QueryLogic thread interrupted", e);
                         }
                         // otherwise something else unexpected happened
-                        throw new RuntimeException(e);
+                        else {
+                            throw new RuntimeException(e);
+                        }
                     }
                     resultCount++;
                 }
