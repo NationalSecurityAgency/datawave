@@ -1,17 +1,21 @@
 package datawave.webservice.query.logic.composite;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 
-public class CompositeQueryLogicResults implements Iterable<Object> {
+public class CompositeQueryLogicResults implements Iterable<Object>, Thread.UncaughtExceptionHandler {
     
-    private ArrayBlockingQueue<Object> results = null;
-    private CountDownLatch completionLatch = null;
+    private final ArrayBlockingQueue<Object> results;
+    private final CountDownLatch completionLatch;
+    private final List<Thread.UncaughtExceptionHandler> handlers;
     
     public CompositeQueryLogicResults(int pagesize, CountDownLatch completionLatch) {
         this.results = new ArrayBlockingQueue<>(pagesize);
         this.completionLatch = completionLatch;
+        this.handlers = new ArrayList<>();
     }
     
     public void add(Object object) throws InterruptedException {
@@ -32,7 +36,15 @@ public class CompositeQueryLogicResults implements Iterable<Object> {
     
     @Override
     public Iterator<Object> iterator() {
-        return new CompositeQueryLogicResultsIterator(this.results, this.completionLatch);
+        CompositeQueryLogicResultsIterator it = new CompositeQueryLogicResultsIterator(this.results, this.completionLatch);
+        handlers.add(it);
+        return it;
     }
     
+    @Override
+    public void uncaughtException(Thread t, Throwable e) {
+        for (Thread.UncaughtExceptionHandler handler : handlers) {
+            handler.uncaughtException(t, e);
+        }
+    }
 }

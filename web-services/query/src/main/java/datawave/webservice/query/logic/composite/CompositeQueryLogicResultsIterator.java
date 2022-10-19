@@ -7,14 +7,15 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
-public class CompositeQueryLogicResultsIterator implements Iterator<Object> {
+public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thread.UncaughtExceptionHandler {
     
     protected static final Logger log = Logger.getLogger(CompositeQueryLogicResultsIterator.class);
     
-    private ArrayBlockingQueue<Object> results = null;
+    private final ArrayBlockingQueue<Object> results;
     private Object nextEntry = null;
-    private Object lock = new Object();
-    private CountDownLatch completionLatch = null;
+    private final Object lock = new Object();
+    private final CountDownLatch completionLatch;
+    private Throwable failure = null;
     
     public CompositeQueryLogicResultsIterator(ArrayBlockingQueue<Object> results, CountDownLatch completionLatch) {
         this.results = results;
@@ -24,6 +25,9 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object> {
     @Override
     public boolean hasNext() {
         synchronized (lock) {
+            if (failure != null) {
+                throw new RuntimeException(failure);
+            }
             if (nextEntry != null)
                 return true;
             try {
@@ -42,6 +46,9 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object> {
         Object current = null;
         
         synchronized (lock) {
+            if (failure != null) {
+                throw new RuntimeException(failure);
+            }
             if (hasNext()) {
                 current = nextEntry;
                 nextEntry = null;
@@ -53,5 +60,14 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object> {
     @Override
     public void remove() {
         throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public void uncaughtException(Thread t, Throwable e) {
+        synchronized (lock) {
+            if (this.failure != null) {
+                this.failure = e;
+            }
+        }
     }
 }

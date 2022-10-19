@@ -1,5 +1,6 @@
 package datawave.webservice.query.logic.composite;
 
+import datawave.audit.SelectorExtractor;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
@@ -28,6 +29,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 /**
  * Query Logic implementation that is configured with more than one query logic delegate. The queries are run in parallel and results are retrieved as they come
@@ -93,10 +95,15 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             long resultCount = 0L;
             
             log.trace("Starting thread: " + this.getName());
+            
             if (!started) {
                 startLatch.countDown();
                 started = true;
             }
+            
+            // the results queue is also an exception handler
+            setUncaughtExceptionHandler(results);
+            
             try {
                 Object last = new Object();
                 if (this.getMaxResults() < 0)
@@ -109,7 +116,12 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                             results.add(last);
                         }
                     } catch (InterruptedException e) {
-                        log.warn("QueryLogic thread interrupted", e);
+                        // if this was on purpose, then just log and the loop will naturally exit
+                        if (interrupted) {
+                            log.warn("QueryLogic thread interrupted", e);
+                        }
+                        // otherwise something else unexpected happened
+                        throw new RuntimeException(e);
                     }
                     resultCount++;
                 }
@@ -125,6 +137,13 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     protected static final Logger log = Logger.getLogger(CompositeQueryLogic.class);
     
     private List<QueryLogic<?>> queryLogics = null;
+    
+    // Specifies whether we need to check if the table being queried must be different across the children.
+    private boolean checkTables = true;
+    
+    // Specified whether all queries must succeed initialization
+    private boolean allMustInitialize = false;
+    
     private QueryLogicTransformer transformer;
     private Priority p = Priority.NORMAL;
     private volatile boolean interrupted = false;
@@ -137,31 +156,45 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     
     public CompositeQueryLogic(CompositeQueryLogic other) {
         super(other);
-        this.queryLogics = new ArrayList<>(other.queryLogics);
+        if (other.queryLogics != null) {
+            this.queryLogics = new ArrayList<>();
+            for (QueryLogic<?> logic : other.queryLogics) {
+                try {
+                    logic = (QueryLogic) logic.clone();
+                } catch (CloneNotSupportedException e) {
+                    throw new RuntimeException(e);
+                }
+                this.queryLogics.add(logic);
+            }
+        }
+        this.allMustInitialize = other.allMustInitialize;
+        this.checkTables = other.checkTables;
     }
     
     @Override
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
         
-        for (QueryLogic<?> logic : queryLogics) {
-            final QueryLogic<?> queryLogic = logic;
-            int count = CollectionUtils.countMatches(
-                            queryLogics,
-                            object -> {
-                                if (object instanceof QueryLogic<?>) {
-                                    if (queryLogic.getClass().equals(((QueryLogic<?>) object).getClass())
-                                                    && queryLogic.getTableName().equals(((QueryLogic<?>) object).getTableName())) {
-                                        return true;
+        if (checkTables) {
+            for (QueryLogic<?> logic : queryLogics) {
+                final QueryLogic<?> queryLogic = logic;
+                int count = CollectionUtils.countMatches(
+                                queryLogics,
+                                object -> {
+                                    if (object instanceof QueryLogic<?>) {
+                                        if (queryLogic.getClass().equals(((QueryLogic<?>) object).getClass())
+                                                        && queryLogic.getTableName().equals(((QueryLogic<?>) object).getTableName())) {
+                                            return true;
+                                        } else {
+                                            return false;
+                                        }
                                     } else {
                                         return false;
                                     }
-                                } else {
-                                    return false;
-                                }
-                            });
-            
-            if (count > 1) {
-                throw new RuntimeException("More than one instance of query logic class configured with the same table: " + logic.getClass().getName());
+                                });
+                
+                if (count > 1) {
+                    throw new RuntimeException("More than one instance of query logic class configured with the same table: " + logic.getClass().getName());
+                }
             }
         }
         
@@ -181,7 +214,12 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 holder.setMaxResults(logic.getMaxResults());
                 logicState.put(logic, holder);
             } catch (Exception e) {
-                log.info(e.getMessage() + " removing query logic " + logic.getClass().getName() + " from CompositeQuery");
+                // if all must initialize successfully, then pass up an exception
+                if (allMustInitialize) {
+                    throw new RuntimeException(e);
+                }
+                
+                log.warn("Failed to initialize " + logic.getClass().getName() + ", skipping", e);
                 itr.remove();
                 if (itr.hasNext() == false && logicState.isEmpty()) {
                     // all logics have failed to initialize, rethrow the last exception caught
@@ -360,5 +398,83 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             }
         }
         return params.isEmpty() ? null : params;
+    }
+    
+    /**
+     * We can run the query if we can and at least of one of the children can.
+     * 
+     * @return canRunQuery
+     */
+    @Override
+    public boolean canRunQuery() {
+        boolean canRun = false;
+        if (super.canRunQuery()) {
+            for (QueryLogic<?> logic : this.queryLogics) {
+                canRun = logic.canRunQuery();
+                if (canRun) {
+                    break;
+                }
+            }
+        }
+        return canRun;
+    }
+    
+    /**
+     * The selector extractor is dependent on the children. Return the first non-null instance.
+     * 
+     * @return selector extractor
+     */
+    @Override
+    public SelectorExtractor getSelectorExtractor() {
+        SelectorExtractor extractor = null;
+        for (QueryLogic<?> logic : this.queryLogics) {
+            extractor = logic.getSelectorExtractor();
+            if (extractor != null) {
+                break;
+            }
+        }
+        return extractor;
+    }
+    
+    /**
+     * Setting the principal is called after the logic is created. Pass this on to the children.
+     * 
+     * @param principal
+     */
+    @Override
+    public void setPrincipal(Principal principal) {
+        super.setPrincipal(principal);
+        for (QueryLogic<?> logic : this.queryLogics) {
+            logic.setPrincipal(principal);
+        }
+    }
+    
+    /**
+     * Setting the page processing start time is called after the logic is created. Pass this on to the children.
+     * 
+     * @param pageProcessingStartTime
+     */
+    @Override
+    public void setPageProcessingStartTime(long pageProcessingStartTime) {
+        super.setPageProcessingStartTime(pageProcessingStartTime);
+        for (QueryLogic<?> logic : this.queryLogics) {
+            logic.setPageProcessingStartTime(pageProcessingStartTime);
+        }
+    }
+    
+    public boolean isCheckTables() {
+        return checkTables;
+    }
+    
+    public void setCheckTables(boolean checkTables) {
+        this.checkTables = checkTables;
+    }
+    
+    public boolean isAllMustInitialize() {
+        return allMustInitialize;
+    }
+    
+    public void setAllMustInitialize(boolean allMustInitialize) {
+        this.allMustInitialize = allMustInitialize;
     }
 }
