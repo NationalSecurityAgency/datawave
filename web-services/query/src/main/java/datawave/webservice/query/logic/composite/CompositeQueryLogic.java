@@ -29,7 +29,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.stream.Collectors;
 
 /**
  * Query Logic implementation that is configured with more than one query logic delegate. The queries are run in parallel and results are retrieved as they come
