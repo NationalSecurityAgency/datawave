@@ -473,7 +473,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 }
             }
             
-            BaseQueryResponse queryResponse = queryLogic.getTransformer(query).createResponse(new ResultsPage(objectList));
+            BaseQueryResponse queryResponse = queryLogic.getEnrichedTransformer(query).createResponse(new ResultsPage(objectList));
             List<QueryExceptionType> exceptions = queryResponse.getExceptions();
             
             if (queryResponse.getExceptions() != null && !queryResponse.getExceptions().isEmpty()) {
@@ -494,7 +494,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             List<EventBase> eventList = eventQueryResponse.getEvents();
             
             for (EventBase<?,?> event : eventList) {
-                QueryMetric metric = toMetric(event);
+                QueryMetric metric = (QueryMetric) toMetric(event);
                 queryMetrics.add(metric);
             }
         } catch (Exception e) {
@@ -560,7 +560,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         return response;
     }
     
-    public QueryMetric toMetric(datawave.webservice.query.result.event.EventBase event) {
+    public BaseQueryMetric toMetric(EventBase event) {
         SimpleDateFormat sdf_date_time1 = new SimpleDateFormat("yyyyMMdd HHmmss");
         SimpleDateFormat sdf_date_time2 = new SimpleDateFormat("yyyyMMdd HHmmss");
         SimpleDateFormat sdf_date_time3 = new SimpleDateFormat("yyyyMMdd");
@@ -568,7 +568,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         List<String> excludedFields = Arrays.asList("ELAPSED_TIME", "RECORD_ID", "NUM_PAGES", "NUM_RESULTS");
         
         try {
-            QueryMetric m = new QueryMetric();
+            BaseQueryMetric m = metricFactory.createMetric(false);
             List<FieldBase> field = event.getFields();
             m.setMarkings(event.getMarkings());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
@@ -697,7 +697,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     } else if (fieldName.equals("FI_RANGES")) {
                         m.setFiRanges(Long.parseLong(fieldValue));
                     } else if (fieldName.equals("VERSION")) {
-                        m.setVersion(fieldValue);
+                        m.addVersion(BaseQueryMetric.DATAWAVE, fieldValue);
+                    } else if (fieldName.startsWith("VERSION.")) {
+                        m.addVersion(fieldName.substring(8), fieldValue);
                     } else if (fieldName.equals("YIELD_COUNT")) {
                         m.setYieldCount(Long.parseLong(fieldValue));
                     } else if (fieldName.equals("LOGIN_TIME")) {

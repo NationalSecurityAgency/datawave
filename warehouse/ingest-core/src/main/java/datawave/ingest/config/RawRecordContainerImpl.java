@@ -491,7 +491,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     
     @Override
     /**
-     * This will report the number of bytes taken by the RawRecordContainer object when written out. Note that write(DataOutput) must have been called
+     * This will report the number of bytes taken by the RawRecordContainer object when written out. Note that write(DataOutput) or readFields(DataInput) must have been called
      * previously otherwise this will return -1.
      */
     public long getDataOutputSize() {
@@ -668,6 +668,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     public void readFields(DataInput in) throws IOException {
         clear();
         int length = in.readInt();
+        this.dataOutputSize = length;
         byte[] buf = new byte[length];
         in.readFully(buf);
         Data data = Data.parseFrom(buf);

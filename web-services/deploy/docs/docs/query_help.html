@@ -74,7 +74,7 @@
 		<tr class="highlight"><td>filter:includeRegex(field1, regex1) &lt;op&gt; filter:includeRegex(field2, regex2) ...</td><td>#INCLUDE(op, field1, regex1, field2, regex2 ...) where op is 'or' or 'and'</td></tr>
 		<tr><td>filter:excludeRegex(regex)</td><td>#EXCLUDE(regex)</td></tr>
 		<tr class="highlight"><td>filter:excludeRegex(field, regex)</td><td>#EXCLUDE(field, regex)</td></tr>
-		<tr><td>filter:excludeRegex(field1, regex1) &lt;op&gt; filter:excludeRegex(field2, regex2) ...</td><td>#EXCLUDE(op, field1, regex1, field2, regex2 ...) where op is 'or' or 'and'</td></tr>
+		<tr><td>filter:excludeRegex(field1, regex1) &lt;op&gt; filter:excludeRegex(field2, regex2) ...</td><td>#EXCLUDE(op, field1, regex1, field2, regex2 ...) where op is 'or' or 'and' (note: the op provided in the LUCENE query will be reversed for the JEXL intersection of the same query)</td></tr>
 		<tr class="highlight"><td>filter:isNull(field)</td><td>#ISNULL(field)</td></tr>
 		<tr><td>not(filter:isNull(field))</td><td>#ISNOTNULL(field)</td></tr>
 		<tr class="highlight"><td>filter:occurrence(field,operator,count))</td><td>#OCCURRENCE(field,operator,count)</td></tr>
