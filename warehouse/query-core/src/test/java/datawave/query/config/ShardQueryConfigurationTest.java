@@ -294,6 +294,7 @@ public class ShardQueryConfigurationTest {
         other.setNoExpansionFields(noExpansionFields);
         other.setDisallowedRegexPatterns(disallowedRegexPatterns);
         other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
+        other.setAccumuloPassword("ChangeIt");
         
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
@@ -378,6 +379,7 @@ public class ShardQueryConfigurationTest {
         Assertions.assertEquals(expectedQueryModel.getUnevaluatedFields(), config.getQueryModel().getUnevaluatedFields());
         Assertions.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         Assertions.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
+        Assertions.assertEquals("ChangeIt", config.getAccumuloPassword());
         
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
