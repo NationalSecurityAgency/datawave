@@ -58,6 +58,23 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
     public void testEdgeQuerySyntax_WithQueryModel() throws Exception {
         QueryImpl q = configQuery("(VERTEXA =~ 'M.*') && (VERTEXB == 'JUPITER') && (RELATION == 'FROM-TO' || RELATION == 'TO-FROM')", auths);
         q.addParameter("stats", "true");
+        q.addParameter("query.syntax", "JEXL");
+        DefaultExtendedEdgeQueryLogic logic = runLogic(q, auths);
+        
+        List<String> expected = new ArrayList<>();
+        
+        expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
+        expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
+        expected.add("mercury STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
+        
+        compareResults(logic, expected);
+    }
+    
+    @Test
+    public void testEdgeQuerySyntaxLuceneWithQueryModel() throws Exception {
+        QueryImpl q = configQuery("(VERTEXA:M*) AND (VERTEXB:JUPITER) AND (RELATION:FROM-TO OR RELATION:TO-FROM)", auths);
+        q.addParameter("stats", "true");
+        q.addParameter("query.syntax", "LUCENE");
         DefaultExtendedEdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
