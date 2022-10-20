@@ -475,7 +475,6 @@ public class EvaluationPhaseFilterFunctionsTest {
      */
     public static class IsNotNullTests {
         private Object fieldValue;
-        private List<Object> listOfValues;
         
         // Verify that a null object returns an empty set.
         @Test
@@ -484,20 +483,11 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertThat(result()).isEmpty();
         }
         
-        // Verify that a null object returns an empty set with multiple filter fields.
+        // // Verify that a null object returns an empty set with multiple filter fields.
         @Test
-        public void testNullListOfFilterFields() {
-            givenListOfValues(null);
-            
-            boolean result = false;
-            for (FunctionalSet<ValueTuple> resultSet : resultForListOfFieldValues()) {
-                if (!resultSet.isEmpty()) {
-                    result = true;
-                    break;
-                }
-            }
-            
-            assertFalse(result);
+        public void testEmptyListOfFilterFields() {
+            givenFieldValue(Arrays.asList());
+            assertThat(result()).isEmpty();
         }
         
         // Verify that a non-null value tuple returns a set with that value tuple.
@@ -513,22 +503,6 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testEmptyCollection() {
             givenFieldValue(Collections.emptySet());
             assertThat(result()).isEmpty();
-        }
-        
-        // Verify that an empty collection returns an empty set with use of multiple filter fields.
-        @Test
-        public void testEmptyListOfFilterFields() {
-            givenListOfValues(Arrays.asList(Collections.emptySet()));
-            
-            boolean result = false;
-            for (FunctionalSet<ValueTuple> resultSet : resultForListOfFieldValues()) {
-                if (!resultSet.isEmpty()) {
-                    result = true;
-                    break;
-                }
-            }
-            
-            assertFalse(result);
         }
         
         // Verify that a non-empty collection of value tuples returns a set with the tuples.
@@ -548,33 +522,17 @@ public class EvaluationPhaseFilterFunctionsTest {
             ValueTuple valueTuple2 = toValueTuple("FOO.1,ZOOM,zoom");
             ValueTuple valueTuple3 = toValueTuple("FOO.2,BAT,bat");
             ValueTuple valueTuple4 = toValueTuple("FOO.2,ZAP,zap");
-            givenListOfValues(Arrays.asList(valueTuple1, valueTuple2, valueTuple3, valueTuple4));
+            givenFieldValue(Arrays.asList(valueTuple1, valueTuple2, valueTuple3, valueTuple4));
             
-            boolean valueTuple3Found = false;
-            for (FunctionalSet<ValueTuple> resultSet : resultForListOfFieldValues()) {
-                if (resultSet.contains(valueTuple3)) {
-                    valueTuple3Found = true;
-                    break;
-                }
-            }
-            
-            assertTrue(valueTuple3Found);
+            assertThat(result()).containsExactlyInAnyOrder(valueTuple1, valueTuple2, valueTuple3, valueTuple4);
         }
         
         private void givenFieldValue(Object fieldValue) {
             this.fieldValue = fieldValue;
         }
         
-        private void givenListOfValues(List<Object> listOfValues) {
-            this.listOfValues = listOfValues;
-        }
-        
         public Collection<ValueTuple> result() {
             return EvaluationPhaseFilterFunctions.isNotNull(fieldValue);
-        }
-        
-        public List<FunctionalSet<ValueTuple>> resultForListOfFieldValues() {
-            return EvaluationPhaseFilterFunctions.isNotNull(listOfValues);
         }
     }
     

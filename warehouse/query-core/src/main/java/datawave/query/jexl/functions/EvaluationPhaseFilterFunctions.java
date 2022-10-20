@@ -1,6 +1,7 @@
 package datawave.query.jexl.functions;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
@@ -8,6 +9,7 @@ import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
 import datawave.util.OperationEvaluator;
 import org.apache.commons.collections4.SetUtils;
+import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec;
 import org.apache.log4j.Logger;
 
 import java.text.DateFormat;
@@ -140,7 +142,6 @@ public class EvaluationPhaseFilterFunctions {
                 if (!values.isEmpty()) {
                     return values.stream().map(EvaluationPhaseFilterFunctions::getHitTerm).collect(Collectors.toCollection(FunctionalSet::new));
                 }
-                
             } else {
                 return FunctionalSet.singleton(getHitTerm(fieldValue));
             }
@@ -151,25 +152,30 @@ public class EvaluationPhaseFilterFunctions {
     
     /**
      * Behaves similarly to isNotNull(Object) except with multiple parameters. When evaluating multiple parameters, every parameter must meet the criteria or an
-     * emptySet will be returned. Returns List of {@link FunctionalSet} hit terms found foreach object in {@code iterable} collection. If {@code iterable} is
-     * non-empty collection of value tuples, a List of {@link FunctionalSet} containing the hit terms from each value in {@code iterable} collection will be
-     * returned.
+     * emptySet will be returned. Returns 1st {@link FunctionalSet} hit term found in {@code iterable} collection. If {@code iterable} contains a null value, an
+     * empty FunctionalSet is returned.
      *
      * @param iterable
      *            Collection of objects to iterate and utilize to populate return list of FunctionalSet objects.
      * @return List of {@link FunctionalSet} of hit terms found.
      */
-    public static List<FunctionalSet<ValueTuple>> isNotNull(Iterable<?> iterable) {
-        List<FunctionalSet<ValueTuple>> resultSet = new ArrayList<>();
+    public static FunctionalSet<ValueTuple> isNotNull(Iterable<?> iterable) {
+        FunctionalSet<ValueTuple> firstResultSet = null;
+        
         if (iterable != null) {
             for (Object o : iterable) {
-                resultSet.add(isNotNull(o));
+                FunctionalSet<ValueTuple> currentResultSet = isNotNull(o);
+                
+                if (currentResultSet.equals(FunctionalSet.emptySet())) {
+                    return FunctionalSet.emptySet();
+                } else if (firstResultSet == null)
+                    firstResultSet = currentResultSet;
             }
         } else {
-            resultSet.add(FunctionalSet.emptySet());
+            return FunctionalSet.emptySet();
         }
         
-        return resultSet;
+        return firstResultSet;
     }
     
     /**
