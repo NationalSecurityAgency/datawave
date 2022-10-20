@@ -5,8 +5,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
@@ -17,21 +17,24 @@ import java.util.Map;
 
 public class StatsJobTest {
     private static final Logger log = Logger.getLogger(StatsJobTest.class);
-    
-    private StatsJobWrapper wrapper;
-    
-    @BeforeEach
-    public void setup() {
-        wrapper = new StatsJobWrapper();
+
+    static {
         Logger.getLogger(IngestJob.class).setLevel(Level.DEBUG);
         Logger.getLogger(StatsJob.class).setLevel(Level.DEBUG);
         Logger.getLogger(StatsJobTest.class).setLevel(Level.DEBUG);
     }
-    
-    @Disabled
+
+    private StatsJobWrapper wrapper;
+
+    @BeforeEach
+    public void setup() {
+        wrapper = new StatsJobWrapper();
+
+    }
+
     @Test
     public void testParseArguments() throws Exception {
-        Assertions.assertNotNull(System.getenv("DATAWAVE_INGEST_HOME"));
+        Assumptions.assumeTrue(null != System.getenv("DATAWAVE_INGEST_HOME"));
         log.info("======  testParseArguments  =====");
         Map<String,Object> mapArgs = new HashMap<>();
         

@@ -30,7 +30,6 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -189,7 +188,6 @@ public abstract class CompositeFunctionsTest {
         eventQueryLogic.setFullTableScanEnabled(true);
         eventQueryLogic.setMaxDepthThreshold(7);
         tldEventQueryLogic.setFullTableScanEnabled(true);
-        tldEventQueryLogic.setMaxDepthThreshold(7);
         deserializer = new KryoDocumentDeserializer();
         
         log.debug("runTestQuery");
@@ -255,6 +253,8 @@ public abstract class CompositeFunctionsTest {
     
     @Test
     public void testMatchesAtLeastCountOf() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -280,6 +280,8 @@ public abstract class CompositeFunctionsTest {
     
     @Test
     public void testMatchesAtLeastCountOfWithOptionsFunction() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         Map<String,String> extraParameters = new HashMap<>();
         
         if (log.isDebugEnabled()) {
@@ -308,6 +310,8 @@ public abstract class CompositeFunctionsTest {
     
     @Test
     public void testDateDelta() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -336,6 +340,8 @@ public abstract class CompositeFunctionsTest {
     
     @Test
     public void testAgainstUnsupportedCompositeStructures() {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -363,6 +369,8 @@ public abstract class CompositeFunctionsTest {
     
     @Test
     public void testWithIndexOnlyFieldsAndModelExpansion() {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -397,6 +405,8 @@ public abstract class CompositeFunctionsTest {
     
     @Test
     public void testArithmetic() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         
@@ -426,6 +436,8 @@ public abstract class CompositeFunctionsTest {
     
     @Test
     public void testNulls() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         
@@ -473,6 +485,8 @@ public abstract class CompositeFunctionsTest {
     
     @Test
     public void testNotNulls() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         
@@ -525,6 +539,8 @@ public abstract class CompositeFunctionsTest {
     
     @Test
     public void composeFunctionsInsteadOfMatchesAtLeastCountOf() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -545,6 +561,8 @@ public abstract class CompositeFunctionsTest {
     
     @Test
     public void testCompositeFunctions() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -580,6 +598,8 @@ public abstract class CompositeFunctionsTest {
     
     @Test
     public void testMatchesAtLeastCountOfWithLucene() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         eventQueryLogic.setParser(new LuceneToJexlQueryParser());
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
@@ -597,6 +617,8 @@ public abstract class CompositeFunctionsTest {
 
     @Test
     public void testWithLucene() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         eventQueryLogic.setParser(new LuceneToJexlQueryParser());
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
@@ -628,6 +650,8 @@ public abstract class CompositeFunctionsTest {
 
     @Test
     public void testTLDWithLuceneAndIdentifierToLiteralLTJexl() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         tldEventQueryLogic.setParser(new LuceneToJexlQueryParser());
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
@@ -648,6 +672,8 @@ public abstract class CompositeFunctionsTest {
 
     @Test
     public void testTLDWithLuceneAndIdentifierToLiteralEQJexl() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         tldEventQueryLogic.setParser(new LuceneToJexlQueryParser());
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
@@ -668,6 +694,8 @@ public abstract class CompositeFunctionsTest {
 
     @Test
     public void testTLDWithLuceneAndIdentifierToIdentifierJexl() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         tldEventQueryLogic.setParser(new LuceneToJexlQueryParser());
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
@@ -688,6 +716,8 @@ public abstract class CompositeFunctionsTest {
 
     @Test
     public void testWithLuceneAndOptionsFunction() throws Exception {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         eventQueryLogic.setParser(new LuceneToJexlQueryParser());
         Map<String,String> extraParameters = new HashMap<>();
         
@@ -725,6 +755,8 @@ public abstract class CompositeFunctionsTest {
     // this tests the cases when a filter function cannot be rewritten
     @Test
     public void testFilterFunctionsInvalidatedByIndexOnlyFields() throws ParseException {
+        tldEventQueryLogic.setMaxDepthThreshold(7);
+
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -778,7 +810,6 @@ public abstract class CompositeFunctionsTest {
         }
     }
     
-    @Disabled
     @Test
     public void testDelayedExceededValueThresholdRegexTFField() throws Exception {
         Map<String,String> extraParameters = new HashMap();
