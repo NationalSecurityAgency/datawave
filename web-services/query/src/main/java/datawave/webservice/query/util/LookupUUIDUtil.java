@@ -28,6 +28,8 @@ import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -611,7 +613,8 @@ public class LookupUUIDUtil {
                         if (!(contentQueryResponse instanceof EventQueryResponseBase)) {
                             EventQueryResponseBase er = responseObjectFactory.getEventQueryResponse();
                             er.addMessage("Unhandled response type " + contentQueryResponse + " from ContentQuery");
-                            throw new PreConditionFailedException(null, er);
+                            throw new DatawaveWebApplicationException(new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS,
+                                            "Expected EventQueryResponseBase but got " + contentQueryResponse.getClass()), er);
                         }
                         
                         // Prevent NPE due to attempted merge when total events is null
@@ -864,7 +867,8 @@ public class LookupUUIDUtil {
         } else {
             final EventQueryResponseBase er = responseObjectFactory.getEventQueryResponse();
             er.addMessage("Unhandled response type from Query/createQueryAndNext");
-            throw new PreConditionFailedException(null, er);
+            throw new DatawaveWebApplicationException(new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS, "Expected EventQueryResponseBase but got "
+                            + response.getClass()), er);
         }
         
         return pagedResponse;
