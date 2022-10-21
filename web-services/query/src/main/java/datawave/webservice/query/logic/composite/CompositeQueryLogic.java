@@ -131,10 +131,10 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     private QueryLogicTransformer transformer;
     private Priority p = Priority.NORMAL;
     private volatile boolean interrupted = false;
-    private CountDownLatch startLatch = null;
-    private CountDownLatch completionLatch = null;
+    private volatile CountDownLatch startLatch = null;
+    private volatile CountDownLatch completionLatch = null;
     private List<Entry<QueryLogic<?>,QueryLogicHolder>> logicState = new ArrayList<>();
-    private CompositeQueryLogicResults results = null;
+    private volatile CompositeQueryLogicResults results = null;
     
     public CompositeQueryLogic() {}
     
@@ -175,6 +175,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             } catch (Exception e) {
                 // if all must initialize successfully, then pass up an exception
                 if (allMustInitialize) {
+                    log.error("Failed to initialize " + logic.getClass().getName() + ", aborting", e);
                     throw new RuntimeException(e);
                 }
                 
@@ -317,6 +318,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     
     @Override
     public boolean canRunQuery(Principal principal) {
+        
         // user can run this composite query if they can run at least one of the configured query logics
         Iterator<QueryLogic<?>> itr = queryLogics.iterator();
         while (itr.hasNext()) {
@@ -366,16 +368,14 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
      */
     @Override
     public boolean canRunQuery() {
-        boolean canRun = false;
         if (super.canRunQuery()) {
             for (QueryLogic<?> logic : this.queryLogics) {
-                canRun = logic.canRunQuery();
-                if (canRun) {
-                    break;
+                if (logic.canRunQuery()) {
+                    return true;
                 }
             }
         }
-        return canRun;
+        return false;
     }
     
     /**
@@ -385,14 +385,13 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
      */
     @Override
     public SelectorExtractor getSelectorExtractor() {
-        SelectorExtractor extractor = null;
         for (QueryLogic<?> logic : this.queryLogics) {
-            extractor = logic.getSelectorExtractor();
+            SelectorExtractor extractor = logic.getSelectorExtractor();
             if (extractor != null) {
-                break;
+                return extractor;
             }
         }
-        return extractor;
+        return null;
     }
     
     /**

@@ -15,7 +15,7 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
     private Object nextEntry = null;
     private final Object lock = new Object();
     private final CountDownLatch completionLatch;
-    private Throwable failure = null;
+    private volatile Throwable failure = null;
     
     public CompositeQueryLogicResultsIterator(ArrayBlockingQueue<Object> results, CountDownLatch completionLatch) {
         this.results = results;
