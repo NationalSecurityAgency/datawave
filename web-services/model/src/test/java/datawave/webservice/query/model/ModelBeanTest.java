@@ -4,11 +4,13 @@ import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createStrictMock;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -22,18 +24,28 @@ import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.security.util.ScannerHelper;
+import datawave.util.TableName;
 import datawave.webservice.common.cache.AccumuloTableCache;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.model.ModelList;
 
+import datawave.webservice.result.VoidResponse;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
@@ -67,9 +79,12 @@ public class ModelBeanTest {
     private DatawavePrincipal principal = null;
     
     private static long TIMESTAMP = System.currentTimeMillis();
+    private static long NEWTIMESTAMP = System.currentTimeMillis() + 1000;
     
     private datawave.webservice.model.Model MODEL_ONE = null;
     private datawave.webservice.model.Model MODEL_TWO = null;
+    private datawave.webservice.model.Model MODEL_THREE_BAD = null;
+    private datawave.webservice.model.Model MODEL_THREE_GOOD = null;
     
     @Before
     public void setup() throws Exception {
@@ -91,10 +106,15 @@ public class ModelBeanTest {
         
         URL m1Url = ModelBeanTest.class.getResource("/ModelBeanTest_m1.xml");
         URL m2Url = ModelBeanTest.class.getResource("/ModelBeanTest_m2.xml");
+        URL m3Url = ModelBeanTest.class.getResource("/ModelBeanTest_m3_bad.xml");
+        URL m3GoodUrl = ModelBeanTest.class.getResource("/ModelBeanTest_m3_good.xml");
+        
         JAXBContext ctx = JAXBContext.newInstance(datawave.webservice.model.Model.class);
         Unmarshaller u = ctx.createUnmarshaller();
         MODEL_ONE = (datawave.webservice.model.Model) u.unmarshal(m1Url);
         MODEL_TWO = (datawave.webservice.model.Model) u.unmarshal(m2Url);
+        MODEL_THREE_BAD = (datawave.webservice.model.Model) u.unmarshal(m3Url);
+        MODEL_THREE_GOOD = (datawave.webservice.model.Model) u.unmarshal(m3GoodUrl);
         
         Logger.getLogger(ModelBean.class).setLevel(Level.OFF);
         PowerMock.mockStatic(System.class, System.class.getMethod("currentTimeMillis"));
@@ -165,6 +185,7 @@ public class ModelBeanTest {
         bean.importModel(MODEL_TWO, (String) null);
         
         PowerMock.verifyAll();
+        
     }
     
     @Test
@@ -185,6 +206,7 @@ public class ModelBeanTest {
         Assert.assertEquals(2, list.getNames().size());
         Assert.assertTrue(list.getNames().contains(MODEL_ONE.getName()));
         Assert.assertTrue(list.getNames().contains(MODEL_TWO.getName()));
+        
     }
     
     @Test
@@ -203,6 +225,216 @@ public class ModelBeanTest {
         PowerMock.verifyAll();
         
         Assert.assertEquals(MODEL_ONE, model);
+    }
+    
+    @Test
+    public void testValidateModel() throws Exception {
+        
+        importModels();
+        populateMetadataTable();
+        
+        List<String> expectedMessage = new ArrayList<String>();
+        expectedMessage.add("Model field custom_data_type has mixed tokenized states.\n" + "Model field randomized-ID has mixed indexed states.\n");
+        
+        PowerMock.resetAll();
+        
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
+        HashMap<String,String> trackingMap = new HashMap<>();
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        connectionFactory.returnConnection(connector);
+        PowerMock.replayAll();
+        
+        VoidResponse resp = bean.validateModel(MODEL_THREE_BAD, TableName.METADATA);
+        
+        Assert.assertFalse(resp.getExceptions().isEmpty());
+        
+        Assert.assertEquals(expectedMessage, resp.getMessages());
+        
+        PowerMock.verifyAll();
+        
+    }
+    
+    @Test
+    public void testFailReplace() throws Exception {
+        
+        importModels();
+        populateMetadataTable();
+        
+        PowerMock.resetAll();
+        
+        HashMap<String,String> trackingMap = new HashMap<>();
+        
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        connectionFactory.returnConnection(connector);
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        connectionFactory.returnConnection(connector);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        
+        EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
+        PowerMock.replayAll();
+        
+        bean.importModel(MODEL_THREE_GOOD, (String) null);
+        
+        PowerMock.verifyAll();
+        
+        PowerMock.resetAll();
+        
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
+        trackingMap = new HashMap<>();
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        connectionFactory.returnConnection(connector);
+        PowerMock.replayAll();
+        
+        bean.replaceModel(MODEL_THREE_BAD, TableName.METADATA);
+        
+        PowerMock.resetAll();
+        
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
+        trackingMap = new HashMap<>();
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        connectionFactory.returnConnection(connector);
+        PowerMock.replayAll();
+        
+        datawave.webservice.model.Model model = bean.getModel("Model3", (String) null);
+        
+        Assert.assertEquals(MODEL_THREE_GOOD, model);
+        
+        PowerMock.verifyAll();
+        
+    }
+    
+    @Test
+    public void testReplace() throws Exception {
+        // import the bad model and replace with the good model
+        
+        importModels();
+        populateMetadataTable();
+        
+        PowerMock.resetAll();
+        
+        HashMap<String,String> trackingMap = new HashMap<>();
+        
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        connectionFactory.returnConnection(connector);
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        connectionFactory.returnConnection(connector);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        
+        EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
+        PowerMock.replayAll();
+        
+        bean.importModel(MODEL_THREE_BAD, (String) null);
+        
+        PowerMock.verifyAll();
+        
+        PowerMock.resetAll();
+        
+        // validate
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        connectionFactory.returnConnection(connector);
+        // list
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        connectionFactory.returnConnection(connector);
+        // delete
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        connectionFactory.returnConnection(connector);
+        // list
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        connectionFactory.returnConnection(connector);
+        // insert
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        connectionFactory.returnConnection(connector);
+        // for each entry
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        // insert
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        connectionFactory.returnConnection(connector);
+        // for each entry. must increment timestamp so new entries are not blocked by recent deletes.
+        EasyMock.expect(System.currentTimeMillis()).andReturn(NEWTIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(NEWTIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(NEWTIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(NEWTIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(NEWTIMESTAMP);
+        EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
+        
+        PowerMock.replayAll();
+        
+        bean.replaceModel(MODEL_THREE_GOOD, TableName.METADATA);
+        
+        PowerMock.verifyAll();
+        
+        PowerMock.resetAll();
+        
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
+        trackingMap = new HashMap<>();
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
+        connectionFactory.returnConnection(connector);
+        PowerMock.replayAll();
+        
+        datawave.webservice.model.Model model = bean.getModel("Model3", TableName.METADATA);
+        
+        Assert.assertEquals(MODEL_THREE_GOOD, model);
+        
+        PowerMock.verifyAll();
+        
+    }
+    
+    private void populateMetadataTable() throws TableExistsException, AccumuloSecurityException, AccumuloException, TableNotFoundException {
+        BatchWriter writer = connector.createBatchWriter(TableName.METADATA, new BatchWriterConfig());
+        
+        Mutation m = new Mutation("UUID1");
+        m.put(new Text("i"), new Text("d1"), new Value());
+        writer.addMutation(m);
+        
+        m = new Mutation("TYPE3");
+        m.put(new Text("tf"), new Text("d1"), new Value());
+        writer.addMutation(m);
+        
+        writer.close();
+        
     }
     
     @Test

@@ -4,6 +4,8 @@ import com.google.common.collect.Sets;
 import datawave.annotation.Required;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
+import datawave.query.util.MetadataHelper;
+import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.cache.AccumuloTableCache;
@@ -13,6 +15,7 @@ import datawave.webservice.common.exception.NotFoundException;
 import datawave.webservice.common.exception.PreConditionFailedException;
 import datawave.webservice.model.FieldMapping;
 import datawave.webservice.model.ModelList;
+import datawave.webservice.model.ModelValidator;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
@@ -303,6 +306,92 @@ public class ModelBean {
         // Set the new name
         model.setName(newName);
         importModel(model, modelTableName);
+        return response;
+    }
+    
+    @POST
+    @Consumes({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
+    @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
+            "application/x-protostuff"})
+    @Path("/validate")
+    @GZIP
+    @Interceptors(ResponseInterceptor.class)
+    public VoidResponse validateModel(datawave.webservice.model.Model model, @QueryParam("modelTableName") String modelTableName) {
+        
+        VoidResponse response = new VoidResponse();
+        
+        if (modelTableName == null) {
+            modelTableName = defaultModelTableName;
+        }
+        Connector connector = null;
+        try {
+            
+            Principal p = ctx.getCallerPrincipal();
+            String user = p.getName();
+            Set<Authorizations> cbAuths = new HashSet<>();
+            if (p instanceof DatawavePrincipal) {
+                DatawavePrincipal cp = (DatawavePrincipal) p;
+                user = cp.getShortName();
+                for (Collection<String> auths : cp.getAuthorizations()) {
+                    cbAuths.add(new Authorizations(auths.toArray(new String[auths.size()])));
+                }
+            }
+            log.trace(user + " has authorizations " + cbAuths);
+            
+            Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
+            MetadataHelperFactory factory = new MetadataHelperFactory();
+            connector = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+            MetadataHelper metadataHelper = factory.createMetadataHelper(connector, modelTableName, cbAuths);
+            
+            ModelValidator.validate(metadataHelper, model);
+            
+        } catch (Exception e) {
+            response.addMessage(e.getMessage());
+            response.addException(e);
+        }
+        
+        if (null != connector) {
+            try {
+                connectionFactory.returnConnection(connector);
+            } catch (Exception e) {
+                log.error("Error returning connection to factory", e);
+            }
+        }
+        
+        return response;
+    }
+    
+    @POST
+    @Consumes({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
+    @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
+            "application/x-protostuff"})
+    @Path("/replace")
+    @GZIP
+    @RolesAllowed({"Administrator", "JBossAdministrator"})
+    @Interceptors(ResponseInterceptor.class)
+    public VoidResponse replaceModel(datawave.webservice.model.Model model, @QueryParam("modelTableName") String modelTableName) {
+        
+        if (modelTableName == null) {
+            modelTableName = defaultModelTableName;
+        }
+        
+        if (log.isDebugEnabled()) {
+            log.debug("modelTableName: " + (null == modelTableName ? "" : modelTableName));
+        }
+        
+        VoidResponse response = validateModel(model, modelTableName);
+        
+        if (null == response.getExceptions()) {
+            // TODO: check if models are different first?
+            ModelList models = listModelNames(modelTableName);
+            if (models.getNames().contains(model.getName())) {
+                deleteModel(model.getName(), modelTableName, false);
+            }
+            
+            insertMapping(model, modelTableName);
+            
+        }
+        
         return response;
     }
     
