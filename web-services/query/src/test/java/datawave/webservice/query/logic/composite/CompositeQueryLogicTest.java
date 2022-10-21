@@ -367,26 +367,6 @@ public class CompositeQueryLogicTest {
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
     }
     
-    @Test(expected = RuntimeException.class)
-    public void testInitializeWithSameQueryLogicAndTableNames() throws Exception {
-        
-        List<QueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic());
-        logics.add(new TestQueryLogic());
-        
-        QueryImpl settings = new QueryImpl();
-        settings.setPagesize(100);
-        settings.setQueryAuthorizations(auths.toString());
-        settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<>());
-        settings.setId(UUID.randomUUID());
-        
-        CompositeQueryLogic c = new CompositeQueryLogic();
-        c.setQueryLogics(logics);
-        
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
-    }
-    
     @Test
     public void testInitializeOKWithSameQueryLogicAndTableNames() throws Exception {
         
@@ -402,10 +382,12 @@ public class CompositeQueryLogicTest {
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
-        c.setCheckTables(false);
         c.setQueryLogics(logics);
         
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        c.getTransformer(settings);
+        
+        Assert.assertEquals(2, c.getQueryLogics().size());
     }
     
     @Test
@@ -436,6 +418,10 @@ public class CompositeQueryLogicTest {
         c.setQueryLogics(logics);
         
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        
+        c.getTransformer(settings);
+        
+        Assert.assertEquals(2, c.getQueryLogics().size());
     }
     
     @Test

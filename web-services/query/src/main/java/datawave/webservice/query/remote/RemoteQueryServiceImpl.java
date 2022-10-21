@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -87,7 +88,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
             URIBuilder uriBuilder = new URIBuilder();
             queryParameters.entrySet().stream().forEach(e -> e.getValue().stream().forEach(v -> uriBuilder.addParameter(e.getKey(), v)));
             postBody = uriBuilder.build().getQuery();
-            post = new StringEntity(postBody, ContentType.APPLICATION_FORM_URLENCODED);
+            post = new StringEntity(postBody, ContentType.create(MediaType.APPLICATION_FORM_URLENCODED, Charset.forName("utf-8")));
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -104,7 +105,6 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
                     httpPost.setEntity(post);
                     httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
                     httpPost.setHeader(HttpHeaders.AUTHORIZATION, getBearer(callerObject));
-                    httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED);
                 },
                 entity -> {
                     return readResponse(entity, genericResponseReader);
