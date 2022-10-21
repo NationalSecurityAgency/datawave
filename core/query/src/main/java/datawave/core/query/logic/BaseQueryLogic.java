@@ -43,9 +43,11 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     // This will only be set when deployed via Wildfly
     protected Principal principal;
+    protected Principal serverPrincipal;
     
     // This will only be set when deployed as a microservice
     protected ProxiedUserDetails currentUser;
+    protected ProxiedUserDetails serverUser;
     
     protected Set<String> requiredRoles;
     protected MarkingFunctions markingFunctions;
@@ -122,12 +124,28 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         this.principal = principal;
     }
     
+    public Principal getServerPrincipal() {
+        return serverPrincipal;
+    }
+    
+    public void setServerPrincipal(Principal serverPrincipal) {
+        this.serverPrincipal = serverPrincipal;
+    }
+    
     public ProxiedUserDetails getCurrentUser() {
         return currentUser;
     }
     
     public void setCurrentUser(ProxiedUserDetails currentUser) {
         this.currentUser = currentUser;
+    }
+    
+    public ProxiedUserDetails getServerUser() {
+        return serverUser;
+    }
+    
+    public void setServerUser(ProxiedUserDetails serverUser) {
+        this.serverUser = serverUser;
     }
     
     public Set<String> getRequiredRoles() {

@@ -6,6 +6,7 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.system.ServerPrincipal;
 import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
@@ -33,6 +34,10 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
     
     @Inject
     private ApplicationContext applicationContext;
+    
+    @Inject
+    @ServerPrincipal
+    private DatawavePrincipal serverPrincipal;
     
     @Override
     public QueryLogic<?> getQueryLogic(String name, Principal principal) throws IllegalArgumentException, CloneNotSupportedException {
@@ -77,6 +82,7 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
         
         if (logic instanceof BaseQueryLogic) {
             ((BaseQueryLogic<?>) logic).setPrincipal(principal);
+            ((BaseQueryLogic<?>) logic).setServerPrincipal(serverPrincipal);
         }
         
         return logic;

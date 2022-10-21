@@ -614,7 +614,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         transformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
         transformer.setContentFieldNames(getConfig().getContentFieldNames());
         transformer.setLogTimingDetails(this.getLogTimingDetails());
-        transformer.setCardinalityConfiguration(cardinalityConfiguration);
+        if (cardinalityConfiguration != null && cardinalityConfiguration.isEnabled()) {
+            transformer.setCardinalityConfiguration(cardinalityConfiguration);
+        }
         transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
         transformer.setQm(queryModel);
         this.transformerInstance = transformer;
