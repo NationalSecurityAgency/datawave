@@ -10,7 +10,6 @@ import org.apache.accumulo.core.util.Pair;
 import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -107,7 +106,6 @@ public class QueryCacheBeanTest extends EasyMockSupport {
         assertNotNull("List of running queries should not be null", result1);
     }
     
-    @Disabled
     @Test
     public void testGetRunningQueries() throws Exception {
         QueryImpl q = new QueryImpl();
@@ -137,8 +135,9 @@ public class QueryCacheBeanTest extends EasyMockSupport {
         cache.init();
         cache.put(query.getSettings().getId().toString(), query);
         CreatedQueryLogicCacheBean qlCache = new CreatedQueryLogicCacheBean();
-        ReflectionTestUtils.setField(bean, "cache", altCache);
-        ReflectionTestUtils.setField(bean, "qlCache", remoteCache);
+        ReflectionTestUtils.setField(bean, "cache", cache);
+        ReflectionTestUtils.setField(bean, "qlCache", qlCache);
+
         String expectedResult = query.toString();
         
         RunningQueries output = bean.getRunningQueries();
