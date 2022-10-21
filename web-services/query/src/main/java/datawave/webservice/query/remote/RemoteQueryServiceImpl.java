@@ -86,9 +86,10 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         final StringEntity post;
         try {
             URIBuilder uriBuilder = new URIBuilder();
+            uriBuilder.setCharset(Charset.forName("UTF-8"));
             queryParameters.entrySet().stream().forEach(e -> e.getValue().stream().forEach(v -> uriBuilder.addParameter(e.getKey(), v)));
             postBody = uriBuilder.build().getQuery();
-            post = new StringEntity(postBody, ContentType.create(MediaType.APPLICATION_FORM_URLENCODED, Charset.forName("utf-8")));
+            post = new StringEntity(postBody, ContentType.create(MediaType.APPLICATION_FORM_URLENCODED, Charset.forName("UTF-8")));
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
