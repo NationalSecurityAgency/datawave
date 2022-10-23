@@ -4,6 +4,7 @@ import datawave.webservice.common.cache.SharedCacheCoordinator;
 import datawave.webservice.common.cache.SharedTriState;
 import datawave.webservice.common.cache.SharedTriStateListener;
 import datawave.webservice.common.cache.SharedTriStateReader;
+import datawave.webservice.util.EnvProvider;
 import org.apache.accumulo.core.client.ClientConfiguration;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
@@ -37,6 +38,26 @@ public class MetadataHelperUpdateHdfsListener {
     private final String password;
     private final long lockWaitTime;
     
+    /**
+     * Default constructor
+     *
+     * @param zookeepers
+     *            the zookeepers
+     * @param typeMetadataHelperFactory
+     *            the typeMetadataHelperFactory
+     * @param metadataTableNames
+     *            the metadata table names
+     * @param allMetadataAuths
+     *            metadata auths
+     * @param instance
+     *            the accumulo instance
+     * @param username
+     *            the username
+     * @param password
+     *            the password
+     * @param lockWaitTime
+     *            lock wait time
+     */
     public MetadataHelperUpdateHdfsListener(String zookeepers, TypeMetadataHelper.Factory typeMetadataHelperFactory, String[] metadataTableNames,
                     Set<Authorizations> allMetadataAuths, String instance, String username, String password, long lockWaitTime) {
         this.zookeepers = zookeepers;
@@ -44,12 +65,23 @@ public class MetadataHelperUpdateHdfsListener {
         this.allMetadataAuths = allMetadataAuths;
         this.instance = instance;
         this.username = username;
-        this.password = password;
+        this.password = resolvePassword(password);
         this.lockWaitTime = lockWaitTime;
         
         for (String metadataTableName : metadataTableNames) {
             registerCacheListener(metadataTableName);
         }
+    }
+    
+    /**
+     * Gets a password, either hard coded or from the environment
+     *
+     * @param password
+     *            a hard coded password
+     * @return the password
+     */
+    private String resolvePassword(String password) {
+        return EnvProvider.resolve(password);
     }
     
     private void registerCacheListener(final String metadataTableName) {

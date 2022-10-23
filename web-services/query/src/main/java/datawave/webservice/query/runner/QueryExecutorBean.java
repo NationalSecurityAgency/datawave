@@ -33,6 +33,9 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
+import datawave.webservice.common.exception.NotFoundException;
+import datawave.webservice.common.exception.PreConditionFailedException;
+import datawave.webservice.common.exception.QueryCanceledException;
 import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -96,6 +99,7 @@ import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.omg.CosNaming.NamingContextPackage.NotFound;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
@@ -1380,7 +1384,7 @@ public class QueryExecutorBean implements QueryExecutor {
         
         long pageNum = query.getLastPageNumber();
         
-        BaseQueryResponse response = query.getLogic().getTransformer(query.getSettings()).createResponse(resultsPage);
+        BaseQueryResponse response = query.getLogic().getEnrichedTransformer(query.getSettings()).createResponse(resultsPage);
         if (resultsPage.getStatus() != ResultsPage.Status.NONE) {
             response.setHasResults(true);
         } else {
@@ -2016,6 +2020,7 @@ public class QueryExecutorBean implements QueryExecutor {
             closedQueryCache.add(id); // remember that we auto-closed this query
             throw e;
         } catch (DatawaveWebApplicationException e) {
+            log.error("Failed Query", e);
             if (query != null) {
                 query.setActiveCall(false);
                 if (query.getLogic().getCollectQueryMetrics()) {
@@ -2032,7 +2037,9 @@ public class QueryExecutorBean implements QueryExecutor {
             } catch (Exception ex) {
                 log.error("Error marking transaction for roll back", ex);
             }
-            if (e.getCause() instanceof NoResultsException) {
+            // close out the query if at least it was a valid request
+            if (!((e instanceof BadRequestException) || (e instanceof NotFoundException) || (e instanceof QueryCanceledException)
+                            || (e instanceof UnauthorizedException) || (e instanceof PreConditionFailedException))) {
                 close(id);
                 closedQueryCache.add(id); // remember that we auto-closed this query
             }
@@ -2064,6 +2071,7 @@ public class QueryExecutorBean implements QueryExecutor {
             } else {
                 try {
                     close(id);
+                    closedQueryCache.add(id); // remember that we auto-closed this query
                 } catch (Exception ce) {
                     log.error(qe, ce);
                 }
@@ -3266,7 +3274,7 @@ public class QueryExecutorBean implements QueryExecutor {
         Class<?> responseClass;
         try {
             QueryLogic<?> l = queryLogicFactory.getQueryLogic(logicName, p);
-            QueryLogicTransformer t = l.getTransformer(q);
+            QueryLogicTransformer t = l.getEnrichedTransformer(q);
             BaseResponse refResponse = t.createResponse(emptyList);
             responseClass = refResponse.getClass();
         } catch (Exception e) {

@@ -58,7 +58,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
             counters = new BulkIngestCounters(conf);
             boolean deleteMode = conf.getBoolean(BaseIngestHelper.INGEST_MODE_DELETE, false);
             // Get the list of tables that we are bulk ingesting into.
-            Set<String> tables = TableConfigurationUtil.getTables(conf);
+            Set<String> tables = TableConfigurationUtil.getJobOutputTableNames(conf);
             for (String table : tables) {
                 // Create the counters for this table.
                 counters.createCounter(table, deleteMode);
