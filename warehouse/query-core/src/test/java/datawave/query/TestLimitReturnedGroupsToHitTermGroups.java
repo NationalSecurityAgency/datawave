@@ -228,7 +228,8 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         String queryString = "CANINE == 'shepherd'";
         
         // definitely should NOT include group 3
-        Set<String> goodResults = Sets.newHashSet("CANINE.PET.13:shepherd", "CAT.PET.13:ragdoll", "FISH.PET.13:tetra", "BIRD.PET.13:lovebird");
+        Set<String> goodResults = Sets.newHashSet("CANINE.PET.13:shepherd", "CAT.PET.13:ragdoll", "FISH.PET.13:tetra", "BIRD.PET.13:lovebird",
+                        "REPTILE.PET.1:snake", "DOG.WILD.1:coyote");
         
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
@@ -248,7 +249,8 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                 "CANINE.PET.1:basset", "CAT.PET.1:calico", "BIRD.PET.1:canary", "FISH.PET.1:goldfish",
                 "CANINE.PET.12:bernese", "CAT.PET.12:himalayan", "BIRD.PET.12:cockatiel", "FISH.PET.12:swordtail",
                 "CANINE.PET.13:shepherd", "CAT.PET.13:ragdoll", "BIRD.PET.13:lovebird", "FISH.PET.13:tetra",
-                "CANINE.WILD.1:coyote", "CAT.WILD.1:tiger", "BIRD.WILD.1:hawk", "FISH.WILD.1:tuna");
+                "CANINE.WILD.1:coyote", "CAT.WILD.1:tiger", "BIRD.WILD.1:hawk", "FISH.WILD.1:tuna",
+                "REPTILE.PET.1:snake", "DOG.WILD.1:coyote");
 
         //@formatter:on
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
@@ -281,9 +283,85 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         
         String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
         
-        Set<String> goodResults = Sets.newHashSet("BIRD:parakeet", "BIRD:canary", "CANINE:beagle");
+        Set<String> goodResults = Sets.newHashSet("BIRD:parakeet", "BIRD:canary", "CANINE:beagle", "CANINE:coyote", "CANINE:basset", "CANINE:shepherd",
+                        "CANINE:bernese");
         
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
     
+    @Test
+    public void testLimiting() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "false");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "CANINE=1,BIRD=1,DOG=1");
+        
+        String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
+        
+        // Only CANINE hits, 1 bird, and all fish, cats, dog, and reptile
+        Set<String> goodResults = Sets.newHashSet("BIRD:parakeet", "CANINE:beagle", "CANINE:coyote", "CANINE:basset", "CANINE:shepherd", "CANINE:bernese",
+                        "FISH:tuna", "CAT:tabby", "CAT:tom", "FISH:swordtail", "FISH:angelfish", "CAT:siamese", "FISH:goldfish", "CAT:himalayan",
+                        "CAT:leopard", "CAT:cougar", "CAT:calico", "CAT:tiger", "FISH:tetra", "FISH:mackerel", "FISH:shark", "CAT:puma", "CAT:ragdoll",
+                        "FISH:beta", "FISH:guppy", "FISH:salmon", "REPTILE:snake", "DOG:coyote");
+        
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+    
+    @Test
+    public void testLimitingToZero() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "false");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "CANINE=0,BIRD=0,DOG=0");
+        
+        String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
+        
+        // Only CANINE hits, 0 birds, and all fish and cats and reptile. The dog was not a hit.
+        Set<String> goodResults = Sets.newHashSet("CANINE:beagle", "CANINE:coyote", "CANINE:basset", "CANINE:shepherd", "CANINE:bernese", "FISH:tuna",
+                        "CAT:tabby", "CAT:tom", "FISH:swordtail", "FISH:angelfish", "CAT:siamese", "FISH:goldfish", "CAT:himalayan", "CAT:leopard",
+                        "CAT:cougar", "CAT:calico", "CAT:tiger", "FISH:tetra", "FISH:mackerel", "FISH:shark", "CAT:puma", "CAT:ragdoll", "FISH:beta",
+                        "FISH:guppy", "FISH:salmon", "REPTILE:snake");
+        
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+    
+    @Test
+    public void testLimitingWithGrouping() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "CANINE=1,BIRD=1,DOG=1");
+        
+        String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
+        
+        // CANINE hits along with the associated birds, all fish and cats and related dog and reptile
+        Set<String> goodResults = Sets.newHashSet("CANINE.PET.0:beagle", "BIRD.PET.0:parakeet", "CANINE.PET.1:basset", "BIRD.PET.1:canary",
+                        "CANINE.PET.12:bernese", "BIRD.PET.12:cockatiel", "CANINE.PET.13:shepherd", "BIRD.PET.13:lovebird", "CANINE.WILD.1:coyote",
+                        "BIRD.WILD.1:hawk", "FISH.PET.12:swordtail", "CAT.PET.13:ragdoll", "FISH.WILD.0:shark", "CAT.PET.1:calico", "FISH.PET.0:beta",
+                        "CAT.WILD.1:tiger", "FISH.PET.2:angelfish", "CAT.PET.0:tabby", "FISH.WILD.2:mackerel", "FISH.PET.13:tetra", "FISH.PET.1:goldfish",
+                        "FISH.PET.3:guppy", "CAT.PET.12:himalayan", "FISH.WILD.1:tuna", "FISH.WILD.3:salmon", "CAT.WILD.3:puma", "CAT.WILD.2:leopard",
+                        "CAT.PET.3:siamese", "CAT.WILD.0:cougar", "CAT.PET.2:tom", "REPTILE.PET.1:snake", "DOG.WILD.1:coyote");
+        
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+    
+    @Test
+    public void testLimitingToZeroWithGrouping() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "CANINE=0,BIRD=0,DOG=0");
+        
+        String queryString = "filter:getAllMatches(CANINE,'.*e.*')";
+        
+        // CANINE hits along with the associated birds, all fish and cats and related dog and reptile
+        Set<String> goodResults = Sets.newHashSet("CANINE.PET.0:beagle", "BIRD.PET.0:parakeet", "CANINE.PET.1:basset", "BIRD.PET.1:canary",
+                        "CANINE.PET.12:bernese", "BIRD.PET.12:cockatiel", "CANINE.PET.13:shepherd", "BIRD.PET.13:lovebird", "CANINE.WILD.1:coyote",
+                        "BIRD.WILD.1:hawk", "FISH.PET.12:swordtail", "CAT.PET.13:ragdoll", "FISH.WILD.0:shark", "CAT.PET.1:calico", "FISH.PET.0:beta",
+                        "CAT.WILD.1:tiger", "FISH.PET.2:angelfish", "CAT.PET.0:tabby", "FISH.WILD.2:mackerel", "FISH.PET.13:tetra", "FISH.PET.1:goldfish",
+                        "FISH.PET.3:guppy", "CAT.PET.12:himalayan", "FISH.WILD.1:tuna", "FISH.WILD.3:salmon", "CAT.WILD.3:puma", "CAT.WILD.2:leopard",
+                        "CAT.PET.3:siamese", "CAT.WILD.0:cougar", "CAT.PET.2:tom", "REPTILE.PET.1:snake", "DOG.WILD.1:coyote");
+        
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
 }

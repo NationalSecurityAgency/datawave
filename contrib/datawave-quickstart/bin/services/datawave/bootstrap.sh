@@ -165,6 +165,9 @@ function setBuildPropertyOverrides() {
    echo "accumulo.instance.name=${DW_ACCUMULO_INSTANCE_NAME}" >> ${BUILD_PROPERTIES_FILE}
    echo "accumulo.user.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
 
+#   # uncomment to enable environment passwords in the quickstart, and comment out above line
+#   echo "accumulo.user.password=env:DW_ACCUMULO_PASSWORD" >> ${BUILD_PROPERTIES_FILE}
+
    echo "cached.results.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
    echo "type.metadata.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
    echo "mapReduce.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}

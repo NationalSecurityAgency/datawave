@@ -6,6 +6,10 @@ import datawave.webservice.common.cache.SharedTriStateListener;
 import datawave.webservice.common.cache.SharedTriStateReader;
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
+import datawave.webservice.util.EnvProvider;
+import org.apache.accumulo.core.client.ClientConfiguration;
+import org.apache.accumulo.core.client.ZooKeeperInstance;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
@@ -35,6 +39,26 @@ public class MetadataHelperUpdateHdfsListener {
     private final String password;
     private final long lockWaitTime;
     
+    /**
+     * Default constructor
+     *
+     * @param zookeepers
+     *            the zookeepers
+     * @param typeMetadataHelperFactory
+     *            the typeMetadataHelperFactory
+     * @param metadataTableNames
+     *            the metadata table names
+     * @param allMetadataAuths
+     *            metadata auths
+     * @param instance
+     *            the accumulo instance
+     * @param username
+     *            the username
+     * @param password
+     *            the password
+     * @param lockWaitTime
+     *            lock wait time
+     */
     public MetadataHelperUpdateHdfsListener(String zookeepers, TypeMetadataHelper.Factory typeMetadataHelperFactory, String[] metadataTableNames,
                     Set<Authorizations> allMetadataAuths, String instance, String username, String password, long lockWaitTime) {
         this.zookeepers = zookeepers;
@@ -42,7 +66,7 @@ public class MetadataHelperUpdateHdfsListener {
         this.allMetadataAuths = allMetadataAuths;
         this.instance = instance;
         this.username = username;
-        this.password = password;
+        this.password = resolvePassword(password);
         this.lockWaitTime = lockWaitTime;
         
         for (String metadataTableName : metadataTableNames) {
@@ -50,6 +74,17 @@ public class MetadataHelperUpdateHdfsListener {
         }
     }
     
+    /**
+     * Gets a password, either hard coded or from the environment
+     *
+     * @param password
+     *            a hard coded password
+     * @return the password
+     */
+    private String resolvePassword(String password) {
+        return EnvProvider.resolve(password);
+    }
+
     private void registerCacheListener(final String metadataTableName) {
         if (log.isDebugEnabled())
             log.debug("table:" + metadataTableName + " created UpdateHdfs listener for table:" + metadataTableName);

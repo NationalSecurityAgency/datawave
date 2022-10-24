@@ -980,6 +980,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         
         if (!this.limitFieldsMap.isEmpty()) {
+            // note that we have already reduced the document to those attributes to keep. This will reduce the attributes further
+            // base on those fields we are limiting.
             if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents,
                                 new EvaluationTrackingFunction<>(QuerySpan.Stage.LimitFields, trackingSpan, new LimitFields(this.getLimitFieldsMap())));

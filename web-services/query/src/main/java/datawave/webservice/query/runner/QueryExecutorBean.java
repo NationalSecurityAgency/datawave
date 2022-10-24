@@ -1375,7 +1375,7 @@ public class QueryExecutorBean implements QueryExecutor {
         
         long pageNum = query.getLastPageNumber();
         
-        BaseQueryResponse response = query.getLogic().getTransformer(query.getSettings()).createResponse(resultsPage);
+        BaseQueryResponse response = query.getLogic().getEnrichedTransformer(query.getSettings()).createResponse(resultsPage);
         if (resultsPage.getStatus() != ResultsPage.Status.NONE) {
             response.setHasResults(true);
         } else {
@@ -3262,7 +3262,7 @@ public class QueryExecutorBean implements QueryExecutor {
         Class<?> responseClass;
         try {
             QueryLogic<?> l = queryLogicFactory.getQueryLogic(logicName, p);
-            QueryLogicTransformer t = l.getTransformer(q);
+            QueryLogicTransformer t = l.getEnrichedTransformer(q);
             BaseResponse refResponse = t.createResponse(emptyList);
             responseClass = refResponse.getClass();
         } catch (Exception e) {
