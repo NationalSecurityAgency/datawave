@@ -12,6 +12,10 @@ import java.util.List;
  */
 public class JexlNodes {
     
+    private JexlNodes() {
+        // this is a static utility
+    }
+    
     /**
      * Ensures that the child array as at least {i} capacity.
      */
@@ -157,14 +161,14 @@ public class JexlNodes {
      * @param literal
      * @param value
      */
-    public static <T> void setLiteral(ASTNumberLiteral literal, Number value) {
+    public static void setLiteral(ASTNumberLiteral literal, Number value) {
         Preconditions.checkNotNull(literal);
         Preconditions.checkNotNull(value);
         
         literal.literal = value;
     }
     
-    public static <T> void setLiteral(ASTStringLiteral literal, String value) {
+    public static void setLiteral(ASTStringLiteral literal, String value) {
         Preconditions.checkNotNull(literal);
         Preconditions.checkNotNull(value);
         
