@@ -13,6 +13,8 @@ import datawave.webservice.result.VoidResponse;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,8 +48,11 @@ public class RemoteEventQueryLogicTest {
         response2.setEvents(Collections.singletonList(event1));
         response2.setReturnedEvents(1L);
         
+        DefaultEventQueryResponse response3 = new DefaultEventQueryResponse();
+        response3.setReturnedEvents(0L);
+        
         // create a remote event query logic that has our own remote query service behind it
-        logic.setRemoteQueryService(new TestRemoteQueryService(createResponse, response1, response2));
+        logic.setRemoteQueryService(new TestRemoteQueryService(createResponse, response1, response2, response3));
         logic.setRemoteQueryLogic("TestQuery");
     }
     
@@ -67,11 +72,13 @@ public class RemoteEventQueryLogicTest {
         GenericResponse<String> createResponse;
         LinkedList<BaseQueryResponse> nextResponses;
         
-        public TestRemoteQueryService(GenericResponse<String> createResponse, BaseQueryResponse response1, BaseQueryResponse response2) {
+        public TestRemoteQueryService(GenericResponse<String> createResponse, BaseQueryResponse response1, BaseQueryResponse response2,
+                        BaseQueryResponse response3) {
             this.createResponse = createResponse;
             this.nextResponses = new LinkedList<>();
             nextResponses.add(response1);
             nextResponses.add(response2);
+            nextResponses.add(response3);
         }
         
         @Override
@@ -97,6 +104,15 @@ public class RemoteEventQueryLogicTest {
         @Override
         public GenericResponse<String> planQuery(String id, Object callerObject) {
             throw new UnsupportedOperationException();
+        }
+        
+        @Override
+        public URI getQueryMetricsURI(String id) {
+            try {
+                return new URI("https://localhost:8443/DataWave/Query/Metrics/id/" + id);
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }
