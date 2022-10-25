@@ -98,7 +98,7 @@ public class PushdownScheduler extends Scheduler {
         customizedFunctionList = Lists.newArrayList();
         Preconditions.checkNotNull(config.getConnector());
     }
-
+    
     public void addSetting(IteratorSetting customSetting) {
         settings.add(customSetting);
     }

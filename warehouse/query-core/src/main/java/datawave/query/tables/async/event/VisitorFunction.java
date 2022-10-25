@@ -121,6 +121,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                 .build();
         // @formatter:on
     }
+    
     private Date getEarliestBeginDate(Collection<Range> ranges) {
         SimpleDateFormat sdf = new SimpleDateFormat(DateHelper.DATE_FORMAT_STRING_TO_DAY);
         Date minDate = null;
@@ -140,7 +141,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         }
         return minDate;
     }
-
+    
     public String getRangeKey(Range range) {
         Key key = range.getStartKey();
         StringBuilder builder = new StringBuilder();
@@ -152,7 +153,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         }
         return builder.toString();
     }
-
+    
     @Override
     @Nullable
     public ScannerChunk apply(@Nullable ScannerChunk input) {
@@ -334,7 +335,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.maxChildNodesToPrint),
                                         "VistorFunction::apply method");
                     }
-
+                    
                     for (Range range : newSettings.getRanges()) {
                         String rangeKey = getRangeKey(range);
                         metric.addSubPlan(rangeKey, newQuery);
@@ -348,7 +349,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         }
         
         newSettings.setOptions(newOptions);
-
+        
         return newSettings;
     }
     

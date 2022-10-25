@@ -42,7 +42,12 @@ public class VisitorFunctionTest extends EasyMockSupport {
     public void setup() {
         config = new ShardQueryConfiguration();
         helper = createMock(MetadataHelper.class);
-        metric = createMock(BaseQueryMetric.class); // Is this the proper way of going about this? Look over this
+        metric = new BaseQueryMetric() {
+            @Override
+            public void populate(Query query) {
+                
+            }
+        }; // TODO: Must double check if this is proper way of going about this. AND re-add unit tests based on subPlans.
     }
     
     private void setupExpects() throws TableNotFoundException, IOException, URISyntaxException {
@@ -102,7 +107,6 @@ public class VisitorFunctionTest extends EasyMockSupport {
         
         function = new VisitorFunction(config, helper, metric);
         function.apply(chunk);
-        
         verifyAll();
     }
     
