@@ -13,8 +13,6 @@ import datawave.webservice.result.VoidResponse;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -99,15 +97,6 @@ public class RemoteEventQueryLogicTest {
         @Override
         public GenericResponse<String> planQuery(String id, Object callerObject) {
             throw new UnsupportedOperationException();
-        }
-        
-        @Override
-        public URI getQueryMetricsURI(String id) {
-            try {
-                return new URI("https://localhost:8443/DataWave/Query/Metrics/id/" + id);
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 }
