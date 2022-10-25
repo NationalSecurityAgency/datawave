@@ -48,41 +48,40 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 @ExtendWith(EasyMockExtension.class)
 public class ExtendedRunningQueryTest extends EasyMockSupport {
     @Mock
     Connector connector;
-
+    
     @Mock
     AccumuloConnectionFactory connectionFactory;
-
+    
     @Mock
     GenericQueryConfiguration genericConfiguration;
-
+    
     @Mock
     Query query;
-
+    
     @Mock
     QueryUncaughtExceptionHandler exceptionHandler;
-
+    
     @Mock
     QueryLogic<?> queryLogic;
-
+    
     @Mock
     QueryMetricsBean queryMetrics;
-
+    
     @Mock
     TransformIterator transformIterator;
-
+    
     private Transformer transformer = NOPTransformer.nopTransformer();
-
+    
     @BeforeEach
     public void setup() {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
     }
-
+    
     @Test
     public void testConstructor_NoArg() throws Exception {
         // Run the test
@@ -101,7 +100,7 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         TransformIterator result6 = subject.getTransformIterator();
         Set<Authorizations> result7 = subject.getCalculatedAuths();
         verifyAll();
-
+        
         // Verify results
         assertNotNull(result1, "Expected an exception to be thrown due to uninitialized instance variables");
         
@@ -117,11 +116,11 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         
         assertNull(result7, "Expected a null set of authorizations");
     }
-
+    
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
     public void testNext_HappyPathUsingDeprecatedConstructor() throws Exception {
-
+        
         // Set local test input
         String userDN = "userDN";
         List<String> dnList = Lists.newArrayList(userDN);
@@ -144,7 +143,7 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         long maxWork = Long.MAX_VALUE;
         long maxResults = 100L;
         List<Object> resultObjects = Arrays.asList(new Object(), "resultObject1", null);
-
+        
         // Set expectations
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
         expect(this.query.getUncaughtExceptionHandler()).andReturn(exceptionHandler).times(5);
@@ -154,7 +153,7 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         expect(this.query.getQuery()).andReturn(query).times(2);
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).times(2);
         expect(this.query.getQueryName()).andReturn(queryName).times(2);
-
+        
         expect(this.query.getBeginDate()).andReturn(beginDate).times(2);
         expect(this.query.getEndDate()).andReturn(endDate).times(2);
         expect(this.query.isMaxResultsOverridden()).andReturn(false).anyTimes();
@@ -182,17 +181,17 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
         this.queryLogic.setPageProcessingStartTime(anyLong());
-
+        
         // Run the test
         replayAll();
         RunningQuery subject = new RunningQuery(this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
-                new QueryMetricFactoryImpl());
-
+                        new QueryMetricFactoryImpl());
+        
         ResultsPage result1 = subject.next();
         String result2 = subject.toString();
         QueryMetric.Lifecycle status = subject.getMetric().getLifecycle();
         verifyAll();
-
+        
         // Verify results
         assertNotNull(result1, "Expected a non-null page");
         assertNotNull(result1.getResults(), "Expected a non-null list of results");
@@ -204,7 +203,7 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         assertSame(QueryMetric.Lifecycle.RESULTS, subject.getMetric().getLifecycle(), "Expected lifecycle to be results");
         
     }
-
+    
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
     public void testNextMaxResults_HappyPathUsingDeprecatedConstructor() throws Exception {
@@ -226,12 +225,12 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         Date expirationDate = new Date(currentTime + 9999);
         int pageSize = 5;
         int maxPageSize = 5;
-
+        
         long pageByteTrigger = 4 * 1024L;
         long maxWork = Long.MAX_VALUE;
         long maxResults = 4L;
         List<Object> resultObjects = Arrays.asList(new Object(), "resultObject1", "resultObject2", "resultObject3", "resultObject4", "resultObject5");
-
+        
         // Set expectations
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
         expect(this.query.getUncaughtExceptionHandler()).andReturn(exceptionHandler).times(7);
@@ -255,7 +254,7 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
-
+        
         Iterator<Object> iterator = resultObjects.iterator();
         int count = 0;
         expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
@@ -265,7 +264,7 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
             count++;
         }
         expect(this.transformIterator.getTransformer()).andReturn(transformer).times(count);
-
+        
         expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
         expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
@@ -273,18 +272,18 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         this.queryLogic.setPageProcessingStartTime(anyLong());
-
+        
         // Run the test
         replayAll();
         RunningQuery subject = new RunningQuery(this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
-                new QueryMetricFactoryImpl());
-
+                        new QueryMetricFactoryImpl());
+        
         ResultsPage result1 = subject.next();
-
+        
         String result2 = subject.toString();
         QueryMetric.Lifecycle status = subject.getMetric().getLifecycle();
         verifyAll();
-
+        
         // Verify results
         assertNotNull(result1, "Expected a non-null page");
         assertNotNull(result1.getResults(), "Expected a non-null list of results");
@@ -293,7 +292,7 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         
         assertNotNull(result2, "Expected a non-null toString() representation");
     }
-
+    
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
     public void testNext_NoResultsAfterCancellationUsingDeprecatedConstructor() throws Exception {
@@ -313,7 +312,7 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         long maxResults = 100L;
-
+        
         // Set expectations
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
         expect(this.query.getUncaughtExceptionHandler()).andReturn(exceptionHandler).times(3);
@@ -341,16 +340,16 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
         this.queryLogic.setPageProcessingStartTime(anyLong());
-
+        
         // Run the test
         replayAll();
         RunningQuery subject = new RunningQuery(this.queryMetrics, this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
-                new QueryMetricFactoryImpl());
+                        new QueryMetricFactoryImpl());
         subject.cancel();
         boolean result1 = subject.isCanceled();
         ResultsPage result2 = subject.next();
         verifyAll();
-
+        
         // Verify results
         assertTrue(result1, "Expected isCanceled() to return true");
         
@@ -359,7 +358,7 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         assertTrue(result2.getResults().isEmpty(), "Expected an empty list of results");
         assertSame(QueryMetric.Lifecycle.CANCELLED, subject.getMetric().getLifecycle(), "Expected status to be cancelled");
     }
-
+    
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
     public void testCloseConnection_HappyPath() throws Exception {
@@ -371,7 +370,7 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         long maxResults = 100L;
-
+        
         // Set expectations
         expect(this.transformIterator.getTransformer()).andReturn(transformer);
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
@@ -400,18 +399,18 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
         this.connectionFactory.returnConnection(this.connector);
         this.queryLogic.close();
-
+        
         // Run the test
         replayAll();
         RunningQuery subject = new RunningQuery(this.queryMetrics, this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
-                new QueryMetricFactoryImpl());
+                        new QueryMetricFactoryImpl());
         subject.closeConnection(this.connectionFactory);
         QueryMetric.Lifecycle status = subject.getMetric().getLifecycle();
         verifyAll();
-
+        
         assertSame(status, QueryMetric.Lifecycle.CLOSED, "Expected status to be closed");
     }
-
+    
     @SuppressWarnings({"unchecked"})
     @Test
     public void testNextWithDnResultLimit_HappyPathUsingDeprecatedConstructor() throws Exception {
@@ -433,13 +432,13 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         Date expirationDate = new Date(currentTime + 9999);
         int pageSize = 5;
         int maxPageSize = 5;
-
+        
         long pageByteTrigger = 4 * 1024L;
         long maxWork = Long.MAX_VALUE;
         long maxResults = 10L;
         long dnResultLimit = 2L;
         List<Object> resultObjects = Arrays.asList(new Object(), "resultObject1", "resultObject2", "resultObject3", "resultObject4", "resultObject5");
-
+        
         // Set expectations
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
         expect(this.query.getUncaughtExceptionHandler()).andReturn(exceptionHandler).times(5);
@@ -463,7 +462,7 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(dnResultLimit);
-
+        
         Iterator<Object> iterator = resultObjects.iterator();
         int count = 0;
         while (iterator.hasNext() && count < dnResultLimit) {
@@ -471,12 +470,12 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
             expect(this.transformIterator.next()).andReturn(iterator.next());
             count++;
         }
-
+        
         // now that the results thread is separate from the running query thread, we could continue getting stuff
         expect(this.transformIterator.getTransformer()).andReturn(transformer).anyTimes();
         expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext()).anyTimes();
         expect(this.transformIterator.next()).andReturn(iterator.next()).anyTimes();
-
+        
         expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
         expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
@@ -484,18 +483,18 @@ public class ExtendedRunningQueryTest extends EasyMockSupport {
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         this.queryLogic.setPageProcessingStartTime(anyLong());
-
+        
         // Run the test
         replayAll();
         RunningQuery subject = new RunningQuery(this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
-                new QueryMetricFactoryImpl());
-
+                        new QueryMetricFactoryImpl());
+        
         ResultsPage result1 = subject.next();
-
+        
         String result2 = subject.toString();
         QueryMetric.Lifecycle status = subject.getMetric().getLifecycle();
         verifyAll();
-
+        
         // Verify results
         assertNotNull(result1, "Expected a non-null page");
         assertNotNull(result1.getResults(), "Expected a non-null list of results");

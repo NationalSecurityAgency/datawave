@@ -17,21 +17,21 @@ import java.util.Map;
 
 public class StatsJobTest {
     private static final Logger log = Logger.getLogger(StatsJobTest.class);
-
+    
     static {
         Logger.getLogger(IngestJob.class).setLevel(Level.DEBUG);
         Logger.getLogger(StatsJob.class).setLevel(Level.DEBUG);
         Logger.getLogger(StatsJobTest.class).setLevel(Level.DEBUG);
     }
-
+    
     private StatsJobWrapper wrapper;
-
+    
     @BeforeEach
     public void setup() {
         wrapper = new StatsJobWrapper();
-
+        
     }
-
+    
     @Test
     public void testParseArguments() throws Exception {
         Assumptions.assumeTrue(null != System.getenv("DATAWAVE_INGEST_HOME"));

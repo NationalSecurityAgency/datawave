@@ -254,7 +254,7 @@ public abstract class CompositeFunctionsTest {
     @Test
     public void testMatchesAtLeastCountOf() throws Exception {
         tldEventQueryLogic.setMaxDepthThreshold(7);
-
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -281,7 +281,7 @@ public abstract class CompositeFunctionsTest {
     @Test
     public void testMatchesAtLeastCountOfWithOptionsFunction() throws Exception {
         tldEventQueryLogic.setMaxDepthThreshold(7);
-
+        
         Map<String,String> extraParameters = new HashMap<>();
         
         if (log.isDebugEnabled()) {
@@ -311,7 +311,7 @@ public abstract class CompositeFunctionsTest {
     @Test
     public void testDateDelta() throws Exception {
         tldEventQueryLogic.setMaxDepthThreshold(7);
-
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -486,7 +486,7 @@ public abstract class CompositeFunctionsTest {
     @Test
     public void testNotNulls() throws Exception {
         tldEventQueryLogic.setMaxDepthThreshold(7);
-
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         
@@ -540,7 +540,7 @@ public abstract class CompositeFunctionsTest {
     @Test
     public void composeFunctionsInsteadOfMatchesAtLeastCountOf() throws Exception {
         tldEventQueryLogic.setMaxDepthThreshold(7);
-
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -562,7 +562,7 @@ public abstract class CompositeFunctionsTest {
     @Test
     public void testCompositeFunctions() throws Exception {
         tldEventQueryLogic.setMaxDepthThreshold(7);
-
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -756,7 +756,7 @@ public abstract class CompositeFunctionsTest {
     @Test
     public void testFilterFunctionsInvalidatedByIndexOnlyFields() throws ParseException {
         tldEventQueryLogic.setMaxDepthThreshold(7);
-
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");

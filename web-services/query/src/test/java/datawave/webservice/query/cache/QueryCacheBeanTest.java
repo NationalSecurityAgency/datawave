@@ -137,7 +137,7 @@ public class QueryCacheBeanTest extends EasyMockSupport {
         CreatedQueryLogicCacheBean qlCache = new CreatedQueryLogicCacheBean();
         ReflectionTestUtils.setField(bean, "cache", cache);
         ReflectionTestUtils.setField(bean, "qlCache", qlCache);
-
+        
         String expectedResult = query.toString();
         
         RunningQueries output = bean.getRunningQueries();

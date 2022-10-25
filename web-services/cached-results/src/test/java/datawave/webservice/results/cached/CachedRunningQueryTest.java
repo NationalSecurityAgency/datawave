@@ -1,17 +1,19 @@
 package datawave.webservice.results.cached;
 
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cachedresults.CacheableQueryRowImpl;
 import org.apache.commons.lang.StringUtils;
-import org.easymock.EasyMockExtension;
-import org.easymock.Mock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,22 +22,21 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-@Disabled
-@ExtendWith(EasyMockExtension.class)
+@ExtendWith(MockitoExtension.class)
 public class CachedRunningQueryTest {
     
     @Mock
+    QueryImpl query;
+    
     CachedRunningQuery crq;
+    
     private String fixedColumns = StringUtils.join(CacheableQueryRowImpl.getFixedColumnSet(), ",");
     
     @BeforeEach
     public void setup() throws Exception {
-        // crq = EasyMock.partialMockBuilder(CachedRunningQuery.class).addMockedMethod("initialize").createMock();
-        Class<CachedRunningQuery> clazz = CachedRunningQuery.class;
-        Method method = clazz.getDeclaredMethod("initialize");
-        method.setAccessible(true);
-        method.invoke(crq);
+        crq = new CachedRunningQuery(query, null, "", "", "", "", 0, "", null, null, new QueryMetricFactoryImpl());
         ReflectionTestUtils.setField(crq, "variableFields", new TreeSet<>());
+        
         List<String> columns = new ArrayList<>();
         columns.add("foo.bar");
         columns.add("hey.there");
@@ -209,86 +210,90 @@ public class CachedRunningQueryTest {
                         sql);
     }
     
-    //
-    // @Test
-    // public void testUpdate() throws Exception {
-    //
-    // String sql = crq.generateSql("v", "foo.bar", null, null, null, "me", null);
-    // Assertions.assertEquals("SELECT " + fixedColumns + ",`foo.bar` FROM v WHERE _user_ = 'me'", sql);
-    //
-    // PowerMock.field(CachedRunningQuery.class, "view").set(crq, "v");
-    // PowerMock.field(CachedRunningQuery.class, "fields").set(crq, "foo.bar");
-    // EasyMock.replay();
-    //
-    // Assertions.assertTrue(crq.update(null, null, null, "`foo.bar` DESC", null));
-    // EasyMock.verify();
-    //
-    // String sql2 = crq.generateSql("v", "foo.bar", null, null, "`foo.bar` DESC", "me", null);
-    // Assertions.assertEquals("SELECT " + fixedColumns + ",`foo.bar` FROM v WHERE _user_ = 'me' ORDER BY `foo.bar` DESC", sql2);
-    // }
-    //
-    // @Test
-    // public void testIsFunction() throws Exception {
-    // Object result = Whitebox.invokeMethod(crq, "isFunction", "MIN(foo.bar)");
-    // Assertions.assertTrue((Boolean) result);
-    // result = Whitebox.invokeMethod(crq, "isFunction", "COUNT(foo.bar)");
-    // Assertions.assertTrue((Boolean) result);
-    // result = Whitebox.invokeMethod(crq, "isFunction", "MAX(foo.bar)");
-    // Assertions.assertTrue((Boolean) result);
-    // result = Whitebox.invokeMethod(crq, "isFunction", "SUM(foo.bar)");
-    // Assertions.assertTrue((Boolean) result);
-    // result = Whitebox.invokeMethod(crq, "isFunction", "MIN(STR_TO_DATE(foo.bar, '%Y'))");
-    // Assertions.assertTrue((Boolean) result);
-    // result = Whitebox.invokeMethod(crq, "isFunction", "MAX(STR_TO_DATE(foo.bar, '%Y'))");
-    // Assertions.assertTrue((Boolean) result);
-    // result = Whitebox.invokeMethod(crq, "isFunction", "foo.bar");
-    // Assertions.assertFalse((Boolean) result);
-    // result = Whitebox.invokeMethod(crq, "isFunction", "INET_ATON('1.2.3.4')");
-    // Assertions.assertTrue((Boolean) result);
-    // result = Whitebox.invokeMethod(crq, "isFunction", "INET_NTOA(10000)");
-    // Assertions.assertTrue((Boolean) result);
-    // result = Whitebox.invokeMethod(crq, "isFunction", "CONVERT('5',UNSIGNED)");
-    // Assertions.assertTrue((Boolean) result);
-    // result = Whitebox.invokeMethod(crq, "isFunction", "STR_TO_DATE(foo.bar, '%Y')");
-    // Assertions.assertTrue((Boolean) result);
-    // }
-    //
-    // @Test
-    // public void testQuoteField() throws Exception {
-    // Object result = Whitebox.invokeMethod(crq, "quoteField", "foo.bar");
-    // Assertions.assertEquals("`foo.bar`", result.toString());
-    // result = Whitebox.invokeMethod(crq, "quoteField", "MIN(foo.bar)");
-    // Assertions.assertEquals("MIN(`foo.bar`)", result.toString());
-    // result = Whitebox.invokeMethod(crq, "quoteField", "MAX(foo.bar)");
-    // Assertions.assertEquals("MAX(`foo.bar`)", result.toString());
-    // result = Whitebox.invokeMethod(crq, "quoteField", "SUM(foo.bar)");
-    // Assertions.assertEquals("SUM(`foo.bar`)", result.toString());
-    // result = Whitebox.invokeMethod(crq, "quoteField", "COUNT(foo.bar)");
-    // Assertions.assertEquals("COUNT(`foo.bar`)", result.toString());
-    // }
-    //
-    // @Test(expected = IllegalArgumentException.class)
-    // public void testInvalidFunction() throws Exception {
-    // Whitebox.invokeMethod(crq, "isFunction", "SIN(foo.bar)");
-    // }
-    //
-    // @Test
-    // public void testDSGroupByQuery() throws Exception {
-    //
-    // List<String> columns = new ArrayList<>();
-    // columns.add("TIME.0");
-    // columns.add("TIME.0");
-    // PowerMock.field(CachedRunningQuery.class, "viewColumnNames").set(crq, columns);
-    // // Add the fields we will be testing with
-    // crq.setVariableFields(new TreeSet<>(columns));
-    //
-    // String sql = crq.generateSql("v", "*,COUNT(*) AS GROUP_TOTAL, MIN(STR_TO_DATE(`TIME.0`, '%a %b %e %H:%i:%s GMT %Y')) as FIRST_SEEN,"
-    // + "MAX(STR_TO_DATE(TIME.0, '%a %b %e %H:%i:%s GMT %Y')) AS LAST_SEEN", null, "GROUP_FIELD.10.5.0", null, "me", null);
-    // Assertions.assertEquals("SELECT *,COUNT(*) AS GROUP_TOTAL,MIN(STR_TO_DATE(`TIME.0`, '%a %b %e %H:%i:%s GMT %Y')) as FIRST_SEEN,"
-    // + "MAX(STR_TO_DATE(`TIME.0`, '%a %b %e %H:%i:%s GMT %Y')) AS LAST_SEEN FROM v WHERE _user_ = 'me'" + " GROUP BY `GROUP_FIELD.10.5.0`",
-    // sql);
-    //
-    // }
+    @Test
+    public void testUpdate() throws Exception {
+        
+        String sql = crq.generateSql("v", "foo.bar", null, null, null, "me", null);
+        Assertions.assertEquals("SELECT " + fixedColumns + ",`foo.bar` FROM v WHERE _user_ = 'me'", sql);
+        
+        ReflectionTestUtils.setField(crq, "view", "v");
+        ReflectionTestUtils.setField(crq, "fields", "foo.bar");
+        
+        Assertions.assertTrue(crq.update(null, null, null, "`foo.bar` DESC", null));
+        
+        String sql2 = crq.generateSql("v", "foo.bar", null, null, "`foo.bar` DESC", "me", null);
+        Assertions.assertEquals("SELECT " + fixedColumns + ",`foo.bar` FROM v WHERE _user_ = 'me' ORDER BY `foo.bar` DESC", sql2);
+    }
+    
+    @Test
+    public void testIsFunction() throws Exception {
+        Method m = CachedRunningQuery.class.getDeclaredMethod("isFunction", String.class);
+        m.setAccessible(true);
+        Object result = m.invoke(crq, "MIN(foo.bar)");
+        Assertions.assertTrue((Boolean) result);
+        result = m.invoke(crq, "COUNT(foo.bar)");
+        Assertions.assertTrue((Boolean) result);
+        result = m.invoke(crq, "MAX(foo.bar)");
+        Assertions.assertTrue((Boolean) result);
+        result = m.invoke(crq, "SUM(foo.bar)");
+        Assertions.assertTrue((Boolean) result);
+        result = m.invoke(crq, "MIN(STR_TO_DATE(foo.bar, '%Y'))");
+        Assertions.assertTrue((Boolean) result);
+        result = m.invoke(crq, "MAX(STR_TO_DATE(foo.bar, '%Y'))");
+        Assertions.assertTrue((Boolean) result);
+        result = m.invoke(crq, "foo.bar");
+        Assertions.assertFalse((Boolean) result);
+        result = m.invoke(crq, "INET_ATON('1.2.3.4')");
+        Assertions.assertTrue((Boolean) result);
+        result = m.invoke(crq, "INET_NTOA(10000)");
+        Assertions.assertTrue((Boolean) result);
+        result = m.invoke(crq, "CONVERT('5',UNSIGNED)");
+        Assertions.assertTrue((Boolean) result);
+        result = m.invoke(crq, "STR_TO_DATE(foo.bar, '%Y')");
+        Assertions.assertTrue((Boolean) result);
+    }
+    
+    @Test
+    public void testQuoteField() throws Exception {
+        Method m = CachedRunningQuery.class.getDeclaredMethod("quoteField", String.class);
+        m.setAccessible(true);
+        Object result = m.invoke(crq, "foo.bar");
+        Assertions.assertEquals("`foo.bar`", result.toString());
+        result = m.invoke(crq, "MIN(foo.bar)");
+        Assertions.assertEquals("MIN(`foo.bar`)", result.toString());
+        result = m.invoke(crq, "MAX(foo.bar)");
+        Assertions.assertEquals("MAX(`foo.bar`)", result.toString());
+        result = m.invoke(crq, "SUM(foo.bar)");
+        Assertions.assertEquals("SUM(`foo.bar`)", result.toString());
+        result = m.invoke(crq, "COUNT(foo.bar)");
+        Assertions.assertEquals("COUNT(`foo.bar`)", result.toString());
+    }
+    
+    @Test
+    public void testInvalidFunction() throws Exception {
+        Method m = CachedRunningQuery.class.getDeclaredMethod("isFunction", String.class);
+        m.setAccessible(true);
+        InvocationTargetException e = Assertions.assertThrows(InvocationTargetException.class, () -> m.invoke(crq, "SIN(foo.bar)"));
+        Assertions.assertTrue(e.getCause() instanceof IllegalArgumentException);
+    }
+    
+    @Test
+    public void testDSGroupByQuery() throws Exception {
+        
+        List<String> columns = new ArrayList<>();
+        columns.add("TIME.0");
+        columns.add("TIME.0");
+        ReflectionTestUtils.setField(crq, "viewColumnNames", columns);
+        // Add the fields we will be testing with
+        crq.setVariableFields(new TreeSet<>(columns));
+        
+        String sql = crq.generateSql("v", "*,COUNT(*) AS GROUP_TOTAL, MIN(STR_TO_DATE(`TIME.0`, '%a %b %e %H:%i:%s GMT %Y')) as FIRST_SEEN,"
+                        + "MAX(STR_TO_DATE(TIME.0, '%a %b %e %H:%i:%s GMT %Y')) AS LAST_SEEN", null, "GROUP_FIELD.10.5.0", null, "me", null);
+        Assertions.assertEquals("SELECT *,COUNT(*) AS GROUP_TOTAL,MIN(STR_TO_DATE(`TIME.0`, '%a %b %e %H:%i:%s GMT %Y')) as FIRST_SEEN,"
+                        + "MAX(STR_TO_DATE(`TIME.0`, '%a %b %e %H:%i:%s GMT %Y')) AS LAST_SEEN FROM v WHERE _user_ = 'me'" + " GROUP BY `GROUP_FIELD.10.5.0`",
+                        sql);
+        
+    }
     
     @Test
     public void testSplitStringOnCommaButNotInParentheses() throws IOException {
