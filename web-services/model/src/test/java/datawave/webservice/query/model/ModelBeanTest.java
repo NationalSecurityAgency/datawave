@@ -143,7 +143,7 @@ public class ModelBeanTest {
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         PowerMock.replayAll();
         
-        bean.importModel(MODEL_ONE, (String) null);
+        bean.importModel(MODEL_ONE, (String) null, false);
         PowerMock.verifyAll();
     }
     
@@ -164,7 +164,7 @@ public class ModelBeanTest {
         EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
         PowerMock.replayAll();
         
-        bean.importModel(MODEL_ONE, (String) null);
+        bean.importModel(MODEL_ONE, (String) null, false);
         PowerMock.verifyAll();
         PowerMock.resetAll();
         
@@ -182,7 +182,7 @@ public class ModelBeanTest {
         EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
         PowerMock.replayAll();
         
-        bean.importModel(MODEL_TWO, (String) null);
+        bean.importModel(MODEL_TWO, (String) null, false);
         
         PowerMock.verifyAll();
         
@@ -281,7 +281,7 @@ public class ModelBeanTest {
         EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
         PowerMock.replayAll();
         
-        bean.importModel(MODEL_THREE_GOOD, (String) null);
+        bean.importModel(MODEL_THREE_GOOD, (String) null, false);
         
         PowerMock.verifyAll();
         
@@ -294,7 +294,7 @@ public class ModelBeanTest {
         connectionFactory.returnConnection(connector);
         PowerMock.replayAll();
         
-        bean.replaceModel(MODEL_THREE_BAD, TableName.METADATA);
+        bean.replaceModel(MODEL_THREE_BAD, TableName.METADATA, true);
         
         PowerMock.resetAll();
         
@@ -342,7 +342,7 @@ public class ModelBeanTest {
         EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
         PowerMock.replayAll();
         
-        bean.importModel(MODEL_THREE_BAD, (String) null);
+        bean.importModel(MODEL_THREE_BAD, (String) null, false);
         
         PowerMock.verifyAll();
         
@@ -401,7 +401,7 @@ public class ModelBeanTest {
         
         PowerMock.replayAll();
         
-        bean.replaceModel(MODEL_THREE_GOOD, TableName.METADATA);
+        bean.replaceModel(MODEL_THREE_GOOD, TableName.METADATA, true);
         
         PowerMock.verifyAll();
         

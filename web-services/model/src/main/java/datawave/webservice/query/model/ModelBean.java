@@ -204,7 +204,8 @@ public class ModelBean {
     @GZIP
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors(ResponseInterceptor.class)
-    public VoidResponse importModel(datawave.webservice.model.Model model, @QueryParam("modelTableName") String modelTableName) {
+    public VoidResponse importModel(datawave.webservice.model.Model model, @QueryParam("modelTableName") String modelTableName,
+                    @QueryParam("validateModel") boolean validate) {
         
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
@@ -215,11 +216,17 @@ public class ModelBean {
         }
         VoidResponse response = new VoidResponse();
         
-        ModelList models = listModelNames(modelTableName);
-        if (models.getNames().contains(model.getName()))
-            throw new PreConditionFailedException(null, response);
+        if (validate) {
+            response = validateModel(model, modelTableName);
+        }
         
-        insertMapping(model, modelTableName);
+        if (null == response.getExceptions()) {
+            ModelList models = listModelNames(modelTableName);
+            if (models.getNames().contains(model.getName()))
+                throw new PreConditionFailedException(null, response);
+            
+            insertMapping(model, modelTableName);
+        }
         
         return response;
     }
@@ -305,7 +312,7 @@ public class ModelBean {
         datawave.webservice.model.Model model = getModel(name, modelTableName);
         // Set the new name
         model.setName(newName);
-        importModel(model, modelTableName);
+        importModel(model, modelTableName, false);
         return response;
     }
     
@@ -369,7 +376,8 @@ public class ModelBean {
     @GZIP
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors(ResponseInterceptor.class)
-    public VoidResponse replaceModel(datawave.webservice.model.Model model, @QueryParam("modelTableName") String modelTableName) {
+    public VoidResponse replaceModel(datawave.webservice.model.Model model, @QueryParam("modelTableName") String modelTableName,
+                    @QueryParam("validateModel") boolean validate) {
         
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
@@ -379,10 +387,13 @@ public class ModelBean {
             log.debug("modelTableName: " + (null == modelTableName ? "" : modelTableName));
         }
         
-        VoidResponse response = validateModel(model, modelTableName);
+        VoidResponse response = new VoidResponse();
+        
+        if (validate) {
+            response = validateModel(model, modelTableName);
+        }
         
         if (null == response.getExceptions()) {
-            // TODO: check if models are different first?
             ModelList models = listModelNames(modelTableName);
             if (models.getNames().contains(model.getName())) {
                 deleteModel(model.getName(), modelTableName, false);
