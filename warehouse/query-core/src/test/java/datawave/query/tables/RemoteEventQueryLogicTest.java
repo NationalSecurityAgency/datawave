@@ -48,8 +48,11 @@ public class RemoteEventQueryLogicTest {
         response2.setEvents(Collections.singletonList(event1));
         response2.setReturnedEvents(1L);
         
+        DefaultEventQueryResponse response3 = new DefaultEventQueryResponse();
+        response3.setReturnedEvents(0L);
+        
         // create a remote event query logic that has our own remote query service behind it
-        logic.setRemoteQueryService(new TestRemoteQueryService(createResponse, response1, response2));
+        logic.setRemoteQueryService(new TestRemoteQueryService(createResponse, response1, response2, response3));
         logic.setRemoteQueryLogic("TestQuery");
     }
     
@@ -69,11 +72,13 @@ public class RemoteEventQueryLogicTest {
         GenericResponse<String> createResponse;
         LinkedList<BaseQueryResponse> nextResponses;
         
-        public TestRemoteQueryService(GenericResponse<String> createResponse, BaseQueryResponse response1, BaseQueryResponse response2) {
+        public TestRemoteQueryService(GenericResponse<String> createResponse, BaseQueryResponse response1, BaseQueryResponse response2,
+                        BaseQueryResponse response3) {
             this.createResponse = createResponse;
             this.nextResponses = new LinkedList<>();
             nextResponses.add(response1);
             nextResponses.add(response2);
+            nextResponses.add(response3);
         }
         
         @Override
