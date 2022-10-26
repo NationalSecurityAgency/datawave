@@ -529,9 +529,9 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
     private boolean skipExcessiveNumberOfDescendants(final String childSuffix, final Matcher matcher, final Text row, final String fiRootValue, final Key endKey)
                     throws IOException {
         boolean skipped;
-        if (matcher.find() && (matcher.start() < childSuffix.length())) {
+        if (matcher.find(0) && (matcher.start() < childSuffix.length())) {
             // Get the base matching child suffix
-            final String baseMatch = childSuffix.substring(0, matcher.start());
+            final String baseMatch = childSuffix.substring(matcher.start(), matcher.end());
             
             // create the skipping range
             final Key skipStartKey = new Key(row, this.indexCf, new Text(fiRootValue + baseMatch + '0'));
