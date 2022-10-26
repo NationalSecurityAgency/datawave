@@ -2,19 +2,19 @@
 
 source ~/.bashrc
 
-# If DOCKER_HOST is defined update Accumulo and Hadoop bind hosts
-if [ "${DOCKER_HOST}" != "localhost" ] ; then
+# If DW_CONTAINER_HOST is defined update Accumulo and Hadoop bind hosts
+if [ ! -z "${DW_CONTAINER_HOST}" ] && [ "${DW_CONTAINER_HOST}" != "localhost" ] ; then
    # Update Accumulo bind hosts
-   sed -i'' -e "s/localhost/${DOCKER_HOST}/g" ${ACCUMULO_HOME}/conf/gc
-   sed -i'' -e "s/localhost/${DOCKER_HOST}/g" ${ACCUMULO_HOME}/conf/masters
-   sed -i'' -e "s/localhost/${DOCKER_HOST}/g" ${ACCUMULO_HOME}/conf/monitor
-   sed -i'' -e "s/localhost/${DOCKER_HOST}/g" ${ACCUMULO_HOME}/conf/slaves
-   sed -i'' -e "s/localhost/${DOCKER_HOST}/g" ${ACCUMULO_HOME}/conf/tracers
+   sed -i'' -e "s/localhost/${DW_CONTAINER_HOST}/g" ${ACCUMULO_HOME}/conf/gc
+   sed -i'' -e "s/localhost/${DW_CONTAINER_HOST}/g" ${ACCUMULO_HOME}/conf/masters
+   sed -i'' -e "s/localhost/${DW_CONTAINER_HOST}/g" ${ACCUMULO_HOME}/conf/monitor
+   sed -i'' -e "s/localhost/${DW_CONTAINER_HOST}/g" ${ACCUMULO_HOME}/conf/slaves
+   sed -i'' -e "s/localhost/${DW_CONTAINER_HOST}/g" ${ACCUMULO_HOME}/conf/tracers
 
    # Create hadoop client configs
    mkdir -p ${HADOOP_HOME}/client/conf
    cp -r ${HADOOP_CONF_DIR}/*-site.xml ${HADOOP_HOME}/client/conf
-   sed -i'' -e "s/${DW_BIND_HOST}/${DOCKER_HOST}/g" ${HADOOP_HOME}/client/conf/*-site.xml
+   sed -i'' -e "s/${DW_BIND_HOST}/${DW_CONTAINER_HOST}/g" ${HADOOP_HOME}/client/conf/*-site.xml
 fi
 
 START_AS_DAEMON=true
