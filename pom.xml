@@ -17,7 +17,6 @@
     <modules>
         <module>core</module>
         <module>common-test</module>
-        <module>microservices</module>
         <module>web-services</module>
         <module>warehouse</module>
     </modules>
@@ -1756,6 +1755,17 @@
             </activation>
             <modules>
                 <module>contrib/datawave-quickstart/docker</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>microservices</id>
+            <activation>
+                <property>
+                    <name>!skipMicroservices</name>
+                </property>
+            </activation>
+            <modules>
+                <module>microservices</module>
             </modules>
         </profile>
         <profile>

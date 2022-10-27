@@ -159,14 +159,14 @@ Build the Datawave Quickstart docker image using the following build command:
 mvn -Pcompose,docker,quickstart -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
 
 # To build just the quickstart docker image, run this
-mvn -Pcompose -P-microservices -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
+mvn -Pcompose -DskipServices -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
 ```
 Note that the quickstart-docker property is set.  This property is a shortcut which activates the `docker` and `quickstart` profiles without activating the `docker` profile for the microservices.
 
 For this command, the build profile is set to `compose`.  This profile contains all of the properties needed to make the quickstart work as part
 of the docker compose deployment.  The use of any other build profile with docker compose is unsupported.
 
-This command also disabled the `microservices` profile.  This is an optional setting which will skip the microservice builds entirely, saving you some time if you only want to build/rebuild the Datawave Quickstart.  
+This command also prevents the microservice services from building with `-DskipServices`.  This is an optional setting which will skip the microservice builds entirely, saving you some time if you only want to build/rebuild the Datawave Quickstart.  
 
 If you ever need to rebuild the Datawave quickstart docker image, but don't want to ingest the sample data you can add `-DskipIngest` to 
 your build command.  This can save you some time, since the docker compose configuration stores ingested data in a persistent volume.
