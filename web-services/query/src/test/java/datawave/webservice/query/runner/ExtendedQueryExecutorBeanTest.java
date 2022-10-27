@@ -65,7 +65,6 @@ import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -110,6 +109,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.AdditionalMatchers.geq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doThrow;
@@ -433,7 +435,6 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.persister.adminFindById(queryId.toString())).thenReturn(null);
         
         // Run the test
-        EasyMock.replay();
         QueryExecutorBean subject = new QueryExecutorBean();
         ReflectionTestUtils.setField(subject, "ctx", context);
         ReflectionTestUtils.setField(subject, "qlCache", qlCache);
@@ -466,7 +467,6 @@ public class ExtendedQueryExecutorBeanTest {
         this.connectionFactory.returnConnection(this.connector);
         
         // Run the test
-        EasyMock.replay();
         QueryExecutorBean subject = new QueryExecutorBean();
         ReflectionTestUtils.setField(subject, "ctx", context);
         ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
@@ -520,8 +520,8 @@ public class ExtendedQueryExecutorBeanTest {
         
     }
     
-    @Disabled
     @SuppressWarnings({"unchecked", "rawtypes"})
+    @Disabled
     @Test
     public void testCancel_RunningQueryFoundInCache() throws Exception {
         try (MockedStatic<Trace> traceMock = Mockito.mockStatic(Trace.class)) {
@@ -549,6 +549,10 @@ public class ExtendedQueryExecutorBeanTest {
             when(this.query.getId()).thenReturn(queryId);
             cache.remove(queryId.toString());
             when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
+            List<Query> qId = new ArrayList<Query>();
+            qId.add(query);
+            when(this.persister.findById(anyString())).thenReturn(qId);
+            
             this.span.data(eq("closedAt"), isA(String.class));
             this.span.stop();
             
@@ -561,6 +565,8 @@ public class ExtendedQueryExecutorBeanTest {
             ReflectionTestUtils.setField(subject, "queryCache", cache);
             ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
             ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+            ReflectionTestUtils.setField(subject, "persister", persister);
+            ReflectionTestUtils.setField(subject, "queryLogicFactory", queryLogicFactory);
             ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
             ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
             VoidResponse result1 = subject.cancel(queryId.toString());
@@ -2356,7 +2362,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic1.getRequiredQueryParameters()).thenReturn(new TreeSet<>());
         when(this.queryLogic1.getExampleQueries()).thenReturn(new TreeSet<>());
         when(this.queryLogic1.getRoleManager()).thenReturn(roleManager);
-        when(this.queryLogic1.getResponseClass(EasyMock.anyObject(Query.class))).thenThrow(ILLEGAL_STATE_EXCEPTION);
+        when(this.queryLogic1.getResponseClass(any(Query.class))).thenThrow(ILLEGAL_STATE_EXCEPTION);
         when(this.queryLogic2.getLogicName()).thenReturn("logic2"); // Begin 1st loop
         when(this.queryLogic2.getAuditType(null)).thenReturn(Auditor.AuditType.LOCALONLY);
         when(this.queryLogic2.getLogicDescription()).thenReturn("description2");
@@ -2365,7 +2371,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic2.getExampleQueries()).thenReturn(new TreeSet<>());
         RoleManager roleManager2 = new DatawaveRoleManager(Arrays.asList("ROLE_1", "ROLE_2"));
         when(this.queryLogic2.getRoleManager()).thenReturn(roleManager2);
-        when(this.queryLogic2.getResponseClass(EasyMock.anyObject(Query.class))).thenReturn(this.baseResponse.getClass().getCanonicalName());
+        when(this.queryLogic2.getResponseClass(any(Query.class))).thenReturn(this.baseResponse.getClass().getCanonicalName());
         Map<String,String> parsers = new HashMap<>();
         parsers.put("PARSER1", null);
         when(this.queryLogic2.getQuerySyntaxParsers()).thenReturn((Map) parsers);
@@ -3010,11 +3016,10 @@ public class ExtendedQueryExecutorBeanTest {
         assertNotNull(result1, "Expected a non-null response performing an admin close");
     }
     
-    @Disabled
     @SuppressWarnings({"rawtypes", "unchecked"})
+    @Disabled
     @Test
     public void testExecute_HappyPath() throws Exception {
-        // Set local test input
         String queryLogicName = "queryLogicName";
         String query = "query";
         String queryName = "queryName";
@@ -3055,22 +3060,8 @@ public class ExtendedQueryExecutorBeanTest {
         params.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         params.putSingle(QueryParameters.QUERY_PARAMS, parameters);
         
+        // QueryExecutorBean subject = PowerMock.createPartialMock(QueryExecutorBean.class, "createQuery");
         QueryExecutorBean subject = spy(QueryExecutorBean.class);
-        
-        // Set expectations of the create logic
-        when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-        when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
-        when(this.httpHeaders.getAcceptableMediaTypes()).thenReturn(mediaTypes);
-        when(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).thenReturn((QueryLogic) this.queryLogic1);
-        when(this.queryLogic1.getEnrichedTransformer(isA(Query.class))).thenReturn(this.transformer);
-        when(this.transformer.createResponse(isA(ResultsPage.class))).thenReturn(this.baseResponse);
-        when(subject.createQuery(queryLogicName, params, httpHeaders)).thenReturn(createResponse);
-        when(this.cache.get(eq(queryId.toString()))).thenReturn(this.runningQuery);
-        when(this.runningQuery.getMetric()).thenReturn(this.queryMetric);
-        this.queryMetric.setCreateCallTime(EasyMock.geq(0L));
-        // return streaming response
-        
-        // Run the test
         
         ReflectionTestUtils.setField(subject, "ctx", context);
         ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
@@ -3084,7 +3075,30 @@ public class ExtendedQueryExecutorBeanTest {
         ReflectionTestUtils.setField(subject, "auditor", auditor);
         ReflectionTestUtils.setField(subject, "metrics", metrics);
         ReflectionTestUtils.setField(subject, "traceInfos", traceInfos);
+        ReflectionTestUtils.setField(subject, "marking", new ColumnVisibilitySecurityMarking());
+        ReflectionTestUtils.setField(subject, "qp", new QueryParametersImpl());
         ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        
+        // Set expectations of the create logic
+        when(this.context.getCallerPrincipal()).thenReturn(this.principal);
+        when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
+        when(this.principal.getPrimaryUser()).thenReturn(dwUser);
+        when(this.dwUser.getAuths()).thenReturn(Collections.singleton(queryAuthorizations));
+        when(this.principal.getProxiedUsers()).thenReturn(Collections.singletonList(dwUser));
+        when(this.httpHeaders.getAcceptableMediaTypes()).thenReturn(mediaTypes);
+        when(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).thenReturn((QueryLogic) this.queryLogic1);
+        when(this.queryLogic1.getEnrichedTransformer(isA(Query.class))).thenReturn(this.transformer);
+        when(this.transformer.createResponse(isA(ResultsPage.class))).thenReturn(this.baseResponse);
+        // when(subject.createQuery(queryLogicName, params, httpHeaders)).thenReturn(createResponse);
+        when(this.cache.get(eq(queryId.toString()))).thenReturn(this.runningQuery);
+        when(this.runningQuery.getMetric()).thenReturn(this.queryMetric);
+        this.queryMetric.setCreateCallTime(geq(0L));
+        
+        // when(this.principal.getPrimaryUser()).thenReturn(dwUser);
+        // return streaming response
+        
+        // Run the test
+        
         StreamingOutput result1 = subject.execute(queryLogicName, params, httpHeaders);
         
         // Verify results
@@ -3282,6 +3296,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.principal.getPrimaryUser()).thenReturn(dwUser);
         when(this.dwUser.getAuths()).thenReturn(Collections.singleton(queryAuthorizations));
         when(this.principal.getProxiedUsers()).thenReturn(Collections.singletonList(dwUser));
+        // when(this.principal.getPrimaryUser()).thenReturn(dwUser);
         // when(this.query.getOwner()).thenReturn(userSid);
         // when(this.query.getId()).thenReturn(queryId);
         // when(this.query.getQuery()).thenReturn(queryName);
