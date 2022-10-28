@@ -259,6 +259,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private final int PAGE_TIMEOUT_MIN = 1;
     private final int PAGE_TIMEOUT_MAX = QueryExpirationConfiguration.PAGE_TIMEOUT_MIN_DEFAULT;
     private final String UUID_REGEX_RULE = "[a-fA-F\\d-]+";
+    private final String INVALID_PAGESIZE = "page.size";
     
     @Inject
     private QueryParameters qp;
