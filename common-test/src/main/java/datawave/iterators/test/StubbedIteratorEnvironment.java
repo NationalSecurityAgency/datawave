@@ -1,5 +1,6 @@
-package datawave.iterators.filter.ageoff;
+package datawave.iterators.test;
 
+import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
@@ -11,7 +12,9 @@ import org.apache.accumulo.core.security.Authorizations;
 
 import java.io.IOException;
 
-// todo move to a shared test resource
+/**
+ * Provides a stub implementation of IteratorEnvironment that's methods can be overridden as needed within a unit test
+ */
 public class StubbedIteratorEnvironment implements IteratorEnvironment {
     @Override
     public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
@@ -30,22 +33,22 @@ public class StubbedIteratorEnvironment implements IteratorEnvironment {
     
     @Override
     public boolean isFullMajorCompaction() {
-        return false;
+        throw new UnsupportedOperationException();
     }
     
     @Override
     public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
-        
+        throw new UnsupportedOperationException();
     }
     
     @Override
     public Authorizations getAuthorizations() {
-        return null;
+        throw new UnsupportedOperationException();
     }
     
     @Override
     public IteratorEnvironment cloneWithSamplingEnabled() {
-        return null;
+        throw new SampleNotPresentException();
     }
     
     @Override
