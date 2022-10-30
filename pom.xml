@@ -1738,6 +1738,14 @@
                                     <additionalJOption>-J-Xmx768m</additionalJOption>
                                     <tags>
                                         <tag>
+                                            <name>XmlSchema</name>
+                                            <placement>X</placement>
+                                        </tag>
+                                        <tag>
+                                            <name>XmlNs</name>
+                                            <placement>X</placement>
+                                        </tag>
+                                        <tag>
                                             <name>HTTP</name>
                                             <placement>m</placement>
                                             <head>HTTP Return Codes</head>
