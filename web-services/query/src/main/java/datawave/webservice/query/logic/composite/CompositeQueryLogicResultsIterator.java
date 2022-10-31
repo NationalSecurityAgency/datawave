@@ -1,5 +1,6 @@
 package datawave.webservice.query.logic.composite;
 
+import com.google.common.base.Throwables;
 import org.apache.log4j.Logger;
 
 import java.util.Iterator;
@@ -26,7 +27,7 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
     public boolean hasNext() {
         synchronized (lock) {
             if (failure != null) {
-                throw new RuntimeException(failure);
+                Throwables.propagate(failure);
             }
             if (nextEntry != null)
                 return true;
@@ -35,7 +36,7 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
                     nextEntry = results.poll(1, TimeUnit.SECONDS);
                 }
                 if (failure != null) {
-                    throw new RuntimeException(failure);
+                    Throwables.propagate(failure);
                 }
                 return true;
             } catch (InterruptedException e) {
@@ -50,7 +51,7 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
         
         synchronized (lock) {
             if (failure != null) {
-                throw new RuntimeException(failure);
+                Throwables.propagate(failure);
             }
             if (hasNext()) {
                 current = nextEntry;
