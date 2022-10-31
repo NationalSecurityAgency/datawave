@@ -424,7 +424,7 @@ public class QueryExecutorBean implements QueryExecutor {
             for (Parameter pm : QueryUtil.parseParameters(params)) {
                 if (!queryParameters.containsKey(pm.getParameterName())) {
                     if (pm.getParameterName().equals(INVALID_PAGESIZE)) {
-                        log.error("Invalid parameter: page.size");
+                        log.error("Invalid parameter found: " + INVALID_PAGESIZE + ". Please use the pagesize query option instead.");
                         GenericResponse<String> response = new GenericResponse<>();
                         throwBadRequest(DatawaveErrorCode.INVALID_PAGE_SIZE, response);
                     }
