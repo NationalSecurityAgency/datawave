@@ -502,7 +502,7 @@ public class CompositeQueryLogicTest {
         c.setAllMustInitialize(true);
         c.setQueryLogics(logics);
         
-        assertThrows(RuntimeException.class, () -> c.initialize((Connector) null, (Query) settings, Collections.singleton(auths)));
+        assertThrows(CompositeLogicException.class, () -> c.initialize((Connector) null, (Query) settings, Collections.singleton(auths)));
     }
     
     @Test
@@ -533,7 +533,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        assertThrows(RuntimeException.class, () -> c.initialize((Connector) null, (Query) settings, Collections.singleton(auths)));
+        assertThrows(CompositeLogicException.class, () -> c.initialize((Connector) null, (Query) settings, Collections.singleton(auths)));
     }
     
     @Test
@@ -565,7 +565,7 @@ public class CompositeQueryLogicTest {
         c.setAllMustInitialize(true);
         c.setQueryLogics(logics);
         
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(CompositeLogicException.class, () -> {
             c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
             
             c.getTransformer(settings);
@@ -721,7 +721,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
         List<Object> results = new ArrayList<>();
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(CompositeLogicException.class, () -> {
             while (iter.hasNext()) {
                 Object o = iter.next();
                 if (null == o)
