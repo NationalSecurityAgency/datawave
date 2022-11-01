@@ -33,6 +33,12 @@ public enum UniqueGranularity {
     TRUNCATE_TEMPORAL_TO_HOUR("HOUR", new DateTimeValueFormatter("yyyy-MM-dd'T'HH")),
     
     /**
+     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the month. Otherwise, the original
+     * value will be returned.
+     */
+    TRUNCATE_TEMPORAL_TO_MONTH("MONTH", new DateTimeValueFormatter("yyyy-MM")),
+    
+    /**
      * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the original
      * value will be returned.
      */
@@ -52,6 +58,8 @@ public enum UniqueGranularity {
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR;
             case "MINUTE":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE;
+            case "MONTH":
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH;
             default:
                 throw new IllegalArgumentException("No " + UniqueGranularity.class.getSimpleName() + " exists with the name " + name);
         }
