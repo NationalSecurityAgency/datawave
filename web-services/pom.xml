@@ -556,6 +556,8 @@
                         <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <runOrder>random</runOrder>
+                        <!-- exclude integraiton tests - they are run separately -->
+                        <excludedGroups>IntegrationTest</excludedGroups>
                         <!-- write temporary files to the target directory.
                              this is necessary to allow the HornetQ related tests to pass
                              when running on a multi user system where /tmp/server.lock could
@@ -638,7 +640,8 @@
                 <configuration combine.children="append">
                     <reuseForks>false</reuseForks>
                     <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
-                    <groups>datawave.common.test.integration.IntegrationTest</groups>
+                    <!-- Only execute tests with @Tag(IntegrationTest) -->
+                    <groups>IntegrationTest</groups>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>${runOrder}</runOrder>
                     <environmentVariables>
@@ -648,6 +651,13 @@
                         <HADOOP_CONF_DIR>/dev/null</HADOOP_CONF_DIR>
                     </environmentVariables>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.junit.jupiter</groupId>
+                        <artifactId>junit-jupiter-engine</artifactId>
+                        <version>${version.junit-jupiter}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>integration-test</id>

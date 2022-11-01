@@ -865,6 +865,12 @@
                 <artifactId>jgroups</artifactId>
                 <version>${version.jgroups}</version>
             </dependency>
+            <!-- common-test needs this to be compile scoped, not just test scope, so omit the scope -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${version.junit-jupiter}</version>
+            </dependency>
             <dependency>
                 <groupId>org.locationtech.geowave</groupId>
                 <artifactId>geowave-core-geotime</artifactId>
@@ -1033,12 +1039,6 @@
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-core</artifactId>
                 <version>${version.weld-test}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>${version.junit-jupiter}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1377,8 +1377,15 @@
                         <threadCountClasses>1</threadCountClasses>
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
-                        <groups>datawave.common.test.integration.IntegrationTest</groups>
+                        <groups>IntegrationTest</groups>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.junit.jupiter</groupId>
+                            <artifactId>junit-jupiter-engine</artifactId>
+                            <version>${version.junit-jupiter}</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <id>integration-test</id>
