@@ -401,7 +401,7 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     private void handleIncorrectPageSize() {
-        log.error("Invalid parameter found: " + INVALID_PAGESIZE + ". Please use the pagesize query option instead.");
+        log.error("Invalid parameter found: " + INVALID_PAGESIZE + ". Please use the standard 'pagesize' query option instead.");
         GenericResponse<String> response = new GenericResponse<>();
         throwBadRequest(DatawaveErrorCode.INVALID_PAGE_SIZE, response);
     }
