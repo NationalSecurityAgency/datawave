@@ -1197,6 +1197,7 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime + 999999);
         int pagesize = 10;
         int pageTimeout = -1;
+        String errorCode = DatawaveErrorCode.INVALID_PAGE_SIZE.getErrorCode();
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         boolean trace = false;
         String userName = "userName";
@@ -1219,7 +1220,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
-        // If the wrong page size parameter is added here, it should be dropped automatically by the implemented parameters.
+        // If the wrong page size parameter is added here, it should be dropped automatically by the QueryImpl
         queryParameters.putSingle("page.size", String.valueOf(pagesize));
         queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
         queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
@@ -1351,8 +1352,17 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
-        BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, queryParameters);
-        PowerMock.verifyAll();
+        Throwable result1 = null;
+        try {
+            subject.createQuery(queryLogicName, queryParameters);
+        } catch (Exception e) {
+            result1 = e.getCause();
+            assertTrue(e.getCause().toString().contains("datawave.webservice.query.exception.BadRequestQueryException: Invalid page size."));
+            assertEquals(e.getMessage(), "HTTP 400 Bad Request");
+            assertTrue(((BadRequestQueryException) result1).getErrorCode().equals(errorCode));
+        }
+        
+        assertNotNull("Expected a non-null response", result1);
         
         // Verify results
         assertNotNull("Expected a non-null response", result1);

@@ -400,6 +400,12 @@ public class QueryExecutorBean implements QueryExecutor {
         throw new BadRequestException(qe, response);
     }
     
+    private void handleIncorrectPageSize() {
+        log.error("Invalid parameter found: " + INVALID_PAGESIZE + ". Please use the pagesize query option instead.");
+        GenericResponse<String> response = new GenericResponse<>();
+        throwBadRequest(DatawaveErrorCode.INVALID_PAGE_SIZE, response);
+    }
+    
     /**
      * This method will provide some initial query validation for the define and create query calls.
      */
@@ -418,20 +424,24 @@ public class QueryExecutorBean implements QueryExecutor {
         
         // Pull "params" values into individual query parameters for validation on the query logic.
         // This supports the deprecated "params" value (both on the old and new API). Once we remove the deprecated
-        // parameter, this code block can go away.
+        // parameter, this code block can go away. In case users pass incorrect page size parameters, spit it back up.
         String params = queryParameters.getFirst(QueryParameters.QUERY_PARAMS);
         if (params != null) {
             for (Parameter pm : QueryUtil.parseParameters(params)) {
                 if (!queryParameters.containsKey(pm.getParameterName())) {
                     if (pm.getParameterName().equals(INVALID_PAGESIZE)) {
-                        log.error("Invalid parameter found: " + INVALID_PAGESIZE + ". Please use the pagesize query option instead.");
-                        GenericResponse<String> response = new GenericResponse<>();
-                        throwBadRequest(DatawaveErrorCode.INVALID_PAGE_SIZE, response);
+                        handleIncorrectPageSize();
                     }
                     queryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
                 }
             }
         }
+        
+        /* If the incorrect pagesize parameter comes through as a main parameter, return a similar error. */
+        if (queryParameters.containsKey(INVALID_PAGESIZE)) {
+            handleIncorrectPageSize();
+        }
+        
         queryParameters.remove(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ);
         queryParameters.remove(AuditParameters.USER_DN);
         queryParameters.remove(AuditParameters.QUERY_AUDIT_TYPE);
