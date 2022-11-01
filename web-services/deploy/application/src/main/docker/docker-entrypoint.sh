@@ -66,9 +66,5 @@ else
   eval "$@" "&"
   CMD_PID=${!}
 
-  WAIT_STATUS=128
-  while [ "$WAIT_STATUS" -ge 128 ]; do
-    wait $CMD_PID 2>/dev/null
-    WAIT_STATUS=$?
-  done
+  wait $CMD_PID 2>/dev/null
 fi
