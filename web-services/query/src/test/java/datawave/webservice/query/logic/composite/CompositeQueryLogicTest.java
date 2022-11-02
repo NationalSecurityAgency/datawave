@@ -38,8 +38,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -475,7 +473,7 @@ public class CompositeQueryLogicTest {
         Assert.assertEquals(1, c.getQueryLogics().size());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = CompositeLogicException.class)
     public void testInitializeNotOKWithFailure() throws Exception {
 
         List<QueryLogic<?>> logics = new ArrayList<>();
@@ -501,7 +499,7 @@ public class CompositeQueryLogicTest {
         c.initialize(null, settings, Collections.singleton(auths));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = CompositeLogicException.class)
     public void testInitializeAllFail() throws Exception {
 
         List<QueryLogic<?>> logics = new ArrayList<>();
@@ -532,7 +530,7 @@ public class CompositeQueryLogicTest {
         c.initialize(null, settings, Collections.singleton(auths));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = CompositeLogicException.class)
     public void testInitializeAllFail2() throws Exception {
 
         List<QueryLogic<?>> logics = new ArrayList<>();
@@ -675,7 +673,7 @@ public class CompositeQueryLogicTest {
         
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test(expected = CompositeLogicException.class)
     public void testQueryLogicWithNextFailure() throws Exception {
         List<QueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();

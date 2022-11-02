@@ -19,12 +19,12 @@ import org.apache.log4j.Logger;
 
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -36,14 +36,24 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
 
     private class QueryLogicHolder extends Thread {
         private GenericQueryConfiguration config;
+        private QueryLogic<?> logic;
         private TransformIterator transformIterator;
         private Query settings;
         private boolean started = false;
         private long maxResults;
         
-        public QueryLogicHolder(String logicName) {
+        public QueryLogicHolder(QueryLogic<?> logic) {
             this.setDaemon(true);
-            this.setName(Thread.currentThread().getName() + "-CompositeQueryLogic-" + logicName + "-" + UUID.randomUUID());
+            this.setLogic(logic);
+            this.setName(Thread.currentThread().getName() + "-CompositeQueryLogic-" + logic.getLogicName());
+        }
+
+        public QueryLogic<?> getLogic() {
+            return logic;
+        }
+
+        public void setLogic(QueryLogic<?> logic) {
+            this.logic = logic;
         }
         
         public GenericQueryConfiguration getConfig() {
@@ -112,6 +122,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                     resultCount++;
                 }
                 success = true;
+            } catch (Exception e) {
+                throw new CompositeLogicException("Failed to retrieve results", Collections.singletonList(new UnmodifiableMapEntry(logic, e)));
             } finally {
                 if (success) {
                     completionLatch.countDown();
@@ -160,6 +172,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         
         Iterator<QueryLogic<?>> itr = queryLogics.iterator();
         StringBuilder logicQueryStringBuilder = new StringBuilder("CompositeQueryLogic: ");
+        List<Entry<QueryLogic<?>,Exception>> exceptions = new ArrayList<>();
         while (itr.hasNext()) {
             QueryLogic<?> logic = itr.next();
             GenericQueryConfiguration config = null;
@@ -168,26 +181,30 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 logicQueryStringBuilder.append("(table=" + config.getTableName());
                 logicQueryStringBuilder.append(",query=" + config.getQueryString());
                 logicQueryStringBuilder.append(") ");
-                QueryLogicHolder holder = new QueryLogicHolder(logic.getClass().getSimpleName());
+                QueryLogicHolder holder = new QueryLogicHolder(logic);
                 holder.setConfig(config);
                 holder.setSettings(settings);
                 holder.setMaxResults(logic.getMaxResults());
                 logicState.add(new UnmodifiableMapEntry(logic, holder));
             } catch (Exception e) {
-                // if all must initialize successfully, then pass up an exception
-                if (allMustInitialize) {
-                    log.error("Failed to initialize " + logic.getClass().getName() + ", aborting", e);
-                    throw new RuntimeException(e);
-                }
-
-                log.warn("Failed to initialize " + logic.getClass().getName() + ", skipping", e);
+                exceptions.add(new UnmodifiableMapEntry(logic, e));
+                log.error("Failed to initialize " + logic.getClass().getName(), e);
                 itr.remove();
-                if (itr.hasNext() == false && logicState.isEmpty()) {
-                    // all logics have failed to initialize, rethrow the last exception caught
-                    throw new IllegalStateException("All logics have failed to initialize", e);
-                }
             }
         }
+
+        if (!exceptions.isEmpty()) {
+            if (logicState.isEmpty()) {
+                // all logics have failed to initialize, rethrow the last exception caught
+                throw new CompositeLogicException("All logics have failed to initialize", exceptions);
+            }
+
+            // if all must initialize successfully, then pass up an exception
+            if (allMustInitialize) {
+                throw new CompositeLogicException("Failed to initialize all composite child logics", exceptions);
+            }
+        }
+
         startLatch = new CountDownLatch(logicState.size());
         completionLatch = new CountDownLatch(logicState.size());
         this.results = new CompositeQueryLogicResults(Math.min(settings.getPagesize() * 2, 1000), completionLatch);
