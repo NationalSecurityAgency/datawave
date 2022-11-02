@@ -39,6 +39,24 @@ public enum UniqueGranularity {
     TRUNCATE_TEMPORAL_TO_MONTH("MONTH", new DateTimeValueFormatter("yyyy-MM")),
     
     /**
+     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the year. Otherwise, the original
+     * value will be returned.
+     */
+    TRUNCATE_TEMPORAL_TO_YEAR("YEAR", new DateTimeValueFormatter("yyyy")),
+    
+    /**
+     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the era. Otherwise, the original
+     * value will be returned.
+     */
+    TRUNCATE_TEMPORAL_TO_ERA("ERA", new DateTimeValueFormatter("G")),
+    
+    /**
+     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the day of the week in the month.
+     * Otherwise, the original value will be returned.
+     */
+    TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK_IN_MONTH("DAY_OF_WEEK_IN_MONTH", new DateTimeValueFormatter("F")),
+    
+    /**
      * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the original
      * value will be returned.
      */
@@ -60,6 +78,12 @@ public enum UniqueGranularity {
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE;
             case "MONTH":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH;
+            case "YEAR":
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_YEAR;
+            case "ERA":
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_ERA;
+            case "DAY_OF_WEEK_IN_MONTH":
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK_IN_MONTH;
             default:
                 throw new IllegalArgumentException("No " + UniqueGranularity.class.getSimpleName() + " exists with the name " + name);
         }

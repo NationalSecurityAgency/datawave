@@ -39,6 +39,22 @@ public class UniqueGranularityTest {
     }
     
     @Test
+    public void testTruncateTemporalToMonth() {
+        assertEquals("MONTH", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH.getName());
+        assertNull(UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH.transform(null));
+        assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH.transform("nonDateValue"));
+        assertEquals("2019-01", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH.transform("2019-01-15 12:30:15"));
+    }
+    
+    @Test
+    public void testTruncateTemporalToEra() {
+        assertEquals("ERA", UniqueGranularity.TRUNCATE_TEMPORAL_TO_ERA.getName());
+        assertNull(UniqueGranularity.TRUNCATE_TEMPORAL_TO_ERA.transform(null));
+        assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_ERA.transform("nonDateValue"));
+        assertEquals("AD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_ERA.transform("2019-01-15 12:30:15"));
+    }
+    
+    @Test
     public void testMinuteTruncation() {
         assertEquals("MINUTE", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.getName());
         assertNull(UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform(null));
