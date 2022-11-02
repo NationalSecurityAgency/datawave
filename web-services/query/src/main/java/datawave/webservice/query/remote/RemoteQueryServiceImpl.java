@@ -12,13 +12,15 @@ import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
 import org.apache.http.HttpEntity;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
+import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xbill.DNS.TextParseException;
 
 import javax.annotation.PostConstruct;
 import javax.ws.rs.core.HttpHeaders;
@@ -26,7 +28,10 @@ import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -42,6 +47,8 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     private static final String CLOSE = "%s/close";
     
     private static final String PLAN = "%s/plan";
+    
+    private static final String METRICS = "Metrics/id/%s";
     
     private ObjectReader voidResponseReader;
     
@@ -81,14 +88,13 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     }
     
     private GenericResponse<String> query(String endPoint, String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
-        final String postBody;
-        final StringEntity post;
+        final List<NameValuePair> nameValuePairs = new ArrayList<>();
+        queryParameters.entrySet().stream().forEach(e -> e.getValue().stream().forEach(v -> nameValuePairs.add(new BasicNameValuePair(e.getKey(), v))));
+        
+        final HttpEntity postBody;
         try {
-            URIBuilder uriBuilder = new URIBuilder();
-            queryParameters.entrySet().stream().forEach(e -> e.getValue().stream().forEach(v -> uriBuilder.addParameter(e.getKey(), v)));
-            postBody = uriBuilder.build().getQuery();
-            post = new StringEntity(postBody, ContentType.APPLICATION_FORM_URLENCODED);
-        } catch (URISyntaxException e) {
+            postBody = new UrlEncodedFormEntity(nameValuePairs, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
         
@@ -101,10 +107,9 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
                 suffix,
                 uriBuilder -> { },
                 httpPost -> {
-                    httpPost.setEntity(post);
+                    httpPost.setEntity(postBody);
                     httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
                     httpPost.setHeader(HttpHeaders.AUTHORIZATION, getBearer(callerObject));
-                    httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED);
                 },
                 entity -> {
                     return readResponse(entity, genericResponseReader);
@@ -144,6 +149,18 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         }, entity -> {
             return readResponse(entity, genericResponseReader);
         }, () -> suffix);
+    }
+    
+    @Override
+    public URI getQueryMetricsURI(String id) {
+        try {
+            URIBuilder builder = buildURI();
+            builder.setPath(serviceURI() + String.format(METRICS, id));
+            return builder.build();
+        } catch (TextParseException | URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        
     }
     
     public <T> T readResponse(HttpEntity entity, ObjectReader reader) throws IOException {

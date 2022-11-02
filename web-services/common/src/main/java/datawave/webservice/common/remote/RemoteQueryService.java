@@ -4,6 +4,7 @@ import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -58,4 +59,12 @@ public interface RemoteQueryService {
      * @return a generic response
      */
     public GenericResponse<String> planQuery(String id, Object callerObject);
+    
+    /**
+     * Get the URI for the query metrics
+     * 
+     * @param id
+     * @return the query metrics uri
+     */
+    public URI getQueryMetricsURI(String id);
 }
