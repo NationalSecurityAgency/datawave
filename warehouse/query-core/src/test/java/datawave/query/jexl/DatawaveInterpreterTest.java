@@ -5,6 +5,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.DatawaveJexlScript;
 import org.apache.commons.jexl2.ExpressionImpl;
@@ -14,9 +15,7 @@ import org.apache.commons.jexl2.JexlException;
 import org.apache.commons.jexl2.Script;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.easymock.EasyMock;
-import org.junit.Ignore;
 import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -285,7 +284,6 @@ public class DatawaveInterpreterTest {
         test(query, buildBoundedRangeContext(), false);
     }
     
-    // test filter:isNull
     @Test
     public void testFilterFunctionIsNull() {
         // single field, present
@@ -297,32 +295,25 @@ public class DatawaveInterpreterTest {
         test(query, buildDefaultContext(), true);
     }
     
-    @Ignore
     @Test
     public void testFilterFunctionMultiFieldedIsNull() {
-        // Once #1604 is complete these tests will evaluate correctly
-        
-        // multi field, all present
-        String query = "FOO == 'bar' && filter:isNull(FOO || FOO)";
+        // multi field, all present.
+        String query = "FOO == 'bar' && (filter:isNull(FOO) || filter:isNull(FOO))";
         test(query, buildDefaultContext(), false);
         
-        // multi field, (present || absent)
-        query = "FOO == 'bar' && filter:isNull(FOO || FOO)";
+        // multi field, last field absent.
+        query = "FOO == 'bar' && (filter:isNull(FOO) || filter:isNull(ABSENT))";
         test(query, buildDefaultContext(), true);
         
-        query = "FOO == 'bar' && filter:isNull(FOO || ABSENT)";
+        // multi field, first field absent.
+        query = "FOO == 'bar' && (filter:isNull(ABSENT) || filter:isNull(FOO))";
         test(query, buildDefaultContext(), true);
         
-        // multi field, (absent || present)
-        query = "FOO == 'bar' && filter:isNull(ABSENT || FOO)";
-        test(query, buildDefaultContext(), true);
-        
-        // multi field, all absent
-        query = "FOO == 'bar' && filter:isNull(ABSENT || ABSENT)";
+        // multi field, all absent.
+        query = "FOO == 'bar' && (filter:isNull(ABSENT) || filter:isNull(ABSENT))";
         test(query, buildDefaultContext(), true);
     }
     
-    // test filter:isNotNull and not(filter:isNull)
     @Test
     public void testFilterFunctionIsNotNull() {
         // single field, present
@@ -340,40 +331,22 @@ public class DatawaveInterpreterTest {
         test(query, buildDefaultContext(), false);
     }
     
-    @Ignore
     @Test
-    public void testFilterFunctionsMultiFieldedIsNotNull() {
-        // Once #1604 is complete these tests will evaluate correctly
-        
+    public void testFilterFunctionsMultiFieldedIsNotNull() throws InterruptedException {
         // multi field, all present
-        String query = "FOO == 'bar' && filter:isNotNull(FOO || FOO)";
-        test(query, buildDefaultContext(), true);
-        
-        query = "FOO == 'bar' && !(filter:isNull(FOO || FOO))";
+        String query = "FOO == 'bar' && (filter:isNotNull(FOO) || filter:isNotNull(FOO))";
         test(query, buildDefaultContext(), true);
         
         // multi field, (present || absent)
-        query = "FOO == 'bar' && filter:isNotNull(FOO || ABSENT)";
-        test(query, buildDefaultContext(), true);
-        
-        query = "FOO == 'bar' && !(filter:isNull(FOO || ABSENT))";
-        test(query, buildDefaultContext(), true);
-        
-        query = "FOO == 'bar' && ( !(filter:isNull(FOO)) || !(filter:isNull(ABSENT)) )";
+        query = "FOO == 'bar' && (filter:isNotNull(FOO) || filter:isNotNull(ABSENT))";
         test(query, buildDefaultContext(), true);
         
         // multi field, (absent || present)
-        query = "FOO == 'bar' && filter:isNotNull(ABSENT || FOO)";
-        test(query, buildDefaultContext(), false); // this is wrong. isNotNull expands into an AND so both values must be null.
-        
-        query = "FOO == 'bar' && !(filter:isNull(ABSENT || FOO))";
+        query = "FOO == 'bar' && (filter:isNotNull(ABSENT) || filter:isNotNull(FOO))";
         test(query, buildDefaultContext(), false); // this is wrong. isNotNull expands into an AND so both values must be null.
         
         // multi field, all absent
-        query = "FOO == 'bar' && filter:isNotNull(ABSENT || ABSENT)";
-        test(query, buildDefaultContext(), false);
-        
-        query = "FOO == 'bar' && !(filter:isNull(ABSENT || ABSENT))";
+        query = "FOO == 'bar' && (filter:isNotNull(ABSENT) || filter:isNotNull(ABSENT))";
         test(query, buildDefaultContext(), false);
     }
     
@@ -439,6 +412,10 @@ public class DatawaveInterpreterTest {
      */
     protected JexlContext buildDefaultContext() {
         //  @formatter:off
+
+        //The following property must be reset for proper testing of EvaluationPhaseFilterFunctions.isNotNull() logic.
+        EvaluationPhaseFilterFunctions.setMultiSetIsNotNullEmptySetFound(false);
+
         DatawaveJexlContext context = new DatawaveJexlContext();
 
         //  standard field value pair
