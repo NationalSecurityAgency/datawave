@@ -95,7 +95,6 @@ auth.token=${DW_ACCUMULO_PASSWORD}"
 DW_ACCUMULO_JVM_HEAPDUMP_DIR="${DW_CLOUD_DATA}/heapdumps"
 
 # shellcheck disable=SC2034
-export ACCUMULO_JAVA_OPTS="${ACCUMULO_JAVA_OPTS:-"-Dmasked.value.filter.classname=datawave.query.function.MaskedValueFilterInterface\$NoOp"}"
 
 export ZOOKEEPER_HOME="${DW_CLOUD_HOME}/${DW_ZOOKEEPER_SYMLINK}"
 export ACCUMULO_HOME="${DW_CLOUD_HOME}/${DW_ACCUMULO_SYMLINK}"

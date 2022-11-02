@@ -39,7 +39,7 @@ public class MaskedValueFilterFactory {
             // It is a VFSClassLoader that has the accumulo lib/ext jars set as its resources.
             // After setting the classloader, then set the config locations and refresh the context.
             context.setClassLoader(thisClassLoader);
-            context.setConfigLocation("classpath:/MaskingFilterContext.xml");
+            context.setConfigLocation("classpath*:/MaskingFilterContext.xml");
             context.refresh();
             instance = context.getBean("maskedValueFilter", MaskedValueFilterInterface.class);
         } catch (Throwable t) {
