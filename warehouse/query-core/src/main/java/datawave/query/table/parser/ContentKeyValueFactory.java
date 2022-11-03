@@ -1,10 +1,5 @@
 package datawave.query.table.parser;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.zip.GZIPInputStream;
-
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
@@ -13,7 +8,12 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.infinispan.commons.util.Base64;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Base64;
+import java.util.zip.GZIPInputStream;
 
 public class ContentKeyValueFactory {
     
@@ -44,7 +44,7 @@ public class ContentKeyValueFactory {
              * We are storing 'documents' in this column gzip'd and base64 encoded. Base64.decode detects and handles compression.
              */
             try {
-                c.setContents(Base64.decode(new String(value.get())));
+                c.setContents(Base64.getMimeDecoder().decode(new String(value.get())));
             } catch (IllegalStateException e) {
                 // Thrown when data is not Base64 encoded. Try GZIP
                 ByteArrayInputStream bais = new ByteArrayInputStream(value.get());
