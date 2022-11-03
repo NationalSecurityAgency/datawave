@@ -64,6 +64,10 @@ public enum UniqueGranularity {
     
     TRUNCATE_TEMPORAL_TO_WEEK_OF_MONTH("WEEK_OF_MONTH", new DateTimeValueFormatter("W")),
     
+    TRUNCATE_TEMPORAL_TO_SECOND("SECOND", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ss")),
+    
+    TRUNCATE_TEMPORAL_TO_MILLISECOND("MILLISECOND", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS")),
+    
     /**
      * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the original
      * value will be returned.
@@ -84,6 +88,10 @@ public enum UniqueGranularity {
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR;
             case "MINUTE":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE;
+            case "SECOND":
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND;
+            case "MILLISECOND":
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND;
             case "MONTH":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH;
             case "YEAR":
