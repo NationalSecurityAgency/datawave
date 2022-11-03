@@ -99,7 +99,6 @@ import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.omg.CosNaming.NamingContextPackage.NotFound;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
