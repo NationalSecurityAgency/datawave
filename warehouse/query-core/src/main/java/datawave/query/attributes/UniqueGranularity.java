@@ -62,7 +62,7 @@ public enum UniqueGranularity {
      */
     TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK("DAY_OF_WEEK", new DateTimeValueFormatter("EEE")),
     
-    TRUNCATE_TEMPORAL_TO_WEEK_OF_MONTH("DAY_OF_WEEK", new DateTimeValueFormatter("W")),
+    TRUNCATE_TEMPORAL_TO_WEEK_OF_MONTH("WEEK_OF_MONTH", new DateTimeValueFormatter("W")),
     
     /**
      * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the original
