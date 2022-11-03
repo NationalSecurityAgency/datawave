@@ -55,6 +55,30 @@ public class UniqueGranularityTest {
     }
     
     @Test
+    public void testTruncateTemporalToDOWIM() {
+        assertEquals("DAY_OF_WEEK_IN_MONTH", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK_IN_MONTH.getName());
+        assertNull(UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK_IN_MONTH.transform(null));
+        assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK_IN_MONTH.transform("nonDateValue"));
+        assertEquals("3", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK_IN_MONTH.transform("2019-01-15 12:30:15"));
+    }
+    
+    @Test
+    public void testTruncateTemporalToDOW() {
+        assertEquals("DAY_OF_WEEK", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK.getName());
+        assertNull(UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK.transform(null));
+        assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK.transform("nonDateValue"));
+        assertEquals("Wed", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK.transform("2022-11-02 12:58:15"));
+    }
+    
+    @Test
+    public void testTruncateTemporalToWOM() {
+        assertEquals("WEEK_OF_MONTH", UniqueGranularity.TRUNCATE_TEMPORAL_TO_WEEK_OF_MONTH.getName());
+        assertNull(UniqueGranularity.TRUNCATE_TEMPORAL_TO_WEEK_OF_MONTH.transform(null));
+        assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_WEEK_OF_MONTH.transform("nonDateValue"));
+        assertEquals("1", UniqueGranularity.TRUNCATE_TEMPORAL_TO_WEEK_OF_MONTH.transform("2022-11-02 12:58:15"));
+    }
+    
+    @Test
     public void testMinuteTruncation() {
         assertEquals("MINUTE", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.getName());
         assertNull(UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform(null));
