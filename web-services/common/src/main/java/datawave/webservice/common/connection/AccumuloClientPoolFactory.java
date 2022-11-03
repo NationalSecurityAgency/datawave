@@ -27,7 +27,7 @@ public class AccumuloClientPoolFactory implements PooledObjectFactory<AccumuloCl
      * Returns a new CB Connection
      */
     public PooledObject<AccumuloClient> makeObject() throws Exception {
-        AccumuloClient c = Accumulo.newClient().to(instanceName, zookeepers).as(username, password).build();
+        AccumuloClient c = Accumulo.newClient().to(instanceName, zookeepers).as(username, password).overrideTLS().build();
         return new DefaultPooledObject<>(c);
     }
     

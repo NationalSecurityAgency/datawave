@@ -175,7 +175,7 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
         job.setOutputFormatClass(AccumuloOutputFormat.class);
         // @formatter:off
         AccumuloOutputFormat.configure()
-                .clientProperties(Accumulo.newClientProperties().to(instance,zookeepers).as(userName, password).build())
+                .clientProperties(Accumulo.newClientProperties().to(instance,zookeepers).as(userName, password).overrideTLS().build())
                 .createTables(true)
                 .defaultTable(outputTable)
                 .store(job);

@@ -206,7 +206,7 @@ public class CardinalityScanner {
         
         Map<CardinalityIntersectionRecord,HyperLogLogPlus> cardinalityMap = new TreeMap<>();
         try (AccumuloClient client = Accumulo.newClient().to(config.getInstanceName(), config.getZookeepers()).as(config.getUsername(), config.getPassword())
-                        .build()) {
+                        .overrideTLS().build()) {
             Collection<Authorizations> authCollection = Collections.singleton(new Authorizations(config.getAuths().split(",")));
             if (!client.tableOperations().exists(config.getTableName())) {
                 throw new IllegalArgumentException("Table " + config.getTableName() + " does not exist");

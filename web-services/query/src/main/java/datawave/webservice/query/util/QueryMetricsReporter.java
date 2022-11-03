@@ -155,7 +155,7 @@ public class QueryMetricsReporter {
         }
         
         // Open up a BatchScanner to the QueryMetrics table
-        try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, new PasswordToken(password)).build();
+        try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, new PasswordToken(password)).overrideTLS().build();
                         BatchScanner bs = client.createBatchScanner(tableName, Authorizations.EMPTY, 8)) {
             // Set a range for the entire table
             Range r = null;

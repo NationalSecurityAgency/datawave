@@ -87,7 +87,7 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
             
             useHourlyPrecision = HourlyPrecisionHelper.checkForHourlyPrecisionOption(context.getConfiguration(), log);
             
-            try (AccumuloClient client = Accumulo.newClient().to(instance, zookeepers).as(user, password).build()) {
+            try (AccumuloClient client = Accumulo.newClient().to(instance, zookeepers).as(user, password).overrideTLS().build()) {
                 ingestScanner = client.createScanner(conf.get(MetricsConfig.INGEST_TABLE, MetricsConfig.DEFAULT_INGEST_TABLE), Authorizations.EMPTY);
             } catch (TableNotFoundException e) {
                 throw new IOException(e);

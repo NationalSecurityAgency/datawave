@@ -71,6 +71,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
         accumuloClient = Accumulo.newClient()
                 .to(configuration.instanceName(), configuration.zookeepers())
                 .as(configuration.username(), configuration.password())
+                .overrideTLS()
                 .build();
         // @formatter:on
         

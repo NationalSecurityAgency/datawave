@@ -155,7 +155,7 @@ public class GenerateShardSplits {
         
         if (username != null) {
             // Connect to accumulo
-            try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, new PasswordToken(password)).build()) {
+            try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, new PasswordToken(password)).overrideTLS().build()) {
                 // add the splits
                 if (addSplits) {
                     client.tableOperations().addSplits(tableName, splits);

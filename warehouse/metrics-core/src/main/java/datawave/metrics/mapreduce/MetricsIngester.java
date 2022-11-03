@@ -165,6 +165,7 @@ public class MetricsIngester extends Configured implements Tool {
             Properties clientProps = Accumulo.newClientProperties()
                     .to(instanceName, zookeepers).as(userName, password)
                     .batchWriterConfig(new BatchWriterConfig().setMaxLatency(25, TimeUnit.MILLISECONDS))
+                    .overrideTLS()
                     .build();
             AccumuloOutputFormat.configure()
                     .clientProperties(clientProps)
@@ -303,12 +304,12 @@ public class MetricsIngester extends Configured implements Tool {
         
         Properties clientProps = Accumulo.newClientProperties().to(conf.get(MetricsConfig.WAREHOUSE_INSTANCE), conf.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS))
                         .as(conf.get(MetricsConfig.WAREHOUSE_USERNAME), conf.get(MetricsConfig.WAREHOUSE_PASSWORD, ""))
-                        .batchWriterConfig(new BatchWriterConfig().setMaxLatency(25, TimeUnit.MILLISECONDS)).build();
+                        .batchWriterConfig(new BatchWriterConfig().setMaxLatency(25, TimeUnit.MILLISECONDS)).overrideTLS().build();
         
         job.setInputFormatClass(AccumuloInputFormat.class);
         job.setOutputFormatClass(AccumuloOutputFormat.class);
         
-        try (AccumuloClient client = Accumulo.newClient().from(clientProps).build()) {
+        try (AccumuloClient client = Accumulo.newClient().from(clientProps).overrideTLS().build()) {
             // @formatter;off
             AccumuloInputFormat.configure().clientProperties(clientProps).table(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE))
                             .auths(client.securityOperations().getUserAuthorizations(client.whoami())).fetchColumns(columns).ranges(ranges).store(job);

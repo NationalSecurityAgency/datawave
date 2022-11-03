@@ -151,7 +151,7 @@ public class MetadataHelperUpdateHdfsListener {
                             log.debug("table:" + metadataTableName + " " + this + " setTriState to UPDATING");
                         }
                         // get a connection for my MetadataHelper, and get the TypeMetadata map
-                        try (AccumuloClient client = Accumulo.newClient().to(instance, zookeepers).as(username, password).build()) {
+                        try (AccumuloClient client = Accumulo.newClient().to(instance, zookeepers).as(username, password).overrideTLS().build()) {
                             TypeMetadataHelper typeMetadataHelper = this.typeMetadataHelperFactory.createTypeMetadataHelper(client, metadataTableName,
                                             allMetadataAuths, false);
                         }

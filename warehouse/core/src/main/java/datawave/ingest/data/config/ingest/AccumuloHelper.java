@@ -56,11 +56,11 @@ public class AccumuloHelper {
      * @return an {@link AccumuloClient} to Accumulo given this object's settings.
      */
     public AccumuloClient newClient() {
-        return Accumulo.newClient().to(instanceName, zooKeepers).as(username, password).build();
+        return Accumulo.newClient().to(instanceName, zooKeepers).as(username, password).overrideTLS().build();
     }
     
     public Properties newClientProperties() {
-        return Accumulo.newClientProperties().to(instanceName, zooKeepers).as(username, password).build();
+        return Accumulo.newClientProperties().to(instanceName, zooKeepers).as(username, password).overrideTLS().build();
     }
     
     public static void setUsername(Configuration conf, String username) {

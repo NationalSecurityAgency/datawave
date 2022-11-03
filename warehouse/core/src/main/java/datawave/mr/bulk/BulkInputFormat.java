@@ -535,6 +535,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             return Accumulo.newClient()
                     .to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
                     .as(getUsername(conf), new PasswordToken(getPassword(conf)))
+                    .overrideTLS()
                     .build();
             // @formatter:on
         }
@@ -1076,7 +1077,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             return new InMemoryTabletLocator();
         String tableName = getTablename(conf);
         Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
-                        .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
+                        .as(getUsername(conf), new PasswordToken(getPassword(conf))).overrideTLS().build();
         ClientInfo info = ClientInfo.from(props);
         ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
         return TabletLocator.getLocator(context, context.getTableId(tableName));

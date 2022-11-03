@@ -130,7 +130,7 @@ public class ShardedTableMapFileTest {
         accumuloCluster = new MiniAccumuloCluster(clusterDir, PASSWORD);
         accumuloCluster.start();
         
-        try (AccumuloClient client = Accumulo.newClient().from(accumuloCluster.getClientProperties()).build()) {
+        try (AccumuloClient client = Accumulo.newClient().from(accumuloCluster.getClientProperties()).overrideTLS().build()) {
             TableOperations tableOperations = client.tableOperations();
             tableOperations.create(TABLE_NAME);
             tableOperations.addSplits(TABLE_NAME, sortedSet);

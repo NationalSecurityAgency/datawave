@@ -54,7 +54,7 @@ public class UpgradeCounterValues {
     protected void run(String[] args) throws ParseException, AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
         parseConfig(args);
         
-        try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, password).build()) {
+        try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, password).overrideTLS().build()) {
             Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
             try (BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxWriteThreads(bwThreads).setMaxMemory(bwMemory)
                             .setMaxLatency(60, TimeUnit.SECONDS));

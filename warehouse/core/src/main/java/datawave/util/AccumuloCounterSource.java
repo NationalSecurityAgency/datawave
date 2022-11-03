@@ -40,7 +40,7 @@ public class AccumuloCounterSource extends CounterSource {
     
     public AccumuloCounterSource(String instanceStr, String zookeepers, String username, String password, String table) throws AccumuloException,
                     AccumuloSecurityException {
-        client = Accumulo.newClient().to(instanceStr, zookeepers).as(username, password).build();
+        client = Accumulo.newClient().to(instanceStr, zookeepers).as(username, password).overrideTLS().build();
         queryTable = table;
         this.username = username;
     }

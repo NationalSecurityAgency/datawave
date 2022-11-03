@@ -56,7 +56,7 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
     
     public AccumuloIndexAgeDisplay(String instanceName, String zookeepers, String tableName, String columns, String userName, PasswordToken password,
                     Integer[] buckets) {
-        this(Accumulo.newClient().to(instanceName, zookeepers).as(userName, password).build(), tableName, columns, buckets);
+        this(Accumulo.newClient().to(instanceName, zookeepers).as(userName, password).overrideTLS().build(), tableName, columns, buckets);
     }
     
     @Override

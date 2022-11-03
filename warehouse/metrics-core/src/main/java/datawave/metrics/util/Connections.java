@@ -95,12 +95,12 @@ public class Connections {
     public static AccumuloClient metricsClient(Configuration c) throws AccumuloException, AccumuloSecurityException {
         final String mtxZk = c.get(MetricsConfig.ZOOKEEPERS), mtxInst = c.get(MetricsConfig.INSTANCE), mtxUser = c.get(MetricsConfig.USER), mtxPass = c
                         .get(MetricsConfig.PASS);
-        return Accumulo.newClient().to(mtxInst, mtxZk).as(mtxUser, mtxPass).build();
+        return Accumulo.newClient().to(mtxInst, mtxZk).as(mtxUser, mtxPass).overrideTLS().build();
     }
     
     public static AccumuloClient warehouseClient(Configuration c) throws AccumuloException, AccumuloSecurityException {
         final String whZk = c.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS), whInst = c.get(MetricsConfig.WAREHOUSE_INSTANCE), whUser = c
                         .get(MetricsConfig.WAREHOUSE_USERNAME), whPass = c.get(MetricsConfig.WAREHOUSE_PASSWORD);
-        return Accumulo.newClient().to(whInst, whZk).as(whUser, whPass).build();
+        return Accumulo.newClient().to(whInst, whZk).as(whUser, whPass).overrideTLS().build();
     }
 }

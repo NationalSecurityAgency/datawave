@@ -322,7 +322,9 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
             client.securityOperations().changeLocalUserPassword(client.whoami(), new PasswordToken(getPassword(conf)));
             return client;
         } else {
-            return Accumulo.newClient().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS)).as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
+            return Accumulo.newClient().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS)).as(getUsername(conf), new PasswordToken(getPassword(conf)))
+            .overrideTLS()
+            .build();
         }
     }
     

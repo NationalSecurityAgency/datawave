@@ -384,7 +384,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         this.instanceName = instanceName;
         this.zooKeepers = zooKeepers;
         // this will keep an active connection open to Accumulo and must be closed during shutdown
-        this.accumuloClient = Accumulo.newClient().to(instanceName, zooKeepers).as(user, passToken).build();
+        this.accumuloClient = Accumulo.newClient().to(instanceName, zooKeepers).as(user, passToken).overrideTLS().build();
         this.seqFileHdfs = seqFileHdfs;
         this.srcHdfs = srcHdfs;
         this.destHdfs = destHdfs;

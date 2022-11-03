@@ -200,6 +200,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
                                 .setMaxLatency(30, TimeUnit.SECONDS)
                                 .setMaxMemory(10485760)
                                 .setMaxWriteThreads(2))
+                        .overrideTLS()
                         .build();
 
                 AccumuloOutputFormat.configure()

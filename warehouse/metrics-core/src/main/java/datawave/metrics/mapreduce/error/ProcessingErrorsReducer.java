@@ -66,7 +66,7 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
         String zooKeepers = conf.get(MetricsConfig.ZOOKEEPERS);
         String user = conf.get(MetricsConfig.USER);
         String pass = conf.get(MetricsConfig.PASS);
-        client = Accumulo.newClient().to(instance, zooKeepers).as(user, pass).build();
+        client = Accumulo.newClient().to(instance, zooKeepers).as(user, pass).overrideTLS().build();
         try {
             writer = client.createBatchWriter(conf.get(MetricsConfig.METRICS_TABLE, MetricsConfig.DEFAULT_METRICS_TABLE), new BatchWriterConfig()
                             .setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(128L * 1024L).setMaxWriteThreads(11));
@@ -78,7 +78,7 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
         zooKeepers = conf.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS);
         user = conf.get(MetricsConfig.WAREHOUSE_USERNAME);
         pass = conf.get(MetricsConfig.WAREHOUSE_PASSWORD);
-        warehouseClient = Accumulo.newClient().to(instance, zooKeepers).as(user, pass).build();
+        warehouseClient = Accumulo.newClient().to(instance, zooKeepers).as(user, pass).overrideTLS().build();
         try {
             
             warehouseWriter = client.createBatchWriter(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE), new BatchWriterConfig()

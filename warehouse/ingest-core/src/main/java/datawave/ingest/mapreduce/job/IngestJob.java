@@ -982,7 +982,9 @@ public class IngestJob implements Tool {
         job.setWorkingDirectory(workDirPath);
         if (outputMutations) {
             CBMutationOutputFormatter.configure()
-                            .clientProperties(Accumulo.newClientProperties().to(instanceName, zooKeepers).as(userName, new PasswordToken(password)).build())
+                            .clientProperties(Accumulo.newClientProperties().to(instanceName, zooKeepers).as(userName, new PasswordToken(password))
+                            .overrideTLS()
+                            .build())
                             .createTables(true).store(job);
             job.setOutputFormatClass(CBMutationOutputFormatter.class);
         } else {
