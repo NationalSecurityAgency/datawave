@@ -430,8 +430,9 @@ public class QueryExecutorBean implements QueryExecutor {
                 if (!queryParameters.containsKey(pm.getParameterName())) {
                     if (pm.getParameterName().equals(INVALID_PAGESIZE)) {
                         handleIncorrectPageSize();
+                    } else {
+                        queryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
                     }
-                    queryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
                 }
             }
         }
