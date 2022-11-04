@@ -30,6 +30,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * This class encapsulates the split points found in the accumulo.metadata table. Methods are also supplied to distribute the split points via a distributed job
@@ -62,19 +63,14 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         SortedMap<Text,String> tabletLocationsByEndRow = new TreeMap<>();
         
         MetadataServicer.forTableName(getClientContext(), table).getTabletLocations(tabletLocations);
-        for (Map.Entry<KeyExtent,String> entry : tabletLocations.entrySet()) {
-            // Note that if the tablet is currently in transition, then the "location" (entry.getValue()) will be null
-            String value = entry.getValue();
-            if (null == value) {
-                if (log.isDebugEnabled()) {
-                    log.debug("tablet location for " + entry.getKey() + " is null");
-                }
-                value = NO_LOCATION;
-            }
-            if (entry.getKey().getEndRow() != null) {
-                tabletLocationsByEndRow.put(entry.getKey().getEndRow(), value);
-            }
-        }
+        
+        tabletLocationsByEndRow = tabletLocations
+                        .entrySet()
+                        .stream()
+                        .filter(k -> k.getKey().getEndRow() != null)
+                        .collect(Collectors.toMap(e -> e.getKey().getEndRow(), e -> e.getValue() == null ? NO_LOCATION : e.getValue(), (o1, o2) -> o1,
+                                        TreeMap::new));
+        
         return tabletLocationsByEndRow;
     }
     
@@ -201,7 +197,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                 for (String table : tableNames) {
                     log.info("Retrieving splits for " + table);
                     Map<Text,String> splitLocations = getSplitsWithLocation(table);
-                    List<Text> splits = new ArrayList<>(tops.listSplits(table));
+                    List<Text> splits = new ArrayList<>(splitLocations.keySet());
                     this.splits.put(table, splits);
                     splitsPerTable.put(table, splits.size());
                     log.info("Writing " + splits.size() + " splits.");
