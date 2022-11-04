@@ -104,6 +104,14 @@ public class UniqueGranularityTest {
     }
     
     @Test
+    public void testTruncateTemporalToHOD() {
+        assertEquals("15", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR_OF_DAY.transform("2022-11-02 15:58:15"));
+        assertEquals("03", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR_OF_DAY.transform("2022-11-04 03:18:15"));
+        assertEquals("12", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR_OF_DAY.transform("2022-11-03T12:30:00.976Z"));
+        
+    }
+    
+    @Test
     public void testTruncateTemporalToWOM() {
         assertEquals("WEEK_OF_MONTH", UniqueGranularity.TRUNCATE_TEMPORAL_TO_WEEK_OF_MONTH.getName());
         assertNull(UniqueGranularity.TRUNCATE_TEMPORAL_TO_WEEK_OF_MONTH.transform(null));
