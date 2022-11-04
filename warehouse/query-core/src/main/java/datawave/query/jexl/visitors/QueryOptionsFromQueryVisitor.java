@@ -224,6 +224,8 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     optionsMap.put(QueryParameters.EXCERPT_FIELDS, JOINER.join(optionsList));
                     return null;
                 }
+                default:
+                    break; // do nothing
             }
         }
         return super.visit(node, optionsMap);
@@ -233,7 +235,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private void putFieldsFromChildren(JexlNode node, UniqueFields uniqueFields, UniqueGranularity transformer) {
         List<String> fields = new ArrayList<>();
         this.visit(node, fields);
-        fields.forEach((field) -> uniqueFields.put(field, transformer));
+        fields.forEach(field -> uniqueFields.put(field, transformer));
     }
     
     // Update the {@value QueryParameters#UNIQUE_FIELDS} option to include the given unique fields.

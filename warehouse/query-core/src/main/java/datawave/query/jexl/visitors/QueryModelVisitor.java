@@ -94,42 +94,42 @@ public class QueryModelVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        return expandBinaryNodeFromModel(node, data);
+        return expandBinaryNodeFromModel(node);
     }
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        return expandBinaryNodeFromModel(node, data);
+        return expandBinaryNodeFromModel(node);
     }
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        return expandBinaryNodeFromModel(node, data);
+        return expandBinaryNodeFromModel(node);
     }
     
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        return expandBinaryNodeFromModel(node, data);
+        return expandBinaryNodeFromModel(node);
     }
     
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        return expandBinaryNodeFromModel(node, data);
+        return expandBinaryNodeFromModel(node);
     }
     
     @Override
     public Object visit(ASTLENode node, Object data) {
-        return expandBinaryNodeFromModel(node, data);
+        return expandBinaryNodeFromModel(node);
     }
     
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        return expandBinaryNodeFromModel(node, data);
+        return expandBinaryNodeFromModel(node);
     }
     
     @Override
     public Object visit(ASTGENode node, Object data) {
-        return expandBinaryNodeFromModel(node, data);
+        return expandBinaryNodeFromModel(node);
     }
     
     @Override
@@ -163,15 +163,15 @@ public class QueryModelVisitor extends RebuildingVisitor {
             return node;
         }
         
-        LiteralRange range = JexlASTHelper.findRange().getRange(node);
+        LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
         if (range != null) {
-            return expandRangeNodeFromModel(range, node, data);
+            return expandRangeNodeFromModel(range, node);
         } else {
             return super.visit(node, data);
         }
     }
     
-    public Object expandRangeNodeFromModel(LiteralRange range, ASTAndNode node, Object data) {
+    public Object expandRangeNodeFromModel(LiteralRange<?> range, ASTAndNode node) {
         
         if (isFieldExcluded(range.getFieldName())) {
             return node;
@@ -188,7 +188,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
         
         for (String alias : aliases) {
             if (alias != null) {
-                BoundedRange rangeNode = (BoundedRange) BoundedRange.create(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE),
+                BoundedRange rangeNode = BoundedRange.create(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE),
                                 JexlASTHelper.setField(RebuildingVisitor.copy(range.getLowerNode()), alias),
                                 JexlASTHelper.setField(RebuildingVisitor.copy(range.getUpperNode()), alias)));
                 aliasedBounds.add(rangeNode);
@@ -201,7 +201,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
             nodeToAdd = JexlASTHelper.dereference(aliasedBounds.get(0));
         } else {
             ASTOrNode unionOfAliases = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            nodeToAdd = JexlNodes.children(unionOfAliases, aliasedBounds.toArray(new JexlNode[aliasedBounds.size()]));
+            nodeToAdd = JexlNodes.children(unionOfAliases, aliasedBounds.toArray(new JexlNode[0]));
         }
         
         return nodeToAdd;
@@ -211,10 +211,9 @@ public class QueryModelVisitor extends RebuildingVisitor {
      * Applies the forward mapping from the QueryModel to a node, expanding the node into an Or if needed.
      * 
      * @param node
-     * @param data
      * @return
      */
-    protected JexlNode expandBinaryNodeFromModel(JexlNode node, Object data) {
+    protected JexlNode expandBinaryNodeFromModel(JexlNode node) {
         
         String field = JexlASTHelper.getIdentifier(node);
         if (isFieldExcluded(field)) {
@@ -277,13 +276,11 @@ public class QueryModelVisitor extends RebuildingVisitor {
             return toReturn;
         }
         
-        JexlNode leftSeed, rightSeed;
-        Set<JexlNode> left = Sets.newHashSet(), right = Sets.newHashSet();
-        boolean isNullEquality = false;
-        
-        if (node instanceof ASTEQNode && (leftNode instanceof ASTNullLiteral || rightNode instanceof ASTNullLiteral)) {
-            isNullEquality = true;
-        }
+        JexlNode leftSeed;
+        JexlNode rightSeed;
+        Set<JexlNode> left = Sets.newHashSet();
+        Set<JexlNode> right = Sets.newHashSet();
+        boolean isNullEquality = node instanceof ASTEQNode && (leftNode instanceof ASTNullLiteral || rightNode instanceof ASTNullLiteral);
         
         // the query has been previously groomed so that identifiers are on the left and literals are on the right
         // an identifier with a method attached will have already been substituted above (and will return null for the IdentifierOpLiteral)
@@ -304,7 +301,6 @@ public class QueryModelVisitor extends RebuildingVisitor {
         }
         
         if (leftSeed instanceof ASTReference) {
-            // String fieldName = JexlASTHelper.getIdentifier((JexlNode)leftSeed);
             List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(leftSeed);
             if (identifiers.size() > 1) {
                 log.warn("I did not expect to see more than one Identifier here for " + JexlStringBuildingVisitor.buildQuery(leftSeed) + " from "
@@ -350,10 +346,10 @@ public class QueryModelVisitor extends RebuildingVisitor {
         // retrieve the cartesian product
         Set<List<JexlNode>> product = Sets.cartesianProduct(left, right);
         
-        /**
+        /*
          * use the product transformer to shallow copy the jexl nodes. We've created new nodes that will be embedded within an ast reference. As a result, we
          * need to ensure that if we create a logical structure ( such as an or ) -- each literal references a unique identifier from the right. Otherwise,
-         * subsequent visitors will reference incorrection sub trees, and potentially negate the activity of the query model visitor
+         * subsequent visitors will reference incorrect subtrees, and potentially negate the activity of the query model visitor
          */
         Set<List<JexlNode>> newSet = product.stream().map(list -> list.stream().map(RebuildingVisitor::copy).collect(Collectors.toList()))
                         .collect(Collectors.toSet());

@@ -66,34 +66,34 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                 JexlNode regexNode = buildRegexNode(identifier, functionMetadata.name(), arguments.get(1).image);
                 if (regexNode != null) {
                     children.add(regexNode);
+                } else {
+                    // failure to rewrite a regex means a copy of the original node is returned
+                    return returnNode;
                 }
             }
             
-            // only re-parent if the same number of regex nodes were built
-            if (identifiers.size() == children.size()) {
-                switch (identifiers.size()) {
-                    case 0:
-                        return returnNode;
-                    case 1:
-                        if (log.isTraceEnabled()) {
-                            log.trace("Rewrote \"" + JexlStringBuildingVisitor.buildQueryWithoutParse(node) + "\" into \""
-                                            + JexlStringBuildingVisitor.buildQueryWithoutParse(children.get(0)) + "\"");
-                        }
-                        return children.get(0);
-                    default:
-                        if (functionMetadata.name().equals(INCLUDE_REGEX)) {
-                            returnNode = JexlNodeFactory.createOrNode(children);
-                        } else {
-                            // build an AND node because of how DeMorgan's law works with expanding negations
-                            returnNode = JexlNodeFactory.createAndNode(children);
-                        }
-                        
-                        if (log.isTraceEnabled()) {
-                            log.trace("Rewrote \"" + JexlStringBuildingVisitor.buildQueryWithoutParse(node) + "\" into \""
-                                            + JexlStringBuildingVisitor.buildQueryWithoutParse(returnNode) + "\"");
-                        }
-                        return returnNode;
-                }
+            switch (children.size()) {
+                case 0:
+                    return returnNode;
+                case 1:
+                    if (log.isTraceEnabled()) {
+                        log.trace("Rewrote \"" + JexlStringBuildingVisitor.buildQueryWithoutParse(node) + "\" into \""
+                                        + JexlStringBuildingVisitor.buildQueryWithoutParse(children.get(0)) + "\"");
+                    }
+                    return children.get(0);
+                default:
+                    if (functionMetadata.name().equals(INCLUDE_REGEX)) {
+                        returnNode = JexlNodeFactory.createOrNode(children);
+                    } else {
+                        // build an AND node because of how DeMorgan's law works with expanding negations
+                        returnNode = JexlNodeFactory.createAndNode(children);
+                    }
+                    
+                    if (log.isTraceEnabled()) {
+                        log.trace("Rewrote \"" + JexlStringBuildingVisitor.buildQueryWithoutParse(node) + "\" into \""
+                                        + JexlStringBuildingVisitor.buildQueryWithoutParse(returnNode) + "\"");
+                    }
+                    return returnNode;
             }
         }
         return returnNode;

@@ -63,6 +63,9 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     private final HashSet<JexlNode> expandedNodes;
     private final MetadataHelper helper;
     
+    private static final String COULD_NOT_NORMALIZE = "Could not normalize ";
+    private static final String USING = " using ";
+    
     public ExpandMultiNormalizedTerms(ShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(config);
         Preconditions.checkNotNull(helper);
@@ -139,7 +142,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        /**
+        /*
          * If we have an exceeded value or term predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types
          */
         if (QueryPropertyMarker.findInstance(node).isAnyTypeOf(ExceededValueThresholdMarkerJexlNode.class, ExceededTermThresholdMarkerJexlNode.class)
@@ -155,55 +158,75 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         }
     }
     
+    /**
+     * Expands a {@link LiteralRange} for each normalizer associated with the field
+     *
+     * @param range
+     *            a {@link LiteralRange}
+     * @param node
+     *            a JexlNode
+     * @return normalized ranges, or the original node if no normalizations could be applied
+     */
     private Object expandRangeForNormalizers(LiteralRange<?> range, JexlNode node) {
         List<BoundedRange> aliasedBounds = Lists.newArrayList();
         String field = range.getFieldName();
+        Set<Type<?>> dataTypes = getTypesForField(field);
         
-        // Get all of the indexed or normalized dataTypes for the field name
-        Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(field));
-        dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(field));
-        
+        BoundedRange normalizedRange;
         for (Type<?> normalizer : dataTypes) {
-            JexlNode lowerBound = range.getLowerNode(), upperBound = range.getUpperNode();
-            
-            JexlNode left = null;
-            try {
-                left = JexlASTHelper.applyNormalization(copy(lowerBound), normalizer);
-            } catch (Exception ne) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Could not normalize " + PrintingVisitor.formattedQueryString(lowerBound) + " using " + normalizer.getClass() + ". "
-                                    + ne.getMessage());
-                }
-                continue;
+            normalizedRange = expandRangeForNormalizer(range, normalizer);
+            if (normalizedRange != null) {
+                aliasedBounds.add(normalizedRange);
             }
-            
-            JexlNode right = null;
-            try {
-                right = JexlASTHelper.applyNormalization(copy(upperBound), normalizer);
-            } catch (Exception ne) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Could not normalize " + PrintingVisitor.formattedQueryString(upperBound) + " using " + normalizer.getClass() + ". "
-                                    + ne.getMessage());
-                }
-                continue;
-            }
-            
-            aliasedBounds.add(new BoundedRange(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right)));
         }
         
-        if (aliasedBounds.isEmpty()) {
-            return node;
-        } else {
-            this.expandedNodes.addAll(aliasedBounds);
-            
-            // Avoid extra parens around the expansion
-            if (1 == aliasedBounds.size()) {
+        switch (aliasedBounds.size()) {
+            case 0:
+                return node;
+            case 1:
+                this.expandedNodes.addAll(aliasedBounds);
                 return aliasedBounds.get(0);
-            } else {
-                List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(aliasedBounds);
-                return JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[var.size()])));
-            }
+            default:
+                this.expandedNodes.addAll(aliasedBounds);
+                List<ASTReferenceExpression> nodes = JexlASTHelper.wrapInParens(aliasedBounds);
+                return JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), nodes.toArray(new JexlNode[0])));
         }
+    }
+    
+    /**
+     * Expands a {@link LiteralRange} for the specified normalizer
+     *
+     * @param range
+     *            a {@link LiteralRange}
+     * @param normalizer
+     *            a {@link Type}
+     * @return an expanded range, or null if the normalization failed
+     */
+    private BoundedRange expandRangeForNormalizer(LiteralRange<?> range, Type<?> normalizer) {
+        JexlNode lowerBound = range.getLowerNode();
+        JexlNode upperBound = range.getUpperNode();
+        
+        JexlNode left;
+        try {
+            left = JexlASTHelper.applyNormalization(copy(lowerBound), normalizer);
+        } catch (Exception ne) {
+            if (log.isTraceEnabled()) {
+                log.trace(COULD_NOT_NORMALIZE + PrintingVisitor.formattedQueryString(lowerBound) + USING + normalizer.getClass() + ". " + ne.getMessage());
+            }
+            return null;
+        }
+        
+        JexlNode right;
+        try {
+            right = JexlASTHelper.applyNormalization(copy(upperBound), normalizer);
+        } catch (Exception ne) {
+            if (log.isTraceEnabled()) {
+                log.trace(COULD_NOT_NORMALIZE + PrintingVisitor.formattedQueryString(upperBound) + USING + normalizer.getClass() + ". " + ne.getMessage());
+            }
+            return null;
+        }
+        
+        return new BoundedRange(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right));
     }
     
     /**
@@ -220,10 +243,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             
             final String fieldName = op.deconstructIdentifier();
             final Object literal = op.getLiteralValue();
-            
-            // Get all of the indexed or normalized dataTypes for the field name
-            Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(fieldName));
-            dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(fieldName));
+            Set<Type<?>> dataTypes = getTypesForField(fieldName);
             
             // Catch the case of the user entering FIELD == null
             if (!dataTypes.isEmpty() && null != literal) {
@@ -253,13 +273,13 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                 return BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
                             } catch (Exception ex) {
                                 if (log.isTraceEnabled()) {
-                                    log.trace("Could not normalize " + term + " as cidr notation with: " + normalizer.getClass());
+                                    log.trace(COULD_NOT_NORMALIZE + term + " as cidr notation with: " + normalizer.getClass());
                                 }
                             }
                             // this could be CIDR notation, attempt to expand the node to the cidr range
                         } catch (Exception ne) {
                             if (log.isTraceEnabled()) {
-                                log.trace("Could not normalize " + term + " using " + normalizer.getClass());
+                                log.trace(COULD_NOT_NORMALIZE + term + USING + normalizer.getClass());
                             }
                             // if this was a regex, then lets assume that the regex could not be decoded enough to determine how to match against the index.
                             // in this case we need to force this term to be evaluation only (i.e. cannot be done against an index)
@@ -304,6 +324,19 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             }
         }
         return nodeToReturn;
+    }
+    
+    /**
+     * Get all the indexed or normalized datatypes for the field name
+     *
+     * @param field
+     *            the field
+     * @return a Set of Types
+     */
+    private Set<Type<?>> getTypesForField(String field) {
+        Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(field));
+        dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(field));
+        return dataTypes;
     }
     
 }

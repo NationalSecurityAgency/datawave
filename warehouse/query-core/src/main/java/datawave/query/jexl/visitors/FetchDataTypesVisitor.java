@@ -190,11 +190,8 @@ public class FetchDataTypesVisitor extends BaseVisitor {
         for (String field : desc.fields(this.helper, this.datatypeFilter)) {
             final String fieldName = JexlASTHelper.deconstructIdentifier(field);
             try {
-                
-                Set<Type<?>> dataTypesForField = Collections.emptySet();
-                
+                Set<Type<?>> dataTypesForField;
                 if (useCache) {
-                    
                     Tuple2<String,Set<String>> cacheKey = new Tuple2<>(fieldName, datatypeFilter);
                     Set<Type<?>> types = typeCache.getIfPresent(cacheKey);
                     if (null == types) {
@@ -206,8 +203,9 @@ public class FetchDataTypesVisitor extends BaseVisitor {
                         }
                         dataTypesForField = types;
                     }
-                } else
+                } else {
                     dataTypesForField = this.helper.getDatatypesForField(fieldName, datatypeFilter);
+                }
                 
                 mm.putAll(field, dataTypesForField);
             } catch (TableNotFoundException e) {

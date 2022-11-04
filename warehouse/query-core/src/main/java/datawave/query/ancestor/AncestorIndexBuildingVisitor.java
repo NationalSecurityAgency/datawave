@@ -83,13 +83,13 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         String value = null == objValue ? "null" : objValue.toString();
         
         StringBuilder builder = new StringBuilder("fi");
-        builder.append(NULL_DELIMETER).append(identifier);
+        builder.append(NULL_DELIMITER).append(identifier);
         
         Text cf = new Text(builder.toString());
         
         builder = new StringBuilder(value);
         
-        builder.append(NULL_DELIMETER).append(endKey.getColumnFamily());
+        builder.append(NULL_DELIMITER).append(endKey.getColumnFamily());
         Text cq = new Text(builder.toString());
         
         return new Key(endKey.getRow(), cf, cq, endKey.getTimestamp());
@@ -305,11 +305,11 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         String fieldValuie = null == objValue ? "null" : objValue.toString();
         
         StringBuilder builder = new StringBuilder("fi");
-        builder.append(NULL_DELIMETER).append(fieldName);
+        builder.append(NULL_DELIMITER).append(fieldName);
         Text cf = new Text(builder.toString());
         
         builder = new StringBuilder(fieldValuie);
-        builder.append(NULL_DELIMETER).append(dataType).append(NULL_DELIMETER).append(uid);
+        builder.append(NULL_DELIMITER).append(dataType).append(NULL_DELIMITER).append(uid);
         Text cq = new Text(builder.toString());
         
         return new Key(row, cf, cq, timestamp);

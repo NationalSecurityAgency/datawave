@@ -69,10 +69,10 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        LiteralRange range = JexlASTHelper.findRange().indexedOnly(this.dataTypeFilter, this.helper).notDelayed().getRange(node);
+        LiteralRange<?> range = JexlASTHelper.findRange().indexedOnly(this.dataTypeFilter, this.helper).notDelayed().getRange(node);
         
         if (range != null) {
-            return delayBoundedIndexHole(range, node, data);
+            return delayBoundedIndexHole(range, node);
         } else {
             JexlNode andNode = JexlNodes.newInstanceOfType(node);
             andNode.image = node.image;
@@ -92,7 +92,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     /**
      * Delay the ranges that overlap holes. The range map is expected to only be indexed ranges.
      */
-    protected JexlNode delayBoundedIndexHole(LiteralRange range, ASTAndNode currentNode, Object data) {
+    protected JexlNode delayBoundedIndexHole(LiteralRange<?> range, ASTAndNode currentNode) {
         
         if (missingIndexRange(range)) {
             return IndexHoleMarkerJexlNode.create(currentNode);
@@ -194,7 +194,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         return false;
     }
     
-    private boolean missingIndexRange(LiteralRange range) {
+    private boolean missingIndexRange(LiteralRange<?> range) {
         String strUpper = String.valueOf(range.getUpper());
         String strLower = String.valueOf(range.getLower());
         for (IndexHole hole : indexHoles) {

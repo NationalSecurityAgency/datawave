@@ -11,7 +11,6 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +21,6 @@ import java.util.List;
  * &amp;&amp; (B || C) to (A &amp;&amp; B) || (A &amp;&amp; C).
  */
 public class ExecutableExpansionVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(ExecutableExpansionVisitor.class);
     
     private final ShardQueryConfiguration config;
     private final MetadataHelper helper;

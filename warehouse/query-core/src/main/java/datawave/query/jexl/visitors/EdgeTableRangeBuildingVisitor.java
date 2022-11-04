@@ -26,7 +26,6 @@ import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -96,13 +95,16 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     protected List<? extends Type<?>> regexDataTypes;
     protected List<? extends Type<?>> dataTypes;
     
-    private static final char BACKSLASH = '\\';
-    private static final char STRING_QUOTE = '\'';
     private Set<String> allowedFunctions = Sets.newHashSet("has_all");
     private int termCount = 0;
     private long maxTerms = 10000;
     private boolean sawEquivalenceRegexSource = false;
     private boolean sawEquivalenceRegexSink = false;
+    
+    private static final String AND_ERR_MSG = "And node had unexpected return type";
+    private static final String QUERY_SYNTAX_ERR = "Error: problem with query syntax";
+    private static final String PARSE_ERR = "Problem parsing query";
+    private static final String OR_EXCLUSION_ERR = "Can't OR exclusion expressions";
     
     public EdgeTableRangeBuildingVisitor(boolean stats, List<? extends Type<?>> types, long maxTerms, List<? extends Type<?>> rTypes) {
         this.includeStats = stats;
@@ -116,6 +118,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      * 
      * The job of this node is to take the results of its child and create the visitation context to be returned
      */
+    @Override
     public Object visit(ASTJexlScript node, Object data) {
         
         int numChildren = node.jjtGetNumChildren();
@@ -139,7 +142,6 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             
         } else if (context.get(0) instanceof QueryContext) {
             return computeVisitaionContext((List<QueryContext>) context);
-            // return context;
         } else {
             log.error("JexlScript node recieved unexpected return type: " + context);
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR);
@@ -227,26 +229,26 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                     for (QueryContext qContext : ((List<QueryContext>) childContext)) {
                         // Combine the query contexts if anything fails blame the user
                         if (!(qContext.combineQueryContexts(((List<QueryContext>) mergedContext), false))) {
-                            log.error("And node had unexpected return type");
-                            throw new IllegalArgumentException("Error: problem with query syntax");
+                            log.error(AND_ERR_MSG);
+                            throw new IllegalArgumentException(QUERY_SYNTAX_ERR);
                         }
                     }
                     mergedContext = childContext;
                 } else if (((List<QueryContext>) mergedContext).get(0).getRowContext() != null) {
                     for (QueryContext qContext : ((List<QueryContext>) mergedContext)) {
                         if (!(qContext.combineQueryContexts(((List<QueryContext>) childContext), false))) {
-                            log.error("And node had unexpected return type");
-                            throw new IllegalArgumentException("Error: problem with query syntax");
+                            log.error(AND_ERR_MSG);
+                            throw new IllegalArgumentException(QUERY_SYNTAX_ERR);
                         }
                     }
                 } else {
-                    log.error("Problem parsing query");
-                    throw new IllegalArgumentException("Error: problem with query syntax");
+                    log.error(PARSE_ERR);
+                    throw new IllegalArgumentException(QUERY_SYNTAX_ERR);
                 }
             } else {
                 
-                log.error("And node had unexpected return type");
-                throw new IllegalArgumentException("Error: problem with query syntax");
+                log.error(AND_ERR_MSG);
+                throw new IllegalArgumentException(QUERY_SYNTAX_ERR);
             }
         }
         
@@ -294,8 +296,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                 IdentityContext iContext1 = (IdentityContext) childContext.get(0);
                 IdentityContext iContext2 = (IdentityContext) mergedContext.get(0);
                 
-                checkNotExclusion(iContext1, "Can't OR exclusion expressions");
-                checkNotExclusion(iContext2, "Can't OR exclusion expressions");
+                checkNotExclusion(iContext1, OR_EXCLUSION_ERR);
+                checkNotExclusion(iContext2, OR_EXCLUSION_ERR);
                 if (iContext1.getIdentity().equals(iContext2.getIdentity())) {
                     ((List<IdentityContext>) childContext).addAll((List<IdentityContext>) mergedContext);
                     mergedContext = childContext;
@@ -308,11 +310,11 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                 List<QueryContext> context1 = (List<QueryContext>) childContext;
                 List<QueryContext> context2 = (List<QueryContext>) mergedContext;
                 
-                if (context1.size() == 1 && context1.get(0).hasSourceList() == false) {
+                if (context1.size() == 1 && !context1.get(0).hasSourceList()) {
                     runCombine(context2, context1);
                     
                     mergedContext = context2;
-                } else if (context2.size() == 1 && context2.get(0).hasSourceList() == false) {
+                } else if (context2.size() == 1 && !context2.get(0).hasSourceList()) {
                     runCombine(context1, context2);
                     
                     mergedContext = context1;
@@ -330,7 +332,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
              */
             
             else if ((childContext.get(0) instanceof IdentityContext) && (mergedContext.get(0) instanceof QueryContext)) {
-                checkNotExclusion((IdentityContext) childContext.get(0), "Can't OR exclusion expressions");
+                checkNotExclusion((IdentityContext) childContext.get(0), OR_EXCLUSION_ERR);
                 
                 QueryContext queryContext = new QueryContext();
                 queryContext.packageIdentities((List<IdentityContext>) childContext, false);
@@ -343,7 +345,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                     runCombine((List<QueryContext>) mergedContext, otherContexts);
                 }
             } else if ((childContext.get(0) instanceof QueryContext) && (mergedContext.get(0) instanceof IdentityContext)) {
-                checkNotExclusion((IdentityContext) mergedContext.get(0), "Can't OR exclusion expressions");
+                checkNotExclusion((IdentityContext) mergedContext.get(0), OR_EXCLUSION_ERR);
                 
                 QueryContext queryContext = new QueryContext();
                 queryContext.packageIdentities((List<IdentityContext>) mergedContext, false);
@@ -359,7 +361,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                 mergedContext = childContext;
             } else {
                 log.error("OR node had unexpected return type");
-                throw new IllegalArgumentException("Error: problem with query syntax");
+                throw new IllegalArgumentException(QUERY_SYNTAX_ERR);
             }
         }
         
@@ -367,20 +369,16 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     }
     
     private void runCombine(List<QueryContext> q1, List<QueryContext> q2) {
-        for (QueryContext qContext : (List<QueryContext>) q1) {
+        for (QueryContext qContext : q1) {
             if (!qContext.combineQueryContexts(q2, true)) {
                 log.error("Unable to combine query contexts");
-                throw new IllegalArgumentException("Error: problem with query syntax");
+                throw new IllegalArgumentException(QUERY_SYNTAX_ERR);
             }
         }
     }
     
     private boolean isSourceList(List<IdentityContext> context) {
-        if (context.get(0).getIdentity().equals(EDGE_SOURCE)) {
-            return true;
-        } else {
-            return false;
-        }
+        return context.get(0).getIdentity().equals(EDGE_SOURCE);
     }
     
     private void checkNotExclusion(IdentityContext context, String msg) {
@@ -436,7 +434,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
         
         if (numChildren != 2) {
             log.error("Equals node had unexpected number of children: " + numChildren);
-            throw new IllegalArgumentException("Problem parsing query");
+            throw new IllegalArgumentException(PARSE_ERR);
         }
         
         String identifier = getIdentity(node.jjtGetChild(0));
@@ -456,7 +454,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                         IdentityContext iContext = new IdentityContext(identifier, normalizedLiteral, operator);
                         contexts.add(iContext);
                     } catch (PatternSyntaxException e) {
-                        continue;
+                        // keep going
                     }
                 }
                 if (contexts.isEmpty()) {
@@ -485,7 +483,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
         
         if (referenceNode.jjtGetNumChildren() != 1) {
             log.error("Reference node (identity) had unexpected number of children: " + referenceNode.jjtGetNumChildren());
-            throw new IllegalArgumentException("Problem parsing query");
+            throw new IllegalArgumentException(PARSE_ERR);
         }
         
         return referenceNode.jjtGetChild(0).image.toUpperCase();
@@ -497,7 +495,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     private String getLiteral(SimpleNode referenceNode) {
         if (referenceNode.jjtGetNumChildren() != 1) {
             log.error("Reference node (literal) had unexpected number of children: " + referenceNode.jjtGetNumChildren());
-            throw new IllegalArgumentException("Problem parsing query");
+            throw new IllegalArgumentException(PARSE_ERR);
         }
         
         return referenceNode.jjtGetChild(0).image;
@@ -508,6 +506,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      * list with a single Identity context is returned in the following format: Identity = FUNCTION Opperator = FUNCTION LITER = "{function string}" //eg
      * source.has_all(SINK, "t1", "t2", ...)
      */
+    @Override
     public Object visit(ASTFunctionNode node, Object data) {
         if (node.jjtGetParent() instanceof ASTJexlScript) {
             // then we're the only node in here, we need to come up with ranges from the function itself, or fail the query
@@ -563,7 +562,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
         boolean includeSink = false;
         boolean includeSource = false;
         for (QueryContext queryContext : queryContexts) {
-            if (queryContext.hasCompleteColumnFamily() == false) {
+            if (!queryContext.hasCompleteColumnFamily()) {
                 includColumnFamilyTerms = true;
                 break;
             }
@@ -579,13 +578,12 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                 QueryContext.ColumnContext currentContext = queryContexts.get(i).getColumnContext();
                 if ((firstColumn != null && currentContext == null) || (firstColumn == null && currentContext != null)) {
                     columnFamilyAreDifferent = true;
-                    break;
+                } else if (firstColumn != null && !(firstColumn.equals(queryContexts.get(i).getColumnContext()))) {
+                    columnFamilyAreDifferent = true;
                 }
-                if (firstColumn != null) {
-                    if (!(firstColumn.equals(queryContexts.get(i).getColumnContext()))) {
-                        columnFamilyAreDifferent = true;
-                        break;
-                    }
+                
+                if (columnFamilyAreDifferent) {
+                    break;
                 }
             }
         }

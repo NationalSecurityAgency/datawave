@@ -46,7 +46,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
     protected final MetadataHelper helper;
     protected final Set<String> datatypeFilter;
     
-    protected Boolean normalizationFailed = false;
+    protected boolean normalizationFailed = false;
     
     public FunctionNormalizationRebuildingVisitor(List<Type<?>> normalizers, JexlArgumentDescriptor descriptor, MetadataHelper helper,
                     Set<String> datatypeFilter) {
@@ -181,10 +181,9 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         // all of the arguments will refer to the same set of fields so we assume that the content
         // functions will be applied to each field in turn instead of every combination thereof.
         Map<Set<String>,Set<Integer>> fieldGroups = new HashMap<>();
-        Set<String> EMPTY_SET = new HashSet<>();
         for (int i = 0; i < function.jjtGetNumChildren(); i++) {
             // get the fields that go with this argument IFF this is a string literal argument
-            Set<String> fields = EMPTY_SET;
+            Set<String> fields = Collections.emptySet();
             List<JexlNode> literals = JexlASTHelper.getLiterals(function.jjtGetChild(i));
             if ((literals.size() == 1) && (literals.get(0) instanceof ASTStringLiteral)) {
                 fields = new HashSet<>(descriptor.fieldsForNormalization(helper, datatypeFilter, i - 2));

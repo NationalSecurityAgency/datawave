@@ -39,7 +39,7 @@ public class FieldToFieldComparisonVisitor extends RebuildingVisitor {
         
         // check both sides of nodes and count the nodes with identifier(s)
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            if (JexlASTHelper.getIdentifiers(node.jjtGetChild(i)).size() > 0) {
+            if (!JexlASTHelper.getIdentifiers(node.jjtGetChild(i)).isEmpty()) {
                 identifierNodes++;
             }
         }

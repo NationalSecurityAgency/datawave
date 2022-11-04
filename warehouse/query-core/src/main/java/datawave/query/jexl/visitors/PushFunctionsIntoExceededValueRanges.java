@@ -9,7 +9,6 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -19,10 +18,10 @@ import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -38,7 +37,6 @@ import static org.apache.commons.jexl2.parser.JexlNodes.newInstanceOfType;
  *
  */
 public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(PushFunctionsIntoExceededValueRanges.class);
     
     private MetadataHelper helper;
     private Set<String> datatypeFilter;
@@ -117,7 +115,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
                     if (copyFunction) {
                         filterableFunctions = new HashSet<>();
                         for (JexlNode function : functionNodesByField.get(field)) {
-                            filterableFunctions.add(super.copy(function));
+                            filterableFunctions.add(copy(function));
                         }
                     }
                     children.add(pushFunctionIntoExceededValueRange(filterableFunctions, range));
@@ -156,7 +154,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         if (child instanceof ASTFunctionNode) {
             return JexlASTHelper.getFieldNames((ASTFunctionNode) child, helper, datatypeFilter);
         }
-        return null;
+        return Collections.emptySet();
     }
     
     private boolean isExceededValueRangeNode(JexlNode child) {

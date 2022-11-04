@@ -287,19 +287,19 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         Key startKey = rangeLimiter.getStartKey();
         
         StringBuilder strBuilder = new StringBuilder("fi");
-        strBuilder.append(NULL_DELIMETER).append(range.getFieldName());
+        strBuilder.append(NULL_DELIMITER).append(range.getFieldName());
         Text cf = new Text(strBuilder.toString());
         
         strBuilder = new StringBuilder(range.getLower().toString());
         
-        strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
+        strBuilder.append(NULL_DELIMITER).append(startKey.getColumnFamily());
         Text cq = new Text(strBuilder.toString());
         
         Key seekBeginKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
         
         strBuilder = new StringBuilder(range.getUpper().toString());
         
-        strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily() + Constants.MAX_UNICODE_STRING);
+        strBuilder.append(NULL_DELIMITER).append(startKey.getColumnFamily() + Constants.MAX_UNICODE_STRING);
         cq = new Text(strBuilder.toString());
         
         Key seekEndKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());

@@ -46,8 +46,7 @@ public class RootNegationCheckVisitor {
             
             if (ASTNENode.class.equals(childClass) || ASTNotNode.class.equals(childClass) || ASTNRNode.class.equals(childClass)) {
                 // no need to inspect this path anymore
-                continue;
-            } else if (child.jjtGetNumChildren() == 0) {
+            } else if (child == null || child.jjtGetNumChildren() == 0) {
                 // reached a leaf node without ever encountering a negation
                 foundLeaf = true;
             } else {

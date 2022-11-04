@@ -15,7 +15,6 @@ import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
 
 import java.util.Set;
 
@@ -25,7 +24,6 @@ import java.util.Set;
  *
  */
 public class SortedUIDsRequiredVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(SortedUIDsRequiredVisitor.class);
     
     private final Set<String> indexedFields;
     private int indexedFieldCount = 0;
@@ -89,14 +87,12 @@ public class SortedUIDsRequiredVisitor extends BaseVisitor {
     public Object visit(ASTReference node, Object data) {
         // delayed predicates are not run against the index (if acknowledging them)
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-        if (!(acknowledgeDelayedPredicates && instance.isType(ASTDelayedPredicate.class))) {
-            if (!instance.isType(IndexHoleMarkerJexlNode.class)) {
-                if (instance.isAnyTypeOf(ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
-                    ivarators++;
-                    indexedFieldCount++;
-                } else {
-                    data = super.visit(node, data);
-                }
+        if (!(acknowledgeDelayedPredicates && instance.isType(ASTDelayedPredicate.class) && !instance.isType(IndexHoleMarkerJexlNode.class))) {
+            if (instance.isAnyTypeOf(ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
+                ivarators++;
+                indexedFieldCount++;
+            } else {
+                data = super.visit(node, data);
             }
         }
         return data;

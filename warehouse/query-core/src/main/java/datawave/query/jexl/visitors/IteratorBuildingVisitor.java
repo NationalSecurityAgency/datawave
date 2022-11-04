@@ -99,7 +99,6 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
@@ -128,7 +127,7 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
 public class IteratorBuildingVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(IteratorBuildingVisitor.class);
     
-    public static final String NULL_DELIMETER = "\u0000";
+    public static final String NULL_DELIMITER = "\u0000";
     
     @SuppressWarnings("rawtypes")
     protected NestedIterator root;
@@ -137,7 +136,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected Map<Entry<String,String>,Entry<Key,Value>> limitedMap = null;
     protected Collection<String> includeReferences = UniversalSet.instance();
     protected Collection<String> excludeReferences = Collections.emptyList();
-    protected Predicate<Key> datatypeFilter = Predicates.<Key> alwaysTrue();
+    protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
     protected TimeFilter timeFilter;
     
     protected FileSystemCache hdfsFileSystem;
@@ -207,6 +206,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     protected Map<String,Object> exceededOrEvaluationCache;
     
+    // logging constants
+    private static final String SATISFACTION_WARNING = "Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor";
+    private static final String EXCLUDED_REFERENCE = " is an excluded reference.";
+    
     public boolean isQueryFullySatisfied() {
         if (limitLookup) {
             return false;
@@ -255,7 +258,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // index checking has already been done, otherwise we would not have
             // an "ExceededValueThresholdMarker"
             // hence the "IndexAgnostic" method can be used here
-            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(and);
+            LiteralRange<?> range = JexlASTHelper.findRange().recursively().getRange(and);
             if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
@@ -319,7 +322,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 if (termFrequencyFields.contains(identifier)) {
                     nested = buildExceededFromTermFrequency(identifier, and, source, range, data);
                 } else {
-                    /**
+                    /*
                      * This is okay since 1) We are doc specific 2) We are not index only or tf 3) Therefore, we must evaluate against the document for this
                      * expression 4) Return a stubbed range in case we have a disjunction that breaks the current doc.
                      */
@@ -327,7 +330,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         nested = createExceededCheck(identifier, range, and);
                 }
                 
-                if (null != nested && null != data && data instanceof AbstractIteratorBuilder) {
+                if (null != nested && data instanceof AbstractIteratorBuilder) {
                     
                     AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
                     if (negatedLocal) {
@@ -336,8 +339,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         iterators.addInclude(nested);
                     }
                 } else {
-                    if (isQueryFullySatisfied == true) {
-                        log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+                    if (isQueryFullySatisfied) {
+                        log.warn(SATISFACTION_WARNING);
                     }
                     // if there is no parent
                     if (root == null && data == null) {
@@ -349,7 +352,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 }
                 
             }
-        } else if (null != data && data instanceof AndIteratorBuilder) {
+        } else if (data instanceof AndIteratorBuilder) {
             and.childrenAccept(this, data);
         } else {
             // Create an AndIterator and recursively add the children
@@ -456,8 +459,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setField(identifier);
             
             NestedIterator<Key> tfIterator = builder.build();
-            OrIterator tfMerge = new OrIterator(Arrays.asList(tfIterator, eventFieldIterator));
-            return tfMerge;
+            return new OrIterator(Arrays.asList(tfIterator, eventFieldIterator));
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}", "buildExceededFromTermFrequency"));
             throw new DatawaveFatalQueryException(qe);
@@ -481,19 +483,19 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         Key startKey = rangeLimiter.getStartKey();
         
         StringBuilder strBuilder = new StringBuilder("fi");
-        strBuilder.append(NULL_DELIMETER).append(range.getFieldName());
+        strBuilder.append(NULL_DELIMITER).append(range.getFieldName());
         Text cf = new Text(strBuilder.toString());
         
         strBuilder = new StringBuilder(range.getLower().toString());
         
-        strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
+        strBuilder.append(NULL_DELIMITER).append(startKey.getColumnFamily());
         Text cq = new Text(strBuilder.toString());
         
         Key seekBeginKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
         
         strBuilder = new StringBuilder(range.getUpper().toString());
         
-        strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
+        strBuilder.append(NULL_DELIMITER).append(startKey.getColumnFamily());
         cq = new Text(strBuilder.toString());
         
         Key seekEndKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
@@ -503,7 +505,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTOrNode or, Object data) {
-        if (null != data && data instanceof OrIteratorBuilder) {
+        if (data instanceof OrIteratorBuilder) {
             or.childrenAccept(this, data);
         } else {
             // Create an OrIterator and recursively add the children
@@ -564,12 +566,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     private String formatIncludesOrExcludes(List<NestedIterator> in) {
-        String builder = in.toString();
-        builder = builder.replaceAll("OrIterator:", "\n\tOrIterator:");
-        builder = builder.replaceAll("Includes:", "\n\t\tIncludes:");
-        builder = builder.replaceAll("Excludes:", "\n\t\tExcludes:");
-        builder = builder.replaceAll("Bridge:", "\n\t\t\tBridge:");
-        return builder.toString();
+        String s = in.toString();
+        s = s.replace("OrIterator:", "\n\tOrIterator:");
+        s = s.replace("Includes:", "\n\t\tIncludes:");
+        s = s.replace("Excludes:", "\n\t\tExcludes:");
+        s = s.replace("Bridge:", "\n\t\t\tBridge:");
+        return s;
     }
     
     @Override
@@ -606,21 +608,20 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             }
             
             // SatisfactionVisitor should have already initialized this to false
-            if (isQueryFullySatisfied == true) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+            if (isQueryFullySatisfied) {
+                log.warn(SATISFACTION_WARNING);
             }
-            return null;
-        }
-        
-        AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
-        // Add the negated IndexIteratorBuilder to the parent as an *exclude*
-        if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
-                        && !excludeReferences.contains(builder.getField())) {
-            iterators.addExclude(builder.build());
         } else {
-            // SatisfactionVisitor should have already initialized this to false
-            if (isQueryFullySatisfied == true) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+            AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
+            // Add the negated IndexIteratorBuilder to the parent as an *exclude*
+            if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
+                            && !excludeReferences.contains(builder.getField())) {
+                iterators.addExclude(builder.build());
+            } else {
+                // SatisfactionVisitor should have already initialized this to false
+                if (isQueryFullySatisfied) {
+                    log.warn(SATISFACTION_WARNING);
+                }
             }
         }
         
@@ -652,8 +653,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
          * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
          */
         if (isUnindexed(node)) {
-            if (isQueryFullySatisfied == true) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+            if (isQueryFullySatisfied) {
+                log.warn(SATISFACTION_WARNING);
             }
             return null;
         }
@@ -691,7 +692,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         if (data == null) {
             // Make this EQNode the root
             if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
-                throw new IllegalStateException(builder.getField() + " is a blacklisted reference.");
+                throw new IllegalStateException(builder.getField() + EXCLUDED_REFERENCE);
             } else if (builder.getField() != null) {
                 root = builder.build();
                 
@@ -709,8 +710,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (isNew && inclusionReference && notExcluded) {
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied == true) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+                if (isQueryFullySatisfied) {
+                    log.warn(SATISFACTION_WARNING);
                 }
             }
         }
@@ -839,12 +840,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         String value = null == objValue ? "null" : objValue.toString();
         
         StringBuilder builder = new StringBuilder("fi");
-        builder.append(NULL_DELIMETER).append(identifier);
+        builder.append(NULL_DELIMITER).append(identifier);
         Text cf = new Text(builder.toString());
         
         builder = new StringBuilder(value);
         
-        builder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
+        builder.append(NULL_DELIMITER).append(startKey.getColumnFamily());
         Text cq = new Text(builder.toString());
         
         return new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
@@ -857,12 +858,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         String value = null == objValue ? "null" : objValue.toString();
         
         StringBuilder builder = new StringBuilder("fi");
-        builder.append(NULL_DELIMETER).append(identifier);
+        builder.append(NULL_DELIMITER).append(identifier);
         Text cf = new Text(builder.toString());
         
         builder = new StringBuilder(value);
         
-        builder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
+        builder.append(NULL_DELIMITER).append(startKey.getColumnFamily());
         Text cq = new Text(builder.toString());
         
         return new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
@@ -879,8 +880,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (subNode instanceof ASTEQNode) {
                 delayedEqNodes.add(subNode);
             }
-            if (isQueryFullySatisfied == true) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+            if (isQueryFullySatisfied) {
+                log.warn(SATISFACTION_WARNING);
             }
             log.warn("Will not process ASTDelayedPredicate.");
         }
@@ -932,15 +933,15 @@ public class IteratorBuildingVisitor extends BaseVisitor {
          * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
          */
         if (isUnindexed(node)) {
-            if (isQueryFullySatisfied == true) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+            if (isQueryFullySatisfied) {
+                log.warn(SATISFACTION_WARNING);
             }
             return null;
         }
         
         // boolean to tell us if we've overridden our subtree due to
         // a negation or
-        boolean isNegation = (null != data && data instanceof AbstractIteratorBuilder && ((AbstractIteratorBuilder) data).isInANot());
+        boolean isNegation = (data instanceof AbstractIteratorBuilder && ((AbstractIteratorBuilder) data).isInANot());
         builder.setSource(getSourceIterator(node, isNegation));
         
         builder.setQueryId(queryId);
@@ -956,8 +957,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // A EQNode may be of the form FIELD == null. The evaluation can
         // handle this, so we should just not build an IndexIterator for it.
         if (null == builder.getValue()) {
-            if (isQueryFullySatisfied == true) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+            if (isQueryFullySatisfied) {
+                log.warn(SATISFACTION_WARNING);
             }
             return null;
         }
@@ -966,7 +967,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         if (data == null) {
             // Make this EQNode the root
             if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
-                throw new IllegalStateException(builder.getField() + " is a blacklisted reference.");
+                throw new IllegalStateException(builder.getField() + EXCLUDED_REFERENCE);
             } else {
                 root = builder.build();
                 
@@ -983,8 +984,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (isNew && inclusionReference && notExcluded) {
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied == true) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+                if (isQueryFullySatisfied) {
+                    log.warn(SATISFACTION_WARNING);
                 }
             }
         }
@@ -1008,10 +1009,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setField(JexlASTHelper.deconstructIdentifier(node.image));
         }
         
-        if (isUnindexed(node)) {
-            if (isQueryFullySatisfied == true) {
-                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-            }
+        if (isUnindexed(node) && isQueryFullySatisfied) {
+            log.warn(SATISFACTION_WARNING);
         }
         
         return null;
@@ -1144,10 +1143,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         exceededOrEvaluationCache.put(id, values);
                 } else if (params.getFstURI() != null) {
                     URI fstUri = new URI(params.getFstURI());
-                    FST fst;
+                    FST<?> fst;
                     // only recompute this if not already set since this is potentially expensive
                     if (exceededOrEvaluationCache.containsKey(id)) {
-                        fst = (FST) exceededOrEvaluationCache.get(id);
+                        fst = (FST<?>) exceededOrEvaluationCache.get(id);
                     } else {
                         fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstUri), hdfsFileCompressionCodec,
                                         hdfsFileSystem.getFileSystem(fstUri));
@@ -1188,7 +1187,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // "ExceededValueThresholdMarker"
         // hence the "IndexAgnostic" method can be used here
         if (source instanceof ASTAndNode) {
-            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(source);
+            LiteralRange<?> range = JexlASTHelper.findRange().recursively().getRange(source);
             if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
@@ -1217,7 +1216,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // "ExceededValueThresholdMarker"
         // hence the "IndexAgnostic" method can be used here
         if (sourceNode instanceof ASTAndNode) {
-            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(sourceNode);
+            LiteralRange<?> range = JexlASTHelper.findRange().recursively().getRange(sourceNode);
             if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
@@ -1248,7 +1247,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // "ExceededValueThresholdMarker"
         // hence the "IndexAgnostic" method can be used here
         if (sourceNode instanceof ASTAndNode) {
-            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(sourceNode);
+            LiteralRange<?> range = JexlASTHelper.findRange().recursively().getRange(sourceNode);
             if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
@@ -1309,7 +1308,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (nodes.size() > 1) {
                 ASTAndNode andNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
                 children(script, andNode);
-                children(andNode, nodes.toArray(new JexlNode[nodes.size()]));
+                children(andNode, nodes.toArray(new JexlNode[0]));
             } else {
                 children(script, nodes.get(0));
             }
@@ -1405,7 +1404,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         if (data == null) {
             // Make this EQNode the root
             if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
-                throw new IllegalStateException(builder.getField() + " is a blacklisted reference.");
+                throw new IllegalStateException(builder.getField() + EXCLUDED_REFERENCE);
             } else {
                 root = builder.build();
                 
@@ -1419,10 +1418,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
                             && !excludeReferences.contains(builder.getField())) {
                 iterators.addInclude(builder.build());
-            } else {
-                if (isQueryFullySatisfied == true) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
-                }
+            } else if (isQueryFullySatisfied) {
+                log.warn(SATISFACTION_WARNING);
             }
         }
     }

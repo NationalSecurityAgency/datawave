@@ -73,7 +73,7 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
         // if a field set was passed in, then check for existence before upcasing (@see visit(ASTFunctionNode, Object))
         if (data == null || ((Set<String>) data).contains(node.image)) {
             // don't uppercase an identifier under a ASTMethodNode, it is the method's name
-            if (node.jjtGetParent() instanceof ASTMethodNode == false) {
+            if (!(node.jjtGetParent() instanceof ASTMethodNode)) {
                 node.image = node.image.toUpperCase();
             }
         }

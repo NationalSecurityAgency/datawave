@@ -131,8 +131,8 @@ public class QueryPruningVisitor extends BaseVisitor {
         return (TruthState) node.jjtAccept(visitor, null);
     }
     
-    final private boolean rewrite;
-    final private boolean debugPrune;
+    private final boolean rewrite;
+    private final boolean debugPrune;
     
     private QueryPruningVisitor(boolean rewrite) {
         this(rewrite, false);
@@ -444,11 +444,13 @@ public class QueryPruningVisitor extends BaseVisitor {
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTIntegerLiteral node, Object data) {
         return TruthState.UNKNOWN;
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTFloatLiteral node, Object data) {
         return TruthState.UNKNOWN;
     }
@@ -552,10 +554,8 @@ public class QueryPruningVisitor extends BaseVisitor {
         if (rewrite && toReplace != null) {
             JexlNode parent = toReplace.jjtGetParent();
             if (parent != null && parent != toReplace) {
-                if (queryString != null && log.isDebugEnabled()) {
-                    if (this.debugPrune && baseReplacement != null) {
-                        log.debug("Pruning " + queryString + " to " + (baseReplacement instanceof ASTTrueNode ? "true" : "false"));
-                    }
+                if (queryString != null && log.isDebugEnabled() && this.debugPrune && baseReplacement != null) {
+                    log.debug("Pruning " + queryString + " to " + (baseReplacement instanceof ASTTrueNode ? "true" : "false"));
                 }
                 
                 if (baseReplacement != null) {
@@ -573,7 +573,7 @@ public class QueryPruningVisitor extends BaseVisitor {
                         }
                     }
                     
-                    JexlNodes.children(parent, children.toArray(new JexlNode[children.size()]));
+                    JexlNodes.children(parent, children.toArray(new JexlNode[0]));
                 }
             }
         }
