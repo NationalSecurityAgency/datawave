@@ -214,11 +214,11 @@ public class ScannerFactory {
     }
     
     public synchronized Collection<ScannerBase> currentScanners() {
-        return Collections.unmodifiableSet(instances);
+        return new HashSet<>(instances);
     }
     
     public synchronized Collection<ScannerSession> currentSessions() {
-        return Collections.unmodifiableSet(sessionInstances);
+        return new HashSet<>(sessionInstances);
     }
     
     public synchronized boolean lockdown() {
@@ -234,7 +234,7 @@ public class ScannerFactory {
     /**
      * @param bs
      */
-    public void close(ScannerSession bs) {
+    public synchronized void close(ScannerSession bs) {
         try {
             log.debug("Closed session " + System.identityHashCode(bs));
             sessionInstances.remove(bs);
