@@ -7,9 +7,8 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import org.apache.accumulo.core.data.Key;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import java.util.function.Function;
 
@@ -17,15 +16,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Due to the expansive nature of {@link QueryFunctions}, tests for individual methods are encapsulated within their own test suites represented by the nested
- * classes found herein. The {@link Enclosed} runner will run all tests within these test suites.
+ * classes found herein. The {@link Nested} runner will run all tests within these test suites.
  */
-@RunWith(Enclosed.class)
 public class QueryFunctionsTest {
     
     /**
      * Tests for {@link QueryFunctions#matchRegex(Object, String)}.
      */
-    public static class IncludeRegexSingularValueTests {
+    @Nested
+    public class IncludeRegexSingularValueTests {
         
         private Object fieldValue;
         private String regex;
@@ -140,7 +139,8 @@ public class QueryFunctionsTest {
     /**
      * Tests for {@link QueryFunctions#matchRegex(Iterable, String)}.
      */
-    public static class IncludeRegexIterableValueTests {
+    @Nested
+    public class IncludeRegexIterableValueTests {
         
         private Iterable<Object> fieldValues;
         private String regex;

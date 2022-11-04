@@ -11,7 +11,7 @@ import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -19,12 +19,12 @@ import java.util.List;
 
 import static datawave.query.jexl.JexlASTHelper.parseJexlQuery;
 import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQuery;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class QueryPropertyMarkerTest {
     
@@ -37,13 +37,13 @@ public class QueryPropertyMarkerTest {
         assertEmptyInstance(findInstance("((_Bounded_ = true) && (FOO > '1' && FOO < '2')) && ((_EvalOnly_ = true) && (FOO == '1' && BAR == '2'))"));
         
         // Test unwrapped marker and unwrapped sources
-        assertInstance(findInstance("(_Delayed_ = true) && FOO == '1' && BAR == '2'"), ASTDelayedPredicate.class, "(FOO == '1' && BAR == '2')");
+        assertInstance(findInstance("(_Delayed_ = true) && FOO == '1' && BAR == '2'"), "(FOO == '1' && BAR == '2')");
         // Test unwrapped marker and wrapped sources
-        assertInstance(findInstance("(_Delayed_ = true) && (FOO == '1' && BAR == '2')"), ASTDelayedPredicate.class, "FOO == '1' && BAR == '2'");
+        assertInstance(findInstance("(_Delayed_ = true) && (FOO == '1' && BAR == '2')"), "FOO == '1' && BAR == '2'");
         // Test wrapped marker and unwrapped sources
-        assertInstance(findInstance("((_Delayed_ = true) && FOO == '1' && BAR == '2')"), ASTDelayedPredicate.class, "(FOO == '1' && BAR == '2')");
+        assertInstance(findInstance("((_Delayed_ = true) && FOO == '1' && BAR == '2')"), "(FOO == '1' && BAR == '2')");
         // Test wrapped marker and wrapped sources
-        assertInstance(findInstance("((_Delayed_ = true) && (FOO == '1' && BAR == '2'))"), ASTDelayedPredicate.class, "FOO == '1' && BAR == '2'");
+        assertInstance(findInstance("((_Delayed_ = true) && (FOO == '1' && BAR == '2'))"), "FOO == '1' && BAR == '2'");
     }
     
     @Test
@@ -237,8 +237,8 @@ public class QueryPropertyMarkerTest {
         assertNull(instance.getSource());
     }
     
-    private void assertInstance(QueryPropertyMarker.Instance instance, Class<? extends QueryPropertyMarker> type, String source) {
-        assertEquals(type, instance.getType());
+    private void assertInstance(QueryPropertyMarker.Instance instance, String source) {
+        assertEquals(ASTDelayedPredicate.class, instance.getType());
         assertEquals(source, buildQuery(instance.getSource()));
     }
 }

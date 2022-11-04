@@ -14,14 +14,17 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static datawave.ingest.mapreduce.job.metrics.MetricsTestData.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static datawave.ingest.mapreduce.job.metrics.MetricsTestData.createEvent;
+import static datawave.ingest.mapreduce.job.metrics.MetricsTestData.createFields;
+import static datawave.ingest.mapreduce.job.metrics.MetricsTestData.family;
+import static datawave.ingest.mapreduce.job.metrics.MetricsTestData.qualifier;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KeyValueCountingContextWriterTest {
     
@@ -34,7 +37,7 @@ public class KeyValueCountingContextWriterTest {
     
     private DataTypeHandler<BulkIngestKey> handler = new DummyDataTypeHandler<>();
     
-    @Before
+    @BeforeEach
     public void setUp() {
         
         Type fileType = new Type("file", null, null, null, 10, null);
@@ -82,8 +85,8 @@ public class KeyValueCountingContextWriterTest {
             foundTarMetric = foundTarMetric || (family.equals(expectedFamily) && qualifier.equals("extension\u0000tar\u0000shard"));
         }
         
-        assertTrue("Did not find .gz KeyValueCount mutation", foundGzMetric);
-        assertTrue("Did not find .tar KeyValueCount mutation", foundTarMetric);
+        assertTrue(foundGzMetric, "Did not find .gz KeyValueCount mutation");
+        assertTrue(foundTarMetric, "Did not find .tar KeyValueCount mutation");
     }
     
     @Test

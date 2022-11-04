@@ -2,7 +2,7 @@ package datawave.query.attributes;
 
 import datawave.data.type.NoOpType;
 import org.apache.accumulo.core.data.Key;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TypeAttributeTest extends AttributeTest {
     

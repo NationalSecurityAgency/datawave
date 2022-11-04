@@ -2,9 +2,9 @@ package datawave.util.flag;
 
 import datawave.util.flag.InputFile.TrackedDir;
 import org.apache.hadoop.fs.Path;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +19,7 @@ public class InputFileTest {
     private static final String BASE_DIR = "/base";
     private InputFile inFile;
     
-    @Before
+    @BeforeEach
     public void setup() {
         Path p = new Path("path");
         this.inFile = new InputFile("foo", p, 10, 10, 0, BASE_DIR);
@@ -34,8 +34,8 @@ public class InputFileTest {
             inFile.updateCurrentDir(dir);
             Path cur = inFile.getCurrentDir();
             Path expect = inFile.getTrackedDir(dir);
-            Assert.assertEquals(expect, cur);
-            Assert.assertTrue(inFile.isMoved());
+            Assertions.assertEquals(expect, cur);
+            Assertions.assertTrue(inFile.isMoved());
             inFile.setMoved(false);
         }
     }
@@ -43,11 +43,11 @@ public class InputFileTest {
     @Test
     public void testEqualsHashCode() {
         InputFile test = new InputFile(inFile.getFolder(), inFile.getPath(), inFile.getBlocksize(), inFile.getFilesize(), inFile.getTimestamp(), "/xx");
-        Assert.assertEquals(test, this.inFile);
-        Assert.assertEquals(test.hashCode(), this.inFile.hashCode());
+        Assertions.assertEquals(test, this.inFile);
+        Assertions.assertEquals(test.hashCode(), this.inFile.hashCode());
         test.setFilesize(test.getFilesize() + 1);
-        Assert.assertNotEquals(test, this.inFile);
-        Assert.assertNotEquals(test.hashCode(), this.inFile.hashCode());
+        Assertions.assertNotEquals(test, this.inFile);
+        Assertions.assertNotEquals(test.hashCode(), this.inFile.hashCode());
     }
     
     private TrackedDir getRandomDir(TrackedDir exclude) {

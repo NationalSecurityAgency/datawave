@@ -16,9 +16,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,7 +36,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
     
-    @Before
+    @BeforeEach
     public void setup() {
         config = new ShardQueryConfiguration();
         helper = createMock(MetadataHelper.class);
@@ -62,6 +62,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         URI hdfsCacheURI = new URI("file:" + tmpDir.getPath());
         FileSystem fs = FileSystem.get(hdfsCacheURI, hadoopConf);
         
+        assert hadoopConfig != null;
         config.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
         config.setIvaratorFstHdfsBaseURIs("file:////tmp/");
         config.setIndexedFields(indexedFields);
@@ -140,15 +141,16 @@ public class VisitorFunctionTest extends EasyMockSupport {
         
         verifyAll();
         
-        Assert.assertNotEquals(chunk, updatedChunk);
+        Assertions.assertNotEquals(chunk, updatedChunk);
+        assert updatedChunk != null;
         String updatedQuery = updatedChunk.getOptions().getIterators().iterator().next().getOptions().get(QueryOptions.QUERY);
-        Assert.assertNotEquals(query, updatedQuery);
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("_List_"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("field = 'FIELD1'"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("values\":[\"a\",\"b\"]"));
+        Assertions.assertNotEquals(query, updatedQuery);
+        Assertions.assertTrue(updatedQuery.contains("_List_"), updatedQuery);
+        Assertions.assertTrue(updatedQuery.contains("field = 'FIELD1'"), updatedQuery);
+        Assertions.assertTrue(updatedQuery.contains("values\":[\"a\",\"b\"]"), updatedQuery);
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void overTermThresholdCantReduceTest() throws IOException, TableNotFoundException, URISyntaxException {
         setupExpects();
         
@@ -182,16 +184,18 @@ public class VisitorFunctionTest extends EasyMockSupport {
         replayAll();
         
         function = new VisitorFunction(config, helper);
-        ScannerChunk updatedChunk = function.apply(chunk);
-        
-        verifyAll();
-        
-        Assert.assertNotEquals(chunk, updatedChunk);
-        String updatedQuery = updatedChunk.getOptions().getIterators().iterator().next().getOptions().get(QueryOptions.QUERY);
-        Assert.assertNotEquals(query, updatedQuery);
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("_List_"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("field = 'FIELD1'"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("values\":[\"a\",\"b\"]"));
+        Assertions.assertThrows(DatawaveFatalQueryException.class, () -> {
+            ScannerChunk updatedChunk = function.apply(chunk);
+            verifyAll();
+            
+            Assertions.assertNotEquals(chunk, updatedChunk);
+            assert updatedChunk != null;
+            String updatedQuery = updatedChunk.getOptions().getIterators().iterator().next().getOptions().get(QueryOptions.QUERY);
+            Assertions.assertNotEquals(query, updatedQuery);
+            Assertions.assertTrue(updatedQuery.contains("_List_"), updatedQuery);
+            Assertions.assertTrue(updatedQuery.contains("field = 'FIELD1'"), updatedQuery);
+            Assertions.assertTrue(updatedQuery.contains("values\":[\"a\",\"b\"]"), updatedQuery);
+        });
     }
     
     @Test
@@ -232,14 +236,15 @@ public class VisitorFunctionTest extends EasyMockSupport {
         
         verifyAll();
         
-        Assert.assertNotEquals(chunk, updatedChunk);
+        Assertions.assertNotEquals(chunk, updatedChunk);
+        assert updatedChunk != null;
         String updatedQuery = updatedChunk.getOptions().getIterators().iterator().next().getOptions().get(QueryOptions.QUERY);
-        Assert.assertNotEquals(query, updatedQuery);
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("_List_"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("field = 'FIELD1'"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("values\":[\"a\",\"b\",\"c\",\"d\",\"e\"]"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("FIELD1 == 'x' || FIELD1 == 'y'"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("&& (field = 'FIELD2') && (params = '{\"values\":[\"a\",\"b\",\"c\",\"d\"]}')"));
+        Assertions.assertNotEquals(query, updatedQuery);
+        Assertions.assertTrue(updatedQuery.contains("_List_"), updatedQuery);
+        Assertions.assertTrue(updatedQuery.contains("field = 'FIELD1'"), updatedQuery);
+        Assertions.assertTrue(updatedQuery.contains("values\":[\"a\",\"b\",\"c\",\"d\",\"e\"]"), updatedQuery);
+        Assertions.assertTrue(updatedQuery.contains("FIELD1 == 'x' || FIELD1 == 'y'"), updatedQuery);
+        Assertions.assertTrue(updatedQuery.contains("&& (field = 'FIELD2') && (params = '{\"values\":[\"a\",\"b\",\"c\",\"d\"]}')"), updatedQuery);
     }
     
     @Test
@@ -279,11 +284,12 @@ public class VisitorFunctionTest extends EasyMockSupport {
         
         verifyAll();
         
-        Assert.assertNotEquals(chunk, updatedChunk);
+        Assertions.assertNotEquals(chunk, updatedChunk);
+        assert updatedChunk != null;
         String updatedQuery = updatedChunk.getOptions().getIterators().iterator().next().getOptions().get(QueryOptions.QUERY);
-        Assert.assertNotEquals(query, updatedQuery);
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("_List_"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("field = 'FIELD1'"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("ranges\":[[\"(a\",\"z)\"]"));
+        Assertions.assertNotEquals(query, updatedQuery);
+        Assertions.assertTrue(updatedQuery.contains("_List_"), updatedQuery);
+        Assertions.assertTrue(updatedQuery.contains("field = 'FIELD1'"), updatedQuery);
+        Assertions.assertTrue(updatedQuery.contains("ranges\":[[\"(a\",\"z)\"]"), updatedQuery);
     }
 }

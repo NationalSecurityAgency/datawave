@@ -1,13 +1,34 @@
 package datawave.security.login;
 
-import static org.easymock.EasyMock.expect;
-import static org.easymock.MockType.STRICT;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.google.common.collect.Lists;
+import datawave.security.auth.DatawaveCredential;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.DatawaveUserService;
+import datawave.security.authorization.JWTTokenHandler;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils;
+import datawave.security.util.DnUtils.NpeUtils;
+import datawave.security.util.MockCallbackHandler;
+import datawave.security.util.MockDatawaveCertVerifier;
+import org.easymock.EasyMockExtension;
+import org.easymock.EasyMockSupport;
+import org.easymock.Mock;
+import org.easymock.TestSubject;
+import org.jboss.security.JSSESecurityDomain;
+import org.jboss.security.SimpleGroup;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.X509KeyManager;
+import javax.security.auth.Subject;
+import javax.security.auth.login.AccountLockedException;
+import javax.security.auth.login.FailedLoginException;
 import java.net.Socket;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -25,38 +46,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.X509KeyManager;
-import javax.security.auth.Subject;
-import javax.security.auth.login.AccountLockedException;
-import javax.security.auth.login.FailedLoginException;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.MockType.STRICT;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import com.google.common.collect.Lists;
-import datawave.security.auth.DatawaveCredential;
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUserService;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.DatawaveUser.UserType;
-import datawave.security.authorization.JWTTokenHandler;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
-import datawave.security.util.DnUtils.NpeUtils;
-import datawave.security.util.MockCallbackHandler;
-import datawave.security.util.MockDatawaveCertVerifier;
-
-import org.easymock.EasyMockRunner;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
-import org.easymock.TestSubject;
-import org.jboss.security.JSSESecurityDomain;
-import org.jboss.security.SimpleGroup;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.reflect.Whitebox;
-
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
     private static final String BLACKLIST_ROLE = "BLACKLIST_ROLE";
     @TestSubject
@@ -76,7 +75,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
     private SubjectIssuerDNPair userDN;
     private DatawavePrincipal defaultPrincipal;
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         
@@ -150,8 +149,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         options.put("blacklistUserRole", BLACKLIST_ROLE);
         options.put("requiredRoles", "AuthorizedUser:AuthorizedServer:OtherRequiredRole");
         
-        Whitebox.setInternalState(datawaveLoginModule, DatawaveUserService.class, datawaveUserService);
-        Whitebox.setInternalState(datawaveLoginModule, JSSESecurityDomain.class, securityDomain);
+        ReflectionTestUtils.setField(datawaveLoginModule, "datawaveUserService", datawaveUserService);
+        ReflectionTestUtils.setField(datawaveLoginModule, "domain", securityDomain);
         datawaveLoginModule.initialize(new Subject(), callbackHandler, sharedState, options);
         
         verifyAll();
@@ -175,7 +174,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         replayAll();
         
         boolean success = datawaveLoginModule.login();
-        assertTrue("Login did not succeed.", success);
+        assertTrue(success, "Login did not succeed.");
         
         verifyAll();
     }
@@ -199,7 +198,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         replayAll();
         
         boolean success = datawaveLoginModule.login();
-        assertTrue("Login did not succeed.", success);
+        assertTrue(success, "Login did not succeed.");
         
         Group[] roleSets = datawaveLoginModule.getRoleSets();
         assertEquals(2, roleSets.length);
@@ -217,10 +216,10 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         SimpleGroup callerPrincipal = (SimpleGroup) roleSets[1];
         assertEquals("CallerPrincipal", callerPrincipal.getName());
         Enumeration<Principal> members = callerPrincipal.members();
-        assertTrue("CallerPrincipal group has no members", members.hasMoreElements());
+        assertTrue(members.hasMoreElements(), "CallerPrincipal group has no members");
         Principal p = members.nextElement();
         assertEquals(expected, p);
-        assertFalse("CallerPrincipal group has too many members", members.hasMoreElements());
+        assertFalse(members.hasMoreElements(), "CallerPrincipal group has too many members");
         
         verifyAll();
     }
@@ -258,7 +257,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         replayAll();
         
         boolean success = datawaveLoginModule.login();
-        assertTrue("Login did not succeed.", success);
+        assertTrue(success, "Login did not succeed.");
         assertEquals(userDN, expected.getUserDN());
         
         Group[] roleSets = datawaveLoginModule.getRoleSets();
@@ -303,7 +302,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         replayAll();
         
         boolean success = datawaveLoginModule.login();
-        assertTrue("Login did not succeed.", success);
+        assertTrue(success, "Login did not succeed.");
         assertEquals(userDN, expected.getUserDN());
         
         Group[] roleSets = datawaveLoginModule.getRoleSets();
@@ -315,7 +314,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         verifyAll();
     }
     
-    @Test(expected = AccountLockedException.class)
+    @Test
     public void testBlacklistedUser() throws Exception {
         DatawaveCredential datawaveCredential = new DatawaveCredential(testUserCert, null, null);
         callbackHandler.name = datawaveCredential.getUserName();
@@ -331,13 +330,16 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         
         replayAll();
         
-        boolean success = datawaveLoginModule.login();
-        assertFalse("Login should not have succeeded.", success);
+        assertThrows(AccountLockedException.class, () -> {
+            boolean success = datawaveLoginModule.login();
+            
+            assertFalse(success, "Login should not have succeeded.");
+        });
         
         verifyAll();
     }
     
-    @Test(expected = AccountLockedException.class)
+    @Test
     public void testBlacklistedProxiedUser() throws Exception {
         // Proxied entities has the original user DN, plus it came through a server and
         // the request is being made by a second server. Make sure that the resulting
@@ -369,8 +371,11 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         
         replayAll();
         
-        boolean success = datawaveLoginModule.login();
-        assertFalse("Login should not have succeeded.", success);
+        assertThrows(AccountLockedException.class, () -> {
+            boolean success = datawaveLoginModule.login();
+            
+            assertFalse(success, "Login should not have succeeded.");
+        });
         
         verifyAll();
     }
@@ -403,7 +408,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         replayAll();
         
         boolean success = datawaveLoginModule.login();
-        assertTrue("Login did not succeed.", success);
+        assertTrue(success, "Login did not succeed.");
         assertEquals(userDN, expected.getUserDN());
         
         verifyAll();
@@ -411,8 +416,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
     
     @Test
     public void testJWTLogin() throws Exception {
-        Whitebox.setInternalState(datawaveLoginModule, "jwtHeaderLogin", true);
-        JWTTokenHandler tokenHandler = Whitebox.getInternalState(datawaveLoginModule, JWTTokenHandler.class);
+        ReflectionTestUtils.setField(datawaveLoginModule, "jwtHeaderLogin", true);
+        JWTTokenHandler tokenHandler = (JWTTokenHandler) ReflectionTestUtils.getField(datawaveLoginModule, "jwtTokenHandler");
         
         // Proxied entities has the original user DN, plus it came through a server and
         // the request is being made by a second server. Make sure that the resulting
@@ -436,13 +441,13 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         replayAll();
         
         boolean success = datawaveLoginModule.login();
-        assertTrue("Login did not succeed.", success);
+        assertTrue(success, "Login did not succeed.");
         assertEquals(userDN, expected.getUserDN());
         
         verifyAll();
     }
     
-    @Test(expected = FailedLoginException.class)
+    @Test
     public void testInvalidLoginCertIssuerDenied() throws Exception {
         MockDatawaveCertVerifier.issuerSupported = false;
         DatawaveCredential datawaveCredential = new DatawaveCredential(testUserCert, null, null);
@@ -454,14 +459,12 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         
         replayAll();
         
-        try {
-            datawaveLoginModule.login();
-        } finally {
-            verifyAll();
-        }
+        assertThrows(FailedLoginException.class, () -> datawaveLoginModule.login());
+        
+        verifyAll();
     }
     
-    @Test(expected = FailedLoginException.class)
+    @Test
     public void testInvalidLoginCertVerificationFailed() throws Exception {
         MockDatawaveCertVerifier.verify = false;
         DatawaveCredential datawaveCredential = new DatawaveCredential(testUserCert, null, null);
@@ -473,14 +476,12 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         
         replayAll();
         
-        try {
-            datawaveLoginModule.login();
-        } finally {
-            verifyAll();
-        }
+        assertThrows(FailedLoginException.class, () -> datawaveLoginModule.login());
+        
+        verifyAll();
     }
     
-    @Test(expected = FailedLoginException.class)
+    @Test
     public void testInvalidLoginAuthorizationLookupFailed() throws Exception {
         DatawaveCredential datawaveCredential = new DatawaveCredential(testUserCert, null, null);
         callbackHandler.name = datawaveCredential.getUserName();
@@ -492,11 +493,10 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         
         replayAll();
         
-        try {
-            datawaveLoginModule.login();
-        } finally {
-            verifyAll();
-        }
+        assertThrows(FailedLoginException.class, () -> datawaveLoginModule.login());
+        
+        verifyAll();
+        
     }
     
     private static class TestDatawavePrincipalLoginModule extends DatawavePrincipalLoginModule {

@@ -1,13 +1,6 @@
 package datawave.ingest.table.config;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -17,11 +10,16 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.api.easymock.PowerMock;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class MetadataTableConfigHelperTest {
     
@@ -52,7 +50,7 @@ public class MetadataTableConfigHelperTest {
         tableProperties = new HashMap<>();
         localityGroups = new HashMap<>();
         
-        TableOperations mock = PowerMock.createMock(TableOperations.class);
+        TableOperations mock = EasyMock.createMock(TableOperations.class);
         
         mock.getProperties(EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
@@ -125,7 +123,7 @@ public class MetadataTableConfigHelperTest {
         }).anyTimes();
         
         // prepare it for use...
-        PowerMock.replay(mock);
+        EasyMock.replay(mock);
         
         return mock;
     }
@@ -137,7 +135,7 @@ public class MetadataTableConfigHelperTest {
             configuration = new HashMap<>();
         }
         
-        Configuration mock = PowerMock.createMock(Configuration.class);
+        Configuration mock = EasyMock.createMock(Configuration.class);
         
         mock.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
@@ -171,14 +169,14 @@ public class MetadataTableConfigHelperTest {
             return results;
         }).anyTimes();
         
-        PowerMock.replay(mock);
+        EasyMock.replay(mock);
         
         return mock;
     }
     
     protected Logger createMockLogger() {
         
-        Logger log = PowerMock.createMock(Logger.class);
+        Logger log = EasyMock.createMock(Logger.class);
         
         if (null == debugMessages) {
             
@@ -210,12 +208,12 @@ public class MetadataTableConfigHelperTest {
             return null;
         }).anyTimes();
         
-        PowerMock.replay(log);
+        EasyMock.replay(log);
         
         return log;
     }
     
-    @Before
+    @BeforeEach
     public void setup() {
         Level desiredLevel = Level.ALL;
         
@@ -224,7 +222,7 @@ public class MetadataTableConfigHelperTest {
         log.setLevel(desiredLevel);
     }
     
-    @After
+    @AfterEach
     public void teardown() {
         
         MetadataTableConfigHelperTest.logger.setLevel(MetadataTableConfigHelperTest.testDriverLevel);
@@ -248,8 +246,8 @@ public class MetadataTableConfigHelperTest {
             
             String msg = iae.getMessage();
             
-            Assert.assertTrue("MetadataTableConfigHelper.setup threw the expected exception, but the message was not the expected message.",
-                            msg.startsWith("No Such Table: "));
+            Assertions.assertTrue(msg.startsWith("No Such Table: "),
+                            "MetadataTableConfigHelper.setup threw the expected exception, but the message was not the expected message.");
         } finally {
             
             MetadataTableConfigHelperTest.logger.info("MetadataTableConfigHelperTest.testSetupNothingDefinedInConfiguration completed.");
@@ -273,8 +271,8 @@ public class MetadataTableConfigHelperTest {
             
             uut.setup(MetadataTableConfigHelperTest.TABLE_NAME, config, log);
             
-            Assert.assertEquals("MetadataTableConfigHelper.setup incorrectly identified the TableName", MetadataTableConfigHelperTest.TABLE_NAME,
-                            uut.exposeTableName());
+            Assertions.assertEquals(MetadataTableConfigHelperTest.TABLE_NAME, uut.exposeTableName(),
+                            "MetadataTableConfigHelper.setup incorrectly identified the TableName");
             
         } finally {
             
@@ -303,8 +301,8 @@ public class MetadataTableConfigHelperTest {
                 
                 String msg = iae.getMessage();
                 
-                Assert.assertTrue("MetadataTableConfigHelper.setup threw the expected exception, but the message was not the expected message.",
-                                msg.startsWith("No Such Table: "));
+                Assertions.assertTrue(msg.startsWith("No Such Table: "),
+                                "MetadataTableConfigHelper.setup threw the expected exception, but the message was not the expected message.");
             }
             
         } finally {
@@ -327,7 +325,7 @@ public class MetadataTableConfigHelperTest {
             
             uut.configure(tops);
             
-            Assert.assertTrue("MetadataTableConfigHelper.configure incorrectly populated the Table Properties.", this.tableProperties.isEmpty());
+            Assertions.assertTrue(this.tableProperties.isEmpty(), "MetadataTableConfigHelper.configure incorrectly populated the Table Properties.");
             
         } finally {
             
@@ -355,15 +353,15 @@ public class MetadataTableConfigHelperTest {
             
             uut.setup(MetadataTableConfigHelperTest.TABLE_NAME, config, log);
             
-            Assert.assertEquals("MetadataTableConfigHelper.setup incorrectly identified the TableName", MetadataTableConfigHelperTest.TABLE_NAME,
-                            uut.exposeTableName());
+            Assertions.assertEquals(MetadataTableConfigHelperTest.TABLE_NAME, uut.exposeTableName(),
+                            "MetadataTableConfigHelper.setup incorrectly identified the TableName");
             
             uut.configure(tops);
             
-            Assert.assertFalse("MetadataTableConfigHelper.configureShardTable failed to populate the Table Properties collection.",
-                            this.tableProperties.isEmpty());
-            Assert.assertTrue("MetadataTableConfigHelper.configureShardTable caused the the Locality Groups collection to be populated.",
-                            this.localityGroups.isEmpty());
+            Assertions.assertFalse(this.tableProperties.isEmpty(),
+                            "MetadataTableConfigHelper.configureShardTable failed to populate the Table Properties collection.");
+            Assertions.assertTrue(this.localityGroups.isEmpty(),
+                            "MetadataTableConfigHelper.configureShardTable caused the the Locality Groups collection to be populated.");
             
             uut = new WrappedMetadataTableConfigHelper();
             
@@ -374,15 +372,15 @@ public class MetadataTableConfigHelperTest {
             
             uut.setup(MetadataTableConfigHelperTest.TABLE_NAME, config, log);
             
-            Assert.assertEquals("MetadataTableConfigHelper.setup incorrectly identified the TableName", MetadataTableConfigHelperTest.TABLE_NAME,
-                            uut.exposeTableName());
+            Assertions.assertEquals(MetadataTableConfigHelperTest.TABLE_NAME, uut.exposeTableName(),
+                            "MetadataTableConfigHelper.setup incorrectly identified the TableName");
             
             uut.configure(tops);
             
-            Assert.assertFalse("MetadataTableConfigHelper.configureShardTable failed to populate the Table Properties collection.",
-                            this.tableProperties.isEmpty());
-            Assert.assertTrue("MetadataTableConfigHelper.configureShardTable caused the the Locality Groups collection to be populated.",
-                            this.localityGroups.isEmpty());
+            Assertions.assertFalse(this.tableProperties.isEmpty(),
+                            "MetadataTableConfigHelper.configureShardTable failed to populate the Table Properties collection.");
+            Assertions.assertTrue(this.localityGroups.isEmpty(),
+                            "MetadataTableConfigHelper.configureShardTable caused the the Locality Groups collection to be populated.");
             
         } finally {
             

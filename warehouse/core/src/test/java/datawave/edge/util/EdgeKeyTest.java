@@ -1,21 +1,20 @@
 package datawave.edge.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-
 import datawave.edge.util.EdgeKey.EDGE_FORMAT;
 import datawave.edge.util.EdgeKey.EdgeKeyBuilder;
 import datawave.edge.util.EdgeKey.STATS_TYPE;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.hadoop.io.Text;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EdgeKeyTest {
     
@@ -29,7 +28,7 @@ public class EdgeKeyTest {
     Key refStatsDateProtobuf;
     Key refDateProtobuf;
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         refBuilder = EdgeKey.newBuilder();
         refBuilder.setFormat(EdgeKey.EDGE_FORMAT.STANDARD).setSourceData("SOURCE").setSinkData("SINK").setType("TYPE").setSourceRelationship("SOURCEREL")
@@ -56,9 +55,6 @@ public class EdgeKeyTest {
                         new Text("ALL"), 814l);
         
     }
-    
-    @After
-    public void tearDown() throws Exception {}
     
     @Test
     public void testNewBuilder() {
@@ -127,12 +123,12 @@ public class EdgeKeyTest {
         
         // verify things changed
         String err = "Source/Sink Swap failed";
-        assertEquals(err, swappedEdgeKey.getSourceData(), "SINK");
-        assertEquals(err, swappedEdgeKey.getSinkData(), "SOURCE");
-        assertEquals(err, swappedEdgeKey.getSourceRelationship(), "SINKREL");
-        assertEquals(err, swappedEdgeKey.getSinkRelationship(), "SOURCEREL");
-        assertEquals(err, swappedEdgeKey.getSourceAttribute1(), "SINKCATEGORY");
-        assertEquals(err, swappedEdgeKey.getSinkAttribute1(), "SOURCECATEGORY");
+        assertEquals(swappedEdgeKey.getSourceData(), "SINK", err);
+        assertEquals(swappedEdgeKey.getSinkData(), "SOURCE", err);
+        assertEquals(swappedEdgeKey.getSourceRelationship(), "SINKREL", err);
+        assertEquals(swappedEdgeKey.getSinkRelationship(), "SOURCEREL", err);
+        assertEquals(swappedEdgeKey.getSourceAttribute1(), "SINKCATEGORY", err);
+        assertEquals(swappedEdgeKey.getSinkAttribute1(), "SOURCECATEGORY", err);
     }
     
     @Test
@@ -192,108 +188,108 @@ public class EdgeKeyTest {
     
     private void verifyEdgeKey(EdgeKey edgeKey) {
         String err = "EdgeKey created with incorrect data";
-        assertEquals(err, edgeKey.getFormat().name(), EDGE_FORMAT.STANDARD.name());
-        assertEquals(err, edgeKey.getSourceData(), "SOURCE");
-        assertEquals(err, edgeKey.getSinkData(), "SINK");
-        assertEquals(err, edgeKey.getType(), "TYPE");
-        assertEquals(err, edgeKey.getSourceRelationship(), "SOURCEREL");
-        assertEquals(err, edgeKey.getSinkRelationship(), "SINKREL");
-        assertEquals(err, edgeKey.getYyyymmdd(), "YYYYMMDD");
-        assertEquals(err, edgeKey.getSourceAttribute1(), "SOURCECATEGORY");
-        assertEquals(err, edgeKey.getSinkAttribute1(), "SINKCATEGORY");
-        assertEquals(err, edgeKey.getAttribute2(), "ATTRIBUTE2");
-        assertEquals(err, edgeKey.getAttribute3(), "ATTRIBUTE3");
-        assertEquals(err, edgeKey.getDateType(), EdgeKey.DATE_TYPE.EVENT_ONLY);
-        assertEquals(err, edgeKey.getColvis().toString(), "ALL");
-        assertTrue(err, (edgeKey.getTimestamp() == 814l));
-        assertFalse(err, edgeKey.isDeleted());
+        assertEquals(edgeKey.getFormat().name(), EDGE_FORMAT.STANDARD.name(), err);
+        assertEquals(edgeKey.getSourceData(), "SOURCE", err);
+        assertEquals(edgeKey.getSinkData(), "SINK", err);
+        assertEquals(edgeKey.getType(), "TYPE", err);
+        assertEquals(edgeKey.getSourceRelationship(), "SOURCEREL", err);
+        assertEquals(edgeKey.getSinkRelationship(), "SINKREL", err);
+        assertEquals(edgeKey.getYyyymmdd(), "YYYYMMDD", err);
+        assertEquals(edgeKey.getSourceAttribute1(), "SOURCECATEGORY", err);
+        assertEquals(edgeKey.getSinkAttribute1(), "SINKCATEGORY", err);
+        assertEquals(edgeKey.getAttribute2(), "ATTRIBUTE2", err);
+        assertEquals(edgeKey.getAttribute3(), "ATTRIBUTE3", err);
+        assertEquals(edgeKey.getDateType(), EdgeKey.DATE_TYPE.EVENT_ONLY, err);
+        assertEquals(edgeKey.getColvis().toString(), "ALL", err);
+        assertTrue((edgeKey.getTimestamp() == 814l), err);
+        assertFalse(edgeKey.isDeleted(), err);
     }
     
     private void verifyNoAttribute3Key(Key key) {
         String err = "Accumulo Key created with incorrect data";
-        assertEquals(err, 11, key.getRow().getLength()); // SOURCE\0SINK
-        assertEquals(err, 6, key.getRow().find("\0"));
-        assertEquals(err, 0, key.getRow().find("SOURCE"));
-        assertEquals(err, 7, key.getRow().find("SINK"));
+        assertEquals(11, key.getRow().getLength(), err); // SOURCE\0SINK
+        assertEquals(6, key.getRow().find("\0"), err);
+        assertEquals(0, key.getRow().find("SOURCE"), err);
+        assertEquals(7, key.getRow().find("SINK"), err);
         
-        assertEquals(err, "TYPE/SOURCEREL-SINKREL", key.getColumnFamily().toString());
+        assertEquals("TYPE/SOURCEREL-SINKREL", key.getColumnFamily().toString(), err);
         
-        assertEquals(err, "YYYYMMDD/SOURCECATEGORY-SINKCATEGORY/ATTRIBUTE2/", key.getColumnQualifier().toString());
+        assertEquals("YYYYMMDD/SOURCECATEGORY-SINKCATEGORY/ATTRIBUTE2/", key.getColumnQualifier().toString(), err);
         
-        assertTrue(err, (key.getTimestamp() == 814l));
+        assertTrue((key.getTimestamp() == 814l), err);
         
-        assertFalse(err, key.isDeleted());
+        assertFalse(key.isDeleted(), err);
     }
     
     private void verifyNoAttribute2Key(Key key) {
         String err = "Accumulo Key created with incorrect data";
-        assertEquals(err, 11, key.getRow().getLength()); // SOURCE\0SINK
-        assertEquals(err, 6, key.getRow().find("\0"));
-        assertEquals(err, 0, key.getRow().find("SOURCE"));
-        assertEquals(err, 7, key.getRow().find("SINK"));
+        assertEquals(11, key.getRow().getLength(), err); // SOURCE\0SINK
+        assertEquals(6, key.getRow().find("\0"), err);
+        assertEquals(0, key.getRow().find("SOURCE"), err);
+        assertEquals(7, key.getRow().find("SINK"), err);
         
         assertEquals(err, "TYPE/SOURCEREL-SINKREL", key.getColumnFamily().toString());
         
         assertEquals(err, "YYYYMMDD/SOURCECATEGORY-SINKCATEGORY//ATTRIBUTE3", key.getColumnQualifier().toString());
         
-        assertTrue(err, (key.getTimestamp() == 814l));
+        assertTrue((key.getTimestamp() == 814l), err);
         
-        assertFalse(err, key.isDeleted());
+        assertFalse(key.isDeleted(), err);
     }
     
     private void verifyNoAttribute3NoAttribute2Key(Key key) {
         String err = "Accumulo Key created with incorrect data";
-        assertEquals(err, 11, key.getRow().getLength()); // SOURCE\0SINK
-        assertEquals(err, 6, key.getRow().find("\0"));
-        assertEquals(err, 0, key.getRow().find("SOURCE"));
-        assertEquals(err, 7, key.getRow().find("SINK"));
+        assertEquals(11, key.getRow().getLength(), err); // SOURCE\0SINK
+        assertEquals(6, key.getRow().find("\0"), err);
+        assertEquals(0, key.getRow().find("SOURCE"), err);
+        assertEquals(7, key.getRow().find("SINK"), err);
         
-        assertEquals(err, "TYPE/SOURCEREL-SINKREL", key.getColumnFamily().toString());
+        assertEquals("TYPE/SOURCEREL-SINKREL", key.getColumnFamily().toString(), err);
         
-        assertEquals(err, "YYYYMMDD/SOURCECATEGORY-SINKCATEGORY//", key.getColumnQualifier().toString());
+        assertEquals("YYYYMMDD/SOURCECATEGORY-SINKCATEGORY//", key.getColumnQualifier().toString(), err);
         
-        assertTrue(err, (key.getTimestamp() == 814l));
+        assertTrue((key.getTimestamp() == 814l), err);
         
-        assertFalse(err, key.isDeleted());
+        assertFalse(key.isDeleted(), err);
     }
     
     private void verifyKey(Key key) {
         String err = "Accumulo Key created with incorrect data";
-        assertEquals(err, 11, key.getRow().getLength()); // SOURCE\0SINK
-        assertEquals(err, 6, key.getRow().find("\0"));
-        assertEquals(err, 0, key.getRow().find("SOURCE"));
-        assertEquals(err, 7, key.getRow().find("SINK"));
+        assertEquals(11, key.getRow().getLength(), err); // SOURCE\0SINK
+        assertEquals(6, key.getRow().find("\0"), err);
+        assertEquals(0, key.getRow().find("SOURCE"), err);
+        assertEquals(7, key.getRow().find("SINK"), err);
         
-        assertEquals(err, "TYPE/SOURCEREL-SINKREL", key.getColumnFamily().toString());
+        assertEquals("TYPE/SOURCEREL-SINKREL", key.getColumnFamily().toString(), err);
         
-        assertEquals(err, "YYYYMMDD/SOURCECATEGORY-SINKCATEGORY/ATTRIBUTE2/ATTRIBUTE3/A", key.getColumnQualifier().toString());
+        assertEquals("YYYYMMDD/SOURCECATEGORY-SINKCATEGORY/ATTRIBUTE2/ATTRIBUTE3/A", key.getColumnQualifier().toString(), err);
         
-        assertTrue(err, (key.getTimestamp() == 814l));
+        assertTrue((key.getTimestamp() == 814l), err);
         
-        assertFalse(err, key.isDeleted());
+        assertFalse(key.isDeleted(), err);
     }
     
     private void verifyStatsKey(Key key) {
         String err = "Accumulo Key created with incorrect data";
-        assertEquals(err, key.getRow().toString(), "SOURCE");
-        assertEquals(err, 6, key.getRow().getLength()); // SOURCE\0SINK
-        assertNotEquals(err, 6, key.getRow().find("\0"));
-        assertEquals(err, 0, key.getRow().find("SOURCE"));
-        assertNotEquals(err, 7, key.getRow().find("SINK"));
+        assertEquals(key.getRow().toString(), "SOURCE", err);
+        assertEquals(6, key.getRow().getLength(), err); // SOURCE\0SINK
+        assertNotEquals(6, key.getRow().find("\0"), err);
+        assertEquals(0, key.getRow().find("SOURCE"), err);
+        assertNotEquals(7, key.getRow().find("SINK"), err);
         
-        assertEquals(err, "STATS/DURATION/TYPE/SOURCEREL", key.getColumnFamily().toString());
+        assertEquals("STATS/DURATION/TYPE/SOURCEREL", key.getColumnFamily().toString(), err);
         
-        assertEquals(err, "YYYYMMDD/SOURCECATEGORY/ATTRIBUTE2/ATTRIBUTE3/A", key.getColumnQualifier().toString());
+        assertEquals("YYYYMMDD/SOURCECATEGORY/ATTRIBUTE2/ATTRIBUTE3/A", key.getColumnQualifier().toString(), err);
         
-        assertTrue(err, (key.getTimestamp() == 814l));
+        assertTrue((key.getTimestamp() == 814l), err);
         
-        assertFalse(err, key.isDeleted());
+        assertFalse(key.isDeleted(), err);
     }
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testBlankKey() {
         Key blankStats = new Key(new Text(""), refStatsBase.getColumnFamily(), refStatsBase.getColumnQualifier(), refStatsBase.getColumnVisibility());
-        EdgeKey.decode(blankStats);
+        Assertions.assertThrows(IllegalStateException.class, () -> EdgeKey.decode(blankStats));
     }
     
     @Test
@@ -303,11 +299,11 @@ public class EdgeKeyTest {
         String[] pair = key.getRow().toString().split("\0");
         
         EdgeKey decoded = EdgeKey.decodeForInternal(key);
-        assertEquals("Did not leave source in accumulo format", pair[0], decoded.getSourceData());
-        assertEquals("Did not leave source in accumulo format", pair[1], decoded.getSinkData());
+        assertEquals(pair[0], decoded.getSourceData(), "Did not leave source in accumulo format");
+        assertEquals(pair[1], decoded.getSinkData(), "Did not leave source in accumulo format");
         EdgeKey reallyDecoded = EdgeKey.decode(key);
-        assertNotEquals("Did leave source in accumulo format", pair[0], reallyDecoded.getSourceData());
-        assertNotEquals("Did leave source in accumulo format", pair[1], reallyDecoded.getSinkData());
+        assertNotEquals(pair[0], reallyDecoded.getSourceData(), "Did leave source in accumulo format");
+        assertNotEquals(pair[1], reallyDecoded.getSinkData(), "Did leave source in accumulo format");
         
     }
     
@@ -319,9 +315,9 @@ public class EdgeKeyTest {
         
         Key k3 = new Key(new Text("A\0B"), new Text("type/relationA-relationB"), new Text("19700101/attr1-attr1/attr2/attr3/H"));
         
-        Assert.assertEquals(EdgeKey.getDateType(k1), EdgeKey.DATE_TYPE.EVENT_ONLY);
-        Assert.assertEquals(EdgeKey.getDateType(k2), EdgeKey.DATE_TYPE.OLD_EVENT);
-        Assert.assertNull(EdgeKey.getDateType(k3));
+        assertEquals(EdgeKey.getDateType(k1), EdgeKey.DATE_TYPE.EVENT_ONLY);
+        assertEquals(EdgeKey.getDateType(k2), EdgeKey.DATE_TYPE.OLD_EVENT);
+        assertNull(EdgeKey.getDateType(k3));
     }
     
     @Test
@@ -329,26 +325,26 @@ public class EdgeKeyTest {
         Key k1 = new Key(new Text("A\0B"), new Text("type/relationA-relationB"), new Text("19700101/attr1-attr1/attr2/attr3/"));
         Key statsk1 = new Key(new Text("A"), new Text("STATS/ACTIVITY/type/relationA"), new Text("19700101/attr1/attr2/attr3/"));
         
-        Assert.assertEquals(EdgeKey.DATE_TYPE.OLD_EVENT, EdgeKey.getDateType(k1));
-        Assert.assertEquals(EdgeKey.DATE_TYPE.OLD_EVENT, EdgeKey.getDateType(statsk1));
+        assertEquals(EdgeKey.DATE_TYPE.OLD_EVENT, EdgeKey.getDateType(k1));
+        assertEquals(EdgeKey.DATE_TYPE.OLD_EVENT, EdgeKey.getDateType(statsk1));
         
         Key k2 = new Key(new Text("A\0B"), new Text("type/relationA-relationB"), new Text("19700101/attr1-attr1/attr2/attr3/B"));
         Key statsk2 = new Key(new Text("A"), new Text("STATS/ACTIVITY/type/relationA"), new Text("19700101/attr1/attr2/attr3/B"));
         
-        Assert.assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT, EdgeKey.getDateType(k2));
-        Assert.assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT, EdgeKey.getDateType(statsk2));
+        assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT, EdgeKey.getDateType(k2));
+        assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT, EdgeKey.getDateType(statsk2));
         
         Key k3 = new Key(new Text("A\0B"), new Text("type/relationA-relationB"), new Text("19700101/attr1-attr1///B"));
         Key statsk3 = new Key(new Text("A"), new Text("STATS/ACTIVITY/type/relationA"), new Text("19700101/attr1///B"));
         
-        Assert.assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT, EdgeKey.getDateType(k3));
-        Assert.assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT, EdgeKey.getDateType(statsk3));
+        assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT, EdgeKey.getDateType(k3));
+        assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT, EdgeKey.getDateType(statsk3));
         
         Key k4 = new Key(new Text("A\0B"), new Text("type/relationA-relationB"), new Text("19700101/attr1-attr1///"));
         Key statsk4 = new Key(new Text("A"), new Text("STATS/ACTIVITY/type/relationA"), new Text("19700101/attr1///"));
         
-        Assert.assertEquals(EdgeKey.DATE_TYPE.OLD_EVENT, EdgeKey.getDateType(k4));
-        Assert.assertEquals(EdgeKey.DATE_TYPE.OLD_EVENT, EdgeKey.getDateType(statsk4));
+        assertEquals(EdgeKey.DATE_TYPE.OLD_EVENT, EdgeKey.getDateType(k4));
+        assertEquals(EdgeKey.DATE_TYPE.OLD_EVENT, EdgeKey.getDateType(statsk4));
         
     }
     

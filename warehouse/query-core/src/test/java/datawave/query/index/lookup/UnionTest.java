@@ -7,7 +7,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,10 +18,10 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Some basic tests of the {@link Union} class.
@@ -29,17 +29,17 @@ import static org.junit.Assert.assertTrue;
 public class UnionTest {
     
     // Helper method to generate index matches (document id - field, value)
-    private List<IndexMatch> buildIndexMatches(String field, String value, String... docIds) {
+    private List<IndexMatch> buildIndexMatches(String... docIds) {
         List<IndexMatch> matches = new ArrayList<>(docIds.length);
         for (String docId : docIds) {
-            matches.add(buildIndexMatch(field, value, docId));
+            matches.add(buildIndexMatch("VALUE", docId));
         }
         return matches;
     }
     
     // Helper method to generate index matches (document id - field, value)
-    private IndexMatch buildIndexMatch(String field, String value, String docId) {
-        JexlNode eqNode = JexlNodeFactory.buildEQNode(field, value);
+    private IndexMatch buildIndexMatch(String value, String docId) {
+        JexlNode eqNode = JexlNodeFactory.buildEQNode("FIELD", value);
         return new IndexMatch(docId, eqNode);
     }
     
@@ -60,13 +60,13 @@ public class UnionTest {
     @Test
     public void testUnionOfTwoDocumentStreams() {
         // Build a peeking iterator for a left side term
-        List<IndexMatch> leftMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
+        List<IndexMatch> leftMatches = buildIndexMatches("doc1", "doc2", "doc3");
         IndexInfo left = new IndexInfo(leftMatches);
         Tuple2<String,IndexInfo> leftTuple = Tuples.tuple("20190314_0", left);
         PeekingIterator<Tuple2<String,IndexInfo>> leftIter = Iterators.peekingIterator(Collections.singleton(leftTuple).iterator());
         
         // Build a peeking iterator for a right side term.
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
+        List<IndexMatch> rightMatches = buildIndexMatches("doc2", "doc3", "doc4");
         IndexInfo right = new IndexInfo(rightMatches);
         Tuple2<String,IndexInfo> rightTuple = Tuples.tuple("20190314_0", right);
         PeekingIterator<Tuple2<String,IndexInfo>> rightIter = Iterators.peekingIterator(Collections.singleton(rightTuple).iterator());
@@ -99,13 +99,13 @@ public class UnionTest {
     @Test
     public void testUnionOfShardAndDayStreams() {
         // Build a peeking iterator for a left side term
-        List<IndexMatch> leftMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
+        List<IndexMatch> leftMatches = buildIndexMatches("doc1", "doc2", "doc3");
         IndexInfo left = new IndexInfo(leftMatches);
         Tuple2<String,IndexInfo> leftTuple = Tuples.tuple("20190314", left);
         PeekingIterator<Tuple2<String,IndexInfo>> leftIter = Iterators.peekingIterator(Collections.singleton(leftTuple).iterator());
         
         // Build a peeking iterator for a right side term.
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
+        List<IndexMatch> rightMatches = buildIndexMatches("doc2", "doc3", "doc4");
         IndexInfo right = new IndexInfo(rightMatches);
         Tuple2<String,IndexInfo> rightTuple = Tuples.tuple("20190314_0", right);
         PeekingIterator<Tuple2<String,IndexInfo>> rightIter = Iterators.peekingIterator(Collections.singleton(rightTuple).iterator());

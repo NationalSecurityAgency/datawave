@@ -4,16 +4,17 @@ import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import com.google.common.collect.Iterators;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CardinalityAggregatorTest {
     
@@ -33,7 +34,7 @@ public class CardinalityAggregatorTest {
     public void testEmptyCardinality() throws IOException {
         agg.reset();
         assertTrue(agg.propogateKey());
-        Value result = agg.reduce(new Key("key"), Iterators.emptyIterator());
+        Value result = agg.reduce(new Key("key"), Collections.emptyIterator());
         assertFalse(agg.propogateKey());
         assertEquals(CardinalityAggregator.EMPTY_VALUE, result);
     }

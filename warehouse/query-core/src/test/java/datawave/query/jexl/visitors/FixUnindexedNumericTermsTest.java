@@ -11,12 +11,12 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FixUnindexedNumericTermsTest {
     
@@ -26,7 +26,7 @@ public class FixUnindexedNumericTermsTest {
     
     private ShardQueryConfiguration config;
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         datatypes = HashMultimap.create();
         config = EasyMock.mock(ShardQueryConfiguration.class);
@@ -130,7 +130,7 @@ public class FixUnindexedNumericTermsTest {
             log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
             log.error("Actual " + PrintingVisitor.formattedQueryString(actual));
         }
-        assertTrue(comparison.getReason(), comparison.isEqual());
+        assertTrue(comparison.isEqual(), comparison.getReason());
     }
     
     private void assertLineage(JexlNode node) {

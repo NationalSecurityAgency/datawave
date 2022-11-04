@@ -3,7 +3,8 @@ package datawave.query.index.lookup;
 import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlNodeFactory;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -18,11 +19,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class IndexMatchTest {
     
@@ -257,13 +257,12 @@ public class IndexMatchTest {
         assertEquals("uid", other.uid);
     }
     
-    @Test(expected = NullPointerException.class)
-    public void testWriteReadIndexMatchWithNullUid() throws IOException {
+    @Test
+    public void testWriteReadIndexMatchWithNullUid() {
         IndexMatch match = new IndexMatch(null);
         
         // Cannot write a null uid.
-        IndexMatch other = writeRead(match);
-        fail("IndexMatch should have thrown an exception trying to write a null uid.");
+        Assertions.assertThrows(NullPointerException.class, () -> writeRead(match));
     }
     
     /**
@@ -272,7 +271,6 @@ public class IndexMatchTest {
      * @param match
      *            the IndexMatch to be written to a byte array.
      * @return a new IndexMatch constructed from the byte array
-     * @throws IOException
      */
     private IndexMatch writeRead(IndexMatch match) throws IOException {
         // Write the IndexMatch to a byte array.

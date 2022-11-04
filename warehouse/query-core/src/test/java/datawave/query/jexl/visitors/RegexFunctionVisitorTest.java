@@ -9,20 +9,16 @@ import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Set;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RegexFunctionVisitorTest {
     
     private final ASTValidator validator = new ASTValidator();
-    
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
     
     // expected base cases -- single fielded
     
@@ -114,11 +110,10 @@ public class RegexFunctionVisitorTest {
     }
     
     @Test
-    public void testBadRegex() throws ParseException {
-        exception.expect(DatawaveFatalQueryException.class);
+    public void testBadRegex() {
         Set<String> indexOnlyFields = Sets.newHashSet("FIELDA");
         String query = "FOO == 'bar' && filter:includeRegex(FIELDA, '(?#icu)Friendly')";
-        assertVisitorResult(query, query, indexOnlyFields);
+        assertThrows(DatawaveFatalQueryException.class, () -> assertVisitorResult(query, query, indexOnlyFields));
     }
     
     // legacy tests
@@ -147,7 +142,7 @@ public class RegexFunctionVisitorTest {
         try {
             validator.isValid(actual);
         } catch (InvalidQueryTreeException e) {
-            Assert.fail("Invalid query tree detected for script: " + JexlStringBuildingVisitor.buildQueryWithoutParse(actual));
+            Assertions.fail("Invalid query tree detected for script: " + JexlStringBuildingVisitor.buildQueryWithoutParse(actual));
         }
     }
 }

@@ -25,9 +25,9 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -39,10 +39,10 @@ import static datawave.common.test.utils.query.RangeFactoryForTests.makeDayRange
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeShardedRange;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
 import static datawave.util.TableName.SHARD_INDEX;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Cover some basic tests involving streams of shards for a basic set of query structures. Only tests for correctness of shard intersection, not that the
@@ -69,11 +69,11 @@ public class RangeStreamTestX {
     // (A && B) || (C && D)
     // (A || B) && (C || D)
     
-    private static InMemoryInstance instance = new InMemoryInstance(RangeStreamTestX.class.toString());
+    private static final InMemoryInstance instance = new InMemoryInstance(RangeStreamTestX.class.toString());
     private static Connector connector;
     private ShardQueryConfiguration config;
     
-    @BeforeClass
+    @BeforeAll
     public static void setupAccumulo() throws Exception {
         // Zero byte password, so secure it hurts.
         connector = instance.getConnector("", new PasswordToken(new byte[0]));
@@ -368,7 +368,7 @@ public class RangeStreamTestX {
         return new Value(list.toByteArray());
     }
     
-    @Before
+    @BeforeEach
     public void setupTest() {
         config = new ShardQueryConfiguration();
         config.setConnector(connector);
@@ -3261,8 +3261,8 @@ public class RangeStreamTestX {
     
     private void runTest(String query, List<Range> expectedRanges, List<String> expectedQueries) throws Exception {
         
-        assertEquals("Expected ranges and queries do not match, ranges: " + expectedRanges.size() + " queries: " + expectedQueries.size(),
-                        expectedRanges.size(), expectedQueries.size());
+        assertEquals(expectedRanges.size(), expectedQueries.size(), "Expected ranges and queries do not match, ranges: " + expectedRanges.size() + " queries: "
+                        + expectedQueries.size());
         
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         
@@ -3318,8 +3318,8 @@ public class RangeStreamTestX {
             Range planRange = rangeIter.next();
             Range expectedRange = shardIter.next();
             
-            assertEquals("Query produced unexpected range: " + planRange.toString(), expectedRange, planRange);
-            assertFalse("Query plan had more than one range!", rangeIter.hasNext());
+            assertEquals(expectedRange, planRange, "Query produced unexpected range: " + planRange.toString());
+            assertFalse(rangeIter.hasNext(), "Query plan had more than one range!");
             
             // Assert proper query string for this range.
             
@@ -3333,8 +3333,8 @@ public class RangeStreamTestX {
             expectedScript = JexlASTHelper.parseJexlQuery(expectedString);
             planScript = JexlASTHelper.parseJexlQuery(plannedString);
             
-            assertTrue("Queries did not match for counter: " + counter + " on shard: " + planRange.toString() + "\nExpected: " + expectedString
-                            + "\nActual  : " + plannedString, TreeEqualityVisitor.isEqual(expectedScript, planScript));
+            assertTrue(TreeEqualityVisitor.isEqual(expectedScript, planScript), "Queries did not match for counter: " + counter + " on shard: " + planRange
+                            + "\nExpected: " + expectedString + "\nActual  : " + plannedString);
             counter++;
         }
         

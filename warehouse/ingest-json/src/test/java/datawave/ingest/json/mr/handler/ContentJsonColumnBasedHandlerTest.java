@@ -1,11 +1,11 @@
 package datawave.ingest.json.mr.handler;
 
-import datawave.ingest.json.config.helper.JsonDataTypeHelper;
-import datawave.ingest.json.config.helper.JsonIngestHelper;
-import datawave.ingest.json.mr.input.JsonRecordReader;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
+import datawave.ingest.json.config.helper.JsonDataTypeHelper;
+import datawave.ingest.json.config.helper.JsonIngestHelper;
+import datawave.ingest.json.mr.input.JsonRecordReader;
 import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
@@ -23,11 +23,11 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -49,7 +49,7 @@ public class ContentJsonColumnBasedHandlerTest {
     private static Logger log = Logger.getLogger(ContentJsonColumnBasedHandlerTest.class);
     private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
     
-    @BeforeClass
+    @BeforeAll
     public static void setupSystemSettings() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", "UTF8");
@@ -61,7 +61,7 @@ public class ContentJsonColumnBasedHandlerTest {
         }
     }
     
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         Logger.getRootLogger().removeAllAppenders();
         while (rootAppenders.hasMoreElements()) {
@@ -102,7 +102,7 @@ public class ContentJsonColumnBasedHandlerTest {
         Logger.getLogger(ContentBaseIngestHelper.class).setLevel(Level.OFF);
     }
     
-    @Before
+    @BeforeEach
     public void setup() {
         TypeRegistry.reset();
         conf = new Configuration();
@@ -134,10 +134,10 @@ public class ContentJsonColumnBasedHandlerTest {
         // Set up the Reader
         JsonRecordReader reader = getJsonRecordReader("/input/tvmaze-seinfeld.json");
         
-        Assert.assertTrue("First Record did not read properly?", reader.nextKeyValue());
+        Assertions.assertTrue(reader.nextKeyValue(), "First Record did not read properly?");
         RawRecordContainer event = reader.getEvent();
-        Assert.assertNotNull("Event 1 was null.", event);
-        Assert.assertTrue("Event 1 has parsing errors", event.getErrors().isEmpty());
+        Assertions.assertNotNull(event, "Event 1 was null.");
+        Assertions.assertTrue(event.getErrors().isEmpty(), "Event 1 has parsing errors");
         
         // Set up the edge
         ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();

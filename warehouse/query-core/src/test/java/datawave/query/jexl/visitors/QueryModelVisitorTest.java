@@ -15,19 +15,17 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class QueryModelVisitorTest {
     
@@ -36,7 +34,7 @@ public class QueryModelVisitorTest {
     private QueryModel model;
     private Set<String> allFields;
     
-    @Before
+    @BeforeEach
     public void setupModel() {
         
         model = new QueryModel();
@@ -100,7 +98,7 @@ public class QueryModelVisitorTest {
             log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
             log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
         }
-        Assert.assertTrue(comparison.getReason(), comparison.isEqual());
+        Assertions.assertTrue(comparison.isEqual(), comparison.getReason());
     }
     
     @Test
@@ -461,7 +459,7 @@ public class QueryModelVisitorTest {
             NoExpansionFunctionVisitor.VisitResult result = NoExpansionFunctionVisitor.findNoExpansionFields(script);
             
             JexlNodeAssert.assertThat(script).isNotEqualTo(result.script);
-            Assert.assertEquals(expectedFields, result.noExpansionFields);
+            Assertions.assertEquals(expectedFields, result.noExpansionFields);
             
             ASTJexlScript applied;
             if (result.noExpansionFields.size() > 0) {
@@ -479,7 +477,7 @@ public class QueryModelVisitorTest {
             assertTrue(TreeEqualityVisitor.checkEquality(expectedScript, applied).isEqual());
             
         } catch (ParseException e) {
-            fail("Error testing query: " + query);
+            Assertions.fail("Error testing query: " + query);
         }
     }
     

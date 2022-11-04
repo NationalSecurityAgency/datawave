@@ -1,11 +1,11 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
-
 import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class FieldToFieldComparisonVisitorTest {
     
@@ -63,9 +63,9 @@ public class FieldToFieldComparisonVisitorTest {
         assertResult("(UUID !~ 'C.*?' || UUID !~ 'S.*?')", "(UUID !~ 'C.*?' || UUID !~ 'S.*?')");
     }
     
-    @Test(expected = ParseException.class)
-    public void testChainedEQThrowsException() throws ParseException {
-        JexlASTHelper.parseJexlQuery("FIELD_A == FIELD_B == FIELD_C");
+    @Test
+    public void testChainedEQThrowsException() {
+        Assertions.assertThrows(ParseException.class, () -> JexlASTHelper.parseJexlQuery("FIELD_A == FIELD_B == FIELD_C"));
     }
     
     private void assertResult(String original, String expected) throws ParseException {

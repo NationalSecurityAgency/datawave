@@ -1,8 +1,8 @@
 package datawave.ingest.util;
 
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ResourceAvailabilityUtilTest {
     
@@ -17,9 +17,9 @@ public class ResourceAvailabilityUtilTest {
         boolean result2 = ResourceAvailabilityUtil.isDiskAvailable(unreasonableMinAvailability);
         
         // Verify results
-        assertTrue(reasonableMinAvailability + "% minimum disk space should always be available", result1);
+        assertTrue(result1, reasonableMinAvailability + "% minimum disk space should always be available");
         
-        assertTrue(unreasonableMinAvailability + "% minimum disk space should never be available", !result2);
+        assertTrue(!result2, unreasonableMinAvailability + "% minimum disk space should never be available");
     }
     
     @Test
@@ -33,8 +33,8 @@ public class ResourceAvailabilityUtilTest {
         boolean result2 = ResourceAvailabilityUtil.isMemoryAvailable(unreasonableMinAvailability);
         
         // Verify results
-        assertTrue(reasonableMinAvailability + "% minimum memory should always be available", result1);
+        assertTrue(result1, reasonableMinAvailability + "% minimum memory should always be available");
         
-        assertTrue(unreasonableMinAvailability + "% minimum memory should never be available", !result2);
+        assertTrue(!result2, unreasonableMinAvailability + "% minimum memory should never be available");
     }
 }

@@ -1,15 +1,14 @@
 package datawave.security.util;
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.IOException;
+import org.jboss.security.auth.callback.ObjectCallback;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
+import java.io.IOException;
 
-import org.jboss.security.auth.callback.ObjectCallback;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MockCallbackHandler implements CallbackHandler {
     public String name;

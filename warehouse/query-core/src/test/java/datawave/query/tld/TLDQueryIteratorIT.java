@@ -5,8 +5,8 @@ import datawave.query.iterator.QueryIteratorIT;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -24,7 +24,7 @@ import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
  */
 public class TLDQueryIteratorIT extends QueryIteratorIT {
     
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         super.setup();
         iterator = new TLDQueryIterator();
@@ -57,7 +57,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("z");
         expectedDocument.getValue().put("TF_FIELD3", tfField1Hits);
         
-        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", false, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", false, expectedDocument, configureTLDTestData(11), Collections.emptyList());
     }
     
     @Test
@@ -72,7 +72,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("z");
         expectedDocument.getValue().put("TF_FIELD3", tfField1Hits);
         
-        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", false, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", false, expectedDocument, configureTLDTestData(11), Collections.emptyList());
     }
     
     /**
@@ -94,7 +94,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("r");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
         
-        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11));
     }
     
     @Test
@@ -110,7 +110,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add(",,q ,r, ,s,");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
         
-        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11));
     }
     
     /**
@@ -131,7 +131,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("r");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
         
-        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11));
     }
     
     @Test
@@ -139,7 +139,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*z'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), configureTLDTestData(11));
     }
     
     @Test
@@ -147,7 +147,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*z'))";
-        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), configureTLDTestData(11));
     }
     
     @Test
@@ -161,7 +161,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("r");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
         
-        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11));
     }
     
     @Test
@@ -175,7 +175,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("r");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
         
-        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11));
     }
     
     @Override

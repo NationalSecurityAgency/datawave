@@ -39,20 +39,19 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
+import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -63,6 +62,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -86,7 +86,7 @@ public abstract class GroupingTest {
     private static final String COLVIS_MARKING = "columnVisibility";
     private static final String EXPECTED_COLVIS = "ALL&E&I";
     
-    private static Authorizations auths = new Authorizations("ALL", "E", "I");
+    private static final Authorizations auths = new Authorizations("ALL", "E", "I");
     
     // @formatter:off
     private static final List<RebuildingScannerTestHelper.TEARDOWN> TEARDOWNS = Lists.newArrayList(
@@ -101,8 +101,13 @@ public abstract class GroupingTest {
     private static final List<RebuildingScannerTestHelper.INTERRUPT> INTERRUPTS = Arrays.asList(RebuildingScannerTestHelper.INTERRUPT.values());
     // @formatter:on
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends GroupingTest {
+        
+        @AfterAll
+        public static void teardown() {
+            TypeRegistry.reset();
+        }
         
         @Override
         protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
@@ -114,12 +119,25 @@ public abstract class GroupingTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+            
+            logic.setFullTableScanEnabled(true);
+            logic.setMaxEvaluationPipelines(1);
+            logic.setQueryExecutionForPageTimeout(300000000000000L);
+            deserializer = new KryoDocumentDeserializer();
+            
             return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends GroupingTest {
+        
+        @AfterAll
+        public static void teardown() {
+            TypeRegistry.reset();
+        }
         
         @Override
         protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
@@ -131,12 +149,20 @@ public abstract class GroupingTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+            
+            logic.setFullTableScanEnabled(true);
+            logic.setMaxEvaluationPipelines(1);
+            logic.setQueryExecutionForPageTimeout(300000000000000L);
+            deserializer = new KryoDocumentDeserializer();
+            
             return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
     
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder = new File("/tmp/test/GroupingTest");
     
     protected Set<Authorizations> authSet = Collections.singleton(auths);
     
@@ -160,21 +186,6 @@ public abstract class GroupingTest {
                         .addAsManifestResource(
                                         new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
                                                         + "</alternatives>"), "beans.xml");
-    }
-    
-    @AfterClass
-    public static void teardown() {
-        TypeRegistry.reset();
-    }
-    
-    @Before
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
-        logic.setFullTableScanEnabled(true);
-        logic.setMaxEvaluationPipelines(1);
-        logic.setQueryExecutionForPageTimeout(300000000000000L);
-        deserializer = new KryoDocumentDeserializer();
     }
     
     protected abstract BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
@@ -209,15 +220,24 @@ public abstract class GroupingTest {
         
         BaseQueryResponse response = transformer.createResponse(eventList);
         
+        int leftLimit = 97; // letter 'a'
+        int rightLimit = 122; // letter 'z'
+        int targetStringLength = 10;
+        Random random = new Random();
+        
+        String generatedFileName = random.ints(leftLimit, rightLimit + 1).limit(targetStringLength)
+                        .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
+        
         // un-comment to look at the json output
         ObjectMapper mapper = new ObjectMapper();
         mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-        mapper.writeValue(temporaryFolder.newFile(), response);
+        File responseFile = new File(temporaryFolder, generatedFileName);
+        mapper.writeValue(responseFile, response);
         
-        Assert.assertTrue(response instanceof DefaultEventQueryResponse);
+        Assertions.assertTrue(response instanceof DefaultEventQueryResponse);
         DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;
         
-        Assert.assertEquals("Got the wrong number of events", expected.size(), (long) eventQueryResponse.getReturnedEvents());
+        Assertions.assertEquals(expected.size(), (long) eventQueryResponse.getReturnedEvents(), "Got the wrong number of events");
         
         for (EventBase event : eventQueryResponse.getEvents()) {
             
@@ -252,7 +272,7 @@ public abstract class GroupingTest {
             } else {
                 key = secondKey;
             }
-            Assert.assertEquals(expected.get(key), value);
+            Assertions.assertEquals(expected.get(key), value);
         }
         return response;
     }
@@ -293,7 +313,7 @@ public abstract class GroupingTest {
         log.debug("reponses:" + digested);
         Set<String> responseSet = Sets.newHashSet(digested);
         // if the grouped results from every type of rebuild are the same, there should be only 1 entry in the responseSet
-        Assert.assertEquals(responseSet.size(), 1);
+        Assertions.assertEquals(responseSet.size(), 1);
     }
     
     // grab the relevant stuff from the events and do some formatting
@@ -390,12 +410,12 @@ public abstract class GroupingTest {
                 for (EventBase event : response.getEvents()) {
                     // The event should have a collapsed columnVisibility
                     String actualCV = event.getMarkings().get(COLVIS_MARKING).toString();
-                    Assert.assertEquals(EXPECTED_COLVIS, actualCV);
+                    Assertions.assertEquals(EXPECTED_COLVIS, actualCV);
                     
                     // The fields should have no columnVisibility
                     for (Object f : event.getFields()) {
                         FieldBase<?> field = (FieldBase<?>) f;
-                        Assert.assertNull(field.getMarkings().get(COLVIS_MARKING));
+                        Assertions.assertNull(field.getMarkings().get(COLVIS_MARKING));
                     }
                 }
             }
@@ -584,11 +604,11 @@ public abstract class GroupingTest {
             Attribute<?> attr = entry.getKey().iterator().next(); // the first and only one
             int count = entry.getValue();
             if (attr.getData().toString().equals("FOO")) {
-                Assert.assertEquals(2, count);
-                Assert.assertEquals(new ColumnVisibility("A&B"), attr.getColumnVisibility());
+                Assertions.assertEquals(2, count);
+                Assertions.assertEquals(new ColumnVisibility("A&B"), attr.getColumnVisibility());
             } else if (attr.getData().toString().equals("BAR")) {
-                Assert.assertEquals(1, count);
-                Assert.assertEquals(new ColumnVisibility("C"), attr.getColumnVisibility());
+                Assertions.assertEquals(1, count);
+                Assertions.assertEquals(new ColumnVisibility("C"), attr.getColumnVisibility());
             }
         }
     }
@@ -613,8 +633,8 @@ public abstract class GroupingTest {
         map.add(setb);
         
         // even though the ColumnVisibilities are different, the 2 collections seta and setb are 'equal' and generate the same hashCode
-        Assert.assertEquals(seta.hashCode(), setb.hashCode());
-        Assert.assertEquals(seta, setb);
+        Assertions.assertEquals(seta.hashCode(), setb.hashCode());
+        Assertions.assertEquals(seta, setb);
         
         GroupingTypeAttribute attr3a = new GroupingTypeAttribute(new LcType("BAR"), new Key("NAME"), true);
         attr3a.setColumnVisibility(new ColumnVisibility("C"));
@@ -628,19 +648,19 @@ public abstract class GroupingTest {
             for (Attribute<?> attr : entry.getKey()) {
                 int count = entry.getValue();
                 if (attr.getData().toString().equals("FOO")) {
-                    Assert.assertEquals(2, count);
+                    Assertions.assertEquals(2, count);
                     // the ColumnVisibility for the key was changed to the merged value of the 2 items that were added to the map
-                    Assert.assertEquals(new ColumnVisibility("A&B"), attr.getColumnVisibility());
+                    Assertions.assertEquals(new ColumnVisibility("A&B"), attr.getColumnVisibility());
                 } else if (attr.getData().toString().equals("5")) {
-                    Assert.assertEquals(2, count);
+                    Assertions.assertEquals(2, count);
                     // the ColumnVisibility for the key was changed to the merged value of the 2 items that were added to the map
-                    Assert.assertEquals(new ColumnVisibility("C&D"), attr.getColumnVisibility());
+                    Assertions.assertEquals(new ColumnVisibility("C&D"), attr.getColumnVisibility());
                 } else if (attr.getData().toString().equals("BAR")) {
-                    Assert.assertEquals(1, count);
-                    Assert.assertEquals(new ColumnVisibility("C"), attr.getColumnVisibility());
+                    Assertions.assertEquals(1, count);
+                    Assertions.assertEquals(new ColumnVisibility("C"), attr.getColumnVisibility());
                 } else if (attr.getData().toString().equals("6")) {
-                    Assert.assertEquals(1, count);
-                    Assert.assertEquals(new ColumnVisibility("D"), attr.getColumnVisibility());
+                    Assertions.assertEquals(1, count);
+                    Assertions.assertEquals(new ColumnVisibility("D"), attr.getColumnVisibility());
                 }
             }
         }

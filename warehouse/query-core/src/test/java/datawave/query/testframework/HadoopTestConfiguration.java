@@ -13,7 +13,6 @@ import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,9 +21,6 @@ import java.util.Map;
  * Defines Hadoop configuration data for unit testing.
  */
 public class HadoopTestConfiguration extends Configuration {
-    
-    private static final Logger log = Logger.getLogger(HadoopTestConfiguration.class);
-    
     private static final Map<String,String> DefaultTables = new HashMap<>();
     
     static {

@@ -1,7 +1,7 @@
 package datawave.query.attributes;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.util.GeometricShapeFactory;
 

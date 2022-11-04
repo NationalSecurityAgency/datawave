@@ -15,7 +15,6 @@ import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
@@ -27,9 +26,9 @@ import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.testframework.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.testframework.MockStatusReporter;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
@@ -53,21 +52,22 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
+import java.io.File;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,11 +89,11 @@ import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class CompositeIndexTest {
     
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static File temporaryFolder = new File("/tmp/test/CompositeIndexTest");
     
     private static final int NUM_SHARDS = 241;
     private static final String DATA_TYPE_NAME = "wkt";
@@ -203,7 +203,7 @@ public class CompositeIndexTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() throws Exception {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
         
@@ -243,17 +243,18 @@ public class CompositeIndexTest {
             
             for (int i = 0; i < wktData.length; i++) {
                 record.clear();
-                record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
+                record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 1, null));
                 record.setRawFileName("geodata_" + recNum + ".dat");
                 record.setRawRecordNumber(recNum++);
                 record.setDate(formatter.parse(beginDate).getTime() + dates[i]);
-                record.setRawData((wktData[i] + "|" + ((wktByteLengthData[i] != null) ? Integer.toString(wktByteLengthData[i]) : "")).getBytes("UTF8"));
+                record.setRawData((wktData[i] + "|" + ((wktByteLengthData[i] != null) ? Integer.toString(wktByteLengthData[i]) : ""))
+                                .getBytes(StandardCharsets.UTF_8));
                 record.generateId(null);
                 record.setVisibility(new ColumnVisibility(AUTHS));
                 
                 final Multimap<String,NormalizedContentInterface> fields = ingestHelper.getEventFields(record);
                 
-                if (useCompositeIngest && ingestHelper instanceof CompositeIngest) {
+                if (useCompositeIngest) {
                     Multimap<String,NormalizedContentInterface> compositeFields = ingestHelper.getCompositeFields(fields);
                     for (String fieldName : compositeFields.keySet()) {
                         // if this is an overloaded event field, we are replacing the existing data
@@ -284,14 +285,14 @@ public class CompositeIndexTest {
         
         writeKeyValues(connector, keyValues);
         
-        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.toURI().toString()));
     }
     
     public static void setupConfiguration(Configuration conf) {
         String compositeFieldName = GEO_FIELD;
         conf.set(DATA_TYPE_NAME + "." + compositeFieldName + BaseIngestHelper.COMPOSITE_FIELD_MAP, GEO_FIELD + "," + WKT_BYTE_LENGTH_FIELD);
         conf.set(DATA_TYPE_NAME + "." + compositeFieldName + BaseIngestHelper.COMPOSITE_FIELD_SEPARATOR, " ");
-        conf.set(DATA_TYPE_NAME + BaseIngestHelper.INDEX_FIELDS, GEO_FIELD + ((!compositeFieldName.equals(GEO_FIELD)) ? "," + compositeFieldName : ""));
+        conf.set(DATA_TYPE_NAME + BaseIngestHelper.INDEX_FIELDS, GEO_FIELD + "");
         conf.set(DATA_TYPE_NAME + "." + GEO_FIELD + BaseIngestHelper.FIELD_TYPE, GeometryType.class.getName());
         conf.set(DATA_TYPE_NAME + "." + WKT_BYTE_LENGTH_FIELD + BaseIngestHelper.FIELD_TYPE, NumberType.class.getName());
         
@@ -349,10 +350,10 @@ public class CompositeIndexTest {
         // @formatter:on
         
         List<QueryData> queries = getQueryRanges(query, false);
-        Assert.assertEquals(12, queries.size());
+        Assertions.assertEquals(12, queries.size());
         
         List<DefaultEvent> events = getQueryResults(query, false);
-        Assert.assertEquals(9, events.size());
+        Assertions.assertEquals(9, events.size());
         
         List<String> wktList = new ArrayList<>();
         wktList.addAll(Arrays.asList(wktLegacyData));
@@ -374,17 +375,17 @@ public class CompositeIndexTest {
             }
             
             // shouldn't get back a null wktByteLength
-            Assert.assertNotNull(wktByteLength);
+            Assertions.assertNotNull(wktByteLength);
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(wktList.remove(wkt));
-            Assert.assertTrue(wktByteLengthList.remove(wktByteLength));
+            Assertions.assertTrue(wktList.remove(wkt));
+            Assertions.assertTrue(wktByteLengthList.remove(wktByteLength));
         }
         
-        Assert.assertEquals(3, wktList.size());
-        Assert.assertEquals(3, wktByteLengthList.size());
+        Assertions.assertEquals(3, wktList.size());
+        Assertions.assertEquals(3, wktByteLengthList.size());
         
-        Assert.assertEquals(9, events.size());
+        Assertions.assertEquals(9, events.size());
     }
     
     @Test
@@ -399,10 +400,10 @@ public class CompositeIndexTest {
         // @formatter:on
         
         List<QueryData> queries = getQueryRanges(query, true);
-        Assert.assertEquals(732, queries.size());
+        Assertions.assertEquals(732, queries.size());
         
         List<DefaultEvent> events = getQueryResults(query, true);
-        Assert.assertEquals(9, events.size());
+        Assertions.assertEquals(9, events.size());
         
         List<String> wktList = new ArrayList<>();
         wktList.addAll(Arrays.asList(wktLegacyData));
@@ -424,17 +425,17 @@ public class CompositeIndexTest {
             }
             
             // shouldn't get back a null wktByteLength
-            Assert.assertNotNull(wktByteLength);
+            Assertions.assertNotNull(wktByteLength);
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(wktList.remove(wkt));
-            Assert.assertTrue(wktByteLengthList.remove(wktByteLength));
+            Assertions.assertTrue(wktList.remove(wkt));
+            Assertions.assertTrue(wktByteLengthList.remove(wktByteLength));
         }
         
-        Assert.assertEquals(3, wktList.size());
-        Assert.assertEquals(3, wktByteLengthList.size());
+        Assertions.assertEquals(3, wktList.size());
+        Assertions.assertEquals(3, wktByteLengthList.size());
         
-        Assert.assertEquals(9, events.size());
+        Assertions.assertEquals(9, events.size());
     }
     
     private List<QueryData> getQueryRanges(String queryString, boolean useIvarator) throws Exception {
@@ -475,7 +476,7 @@ public class CompositeIndexTest {
         auths.add(new Authorizations(AUTHS));
         
         Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
+        query.initialize(USER, Collections.singletonList(USER_DN), null, queryParams, null);
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
@@ -504,7 +505,7 @@ public class CompositeIndexTest {
         auths.add(new Authorizations(AUTHS));
         
         Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
+        query.initialize(USER, Collections.singletonList(USER_DN), null, queryParams, null);
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
@@ -527,6 +528,7 @@ public class CompositeIndexTest {
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
         
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
+        assert hdfsSiteConfig != null;
         logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
         logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
         

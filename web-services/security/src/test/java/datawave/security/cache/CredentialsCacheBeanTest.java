@@ -6,21 +6,18 @@ import com.google.common.collect.Lists;
 import datawave.configuration.spring.BeanProvider;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.system.AuthorizationCache;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.Connector;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.security.CacheableManager;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Default;
@@ -33,17 +30,17 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class CredentialsCacheBeanTest {
     
     private CredentialsCacheBean ccb;
     
     @Inject
-    private CacheableManager<Object,Principal> authManager;
+    CacheableManager<Object,Principal> authManager;
     
     private Cache<Principal,Principal> cache;
     
@@ -59,8 +56,8 @@ public class CredentialsCacheBeanTest {
         // @formatter:on
     }
     
-    @Before
-    public void setUp() throws Exception {
+    @Test
+    public void testFlushAll() {
         // With Arquillian we would normally inject this bean into the test class. However there seems to be
         // an incompatibility with Arquillian and the @Singleton annotation on the bean where any method
         // invoked on the bean throws a NullPointerException. Instead, we instantiate the bean manually and
@@ -72,9 +69,9 @@ public class CredentialsCacheBeanTest {
         cache = CacheBuilder.newBuilder().build();
         authManager.setCache(cache);
         
-        DatawaveUser u1 = new DatawaveUser(SubjectIssuerDNPair.of("user1", "issuer1"), UserType.USER, null, null, null, -1);
-        DatawaveUser u2 = new DatawaveUser(SubjectIssuerDNPair.of("user2", "issuer2"), UserType.USER, null, null, null, -1);
-        DatawaveUser s1 = new DatawaveUser(SubjectIssuerDNPair.of("server1", "issuer1"), UserType.SERVER, null, null, null, -1);
+        DatawaveUser u1 = new DatawaveUser(SubjectIssuerDNPair.of("user1", "issuer1"), DatawaveUser.UserType.USER, null, null, null, -1);
+        DatawaveUser u2 = new DatawaveUser(SubjectIssuerDNPair.of("user2", "issuer2"), DatawaveUser.UserType.USER, null, null, null, -1);
+        DatawaveUser s1 = new DatawaveUser(SubjectIssuerDNPair.of("server1", "issuer1"), DatawaveUser.UserType.SERVER, null, null, null, -1);
         
         DatawavePrincipal dp1 = new DatawavePrincipal(Arrays.asList(u1, s1));
         DatawavePrincipal dp2 = new DatawavePrincipal(Collections.singleton(u1));
@@ -83,13 +80,7 @@ public class CredentialsCacheBeanTest {
         cache.put(dp1, dp1);
         cache.put(dp2, dp2);
         cache.put(dp3, dp3);
-    }
-    
-    @After
-    public void tearDown() throws Exception {}
-    
-    @Test
-    public void testFlushAll() {
+        
         assertEquals(3, cache.size());
         
         ccb.flushAll();
@@ -99,6 +90,29 @@ public class CredentialsCacheBeanTest {
     
     @Test
     public void testEvict() throws Exception {
+        // With Arquillian we would normally inject this bean into the test class. However there seems to be
+        // an incompatibility with Arquillian and the @Singleton annotation on the bean where any method
+        // invoked on the bean throws a NullPointerException. Instead, we instantiate the bean manually and
+        // force CDI field injection. This gets everything loaded as we want for testing.
+        // TODO: identify and resolve the underlying issue
+        ccb = new CredentialsCacheBean();
+        BeanProvider.injectFields(ccb);
+        
+        cache = CacheBuilder.newBuilder().build();
+        authManager.setCache(cache);
+        
+        DatawaveUser u1 = new DatawaveUser(SubjectIssuerDNPair.of("user1", "issuer1"), DatawaveUser.UserType.USER, null, null, null, -1);
+        DatawaveUser u2 = new DatawaveUser(SubjectIssuerDNPair.of("user2", "issuer2"), DatawaveUser.UserType.USER, null, null, null, -1);
+        DatawaveUser s1 = new DatawaveUser(SubjectIssuerDNPair.of("server1", "issuer1"), DatawaveUser.UserType.SERVER, null, null, null, -1);
+        
+        DatawavePrincipal dp1 = new DatawavePrincipal(Arrays.asList(u1, s1));
+        DatawavePrincipal dp2 = new DatawavePrincipal(Collections.singleton(u1));
+        DatawavePrincipal dp3 = new DatawavePrincipal(Arrays.asList(u2, s1));
+        
+        cache.put(dp1, dp1);
+        cache.put(dp2, dp2);
+        cache.put(dp3, dp3);
+        
         Principal expected = cache.asMap().keySet().stream().filter(p -> p.getName().startsWith("user2")).findFirst().orElse(null);
         assertNotNull(expected);
         assertEquals(3, cache.size());
@@ -109,6 +123,29 @@ public class CredentialsCacheBeanTest {
     
     @Test
     public void testListDNs() throws Exception {
+        // With Arquillian we would normally inject this bean into the test class. However there seems to be
+        // an incompatibility with Arquillian and the @Singleton annotation on the bean where any method
+        // invoked on the bean throws a NullPointerException. Instead, we instantiate the bean manually and
+        // force CDI field injection. This gets everything loaded as we want for testing.
+        // TODO: identify and resolve the underlying issue
+        ccb = new CredentialsCacheBean();
+        BeanProvider.injectFields(ccb);
+        
+        cache = CacheBuilder.newBuilder().build();
+        authManager.setCache(cache);
+        
+        DatawaveUser u1 = new DatawaveUser(SubjectIssuerDNPair.of("user1", "issuer1"), DatawaveUser.UserType.USER, null, null, null, -1);
+        DatawaveUser u2 = new DatawaveUser(SubjectIssuerDNPair.of("user2", "issuer2"), DatawaveUser.UserType.USER, null, null, null, -1);
+        DatawaveUser s1 = new DatawaveUser(SubjectIssuerDNPair.of("server1", "issuer1"), DatawaveUser.UserType.SERVER, null, null, null, -1);
+        
+        DatawavePrincipal dp1 = new DatawavePrincipal(Arrays.asList(u1, s1));
+        DatawavePrincipal dp2 = new DatawavePrincipal(Collections.singleton(u1));
+        DatawavePrincipal dp3 = new DatawavePrincipal(Arrays.asList(u2, s1));
+        
+        cache.put(dp1, dp1);
+        cache.put(dp2, dp2);
+        cache.put(dp3, dp3);
+        
         ArrayList<String> expectedDns = Lists.newArrayList("user2<issuer2>", "server1<issuer1>", "user1<issuer1>");
         DnList dnList = ccb.listDNs(false);
         assertEquals(3, dnList.getDns().size());
@@ -117,6 +154,29 @@ public class CredentialsCacheBeanTest {
     
     @Test
     public void testListMatching() throws Exception {
+        // With Arquillian we would normally inject this bean into the test class. However there seems to be
+        // an incompatibility with Arquillian and the @Singleton annotation on the bean where any method
+        // invoked on the bean throws a NullPointerException. Instead, we instantiate the bean manually and
+        // force CDI field injection. This gets everything loaded as we want for testing.
+        // TODO: identify and resolve the underlying issue
+        ccb = new CredentialsCacheBean();
+        BeanProvider.injectFields(ccb);
+        
+        cache = CacheBuilder.newBuilder().build();
+        authManager.setCache(cache);
+        
+        DatawaveUser u1 = new DatawaveUser(SubjectIssuerDNPair.of("user1", "issuer1"), DatawaveUser.UserType.USER, null, null, null, -1);
+        DatawaveUser u2 = new DatawaveUser(SubjectIssuerDNPair.of("user2", "issuer2"), DatawaveUser.UserType.USER, null, null, null, -1);
+        DatawaveUser s1 = new DatawaveUser(SubjectIssuerDNPair.of("server1", "issuer1"), DatawaveUser.UserType.SERVER, null, null, null, -1);
+        
+        DatawavePrincipal dp1 = new DatawavePrincipal(Arrays.asList(u1, s1));
+        DatawavePrincipal dp2 = new DatawavePrincipal(Collections.singleton(u1));
+        DatawavePrincipal dp3 = new DatawavePrincipal(Arrays.asList(u2, s1));
+        
+        cache.put(dp1, dp1);
+        cache.put(dp2, dp2);
+        cache.put(dp3, dp3);
+        
         ArrayList<String> expectedDns = Lists.newArrayList("server1<issuer1>", "user1<issuer1>");
         DnList dnList = ccb.listDNsMatching("issuer1");
         assertEquals(2, dnList.getDns().size());
@@ -125,6 +185,29 @@ public class CredentialsCacheBeanTest {
     
     @Test
     public void testList() throws Exception {
+        // With Arquillian we would normally inject this bean into the test class. However there seems to be
+        // an incompatibility with Arquillian and the @Singleton annotation on the bean where any method
+        // invoked on the bean throws a NullPointerException. Instead, we instantiate the bean manually and
+        // force CDI field injection. This gets everything loaded as we want for testing.
+        // TODO: identify and resolve the underlying issue
+        ccb = new CredentialsCacheBean();
+        BeanProvider.injectFields(ccb);
+        
+        cache = CacheBuilder.newBuilder().build();
+        authManager.setCache(cache);
+        
+        DatawaveUser u1 = new DatawaveUser(SubjectIssuerDNPair.of("user1", "issuer1"), DatawaveUser.UserType.USER, null, null, null, -1);
+        DatawaveUser u2 = new DatawaveUser(SubjectIssuerDNPair.of("user2", "issuer2"), DatawaveUser.UserType.USER, null, null, null, -1);
+        DatawaveUser s1 = new DatawaveUser(SubjectIssuerDNPair.of("server1", "issuer1"), DatawaveUser.UserType.SERVER, null, null, null, -1);
+        
+        DatawavePrincipal dp1 = new DatawavePrincipal(Arrays.asList(u1, s1));
+        DatawavePrincipal dp2 = new DatawavePrincipal(Collections.singleton(u1));
+        DatawavePrincipal dp3 = new DatawavePrincipal(Arrays.asList(u2, s1));
+        
+        cache.put(dp1, dp1);
+        cache.put(dp2, dp2);
+        cache.put(dp3, dp3);
+        
         DatawaveUser u = ccb.list("user2<issuer2>");
         assertNotNull(u);
         assertEquals("user2<issuer2>", u.getName());

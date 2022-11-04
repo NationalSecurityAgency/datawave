@@ -10,8 +10,8 @@ import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -24,13 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RemoteEventQueryLogicTest {
     
     RemoteEventQueryLogic logic = new RemoteEventQueryLogic();
     
-    @Before
+    @BeforeEach
     public void setup() {
         UUID uuid = UUID.randomUUID();
         GenericResponse<String> createResponse = new GenericResponse<String>();

@@ -19,7 +19,6 @@ import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -30,10 +29,9 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.jboss.security.JSSESecurityDomain;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
@@ -69,8 +67,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class RemoteEventQueryLogicHttpTest {
     
@@ -110,7 +108,7 @@ public class RemoteEventQueryLogicHttpTest {
         }
     }
     
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
         System.setProperty(DnUtils.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
@@ -329,7 +327,7 @@ public class RemoteEventQueryLogicHttpTest {
         logic.setRemoteQueryLogic("TestQuery");
     }
     
-    @After
+    @AfterEach
     public void after() {
         if (server != null) {
             server.stop(0);

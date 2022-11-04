@@ -27,10 +27,7 @@ public class RawMetaData {
     
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder(this.getClass().getSimpleName());
-        buf.append(": name(").append(this.name).append(") normailizer(");
-        buf.append(this.normalizer.getClass().getSimpleName()).append(") multi(");
-        buf.append(this.multiValue).append(")");
-        return buf.toString();
+        return this.getClass().getSimpleName() + ": name(" + this.name + ") normailizer(" + this.normalizer.getClass().getSimpleName() + ") multi("
+                        + this.multiValue + ")";
     }
 }

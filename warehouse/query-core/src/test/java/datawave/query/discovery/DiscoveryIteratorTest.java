@@ -4,7 +4,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.protobuf.Uid;
-import datawave.query.iterator.SourceManagerTest;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -22,8 +21,7 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Writable;
-import org.apache.log4j.Logger;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -34,13 +32,11 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DiscoveryIteratorTest {
-    static final Logger log = Logger.getLogger(DiscoveryIteratorTest.class);
-    
     @Test
     public void testHappyPath() throws Throwable {
         Connector con = new InMemoryInstance("DiscoveryIteratorTest").getConnector("root", new PasswordToken(""));
@@ -88,9 +84,9 @@ public class DiscoveryIteratorTest {
         
         Map<String,String> map = Maps.newHashMap();
         
-        TreeMap<Key,Value> ohMap = buildMap("term", "20130101");
+        TreeMap<Key,Value> ohMap = buildMap("term");
         for (int i = 0; i < 25; i++) {
-            ohMap.putAll(buildMap("term" + i, "20130101"));
+            ohMap.putAll(buildMap("term" + i));
         }
         disc.init(new SortedMapIterator(ohMap), map, null);
         
@@ -266,14 +262,14 @@ public class DiscoveryIteratorTest {
         writer.addMutation(m);
     }
     
-    TreeMap<Key,Value> buildMap(String term, String date) {
+    TreeMap<Key,Value> buildMap(String term) {
         int nShards = 10;
         TreeMap<Key,Value> map = Maps.newTreeMap();
         String[] types = new String[] {"t1", "t2", "t3"};
         Value value = new Value(makeUidList(24).toByteArray());
         for (String type : types) {
             for (int i = 0; i < nShards; i++) {
-                map.put(new Key(term, "field", date + "_" + i + "\u0000" + type, "FOO"), value);
+                map.put(new Key(term, "field", "20130101" + "_" + i + "\u0000" + type, "FOO"), value);
             }
         }
         return map;

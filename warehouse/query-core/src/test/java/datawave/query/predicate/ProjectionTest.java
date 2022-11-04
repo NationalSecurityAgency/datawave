@@ -1,32 +1,34 @@
 package datawave.query.predicate;
 
 import com.google.common.collect.Sets;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProjectionTest {
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testNoConfiguration() {
         Projection projection = new Projection();
-        assertTrue(projection.apply("FIELD_A"));
+        assertThrows(RuntimeException.class, () -> assertTrue(projection.apply("FIELD_A")));
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testTooMuchConfiguration() {
         Projection projection = new Projection();
         projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
+        assertThrows(RuntimeException.class, () -> projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y")));
         assertTrue(projection.apply("FIELD_A"));
+        
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testTooMuchOfTheSameConfiguration() {
         Projection projection = new Projection();
         projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
+        assertThrows(RuntimeException.class, () -> projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B")));
         assertTrue(projection.apply("FIELD_A"));
     }
     

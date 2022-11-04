@@ -16,10 +16,10 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -30,7 +30,7 @@ public class NYCTLCColumnBasedHandlerTest {
     private Configuration conf;
     private static Logger log = Logger.getLogger(NYCTLCColumnBasedHandlerTest.class);
     
-    @BeforeClass
+    @BeforeAll
     public static void setupSystemSettings() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", "UTF8");
@@ -47,7 +47,7 @@ public class NYCTLCColumnBasedHandlerTest {
         return reader;
     }
     
-    @Before
+    @BeforeEach
     public void setup() {
         TypeRegistry.reset();
         conf = new Configuration();
@@ -81,28 +81,28 @@ public class NYCTLCColumnBasedHandlerTest {
         
         // ----------------------------------------------------------------------
         // EVENT 1
-        Assert.assertTrue("First Record did not read properly?", reader.nextKeyValue());
+        Assertions.assertTrue(reader.nextKeyValue(), "First Record did not read properly?");
         RawRecordContainer event = reader.getEvent();
-        Assert.assertNotNull("Event 1 was null.", event);
-        Assert.assertTrue("Event 1 has parsing errors", event.getErrors().isEmpty());
+        Assertions.assertNotNull(event, "Event 1 was null.");
+        Assertions.assertTrue(event.getErrors().isEmpty(), "Event 1 has parsing errors");
         System.out.println("================================= EVENT 1 =================================");
         ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 66, 33, 0, 0, false);
         
         // ----------------------------------------------------------------------
         // EVENT 2
-        Assert.assertTrue("Second Record did not read properly?", reader.nextKeyValue());
+        Assertions.assertTrue(reader.nextKeyValue(), "Second Record did not read properly?");
         event = reader.getEvent();
-        Assert.assertNotNull("Event 2 was null.", event);
-        Assert.assertTrue("Event 2 has parsing errors", event.getErrors().isEmpty());
+        Assertions.assertNotNull(event, "Event 2 was null.");
+        Assertions.assertTrue(event.getErrors().isEmpty(), "Event 2 has parsing errors");
         System.out.println("================================= EVENT 2 =================================");
         ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 63, 27, 0, 0, false);
         
         // ----------------------------------------------------------------------
         // EVENT 3
-        Assert.assertTrue("Third Record did not read properly?", reader.nextKeyValue());
+        Assertions.assertTrue(reader.nextKeyValue(), "Third Record did not read properly?");
         event = reader.getEvent();
-        Assert.assertNotNull("Event 3 was null.", event);
-        Assert.assertTrue("Event 3 has parsing errors", event.getErrors().isEmpty());
+        Assertions.assertNotNull(event, "Event 3 was null.");
+        Assertions.assertTrue(event.getErrors().isEmpty(), "Event 3 has parsing errors");
         System.out.println("================================= EVENT 3 =================================");
         ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 74, 39, 0, 0, false);
         

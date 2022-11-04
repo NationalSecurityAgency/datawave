@@ -21,12 +21,12 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.functors.NOPTransformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.easymock.EasyMockExtension;
+import org.easymock.EasyMockSupport;
+import org.easymock.Mock;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,15 +40,16 @@ import java.util.UUID;
 import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(PowerMockRunner.class)
-public class ExtendedRunningQueryTest {
+@ExtendWith(EasyMockExtension.class)
+public class ExtendedRunningQueryTest extends EasyMockSupport {
     @Mock
     Connector connector;
     
@@ -75,7 +76,7 @@ public class ExtendedRunningQueryTest {
     
     private Transformer transformer = NOPTransformer.nopTransformer();
     
-    @Before
+    @BeforeEach
     public void setup() {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
@@ -84,7 +85,7 @@ public class ExtendedRunningQueryTest {
     @Test
     public void testConstructor_NoArg() throws Exception {
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         RunningQuery subject = new RunningQuery();
         Exception result1 = null;
         try {
@@ -98,22 +99,22 @@ public class ExtendedRunningQueryTest {
         Query result5 = subject.getSettings();
         TransformIterator result6 = subject.getTransformIterator();
         Set<Authorizations> result7 = subject.getCalculatedAuths();
-        PowerMock.verifyAll();
+        verifyAll();
         
         // Verify results
-        assertNotNull("Expected an exception to be thrown due to uninitialized instance variables", result1);
+        assertNotNull(result1, "Expected an exception to be thrown due to uninitialized instance variables");
         
-        assertNull("Expected a null connector", result2);
+        assertNull(result2, "Expected a null connector");
         
-        assertNull("Expected a null priority", result3);
+        assertNull(result3, "Expected a null priority");
         
-        assertNull("Expected null logic", result4);
+        assertNull(result4, "Expected null logic");
         
-        assertNull("Expected a null query (a.k.a. settings)", result5);
+        assertNull(result5, "Expected a null query (a.k.a. settings)");
         
-        assertNull("Expected a null iterator", result6);
+        assertNull(result6, "Expected a null iterator");
         
-        assertNull("Expected a null set of authorizations", result7);
+        assertNull(result7, "Expected a null set of authorizations");
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -182,24 +183,24 @@ public class ExtendedRunningQueryTest {
         this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         RunningQuery subject = new RunningQuery(this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
         
         ResultsPage result1 = subject.next();
         String result2 = subject.toString();
         QueryMetric.Lifecycle status = subject.getMetric().getLifecycle();
-        PowerMock.verifyAll();
+        verifyAll();
         
         // Verify results
-        assertNotNull("Expected a non-null page", result1);
-        assertNotNull("Expected a non-null list of results", result1.getResults());
-        assertEquals("Expected 2 non-null items in the list of results", 2, result1.getResults().size());
-        assertSame("Expected status to be closed", status, QueryMetric.Lifecycle.RESULTS);
+        assertNotNull(result1, "Expected a non-null page");
+        assertNotNull(result1.getResults(), "Expected a non-null list of results");
+        assertEquals(2, result1.getResults().size(), "Expected 2 non-null items in the list of results");
+        assertSame(status, QueryMetric.Lifecycle.RESULTS, "Expected status to be closed");
         
         assertNotNull("Expected a non-null toString() representation", result2);
         
-        assertSame("Expected lifecycle to be results", QueryMetric.Lifecycle.RESULTS, subject.getMetric().getLifecycle());
+        assertSame(QueryMetric.Lifecycle.RESULTS, subject.getMetric().getLifecycle(), "Expected lifecycle to be results");
         
     }
     
@@ -273,7 +274,7 @@ public class ExtendedRunningQueryTest {
         this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         RunningQuery subject = new RunningQuery(this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
         
@@ -281,15 +282,15 @@ public class ExtendedRunningQueryTest {
         
         String result2 = subject.toString();
         QueryMetric.Lifecycle status = subject.getMetric().getLifecycle();
-        PowerMock.verifyAll();
+        verifyAll();
         
         // Verify results
-        assertNotNull("Expected a non-null page", result1);
-        assertNotNull("Expected a non-null list of results", result1.getResults());
-        assertTrue("Expected MAXRESULTS non-null items in the list of results", resultObjects.size() > maxResults);
-        assertSame("Expected status to be MAXRESULTS", status, QueryMetric.Lifecycle.MAXRESULTS);
+        assertNotNull(result1, "Expected a non-null page");
+        assertNotNull(result1.getResults(), "Expected a non-null list of results");
+        assertTrue(resultObjects.size() > maxResults, "Expected MAXRESULTS non-null items in the list of results");
+        assertSame(status, QueryMetric.Lifecycle.MAXRESULTS, "Expected status to be MAXRESULTS");
         
-        assertNotNull("Expected a non-null toString() representation", result2);
+        assertNotNull(result2, "Expected a non-null toString() representation");
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -331,7 +332,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         this.queryMetrics.updateMetric(isA(QueryMetric.class));
-        PowerMock.expectLastCall().times(3);
+        expectLastCall().times(3);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
         expect(this.transformIterator.hasNext()).andReturn(true).times(0, 1);
         expect(this.genericConfiguration.getQueryString()).andReturn("query").once();
@@ -341,21 +342,21 @@ public class ExtendedRunningQueryTest {
         this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         RunningQuery subject = new RunningQuery(this.queryMetrics, this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
         subject.cancel();
         boolean result1 = subject.isCanceled();
         ResultsPage result2 = subject.next();
-        PowerMock.verifyAll();
+        verifyAll();
         
         // Verify results
-        assertTrue("Expected isCanceled() to return true", result1);
+        assertTrue(result1, "Expected isCanceled() to return true");
         
-        assertNotNull("Expected a non-null page", result2);
-        assertNotNull("Expected a non-null list of results", result2.getResults());
-        assertTrue("Expected an empty list of results", result2.getResults().isEmpty());
-        assertSame("Expected status to be cancelled", QueryMetric.Lifecycle.CANCELLED, subject.getMetric().getLifecycle());
+        assertNotNull(result2, "Expected a non-null page");
+        assertNotNull(result2.getResults(), "Expected a non-null list of results");
+        assertTrue(result2.getResults().isEmpty(), "Expected an empty list of results");
+        assertSame(QueryMetric.Lifecycle.CANCELLED, subject.getMetric().getLifecycle(), "Expected status to be cancelled");
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -394,20 +395,20 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
         this.queryLogic.setupQuery(this.genericConfiguration);
         this.queryMetrics.updateMetric(isA(QueryMetric.class));
-        PowerMock.expectLastCall().times(3);
+        expectLastCall().times(3);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
         this.connectionFactory.returnConnection(this.connector);
         this.queryLogic.close();
         
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         RunningQuery subject = new RunningQuery(this.queryMetrics, this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
         subject.closeConnection(this.connectionFactory);
         QueryMetric.Lifecycle status = subject.getMetric().getLifecycle();
-        PowerMock.verifyAll();
+        verifyAll();
         
-        assertSame("Expected status to be closed", status, QueryMetric.Lifecycle.CLOSED);
+        assertSame(status, QueryMetric.Lifecycle.CLOSED, "Expected status to be closed");
     }
     
     @SuppressWarnings({"unchecked"})
@@ -484,7 +485,7 @@ public class ExtendedRunningQueryTest {
         this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         RunningQuery subject = new RunningQuery(this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
         
@@ -492,14 +493,14 @@ public class ExtendedRunningQueryTest {
         
         String result2 = subject.toString();
         QueryMetric.Lifecycle status = subject.getMetric().getLifecycle();
-        PowerMock.verifyAll();
+        verifyAll();
         
         // Verify results
-        assertNotNull("Expected a non-null page", result1);
-        assertNotNull("Expected a non-null list of results", result1.getResults());
-        assertTrue("Expected DN max results non-null items in the list of results", resultObjects.size() > dnResultLimit);
-        assertSame("Expected status to be MAXRESULTS", status, QueryMetric.Lifecycle.MAXRESULTS);
+        assertNotNull(result1, "Expected a non-null page");
+        assertNotNull(result1.getResults(), "Expected a non-null list of results");
+        assertTrue(resultObjects.size() > dnResultLimit, "Expected DN max results non-null items in the list of results");
+        assertSame(status, QueryMetric.Lifecycle.MAXRESULTS, "Expected status to be MAXRESULTS");
         
-        assertNotNull("Expected a non-null toString() representation", result2);
+        assertNotNull(result2, "Expected a non-null toString() representation");
     }
 }

@@ -2,8 +2,6 @@ package datawave.ingest.mapreduce.handler.shard;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import datawave.data.type.GeometryType;
-import datawave.data.type.NumberType;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -12,10 +10,8 @@ import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
@@ -26,14 +22,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ShardedDataTypeHandlerTest {
     
@@ -109,7 +104,7 @@ public class ShardedDataTypeHandlerTest {
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_LPRIORITY, "30");
     }
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         configuration = new Configuration();
         setupConfiguration(configuration);

@@ -1,11 +1,11 @@
 package datawave.edge.util;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.accumulo.core.data.Value;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import org.apache.accumulo.core.data.Value;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ExtendedHyperLogLogPlusTest {
     
@@ -15,34 +15,34 @@ public class ExtendedHyperLogLogPlusTest {
         final ExtendedHyperLogLogPlus ehllp1 = new ExtendedHyperLogLogPlus();
         
         ehllp1.offer("string1.1");
-        assertEquals("Test cardinality", 1, ehllp1.getCardinality());
+        assertEquals(1, ehllp1.getCardinality(), "Test cardinality");
         
         ehllp1.offer("string1.1");
-        assertEquals("Test cardinality", 1, ehllp1.getCardinality());
+        assertEquals(1, ehllp1.getCardinality(), "Test cardinality");
         
         ehllp1.offer("string1.2");
-        assertEquals("Test cardinality", 2, ehllp1.getCardinality());
+        assertEquals(2, ehllp1.getCardinality(), "Test cardinality");
         
         final ExtendedHyperLogLogPlus deserialized = new ExtendedHyperLogLogPlus(new Value(ehllp1.getBytes()));
         
-        assertEquals("Test serialization", ehllp1.getCardinality(), deserialized.getCardinality());
+        assertEquals(ehllp1.getCardinality(), deserialized.getCardinality(), "Test serialization");
         
         final ExtendedHyperLogLogPlus ehllp2 = new ExtendedHyperLogLogPlus();
         
         ehllp2.offer("string2.1");
-        assertEquals("Test cardinality", 1, ehllp2.getCardinality());
+        assertEquals(1, ehllp2.getCardinality(), "Test cardinality");
         
         ehllp2.offer("string2.1");
-        assertEquals("Test cardinality", 1, ehllp2.getCardinality());
+        assertEquals(1, ehllp2.getCardinality(), "Test cardinality");
         
         ehllp2.offer("string2.2");
-        assertEquals("Test cardinality", 2, ehllp2.getCardinality());
+        assertEquals(2, ehllp2.getCardinality(), "Test cardinality");
         
         ehllp1.addAll(ehllp2);
-        assertEquals("Test cardinality", 4, ehllp1.getCardinality());
+        assertEquals(4, ehllp1.getCardinality(), "Test cardinality");
         
         ehllp1.clear();
-        assertEquals("Test clear", 0, ehllp1.getCardinality());
+        assertEquals(0, ehllp1.getCardinality(), "Test clear");
     }
     
     @Test
@@ -54,10 +54,10 @@ public class ExtendedHyperLogLogPlusTest {
             ehllp1.offer("string1." + i);
         }
         
-        assertEquals("Test cardinality", 4063, ehllp1.getCardinality());
+        assertEquals(4063, ehllp1.getCardinality(), "Test cardinality");
         
         final ExtendedHyperLogLogPlus deserialized = new ExtendedHyperLogLogPlus(new Value(ehllp1.getBytes()));
         
-        assertEquals("Test serialization", ehllp1.getCardinality(), deserialized.getCardinality());
+        assertEquals(ehllp1.getCardinality(), deserialized.getCardinality(), "Test serialization");
     }
 }

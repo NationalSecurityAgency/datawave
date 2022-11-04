@@ -14,8 +14,8 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Set;
@@ -26,6 +26,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.getCurrentArguments;
 import static org.easymock.EasyMock.mock;
 import static org.easymock.EasyMock.replay;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FacetCheckTest {
     
@@ -33,7 +34,7 @@ public class FacetCheckTest {
     
     private FacetCheck facetCheck;
     
-    @Before
+    @BeforeEach
     public void before() throws TableNotFoundException, IllegalAccessException, InstantiationException {
         Multimap<String,String> facets = HashMultimap.create();
         facets.put("FACET1", "VALUE");
@@ -52,16 +53,16 @@ public class FacetCheckTest {
         facetCheck = new FacetCheck(shardQueryConfiguration, facetedConfiguration, metadataHelper);
     }
     
-    @Test(expected = EmptyUnfieldedTermExpansionException.class)
-    public void testAnyFieldSingleTerm() throws ParseException {
+    @Test
+    public void testAnyFieldSingleTerm() {
         String query = Constants.ANY_FIELD + " == 'bar'";
-        testVisitor(query);
+        assertThrows(EmptyUnfieldedTermExpansionException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = EmptyUnfieldedTermExpansionException.class)
-    public void testNoFieldSingleTerm() throws ParseException {
+    @Test
+    public void testNoFieldSingleTerm() {
         String query = Constants.NO_FIELD + " == 'bar'";
-        testVisitor(query);
+        assertThrows(EmptyUnfieldedTermExpansionException.class, () -> testVisitor(query));
     }
     
     @Test
@@ -82,16 +83,16 @@ public class FacetCheckTest {
         testVisitor(query);
     }
     
-    @Test(expected = EmptyUnfieldedTermExpansionException.class)
-    public void testAnyFieldsTerm() throws ParseException {
+    @Test
+    public void testAnyFieldsTerm() {
         String query = Constants.ANY_FIELD + " == 'bar'";
-        testVisitor(query);
+        assertThrows(EmptyUnfieldedTermExpansionException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = EmptyUnfieldedTermExpansionException.class)
-    public void testNoFieldsTerm() throws ParseException {
+    @Test
+    public void testNoFieldsTerm() {
         String query = Constants.NO_FIELD + " == 'bar'";
-        testVisitor(query);
+        assertThrows(EmptyUnfieldedTermExpansionException.class, () -> testVisitor(query));
     }
     
     @Test
@@ -106,124 +107,125 @@ public class FacetCheckTest {
         testVisitor(query);
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNonFacetedSingleTerm() throws ParseException {
+    @Test
+    public void testNonFacetedSingleTerm() {
         String query = "BAR == 'foo'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNonFacetedConjunction() throws ParseException {
+    @Test
+    public void testNonFacetedConjunction() {
         String query = "BAR == 'foo' && BAR2 == 'foo'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNonFacetedDisjunction() throws ParseException {
+    @Test
+    public void testNonFacetedDisjunction() {
         String query = "FOO == 'bar' || BAR == 'foo'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNonFacetedDoubleDisjunction() throws ParseException {
+    @Test
+    public void testNonFacetedDoubleDisjunction() {
         String query = "BAR == 'foo' || BAR2 == 'foo'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNonFacetedTripleDisjunction() throws ParseException {
+    @Test
+    public void testNonFacetedTripleDisjunction() {
         String query = "FOO == 'bar' || BAR == 'foo' || BAR2 == 'foo'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testFunction() throws ParseException {
+    @Test
+    public void testFunction() {
         String query = "FOO == 'bar' || content:phrase(termOffsetMap, 'bar', 'too')";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
+        
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testOnlyFunction() throws ParseException {
+    @Test
+    public void testOnlyFunction() {
         String query = "content:phrase(termOffsetMap, 'bar', 'too')";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testFunctionOverIndexedField() throws ParseException {
+    @Test
+    public void testFunctionOverIndexedField() {
         String query = "content:phrase(termOffsetMap, FOO, 'bar', 'too')";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testRegex() throws ParseException {
+    @Test
+    public void testRegex() {
         String query = "FOO =~ 'bar.*'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testRegexWithExtraTerm() throws ParseException {
+    @Test
+    public void testRegexWithExtraTerm() {
         String query = "FOO =~ 'bar.*' || FOO == 'bar'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNegatedRegex() throws ParseException {
+    @Test
+    public void testNegatedRegex() {
         String query = "FOO !~ 'bar.*'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNegatedRegexWithExtraTerm() throws ParseException {
+    @Test
+    public void testNegatedRegexWithExtraTerm() {
         String query = "FOO !~ 'bar.*' || FOO == 'bar'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testLessThan() throws ParseException {
+    @Test
+    public void testLessThan() {
         String query = "FOO < '+aE1'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testLessThanWithExtraTerm() throws ParseException {
+    @Test
+    public void testLessThanWithExtraTerm() {
         String query = "FOO < '+aE1' || FOO == 'bar'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testLessThanEquals() throws ParseException {
+    @Test
+    public void testLessThanEquals() {
         String query = "FOO <= '+aE1'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testLessThanEqualsWithExtraTerm() throws ParseException {
+    @Test
+    public void testLessThanEqualsWithExtraTerm() {
         String query = "FOO <= '+aE1' || FOO == 'bar'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testGreaterThan() throws ParseException {
+    @Test
+    public void testGreaterThan() {
         String query = "FOO > '+aE1'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testGreaterThanWithExtraTerm() throws ParseException {
+    @Test
+    public void testGreaterThanWithExtraTerm() {
         String query = "FOO > '+aE1' || FOO == 'bar'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testGreaterThanEquals() throws ParseException {
+    @Test
+    public void testGreaterThanEquals() {
         String query = "FOO >= '+aE1'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testGreaterThanEqualsWithExtraTerm() throws ParseException {
+    @Test
+    public void testGreaterThanEqualsWithExtraTerm() {
         String query = "FOO >= '+aE1' || FOO == 'bar'";
-        testVisitor(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testVisitor(query));
     }
     
     private void testVisitor(String query) throws ParseException {

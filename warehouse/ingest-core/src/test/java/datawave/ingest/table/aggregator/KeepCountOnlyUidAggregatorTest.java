@@ -3,8 +3,8 @@ package datawave.ingest.table.aggregator;
 import datawave.ingest.protobuf.Uid;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -12,8 +12,8 @@ import static datawave.ingest.table.aggregator.UidTestUtils.countOnlyList;
 import static datawave.ingest.table.aggregator.UidTestUtils.removeUidList;
 import static datawave.ingest.table.aggregator.UidTestUtils.valueToUidList;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KeepCountOnlyUidAggregatorTest {
     
@@ -21,7 +21,7 @@ public class KeepCountOnlyUidAggregatorTest {
     
     private final KeepCountOnlyUidAggregator agg = new KeepCountOnlyUidAggregator();
     
-    @Before
+    @BeforeEach
     public void setup() {
         agg.reset();
     }

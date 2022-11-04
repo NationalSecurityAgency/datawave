@@ -1,23 +1,22 @@
 package datawave.util.flag;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -30,7 +29,7 @@ public class FlagEntryMoverTest extends AbstractFlagConfig {
     
     public FlagEntryMoverTest() {}
     
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         fmc = getDefaultFMC();
         fmc.setBaseHDFSDir(fmc.getBaseHDFSDir().replace("target", "target/FlagEntryMoverTest"));
@@ -64,10 +63,10 @@ public class FlagEntryMoverTest extends AbstractFlagConfig {
         InputFile result = instance.call();
         assertSame(result, entry);
         assertTrue(result.isMoved());
-        Assert.assertEquals(result.getFlagging(), result.getCurrentDir());
-        Assert.assertEquals(entry.getPath().getName(), entry.getFlagged().getName());
-        Assert.assertEquals(entry.getPath().getName(), entry.getFlagging().getName());
-        Assert.assertEquals(entry.getPath().getName(), entry.getLoaded().getName());
+        assertEquals(result.getFlagging(), result.getCurrentDir());
+        assertEquals(entry.getPath().getName(), entry.getFlagged().getName());
+        assertEquals(entry.getPath().getName(), entry.getFlagging().getName());
+        assertEquals(entry.getPath().getName(), entry.getLoaded().getName());
     }
     
     @Test
@@ -82,12 +81,12 @@ public class FlagEntryMoverTest extends AbstractFlagConfig {
         
         FlagEntryMover instance = new FlagEntryMover(directoryCache, fs, entry);
         InputFile result = instance.call();
-        assertFalse("Should not have moved", result.isMoved());
-        Assert.assertEquals(entry, result);
-        Assert.assertEquals(entry.getPath(), result.getCurrentDir());
-        Assert.assertEquals(entry.getPath().getName(), entry.getFlagged().getName());
-        Assert.assertEquals(entry.getPath().getName(), entry.getFlagging().getName());
-        Assert.assertEquals(entry.getPath().getName(), entry.getLoaded().getName());
+        assertFalse(result.isMoved(), "Should not have moved");
+        assertEquals(entry, result);
+        assertEquals(entry.getPath(), result.getCurrentDir());
+        assertEquals(entry.getPath().getName(), entry.getFlagged().getName());
+        assertEquals(entry.getPath().getName(), entry.getFlagging().getName());
+        assertEquals(entry.getPath().getName(), entry.getLoaded().getName());
     }
     
     @Test
@@ -110,14 +109,14 @@ public class FlagEntryMoverTest extends AbstractFlagConfig {
         assertTrue(entry.equals(result));
         // current path should match flagging
         assertNotEquals(result.getPath(), result.getCurrentDir());
-        Assert.assertEquals(entry.getFlagging(), result.getCurrentDir());
+        assertEquals(entry.getFlagging(), result.getCurrentDir());
         // path name should differ from flagged/flagging/loaded
         final String pathName = result.getPath().getName();
         final String flaggedName = result.getFlagged().getName();
-        Assert.assertNotEquals(pathName, flaggedName);
+        assertNotEquals(pathName, flaggedName);
         final String flaggingName = result.getFlagging().getName();
-        Assert.assertEquals(flaggingName, flaggedName);
+        assertEquals(flaggingName, flaggedName);
         final String loadedName = result.getLoaded().getName();
-        Assert.assertEquals(loadedName, flaggedName);
+        assertEquals(loadedName, flaggedName);
     }
 }

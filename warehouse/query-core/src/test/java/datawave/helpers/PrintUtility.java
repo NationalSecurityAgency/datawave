@@ -115,7 +115,7 @@ public class PrintUtility {
             return "";
         }
         
-        String lastError = "";
+        String lastError;
         
         try {
             final Uid.List uidList = Uid.List.parseFrom(value.get());

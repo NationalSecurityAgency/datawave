@@ -3,8 +3,8 @@ package datawave.core.iterators;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,10 +34,10 @@ public class DataWaveFieldIndexRangeIteratorJexlTest {
         expectedRanges.add(new Range(new Key("20190424", "fi\0fieldName", "O\u0000"), true, new Key("20190424", "fi\0fieldName", "R\u0001"), true));
         expectedRanges.add(new Range(new Key("20190424", "fi\0fieldName", "T\u0000"), true, new Key("20190424", "fi\0fieldName", "T\u0001"), true));
         
-        Assert.assertEquals(expectedRanges.size(), boundingFiRanges.size());
+        Assertions.assertEquals(expectedRanges.size(), boundingFiRanges.size());
         
         for (int i = 0; i < expectedRanges.size(); i++)
-            Assert.assertEquals(expectedRanges.get(i), boundingFiRanges.get(i));
+            Assertions.assertEquals(expectedRanges.get(i), boundingFiRanges.get(i));
     }
     
     @Test
@@ -62,15 +62,15 @@ public class DataWaveFieldIndexRangeIteratorJexlTest {
         expectedRanges.add(new Range(new Key("20190424", "fi\0fieldName", "R\u0001\u0000"), true, new Key("20190424", "fi\0fieldName", "S\uDBFF\uDFFF"), true));
         expectedRanges.add(new Range(new Key("20190424", "fi\0fieldName", "T\u0001\u0000"), true, new Key("20190424", "fi\0fieldName\0"), true));
         
-        Assert.assertEquals(expectedRanges.size(), boundingFiRanges.size());
+        Assertions.assertEquals(expectedRanges.size(), boundingFiRanges.size());
         
         for (int i = 0; i < expectedRanges.size(); i++)
-            Assert.assertEquals(expectedRanges.get(i), boundingFiRanges.get(i));
+            Assertions.assertEquals(expectedRanges.get(i), boundingFiRanges.get(i));
     }
     
     private static class TestDataWaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexRangeIteratorJexl {
         
-        boolean negated = false;
+        boolean negated;
         
         public TestDataWaveFieldIndexRangeIteratorJexl(SortedSet<Range> subRanges, boolean negated) {
             this.subRanges = subRanges;

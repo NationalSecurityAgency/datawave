@@ -14,13 +14,13 @@ import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
-import datawave.query.testframework.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.testframework.MockStatusReporter;
 import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParameters;
@@ -42,20 +42,21 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -72,9 +73,9 @@ import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class GeoSortedQueryDataTest {
     
     private static final int NUM_SHARDS = 241;
@@ -154,7 +155,7 @@ public class GeoSortedQueryDataTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() throws Exception {
         setupEnvVariables();
         conf.addResource(ClassLoader.getSystemResource("datawave/query/tables/geo-test-config.xml"));
@@ -176,11 +177,11 @@ public class GeoSortedQueryDataTest {
         int recNum = 1;
         for (int i = 0; i < wktData.length; i++) {
             record.clear();
-            record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
+            record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 1, null));
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
             record.setDate(formatter.parse(BEGIN_DATE).getTime() + dates[i]);
-            record.setRawData(wktData[i].getBytes("UTF8"));
+            record.setRawData(wktData[i].getBytes(StandardCharsets.UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
             
@@ -267,7 +268,7 @@ public class GeoSortedQueryDataTest {
         }
     }
     
-    @Before
+    @BeforeEach
     public void setupTest() {
         // increase the depth threshold
         logic.setMaxDepthThreshold(10);
@@ -283,7 +284,7 @@ public class GeoSortedQueryDataTest {
         Iterator<QueryData> queryIter = initializeGeoQuery();
         
         // ensure that the queries are sorted geo granularity (high to low)
-        GeoWaveQueryInfoVisitor visitor = new GeoWaveQueryInfoVisitor(Arrays.asList(FIELD_NAME));
+        GeoWaveQueryInfoVisitor visitor = new GeoWaveQueryInfoVisitor(Collections.singletonList(FIELD_NAME));
         GeoWaveQueryInfoVisitor.GeoWaveQueryInfo prevQueryInfo = null;
         while (queryIter.hasNext()) {
             QueryData qd = queryIter.next();
@@ -330,7 +331,7 @@ public class GeoSortedQueryDataTest {
         auths.add(new Authorizations(AUTHS));
         
         Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
+        query.initialize(USER, Collections.singletonList(USER_DN), null, queryParams, null);
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         

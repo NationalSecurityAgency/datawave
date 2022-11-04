@@ -23,12 +23,12 @@ public class EmptyTreeIterable implements NestedIterator<Key> {
     
     @Override
     public Collection<NestedIterator<Key>> leaves() {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
     
     @Override
     public Collection<NestedIterator<Key>> children() {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
     
     @Override

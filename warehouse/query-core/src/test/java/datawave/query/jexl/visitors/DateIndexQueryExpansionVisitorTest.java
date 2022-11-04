@@ -1,11 +1,12 @@
 package datawave.query.jexl.visitors;
 
+import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.helpers.PrintUtility;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.DateIndexTestIngest;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
+import datawave.query.util.DateIndexTestIngest;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.test.JexlNodeAssert;
@@ -17,14 +18,13 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Date;
@@ -44,14 +44,14 @@ public class DateIndexQueryExpansionVisitorTest {
     private MetadataHelper metadataHelper;
     private DateIndexHelper dateIndexHelper;
     
-    @BeforeClass
+    @BeforeAll
     public static void before() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         InMemoryInstance i = new InMemoryInstance(DateIndexQueryExpansionVisitorTest.class.getName());
         connector = i.getConnector("root", new PasswordToken(""));
     }
     
-    @Before
+    @BeforeEach
     public void setupTests() throws Exception {
         this.metadataHelper = new MetadataHelperFactory().createMetadataHelper(connector, TableName.DATE_INDEX, Collections.singleton(auths));
         this.deleteAndCreateTable();

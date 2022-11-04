@@ -27,10 +27,10 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
-import datawave.query.testframework.MockStatusReporter;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.testframework.MockStatusReporter;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
@@ -53,22 +53,22 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
-import java.io.IOException;
+import java.io.File;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,11 +87,11 @@ import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class ExceededOrThresholdMarkerJexlNodeTest {
     
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static File temporaryFolder = new File("/tmp/test/ExceededOrThresholdMarkerJexlNodeTest");
     
     private static final int NUM_SHARDS = 1;
     private static final String DATA_TYPE_NAME = "wkt";
@@ -135,11 +135,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     private static final String INDEX_1 = "1f0aaaaaaaaaaaaaaa";
     private static final String INDEX_2 = "1f1ffc54fefc54fefc";
     private static final String INDEX_3 = "1f1fffb0ebff104155";
-    private static final String INDEX_4 = "1f1fffc410554eb0ff";
     private static final String INDEX_5 = "1f2000228a00228a00";
     private static final String INDEX_6 = "1f2000747900de7300";
     private static final String INDEX_7 = "1f20008a28008a2800";
-    private static final String INDEX_8 = "1f2000de7300747900";
     private static final String INDEX_9 = "1f200364bda9c63d03";
     private static final String INDEX_10 = "1f200398c60112ee03";
     private static final String INDEX_11 = "1f35553ac3ffb0ebff";
@@ -191,12 +189,12 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() throws Exception {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
         
-        fstUri = temporaryFolder.newFolder().toURI().toString();
-        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
+        fstUri = temporaryFolder.toURI().toString();
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.toURI().toString()));
         
         setupConfiguration(conf);
         
@@ -216,13 +214,13 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         beginDate = BEGIN_DATE;
         wktData = ExceededOrThresholdMarkerJexlNodeTest.wktData;
         
-        for (int i = 0; i < wktData.length; i++) {
+        for (String wktDatum : wktData) {
             record.clear();
-            record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
+            record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 1, null));
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
             record.setDate(formatter.parse(beginDate).getTime());
-            record.setRawData((wktData[i]).getBytes("UTF8"));
+            record.setRawData(wktDatum.getBytes(StandardCharsets.UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
             
@@ -307,10 +305,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         
         List<String> queryRanges = getQueryRanges(query);
         
-        Assert.assertEquals(1, queryRanges.size());
+        Assertions.assertEquals(1, queryRanges.size());
         String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
                         queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
-        Assert.assertEquals(
+        Assertions.assertEquals(
                         "((_List_ = true) && ((id = '"
                                         + id
                                         + "') && (field = '"
@@ -319,7 +317,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
                         queryRanges.get(0));
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(10, events.size());
+        Assertions.assertEquals(10, events.size());
         
         List<String> pointList = new ArrayList<>();
         pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
@@ -334,10 +332,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
+            Assertions.assertTrue(pointList.removeAll(wkt));
         }
         
-        Assert.assertEquals(0, pointList.size());
+        Assertions.assertEquals(0, pointList.size());
     }
     
     @Test
@@ -356,10 +354,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         
         List<String> queryRanges = getQueryRanges(query);
         
-        Assert.assertEquals(1, queryRanges.size());
+        Assertions.assertEquals(1, queryRanges.size());
         String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
                         queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
-        Assert.assertEquals(
+        Assertions.assertEquals(
                         "((_Value_ = true) && ((_Bounded_ = true) && ("
                                         + GEO_QUERY_FIELD
                                         + " >= '1f200364bda9c63d03' && "
@@ -372,7 +370,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
                         queryRanges.get(0));
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(10, events.size());
+        Assertions.assertEquals(10, events.size());
         
         List<String> pointList = new ArrayList<>();
         pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
@@ -387,10 +385,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
+            Assertions.assertTrue(pointList.removeAll(wkt));
         }
         
-        Assert.assertEquals(0, pointList.size());
+        Assertions.assertEquals(0, pointList.size());
     }
     
     @Test
@@ -409,10 +407,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxRangesPerRangeIvarator = 1;
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(3, events.size());
+        Assertions.assertEquals(3, events.size());
         
-        List<String> pointList = new ArrayList<>();
-        pointList.addAll(Arrays.asList(POINT_4, POINT_8, POINT_12));
+        List<String> pointList = new ArrayList<>(Arrays.asList(POINT_4, POINT_8, POINT_12));
         
         for (DefaultEvent event : events) {
             List<String> wkt = new ArrayList<>();
@@ -423,10 +420,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
+            Assertions.assertTrue(pointList.removeAll(wkt));
         }
         
-        Assert.assertEquals(0, pointList.size());
+        Assertions.assertEquals(0, pointList.size());
     }
     
     @Test
@@ -444,10 +441,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxRangesPerRangeIvarator = 1;
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(9, events.size());
+        Assertions.assertEquals(9, events.size());
         
-        List<String> pointList = new ArrayList<>();
-        pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
+        List<String> pointList = new ArrayList<>(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
         
         for (DefaultEvent event : events) {
             List<String> wkt = new ArrayList<>();
@@ -458,10 +454,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
+            Assertions.assertTrue(pointList.removeAll(wkt));
         }
         
-        Assert.assertEquals(0, pointList.size());
+        Assertions.assertEquals(0, pointList.size());
     }
     
     @Test
@@ -478,10 +474,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         collapseUids = false;
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(1, events.size());
+        Assertions.assertEquals(1, events.size());
         
-        List<String> pointList = new ArrayList<>();
-        pointList.addAll(Arrays.asList(POINT_13.split(";")));
+        List<String> pointList = new ArrayList<>(Arrays.asList(POINT_13.split(";")));
         
         for (DefaultEvent event : events) {
             List<String> wkt = new ArrayList<>();
@@ -492,10 +487,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
+            Assertions.assertTrue(pointList.removeAll(wkt));
         }
         
-        Assert.assertEquals(0, pointList.size());
+        Assertions.assertEquals(0, pointList.size());
     }
     
     @Test
@@ -514,7 +509,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxRangesPerRangeIvarator = 1;
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(4, events.size());
+        Assertions.assertEquals(4, events.size());
         
         List<String> pointList = new ArrayList<>();
         pointList.addAll(Arrays.asList(POINT_4, POINT_8, POINT_12));
@@ -529,10 +524,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
+            Assertions.assertTrue(pointList.removeAll(wkt));
         }
         
-        Assert.assertEquals(0, pointList.size());
+        Assertions.assertEquals(0, pointList.size());
     }
     
     @Test
@@ -550,10 +545,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxRangesPerRangeIvarator = 1;
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(9, events.size());
+        Assertions.assertEquals(9, events.size());
         
-        List<String> pointList = new ArrayList<>();
-        pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
+        List<String> pointList = new ArrayList<>(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
         
         for (DefaultEvent event : events) {
             List<String> wkt = new ArrayList<>();
@@ -564,10 +558,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
+            Assertions.assertTrue(pointList.removeAll(wkt));
         }
         
-        Assert.assertEquals(0, pointList.size());
+        Assertions.assertEquals(0, pointList.size());
     }
     
     @Test
@@ -586,7 +580,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxRangesPerRangeIvarator = 1;
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(4, events.size());
+        Assertions.assertEquals(4, events.size());
         
         List<String> pointList = new ArrayList<>();
         pointList.addAll(Arrays.asList(POINT_4, POINT_8, POINT_12));
@@ -601,33 +595,33 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
+            Assertions.assertTrue(pointList.removeAll(wkt));
         }
         
-        Assert.assertEquals(0, pointList.size());
+        Assertions.assertEquals(0, pointList.size());
     }
     
     private List<String> getQueryRanges(String queryString) throws Exception {
         ShardQueryLogic logic = getShardQueryLogic();
         
-        Iterator iter = getQueryRangesIterator(queryString, logic);
+        Iterator<String> iter = getQueryRangesIterator(queryString, logic);
         List<String> queryData = new ArrayList<>();
         while (iter.hasNext())
-            queryData.add((String) iter.next());
+            queryData.add(iter.next());
         return queryData;
     }
     
     private List<DefaultEvent> getQueryResults(String queryString) throws Exception {
         ShardQueryLogic logic = getShardQueryLogic();
         
-        Iterator iter = getResultsIterator(queryString, logic);
+        Iterator<DefaultEvent> iter = getResultsIterator(queryString, logic);
         List<DefaultEvent> events = new ArrayList<>();
         while (iter.hasNext())
-            events.add((DefaultEvent) iter.next());
+            events.add(iter.next());
         return events;
     }
     
-    private Iterator getQueryRangesIterator(String queryString, ShardQueryLogic logic) throws Exception {
+    private Iterator<String> getQueryRangesIterator(String queryString, ShardQueryLogic logic) throws Exception {
         MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
         params.putSingle(QUERY_LOGIC_NAME, "EventQuery");
         params.putSingle(QUERY_STRING, queryString);
@@ -645,7 +639,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         auths.add(new Authorizations(AUTHS));
         
         Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
+        query.initialize(USER, Collections.singletonList(USER_DN), null, queryParams, null);
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
@@ -665,7 +659,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
                         });
     }
     
-    private Iterator getResultsIterator(String queryString, ShardQueryLogic logic) throws Exception {
+    private Iterator<DefaultEvent> getResultsIterator(String queryString, ShardQueryLogic logic) throws Exception {
         MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
         params.putSingle(QUERY_LOGIC_NAME, "EventQuery");
         params.putSingle(QUERY_STRING, queryString);
@@ -683,7 +677,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         auths.add(new Authorizations(AUTHS));
         
         Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
+        query.initialize(USER, Collections.singletonList(USER_DN), null, queryParams, null);
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
@@ -694,7 +688,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         return logic.getTransformIterator(query);
     }
     
-    private ShardQueryLogic getShardQueryLogic() throws IOException {
+    private ShardQueryLogic getShardQueryLogic() {
         ShardQueryLogic logic = new ShardQueryLogic(this.logic);
         
         // increase the depth threshold
@@ -704,6 +698,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
         
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
+        assert hdfsSiteConfig != null;
         logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
         
         setupIvarator(logic);
@@ -711,7 +706,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         return logic;
     }
     
-    private void setupIvarator(ShardQueryLogic logic) throws IOException {
+    private void setupIvarator(ShardQueryLogic logic) {
         // Set these to ensure ivarator runs
         logic.setMaxUnfieldedExpansionThreshold(1);
         logic.setMaxValueExpansionThreshold(1);

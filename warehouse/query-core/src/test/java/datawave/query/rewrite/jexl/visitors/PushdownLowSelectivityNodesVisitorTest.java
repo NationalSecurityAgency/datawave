@@ -8,9 +8,9 @@ import datawave.query.jexl.visitors.PushdownLowSelectivityNodesVisitor;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -22,7 +22,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
     private MockMetadataHelper helper = null;
     private ShardQueryConfiguration config = null;
     
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         helper = new MockMetadataHelper();
         Map<String,Map<String,MetadataCardinalityCounts>> selectivities = new HashMap<>();
@@ -52,7 +52,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO == 'ca1' || UNINDEXED == 'ca1')");
         
         String result = JexlStringBuildingVisitor.buildQuery(PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(script, config, helper));
-        Assert.assertEquals("FOO == 'jsub' && (((_Delayed_ = true) && (FOO == 'ca1')) || UNINDEXED == 'ca1')", result);
+        Assertions.assertEquals("FOO == 'jsub' && (((_Delayed_ = true) && (FOO == 'ca1')) || UNINDEXED == 'ca1')", result);
     }
     
     @Test
@@ -60,7 +60,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO == 'ca11' || UNINDEXED == 'ca11')");
         
         String result = JexlStringBuildingVisitor.buildQuery(PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(script, config, helper));
-        Assert.assertEquals("FOO == 'jsub' && (((_Delayed_ = true) && (FOO == 'ca11')) || UNINDEXED == 'ca11')", result);
+        Assertions.assertEquals("FOO == 'jsub' && (((_Delayed_ = true) && (FOO == 'ca11')) || UNINDEXED == 'ca11')", result);
     }
     
     @Test
@@ -68,7 +68,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO == 'ca2' || UNINDEXED == 'ca2')");
         
         String result = JexlStringBuildingVisitor.buildQuery(PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(script, config, helper));
-        Assert.assertEquals("FOO == 'jsub' && (((_Delayed_ = true) && (FOO == 'ca2')) || UNINDEXED == 'ca2')", result);
+        Assertions.assertEquals("FOO == 'jsub' && (((_Delayed_ = true) && (FOO == 'ca2')) || UNINDEXED == 'ca2')", result);
     }
     
     @Test
@@ -76,7 +76,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO == 'ca21' || UNINDEXED == 'ca21')");
         
         String result = JexlStringBuildingVisitor.buildQuery(PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(script, config, helper));
-        Assert.assertEquals("FOO == 'jsub' && (FOO == 'ca21' || UNINDEXED == 'ca21')", result);
+        Assertions.assertEquals("FOO == 'jsub' && (FOO == 'ca21' || UNINDEXED == 'ca21')", result);
     }
     
     @Test
@@ -84,7 +84,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'jsub' && (FOO == 'ca1' || UNINDEXED == 'ca1')");
         config.setMinSelectivity(0.01);
         String result = JexlStringBuildingVisitor.buildQuery(PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(script, config, helper));
-        Assert.assertEquals("FOO == 'jsub' && (FOO == 'ca1' || UNINDEXED == 'ca1')", result);
+        Assertions.assertEquals("FOO == 'jsub' && (FOO == 'ca1' || UNINDEXED == 'ca1')", result);
     }
     
     @Test
@@ -93,7 +93,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
                         .parseJexlQuery("FOO == 'jsub' && (FOO == 'ca1' || FOO == 'ca2' || FOO == 'ca3' || FOO == 'ca4' || UNINDEXED == 'ca1')");
         
         String result = JexlStringBuildingVisitor.buildQuery(PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(script, config, helper));
-        Assert.assertEquals(
+        Assertions.assertEquals(
                         "FOO == 'jsub' && (((_Delayed_ = true) && (FOO == 'ca1')) || ((_Delayed_ = true) && (FOO == 'ca2')) || ((_Delayed_ = true) && (FOO == 'ca3')) || ((_Delayed_ = true) && (FOO == 'ca4')) || UNINDEXED == 'ca1')",
                         result);
     }

@@ -1,13 +1,13 @@
 package datawave.webservice.query.logic.filtered;
 
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class QueryLogicFilterByAuthTest {
     @Test

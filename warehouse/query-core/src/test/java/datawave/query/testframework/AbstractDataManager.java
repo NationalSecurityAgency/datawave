@@ -4,7 +4,7 @@ import datawave.data.normalizer.GeoNormalizer;
 import datawave.data.normalizer.Normalizer;
 import datawave.data.normalizer.NumberNormalizer;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
+import org.assertj.core.api.Assertions;
 
 import java.text.ParseException;
 import java.util.Date;
@@ -87,7 +87,7 @@ public abstract class AbstractDataManager implements RawDataManager {
                     }
                 } catch (ParseException pe) {
                     log.error(pe);
-                    Assert.fail("invalid shard date value(" + dateStr + ")");
+                    Assertions.fail("invalid shard date value(" + dateStr + ")");
                 }
             }
         }
@@ -131,7 +131,7 @@ public abstract class AbstractDataManager implements RawDataManager {
                 if (!(getNormalizer(field) instanceof GeoNormalizer)) {
                     if (getNormalizer(field) instanceof NumberNormalizer) {
                         // remove quotes from phrase
-                        String num = "";
+                        String num;
                         String numPhrase = phrase;
                         int start = phrase.indexOf('\'');
                         if (0 <= start) {

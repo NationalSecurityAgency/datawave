@@ -8,23 +8,23 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DocumentProjectionTest {
     
     private final ColumnVisibility cv = new ColumnVisibility("PUBLIC");
     private Document d;
     
-    @Before
+    @BeforeEach
     public void setup() {
         d = new Document();
         d.put("FOO", new Content("foofighter", new Key("row", "dt\0uid", "", cv, -1), true));

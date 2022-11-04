@@ -6,13 +6,12 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,9 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CreateUidsIteratorTest {
     
@@ -42,7 +41,7 @@ public class CreateUidsIteratorTest {
     
     @Test
     public void testLastNull() {
-        ArrayByteSequence bs = new ArrayByteSequence("shard_1\u0000datatype".getBytes(Charset.forName("UTF-8")));
+        ArrayByteSequence bs = new ArrayByteSequence("shard_1\u0000datatype".getBytes(StandardCharsets.UTF_8));
         assertEquals("shard_1".length(), CreateUidsIterator.lastNull(bs));
     }
     
@@ -56,7 +55,6 @@ public class CreateUidsIteratorTest {
     /**
      * Ensure that for a known set of data the iterator will correctly seek to each next value.
      *
-     * @throws IOException
      */
     @Test
     public void testReseek() throws IOException {
@@ -103,13 +101,12 @@ public class CreateUidsIteratorTest {
                 expectedDocs.remove(id);
             }
         }
-        assertEquals("Items remaining " + expectedDocs, 0, expectedDocs.size());
+        assertEquals(0, expectedDocs.size(), "Items remaining " + expectedDocs);
     }
     
     /**
      * Ensure that iterator will work when some Protobuf UIDs are created with the IGNORE flag set to 'true'.
      *
-     * @throws IOException
      */
     @Test
     public void testWithIgnore() throws IOException {
@@ -125,11 +122,11 @@ public class CreateUidsIteratorTest {
         List<IndexMatch> expectedDocs = new LinkedList<>();
         
         data.put(new Key("row", "cf", "date_1\u0000A"), hasDocs);
-        addToExpectedDocs("A", docIds, expectedDocs, null);
+        addToExpectedDocs("A", docIds, expectedDocs);
         data.put(new Key("row", "cf", "date_1\u0000B"), hasDocs);
-        addToExpectedDocs("B", docIds, expectedDocs, null);
+        addToExpectedDocs("B", docIds, expectedDocs);
         data.put(new Key("row", "cf", "date_1\u0000C"), hasDocs);
-        addToExpectedDocs("C", docIds, expectedDocs, null);
+        addToExpectedDocs("C", docIds, expectedDocs);
         
         builder = Uid.List.newBuilder();
         builder.setCOUNT(100);
@@ -171,11 +168,11 @@ public class CreateUidsIteratorTest {
         List<IndexMatch> expectedDocs = new LinkedList<>();
         
         data.put(new Key("row", "cf", "date_1\u0000A"), hasDocs);
-        addToExpectedDocs("A", docIds, expectedDocs, null);
+        addToExpectedDocs("A", docIds, expectedDocs);
         data.put(new Key("row", "cf", "date_1\u0000B"), hasDocs);
-        addToExpectedDocs("B", docIds, expectedDocs, null);
+        addToExpectedDocs("B", docIds, expectedDocs);
         data.put(new Key("row", "cf", "date_1\u0000C"), hasDocs);
-        addToExpectedDocs("C", docIds, expectedDocs, null);
+        addToExpectedDocs("C", docIds, expectedDocs);
         
         // Setup iterator
         CreateUidsIterator iterator = new CreateUidsIterator();
@@ -216,11 +213,11 @@ public class CreateUidsIteratorTest {
         List<IndexMatch> expectedDocs = new LinkedList<>();
         
         data.put(new Key("row", "cf", "date_1\u0000A"), hasDocs);
-        addToExpectedDocs("A", docIds, expectedDocs, null);
+        addToExpectedDocs("A", docIds, expectedDocs);
         data.put(new Key("row", "cf", "date_1\u0000B"), hasDocs);
-        addToExpectedDocs("B", docIds, expectedDocs, null);
+        addToExpectedDocs("B", docIds, expectedDocs);
         data.put(new Key("row", "cf", "date_1\u0000C"), hasDocs);
-        addToExpectedDocs("C", docIds, expectedDocs, null);
+        addToExpectedDocs("C", docIds, expectedDocs);
         
         builder = Uid.List.newBuilder();
         builder.setCOUNT(5);
@@ -262,7 +259,7 @@ public class CreateUidsIteratorTest {
         List<IndexMatch> expectedDocs = new LinkedList<>();
         
         data.put(new Key("bar", "FOO", "20190314_1\u0000A"), hasDocs);
-        addToExpectedDocs("A", docIds, expectedDocs, null);
+        addToExpectedDocs("A", docIds, expectedDocs);
         
         // Setup iterator
         CreateUidsIterator iterator = new CreateUidsIterator();
@@ -310,8 +307,8 @@ public class CreateUidsIteratorTest {
         assertFalse(iterator.hasTop());
     }
     
-    static void addToExpectedDocs(String dataType, Iterable<String> docIds, Collection<IndexMatch> expected, JexlNode node) {
+    static void addToExpectedDocs(String dataType, Iterable<String> docIds, Collection<IndexMatch> expected) {
         for (String id : docIds)
-            expected.add(new IndexMatch(dataType + '\u0000' + id, node));
+            expected.add(new IndexMatch(dataType + '\u0000' + id, null));
     }
 }

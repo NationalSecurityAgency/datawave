@@ -23,12 +23,11 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.javatuples.Triplet;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -40,21 +39,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ContentFunctionsTest {
-    static final Logger log = Logger.getLogger(ContentFunctionsTest.class);
-    private static JexlEngine engine = new DatawaveJexlEngine();
+    private static final JexlEngine engine = new DatawaveJexlEngine();
     
     private JexlContext context;
     private TermOffsetMap termOffSetMap;
     
-    private String phraseFunction = ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
-    private String scoredPhraseFunction = ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
+    private final String phraseFunction = ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
+    private final String scoredPhraseFunction = ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
     private static final String EVENT_ID = "shard\u0000dt\u0000uid";
-    private String eventId = EVENT_ID;
+    private final String eventId = EVENT_ID;
     
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws URISyntaxException {
         Map<String,Object> functions = new HashMap<>();
         functions.put("f", QueryFunctions.class);
@@ -63,7 +61,7 @@ public class ContentFunctionsTest {
         engine.setFunctions(functions);
     }
     
-    @Before
+    @BeforeEach
     public void setup() {
         this.context = new MapContext();
         this.termOffSetMap = new TermOffsetMap();
@@ -167,17 +165,18 @@ public class ContentFunctionsTest {
                         .build();
     }
     
-    private void assertPhraseOffset(String field, int startOffset, int endOffset) {
-        Collection<Triplet<String,Integer,Integer>> phraseOffsets = termOffSetMap.getPhraseIndexes(field);
+    private void assertPhraseOffset(int startOffset, int endOffset) {
+        Collection<Triplet<String,Integer,Integer>> phraseOffsets = termOffSetMap.getPhraseIndexes("CONTENT");
         boolean found = phraseOffsets.stream().anyMatch(
                         (pair) -> pair.getValue0().equals(eventId) && pair.getValue1().equals(startOffset) && pair.getValue2().equals(endOffset));
-        Assert.assertTrue(
-                        "Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + field + " and eventId " + eventId.replace('\u0000', '/'),
-                        found);
+        Assertions.assertTrue(
+                        found,
+                        "Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + "CONTENT" + " and eventId "
+                                        + eventId.replace('\u0000', '/'));
     }
     
     private void assertPhraseOffsetsEmpty() {
-        Assert.assertTrue("Expected empty phrase offset map", termOffSetMap.getPhraseIndexes().isEmpty());
+        Assertions.assertTrue(termOffSetMap.getPhraseIndexes().isEmpty(), "Expected empty phrase offset map");
     }
     
     @Test
@@ -195,8 +194,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 3, 4);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(3, 4);
     }
     
     @Test
@@ -216,8 +215,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 252, 253);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(252, 253);
     }
     
     @Test
@@ -237,8 +236,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 251, 252);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(251, 252);
     }
     
     @Test
@@ -258,8 +257,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 252, 252);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(252, 252);
     }
     
     @Test
@@ -279,8 +278,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 252, 252);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(252, 252);
     }
     
     /**
@@ -301,7 +300,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -320,19 +319,17 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 2, 3);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(2, 3);
     }
     
     /**
      * Ensure that we have a failure
      */
-    @Test(expected = JexlException.class)
+    @Test
     public void testQuotedEvaluation_1_fail() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog's'", "'cat'");
-        Expression expr = engine.createExpression(query);
-        
-        fail("Query should have failed to parse");
+        Assertions.assertThrows(JexlException.class, () -> engine.createExpression(query));
     }
     
     @Test
@@ -350,8 +347,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 2);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 2);
     }
     
     @Test
@@ -369,7 +366,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -388,7 +385,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -398,8 +395,8 @@ public class ContentFunctionsTest {
         Expression expr = engine.createExpression(query);
         
         List<TermWeightPosition> list1, list2;
-        list1 = asList(Arrays.asList(4), Arrays.asList(1));
-        list2 = asList(Arrays.asList(2), Arrays.asList(1)); // (10-6) = (3+1)
+        list1 = asList(Collections.singletonList(4), Collections.singletonList(1));
+        list2 = asList(Collections.singletonList(2), Collections.singletonList(1)); // (10-6) = (3+1)
         
         termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
@@ -407,8 +404,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 2, 3);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(2, 3);
     }
     
     @Test
@@ -426,7 +423,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -449,8 +446,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 7, 10);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(7, 10);
     }
     
     @Test
@@ -471,7 +468,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -493,7 +490,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -515,8 +512,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 4, 6);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(4, 6);
     }
     
     @Test
@@ -534,8 +531,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 2);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 2);
     }
     
     @Test
@@ -553,7 +550,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -572,7 +569,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -591,7 +588,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -612,8 +609,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 9, 11);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(9, 11);
     }
     
     @Test
@@ -633,7 +630,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -652,8 +649,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 2, 3);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(2, 3);
     }
     
     @Test
@@ -671,8 +668,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 2, 5);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(2, 5);
     }
     
     @Test
@@ -690,8 +687,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 3, 4);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(3, 4);
     }
     
     @Test
@@ -709,8 +706,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 2, 6);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(2, 6);
     }
     
     @Test
@@ -730,8 +727,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 3);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 3);
     }
     
     @Test
@@ -740,8 +737,8 @@ public class ContentFunctionsTest {
         Expression expr = engine.createExpression(query);
         
         List<TermWeightPosition> list1, list2, list3;
-        list1 = asList(Arrays.asList(1), Arrays.asList(0));
-        list2 = asList(Arrays.asList(3), Arrays.asList(1)); // ~3-5
+        list1 = asList(Collections.singletonList(1), Collections.singletonList(0));
+        list2 = asList(Collections.singletonList(3), Collections.singletonList(1)); // ~3-5
         list3 = asList(Arrays.asList(4, 10), Arrays.asList(0, 0));
         
         termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
@@ -751,8 +748,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 4);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 4);
     }
     
     @Test
@@ -772,8 +769,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 39, 41);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(39, 41);
     }
     
     @Test
@@ -791,7 +788,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -810,7 +807,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -831,7 +828,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -841,9 +838,9 @@ public class ContentFunctionsTest {
         Expression expr = engine.createExpression(query);
         
         List<TermWeightPosition> list1, list2, list3;
-        list1 = asList(Arrays.asList(4), Arrays.asList(0));
-        list2 = asList(Arrays.asList(3), Arrays.asList(1));
-        list3 = asList(Arrays.asList(2), Arrays.asList(0));
+        list1 = asList(Collections.singletonList(4), Collections.singletonList(0));
+        list2 = asList(Collections.singletonList(3), Collections.singletonList(1));
+        list3 = asList(Collections.singletonList(2), Collections.singletonList(0));
         
         termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
@@ -852,7 +849,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -873,7 +870,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -883,9 +880,9 @@ public class ContentFunctionsTest {
         Expression expr = engine.createExpression(query);
         
         List<TermWeightPosition> list1, list2, list3;
-        list1 = asList(Arrays.asList(2), Arrays.asList(0));
-        list2 = asList(Arrays.asList(4), Arrays.asList(0));
-        list3 = asList(Arrays.asList(3), Arrays.asList(0));
+        list1 = asList(Collections.singletonList(2), Collections.singletonList(0));
+        list2 = asList(Collections.singletonList(4), Collections.singletonList(0));
+        list3 = asList(Collections.singletonList(3), Collections.singletonList(0));
         
         termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
@@ -894,7 +891,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -913,7 +910,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -932,7 +929,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -949,7 +946,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -966,8 +963,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 2);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 2);
     }
     
     @Test
@@ -983,8 +980,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 4, 5);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(4, 5);
     }
     
     @Test
@@ -1000,7 +997,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -1017,8 +1014,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 3);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 3);
     }
     
     @Test
@@ -1034,8 +1031,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 3);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 3);
     }
     
     @Test
@@ -1053,8 +1050,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 3);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 3);
     }
     
     /**
@@ -1076,8 +1073,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 3, 3);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(3, 3);
     }
     
     @Test
@@ -1097,8 +1094,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 4, 6);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(4, 6);
     }
     
     @Test
@@ -1118,7 +1115,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -1139,8 +1136,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 4, 4);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(4, 4);
     }
     
     @Test
@@ -1160,7 +1157,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -1181,8 +1178,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 1);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 1);
     }
     
     @Test
@@ -1191,9 +1188,9 @@ public class ContentFunctionsTest {
         Expression expr = engine.createExpression(query);
         
         List<TermWeightPosition> list1, list2, list3;
-        list1 = asList(false, Arrays.asList(135), Arrays.asList(6)); // cat
-        list2 = asList(Arrays.asList(135), Arrays.asList(6)); // rat
-        list3 = asList(Arrays.asList(1), Arrays.asList(1)); // dog
+        list1 = asList(false, Collections.singletonList(135), Collections.singletonList(6)); // cat
+        list2 = asList(Collections.singletonList(135), Collections.singletonList(6)); // rat
+        list3 = asList(Collections.singletonList(1), Collections.singletonList(1)); // dog
         
         termOffSetMap.putTermFrequencyList("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
@@ -1202,7 +1199,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -1223,8 +1220,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 2);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 2);
     }
     
     @Test
@@ -1242,8 +1239,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 1);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 1);
     }
     
     @Test
@@ -1261,8 +1258,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 5, 5);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(5, 5);
     }
     
     @Test
@@ -1282,7 +1279,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -1301,8 +1298,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 3, 3);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(3, 3);
     }
     
     @Test
@@ -1320,8 +1317,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 3, 3);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(3, 3);
     }
     
     @Test
@@ -1339,7 +1336,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -1363,8 +1360,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 4);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 4);
     }
     
     /**
@@ -1388,8 +1385,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 10, 12);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(10, 12);
     }
     
     /**
@@ -1413,7 +1410,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
         
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -1436,20 +1433,20 @@ public class ContentFunctionsTest {
         
         Expression expr = engine.createExpression(query1);
         Object o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 4);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 4);
         
         termOffSetMap.getPhraseIndexes().clear();
         expr = engine.createExpression(query2);
         o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
         
         termOffSetMap.getPhraseIndexes().clear();
         expr = engine.createExpression(query);
         o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 4);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 4);
     }
     
     @Test
@@ -1500,16 +1497,16 @@ public class ContentFunctionsTest {
         testJexlFunctionArgumentDescriptors(query, expected);
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void testJexlFunctionArgumentDescriptor7() throws ParseException {
+    @Test
+    public void testJexlFunctionArgumentDescriptor7() {
         String query = "content:" + phraseFunction + "('termOffsetMap', 'hello', 'world')";
-        testJexlFunctionArgumentDescriptors(query, "");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> testJexlFunctionArgumentDescriptors(query, ""));
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void testJexlFunctionArgumentDescriptor8() throws ParseException {
+    @Test
+    public void testJexlFunctionArgumentDescriptor8() {
         String query = "content:within(3, 'hello', 'world')";
-        testJexlFunctionArgumentDescriptors(query, "");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> testJexlFunctionArgumentDescriptors(query, ""));
     }
     
     @Test
@@ -1545,10 +1542,10 @@ public class ContentFunctionsTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         
         JexlNode ref = script.jjtGetChild(0);
-        Assert.assertEquals("First child of ASTJexlScript is not an ASTReference", ASTReference.class, ref.getClass());
+        Assertions.assertEquals(ASTReference.class, ref.getClass(), "First child of ASTJexlScript is not an ASTReference");
         
         JexlNode child = ref.jjtGetChild(0);
-        Assert.assertEquals("First child of ASTJexlScript is not an AStFunctionNode", ASTFunctionNode.class, child.getClass());
+        Assertions.assertEquals(ASTFunctionNode.class, child.getClass(), "First child of ASTJexlScript is not an AStFunctionNode");
         
         ASTFunctionNode function = (ASTFunctionNode) child;
         
@@ -1558,8 +1555,8 @@ public class ContentFunctionsTest {
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
         JexlNode scriptChild = expectedScript.jjtGetChild(0);
         
-        Assert.assertTrue("Expected " + JexlStringBuildingVisitor.buildQuery(scriptChild) + " but was " + JexlStringBuildingVisitor.buildQuery(indexQuery),
-                        JexlASTHelper.equals(scriptChild, indexQuery));
+        Assertions.assertTrue(JexlASTHelper.equals(scriptChild, indexQuery), "Expected " + JexlStringBuildingVisitor.buildQuery(scriptChild) + " but was "
+                        + JexlStringBuildingVisitor.buildQuery(indexQuery));
     }
     
     @Test
@@ -1578,8 +1575,8 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         
         Object o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, true));
-        assertPhraseOffset("CONTENT", 1, 3);
+        Assertions.assertTrue(expect(o, true));
+        assertPhraseOffset(1, 3);
     }
     
     @Test
@@ -1604,7 +1601,7 @@ public class ContentFunctionsTest {
         context.set("BODY", Arrays.asList("foo", "bar", "car"));
         
         Object o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -1631,7 +1628,7 @@ public class ContentFunctionsTest {
         context.set("BODY", Arrays.asList("foo", "bar", "car"));
         
         Object o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -1658,7 +1655,7 @@ public class ContentFunctionsTest {
         context.set("BODY", Arrays.asList("foo", "bar", "car"));
         
         Object o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, false));
+        Assertions.assertTrue(expect(o, false));
         assertPhraseOffsetsEmpty();
     }
     
@@ -1725,25 +1722,25 @@ public class ContentFunctionsTest {
         // ///////////////////////////
         
         // full terms list
-        Assert.assertNotNull(termOffsetMap.getTermFrequencyList("his"));
+        Assertions.assertNotNull(termOffsetMap.getTermFrequencyList("his"));
         String[] terms = new String[] {"go", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
+        Assertions.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
         
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
+        Assertions.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
         
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
-        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
+        Assertions.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
         
         // subset(1, end)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
+        Assertions.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
         
         // subset(1,end-5)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
+        Assertions.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
         
         // ///////////////////////////
         // Within functions
@@ -1751,23 +1748,23 @@ public class ContentFunctionsTest {
         
         // full terms list
         terms = new String[] {"go", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 14, termOffsetMap, terms));
+        Assertions.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 14, termOffsetMap, terms));
         
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Collections.emptySet(), ContentFunctions.within("BODY", 15, termOffsetMap, terms));
+        Assertions.assertEquals(Collections.emptySet(), ContentFunctions.within("BODY", 15, termOffsetMap, terms));
         
         // placement does not matter
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 11, termOffsetMap, terms));
+        Assertions.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 11, termOffsetMap, terms));
         
         // subset(1, end)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 12, termOffsetMap, terms));
+        Assertions.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 12, termOffsetMap, terms));
         
         // subset(1,end-5)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and"};
-        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 10, termOffsetMap, terms));
+        Assertions.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 10, termOffsetMap, terms));
     }
     
     private Zone genTestZone() {
@@ -1813,16 +1810,16 @@ public class ContentFunctionsTest {
         
         // The only match, [19, 20], is in ZONE2.
         // Thus, evaluating ZONE1 should return false here (see #1171)...
-        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase(zone1.getZone(), termOffsetMap, terms));
+        Assertions.assertEquals(Collections.emptySet(), ContentFunctions.phrase(zone1.getZone(), termOffsetMap, terms));
         
         // Ensure that we do get the hit if we evaluate the other zone
-        Assert.assertEquals(Collections.singleton(zone2.getZone()), ContentFunctions.phrase(zone2.getZone(), termOffsetMap, terms));
+        Assertions.assertEquals(Collections.singleton(zone2.getZone()), ContentFunctions.phrase(zone2.getZone(), termOffsetMap, terms));
         
         // Ensure that we get the hit if we evaluate both zones
-        Assert.assertEquals(Collections.singleton(zone2.getZone()),
+        Assertions.assertEquals(Collections.singleton(zone2.getZone()),
                         ContentFunctions.phrase(Arrays.asList(zone1.getZone(), zone2.getZone()), termOffsetMap, terms));
         
         // Ensure that we get the hit if we evaluate null zone
-        Assert.assertEquals(Collections.singleton(zone2.getZone()), ContentFunctions.phrase((Object) null, termOffsetMap, terms));
+        Assertions.assertEquals(Collections.singleton(zone2.getZone()), ContentFunctions.phrase((Object) null, termOffsetMap, terms));
     }
 }

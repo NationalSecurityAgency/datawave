@@ -1,14 +1,6 @@
 package datawave.ingest.table.config;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import datawave.ingest.table.aggregator.CombinerConfiguration;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -21,11 +13,17 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.powermock.api.easymock.PowerMock;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @SuppressWarnings("deprecation")
 public class AbstractTableConfigHelperTest {
@@ -34,7 +32,7 @@ public class AbstractTableConfigHelperTest {
     private static final Logger logger = Logger.getLogger(AbstractTableConfigHelperTest.class);
     private static Level testDriverLevel;
     
-    @BeforeClass
+    @BeforeAll
     public static void adjustLogLevels() {
         
         Level desiredLevel = Level.ALL;
@@ -44,7 +42,7 @@ public class AbstractTableConfigHelperTest {
         log.setLevel(desiredLevel);
     }
     
-    @AfterClass
+    @AfterAll
     public static void resetLogLevels() {
         
         Logger log = Logger.getLogger(AbstractTableConfigHelperTest.class);
@@ -57,7 +55,7 @@ public class AbstractTableConfigHelperTest {
         
         protected Logger createMockLogger() {
             
-            Logger log = PowerMock.createMock(Logger.class);
+            Logger log = EasyMock.createMock(Logger.class);
             
             if (null == debugMessages) {
                 
@@ -89,7 +87,7 @@ public class AbstractTableConfigHelperTest {
                 return null;
             }).anyTimes();
             
-            PowerMock.replay(log);
+            EasyMock.replay(log);
             
             return log;
         }
@@ -119,7 +117,7 @@ public class AbstractTableConfigHelperTest {
         public void exposeSetLocalityGroupConfigurationIfNecessary() throws AssertionError, AccumuloSecurityException, AccumuloException,
                         TableNotFoundException {
             
-            Assert.assertNotNull("Unit Under Test not configured correctly - Parent missing.", this.parent);
+            Assertions.assertNotNull(this.parent, "Unit Under Test not configured correctly - Parent missing.");
             
             try {
                 
@@ -135,12 +133,12 @@ public class AbstractTableConfigHelperTest {
                 
                 this.setLocalityGroupConfigurationIfNecessary(AbstractTableConfigHelperTest.TABLE_NAME, newLocalityGroups, tops, log);
                 
-                Assert.assertTrue("SetLocalityGroupConfigurationIfNecessary failed to call areAggregatorsConfigured()", areLocalityGroupsConfiguredCalled);
+                Assertions.assertTrue(areLocalityGroupsConfiguredCalled, "SetLocalityGroupConfigurationIfNecessary failed to call areAggregatorsConfigured()");
                 int actualSize = this.debugMessages.size();
-                Assert.assertEquals("SetLocalityGroupConfigurationIfNecessary failed to set the expected number of debug Log Messages", 1, actualSize);
+                Assertions.assertEquals(1, actualSize, "SetLocalityGroupConfigurationIfNecessary failed to set the expected number of debug Log Messages");
                 this.debugMessages.clear();
                 actualSize = this.infoMessages.size();
-                Assert.assertEquals("SetLocalityGroupConfigurationIfNecessary set more then the expected number of info Log Messages", 0, actualSize);
+                Assertions.assertEquals(0, actualSize, "SetLocalityGroupConfigurationIfNecessary set more then the expected number of info Log Messages");
                 this.infoMessages.clear();
                 
                 areLocalityGroupsConfiguredCalled = false;
@@ -149,12 +147,12 @@ public class AbstractTableConfigHelperTest {
                 
                 this.setLocalityGroupConfigurationIfNecessary(AbstractTableConfigHelperTest.TABLE_NAME, newLocalityGroups, tops, log);
                 
-                Assert.assertTrue("SetLocalityGroupConfigurationIfNecessary failed to call areAggregatorsConfigured()", areLocalityGroupsConfiguredCalled);
+                Assertions.assertTrue(areLocalityGroupsConfiguredCalled, "SetLocalityGroupConfigurationIfNecessary failed to call areAggregatorsConfigured()");
                 actualSize = this.debugMessages.size();
-                Assert.assertEquals("SetLocalityGroupConfigurationIfNecessary failed to set the expected number of debug Log Messages", 0, actualSize);
+                Assertions.assertEquals(0, actualSize, "SetLocalityGroupConfigurationIfNecessary failed to set the expected number of debug Log Messages");
                 this.debugMessages.clear();
                 actualSize = this.infoMessages.size();
-                Assert.assertEquals("SetLocalityGroupConfigurationIfNecessary set more then the expected number of info Log Messages", 2, actualSize);
+                Assertions.assertEquals(2, actualSize, "SetLocalityGroupConfigurationIfNecessary set more then the expected number of info Log Messages");
                 this.infoMessages.clear();
                 
                 newLocalityGroups.clear();
@@ -169,12 +167,12 @@ public class AbstractTableConfigHelperTest {
                 
                 this.setLocalityGroupConfigurationIfNecessary(AbstractTableConfigHelperTest.TABLE_NAME, newLocalityGroups, tops, log);
                 
-                Assert.assertTrue("SetLocalityGroupConfigurationIfNecessary failed to call areAggregatorsConfigured()", areLocalityGroupsConfiguredCalled);
+                Assertions.assertTrue(areLocalityGroupsConfiguredCalled, "SetLocalityGroupConfigurationIfNecessary failed to call areAggregatorsConfigured()");
                 actualSize = this.debugMessages.size();
-                Assert.assertEquals("SetLocalityGroupConfigurationIfNecessary failed to set the expected number of debug Log Messages", 0, actualSize);
+                Assertions.assertEquals(0, actualSize, "SetLocalityGroupConfigurationIfNecessary failed to set the expected number of debug Log Messages");
                 this.debugMessages.clear();
                 actualSize = this.infoMessages.size();
-                Assert.assertEquals("SetLocalityGroupConfigurationIfNecessary set more then the expected number of info Log Messages", 2, actualSize);
+                Assertions.assertEquals(2, actualSize, "SetLocalityGroupConfigurationIfNecessary set more then the expected number of info Log Messages");
                 this.infoMessages.clear();
                 
             } finally {
@@ -190,7 +188,7 @@ public class AbstractTableConfigHelperTest {
         
         public void exposeAreLocalityGroupsConfigured() throws AssertionError, AccumuloSecurityException, AccumuloException, TableNotFoundException {
             
-            Assert.assertNotNull("Unit Under Test not configured correctly - Parent missing", this.parent);
+            Assertions.assertNotNull(this.parent, "Unit Under Test not configured correctly - Parent missing");
             
             String tableName = AbstractTableConfigHelperTest.TABLE_NAME;
             Map<String,Set<Text>> newLocalityGroups = new HashMap<>();
@@ -204,23 +202,23 @@ public class AbstractTableConfigHelperTest {
             
             this.areLocalityGroupsConfigured(tableName, newLocalityGroups, tops);
             
-            Assert.assertTrue("AreAggregatorsConfigured() failed to call areAggregatorsConfigured", areLocalityGroupsConfiguredCalled);
+            Assertions.assertTrue(areLocalityGroupsConfiguredCalled, "AreAggregatorsConfigured() failed to call areAggregatorsConfigured");
             
             overrideAreLocalityGroupsConfigured = false;
             areLocalityGroupsConfiguredCalled = false;
             
             boolean results = this.areLocalityGroupsConfigured(tableName, newLocalityGroups, tops);
             
-            Assert.assertTrue("AreAggregatorsConfigured() failed to call areAggregatorsConfigured", areLocalityGroupsConfiguredCalled);
-            Assert.assertFalse("AreAggregatorsConfigured() unexpectedly found a family", results);
+            Assertions.assertTrue(areLocalityGroupsConfiguredCalled, "AreAggregatorsConfigured() failed to call areAggregatorsConfigured");
+            Assertions.assertFalse(results, "AreAggregatorsConfigured() unexpectedly found a family");
             
             newLocalityGroups.clear();
             newLocalityGroups.put(AbstractTableConfigHelperTest.FIXED_KEYS[0], new HashSet<>());
             
             results = this.areLocalityGroupsConfigured(tableName, newLocalityGroups, tops);
             
-            Assert.assertTrue("AreAggregatorsConfigured() failed to call areAggregatorsConfigured", areLocalityGroupsConfiguredCalled);
-            Assert.assertTrue("AreAggregatorsConfigured() unexpectedly found a family", results);
+            Assertions.assertTrue(areLocalityGroupsConfiguredCalled, "AreAggregatorsConfigured() failed to call areAggregatorsConfigured");
+            Assertions.assertTrue(results, "AreAggregatorsConfigured() unexpectedly found a family");
             
             newLocalityGroups.clear();
             Set<Text> values = new HashSet<>();
@@ -232,13 +230,13 @@ public class AbstractTableConfigHelperTest {
             
             results = this.areLocalityGroupsConfigured(tableName, newLocalityGroups, tops);
             
-            Assert.assertTrue("AreAggregatorsConfigured() failed to call areAggregatorsConfigured", areLocalityGroupsConfiguredCalled);
-            Assert.assertFalse("AreAggregatorsConfigured() unexpectedly failed to find a family", results);
+            Assertions.assertTrue(areLocalityGroupsConfiguredCalled, "AreAggregatorsConfigured() failed to call areAggregatorsConfigured");
+            Assertions.assertFalse(results, "AreAggregatorsConfigured() unexpectedly failed to find a family");
         }
         
         public void exposeAreAggregatorsConfigured() throws AssertionError, TableNotFoundException, AccumuloSecurityException, AccumuloException {
             
-            Assert.assertNotNull("Unit Under Test not configured correctly - Parent missing", this.parent);
+            Assertions.assertNotNull(this.parent, "Unit Under Test not configured correctly - Parent missing");
             
             try {
                 
@@ -252,8 +250,8 @@ public class AbstractTableConfigHelperTest {
                 
                 boolean results = this.areAggregatorsConfigured(tableName, aggregators, tops);
                 
-                Assert.assertTrue("AreAggregatorsConfigured called", areAggregatorsConfiguredCalled);
-                Assert.assertFalse("AreAggregatorsConfigured returned and unexpected results", results);
+                Assertions.assertTrue(areAggregatorsConfiguredCalled, "AreAggregatorsConfigured called");
+                Assertions.assertFalse(results, "AreAggregatorsConfigured returned and unexpected results");
                 
                 parent.tableProperties.clear();
                 Map<String,String> props = generateInitialTableProperties();
@@ -276,8 +274,8 @@ public class AbstractTableConfigHelperTest {
                 
                 results = this.areAggregatorsConfigured(tableName, aggregators, tops);
                 
-                Assert.assertTrue("AreAggregatorsConfigured called", areAggregatorsConfiguredCalled);
-                Assert.assertFalse("AreAggregatorsConfigured returned and unexpected results", results);
+                Assertions.assertTrue(areAggregatorsConfiguredCalled, "AreAggregatorsConfigured called");
+                Assertions.assertFalse(results, "AreAggregatorsConfigured returned and unexpected results");
                 
                 parent.tableProperties.clear();
                 props = generateInitialTableProperties();
@@ -287,8 +285,8 @@ public class AbstractTableConfigHelperTest {
                 
                 results = this.areAggregatorsConfigured(tableName, aggregators, tops);
                 
-                Assert.assertTrue("AreAggregatorsConfigured called", areAggregatorsConfiguredCalled);
-                Assert.assertTrue("AreAggregatorsConfigured returned and unexpected results", results);
+                Assertions.assertTrue(areAggregatorsConfiguredCalled, "AreAggregatorsConfigured called");
+                Assertions.assertTrue(results, "AreAggregatorsConfigured returned and unexpected results");
                 
                 try {
                     
@@ -300,15 +298,14 @@ public class AbstractTableConfigHelperTest {
                     
                     this.areAggregatorsConfigured(tableName, aggregators, tops);
                     
-                    Assert.fail("AreAggregratorsConfigured failed to throw the expected exception.");
+                    Assertions.fail("AreAggregratorsConfigured failed to throw the expected exception.");
                     
                 } catch (RuntimeException re) {
                     
                     Throwable cause = re.getCause();
                     
-                    Assert.assertEquals(
-                                    "AreAggregatorsConfigured throw the expected exception, but the type of the wrapped cause exception not the expected type.",
-                                    TableNotFoundException.class, cause.getClass());
+                    Assertions.assertEquals(TableNotFoundException.class, cause.getClass(),
+                                    "AreAggregatorsConfigured throw the expected exception, but the type of the wrapped cause exception not the expected type.");
                 }
                 
                 try {
@@ -321,15 +318,14 @@ public class AbstractTableConfigHelperTest {
                     
                     this.areAggregatorsConfigured(tableName, aggregators, tops);
                     
-                    Assert.fail("AreAggregratorsConfigured failed to throw the expected exception.");
+                    Assertions.fail("AreAggregratorsConfigured failed to throw the expected exception.");
                     
                 } catch (RuntimeException re) {
                     
                     Throwable cause = re.getCause();
                     
-                    Assert.assertEquals(
-                                    "AreAggregatorsConfigured throw the expected exception, but the type of the wrapped cause exception not the expected type.",
-                                    AccumuloException.class, cause.getClass());
+                    Assertions.assertEquals(AccumuloException.class, cause.getClass(),
+                                    "AreAggregatorsConfigured throw the expected exception, but the type of the wrapped cause exception not the expected type.");
                 }
                 
             } finally {
@@ -343,7 +339,7 @@ public class AbstractTableConfigHelperTest {
         public void exposeSetCombinerConfigurationIfNecessaryForTest() throws AssertionError, AccumuloSecurityException, AccumuloException,
                         TableNotFoundException {
             
-            Assert.assertNotNull("Unit Under Test not configured correctly - Parent missing", this.parent);
+            Assertions.assertNotNull(this.parent, "Unit Under Test not configured correctly - Parent missing");
             
             String tableName = AbstractTableConfigHelperTest.TABLE_NAME;
             List<CombinerConfiguration> aggregators = createWorkingCombinerConfigurations();
@@ -356,9 +352,9 @@ public class AbstractTableConfigHelperTest {
             
             this.setAggregatorConfigurationIfNecessary(tableName, aggregators, tops, log);
             
-            Assert.assertTrue("SetCombinerConfigurationIfNecessary() failed to call areAggregatorsConfigured", areAggregatorsConfiguredCalled);
-            Assert.assertEquals("SetCombinerConfigurationIfNecessary() failed to generate the expected number of debug messages.", 1, debugMessages.size());
-            Assert.assertEquals("SetCombinerConfigurationIfNecessary() failed to generate the expected number of info messages.", 0, infoMessages.size());
+            Assertions.assertTrue(areAggregatorsConfiguredCalled, "SetCombinerConfigurationIfNecessary() failed to call areAggregatorsConfigured");
+            Assertions.assertEquals(1, debugMessages.size(), "SetCombinerConfigurationIfNecessary() failed to generate the expected number of debug messages.");
+            Assertions.assertEquals(0, infoMessages.size(), "SetCombinerConfigurationIfNecessary() failed to generate the expected number of info messages.");
             
             debugMessages.clear();
             overrideAreAggregatorsConfigured = true;
@@ -367,9 +363,9 @@ public class AbstractTableConfigHelperTest {
             
             this.setAggregatorConfigurationIfNecessary(tableName, aggregators, tops, log);
             
-            Assert.assertTrue("SetCombinerConfigurationIfNecessary() failed to call areAggregatorsConfigured", areAggregatorsConfiguredCalled);
-            Assert.assertEquals("SetCombinerConfigurationIfNecessary() failed to generate the expected number of debug messages.", 0, debugMessages.size());
-            Assert.assertEquals("SetCombinerConfigurationIfNecessary() failed to generate the expected number of info messages.", 1, infoMessages.size());
+            Assertions.assertTrue(areAggregatorsConfiguredCalled, "SetCombinerConfigurationIfNecessary() failed to call areAggregatorsConfigured");
+            Assertions.assertEquals(0, debugMessages.size(), "SetCombinerConfigurationIfNecessary() failed to generate the expected number of debug messages.");
+            Assertions.assertEquals(1, infoMessages.size(), "SetCombinerConfigurationIfNecessary() failed to generate the expected number of info messages.");
             
             Map<String,String> props = generateInitialTableProperties();
             props.putAll(AbstractTableConfigHelper.generateAggTableProperties(aggregators));
@@ -390,7 +386,7 @@ public class AbstractTableConfigHelperTest {
                 foundAllExpectedProperties &= props.containsKey(key);
             }
             
-            Assert.assertTrue("Generated Table Properties not what was expected.", foundAllExpectedProperties);
+            Assertions.assertTrue(foundAllExpectedProperties, "Generated Table Properties not what was expected.");
         }
         
         protected List<String> debugMessages = null;
@@ -507,7 +503,7 @@ public class AbstractTableConfigHelperTest {
             }
         }
         
-        TableOperations mock = PowerMock.createMock(TableOperations.class);
+        TableOperations mock = EasyMock.createMock(TableOperations.class);
         
         mock.getProperties(EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
@@ -605,7 +601,7 @@ public class AbstractTableConfigHelperTest {
         }).anyTimes();
         
         // prepare it for use...
-        PowerMock.replay(mock);
+        EasyMock.replay(mock);
         
         return mock;
     }
@@ -621,13 +617,13 @@ public class AbstractTableConfigHelperTest {
             AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED = false;
             
             TableOperations tops = this.mockUpTableOperations();
-            Assert.assertNotNull("AbstractTableConfigHelperTest.testSetPropertyIfNecessary() failed to create a mock TableOperations instance.", tops);
+            Assertions.assertNotNull(tops, "AbstractTableConfigHelperTest.testSetPropertyIfNecessary() failed to create a mock TableOperations instance.");
             
             int propertySize = tableProperties.size();
             
             AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl uut = new AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl();
             
-            Assert.assertNotNull("AbstractTableConfigHelper.cTor failed to create an instance", uut);
+            Assertions.assertNotNull(uut, "AbstractTableConfigHelper.cTor failed to create an instance");
             String name = "name";
             String value = "value";
             
@@ -635,18 +631,16 @@ public class AbstractTableConfigHelperTest {
             
             ++propertySize;
             
-            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.getProperties as expected.",
-                            AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED);
-            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.setProperties as expected.",
-                            AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED);
-            Assert.assertEquals(
-                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new property as expected",
-                            propertySize, tableProperties.size());
-            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new key, 'name'.",
-                            tableProperties.containsKey(name));
-            Assert.assertTrue(
-                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.",
-                            tableProperties.containsValue(value));
+            Assertions.assertTrue(AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED,
+                            "AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.getProperties as expected.");
+            Assertions.assertTrue(AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED,
+                            "AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.setProperties as expected.");
+            Assertions.assertEquals(propertySize, tableProperties.size(),
+                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new property as expected");
+            Assertions.assertTrue(tableProperties.containsKey(name),
+                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new key, 'name'.");
+            Assertions.assertTrue(tableProperties.containsValue(value),
+                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.");
             
         } finally {
             
@@ -669,13 +663,13 @@ public class AbstractTableConfigHelperTest {
             AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED = false;
             
             TableOperations tops = this.mockUpTableOperations();
-            Assert.assertNotNull("AbstractTableConfigHelperTest.testSetPropertyIfNecessary() failed to create a mock TableOperations instance.", tops);
+            Assertions.assertNotNull(tops, "AbstractTableConfigHelperTest.testSetPropertyIfNecessary() failed to create a mock TableOperations instance.");
             
             int propertySize = tableProperties.size();
             
             AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl uut = new AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl();
             
-            Assert.assertNotNull("AbstractTableConfigHelper.cTor failed to create an instance", uut);
+            Assertions.assertNotNull(uut, "AbstractTableConfigHelper.cTor failed to create an instance");
             String name = "name";
             String value = "value-0";
             
@@ -683,18 +677,16 @@ public class AbstractTableConfigHelperTest {
             
             ++propertySize;
             
-            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.getProperties as expected.",
-                            AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED);
-            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.setProperties as expected.",
-                            AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED);
-            Assert.assertEquals(
-                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new property as expected",
-                            propertySize, tableProperties.size());
-            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new key, 'name'.",
-                            tableProperties.containsKey(name));
-            Assert.assertTrue(
-                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.",
-                            tableProperties.containsValue(value));
+            Assertions.assertTrue(AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED,
+                            "AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.getProperties as expected.");
+            Assertions.assertTrue(AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED,
+                            "AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.setProperties as expected.");
+            Assertions.assertEquals(propertySize, tableProperties.size(),
+                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new property as expected");
+            Assertions.assertTrue(tableProperties.containsKey(name),
+                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new key, 'name'.");
+            Assertions.assertTrue(tableProperties.containsValue(value),
+                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.");
             
         } finally {
             
@@ -717,30 +709,28 @@ public class AbstractTableConfigHelperTest {
             AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED = false;
             
             TableOperations tops = this.mockUpTableOperations();
-            Assert.assertNotNull("AbstractTableConfigHelperTest.testSetPropertyIfNecessary() failed to create a mock TableOperations instance.", tops);
+            Assertions.assertNotNull(tops, "AbstractTableConfigHelperTest.testSetPropertyIfNecessary() failed to create a mock TableOperations instance.");
             
             int propertySize = tableProperties.size();
             
             AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl uut = new AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl();
             
-            Assert.assertNotNull("AbstractTableConfigHelper.cTor failed to create an instance", uut);
+            Assertions.assertNotNull(uut, "AbstractTableConfigHelper.cTor failed to create an instance");
             String name = "name-0";
             String value = "value-0";
             
             uut.setPropertyIfNecessary(AbstractTableConfigHelperTest.TABLE_NAME, name, value, tops, null);
             
-            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.getProperties as expected.",
-                            AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED);
-            Assert.assertFalse("AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.setProperties as expected.",
-                            AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED);
-            Assert.assertEquals(
-                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new property as expected",
-                            propertySize, tableProperties.size());
-            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new key, 'name'.",
-                            tableProperties.containsKey(name));
-            Assert.assertTrue(
-                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.",
-                            tableProperties.containsValue(value));
+            Assertions.assertTrue(AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED,
+                            "AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.getProperties as expected.");
+            Assertions.assertFalse(AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED,
+                            "AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.setProperties as expected.");
+            Assertions.assertEquals(propertySize, tableProperties.size(),
+                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new property as expected");
+            Assertions.assertTrue(tableProperties.containsKey(name),
+                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new key, 'name'.");
+            Assertions.assertTrue(tableProperties.containsValue(value),
+                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.");
             
         } finally {
             
@@ -763,30 +753,28 @@ public class AbstractTableConfigHelperTest {
             AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED = false;
             
             TableOperations tops = this.mockUpTableOperations();
-            Assert.assertNotNull("AbstractTableConfigHelperTest.testSetPropertyIfNecessary() failed to create a mock TableOperations instance.", tops);
+            Assertions.assertNotNull(tops, "AbstractTableConfigHelperTest.testSetPropertyIfNecessary() failed to create a mock TableOperations instance.");
             
             int propertySize = tableProperties.size();
             
             AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl uut = new AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl();
             
-            Assert.assertNotNull("AbstractTableConfigHelper.cTor failed to create an instance", uut);
+            Assertions.assertNotNull(uut, "AbstractTableConfigHelper.cTor failed to create an instance");
             String name = "name-0";
             String value = "value";
             
             uut.setPropertyIfNecessary(AbstractTableConfigHelperTest.TABLE_NAME, name, value, tops, null);
             
-            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.getProperties as expected.",
-                            AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED);
-            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.setProperties as expected.",
-                            AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED);
-            Assert.assertEquals(
-                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new property as expected",
-                            propertySize, tableProperties.size());
-            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new key, 'name'.",
-                            tableProperties.containsKey(name));
-            Assert.assertTrue(
-                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.",
-                            tableProperties.containsValue(value));
+            Assertions.assertTrue(AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED,
+                            "AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.getProperties as expected.");
+            Assertions.assertTrue(AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED,
+                            "AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.setProperties as expected.");
+            Assertions.assertEquals(propertySize, tableProperties.size(),
+                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new property as expected");
+            Assertions.assertTrue(tableProperties.containsKey(name),
+                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new key, 'name'.");
+            Assertions.assertTrue(tableProperties.containsValue(value),
+                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.");
             
         } finally {
             
@@ -809,22 +797,22 @@ public class AbstractTableConfigHelperTest {
             AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED = false;
             
             TableOperations tops = this.mockUpTableOperations();
-            Assert.assertNotNull("AbstractTableConfigHelperTest.testSetPropertyIfNecessary() failed to create a mock TableOperations instance.", tops);
+            Assertions.assertNotNull(tops, "AbstractTableConfigHelperTest.testSetPropertyIfNecessary() failed to create a mock TableOperations instance.");
             
             AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl uut = new AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl();
             
-            Assert.assertNotNull("AbstractTableConfigHelper.cTor failed to create an instance", uut);
+            Assertions.assertNotNull(uut, "AbstractTableConfigHelper.cTor failed to create an instance");
             
             uut.setPropertyIfNecessary(AbstractTableConfigHelperTest.BAD_TABLE_NAME, "name", "value", this.mockUpTableOperations(), null);
             
-            Assert.fail("AbstractTableConfigHelper.setProperityIfNecessary() failed to throw the expected excepion.");
+            Assertions.fail("AbstractTableConfigHelper.setProperityIfNecessary() failed to throw the expected excepion.");
             
         } catch (TableNotFoundException tnfe) {
             
-            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.getProperties as expected.",
-                            AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED);
-            Assert.assertFalse("AbstractTableConfigHelper.setProperityIfNecessary() actually called TableOperations.setProperties unexpectedly.",
-                            AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED);
+            Assertions.assertTrue(AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED,
+                            "AbstractTableConfigHelper.setProperityIfNecessary() failed to call TableOperations.getProperties as expected.");
+            Assertions.assertFalse(AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED,
+                            "AbstractTableConfigHelper.setProperityIfNecessary() actually called TableOperations.setProperties unexpectedly.");
             
         } finally {
             
@@ -845,7 +833,7 @@ public class AbstractTableConfigHelperTest {
             
             AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl uut = new AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl();
             
-            Assert.assertNotNull("AbstractTableConfigHelper.cTor failed to create an instance", uut);
+            Assertions.assertNotNull(uut, "AbstractTableConfigHelper.cTor failed to create an instance");
             
             uut.parent = this;
             
@@ -866,7 +854,7 @@ public class AbstractTableConfigHelperTest {
             
             AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl uut = new AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl();
             
-            Assert.assertNotNull("AbstractTableConfigHelper.cTor failed to create an instance", uut);
+            Assertions.assertNotNull(uut, "AbstractTableConfigHelper.cTor failed to create an instance");
             
             uut.parent = this;
             
@@ -888,7 +876,7 @@ public class AbstractTableConfigHelperTest {
             
             AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl uut = new AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl();
             
-            Assert.assertNotNull("AbstractTableConfigHelper.cTor failed to create an instance", uut);
+            Assertions.assertNotNull(uut, "AbstractTableConfigHelper.cTor failed to create an instance");
             
             uut.parent = this;
             
@@ -908,7 +896,7 @@ public class AbstractTableConfigHelperTest {
         try {
             
             AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl uut = new AbstractTableConfigHelperTest.TestAbstractTableConfigHelperImpl();
-            Assert.assertNotNull("AbstractTableConfigHelper.cTor failed to create an instance", uut);
+            Assertions.assertNotNull(uut, "AbstractTableConfigHelper.cTor failed to create an instance");
             
             uut.parent = this;
             

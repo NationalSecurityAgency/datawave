@@ -24,15 +24,15 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapred.TaskAttemptID;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.lucene.analysis.Analyzer;
 import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -125,7 +125,7 @@ public class ContentIndexingColumnBasedHandlerTest {
         }
     };
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         
         conf = new Configuration();
@@ -160,7 +160,7 @@ public class ContentIndexingColumnBasedHandlerTest {
         }
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void setUpExpectedResults() {
         SetExpectedMap(ALPHANUM_LIST + TOKEN_DESIGNATOR, tokenizeAlphanumResults, tokenizeAlphanumReverseResults, tokenizedExpectedFields,
                         tokenizedExpectedIndex, tokenizedExpectedReverse, tokenizedExpectedTfValues);
@@ -350,12 +350,12 @@ public class ContentIndexingColumnBasedHandlerTest {
             handler.indexListEntries(field, true, true, null);
         }
         
-        Assert.assertTrue("Actual fields results do not match expected.\n Expected: " + expectedFields.toString() + "\nActual: "
-                        + handler.getFields().toString(), equalNciMaps(expectedFields, handler.getFields()));
-        Assert.assertTrue("Actual index results do not match expected\n Expected: " + expectedIndex.toString() + "\nActual: " + handler.getIndex().toString(),
-                        equalNciMaps(expectedIndex, handler.getIndex()));
-        Assert.assertTrue("Actual reverse results do not match expected\n Expected: " + expectedReverse.toString() + "\nActual: "
-                        + handler.getReverse().toString(), equalNciMaps(expectedReverse, handler.getReverse()));
+        Assertions.assertTrue(equalNciMaps(expectedFields, handler.getFields()),
+                        "Actual fields results do not match expected.\n Expected: " + expectedFields.toString() + "\nActual: " + handler.getFields().toString());
+        Assertions.assertTrue(equalNciMaps(expectedIndex, handler.getIndex()),
+                        "Actual index results do not match expected\n Expected: " + expectedIndex.toString() + "\nActual: " + handler.getIndex().toString());
+        Assertions.assertTrue(equalNciMaps(expectedReverse, handler.getReverse()), "Actual reverse results do not match expected\n Expected: "
+                        + expectedReverse.toString() + "\nActual: " + handler.getReverse().toString());
         
         // test t entries
         handler.shardId = SHARD_ID.getBytes();
@@ -366,11 +366,11 @@ public class ContentIndexingColumnBasedHandlerTest {
         
         StringBuilder errorMessage = new StringBuilder();
         boolean found = assertExpectedTfRecords(expectedTfValues, tfEntries, errorMessage);
-        Assert.assertTrue(errorMessage.toString() + "\nActual" + tfEntries.toString(), found);
+        Assertions.assertTrue(found, errorMessage.toString() + "\nActual" + tfEntries.toString());
         
         errorMessage = new StringBuilder();
         found = assertExpectedCountTfRecord(expectedTfValues, tfEntries, errorMessage);
-        Assert.assertTrue(errorMessage.toString() + "\nActual" + tfEntries.toString(), found);
+        Assertions.assertTrue(found, errorMessage.toString() + "\nActual" + tfEntries.toString());
     }
     
     private boolean assertExpectedTfRecords(Multimap<String,Pair<String,Integer>> expectedTfValues, Multimap<BulkIngestKey,Value> tfEntries,

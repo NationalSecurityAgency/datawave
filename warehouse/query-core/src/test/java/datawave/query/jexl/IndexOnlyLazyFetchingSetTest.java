@@ -1,25 +1,25 @@
 package datawave.query.jexl;
 
-import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import datawave.query.iterator.IndexOnlyFunctionIterator;
+import org.easymock.EasyMockExtension;
+import org.easymock.EasyMockSupport;
+import org.easymock.Mock;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import datawave.query.iterator.IndexOnlyFunctionIterator;
+import static org.easymock.EasyMock.expect;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.easymock.EasyMockRunner;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     
     @Mock
@@ -29,7 +29,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     Iterator<Object> fetchingIterator;
     
     @Test
-    public void testAddAll_HappyPath() throws Exception {
+    public void testAddAll_HappyPath() {
         // Create test input
         String fieldName = "HEAD";
         
@@ -37,20 +37,20 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         replayAll();
         IndexOnlyLazyFetchingSet<String,Object> subject = new IndexOnlyLazyFetchingSet<>(fieldName, this.parentIterator);
         String result1 = subject.toString();
-        boolean result2 = subject.addAll(Arrays.asList("value4"));
+        boolean result2 = subject.addAll(Collections.singletonList("value4"));
         String result3 = subject.toString();
         verifyAll();
         
         // Verify results
-        assertTrue("toString should have indicated that the values had not been fetched", result1.contains("unfetched"));
+        assertTrue(result1.contains("unfetched"), "toString should have indicated that the values had not been fetched");
         
-        assertTrue("Addition should have been successful", result2);
+        assertTrue(result2, "Addition should have been successful");
         
-        assertTrue("toString should have indicated that the values still had not been fetched", result3.contains("unfetched"));
+        assertTrue(result3.contains("unfetched"), "toString should have indicated that the values still had not been fetched");
     }
     
     @Test
-    public void testClear_HappyPath() throws Exception {
+    public void testClear_HappyPath() {
         // Create test input
         String fieldName = "HEAD";
         Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
@@ -80,17 +80,17 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         verifyAll();
         
         // Verify results
-        assertEquals("The field name should have been returned from the accessor", fieldName, result1);
+        assertEquals(fieldName, result1, "The field name should have been returned from the accessor");
         
-        assertEquals("Incorrect number of values fetched before the clear", values.size(), result2);
+        assertEquals(values.size(), result2, "Incorrect number of values fetched before the clear");
         
-        assertEquals("Incorrect number of values fetched before the clear, which should NOT have resulted in a fetch operation", values.size(), result3);
+        assertEquals(values.size(), result3, "Incorrect number of values fetched before the clear, which should NOT have resulted in a fetch operation");
         
-        assertEquals("Incorrect number of values fetched after the clear", values.size(), result4);
+        assertEquals(values.size(), result4, "Incorrect number of values fetched after the clear");
     }
     
     @Test
-    public void testContains_HappyPath() throws Exception {
+    public void testContains_HappyPath() {
         // Create test input
         String fieldName = "HEAD";
         Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
@@ -113,13 +113,13 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         verifyAll();
         
         // Verify results
-        assertTrue("The subject should have contained the fetched value", result1);
+        assertTrue(result1, "The subject should have contained the fetched value");
         
-        assertTrue("The subject should have contained the fetched value without forcing any more fetching", result2);
+        assertTrue(result2, "The subject should have contained the fetched value without forcing any more fetching");
     }
     
     @Test
-    public void testContainsAll_HappyPath() throws Exception {
+    public void testContainsAll_HappyPath() {
         // Create test input
         String fieldName = "HEAD";
         Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
@@ -141,11 +141,11 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         verifyAll();
         
         // Verify results
-        assertTrue("The subject should have contained the fetched values", result1);
+        assertTrue(result1, "The subject should have contained the fetched values");
     }
     
     @Test
-    public void testIterator_HappyPath() throws Exception {
+    public void testIterator_HappyPath() {
         // Create test input
         String fieldName = "HEAD";
         Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
@@ -194,25 +194,25 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         verifyAll();
         
         // Verify results
-        assertNotNull("The subject should have returned a non-null iterator", result1);
+        assertNotNull(result1, "The subject should have returned a non-null iterator");
         
-        assertEquals("Incorrect number of values fetched via the iterator", values.size(), result2);
+        assertEquals(values.size(), result2, "Incorrect number of values fetched via the iterator");
         
-        assertTrue("The subject, by default, should NOT have retained fetched values", result3.contains("unfetched"));
+        assertTrue(result3.contains("unfetched"), "The subject, by default, should NOT have retained fetched values");
         
-        assertNotNull("The subject should have returned a non-null iterator", result4);
+        assertNotNull(result4, "The subject should have returned a non-null iterator");
         
-        assertEquals("Incorrect number of values fetched via the iterator", values.size(), result5);
+        assertEquals(values.size(), result5, "Incorrect number of values fetched via the iterator");
         
-        assertFalse("The subject, by setting the flag, should have retained fetched values", result6.contains("unfetched"));
+        assertFalse(result6.contains("unfetched"), "The subject, by setting the flag, should have retained fetched values");
         
-        assertNotNull("The subject should have returned a non-null iterator, but all fetching should have occurred using only the previous instance", result7);
+        assertNotNull(result7, "The subject should have returned a non-null iterator, but all fetching should have occurred using only the previous instance");
         
-        assertEquals("Incorrect number of in-memory values obtained from the iterator", values.size(), result8);
+        assertEquals(values.size(), result8, "Incorrect number of in-memory values obtained from the iterator");
     }
     
     @Test
-    public void testRemove_HappyPath() throws Exception {
+    public void testRemove_HappyPath() {
         // Create test input
         String fieldName = "HEAD";
         Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
@@ -234,11 +234,11 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         verifyAll();
         
         // Verify results
-        assertTrue("The subject should have removed the fetched value", result1);
+        assertTrue(result1, "The subject should have removed the fetched value");
     }
     
     @Test
-    public void testRemoveAll_HappyPath() throws Exception {
+    public void testRemoveAll_HappyPath() {
         // Create test input
         String fieldName = "HEAD";
         Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
@@ -260,11 +260,11 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         verifyAll();
         
         // Verify results
-        assertTrue("The subject should have removed the fetched values", result1);
+        assertTrue(result1, "The subject should have removed the fetched values");
     }
     
     @Test
-    public void testRetainAll_HappyPath() throws Exception {
+    public void testRetainAll_HappyPath() {
         // Create test input
         String fieldName = "HEAD";
         Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
@@ -286,11 +286,11 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         verifyAll();
         
         // Verify results
-        assertTrue("The subject should have retained the fetched values", result1);
+        assertTrue(result1, "The subject should have retained the fetched values");
     }
     
     @Test
-    public void testIsEmpty_HappyPath() throws Exception {
+    public void testIsEmpty_HappyPath() {
         // Create test input
         String fieldName = "HEAD";
         Collection<Object> values = new HashSet<>();
@@ -311,19 +311,17 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         subject.setKeepIteratedValuesInMemory(true);
         boolean result1 = subject.isEmpty();
         boolean result2 = subject.add("test");
-        boolean result3 = subject.isEmpty();
         verifyAll();
         
         // Verify results
-        assertTrue("The subject should indicate that it is empty (the fetch occurred but returned an empty set)", result1);
+        assertTrue(result1, "The subject should indicate that it is empty (the fetch occurred but returned an empty set)");
         
-        assertTrue("The subject should indicate that an in-memory add occurred", result2);
+        assertTrue(result2, "The subject should indicate that an in-memory add occurred");
         
-        assertTrue("The subject should indicate that it is not empty (the fetch should not have occurred again)", !result3);
     }
     
     @Test
-    public void testToArray_HappyPath() throws Exception {
+    public void testToArray_HappyPath() {
         // Create test input
         String fieldName = "HEAD";
         Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
@@ -342,12 +340,12 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         replayAll();
         IndexOnlyLazyFetchingSet<String,Object> subject = new IndexOnlyLazyFetchingSet<>(fieldName, this.parentIterator);
         Object[] result1 = subject.toArray();
-        Object[] result2 = subject.toArray(new Object[subject.size()]);
+        Object[] result2 = subject.toArray(new Object[0]);
         verifyAll();
         
         // Verify results
-        assertNotNull("The subject should have returned a non-null array of fetched values", result1);
+        assertNotNull(result1, "The subject should have returned a non-null array of fetched values");
         
-        assertNotNull("The subject should have returned a non-null array of fetched values", result2);
+        assertNotNull(result2, "The subject should have returned a non-null array of fetched values");
     }
 }

@@ -6,8 +6,8 @@ import datawave.query.iterator.profile.QuerySpan;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,13 +16,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class ActiveQueryLogTest {
     
-    private static Random rand = new Random();
+    private static final Random rand = new Random();
     
     private static String createQueryId() {
         return (RandomStringUtils.randomAlphanumeric(5) + "-" + RandomStringUtils.randomAlphanumeric(5) + "-" + RandomStringUtils.randomAlphanumeric(5) + "-" + RandomStringUtils
@@ -153,8 +153,8 @@ public class ActiveQueryLogTest {
             ActiveQuery activeQuery = ActiveQueryLog.getInstance().get(e.getKey());
             QueryTask queryTask = e.getValue();
             ActiveQuerySnapshot snapshot = activeQuery.snapshot();
-            Assert.assertEquals(queryTask.numSeeks, snapshot.getNumCalls(ActiveQuery.CallType.SEEK));
-            Assert.assertEquals(queryTask.numNexts, snapshot.getNumCalls(ActiveQuery.CallType.NEXT));
+            Assertions.assertEquals(queryTask.numSeeks, snapshot.getNumCalls(ActiveQuery.CallType.SEEK));
+            Assertions.assertEquals(queryTask.numNexts, snapshot.getNumCalls(ActiveQuery.CallType.NEXT));
         }
     }
 }

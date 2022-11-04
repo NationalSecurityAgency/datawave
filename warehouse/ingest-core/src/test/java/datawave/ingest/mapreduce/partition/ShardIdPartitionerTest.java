@@ -7,10 +7,10 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -23,7 +23,7 @@ public class ShardIdPartitionerTest {
     Configuration conf = new Configuration();
     ShardIdPartitioner partitioner = null;
     
-    @Before
+    @BeforeEach
     public void setUp() {
         conf = new Configuration();
         conf.setInt(ShardIdFactory.NUM_SHARDS, 31);
@@ -31,7 +31,7 @@ public class ShardIdPartitionerTest {
         partitioner.setConf(conf);
     }
     
-    @After
+    @AfterEach
     public void tearDown() {
         conf.clear();
         conf = null;
@@ -67,14 +67,14 @@ public class ShardIdPartitionerTest {
         boolean errored = false;
         for (int i = 0; i < 58; i++) {
             try {
-                Assert.assertEquals("Unexpected distribution for partition " + i + ": ", expected, partitions[i]);
+                Assertions.assertEquals(expected, partitions[i], "Unexpected distribution for partition " + i + ": ");
             } catch (Throwable e) {
                 System.err.println(e.getMessage());
                 errored = true;
             }
         }
         if (errored) {
-            Assert.fail("Failed to get expected distribution.  See console for unexpected entries");
+            Assertions.fail("Failed to get expected distribution.  See console for unexpected entries");
         }
     }
     

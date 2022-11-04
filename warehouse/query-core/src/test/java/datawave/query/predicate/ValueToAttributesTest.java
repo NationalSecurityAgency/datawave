@@ -11,7 +11,6 @@ import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.BaseEdgeQueryTest;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -27,16 +26,15 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.inject.Inject;
 import java.text.DateFormat;
@@ -56,11 +54,11 @@ import java.util.UUID;
   */
 public abstract class ValueToAttributesTest {
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends ValueToAttributesTest {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
@@ -71,6 +69,7 @@ public abstract class ValueToAttributesTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, BaseEdgeQueryTest.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @Override
@@ -79,11 +78,11 @@ public abstract class ValueToAttributesTest {
         }
     }
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends ValueToAttributesTest {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
@@ -94,11 +93,11 @@ public abstract class ValueToAttributesTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, BaseEdgeQueryTest.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
@@ -134,23 +133,18 @@ public abstract class ValueToAttributesTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @AfterClass
+    @AfterAll
     public static void teardown() {
         TypeRegistry.reset();
-    }
-    
-    @Before
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
-        logic.setFullTableScanEnabled(true);
-        deserializer = new KryoDocumentDeserializer();
     }
     
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
                     throws Exception {
+        logic.setFullTableScanEnabled(true);
+        deserializer = new KryoDocumentDeserializer();
+        
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
@@ -169,7 +163,7 @@ public abstract class ValueToAttributesTest {
         logic.setupQuery(config);
         
         String plannedScript = logic.getQueryPlanner().getPlannedScript();
-        Assert.assertTrue("CompositeTerm was not substituted into query:" + plannedScript, plannedScript.contains("MAKE_COLOR"));
+        Assertions.assertTrue(plannedScript.contains("MAKE_COLOR"), "CompositeTerm was not substituted into query:" + plannedScript);
         
         HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
@@ -184,14 +178,15 @@ public abstract class ValueToAttributesTest {
             if (attr == null)
                 attr = d.get("UUID.0");
             
-            Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(), attr instanceof TypeAttribute
-                            || attr instanceof PreNormalizedAttribute);
+            Assertions.assertNotNull(attr, "Result Document did not contain a 'UUID'");
+            Assertions.assertTrue(attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute,
+                            "Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName());
             
+            assert attr instanceof TypeAttribute<?>;
             TypeAttribute<?> uuidAttr = (TypeAttribute<?>) attr;
             
             String uuid = uuidAttr.getType().getDelegate().toString();
-            Assert.assertTrue("Received unexpected UUID: " + uuid, expected.contains(uuid));
+            Assertions.assertTrue(expected.contains(uuid), "Received unexpected UUID: " + uuid);
             
             resultSet.add(uuid);
             docs.add(d);
@@ -209,8 +204,8 @@ public abstract class ValueToAttributesTest {
         if (!expected.containsAll(resultSet)) {
             log.error("Expected results " + expected + " differ form actual results " + resultSet);
         }
-        Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
-        Assert.assertEquals("Unexpected number of records", expected.size(), resultSet.size());
+        Assertions.assertTrue(expected.containsAll(resultSet), "Expected results " + expected + " differ form actual results " + resultSet);
+        Assertions.assertEquals(expected.size(), resultSet.size(), "Unexpected number of records");
     }
     
     @Test
@@ -230,9 +225,9 @@ public abstract class ValueToAttributesTest {
         
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] { //
-        Arrays.asList("One"), //
-                Arrays.asList("One"), //
-                Arrays.asList("One")//
+        Collections.singletonList("One"), //
+                Collections.singletonList("One"), //
+                Collections.singletonList("One")//
         };
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);

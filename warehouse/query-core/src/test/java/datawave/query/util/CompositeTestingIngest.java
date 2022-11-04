@@ -4,7 +4,6 @@ import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.normalizer.AbstractNormalizer;
 import datawave.data.type.BaseType;
-import datawave.data.type.DateType;
 import datawave.data.type.IpAddressType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
@@ -31,13 +30,12 @@ import java.util.concurrent.TimeUnit;
 public class CompositeTestingIngest {
     
     public enum WhatKindaRange {
-        SHARD, DOCUMENT;
+        SHARD, DOCUMENT
     }
     
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
     private static final Type<?> ipAddressType = new IpAddressType();
     private static final Type<?> numberType = new NumberType();
-    private static final Type<?> dateType = new DateType();
     private static final Type<?> ucType = new UcType();
     
     protected static final String datatype = "test";
@@ -47,7 +45,7 @@ public class CompositeTestingIngest {
     protected static final Value emptyValue = new Value(new byte[0]);
     protected static final long timeStamp = 1356998400000l;
     
-    protected static String normalizeColVal(Map.Entry<String,String> colVal) throws Exception {
+    protected static String normalizeColVal(Map.Entry<String,String> colVal) {
         if ("FROM_ADDRESS".equals(colVal.getKey()) || "TO_ADDRESS".equals(colVal.getKey())) {
             return ipAddressType.normalize(colVal.getValue());
         } else {
@@ -67,18 +65,17 @@ public class CompositeTestingIngest {
     
     /**
      * gparent - parent - child -
-     * 
-     * @return
+     *
      */
     public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        Mutation mutation = null;
+        Mutation mutation;
         
         String oneUUID = UID.builder().newId("One".getBytes(), (Date) null).toString();
-        String twoUUID = UID.builder().newId("Two".toString().getBytes(), (Date) null).toString();
-        String threeUUID = UID.builder().newId("Three".toString().getBytes(), (Date) null).toString();
+        String twoUUID = UID.builder().newId("Two".getBytes(), (Date) null).toString();
+        String threeUUID = UID.builder().newId("Three".getBytes(), (Date) null).toString();
         
         try {
             // write the shard table :
@@ -371,8 +368,7 @@ public class CompositeTestingIngest {
     
     /**
      * forces a shard range
-     * 
-     * @return
+     *
      */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();

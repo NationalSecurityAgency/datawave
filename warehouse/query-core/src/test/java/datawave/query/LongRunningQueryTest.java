@@ -21,8 +21,8 @@ import datawave.webservice.query.runner.RunningQuery;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -34,10 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.concurrent.Executors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Controlling the execution order via the @FixMethodOrder. Otherwise, it seems that our accumulo instance "remembers" and executes the query faster than the
@@ -47,23 +46,22 @@ import static org.junit.Assert.assertTrue;
 public class LongRunningQueryTest {
     
     // variables common to all current tests
-    private SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of("userDn", "issuerDn");
-    private static Authorizations auths = new Authorizations("ALL", "E", "I");
+    private final SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of("userDn", "issuerDn");
+    private static final Authorizations auths = new Authorizations("ALL", "E", "I");
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-    private static MockAccumuloRecordWriter recordWriter;
     private DatawavePrincipal datawavePrincipal;
     private static final Logger log = Logger.getLogger(LongRunningQueryTest.class);
     private static Connector connector = null;
     private ShardQueryLogic logic;
     
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         DatawaveUser user = new DatawaveUser(userDN, DatawaveUser.UserType.USER, Sets.newHashSet(auths.toString().split(",")), null, null, -1L);
         datawavePrincipal = new DatawavePrincipal((Collections.singleton(user)));
         
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         QueryTestTableHelper testTableHelper = new QueryTestTableHelper(LongRunningQueryTest.class.toString(), log);
-        recordWriter = new MockAccumuloRecordWriter();
+        MockAccumuloRecordWriter recordWriter = new MockAccumuloRecordWriter();
         testTableHelper.configureTables(recordWriter);
         connector = testTableHelper.connector;
         
@@ -94,7 +92,6 @@ public class LongRunningQueryTest {
      * least 2 pages (the exact number will depend on cpu speed). All but the lsat page should have 0 results and be marked as PARTIAL. The last page should
      * have 8 results and have a status of COMPLETE.
      *
-     * @throws Exception
      */
     @Test
     public void testLongRunningGroupByQuery() throws Exception {
@@ -148,8 +145,7 @@ public class LongRunningQueryTest {
     
     /***
      * Tests that the code path that allows long running queries does not interfere or create a never ending query if a query legitimately doesn't have results.
-     * 
-     * @throws Exception
+     *
      */
     @Test
     public void testLongRunningQueryWithNoResults() throws Exception {
@@ -191,7 +187,7 @@ public class LongRunningQueryTest {
         }
         
         // There should be at least 2 pages, more depending on cpu speed.
-        assertTrue(pages.size() == 1);
+        assertEquals(1, pages.size());
         
         // check the last page for COMPLETE status and that the total number of results is 0
         assertEquals(0, pages.get(pages.size() - 1).getResults().size());
@@ -204,7 +200,6 @@ public class LongRunningQueryTest {
      * more depending on cpu speed due hitting the execution timeout. The last two pages should have 4 results each, but the last page should have a status of
      * COMPLETE, and the next to last page should have a status of PARTIAL.
      *
-     * @throws Exception
      */
     @Test
     public void testLongRunningQueryWithSmallPageSize() throws Exception {

@@ -1,7 +1,7 @@
 package datawave.query.composite;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,10 +19,10 @@ public class CompositeUtilsTest {
                 result.add(next);
         }
         
-        Assert.assertEquals(3, result.size());
-        Assert.assertEquals("07393f", result.get(0));
-        Assert.assertEquals("073940", result.get(1));
-        Assert.assertEquals("073941", result.get(2));
+        Assertions.assertEquals(3, result.size());
+        Assertions.assertEquals("07393f", result.get(0));
+        Assertions.assertEquals("073940", result.get(1));
+        Assertions.assertEquals("073941", result.get(2));
     }
     
     @Test
@@ -36,34 +36,35 @@ public class CompositeUtilsTest {
                 result.add(next);
         }
         
-        Assert.assertEquals(5, result.size());
-        Assert.assertEquals("073940", result.get(0));
-        Assert.assertEquals("07393f", result.get(1));
-        Assert.assertEquals("07393e", result.get(2));
-        Assert.assertEquals("07393d", result.get(3));
-        Assert.assertEquals("07393c", result.get(4));
+        Assertions.assertEquals(5, result.size());
+        Assertions.assertEquals("073940", result.get(0));
+        Assertions.assertEquals("07393f", result.get(1));
+        Assertions.assertEquals("07393e", result.get(2));
+        Assertions.assertEquals("07393d", result.get(3));
+        Assertions.assertEquals("07393c", result.get(4));
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void decrementMinString() {
         StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 10; i++) {
             builder.appendCodePoint(Character.MIN_CODE_POINT);
-        
+        }
         String minString = builder.toString();
         
-        CompositeUtils.decrementBound(minString);
+        Assertions.assertThrows(RuntimeException.class, () -> CompositeUtils.decrementBound(minString));
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void incrementMaxString() {
         StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 10; i++) {
             builder.appendCodePoint(Character.MAX_CODE_POINT);
+        }
         
         String minString = builder.toString();
         
-        CompositeUtils.incrementBound(minString);
+        Assertions.assertThrows(RuntimeException.class, () -> CompositeUtils.incrementBound(minString));
     }
     
     private boolean isValidHex(String value) {

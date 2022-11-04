@@ -1,13 +1,12 @@
 package datawave.webservice.query;
 
+import datawave.webservice.query.QueryImpl.Parameter;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import java.util.HashSet;
 import java.util.Set;
-
-import datawave.webservice.query.QueryImpl.Parameter;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 public class TestQueryImpl {
     
@@ -19,7 +18,7 @@ public class TestQueryImpl {
     public static final String RETURN_FIELDS = "return.fields";
     public static final String INCLUDE_DATATYPE_AS_FIELD = "include.datatype.as.field";
     
-    @Before
+    @BeforeEach
     public void setup() {
         q = new QueryImpl();
     }
@@ -32,7 +31,7 @@ public class TestQueryImpl {
         try {
             q.addParameter(QUERY_SYNTAX, "LUCENE");
         } catch (NullPointerException e) {
-            Assert.fail();
+            Assertions.fail();
         }
     }
     
@@ -47,7 +46,7 @@ public class TestQueryImpl {
         q.setParameters(parameters);
         
         q.addParameter(QUERY_SYNTAX, "JEXL");
-        Assert.assertEquals("JEXL", q.findParameter(QUERY_SYNTAX).getParameterValue());
+        Assertions.assertEquals("JEXL", q.findParameter(QUERY_SYNTAX).getParameterValue());
     }
     
 }

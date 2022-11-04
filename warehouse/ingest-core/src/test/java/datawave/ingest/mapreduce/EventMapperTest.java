@@ -17,23 +17,27 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
-import org.easymock.EasyMockRule;
+import org.easymock.EasyMockExtension;
 import org.easymock.Mock;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.util.Map;
 
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.anyString;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+@ExtendWith(EasyMockExtension.class)
 public class EventMapperTest {
-    
-    @Rule
-    public EasyMockRule easyMockRule = new EasyMockRule(this);
     
     @Mock
     private Mapper.Context mapContext;
@@ -43,7 +47,7 @@ public class EventMapperTest {
     private SimpleRawRecord errorRecord;
     private EventMapper<LongWritable,RawRecordContainer,BulkIngestKey,Value> eventMapper;
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         long eventTime = System.currentTimeMillis();
         
@@ -105,7 +109,7 @@ public class EventMapperTest {
         replay(mapContext);
     }
     
-    @After
+    @AfterEach
     public void checkMock() {
         verify(mapContext);
     }

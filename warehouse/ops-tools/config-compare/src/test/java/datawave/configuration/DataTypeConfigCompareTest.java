@@ -1,10 +1,10 @@
 package datawave.configuration;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DataTypeConfigCompareTest {
     
@@ -15,7 +15,7 @@ public class DataTypeConfigCompareTest {
     private Configuration type1Conf;
     private Configuration type2Conf;
     
-    @Before
+    @BeforeEach
     public void setup() {
         type1Conf = new Configuration(false);
         type1Conf.addResource(this.getClass().getResourceAsStream(TYPE1));

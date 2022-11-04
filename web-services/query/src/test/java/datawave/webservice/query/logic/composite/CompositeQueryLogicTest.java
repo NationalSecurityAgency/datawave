@@ -1,16 +1,5 @@
 package datawave.webservice.query.logic.composite;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
 import datawave.marking.MarkingFunctions;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
@@ -32,15 +21,32 @@ import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.result.BaseQueryResponse;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CompositeQueryLogicTest {
     
@@ -359,7 +365,7 @@ public class CompositeQueryLogicTest {
         
     }
     
-    @Before
+    @BeforeEach
     public void setup() {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
@@ -385,7 +391,7 @@ public class CompositeQueryLogicTest {
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         c.getTransformer(settings);
         
-        Assert.assertEquals(2, c.getQueryLogics().size());
+        assertEquals(2, c.getQueryLogics().size());
     }
     
     @Test
@@ -419,7 +425,7 @@ public class CompositeQueryLogicTest {
         
         c.getTransformer(settings);
         
-        Assert.assertEquals(2, c.getQueryLogics().size());
+        assertEquals(2, c.getQueryLogics().size());
     }
     
     @Test
@@ -443,7 +449,7 @@ public class CompositeQueryLogicTest {
         
         c.getTransformer(settings);
         
-        Assert.assertEquals(2, c.getQueryLogics().size());
+        assertEquals(2, c.getQueryLogics().size());
     }
     
     @Test
@@ -470,10 +476,10 @@ public class CompositeQueryLogicTest {
         
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         
-        Assert.assertEquals(1, c.getQueryLogics().size());
+        assertEquals(1, c.getQueryLogics().size());
     }
     
-    @Test(expected = CompositeLogicException.class)
+    @Test
     public void testInitializeNotOKWithFailure() throws Exception {
         
         List<QueryLogic<?>> logics = new ArrayList<>();
@@ -496,10 +502,10 @@ public class CompositeQueryLogicTest {
         c.setAllMustInitialize(true);
         c.setQueryLogics(logics);
         
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        assertThrows(CompositeLogicException.class, () -> c.initialize((Connector) null, (Query) settings, Collections.singleton(auths)));
     }
     
-    @Test(expected = CompositeLogicException.class)
+    @Test
     public void testInitializeAllFail() throws Exception {
         
         List<QueryLogic<?>> logics = new ArrayList<>();
@@ -527,10 +533,10 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        assertThrows(CompositeLogicException.class, () -> c.initialize((Connector) null, (Query) settings, Collections.singleton(auths)));
     }
     
-    @Test(expected = CompositeLogicException.class)
+    @Test
     public void testInitializeAllFail2() throws Exception {
         
         List<QueryLogic<?>> logics = new ArrayList<>();
@@ -559,12 +565,14 @@ public class CompositeQueryLogicTest {
         c.setAllMustInitialize(true);
         c.setQueryLogics(logics);
         
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
-        
-        c.getTransformer(settings);
+        assertThrows(CompositeLogicException.class, () -> {
+            c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+            
+            c.getTransformer(settings);
+        });
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testInitializeWithDifferentResponseTypes() throws Exception {
         
         List<QueryLogic<?>> logics = new ArrayList<>();
@@ -583,7 +591,7 @@ public class CompositeQueryLogicTest {
         
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         
-        c.getTransformer(settings);
+        assertThrows(RuntimeException.class, () -> c.getTransformer(settings));
     }
     
     @Test
@@ -654,26 +662,26 @@ public class CompositeQueryLogicTest {
             Object o = iter.next();
             if (null == o)
                 break;
-            Assert.assertTrue(o instanceof TestQueryResponse);
+            assertTrue(o instanceof TestQueryResponse);
             results.add((TestQueryResponse) o);
         }
-        Assert.assertEquals(8, results.size());
+        assertEquals(8, results.size());
         ResultsPage page = new ResultsPage(results, Status.COMPLETE);
         
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
         TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
-        Assert.assertEquals(8, response.getResponses().size());
+        assertEquals(8, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
-            Assert.assertNotNull(r);
+            assertNotNull(r);
         }
         
         c.close();
         
     }
     
-    @Test(expected = CompositeLogicException.class)
+    @Test
     public void testQueryLogicWithNextFailure() throws Exception {
         List<QueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
@@ -713,13 +721,15 @@ public class CompositeQueryLogicTest {
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
         List<Object> results = new ArrayList<>();
-        while (iter.hasNext()) {
-            Object o = iter.next();
-            if (null == o)
-                break;
-            Assert.assertTrue(o instanceof TestQueryResponse);
-            results.add((TestQueryResponse) o);
-        }
+        assertThrows(CompositeLogicException.class, () -> {
+            while (iter.hasNext()) {
+                Object o = iter.next();
+                if (null == o)
+                    break;
+                assertTrue(o instanceof TestQueryResponse);
+                results.add((TestQueryResponse) o);
+            }
+        });
     }
     
     @Test
@@ -767,19 +777,19 @@ public class CompositeQueryLogicTest {
             Object o = iter.next();
             if (null == o)
                 break;
-            Assert.assertTrue(o instanceof TestQueryResponse);
+            assertTrue(o instanceof TestQueryResponse);
             results.add((TestQueryResponse) o);
         }
-        Assert.assertEquals(4, results.size());
+        assertEquals(4, results.size());
         ResultsPage page = new ResultsPage(results, Status.COMPLETE);
         
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
         TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
-        Assert.assertEquals(4, response.getResponses().size());
+        assertEquals(4, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
-            Assert.assertNotNull(r);
+            assertNotNull(r);
         }
         
         c.close();
@@ -830,19 +840,19 @@ public class CompositeQueryLogicTest {
             Object o = iter.next();
             if (null == o)
                 break;
-            Assert.assertTrue(o instanceof TestQueryResponse);
+            assertTrue(o instanceof TestQueryResponse);
             results.add((TestQueryResponse) o);
         }
-        Assert.assertEquals(8, results.size());
+        assertEquals(8, results.size());
         ResultsPage page = new ResultsPage(results, Status.COMPLETE);
         
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
         TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
-        Assert.assertEquals(8, response.getResponses().size());
+        assertEquals(8, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
-            Assert.assertNotNull(r);
+            assertNotNull(r);
         }
         
         c.close();
@@ -893,19 +903,19 @@ public class CompositeQueryLogicTest {
             Object o = iter.next();
             if (null == o)
                 break;
-            Assert.assertTrue(o instanceof TestQueryResponse);
+            assertTrue(o instanceof TestQueryResponse);
             results.add((TestQueryResponse) o);
         }
-        Assert.assertEquals(8, results.size());
+        assertEquals(8, results.size());
         ResultsPage page = new ResultsPage(results, Status.COMPLETE);
         
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
         TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
-        Assert.assertEquals(8, response.getResponses().size());
+        assertEquals(8, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
-            Assert.assertNotNull(r);
+            assertNotNull(r);
         }
         
         c.close();
@@ -944,10 +954,10 @@ public class CompositeQueryLogicTest {
             Object o = iter.next();
             if (null == o)
                 break;
-            Assert.assertTrue(o instanceof TestQueryResponse);
+            assertTrue(o instanceof TestQueryResponse);
             results.add((TestQueryResponse) o);
         }
-        Assert.assertEquals(0, results.size());
+        assertEquals(0, results.size());
         c.close();
         
     }
@@ -971,8 +981,8 @@ public class CompositeQueryLogicTest {
                         Collections.singleton("TESTROLE"), null, 0L);
         DatawavePrincipal p = new DatawavePrincipal(Collections.singletonList(u));
         
-        Assert.assertTrue(c.canRunQuery(p));
-        Assert.assertEquals(2, c.getQueryLogics().size());
+        assertTrue(c.canRunQuery(p));
+        assertEquals(2, c.getQueryLogics().size());
     }
     
     @Test
@@ -996,8 +1006,8 @@ public class CompositeQueryLogicTest {
                         Collections.singleton("TESTROLE"), null, 0L);
         DatawavePrincipal p = new DatawavePrincipal(Collections.singletonList(u));
         
-        Assert.assertTrue(c.canRunQuery(p));
-        Assert.assertEquals(1, c.getQueryLogics().size());
+        assertTrue(c.canRunQuery(p));
+        assertEquals(1, c.getQueryLogics().size());
     }
     
     @Test
@@ -1021,8 +1031,8 @@ public class CompositeQueryLogicTest {
                         Collections.singleton("TESTROLE"), null, 0L);
         DatawavePrincipal p = new DatawavePrincipal(Collections.singletonList(u));
         
-        Assert.assertFalse(c.canRunQuery(p));
-        Assert.assertEquals(0, c.getQueryLogics().size());
+        assertFalse(c.canRunQuery(p));
+        assertEquals(0, c.getQueryLogics().size());
         
     }
     

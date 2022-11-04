@@ -1,16 +1,15 @@
 package datawave.common.result;
 
+import datawave.webservice.common.result.ConnectionPool;
+import datawave.webservice.common.result.ConnectionPool.Priority;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeSet;
-
-import datawave.webservice.common.result.ConnectionPool;
-import datawave.webservice.common.result.ConnectionPool.Priority;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -26,7 +25,7 @@ public class ConnectionPoolTest {
         return p;
     }
     
-    @Before
+    @BeforeEach
     public void setup() {
         connectionPools = new LinkedList<>();
         connectionPools.add(createPool("WAREHOUSE", Priority.NORMAL.toString()));
@@ -48,28 +47,28 @@ public class ConnectionPoolTest {
         ConnectionPool p = null;
         
         p = itr.next();
-        Assert.assertEquals("INGEST", p.getPoolName());
-        Assert.assertEquals("ADMIN", p.getPriority());
+        Assertions.assertEquals("INGEST", p.getPoolName());
+        Assertions.assertEquals("ADMIN", p.getPriority());
         p = itr.next();
-        Assert.assertEquals("INGEST", p.getPoolName());
-        Assert.assertEquals("HIGH", p.getPriority());
+        Assertions.assertEquals("INGEST", p.getPoolName());
+        Assertions.assertEquals("HIGH", p.getPriority());
         p = itr.next();
-        Assert.assertEquals("INGEST", p.getPoolName());
-        Assert.assertEquals("NORMAL", p.getPriority());
+        Assertions.assertEquals("INGEST", p.getPoolName());
+        Assertions.assertEquals("NORMAL", p.getPriority());
         p = itr.next();
-        Assert.assertEquals("INGEST", p.getPoolName());
-        Assert.assertEquals("LOW", p.getPriority());
+        Assertions.assertEquals("INGEST", p.getPoolName());
+        Assertions.assertEquals("LOW", p.getPriority());
         p = itr.next();
-        Assert.assertEquals("WAREHOUSE", p.getPoolName());
-        Assert.assertEquals("ADMIN", p.getPriority());
+        Assertions.assertEquals("WAREHOUSE", p.getPoolName());
+        Assertions.assertEquals("ADMIN", p.getPriority());
         p = itr.next();
-        Assert.assertEquals("WAREHOUSE", p.getPoolName());
-        Assert.assertEquals("HIGH", p.getPriority());
+        Assertions.assertEquals("WAREHOUSE", p.getPoolName());
+        Assertions.assertEquals("HIGH", p.getPriority());
         p = itr.next();
-        Assert.assertEquals("WAREHOUSE", p.getPoolName());
-        Assert.assertEquals("NORMAL", p.getPriority());
+        Assertions.assertEquals("WAREHOUSE", p.getPoolName());
+        Assertions.assertEquals("NORMAL", p.getPriority());
         p = itr.next();
-        Assert.assertEquals("WAREHOUSE", p.getPoolName());
-        Assert.assertEquals("LOW", p.getPriority());
+        Assertions.assertEquals("WAREHOUSE", p.getPoolName());
+        Assertions.assertEquals("LOW", p.getPriority());
     }
 }

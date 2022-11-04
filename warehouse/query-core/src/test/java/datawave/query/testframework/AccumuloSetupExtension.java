@@ -15,8 +15,8 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RawLocalFileSystem;
@@ -36,8 +36,12 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,9 +52,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-public class AccumuloSetup extends ExternalResource {
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class AccumuloSetupExtension implements AfterEachCallback, BeforeEachCallback, AfterAllCallback, BeforeAllCallback {
     
-    private static final Logger log = Logger.getLogger(AccumuloSetup.class);
+    private static final Logger log = Logger.getLogger(AccumuloSetupExtension.class);
     
     /**
      * Setting this flag assures that no resources are left undeleted. Failure to fulfill the assurance results in failure of tests with an AssertionError.
@@ -66,38 +72,29 @@ public class AccumuloSetup extends ExternalResource {
     private Collection<DataTypeHadoopConfig> dataTypes;
     private Set<String> shardIds;
     private FileType fileFormat;
+    private int referenceCount;
     private Authorizations auths = AbstractDataTypeConfig.getTestAuths();
     
-    public AccumuloSetup() {
+    public AccumuloSetupExtension() {
         this(false);
     }
     
-    public AccumuloSetup(boolean assureTempFolderDeletion) {
+    public AccumuloSetupExtension(boolean assureTempFolderDeletion) {
         this.assureTempFolderDeletion = assureTempFolderDeletion;
-    }
-    
-    @Override
-    protected void before() throws Throwable {
-        createTempFolder();
     }
     
     private void createTempFolder() {
         File tmpDir = new File(System.getProperty("java.io.tmpdir"));
         tempFolder = new File(tmpDir, UUID.randomUUID().toString());
         if (!tempFolder.mkdir()) {
-            Assert.fail("Failed to create temporary folder " + tempFolder);
+            fail("Failed to create temporary folder " + tempFolder);
         }
-    }
-    
-    @Override
-    protected void after() {
-        deleteTempFolder();
     }
     
     private void deleteTempFolder() {
         if (!tryDelete()) {
             if (assureTempFolderDeletion) {
-                Assert.fail("Failed to delete temp folder " + tempFolder);
+                fail("Failed to delete temp folder " + tempFolder);
             }
         }
     }
@@ -173,11 +170,11 @@ public class AccumuloSetup extends ExternalResource {
         log.debug("------------- loadTables -------------");
         
         if (this.fileFormat != FileType.GROUPING) {
-            Assert.assertFalse("shard ids have not been specified", this.shardIds.isEmpty());
-            Assert.assertFalse("data types have not been specified", this.dataTypes.isEmpty());
+            Assertions.assertFalse(this.shardIds.isEmpty(), "shard ids have not been specified");
+            Assertions.assertFalse(this.dataTypes.isEmpty(), "data types have not been specified");
         }
         
-        QueryTestTableHelper tableHelper = new QueryTestTableHelper(AccumuloSetup.class.getName(), parentLog, teardown, interrupt);
+        QueryTestTableHelper tableHelper = new QueryTestTableHelper(AccumuloSetupExtension.class.getName(), parentLog, teardown, interrupt);
         final Connector connector = tableHelper.connector;
         tableHelper.configureTables(this.recordWriter);
         
@@ -209,7 +206,7 @@ public class AccumuloSetup extends ExternalResource {
         Path tmpPath = new Path(tempFolder.toURI());
         // To prevent periodic test cases failing, added "---" prefix for UUID for test cases to support queries with _ANYFIELD_ starting with particular
         // letters.
-        Path seqFile = new Path(tmpPath, "---" + UUID.randomUUID().toString());
+        Path seqFile = new Path(tmpPath, "---" + UUID.randomUUID());
         
         TaskAttemptID id = new TaskAttemptID("testJob", 0, TaskType.MAP, 0, 0);
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, id);
@@ -244,5 +241,30 @@ public class AccumuloSetup extends ExternalResource {
             loader.loadTestData(seqWriter);
             return rfs;
         }
+    }
+    
+    @Override
+    public void afterEach(ExtensionContext extensionContext) throws Exception {
+        if (--referenceCount == 0) {
+            // Do stuff to clean up
+            deleteTempFolder();
+        }
+    }
+    
+    @Override
+    public void beforeEach(ExtensionContext extensionContext) throws Exception {
+        if (++referenceCount == 1) {
+            createTempFolder();
+        }
+    }
+    
+    @Override
+    public void afterAll(ExtensionContext extensionContext) throws Exception {
+        afterEach(extensionContext);
+    }
+    
+    @Override
+    public void beforeAll(ExtensionContext extensionContext) throws Exception {
+        beforeEach(extensionContext);
     }
 }

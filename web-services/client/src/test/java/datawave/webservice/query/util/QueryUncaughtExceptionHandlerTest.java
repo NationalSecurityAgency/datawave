@@ -1,7 +1,7 @@
 package datawave.webservice.query.util;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class QueryUncaughtExceptionHandlerTest {
     
@@ -18,8 +18,8 @@ public class QueryUncaughtExceptionHandlerTest {
         queh = new QueryUncaughtExceptionHandler();
         queh.uncaughtException(t, throwable);
         
-        Assert.assertEquals(tName, queh.getThread().getName());
-        Assert.assertEquals(throwMsg, queh.getThrowable().getMessage());
+        Assertions.assertEquals(tName, queh.getThread().getName());
+        Assertions.assertEquals(throwMsg, queh.getThrowable().getMessage());
         
     }
 }

@@ -2,13 +2,13 @@ package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -16,8 +16,8 @@ import java.util.Set;
 public class TabletLocationHashPartitionerTest {
     public static final int MAX_EXPECTED_COLLISIONS = 70;
     
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder = new File("/tmp//test/TabletLocationHashPartitionerTest");
     
     int TOTAL_TSERVERS = 600;
     int SHARDS_PER_DAY = 170;
@@ -26,14 +26,14 @@ public class TabletLocationHashPartitionerTest {
     Configuration conf = new Configuration();
     TabletLocationHashPartitioner partitioner = null;
     
-    @Before
+    @BeforeEach
     public void setUp() {
         conf = new Configuration();
         partitioner = new TabletLocationHashPartitioner();
         partitioner.setConf(conf);
     }
     
-    @After
+    @AfterEach
     public void tearDown() {
         conf.clear();
         conf = null;
@@ -43,7 +43,7 @@ public class TabletLocationHashPartitionerTest {
     @Test
     public void testLocationHashPartitioner() throws Exception {
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
-        new TestShardGenerator(conf, temporaryFolder.newFolder(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard");
+        new TestShardGenerator(conf, temporaryFolder, NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard");
         TabletLocationHashPartitioner partitionerTwo = new TabletLocationHashPartitioner();
         partitionerTwo.setConf(conf);
         
@@ -80,6 +80,6 @@ public class TabletLocationHashPartitionerTest {
             }
             partitionsUsed.add(partition);
         }
-        Assert.assertEquals(42, collisions);
+        Assertions.assertEquals(42, collisions);
     }
 }

@@ -8,7 +8,7 @@ import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
@@ -16,22 +16,22 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static datawave.query.testframework.RawDataManager.RE_OP;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * QueryPlanTest verifies that the query plan is being properly set in the query metrics, even in cases where the query fails during creation.
  */
 public class QueryPlanTest extends AbstractFunctionalQuery {
     
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = new AccumuloSetupExtension();
     
     private static final Logger log = Logger.getLogger(AnyFieldQueryTest.class);
     
@@ -47,7 +47,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         this.auths = CitiesDataType.getTestAuths();
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         FieldConfig generic = new GenericCityFields();
         generic.addIndexField(CitiesDataType.CityField.STATE.name());
@@ -59,7 +59,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         connector = accumuloSetup.loadTables(log);
     }
     
-    @Before
+    @BeforeEach
     public void before() {
         // Use RunningQuery to test that query metrics being updated with plan
         this.useRunningQuery();
@@ -81,66 +81,46 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     }
     
     @Test
-    public void planInMetricsAfterInvalidQueryException() throws Exception {
+    public void planInMetricsAfterInvalidQueryException() {
         String query = "species != " + "'dog'";
         String expectedPlan = "!(SPECIES == 'dog')";
-        try {
-            runTest(query, query);
-            fail("Expected InvalidQueryException.");
-        } catch (InvalidQueryException e) {
-            assertEquals(expectedPlan, metric.getPlan());
-        }
+        Assertions.assertThrows(InvalidQueryException.class, () -> runTest(query, query));
+        assertEquals(expectedPlan, metric.getPlan());
     }
     
     @Test
-    public void planInMetricsAfterMissingIndexException() throws Exception {
+    public void planInMetricsAfterMissingIndexException() {
         String query = "CITY == 'london' && CITY != 'london'";
         String expectedPlan = "CITY == 'london' && !(CITY == 'london')";
         this.logic.setIndexTableName("missing");
-        try {
-            runTest(query, query);
-            fail("Expected RuntimeException.");
-        } catch (RuntimeException e) {
-            assertEquals(expectedPlan, metric.getPlan());
-        }
+        Assertions.assertThrows(RuntimeException.class, () -> runTest(query, query));
+        assertEquals(expectedPlan, metric.getPlan());
+        
     }
     
     @Test
-    public void planInMetricsAfterTableNotFoundException() throws Exception {
+    public void planInMetricsAfterTableNotFoundException() {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
         String expectedPlan = "!(_ANYFIELD_ == 'london')";
         
         this.logic.setMetadataTableName("missing");
-        try {
-            runTest(query, query);
-            fail("Expected DatawaveFatalQueryException.");
-        } catch (DatawaveFatalQueryException e) {
-            assertEquals(expectedPlan, metric.getPlan());
-        }
+        Assertions.assertThrows(DatawaveFatalQueryException.class, () -> runTest(query, query));
+        assertEquals(expectedPlan, metric.getPlan());
+        
     }
     
     @Test
-    public void planInMetricsAfterFTSDException() throws Exception {
+    public void planInMetricsAfterFTSDException() {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
         String expectedPlan = "(!(_ANYFIELD_ == 'london') && !(CITY == 'london') && !(STATE == 'london'))";
-        try {
-            runTest(query, query);
-            fail("Expected FullTableScanDisallowedException.");
-        } catch (FullTableScansDisallowedException e) {
-            assertEquals(expectedPlan, metric.getPlan());
-        }
+        Assertions.assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
+        assertEquals(expectedPlan, metric.getPlan());
     }
     
     @Test
-    public void planInMetricsAfterDNPOQException() throws Exception {
+    public void planInMetricsAfterDNPOQException() {
         String query = Constants.ANY_FIELD + RE_OP + "'.*iss.*'";
-        String expectedPlan = query;
-        
-        try {
-            runTest(query, query);
-            fail("Expected DoNotPerformOptimizedQueryException.");
-        } catch (DoNotPerformOptimizedQueryException e) {
-            assertEquals(expectedPlan, metric.getPlan());
-        }
+        Assertions.assertThrows(DoNotPerformOptimizedQueryException.class, () -> runTest(query, query));
+        assertEquals(query, metric.getPlan());
     }
 }

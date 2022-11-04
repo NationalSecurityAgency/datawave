@@ -9,21 +9,19 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class PushdownNegationVisitorTest {
     PushdownNegationVisitor visitor;
     
-    @Before
+    @BeforeEach
     public void setup() {
         visitor = new PushdownNegationVisitor();
     }
@@ -135,9 +133,9 @@ public class PushdownNegationVisitorTest {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(F1 == 'v1' && F2 == 'v2' && (F3 == 'v3' || F4 == 'v4'))");
         String orig = JexlStringBuildingVisitor.buildQuery(query);
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        assertEquals("(!(F1 == 'v1') || !(F2 == 'v2') || ((!(F3 == 'v3') && !(F4 == 'v4'))))", JexlStringBuildingVisitor.buildQuery(result));
-        assertNotEquals(orig, JexlStringBuildingVisitor.buildQuery(result));
-        assertEquals(orig, JexlStringBuildingVisitor.buildQuery(query));
+        Assertions.assertEquals("(!(F1 == 'v1') || !(F2 == 'v2') || ((!(F3 == 'v3') && !(F4 == 'v4'))))", JexlStringBuildingVisitor.buildQuery(result));
+        Assertions.assertNotEquals(orig, JexlStringBuildingVisitor.buildQuery(result));
+        Assertions.assertEquals(orig, JexlStringBuildingVisitor.buildQuery(query));
     }
     
     @Test
@@ -236,17 +234,17 @@ public class PushdownNegationVisitorTest {
         // source it
         String source = "FOO =~ 'ba.*'";
         JexlNode sourceNode = JexlASTHelper.parseJexlQuery(source);
-        assertEquals(source, JexlStringBuildingVisitor.buildQuery(sourceNode));
+        Assertions.assertEquals(source, JexlStringBuildingVisitor.buildQuery(sourceNode));
         
         // mark it
         String markedSource = "((_Delayed_ = true) && (FOO =~ 'ba.*'))";
         JexlNode marked = ASTDelayedPredicate.create(sourceNode);
-        assertEquals(markedSource, JexlStringBuildingVisitor.buildQueryWithoutParse(marked));
+        Assertions.assertEquals(markedSource, JexlStringBuildingVisitor.buildQueryWithoutParse(marked));
         
         // negate
         String negatedMarkedSource = "!((_Delayed_ = true) && (FOO =~ 'ba.*'))";
         JexlNode negated = JexlNodes.negate(marked);
-        assertEquals(negatedMarkedSource, JexlStringBuildingVisitor.buildQueryWithoutParse(negated));
+        Assertions.assertEquals(negatedMarkedSource, JexlStringBuildingVisitor.buildQueryWithoutParse(negated));
         
         // validate it
         test(negatedMarkedSource, negatedMarkedSource);
@@ -273,20 +271,20 @@ public class PushdownNegationVisitorTest {
         test(query, expected);
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testApplyDeMorgansNull() {
-        PushdownNegationVisitor.applyDeMorgans(null, false);
+        assertThrows(IllegalArgumentException.class, () -> PushdownNegationVisitor.applyDeMorgans(null, false));
     }
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testApplyDeMorgansNoChildren() {
-        PushdownNegationVisitor.applyDeMorgans(new ASTAndNode(1), false);
+        assertThrows(IllegalStateException.class, () -> PushdownNegationVisitor.applyDeMorgans(new ASTAndNode(1), false));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testApplyDeMorgansNotAndOrNode() {
         JexlNode node = JexlNodeFactory.buildEQNode("field", "value");
-        PushdownNegationVisitor.applyDeMorgans(node, false);
+        assertThrows(IllegalArgumentException.class, () -> PushdownNegationVisitor.applyDeMorgans(node, false));
     }
     
     @Test
@@ -298,7 +296,7 @@ public class PushdownNegationVisitorTest {
         children.add(child2);
         JexlNode and = JexlNodeFactory.createUnwrappedAndNode(children);
         JexlNode result = PushdownNegationVisitor.applyDeMorgans(and, true);
-        assertEquals("!((!(f1 == 'v1') || !(f2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(result));
+        Assertions.assertEquals("!((!(f1 == 'v1') || !(f2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
@@ -310,7 +308,7 @@ public class PushdownNegationVisitorTest {
         children.add(child2);
         JexlNode or = JexlNodeFactory.createUnwrappedOrNode(children);
         JexlNode result = PushdownNegationVisitor.applyDeMorgans(or, true);
-        assertEquals("!((!(f1 == 'v1') && !(f2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(result));
+        Assertions.assertEquals("!((!(f1 == 'v1') && !(f2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     private void test(String query, String expected) {
@@ -318,12 +316,12 @@ public class PushdownNegationVisitorTest {
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
             ASTJexlScript pushed = (ASTJexlScript) PushdownNegationVisitor.pushdownNegations(script);
             
-            assertEquals(expected, JexlStringBuildingVisitor.buildQuery(pushed));
-            assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseAndFlattenJexlQuery(expected), pushed));
+            Assertions.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(pushed));
+            Assertions.assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseAndFlattenJexlQuery(expected), pushed));
             JexlNodeAssert.assertThat(pushed).hasValidLineage();
         } catch (ParseException e) {
             e.printStackTrace();
-            fail("Failed to complete test: " + e.getMessage());
+            Assertions.fail("Failed to complete test: " + e.getMessage());
         }
     }
 }

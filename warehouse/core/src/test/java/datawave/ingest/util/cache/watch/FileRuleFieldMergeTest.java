@@ -1,21 +1,20 @@
 package datawave.ingest.util.cache.watch;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-
-import java.io.IOException;
-import java.util.Collection;
-
+import datawave.iterators.filter.ageoff.FilterRule;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import datawave.iterators.filter.ageoff.FilterRule;
+import java.io.IOException;
+import java.util.Collection;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests to verify capability of merging configs that use filters that inherit from {@code FieldAgeOffFilter}
@@ -29,7 +28,7 @@ public class FileRuleFieldMergeTest {
     // this one inherits defaults from parentFilter
     private TestFieldFilter childFilter;
     
-    @Before
+    @BeforeEach
     public void before() throws IOException {
         Path childPath = new Path(this.getClass().getResource(CHILD_FILTER_CONFIGURATION_FILE).toString());
         Path rootPath = new Path(this.getClass().getResource(ROOT_FILTER_CONFIGURATION_FILE).toString());
@@ -41,9 +40,9 @@ public class FileRuleFieldMergeTest {
     
     @Test
     public void verifyIsIndexOnlyForChild() throws IOException {
-        assertThat(isIndexTable(parentFilter), is(false));
+        assertFalse(isIndexTable(parentFilter));
         
-        assertThat(isIndexTable(childFilter), is(true));
+        assertTrue(isIndexTable(childFilter));
     }
     
     @Test
@@ -52,10 +51,10 @@ public class FileRuleFieldMergeTest {
         // <fields>alpha,beta,gamma,delta</fields>
         // since child is index config, field should be in the column family
         Key key = new Key("row", "alpha", "cq", "vis", 0);
-        assertThat(childFilter.accept(key, new Value()), is(false));
+        assertFalse(childFilter.accept(key, new Value()));
         
         key = new Key("row", "beta", "cq", "vis", Long.MAX_VALUE);
-        assertThat(childFilter.accept(key, new Value()), is(true));
+        assertTrue(childFilter.accept(key, new Value()));
     }
     
     private Boolean isIndexTable(TestFieldFilter filter) {
@@ -65,7 +64,7 @@ public class FileRuleFieldMergeTest {
     private static FilterRule loadRulesFromFile(FileRuleWatcher watcher, FileSystem fs, Path filePath) throws IOException {
         Collection<FilterRule> rules = watcher.loadContents(fs.open(filePath));
         // should only have the single rule
-        assertThat(rules.size(), is(1));
+        assertEquals(rules.size(), 1);
         for (FilterRule rule : rules) {
             assertEquals(TestFieldFilter.class, rule.getClass());
         }

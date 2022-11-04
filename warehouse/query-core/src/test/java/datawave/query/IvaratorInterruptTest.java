@@ -23,18 +23,16 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -50,6 +48,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -58,11 +57,11 @@ public abstract class IvaratorInterruptTest {
     private static final Logger log = Logger.getLogger(IvaratorInterruptTest.class);
     private static Connector connector;
     
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static File temporaryFolder = new File("/tmp/test/IvaratorInterruptTest");
     
     protected Authorizations auths = new Authorizations("ALL");
-    private Set<Authorizations> authSet = Collections.singleton(auths);
+    private final Set<Authorizations> authSet = Collections.singleton(auths);
     
     @Inject
     @SpringBean(name = "EventQuery")
@@ -88,7 +87,7 @@ public abstract class IvaratorInterruptTest {
     }
     
     protected static void init(String metadataDir, WiseGuysIngest.WhatKindaRange range) throws Exception {
-        System.setProperty("type.metadata.dir", temporaryFolder.getRoot().getCanonicalPath() + "/" + metadataDir);
+        System.setProperty("type.metadata.dir", temporaryFolder.getCanonicalPath() + "/" + metadataDir);
         
         QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.NEVER,
                         RebuildingScannerTestHelper.INTERRUPT.FI_EVERY_OTHER);
@@ -102,14 +101,14 @@ public abstract class IvaratorInterruptTest {
         PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
     
-    @AfterClass
+    @AfterAll
     public static void teardown() throws IOException {
         TypeRegistry.reset();
         
-        File root = new File(temporaryFolder.getRoot().getCanonicalPath() + "/DocumentRange/DatawaveMetadata");
+        File root = new File(temporaryFolder.getCanonicalPath() + "/DocumentRange/DatawaveMetadata");
         FilenameFilter filenameFilter = (dir, name) -> name.equals("typeMetadata") || name.equals("typeMetadata.crc");
         if (root.exists()) {
-            for (File file : root.listFiles(filenameFilter)) {
+            for (File file : Objects.requireNonNull(root.listFiles(filenameFilter))) {
                 System.out.println("Deleting file " + file.getCanonicalPath() + " : " + file.delete());
             }
         } else {
@@ -117,8 +116,25 @@ public abstract class IvaratorInterruptTest {
         }
     }
     
-    @Before
-    public void setup() throws IOException {
+    @ExtendWith(ArquillianExtension.class)
+    public static class ShardRange extends IvaratorInterruptTest {
+        
+        @BeforeAll
+        public static void init() throws Exception {
+            init(ShardRange.class.getSimpleName(), WiseGuysIngest.WhatKindaRange.SHARD);
+        }
+    }
+    
+    @ExtendWith(ArquillianExtension.class)
+    public static class DocumentRange extends IvaratorInterruptTest {
+        
+        @BeforeAll
+        public static void init() throws Exception {
+            init(DocumentRange.class.getSimpleName(), WiseGuysIngest.WhatKindaRange.DOCUMENT);
+        }
+    }
+    
+    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         logic.setFullTableScanEnabled(true);
@@ -127,35 +143,15 @@ public abstract class IvaratorInterruptTest {
         
         // setup the hadoop configuration
         URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
+        assert hadoopConfig != null;
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
         
         // setup a directory for cache results
-        File tmpDir = temporaryFolder.newFolder();
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
-        logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
-        
+        File tmpDir = temporaryFolder;
+        IvaratorCacheDirConfig iConfig = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
+        logic.setIvaratorCacheDirConfigs(Collections.singletonList(iConfig));
         deserializer = new KryoDocumentDeserializer();
-    }
-    
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends IvaratorInterruptTest {
         
-        @BeforeClass
-        public static void init() throws Exception {
-            init(ShardRange.class.getSimpleName(), WiseGuysIngest.WhatKindaRange.SHARD);
-        }
-    }
-    
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends IvaratorInterruptTest {
-        
-        @BeforeClass
-        public static void init() throws Exception {
-            init(DocumentRange.class.getSimpleName(), WiseGuysIngest.WhatKindaRange.DOCUMENT);
-        }
-    }
-    
-    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
@@ -187,14 +183,15 @@ public abstract class IvaratorInterruptTest {
             if (attr == null)
                 attr = d.get("UUID.0");
             
-            Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(), attr instanceof TypeAttribute
-                            || attr instanceof PreNormalizedAttribute);
+            Assertions.assertNotNull(attr, "Result Document did not contain a 'UUID'");
+            Assertions.assertTrue(attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute,
+                            "Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName());
             
+            assert attr instanceof TypeAttribute<?>;
             TypeAttribute<?> UUIDAttr = (TypeAttribute<?>) attr;
             
             String UUID = UUIDAttr.getType().getDelegate().toString();
-            Assert.assertTrue("Received unexpected UUID: " + UUID, expected.contains(UUID));
+            Assertions.assertTrue(expected.contains(UUID), "Received unexpected UUID: " + UUID);
             
             resultSet.add(UUID);
             docs.add(d);
@@ -212,8 +209,8 @@ public abstract class IvaratorInterruptTest {
         if (!expected.containsAll(resultSet)) {
             log.error("Expected results " + expected + " differ form actual results " + resultSet);
         }
-        Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
-        Assert.assertEquals("Unexpected number of records", expected.size(), resultSet.size());
+        Assertions.assertTrue(expected.containsAll(resultSet), "Expected results " + expected + " differ form actual results " + resultSet);
+        Assertions.assertEquals(expected.size(), resultSet.size(), "Unexpected number of records");
     }
     
     @Test

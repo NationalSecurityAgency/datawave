@@ -13,8 +13,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -144,11 +144,11 @@ public class FieldAgeOffFilterTest {
         ageOffFilter.init(filterOptions, iterEnv);
         // field_y is a match, but its ttl was not defined, so it wil use the default one
         Key key = new Key("1234", "field_z\\x00my-uuid", "field_z\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
         key = new Key("1234", "field_y", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -171,11 +171,11 @@ public class FieldAgeOffFilterTest {
         filterOptions.setOption("field_y.ttl", "2"); // 2 seconds
         
         ageOffFilter.init(filterOptions, iterEnv);
-        Assert.assertNotNull("IteratorEnvironment should not be null after init!", ageOffFilter.iterEnv);
+        Assertions.assertNotNull(ageOffFilter.iterEnv, "IteratorEnvironment should not be null after init!");
         // originally this would cause the iterEnv to be lost and test would fail
         ageOffFilter = (FieldAgeOffFilter) ageOffFilter.deepCopy(tenSecondsAgo);
         
-        Assert.assertNotNull("IteratorEnvironment should not be null after deep copy!", ageOffFilter.iterEnv);
+        Assertions.assertNotNull(ageOffFilter.iterEnv, "IteratorEnvironment should not be null after deep copy!");
     }
     
     @Test
@@ -198,11 +198,11 @@ public class FieldAgeOffFilterTest {
         ageOffFilter.init(filterOptions, iterEnv);
         // field_y is a match, but its ttl was not defined, so it wil use the default one
         Key key = new Key("1234", "field_z\\x00my-uuid", "field_z\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertFalse(ageOffFilter.isFilterRuleApplied());
         key = new Key("1234", "field_y", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -225,11 +225,11 @@ public class FieldAgeOffFilterTest {
         ageOffFilter.init(filterOptions, iterEnv);
         // field_y is a match, but its ttl was not defined, so it wil use the default one
         Key key = new Key("1234", "field_z\\x00my-uuid", "field_z\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
         key = new Key("1234", "field_y", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -252,11 +252,11 @@ public class FieldAgeOffFilterTest {
         ageOffFilter.init(filterOptions, iterEnv);
         // field_y is a match, but its ttl was not defined, so it wil use the default one
         Key key = new Key("1234", "field_z\\x00my-uuid", "field_z\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertFalse(ageOffFilter.isFilterRuleApplied());
         key = new Key("1234", "field_y", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -278,11 +278,11 @@ public class FieldAgeOffFilterTest {
         ageOffFilter.init(filterOptions, iterEnv);
         // field_y is a match, but its ttl was not defined, so it wil use the default one
         Key key = new Key("1234", "field_z\\x00my-uuid", "field_z\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertFalse(ageOffFilter.isFilterRuleApplied());
         key = new Key("1234", "field_y", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -294,8 +294,8 @@ public class FieldAgeOffFilterTest {
         
         // age off immediately
         AgeOffPeriod futureAgeOff = new AgeOffPeriod(System.currentTimeMillis());
-        Assert.assertTrue(ageOffFilter.accept(futureAgeOff, key, new Value()));
-        Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(futureAgeOff, key, new Value()));
+        Assertions.assertFalse(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -313,8 +313,8 @@ public class FieldAgeOffFilterTest {
         ageOffFilter.init(filterOptions, iterEnv);
         // field_y is a match, but its ttl was not defined, so it will use the default one
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, oneSecondAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -332,8 +332,8 @@ public class FieldAgeOffFilterTest {
         ageOffFilter.init(filterOptions, iterEnv);
         // field_y is a match, but its ttl was not defined, so it will use the default one
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -353,8 +353,8 @@ public class FieldAgeOffFilterTest {
         
         // field_a is not a match, so it should pass through
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_a\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertFalse(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -374,12 +374,12 @@ public class FieldAgeOffFilterTest {
         ageOffFilter.init(filterOptions, iterEnv);
         // field_y is a match, but its ttl was not defined, so it will use the default one
         Key keyY = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, oneMinuteAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyY, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyY, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
         // field_z is a match and is not defined in the "fields" tag
         Key keyZ = new Key("1234", "myDataType\\x00my-uuid", "field_z\u0000value", VISIBILITY_PATTERN, tenMinutesAgo);
-        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyZ, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyZ, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -398,12 +398,12 @@ public class FieldAgeOffFilterTest {
         ageOffFilter.init(filterOptions, iterEnv);
         // field_y is a match, but its ttl was not defined, so it will use the default one
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
         // field_z is a match, but the key is more recent than its age off period
         Key keyZ = new Key("1234", "myDataType\\x00my-uuid", "field_z\u0000value", VISIBILITY_PATTERN, oneSecondAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), keyZ, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), keyZ, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -423,12 +423,12 @@ public class FieldAgeOffFilterTest {
         ageOffFilter.init(filterOptions, iterEnv);
         // field_y is a match, but its ttl was not defined, so it will use the default one
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
         // field_z is a match, but the key is more recent than its age off period
         Key keyNumeric = new Key("1234", "myDataType\\x00my-uuid", "12_3_4\u0000value", VISIBILITY_PATTERN, oneSecondAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), keyNumeric, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), keyNumeric, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -449,12 +449,12 @@ public class FieldAgeOffFilterTest {
         ageOffFilter.init(filterOptions, iterEnv);
         // field_y is a match, but its ttl was not defined, so it will use the default one
         Key keyY = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, oneMinuteAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyY, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyY, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
         // field_z is a match and is not defined in the "fields" tag
         Key keyZ = new Key("1234", "myDataType\\x00my-uuid", "field_z\u0000value", VISIBILITY_PATTERN, tenMinutesAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyZ, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyZ, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -473,8 +473,8 @@ public class FieldAgeOffFilterTest {
         
         // field_a is not a match, so it should pass through
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_a\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
-        Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assertions.assertFalse(ageOffFilter.isFilterRuleApplied());
     }
     
     @Test
@@ -495,18 +495,18 @@ public class FieldAgeOffFilterTest {
         
         // field_y is event data, it should pass through; but rule is not applied
         Key key1 = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key1, new Value()));
-        Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key1, new Value()));
+        Assertions.assertFalse(ageOffFilter.isFilterRuleApplied());
         
         // field_y is index data, it should not pass through and rule applied
         Key key2 = new Key("1234", "fi\u0000field_y", "my_value\\x00my-uuid", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key2, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key2, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
         
         // field_z is index data and not aged-off, so it should pass through
         Key key3 = new Key("1234", "fi\u0000field_z", "my_value\\x00my-uuid", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key3, new Value()));
-        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        Assertions.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key3, new Value()));
+        Assertions.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
     
     private FilterOptions createFilterOptionsWithPattern() {

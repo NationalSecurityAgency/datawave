@@ -9,15 +9,15 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests to verify capability of merging configs for rules that use different filters with overlapping matchPattern formats
@@ -34,7 +34,7 @@ public class DifferentClassesMergeTest {
     // childFilter inherits matchPattern contents from parentFilter
     private EdgeColumnQualifierTokenFilter childFilter;
     
-    @Before
+    @BeforeEach
     public void before() throws IOException {
         // create childFilter
         Path childPath = new Path(this.getClass().getResource(CHILD_FILTER_CONFIGURATION_FILE).toString());

@@ -6,16 +6,16 @@ import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class VirtualFieldTest {
     
     protected Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
     
-    @Before
+    @BeforeEach
     public void setup() {
         eventFields.put("GROUPED_1", new NormalizedFieldAndValue("GROUPED_1", "value1", "group1", "subgroup1"));
         eventFields.put("GROUPED_1", new NormalizedFieldAndValue("GROUPED_1", "value2", "group2", "subgroup1"));

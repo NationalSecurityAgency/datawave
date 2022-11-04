@@ -3,25 +3,23 @@ package datawave.query;
 import datawave.query.exceptions.DatawaveIvaratorMaxResultsException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.MaxExpandCityFields;
-
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import static datawave.query.testframework.CitiesDataType.CityField;
 import static datawave.query.testframework.RawDataManager.AND_OP;
@@ -30,8 +28,8 @@ import static datawave.query.testframework.RawDataManager.NOT_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * These tests are highly dependent upon the test data due to the fact that thresholds are tested. Because the test data contains multivalue fields with
@@ -40,12 +38,12 @@ import static org.junit.Assert.fail;
  */
 public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
     
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = new AccumuloSetupExtension();
     
     private static final Logger log = Logger.getLogger(MaxExpansionRegexQueryTest.class);
     
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig max = new MaxExpandCityFields();
@@ -79,7 +77,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxValueExpansionThreshold(1);
         try {
             runTest(query, expect);
-            Assert.fail("exception condition expected");
+            fail("exception condition expected");
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
@@ -105,7 +103,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         // set regex to match more fields than are specified for the unified expansion
         try {
             runTest(query, expect);
-            Assert.fail("exception condition expected");
+            fail("exception condition expected");
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
@@ -122,8 +120,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
      * <li>In phase two, the query should exceed one threshold.</li>
      * <li>In phase three, the query should exceed the threshold for each index.</li>
      * </ul>
-     * 
-     * @throws Exception
+     *
      */
     @Test
     public void testMaxValueAnyField() throws Exception {
@@ -170,7 +167,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxValueExpansionThreshold(4);
         try {
             runTest(query, expect);
-            Assert.fail("exception expected");
+            fail("exception expected");
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
@@ -249,7 +246,6 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
     /**
      * This tests a query without an intersection such that when we force the ivarators to fail with a maxResults setting of 1, the query will fail.
      *
-     * @throws Exception
      */
     @Test
     public void testMaxIvaratorResultsFailsQuery() throws Exception {
@@ -257,8 +253,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         String regex = RE_OP + "'b.*'";
         String query = Constants.ANY_FIELD + regex;
         
-        String anyRegex = this.dataManager.convertAnyField(regex);
-        String expect = anyRegex;
+        String expect = this.dataManager.convertAnyField(regex);
         
         List<String> dirs = ivaratorConfig();
         // set collapseUids to ensure we have shard ranges such that ivarators will actually execute
@@ -301,7 +296,6 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
      * This test case tests and query that has an intersection such that when we force the ivarators to fail with a maxResults setting of 1, that the query can
      * still complete.
      *
-     * @throws Exception
      */
     @Test
     public void testMaxIvaratorResults() throws Exception {
@@ -329,8 +323,6 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         // clear list before new set is added
         dirs.clear();
         
-        // now get a new set of ivarator directories
-        dirs = ivaratorConfig();
         // set the max ivarator results to 1
         this.logic.setMaxIvaratorResults(1);
         // verify we still get our expected results
@@ -354,7 +346,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
     
     private Collection<File> getLeaves(File file) {
         List<File> children = new ArrayList<>();
-        for (File child : file.listFiles()) {
+        for (File child : Objects.requireNonNull(file.listFiles())) {
             if (child.isDirectory()) {
                 children.addAll(getLeaves(child));
             } else {

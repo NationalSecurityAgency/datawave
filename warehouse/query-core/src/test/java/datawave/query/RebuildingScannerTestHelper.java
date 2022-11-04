@@ -66,7 +66,7 @@ public class RebuildingScannerTestHelper {
                         AlwaysTeardownWithoutConsistency.class), RANDOM_SANS_CONSISTENCY(RandomTeardownWithoutConsistency.class), EVERY_OTHER_SANS_CONSISTENCY(
                         EveryOtherTeardownWithoutConsistency.class);
         
-        private Class<? extends TeardownListener> tclass;
+        private final Class<? extends TeardownListener> tclass;
         
         TEARDOWN(Class<? extends TeardownListener> tclass) {
             this.tclass = tclass;
@@ -88,7 +88,7 @@ public class RebuildingScannerTestHelper {
         FI_EVERY_OTHER(FiEveryOtherInterrupt.class),
         RANDOM_HIGH(HighRandomInterrupt.class);
         
-        private Class<? extends InterruptListener> iclass;
+        private final Class<? extends InterruptListener> iclass;
         
         INTERRUPT(Class<? extends InterruptListener> iclass) {
             this.iclass = iclass;
@@ -97,9 +97,7 @@ public class RebuildingScannerTestHelper {
         public InterruptListener instance() {
             try {
                 return iclass.newInstance();
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            } catch (InstantiationException e) {
+            } catch (IllegalAccessException | InstantiationException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -282,14 +280,14 @@ public class RebuildingScannerTestHelper {
     }
     
     public static class RebuildingIterator implements Iterator<Map.Entry<Key,Value>> {
-        private InMemoryScannerBase baseScanner;
+        private final InMemoryScannerBase baseScanner;
         private Iterator<Map.Entry<Key,Value>> delegate;
         private final ScannerRebuilder scanner;
         private final TeardownListener teardown;
         private final InterruptListener interruptListener;
         private Map.Entry<Key,Value> next = null;
         private Map.Entry<Key,Value> lastKey = null;
-        private KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
+        private final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
         private boolean initialized = false;
         
         public RebuildingIterator(InMemoryScannerBase baseScanner, ScannerRebuilder scanner, TeardownListener teardown, InterruptListener interruptListener) {

@@ -2,7 +2,7 @@ package datawave.query.tables.facets;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class MergedReadAheadTest {
     @Test
@@ -54,7 +54,7 @@ public class MergedReadAheadTest {
             output.add(mra.next());
         }
         
-        assertArrayEquals("Expected input and output arrays to be equal (streaming=" + streaming + ")", expected.toArray(), output.toArray());
+        assertArrayEquals(expected.toArray(), output.toArray(), "Expected input and output arrays to be equal (streaming=" + streaming + ")");
     }
     
     static final Function<String,String> lowercaseFunction = new Function<String,String>() {
@@ -73,6 +73,7 @@ public class MergedReadAheadTest {
         @Override
         public boolean apply(@Nullable String s) {
             for (String v : vowels) {
+                assert s != null;
                 if (s.startsWith(v)) {
                     return false;
                 }
@@ -87,6 +88,7 @@ public class MergedReadAheadTest {
         @Override
         public boolean apply(@Nullable String s) {
             for (String v : vowels) {
+                assert s != null;
                 if (s.startsWith(v)) {
                     return false;
                 }

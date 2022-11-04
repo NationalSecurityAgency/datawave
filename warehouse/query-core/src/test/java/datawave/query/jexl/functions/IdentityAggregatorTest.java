@@ -7,20 +7,20 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class IdentityAggregatorTest {
     private IdentityAggregator aggregator;
     
-    @Before
+    @BeforeEach
     public void setup() {
         aggregator = new IdentityAggregator();
     }
@@ -28,7 +28,7 @@ public class IdentityAggregatorTest {
     @Test
     public void apply_testNormal() throws IOException {
         TreeMap<Key,Value> treeMap = Maps.newTreeMap();
-        treeMap.put(getFi("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
+        treeMap.put(getFi("123", "dataType1", "123.345.456", 10), new Value());
         
         SortedKeyValueIterator<Key,Value> itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
@@ -47,10 +47,10 @@ public class IdentityAggregatorTest {
     public void apply_testSeek() throws IOException {
         aggregator = new IdentityAggregator(null, null, 1);
         TreeMap<Key,Value> treeMap = Maps.newTreeMap();
-        treeMap.put(getFi("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
-        treeMap.put(getFi("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 9), new Value());
-        treeMap.put(getFi("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 8), new Value());
-        treeMap.put(getFi("1234", "FIELD1", "VALUE1", "dataType1", "123.345.456", 7), new Value());
+        treeMap.put(getFi("123", "dataType1", "123.345.456", 10), new Value());
+        treeMap.put(getFi("123", "dataType1", "123.345.456", 9), new Value());
+        treeMap.put(getFi("123", "dataType1", "123.345.456", 8), new Value());
+        treeMap.put(getFi("1234", "dataType1", "123.345.456", 7), new Value());
         
         SortedKeyValueIterator<Key,Value> itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
@@ -72,10 +72,10 @@ public class IdentityAggregatorTest {
         
         // test a change to the datatype
         treeMap = Maps.newTreeMap();
-        treeMap.put(getFi("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
-        treeMap.put(getFi("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 9), new Value());
-        treeMap.put(getFi("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 8), new Value());
-        treeMap.put(getFi("123", "FIELD1", "VALUE1", "dataType2", "123.345.456", 7), new Value());
+        treeMap.put(getFi("123", "dataType1", "123.345.456", 10), new Value());
+        treeMap.put(getFi("123", "dataType1", "123.345.456", 9), new Value());
+        treeMap.put(getFi("123", "dataType1", "123.345.456", 8), new Value());
+        treeMap.put(getFi("123", "dataType2", "123.345.456", 7), new Value());
         itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
         result2 = aggregator.apply(itr, new Range(), null, false);
@@ -86,10 +86,10 @@ public class IdentityAggregatorTest {
         
         // test a change to the uid
         treeMap = Maps.newTreeMap();
-        treeMap.put(getFi("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
-        treeMap.put(getFi("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 9), new Value());
-        treeMap.put(getFi("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 8), new Value());
-        treeMap.put(getFi("123", "FIELD1", "VALUE1", "dataType1", "123.345.456.1", 7), new Value());
+        treeMap.put(getFi("123", "dataType1", "123.345.456", 10), new Value());
+        treeMap.put(getFi("123", "dataType1", "123.345.456", 9), new Value());
+        treeMap.put(getFi("123", "dataType1", "123.345.456", 8), new Value());
+        treeMap.put(getFi("123", "dataType1", "123.345.456.1", 7), new Value());
         itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
         result2 = aggregator.apply(itr, new Range(), null, false);
@@ -99,8 +99,8 @@ public class IdentityAggregatorTest {
         assertEquals(result, result2);
     }
     
-    private Key getFi(String row, String field, String value, String dataType, String uid, long timestamp) {
-        return new Key(row, "fi" + Constants.NULL_BYTE_STRING + field, value + Constants.NULL_BYTE_STRING + dataType + Constants.NULL_BYTE_STRING + uid,
+    private Key getFi(String row, String dataType, String uid, long timestamp) {
+        return new Key(row, "fi" + Constants.NULL_BYTE_STRING + "FIELD1", "VALUE1" + Constants.NULL_BYTE_STRING + dataType + Constants.NULL_BYTE_STRING + uid,
                         timestamp);
     }
 }

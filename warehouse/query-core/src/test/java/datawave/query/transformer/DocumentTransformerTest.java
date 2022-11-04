@@ -14,15 +14,13 @@ import datawave.webservice.query.result.event.SimpleEvent;
 import datawave.webservice.query.result.event.SimpleField;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -31,9 +29,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({DocumentTransformer.class, DocumentSerialization.class})
-public class DocumentTransformerTest { // extends EasyMockSupport {
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+public class DocumentTransformerTest {
     private DocumentTransformer transformer;
     
     @Mock
@@ -51,64 +50,38 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
     @Mock
     private KryoDocumentDeserializer mockDeserializer;
     
-    // @Mock
-    // private Numeric mockNumeric;
-    
-    // @Mock
-    // private Document mockDocument;
-    
-    @Before
-    public void setup() {
-        
-    }
-    
-    private void basicExpects(Document d, Key key, Map.Entry<Key,Value> entry) throws MarkingFunctions.Exception {
-        // AbstractMap.SimpleEntry<Key, Document> documentEntry = new AbstractMap.SimpleEntry<>(key, mockDocument);
-        d.put("field1", new Numeric("5", key, true));
-        AbstractMap.SimpleEntry<Key,Document> documentEntry = new AbstractMap.SimpleEntry<>(key, d);
-        
-        // Map<String,Attribute<?extends Comparable<?>>> dictionary = new HashMap<>();
-        // dictionary.put("field1", mockNumeric);
-        
-        SimpleField simpleField = new SimpleField();
-        SimpleEvent simpleEvent = new SimpleEvent();
-        
-        PowerMock.mockStatic(DocumentSerialization.class);
-        EasyMock.expect(DocumentSerialization.getDocumentDeserializer(mockQuery)).andReturn(mockDeserializer);
-        
-        EasyMock.expect(mockLogic.getTableName()).andReturn("table1");
-        EasyMock.expect(mockQuery.getQueryAuthorizations()).andReturn("A,B,C");
-        EasyMock.expect(mockQuery.findParameter("log.timing.details")).andReturn(new QueryImpl.Parameter("", ""));
-        EasyMock.expect(mockDeserializer.apply(entry)).andReturn(documentEntry);
-        // EasyMock.expect(mockDocument.getDictionary()).andReturn(Collections.EMPTY_MAP);
-        // mockDocument.debugDocumentSize(key);
-        EasyMock.expect(mockMarkingFunctions.translateFromColumnVisibility(key.getColumnVisibilityParsed())).andReturn(Collections.EMPTY_MAP);
-        // EasyMock.expect(mockDocument.getDictionary()).andReturn(dictionary);
-        // EasyMock.expect(mockNumeric.getData()).andReturn("5");
-        EasyMock.expect(mockResponseFactory.getField()).andReturn(simpleField);
-        EasyMock.expect(mockResponseFactory.getEvent()).andReturn(simpleEvent);
-        // EasyMock.expect(mockDocument.sizeInBytes()).andReturn(1l);
-    }
-    
     @Test
     public void transform_noPrimaryToSecondaryMapSetTest() throws MarkingFunctions.Exception {
         Key key = new Key("shard", "dataType" + Constants.NULL + "uid");
         Value value = new Value();
         AbstractMap.SimpleEntry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
         Document d = new Document();
-        basicExpects(d, key, entry);
         
-        PowerMock.replayAll();
+        d.put("field1", new Numeric("5", key, true));
+        AbstractMap.SimpleEntry<Key,Document> documentEntry = new AbstractMap.SimpleEntry<>(key, d);
+        SimpleField simpleField = new SimpleField();
+        SimpleEvent simpleEvent = new SimpleEvent();
         
-        transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
-        SimpleEvent event = (SimpleEvent) transformer.transform(entry);
-        
-        PowerMock.verifyAll();
-        
-        Assert.assertNotNull(event);
-        Assert.assertEquals(1, event.getFields().size());
-        Assert.assertEquals("field1", event.getFields().get(0).getName());
-        Assert.assertEquals("5", event.getFields().get(0).getValueString());
+        // the static mock isn't available outside this block, so any when/assertion statements that stem from
+        // the mock must be inside it.
+        try (MockedStatic<DocumentSerialization> ds = Mockito.mockStatic(DocumentSerialization.class)) {
+            ds.when(() -> DocumentSerialization.getDocumentDeserializer(mockQuery)).thenReturn(mockDeserializer);
+            when(mockLogic.getTableName()).thenReturn("table1");
+            when(mockQuery.getQueryAuthorizations()).thenReturn("A,B,C");
+            when(mockQuery.findParameter("log.timing.details")).thenReturn(new QueryImpl.Parameter("", ""));
+            when(mockDeserializer.apply(entry)).thenReturn(documentEntry);
+            when(mockMarkingFunctions.translateFromColumnVisibility(key.getColumnVisibilityParsed())).thenReturn(Collections.emptyMap());
+            when(mockResponseFactory.getField()).thenReturn(simpleField);
+            when(mockResponseFactory.getEvent()).thenReturn(simpleEvent);
+            
+            transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
+            SimpleEvent event = (SimpleEvent) transformer.transform(entry);
+            
+            Assertions.assertNotNull(event);
+            Assertions.assertEquals(1, event.getFields().size());
+            Assertions.assertEquals("field1", event.getFields().get(0).getName());
+            Assertions.assertEquals("5", event.getFields().get(0).getValueString());
+        }
     }
     
     @Test
@@ -121,20 +94,32 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
         List<String> fieldList = Collections.EMPTY_LIST;
         fieldMap.put("field2", fieldList);
         Document d = new Document();
-        basicExpects(d, key, entry);
+        d.put("field1", new Numeric("5", key, true));
+        AbstractMap.SimpleEntry<Key,Document> documentEntry = new AbstractMap.SimpleEntry<>(key, d);
+        SimpleField simpleField = new SimpleField();
+        SimpleEvent simpleEvent = new SimpleEvent();
         
-        PowerMock.replayAll();
-        
-        transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
-        transformer.setPrimaryToSecondaryFieldMap(fieldMap);
-        SimpleEvent event = (SimpleEvent) transformer.transform(entry);
-        
-        PowerMock.verifyAll();
-        
-        Assert.assertNotNull(event);
-        Assert.assertEquals(1, event.getFields().size());
-        Assert.assertEquals("field1", event.getFields().get(0).getName());
-        Assert.assertEquals("5", event.getFields().get(0).getValueString());
+        // the static mock isn't available outside this block, so any when/assertion statements that stem from
+        // the mock must be inside it.
+        try (MockedStatic<DocumentSerialization> ds = Mockito.mockStatic(DocumentSerialization.class)) {
+            ds.when(() -> DocumentSerialization.getDocumentDeserializer(mockQuery)).thenReturn(mockDeserializer);
+            when(mockLogic.getTableName()).thenReturn("table1");
+            when(mockQuery.getQueryAuthorizations()).thenReturn("A,B,C");
+            when(mockQuery.findParameter("log.timing.details")).thenReturn(new QueryImpl.Parameter("", ""));
+            when(mockDeserializer.apply(entry)).thenReturn(documentEntry);
+            when(mockMarkingFunctions.translateFromColumnVisibility(key.getColumnVisibilityParsed())).thenReturn(Collections.emptyMap());
+            when(mockResponseFactory.getField()).thenReturn(simpleField);
+            when(mockResponseFactory.getEvent()).thenReturn(simpleEvent);
+            
+            transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
+            transformer.setPrimaryToSecondaryFieldMap(fieldMap);
+            SimpleEvent event = (SimpleEvent) transformer.transform(entry);
+            
+            Assertions.assertNotNull(event);
+            Assertions.assertEquals(1, event.getFields().size());
+            Assertions.assertEquals("field1", event.getFields().get(0).getName());
+            Assertions.assertEquals("5", event.getFields().get(0).getValueString());
+        }
     }
     
     @Test
@@ -149,20 +134,32 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
         fieldMap.put("field2", fieldList);
         
         Document d = new Document();
-        basicExpects(d, key, entry);
+        d.put("field1", new Numeric("5", key, true));
+        AbstractMap.SimpleEntry<Key,Document> documentEntry = new AbstractMap.SimpleEntry<>(key, d);
+        SimpleField simpleField = new SimpleField();
+        SimpleEvent simpleEvent = new SimpleEvent();
         
-        PowerMock.replayAll();
-        
-        transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
-        transformer.setPrimaryToSecondaryFieldMap(fieldMap);
-        SimpleEvent event = (SimpleEvent) transformer.transform(entry);
-        
-        PowerMock.verifyAll();
-        
-        Assert.assertNotNull(event);
-        Assert.assertEquals(1, event.getFields().size());
-        Assert.assertEquals("field1", event.getFields().get(0).getName());
-        Assert.assertEquals("5", event.getFields().get(0).getValueString());
+        // the static mock isn't available outside this block, so any when/assertion statements that stem from
+        // the mock must be inside it.
+        try (MockedStatic<DocumentSerialization> ds = Mockito.mockStatic(DocumentSerialization.class)) {
+            ds.when(() -> DocumentSerialization.getDocumentDeserializer(mockQuery)).thenReturn(mockDeserializer);
+            when(mockLogic.getTableName()).thenReturn("table1");
+            when(mockQuery.getQueryAuthorizations()).thenReturn("A,B,C");
+            when(mockQuery.findParameter("log.timing.details")).thenReturn(new QueryImpl.Parameter("", ""));
+            when(mockDeserializer.apply(entry)).thenReturn(documentEntry);
+            when(mockMarkingFunctions.translateFromColumnVisibility(key.getColumnVisibilityParsed())).thenReturn(Collections.emptyMap());
+            when(mockResponseFactory.getField()).thenReturn(simpleField);
+            when(mockResponseFactory.getEvent()).thenReturn(simpleEvent);
+            
+            transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
+            transformer.setPrimaryToSecondaryFieldMap(fieldMap);
+            SimpleEvent event = (SimpleEvent) transformer.transform(entry);
+            
+            Assertions.assertNotNull(event);
+            Assertions.assertEquals(1, event.getFields().size());
+            Assertions.assertEquals("field1", event.getFields().get(0).getName());
+            Assertions.assertEquals("5", event.getFields().get(0).getValueString());
+        }
     }
     
     @Test
@@ -177,33 +174,43 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
         fieldMap.put("field2", fieldList);
         
         Document d = new Document();
-        basicExpects(d, key, entry);
+        d.put("field1", new Numeric("5", key, true));
+        AbstractMap.SimpleEntry<Key,Document> documentEntry = new AbstractMap.SimpleEntry<>(key, d);
+        SimpleField simpleField = new SimpleField();
+        SimpleEvent simpleEvent = new SimpleEvent();
         
-        EasyMock.expect(mockResponseFactory.getField()).andReturn(new SimpleField());
-        
-        PowerMock.replayAll();
-        
-        transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
-        transformer.setPrimaryToSecondaryFieldMap(fieldMap);
-        SimpleEvent event = (SimpleEvent) transformer.transform(entry);
-        
-        PowerMock.verifyAll();
-        
-        Assert.assertNotNull(event);
-        Assert.assertEquals(2, event.getFields().size());
-        
-        List<String> foundFields = new ArrayList<>(2);
-        for (SimpleField field : event.getFields()) {
-            foundFields.add(field.getName());
-            Assert.assertEquals("5", field.getValueString());
+        // the static mock isn't available outside this block, so any when/assertion statements that stem from
+        // the mock must be inside it.
+        try (MockedStatic<DocumentSerialization> ds = Mockito.mockStatic(DocumentSerialization.class)) {
+            ds.when(() -> DocumentSerialization.getDocumentDeserializer(mockQuery)).thenReturn(mockDeserializer);
+            when(mockLogic.getTableName()).thenReturn("table1");
+            when(mockQuery.getQueryAuthorizations()).thenReturn("A,B,C");
+            when(mockQuery.findParameter("log.timing.details")).thenReturn(new QueryImpl.Parameter("", ""));
+            when(mockDeserializer.apply(entry)).thenReturn(documentEntry);
+            when(mockMarkingFunctions.translateFromColumnVisibility(key.getColumnVisibilityParsed())).thenReturn(Collections.emptyMap());
+            when(mockResponseFactory.getField()).thenReturn(simpleField, new SimpleField());
+            when(mockResponseFactory.getEvent()).thenReturn(simpleEvent);
+            
+            transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
+            transformer.setPrimaryToSecondaryFieldMap(fieldMap);
+            SimpleEvent event = (SimpleEvent) transformer.transform(entry);
+            
+            Assertions.assertNotNull(event);
+            Assertions.assertEquals(2, event.getFields().size());
+            
+            List<String> foundFields = new ArrayList<>(2);
+            for (SimpleField field : event.getFields()) {
+                foundFields.add(field.getName());
+                Assertions.assertEquals("5", field.getValueString());
+            }
+            
+            List<String> expectedFields = new ArrayList<>();
+            expectedFields.add("field1");
+            expectedFields.add("field2");
+            
+            Assertions.assertTrue(foundFields.containsAll(expectedFields));
+            Assertions.assertTrue(expectedFields.containsAll(foundFields));
         }
-        
-        List<String> expectedFields = new ArrayList<>();
-        expectedFields.add("field1");
-        expectedFields.add("field2");
-        
-        Assert.assertTrue(foundFields.containsAll(expectedFields));
-        Assert.assertTrue(expectedFields.containsAll(foundFields));
     }
     
     @Test
@@ -221,38 +228,47 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
         
         Document d = new Document();
         d.put("field3", new Numeric("6", key, true));
-        basicExpects(d, key, entry);
+        d.put("field1", new Numeric("5", key, true));
+        AbstractMap.SimpleEntry<Key,Document> documentEntry = new AbstractMap.SimpleEntry<>(key, d);
+        SimpleField simpleField = new SimpleField();
+        SimpleEvent simpleEvent = new SimpleEvent();
         
-        EasyMock.expect(mockResponseFactory.getField()).andReturn(new SimpleField());
-        EasyMock.expect(mockResponseFactory.getField()).andReturn(new SimpleField());
-        
-        PowerMock.replayAll();
-        
-        transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
-        transformer.setPrimaryToSecondaryFieldMap(fieldMap);
-        SimpleEvent event = (SimpleEvent) transformer.transform(entry);
-        
-        PowerMock.verifyAll();
-        
-        Assert.assertNotNull(event);
-        Assert.assertEquals(3, event.getFields().size());
-        
-        List<String> foundFields = new ArrayList<>(3);
-        for (SimpleField field : event.getFields()) {
-            foundFields.add(field.getName());
-            if (field.getName().equals("field1")) {
-                Assert.assertEquals("5", field.getValueString());
-            } else {
-                Assert.assertEquals("6", field.getValueString());
+        // the static mock isn't available outside this block, so any when/assertion statements that stem from
+        // the mock must be inside it.
+        try (MockedStatic<DocumentSerialization> ds = Mockito.mockStatic(DocumentSerialization.class)) {
+            ds.when(() -> DocumentSerialization.getDocumentDeserializer(mockQuery)).thenReturn(mockDeserializer);
+            when(mockLogic.getTableName()).thenReturn("table1");
+            when(mockQuery.getQueryAuthorizations()).thenReturn("A,B,C");
+            when(mockQuery.findParameter("log.timing.details")).thenReturn(new QueryImpl.Parameter("", ""));
+            when(mockDeserializer.apply(entry)).thenReturn(documentEntry);
+            when(mockMarkingFunctions.translateFromColumnVisibility(key.getColumnVisibilityParsed())).thenReturn(Collections.emptyMap());
+            when(mockResponseFactory.getField()).thenReturn(simpleField, new SimpleField(), new SimpleField());
+            when(mockResponseFactory.getEvent()).thenReturn(simpleEvent);
+            
+            transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
+            transformer.setPrimaryToSecondaryFieldMap(fieldMap);
+            SimpleEvent event = (SimpleEvent) transformer.transform(entry);
+            
+            Assertions.assertNotNull(event);
+            Assertions.assertEquals(3, event.getFields().size());
+            
+            List<String> foundFields = new ArrayList<>(3);
+            for (SimpleField field : event.getFields()) {
+                foundFields.add(field.getName());
+                if (field.getName().equals("field1")) {
+                    Assertions.assertEquals("5", field.getValueString());
+                } else {
+                    Assertions.assertEquals("6", field.getValueString());
+                }
             }
+            
+            List<String> expectedFields = new ArrayList<>();
+            expectedFields.add("field1");
+            expectedFields.add("field2");
+            expectedFields.add("field3");
+            
+            Assertions.assertTrue(foundFields.containsAll(expectedFields));
+            Assertions.assertTrue(expectedFields.containsAll(foundFields));
         }
-        
-        List<String> expectedFields = new ArrayList<>();
-        expectedFields.add("field1");
-        expectedFields.add("field2");
-        expectedFields.add("field3");
-        
-        Assert.assertTrue(foundFields.containsAll(expectedFields));
-        Assert.assertTrue(expectedFields.containsAll(foundFields));
     }
 }

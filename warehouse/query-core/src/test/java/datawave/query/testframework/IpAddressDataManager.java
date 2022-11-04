@@ -1,10 +1,9 @@
 package datawave.query.testframework;
 
 import au.com.bytecode.opencsv.CSVReader;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-
 import datawave.query.testframework.IpAddressDataType.IpAddrField;
+import org.apache.log4j.Logger;
+import org.junit.jupiter.api.Assertions;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -33,7 +32,7 @@ public class IpAddressDataManager extends AbstractDataManager {
     
     @Override
     public void addTestData(URI file, String datatype, Set<String> indexes) throws IOException {
-        Assert.assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
+        Assertions.assertFalse(this.rawData.containsKey(datatype), "datatype has already been configured(" + datatype + ")");
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
             String[] data;
             int count = 0;
@@ -51,9 +50,9 @@ public class IpAddressDataManager extends AbstractDataManager {
     
     static class IpAddrRawData extends BaseRawData {
         
-        IpAddrRawData(final String datatype, final String fields[]) {
+        IpAddrRawData(final String datatype, final String[] fields) {
             super(datatype, fields, IpAddrField.headers(), IpAddrField.getFieldsMetadata());
-            Assert.assertEquals("ingest data field count is invalid", IpAddrField.headers().size(), fields.length);
+            Assertions.assertEquals(IpAddrField.headers().size(), fields.length, "ingest data field count is invalid");
         }
     }
 }

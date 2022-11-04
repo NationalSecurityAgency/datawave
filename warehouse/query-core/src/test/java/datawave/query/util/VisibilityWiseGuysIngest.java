@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 public class VisibilityWiseGuysIngest {
     
     public enum WhatKindaRange {
-        SHARD, DOCUMENT;
+        SHARD, DOCUMENT
     }
     
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
@@ -36,7 +36,7 @@ public class VisibilityWiseGuysIngest {
     protected static final ColumnVisibility columnVisibilityEnglish = new ColumnVisibility("ALL&E");
     protected static final ColumnVisibility columnVisibilityItalian = new ColumnVisibility("ALL&I");
     protected static final Value emptyValue = new Value(new byte[0]);
-    protected static final long timeStamp = 1356998400000l;
+    protected static final long timeStamp = 1356998400000L;
     
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
     public static final String sopranoUID = UID.builder().newId("Soprano".getBytes(), (Date) null).toString();
@@ -45,13 +45,12 @@ public class VisibilityWiseGuysIngest {
     /**
      * 
      *
-     * @return
      */
     public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        Mutation mutation = null;
+        Mutation mutation;
         
         try {
             // write the shard table :
@@ -425,7 +424,6 @@ public class VisibilityWiseGuysIngest {
     /**
      * forces a shard range
      *
-     * @return
      */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();

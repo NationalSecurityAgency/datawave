@@ -8,8 +8,8 @@ import datawave.query.util.Tuple2;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -20,17 +20,16 @@ import static datawave.common.test.utils.query.RangeFactoryForTests.makeDayRange
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeShardedRange;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeTldTestRange;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TupleToRangeTest {
     
     private JexlNode queryNode = null;
     private ShardQueryConfiguration config;
     
-    @Before
+    @BeforeEach
     public void setup() throws ParseException {
         queryNode = JexlASTHelper.parseJexlQuery("true==true");
         config = new ShardQueryConfiguration();
@@ -214,19 +213,15 @@ public class TupleToRangeTest {
     }
     
     private void eval(List<Range> expectedRanges, Iterator<QueryPlan> ranges) {
-        Iterator<Range> expectedIter = expectedRanges.iterator();
-        while (expectedIter.hasNext()) {
-            
-            Range expectedRange = expectedIter.next();
+        for (Range expectedRange : expectedRanges) {
             
             Iterator<Range> generatedIter = ranges.next().getRanges().iterator();
             Range generatedRange = generatedIter.next();
             assertEquals(expectedRange, generatedRange);
             
-            assertFalse("Query plan generated unexpected ranges", generatedIter.hasNext());
+            assertFalse(generatedIter.hasNext(), "Query plan generated unexpected ranges");
         }
         
-        assertFalse(expectedIter.hasNext());
         assertFalse(ranges.hasNext());
     }
 }

@@ -135,11 +135,7 @@ public final class QueryTestTableHelper {
     
     /**
      * Configures all of the default tables and associates a {@link BatchWriterConfig} object for ach table.
-     * 
-     * @param writer
-     * @throws AccumuloSecurityException
-     * @throws AccumuloException
-     * @throws TableNotFoundException
+     *
      */
     public void configureTables(MockAccumuloRecordWriter writer) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         configureAShardRelatedTable(writer, new MetadataTableConfigHelper(), ShardedDataTypeHandler.METADATA_TABLE_NAME, METADATA_TABLE_NAME);

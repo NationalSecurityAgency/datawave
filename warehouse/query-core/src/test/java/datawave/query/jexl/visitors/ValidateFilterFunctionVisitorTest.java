@@ -5,12 +5,12 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ValidateFilterFunctionVisitorTest {
     
@@ -331,18 +331,21 @@ public class ValidateFilterFunctionVisitorTest {
     }
     
     private void test(String query, boolean exceptionExpected) {
-        try {
-            ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-            ValidateFilterFunctionVisitor.validate(script, indexOnlyFields);
-            
-            if (exceptionExpected) {
-                fail("Expected failure for query: " + query);
+        
+        if (exceptionExpected) {
+            Assertions.assertThrows(DatawaveFatalQueryException.class, () -> {
+                ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                ValidateFilterFunctionVisitor.validate(script, indexOnlyFields);
+            });
+        } else {
+            try {
+                ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                ValidateFilterFunctionVisitor.validate(script, indexOnlyFields);
+            } catch (ParseException e) {
+                fail("Failed to parse query: " + query);
             }
-        } catch (DatawaveFatalQueryException e) {
-            assertTrue("Received an unexpected exception when validating query: " + query, exceptionExpected);
-        } catch (ParseException e) {
-            fail("Failed to parse query: " + query);
         }
+        
     }
     
 }

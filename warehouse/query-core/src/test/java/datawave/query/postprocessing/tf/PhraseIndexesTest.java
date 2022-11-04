@@ -3,11 +3,11 @@ package datawave.query.postprocessing.tf;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
 import org.javatuples.Triplet;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PhraseIndexesTest {
     
@@ -115,8 +115,8 @@ public class PhraseIndexesTest {
         actual.addIndexTriplet("CONTENT", EVENT_ID_2, 19, 20);
         actual.addIndexTriplet("CONTENT", EVENT_ID_2, 12, 17);
         
-        assertEquals(null, actual.getOverlap("BODY", EVENT_ID_1, new TermWeightPosition.Builder().setOffset(4).build()));
-        assertEquals(null, actual.getOverlap("BODY", EVENT_ID_1, new TermWeightPosition.Builder().setOffset(4).build()));
+        assertNull(actual.getOverlap("BODY", EVENT_ID_1, new TermWeightPosition.Builder().setOffset(4).build()));
+        assertNull(actual.getOverlap("BODY", EVENT_ID_1, new TermWeightPosition.Builder().setOffset(4).build()));
         assertEquals(new Triplet(EVENT_ID_1, 1, 3),
                         actual.getOverlap("BODY", EVENT_ID_1, new TermWeightPosition.Builder().setOffset(4).setPrevSkips(1).build()));
         assertEquals(new Triplet(EVENT_ID_2, 19, 20),
@@ -156,7 +156,7 @@ public class PhraseIndexesTest {
         // position 3,4 (4 prevSkip 1) overlaps 1,3 phrase
         assertEquals(new TermWeightPosition.Builder().setOffset(4).setPrevSkips(1).build(), actual.getOverlappingPosition("BODY", EVENT_ID_1, twInfo));
         // no overlaps with 10,11 phrase
-        assertEquals(null, actual.getOverlappingPosition("BODY", EVENT_ID_2, twInfo));
+        assertNull(actual.getOverlappingPosition("BODY", EVENT_ID_2, twInfo));
         // position 3,4 (4 prevSkip 1) overlaps 3,4 phrase
         assertEquals(new TermWeightPosition.Builder().setOffset(4).setPrevSkips(1).build(), actual.getOverlappingPosition("CONTENT", EVENT_ID_1, twInfo));
         // position 18,21 (21 prevSkip 3) overlaps 19,20 phrase
@@ -194,7 +194,7 @@ public class PhraseIndexesTest {
         // position 3,4 (4 prevSkip 1) overlaps 1,3 phrase
         assertEquals(new TermWeightPosition.Builder().setOffset(4).setPrevSkips(1).build(), actual.getOverlappingPosition("BODY", EVENT_ID_1, twInfo));
         // no overlaps with 10,11 phrase
-        assertEquals(null, actual.getOverlappingPosition("BODY", EVENT_ID_2, twInfo));
+        assertNull(actual.getOverlappingPosition("BODY", EVENT_ID_2, twInfo));
         // position 3,4 (4 prevSkip 1) overlaps 3,4 phrase
         assertEquals(new TermWeightPosition.Builder().setOffset(4).setPrevSkips(1).build(), actual.getOverlappingPosition("CONTENT", EVENT_ID_1, twInfo));
         // position 18,21 (21 prevSkip 3) overlaps 19,20 phrase

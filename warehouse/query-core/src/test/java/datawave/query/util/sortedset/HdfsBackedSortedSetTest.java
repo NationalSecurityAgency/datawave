@@ -7,10 +7,9 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FsStatus;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -20,18 +19,16 @@ import java.util.List;
 
 public class HdfsBackedSortedSetTest {
     
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File tempDir = new File("/tmp/test/HdfsBackedSortedSetTest");
     
     @Test
     public void persistReloadTest() throws Exception {
-        File tempDir = temporaryFolder.newFolder();
-        
         File smallDir = new File(tempDir, "small");
-        Assert.assertTrue(smallDir.mkdirs());
+        Assertions.assertTrue(smallDir.mkdirs());
         
         File largeDir = new File(tempDir, "large");
-        Assert.assertTrue(largeDir.mkdirs());
+        Assertions.assertTrue(largeDir.mkdirs());
         
         LocalFileSystem fs = new LocalFileSystem();
         fs.initialize(tempDir.toURI(), new Configuration());
@@ -63,29 +60,28 @@ public class HdfsBackedSortedSetTest {
         Path largeSubPath = new Path(largePath, uniquePath);
         
         // ensure that data was written to the large folder, not the small folder
-        Assert.assertFalse(fs.exists(smallSubPath));
-        Assert.assertEquals(0, fs.listStatus(smallPath).length);
-        Assert.assertTrue(fs.exists(largeSubPath));
+        Assertions.assertFalse(fs.exists(smallSubPath));
+        Assertions.assertEquals(0, fs.listStatus(smallPath).length);
+        Assertions.assertTrue(fs.exists(largeSubPath));
         
         FileStatus[] fileStatuses = fs.listStatus(largeSubPath);
-        Assert.assertEquals(1, fileStatuses.length);
-        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
+        Assertions.assertEquals(1, fileStatuses.length);
+        Assertions.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
         
         // Now make sure reloading an ivarator cache dir works
         HdfsBackedSortedSet<String> reloadedSortedSet = new HdfsBackedSortedSet<>(ivaratorCacheDirs, uniquePath, 9999, 2, new FileSortedSet.PersistOptions());
         
-        Assert.assertEquals(1, reloadedSortedSet.size());
-        Assert.assertEquals(someTestString, reloadedSortedSet.first());
+        Assertions.assertEquals(1, reloadedSortedSet.size());
+        Assertions.assertEquals(someTestString, reloadedSortedSet.first());
     }
     
     @Test
     public void persistCompactReloadTest() throws Exception {
-        File tempDir = temporaryFolder.newFolder();
-        
         File[] dirs = new File[] {new File(tempDir, "first"), new File(tempDir, "second"), new File(tempDir, "third")};
         
-        for (File dir : dirs)
-            Assert.assertTrue(dir.mkdirs());
+        for (File dir : dirs) {
+            Assertions.assertTrue(dir.mkdirs());
+        }
         
         String uniquePath = "blah";
         
@@ -128,28 +124,28 @@ public class HdfsBackedSortedSetTest {
         thirdSortedSet.persist();
         
         // ensure that data was written to the first and third folders
-        Assert.assertTrue(fs.exists(subPaths[0]));
-        Assert.assertTrue(fs.exists(subPaths[2]));
+        Assertions.assertTrue(fs.exists(subPaths[0]));
+        Assertions.assertTrue(fs.exists(subPaths[2]));
         
         // ensure that data was not written to the second folder
-        Assert.assertFalse(fs.exists(subPaths[1]));
-        Assert.assertEquals(0, fs.listStatus(paths[1]).length);
+        Assertions.assertFalse(fs.exists(subPaths[1]));
+        Assertions.assertEquals(0, fs.listStatus(paths[1]).length);
         
         // ensure that 1 file was written to the first folder
         FileStatus[] fileStatuses = fs.listStatus(subPaths[0]);
-        Assert.assertEquals(1, fileStatuses.length);
-        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
+        Assertions.assertEquals(1, fileStatuses.length);
+        Assertions.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
         
         // ensure that 1 file was written to the third folder
         fileStatuses = fs.listStatus(subPaths[2]);
-        Assert.assertEquals(1, fileStatuses.length);
-        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
+        Assertions.assertEquals(1, fileStatuses.length);
+        Assertions.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
         
         // Now make sure reloading an ivarator cache dir works, and set maxOpenFiles to 1 so that we compact during the next persist
         HdfsBackedSortedSet<String> reloadedSortedSet = new HdfsBackedSortedSet<>(ivaratorCacheDirs, uniquePath, 1, 2, new FileSortedSet.PersistOptions());
         
         // Ensure that we have 2 entries total
-        Assert.assertEquals(2, reloadedSortedSet.size());
+        Assertions.assertEquals(2, reloadedSortedSet.size());
         
         // This is what we expect to be loaded by the set
         List<String> results = new ArrayList<>();
@@ -158,7 +154,7 @@ public class HdfsBackedSortedSetTest {
         
         // for each result we find, remove it from the results list and ensure that the list is empty when we're done
         reloadedSortedSet.iterator().forEachRemaining(results::remove);
-        Assert.assertTrue(results.isEmpty());
+        Assertions.assertTrue(results.isEmpty());
         
         // Finally, add an entry to the reloaded sorted set
         String lastTestString = "last test string";
@@ -168,23 +164,23 @@ public class HdfsBackedSortedSetTest {
         reloadedSortedSet.persist();
         
         // ensure that data was not written to the second folder
-        Assert.assertFalse(fs.exists(subPaths[1]));
-        Assert.assertEquals(0, fs.listStatus(paths[1]).length);
+        Assertions.assertFalse(fs.exists(subPaths[1]));
+        Assertions.assertEquals(0, fs.listStatus(paths[1]).length);
         
         // ensure that while the folder still exists, data no longer exists for the third folder
-        Assert.assertTrue(fs.exists(subPaths[2]));
-        Assert.assertEquals(0, fs.listStatus(subPaths[2]).length);
+        Assertions.assertTrue(fs.exists(subPaths[2]));
+        Assertions.assertEquals(0, fs.listStatus(subPaths[2]).length);
         
         // ensure that all data exists in the first folder
         fileStatuses = fs.listStatus(subPaths[0]);
-        Assert.assertEquals(1, fileStatuses.length);
-        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
+        Assertions.assertEquals(1, fileStatuses.length);
+        Assertions.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
         
         // Finally, make sure that the compacted data can be reloaded
         HdfsBackedSortedSet<String> compactedSortedSet = new HdfsBackedSortedSet<>(ivaratorCacheDirs, uniquePath, 9999, 2, new FileSortedSet.PersistOptions());
         
         // Ensure that we have 3 entries total
-        Assert.assertEquals(3, compactedSortedSet.size());
+        Assertions.assertEquals(3, compactedSortedSet.size());
         
         // This is what we expect to be loaded by the set
         results.clear();
@@ -194,6 +190,6 @@ public class HdfsBackedSortedSetTest {
         
         // for each result we find, remove it from the results list and ensure that the list is empty when we're done
         compactedSortedSet.iterator().forEachRemaining(results::remove);
-        Assert.assertTrue(results.isEmpty());
+        Assertions.assertTrue(results.isEmpty());
     }
 }

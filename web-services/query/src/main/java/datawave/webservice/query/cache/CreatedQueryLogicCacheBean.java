@@ -21,6 +21,7 @@ import javax.ejb.LocalBean;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -97,7 +98,7 @@ public class CreatedQueryLogicCacheBean {
      */
     public boolean add(String queryId, String userId, QueryLogic<?> logic, Connector cxn) {
         Triple value = new Triple(userId, logic, cxn);
-        long updateTime = System.currentTimeMillis();
+        long updateTime = Clock.systemDefaultZone().millis();
         return cache.putIfAbsent(new Pair<>(queryId, updateTime), value) == null;
     }
     

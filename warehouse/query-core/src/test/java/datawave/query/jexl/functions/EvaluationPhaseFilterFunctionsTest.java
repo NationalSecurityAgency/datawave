@@ -9,11 +9,10 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import org.apache.accumulo.core.data.Key;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
 import java.util.Calendar;
@@ -25,24 +24,24 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Due to the expansive nature of {@link EvaluationPhaseFilterFunctions}, tests for individual methods are encapsulated within their own test suites represented
- * by the nested classes found herein. The {@link Enclosed} runner will run all tests within these test suites.
+ * by the nested classes found herein. The {@link Nested} runner will run all tests within these test suites.
  */
-@RunWith(Enclosed.class)
 public class EvaluationPhaseFilterFunctionsTest {
     
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#occurrence(Object, int)} and {@link EvaluationPhaseFilterFunctions#occurrence(Object, String, int)}.
      */
-    public static class OccurrenceSingularValueTests {
+    @Nested
+    public class OccurrenceSingularValueTests {
         
-        private static final Object singularFieldValue = toValueTuple("FOO.1,BAR,bar");
+        private final Object singularFieldValue = toValueTuple("FOO.1,BAR,bar");
         
         private Object fieldValue;
         private String operator;
@@ -217,17 +216,18 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#occurrence(Iterable, String, int)} and {@link EvaluationPhaseFilterFunctions#occurrence(Iterable, int)}.
      */
-    public static class OccurrenceIterableValueTests {
+    @Nested
+    public class OccurrenceIterableValueTests {
         
-        private static final ValueTuple indexFieldValue = toValueTuple("FOO.1,INDEX,index");
-        private static final ValueTuple eventFieldValue = toValueTuple("FOO.1,EVENT,event");
-        private static final Object object = new Object();
+        private final ValueTuple indexFieldValue = toValueTuple("FOO.1,INDEX,index");
+        private final ValueTuple eventFieldValue = toValueTuple("FOO.1,EVENT,event");
+        private final Object object = new Object();
         
         private Iterable<?> fieldValue;
         private String operator;
         
-        @BeforeClass
-        public static void setup() {
+        @BeforeEach
+        public void setup() {
             indexFieldValue.getSource().setFromIndex(true);
             eventFieldValue.getSource().setFromIndex(false);
         }
@@ -475,7 +475,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#isNotNull(Object)}.
      */
-    public static class IsNotNullTests {
+    @Nested
+    public class IsNotNullTests {
         
         private Object fieldValue;
         
@@ -522,7 +523,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#isNull(Object)}
      */
-    public static class IsNullTests {
+    @Nested
+    public class IsNullTests {
         
         private Object fieldValue;
         
@@ -566,7 +568,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#excludeRegex(Object, String)} (Object, String)}.
      */
-    public static class ExcludeRegexSingularValueTests {
+    @Nested
+    public class ExcludeRegexSingularValueTests {
         
         private Object fieldValue;
         private String regex;
@@ -629,7 +632,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#excludeRegex(Object, String)} (Iterable, String)}.
      */
-    public static class ExcludeRegexIterableValueTests {
+    @Nested
+    public class ExcludeRegexIterableValueTests {
         
         private Iterable<Object> fieldValues;
         private String regex;
@@ -707,7 +711,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#includeRegex(Object, String)}.
      */
-    public static class IncludeRegexSingularValueTests {
+    @Nested
+    public class IncludeRegexSingularValueTests {
         
         private Object fieldValue;
         private String regex;
@@ -773,7 +778,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#includeRegex(Iterable, String)}.
      */
-    public static class IncludeRegexIterableValueTests {
+    @Nested
+    public class IncludeRegexIterableValueTests {
         
         private Iterable<Object> fieldValues;
         private String regex;
@@ -847,7 +853,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getAllMatches(Object, String)}.
      */
-    public static class GetAllMatchesSingularValueTests {
+    @Nested
+    public class GetAllMatchesSingularValueTests {
         
         private Object fieldValue;
         private String regex;
@@ -913,7 +920,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getAllMatches(Iterable, String)}.
      */
-    public static class GetAllMatchesIterableValueTests {
+    @Nested
+    public class GetAllMatchesIterableValueTests {
         
         private Iterable<Object> fieldValues;
         private String regex;
@@ -981,7 +989,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#matchesAtLeastCountOf(Object[])}.
      */
-    public static class MatchesAtLeastCountOfTests {
+    @Nested
+    public class MatchesAtLeastCountOfTests {
         
         private int minimum;
         private Iterable<Object> fieldValues;
@@ -1037,7 +1046,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getMatchToLeftOfPeriod(String, int)}.
      */
-    public static class GetMatchToLeftOfPeriodTests {
+    @Nested
+    public class GetMatchToLeftOfPeriodTests {
         
         @SuppressWarnings("FieldCanBeLocal")
         private final String input = "first.second.third.fourth";
@@ -1074,7 +1084,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getMatchToRightOfPeriod(String, int)}.
      */
-    public static class GetMatchToRightOfPeriodTests {
+    @Nested
+    public class GetMatchToRightOfPeriodTests {
         
         private final String input = "first.second.third.fourth";
         private int position;
@@ -1113,7 +1124,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#betweenInclusive(long, long, long)}.
      */
-    public static class BetweenInclusiveTests {
+    @Nested
+    public class BetweenInclusiveTests {
         
         @Test
         public void testLessThanRange() {
@@ -1144,13 +1156,14 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getTime(Object, boolean)}.
      */
-    public static class GetTimeTests {
+    @Nested
+    public class GetTimeTests {
         
-        private static final long ONEMILLISECOND = 1L;
-        private static final long ONESECOND = TimeUnit.SECONDS.toMillis(1);
-        private static final long ONEMINUTE = TimeUnit.MINUTES.toMillis(1);
-        private static final long ONEHOUR = TimeUnit.HOURS.toMillis(1);
-        private static final long ONEDAY = TimeUnit.DAYS.toMillis(1);
+        private final long ONEMILLISECOND = 1L;
+        private final long ONESECOND = TimeUnit.SECONDS.toMillis(1);
+        private final long ONEMINUTE = TimeUnit.MINUTES.toMillis(1);
+        private final long ONEHOUR = TimeUnit.HOURS.toMillis(1);
+        private final long ONEDAY = TimeUnit.DAYS.toMillis(1);
         
         private long expectedTime;
         
@@ -1291,11 +1304,12 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Contains tests for {@link EvaluationPhaseFilterFunctions#compare(Object, String, String, Object)}.
      */
-    public static class CompareTests {
+    @Nested
+    public class CompareTests {
         
-        private static final ValueTuple A = toValueTuple("FOO.3,A,a");
-        private static final ValueTuple B = toValueTuple("FOO.2,B,b");
-        private static final ValueTuple C = toValueTuple("FOO.1,C,c");
+        private final ValueTuple A = toValueTuple("FOO.3,A,a");
+        private final ValueTuple B = toValueTuple("FOO.2,B,b");
+        private final ValueTuple C = toValueTuple("FOO.1,C,c");
         
         private Object field1;
         private Object field2;
@@ -1760,7 +1774,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Contains tests for {@link EvaluationPhaseFilterFunctions#afterDate(Iterable, String)}
      */
-    public static class AfterDateTests {
+    @Nested
+    public class AfterDateTests {
         @Test
         public void testAfterDateIterator() {
             FunctionalSet<ValueTuple> values = new FunctionalSet<>();
@@ -1771,7 +1786,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                Assertions.assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
         
@@ -1785,7 +1800,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                Assertions.assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
         
@@ -1799,7 +1814,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                Assertions.assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
     }
@@ -1807,7 +1822,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Contains tests for {@link EvaluationPhaseFilterFunctions#beforeDate(Iterable, String)}.
      */
-    public static class BeforeDateTests {
+    @Nested
+    public class BeforeDateTests {
         
         @Test
         public void testBeforeDateIterator() {
@@ -1819,7 +1835,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                Assertions.assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
         
@@ -1833,7 +1849,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                Assertions.assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
         
@@ -1847,7 +1863,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                Assertions.assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
     }

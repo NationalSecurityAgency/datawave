@@ -4,7 +4,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -37,15 +36,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 public class MockMetadataHelper extends MetadataHelper {
     protected final Metadata metadata = new Metadata();
     private Set<String> indexOnlyFields = new HashSet<>();
-    private Set<String> expansionFields = new HashSet<>();
-    private Set<String> contentFields = new HashSet<>();
-    private Set<String> riFields = new HashSet<>();
+    private final Set<String> expansionFields = new HashSet<>();
+    private final Set<String> contentFields = new HashSet<>();
+    private final Set<String> riFields = new HashSet<>();
     private Set<String> nonEventFields = new HashSet<>();
-    private Multimap<String,String> fieldsToDatatype = HashMultimap.create();
+    private final Multimap<String,String> fieldsToDatatype = HashMultimap.create();
     protected Multimap<String,Type<?>> dataTypes = HashMultimap.create();
     protected Map<String,Map<String,MetadataCardinalityCounts>> termCounts = new HashMap<>();
     protected Map<String,QueryModel> models = new HashMap<>();
@@ -53,10 +53,11 @@ public class MockMetadataHelper extends MetadataHelper {
     
     private static final Logger log = Logger.getLogger(MockMetadataHelper.class);
     
-    Function<Type<?>,String> function = new Function<Type<?>,String>() {
+    java.util.function.Function<Type<?>,String> function = new Function<Type<?>,String>() {
         @Override
         @Nullable
         public String apply(@Nullable Type<?> input) {
+            assert input != null;
             return input.getClass().getName();
         }
     };
@@ -149,7 +150,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     @Override
-    public Set<String> getAllFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+    public Set<String> getAllFields(Set<String> ingestTypeFilter) {
         if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
             return Collections.unmodifiableSet(getMetadata().getAllFields());
         }
@@ -163,7 +164,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     @Override
-    public Set<String> getNonEventFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+    public Set<String> getNonEventFields(Set<String> ingestTypeFilter) {
         return nonEventFields;
     }
     
@@ -173,12 +174,12 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     @Override
-    public QueryModel getQueryModel(String modelTableName, String modelName, Collection<String> unevaluatedFields) throws TableNotFoundException {
+    public QueryModel getQueryModel(String modelTableName, String modelName, Collection<String> unevaluatedFields) {
         return models.get(modelName);
     }
     
     @Override
-    public boolean isIndexed(String fieldName, Set<String> ingestTypeFilter) throws TableNotFoundException {
+    public boolean isIndexed(String fieldName, Set<String> ingestTypeFilter) {
         // TODO: should try to observe the ingestTypeFilter as well
         return getMetadata().indexedFields.contains(fieldName);
     }
@@ -189,44 +190,42 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     @Override
-    public Map<String,Map<String,MetadataCardinalityCounts>> getTermCounts() throws InstantiationException, IllegalAccessException, TableNotFoundException {
+    public Map<String,Map<String,MetadataCardinalityCounts>> getTermCounts() {
         return termCounts;
     }
     
     @Override
-    public Map<String,Map<String,MetadataCardinalityCounts>> getTermCountsWithRootAuths() throws InstantiationException, IllegalAccessException,
-                    TableNotFoundException, AccumuloSecurityException, AccumuloException {
+    public Map<String,Map<String,MetadataCardinalityCounts>> getTermCountsWithRootAuths() {
         return termCounts;
     }
     
     @Override
-    public Set<String> getAllNormalized() throws InstantiationException, IllegalAccessException, TableNotFoundException {
+    public Set<String> getAllNormalized() {
         return getMetadata().getNormalizedFields();
     }
     
     @Override
-    public Set<Type<?>> getAllDatatypes() throws InstantiationException, IllegalAccessException, TableNotFoundException {
+    public Set<Type<?>> getAllDatatypes() {
         return Sets.newHashSet(dataTypes.values());
     }
     
     @Override
-    public Set<Type<?>> getDatatypesForField(String fieldName) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+    public Set<Type<?>> getDatatypesForField(String fieldName) throws InstantiationException, IllegalAccessException {
         return getDatatypesForField(fieldName, null);
     }
     
     @Override
-    public Set<Type<?>> getDatatypesForField(String fieldName, Set<String> ingestTypeFilter) throws InstantiationException, IllegalAccessException,
-                    TableNotFoundException {
+    public Set<Type<?>> getDatatypesForField(String fieldName, Set<String> ingestTypeFilter) {
         // TODO: filter these?
         return new HashSet<>(dataTypes.get(fieldName));
     }
     
     @Override
-    public TypeMetadata getTypeMetadata(Set<String> ingestTypeFilter) throws TableNotFoundException {
+    public TypeMetadata getTypeMetadata(Set<String> ingestTypeFilter) {
         TypeMetadata typeMetadata = new TypeMetadata();
         for (String fieldName : dataTypes.keySet()) {
             try {
-                typeMetadata.put(fieldName, "test", Iterables.transform(getDatatypesForField(fieldName), function).iterator().next());
+                typeMetadata.put(fieldName, "test", getDatatypesForField(fieldName).stream().map(function).collect(Collectors.toList()).iterator().next());
             } catch (InstantiationException | IllegalAccessException e) {
                 log.error(e);
             }
@@ -235,8 +234,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     @Override
-    public Multimap<String,Type<?>> getFieldsToDatatypes(Set<String> ingestTypeFilter) throws InstantiationException, IllegalAccessException,
-                    TableNotFoundException {
+    public Multimap<String,Type<?>> getFieldsToDatatypes(Set<String> ingestTypeFilter) {
         Multimap<String,Type<?>> multimap = ArrayListMultimap.create();
         for (String field : dataTypes.keySet()) {
             multimap.putAll(field, getDatatypesForField(field, ingestTypeFilter));
@@ -245,7 +243,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     @Override
-    public Set<String> getFieldsForDatatype(Class<? extends Type<?>> datawaveType, Set<String> ingestTypeFilter) throws TableNotFoundException {
+    public Set<String> getFieldsForDatatype(Class<? extends Type<?>> datawaveType, Set<String> ingestTypeFilter) {
         Set<String> fields = new HashSet<>();
         for (String field : dataTypes.keySet()) {
             for (Type<?> type : dataTypes.get(field)) {
@@ -259,7 +257,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     @Override
-    public Set<String> getTermFrequencyFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+    public Set<String> getTermFrequencyFields(Set<String> ingestTypeFilter) {
         return getMetadata().getTermFrequencyFields();
     }
     
@@ -269,17 +267,17 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     @Override
-    public Set<String> getExpansionFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+    public Set<String> getExpansionFields(Set<String> ingestTypeFilter) {
         return this.expansionFields;
     }
     
     @Override
-    public Set<String> getContentFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+    public Set<String> getContentFields(Set<String> ingestTypeFilter) {
         return this.contentFields;
     }
     
     @Override
-    public long getCardinalityForField(String fieldName, String datatype, Date begin, Date end) throws TableNotFoundException {
+    public long getCardinalityForField(String fieldName, String datatype, Date begin, Date end) {
         throw new UnsupportedOperationException("not imeplemented in MockMetadataHelper");
     }
     
@@ -339,7 +337,8 @@ public class MockMetadataHelper extends MetadataHelper {
             return 0L;
         }
         
-        Iterable<Map.Entry<String,Long>> filteredByType = Iterables.filter(countsByType.entrySet(), input -> datatypes.contains(input.getKey()));
+        Iterable<Map.Entry<String,Long>> filteredByType = countsByType.entrySet().stream().filter(input -> datatypes.contains(input.getKey()))
+                        .collect(Collectors.toList());
         
         long sum = 0;
         for (Map.Entry<String,Long> entry : filteredByType) {
@@ -350,7 +349,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     @Override
-    protected Multimap<String,String> loadAllFields() throws TableNotFoundException {
+    protected Multimap<String,String> loadAllFields() {
         return HashMultimap.create();
     }
     

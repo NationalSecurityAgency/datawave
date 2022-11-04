@@ -116,7 +116,7 @@ public class GroupsDataType extends AbstractDataTypeConfig {
             return TOKENS.getHdrField().equalsIgnoreCase(header);
         }
         
-        private RawMetaData metadata;
+        private final RawMetaData metadata;
         private final String hdrField;
         private final String queryField;
         

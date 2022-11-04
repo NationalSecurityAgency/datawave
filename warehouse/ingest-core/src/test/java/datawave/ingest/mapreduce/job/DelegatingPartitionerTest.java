@@ -10,9 +10,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DelegatingPartitionerTest {
     public static final int DEFAULT_PARTITION = 3;
@@ -20,7 +22,7 @@ public class DelegatingPartitionerTest {
     private DelegatingPartitioner manager;
     private Configuration conf;
     
-    @Before
+    @BeforeEach
     public void before() {
         manager = new DelegatingPartitioner();
         conf = new Configuration();
@@ -28,18 +30,18 @@ public class DelegatingPartitionerTest {
         conf.set(PartitionerCache.DEFAULT_DELEGATE_PARTITIONER, AlwaysReturnThree.class.getName());
     }
     
-    @Test(expected = Exception.class)
+    @Test
     public void testThrowsExceptionOnInconsistentConfig() throws Exception {
         conf.set(DelegatingPartitioner.TABLE_NAMES_WITH_CUSTOM_PARTITIONERS, "table1,table2"); // table 2 is here
         conf.set(PartitionerCache.PREFIX_DEDICATED_PARTITIONER + "table1", AlwaysReturnOne.class.getName());
         // table2 partitioner class name is missing
-        manager.setConf(conf);
+        assertThrows(Exception.class, () -> manager.setConf(conf));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDoesntLikeEmptyList() throws Exception {
         conf.set(DelegatingPartitioner.TABLE_NAMES_WITH_CUSTOM_PARTITIONERS, "");
-        manager.setConf(conf);
+        assertThrows(IllegalArgumentException.class, () -> manager.setConf(conf));
     }
     
     @Test
@@ -49,8 +51,8 @@ public class DelegatingPartitionerTest {
         conf.set(PartitionerCache.PREFIX_DEDICATED_PARTITIONER + "table2", AlwaysReturnTwo.class.getName());
         manager.setConf(conf);
         
-        Assert.assertEquals(1, getPartition("table1"));
-        Assert.assertEquals(2, getPartition("table2"));
+        Assertions.assertEquals(1, getPartition("table1"));
+        Assertions.assertEquals(2, getPartition("table2"));
     }
     
     @Test
@@ -64,8 +66,8 @@ public class DelegatingPartitionerTest {
         manager.setConf(conf);
         
         // 0 because it will only use the one bin
-        Assert.assertEquals(NUM_REDUCERS - 1, getPartition("table1"));
-        Assert.assertEquals(DEFAULT_PARTITION, getPartition("table2"));
+        Assertions.assertEquals(NUM_REDUCERS - 1, getPartition("table1"));
+        Assertions.assertEquals(DEFAULT_PARTITION, getPartition("table2"));
     }
     
     @Test
@@ -134,7 +136,7 @@ public class DelegatingPartitionerTest {
         
         for (int i = 0; i < 30; i++) {
             assertBetween(NUM_REDUCERS - 1 - 4, NUM_REDUCERS - 1 - 3, getPartition("table2", true));
-            Assert.assertEquals(1, getPartition("table4"));
+            Assertions.assertEquals(1, getPartition("table4"));
             assertBetween(NUM_REDUCERS - 1 - 2, NUM_REDUCERS - 1 - 0, getPartition("table1", true));
         }
     }
@@ -154,8 +156,8 @@ public class DelegatingPartitionerTest {
     }
     
     private void assertBetween(int minInclusive, int maxInclusive, int actual) {
-        Assert.assertTrue("actual: " + actual, minInclusive <= actual);
-        Assert.assertTrue("actual: " + actual, actual <= maxInclusive);
+        Assertions.assertTrue(minInclusive <= actual, "actual: " + actual);
+        Assertions.assertTrue(actual <= maxInclusive, "actual: " + actual);
     }
     
     @Test
@@ -165,8 +167,8 @@ public class DelegatingPartitionerTest {
         conf.set(DelegatingPartitioner.PREFIX_DEDICATED_PARTITIONER + "table1", AlwaysReturnOne.class.getName());
         manager.setConf(conf);
         
-        Assert.assertEquals(1, getPartition("table1"));
-        Assert.assertEquals(DEFAULT_PARTITION, getPartition("table2"));
+        Assertions.assertEquals(1, getPartition("table1"));
+        Assertions.assertEquals(DEFAULT_PARTITION, getPartition("table2"));
     }
     
     @Test
@@ -174,8 +176,8 @@ public class DelegatingPartitionerTest {
         conf.set(DelegatingPartitioner.DEFAULT_DELEGATE_PARTITIONER, AlwaysReturnThree.class.getName());
         manager.setConf(conf);
         
-        Assert.assertEquals(DEFAULT_PARTITION, getPartition("table1"));
-        Assert.assertEquals(DEFAULT_PARTITION, getPartition("table2"));
+        Assertions.assertEquals(DEFAULT_PARTITION, getPartition("table1"));
+        Assertions.assertEquals(DEFAULT_PARTITION, getPartition("table2"));
     }
     
     @Test
@@ -186,8 +188,8 @@ public class DelegatingPartitionerTest {
         conf.set(DelegatingPartitioner.PREFIX_CATEGORY_PARTITIONER + "category5", AlwaysReturnOne.class.getName());
         manager.setConf(conf);
         
-        Assert.assertEquals(1, getPartition("table1"));
-        Assert.assertEquals(DEFAULT_PARTITION, getPartition("table2"));
+        Assertions.assertEquals(1, getPartition("table1"));
+        Assertions.assertEquals(DEFAULT_PARTITION, getPartition("table2"));
     }
     
     @Test
@@ -199,8 +201,8 @@ public class DelegatingPartitionerTest {
         conf.set(DelegatingPartitioner.PREFIX_CATEGORY_PARTITIONER + "category5", AlwaysReturnOne.class.getName());
         manager.setConf(conf);
         
-        Assert.assertEquals(1, getPartition("table1"));
-        Assert.assertEquals(1, getPartition("table2"));
+        Assertions.assertEquals(1, getPartition("table1"));
+        Assertions.assertEquals(1, getPartition("table2"));
     }
     
     @Test
@@ -213,9 +215,9 @@ public class DelegatingPartitionerTest {
         conf.set(DelegatingPartitioner.PREFIX_DEDICATED_PARTITIONER + "table3", AlwaysReturnTwo.class.getName());
         manager.setConf(conf);
         
-        Assert.assertEquals(1, getPartition("table1"));
-        Assert.assertEquals(1, getPartition("table2"));
-        Assert.assertEquals(2, getPartition("table3"));
+        Assertions.assertEquals(1, getPartition("table1"));
+        Assertions.assertEquals(1, getPartition("table2"));
+        Assertions.assertEquals(2, getPartition("table3"));
     }
     
     @Test
@@ -263,8 +265,8 @@ public class DelegatingPartitionerTest {
         
         for (int i = 0; i < 30; i++) {
             assertBetween(NUM_REDUCERS - 1 - 2, NUM_REDUCERS - 1 - 0, getPartition("table2", true));
-            Assert.assertEquals(4, getPartition("table3", true));
-            Assert.assertEquals(4, getPartition("table1", true));
+            Assertions.assertEquals(4, getPartition("table3", true));
+            Assertions.assertEquals(4, getPartition("table1", true));
         }
     }
     

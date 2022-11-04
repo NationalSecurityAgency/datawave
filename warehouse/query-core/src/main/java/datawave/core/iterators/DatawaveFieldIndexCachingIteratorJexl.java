@@ -242,7 +242,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     // We do not want the underlying iterators to filter keys so that we can check the bounds in this iterator as quickly
     // as possible.
     @SuppressWarnings("unchecked")
-    protected static final Collection<ByteSequence> EMPTY_CFS = Collections.EMPTY_LIST;
+    protected static final Collection<ByteSequence> EMPTY_CFS = Collections.emptyList();
     
     // These are the ranges to scan in the field index
     private final List<Range> boundingFiRanges = new ArrayList<>();

@@ -1,8 +1,8 @@
 package datawave.ingest.mapreduce.job;
 
 import datawave.common.test.logging.CommonTestAppender;
-import datawave.ingest.data.TypeRegistry;
 import datawave.data.hash.UID;
+import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.ClientConfiguration;
@@ -24,11 +24,10 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.api.easymock.PowerMock;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URL;
@@ -88,7 +87,7 @@ public class CBMutationOutputFormatterTest {
     
     protected Configuration createMockConfiguration() {
         
-        Configuration mocked = PowerMock.createMock(Configuration.class);
+        Configuration mocked = EasyMock.createMock(Configuration.class);
         
         mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
@@ -140,24 +139,24 @@ public class CBMutationOutputFormatterTest {
             return null;
         }).anyTimes();
         
-        PowerMock.replay(mocked);
+        EasyMock.replay(mocked);
         
         return mocked;
     }
     
     protected Job createMockJob() {
         
-        Job mocked = PowerMock.createMock(Job.class);
+        Job mocked = EasyMock.createMock(Job.class);
         
         mocked.getConfiguration();
         EasyMock.expectLastCall().andAnswer(this::createMockConfiguration).anyTimes();
         
-        PowerMock.replay(mocked);
+        EasyMock.replay(mocked);
         
         return mocked;
     }
     
-    @Before
+    @BeforeEach
     public void setup() {
         
         testDriverLevel = CBMutationOutputFormatterTest.logger.getLevel();
@@ -174,7 +173,7 @@ public class CBMutationOutputFormatterTest {
         TypeRegistry.reset();
     }
     
-    @After
+    @AfterEach
     public void teardown() {
         
         Logger.getLogger(CBMutationOutputFormatter.class).setLevel(uutLevel);
@@ -196,10 +195,10 @@ public class CBMutationOutputFormatterTest {
             
             CBMutationOutputFormatter.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
             
-            Assert.assertTrue("CBMutationOutputFormatter#setZooKeeperInstance failed to set 'Type'",
-                            CBMutationOutputFormatterTest.mockedConfiguration.containsValue("ZooKeeperInstance"));
-            Assert.assertTrue("CBMutationOutputFormatter#setZooKeeperInstance failed to set 'Type'",
-                            this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), "ZooKeeperInstance"));
+            Assertions.assertTrue(CBMutationOutputFormatterTest.mockedConfiguration.containsValue("ZooKeeperInstance"),
+                            "CBMutationOutputFormatter#setZooKeeperInstance failed to set 'Type'");
+            Assertions.assertTrue(this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), "ZooKeeperInstance"),
+                            "CBMutationOutputFormatter#setZooKeeperInstance failed to set 'Type'");
             
         } finally {
             
@@ -226,23 +225,23 @@ public class CBMutationOutputFormatterTest {
             String ptStr = TokenSource.INLINE.prefix() + PasswordToken.class.getName() + ":"
                             + Base64.encodeBase64String(AuthenticationToken.AuthenticationTokenSerializer.serialize(pt));
             
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set 'username'",
-                            CBMutationOutputFormatterTest.mockedConfiguration.containsValue(user));
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set credential token",
-                            CBMutationOutputFormatterTest.mockedConfiguration.containsValue(ptStr));
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set default table name",
-                            CBMutationOutputFormatterTest.mockedConfiguration.containsValue(defaultTable));
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set create table value",
-                            CBMutationOutputFormatterTest.mockedConfiguration.containsValue("false"));
+            Assertions.assertTrue(CBMutationOutputFormatterTest.mockedConfiguration.containsValue(user),
+                            "CBMutationOutputFormatter#setOutputInfo failed to set 'username'");
+            Assertions.assertTrue(CBMutationOutputFormatterTest.mockedConfiguration.containsValue(ptStr),
+                            "CBMutationOutputFormatter#setOutputInfo failed to set credential token");
+            Assertions.assertTrue(CBMutationOutputFormatterTest.mockedConfiguration.containsValue(defaultTable),
+                            "CBMutationOutputFormatter#setOutputInfo failed to set default table name");
+            Assertions.assertTrue(CBMutationOutputFormatterTest.mockedConfiguration.containsValue("false"),
+                            "CBMutationOutputFormatter#setOutputInfo failed to set create table value");
             
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set 'username'",
-                            this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), user));
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set credential token",
-                            this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), ptStr));
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set default table name",
-                            this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), defaultTable));
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set create table",
-                            this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), "false"));
+            Assertions.assertTrue(this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), user),
+                            "CBMutationOutputFormatter#setOutputInfo failed to set 'username'");
+            Assertions.assertTrue(this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), ptStr),
+                            "CBMutationOutputFormatter#setOutputInfo failed to set credential token");
+            Assertions.assertTrue(this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), defaultTable),
+                            "CBMutationOutputFormatter#setOutputInfo failed to set default table name");
+            Assertions.assertTrue(this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), "false"),
+                            "CBMutationOutputFormatter#setOutputInfo failed to set create table");
             
         } finally {
             
@@ -259,7 +258,7 @@ public class CBMutationOutputFormatterTest {
             
             CBMutationOutputFormatter uut = new CBMutationOutputFormatter();
             
-            Assert.assertNotNull("CBMutationOutputFormatter constructor failed to generate an instance.", uut);
+            Assertions.assertNotNull(uut, "CBMutationOutputFormatter constructor failed to generate an instance.");
             
         } finally {
             
@@ -276,7 +275,7 @@ public class CBMutationOutputFormatterTest {
             
             CBMutationOutputFormatter uut = new CBMutationOutputFormatter();
             
-            Assert.assertNotNull("CBMutationOutputFormatter constructor failed to generate an instance.", uut);
+            Assertions.assertNotNull(uut, "CBMutationOutputFormatter constructor failed to generate an instance.");
             
             Configuration conf = new Configuration();
             
@@ -290,14 +289,14 @@ public class CBMutationOutputFormatterTest {
             
             RecordWriter<Text,Mutation> rw = uut.getRecordWriter(attempt);
             
-            Assert.assertNotNull("CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter", rw);
+            Assertions.assertNotNull(rw, "CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter");
             
             List<String> entries = uutAppender.retrieveLogsEntries();
             
-            Assert.assertTrue("CBMutationOutputFormatter#getRecordWriter failed to create simulation warning message.",
-                            processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
-            Assert.assertTrue("CBMutationOutputFormatter#getRecordWriter failed to create Event Table name message.",
-                            processOutputContains(entries, "Event Table Name property for "));
+            Assertions.assertTrue(processOutputContains(entries, "Simulating output only. No writes to tables will occur"),
+                            "CBMutationOutputFormatter#getRecordWriter failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Event Table Name property for "),
+                            "CBMutationOutputFormatter#getRecordWriter failed to create Event Table name message.");
             
         } finally {
             
@@ -314,7 +313,7 @@ public class CBMutationOutputFormatterTest {
             
             CBMutationOutputFormatter uut = new CBMutationOutputFormatter();
             
-            Assert.assertNotNull("CBMutationOutputFormatter constructor failed to generate an instance.", uut);
+            Assertions.assertNotNull(uut, "CBMutationOutputFormatter constructor failed to generate an instance.");
             
             Configuration conf = new Configuration();
             
@@ -328,7 +327,7 @@ public class CBMutationOutputFormatterTest {
             
             RecordWriter<Text,Mutation> rw = uut.getRecordWriter(attempt);
             
-            Assert.assertNotNull("CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter", rw);
+            Assertions.assertNotNull(rw, "CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter");
             
             TaskAttemptContext context = null;
             
@@ -336,12 +335,12 @@ public class CBMutationOutputFormatterTest {
             
             List<String> entries = uutAppender.retrieveLogsEntries();
             
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#close failed to create simulation warning message.",
-                            processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#close failed to create Event Table name message.",
-                            processOutputContains(entries, "Event Table Name property for "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#close failed to create simulation warning message.",
-                            processOutputContains(entries, "mutations written: "));
+            Assertions.assertTrue(processOutputContains(entries, "Simulating output only. No writes to tables will occur"),
+                            "CBMutationOutputFormatter$getRecordWriter#close failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Event Table Name property for "),
+                            "CBMutationOutputFormatter$getRecordWriter#close failed to create Event Table name message.");
+            Assertions.assertTrue(processOutputContains(entries, "mutations written: "),
+                            "CBMutationOutputFormatter$getRecordWriter#close failed to create simulation warning message.");
             
         } finally {
             
@@ -358,7 +357,7 @@ public class CBMutationOutputFormatterTest {
             
             CBMutationOutputFormatter uut = new CBMutationOutputFormatter();
             
-            Assert.assertNotNull("CBMutationOutputFormatter constructor failed to generate an instance.", uut);
+            Assertions.assertNotNull(uut, "CBMutationOutputFormatter constructor failed to generate an instance.");
             
             Configuration conf = new Configuration();
             
@@ -372,7 +371,7 @@ public class CBMutationOutputFormatterTest {
             
             RecordWriter<Text,Mutation> rw = uut.getRecordWriter(attempt);
             
-            Assert.assertNotNull("CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter", rw);
+            Assertions.assertNotNull(rw, "CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter");
             
             Text key = new Text("test-table");
             Mutation value = new Mutation("hello, world".getBytes());
@@ -381,12 +380,12 @@ public class CBMutationOutputFormatterTest {
             
             List<String> entries = uutAppender.retrieveLogsEntries();
             
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.",
-                            processOutputContains(entries, "Event Table Name property for "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Table test-table row key: "));
+            Assertions.assertTrue(processOutputContains(entries, "Simulating output only. No writes to tables will occur"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Event Table Name property for "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table row key: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
             
         } finally {
             
@@ -404,7 +403,7 @@ public class CBMutationOutputFormatterTest {
             
             CBMutationOutputFormatter uut = new CBMutationOutputFormatter();
             
-            Assert.assertNotNull("CBMutationOutputFormatter constructor failed to generate an instance.", uut);
+            Assertions.assertNotNull(uut, "CBMutationOutputFormatter constructor failed to generate an instance.");
             
             Configuration conf = new Configuration();
             
@@ -419,7 +418,7 @@ public class CBMutationOutputFormatterTest {
             
             RecordWriter<Text,Mutation> rw = uut.getRecordWriter(attempt);
             
-            Assert.assertNotNull("CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter", rw);
+            Assertions.assertNotNull(rw, "CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter");
             
             Text key = new Text("test-table");
             Mutation value = new Mutation("hello, world".getBytes());
@@ -428,12 +427,12 @@ public class CBMutationOutputFormatterTest {
             
             List<String> entries = uutAppender.retrieveLogsEntries();
             
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.",
-                            processOutputContains(entries, "Event Table Name property for "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Table test-table row key: "));
+            Assertions.assertTrue(processOutputContains(entries, "Simulating output only. No writes to tables will occur"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Event Table Name property for "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table row key: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
             
         } finally {
             
@@ -451,7 +450,7 @@ public class CBMutationOutputFormatterTest {
             
             CBMutationOutputFormatter uut = new CBMutationOutputFormatter();
             
-            Assert.assertNotNull("CBMutationOutputFormatter constructor failed to generate an instance.", uut);
+            Assertions.assertNotNull(uut, "CBMutationOutputFormatter constructor failed to generate an instance.");
             
             Configuration conf = new Configuration();
             
@@ -466,7 +465,7 @@ public class CBMutationOutputFormatterTest {
             
             RecordWriter<Text,Mutation> rw = uut.getRecordWriter(attempt);
             
-            Assert.assertNotNull("CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter", rw);
+            Assertions.assertNotNull(rw, "CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter");
             
             Text key = new Text("test-table");
             Mutation value = new Mutation("hello, world".getBytes());
@@ -477,18 +476,18 @@ public class CBMutationOutputFormatterTest {
             
             List<String> entries = uutAppender.retrieveLogsEntries();
             
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.",
-                            processOutputContains(entries, "Event Table Name property for "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Table test-table row key: "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table column update message.",
-                            processOutputContains(entries, "Table test-table column: colf:colq"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table column security message.",
-                            processOutputContains(entries, "Table test-table security: "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table value message.",
-                            processOutputContains(entries, "Table test-table value: "));
+            Assertions.assertTrue(processOutputContains(entries, "Simulating output only. No writes to tables will occur"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Event Table Name property for "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table row key: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table column: colf:colq"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table column update message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table security: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table column security message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table value: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table value message.");
             
         } finally {
             
@@ -506,7 +505,7 @@ public class CBMutationOutputFormatterTest {
             
             CBMutationOutputFormatter uut = new CBMutationOutputFormatter();
             
-            Assert.assertNotNull("CBMutationOutputFormatter constructor failed to generate an instance.", uut);
+            Assertions.assertNotNull(uut, "CBMutationOutputFormatter constructor failed to generate an instance.");
             
             URL url = CBMutationOutputFormatterTest.class.getResource("/datawave/ingest/mapreduce/job/IngestJob-test-type.xml");
             Configuration conf = new Configuration();
@@ -526,7 +525,7 @@ public class CBMutationOutputFormatterTest {
             
             RecordWriter<Text,Mutation> rw = uut.getRecordWriter(attempt);
             
-            Assert.assertNotNull("CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter", rw);
+            Assertions.assertNotNull(rw, "CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter");
             
             Text key = new Text("test-table");
             Mutation value = new Mutation("hello, world".getBytes());
@@ -537,18 +536,18 @@ public class CBMutationOutputFormatterTest {
             
             List<String> entries = uutAppender.retrieveLogsEntries();
             
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.",
-                            processOutputContains(entries, "Event Table Name property for "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Table test-table row key: "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table column update message.",
-                            processOutputContains(entries, "Table test-table column: colf:colq"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table column security message.",
-                            processOutputContains(entries, "Table test-table security: "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table value message.",
-                            processOutputContains(entries, "Table test-table value: "));
+            Assertions.assertTrue(processOutputContains(entries, "Simulating output only. No writes to tables will occur"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Event Table Name property for "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table row key: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table column: colf:colq"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table column update message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table security: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table column security message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table value: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table value message.");
             
         } finally {
             
@@ -566,7 +565,7 @@ public class CBMutationOutputFormatterTest {
             
             CBMutationOutputFormatter uut = new CBMutationOutputFormatter();
             
-            Assert.assertNotNull("CBMutationOutputFormatter constructor failed to generate an instance.", uut);
+            Assertions.assertNotNull(uut, "CBMutationOutputFormatter constructor failed to generate an instance.");
             
             URL url = CBMutationOutputFormatterTest.class.getResource("/datawave/ingest/mapreduce/job/IngestJob-test-type.xml");
             Configuration conf = new Configuration();
@@ -586,7 +585,7 @@ public class CBMutationOutputFormatterTest {
             
             RecordWriter<Text,Mutation> rw = uut.getRecordWriter(attempt);
             
-            Assert.assertNotNull("CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter", rw);
+            Assertions.assertNotNull(rw, "CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter");
             
             Text key = new Text("test-table");
             Mutation value = new Mutation("hello, world".getBytes());
@@ -597,18 +596,18 @@ public class CBMutationOutputFormatterTest {
             
             List<String> entries = uutAppender.retrieveLogsEntries();
             
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.",
-                            processOutputContains(entries, "Event Table Name property for "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Table test-table row key: "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table column update message.",
-                            processOutputContains(entries, "Table test-table column: ingest-test:colq"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table column security message.",
-                            processOutputContains(entries, "Table test-table security: "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table value message.",
-                            processOutputContains(entries, "Table test-table value: "));
+            Assertions.assertTrue(processOutputContains(entries, "Simulating output only. No writes to tables will occur"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Event Table Name property for "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table row key: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table column: ingest-test:colq"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table column update message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table security: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table column security message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table value: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table value message.");
             
         } finally {
             
@@ -626,7 +625,7 @@ public class CBMutationOutputFormatterTest {
             
             CBMutationOutputFormatter uut = new CBMutationOutputFormatter();
             
-            Assert.assertNotNull("CBMutationOutputFormatter constructor failed to generate an instance.", uut);
+            Assertions.assertNotNull(uut, "CBMutationOutputFormatter constructor failed to generate an instance.");
             
             URL url = CBMutationOutputFormatterTest.class.getResource("/datawave/ingest/mapreduce/job/IngestJob-test-type.xml");
             Configuration conf = new Configuration();
@@ -646,7 +645,7 @@ public class CBMutationOutputFormatterTest {
             
             RecordWriter<Text,Mutation> rw = uut.getRecordWriter(attempt);
             
-            Assert.assertNotNull("CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter", rw);
+            Assertions.assertNotNull(rw, "CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter");
             
             Text key = new Text("test-table");
             Mutation value = new Mutation("hello, world".getBytes());
@@ -659,18 +658,18 @@ public class CBMutationOutputFormatterTest {
             
             List<String> entries = uutAppender.retrieveLogsEntries();
             
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.",
-                            processOutputContains(entries, "Event Table Name property for "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Table test-table row key: "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table column update message.",
-                            processOutputContains(entries, "Table test-table column:"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table column security message.",
-                            processOutputContains(entries, "Table test-table security: "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table value message.",
-                            processOutputContains(entries, "Table test-table value: "));
+            Assertions.assertTrue(processOutputContains(entries, "Simulating output only. No writes to tables will occur"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Event Table Name property for "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table row key: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table column:"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table column update message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table security: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table column security message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table value: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table value message.");
             
         } finally {
             
@@ -688,7 +687,7 @@ public class CBMutationOutputFormatterTest {
             
             CBMutationOutputFormatter uut = new CBMutationOutputFormatter();
             
-            Assert.assertNotNull("CBMutationOutputFormatter constructor failed to generate an instance.", uut);
+            Assertions.assertNotNull(uut, "CBMutationOutputFormatter constructor failed to generate an instance.");
             
             URL url = CBMutationOutputFormatterTest.class.getResource("/datawave/ingest/mapreduce/job/IngestJob-test-type.xml");
             Configuration conf = new Configuration();
@@ -708,7 +707,7 @@ public class CBMutationOutputFormatterTest {
             
             RecordWriter<Text,Mutation> rw = uut.getRecordWriter(attempt);
             
-            Assert.assertNotNull("CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter", rw);
+            Assertions.assertNotNull(rw, "CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter");
             
             Text key = new Text("test-table");
             Mutation value = new Mutation("hello, world".getBytes());
@@ -721,18 +720,18 @@ public class CBMutationOutputFormatterTest {
             
             List<String> entries = uutAppender.retrieveLogsEntries();
             
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.",
-                            processOutputContains(entries, "Event Table Name property for "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Table test-table row key: "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table column update message.",
-                            processOutputContains(entries, "Table test-table column:"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table column security message.",
-                            processOutputContains(entries, "Table test-table security: "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table value message.",
-                            processOutputContains(entries, "Table test-table value: "));
+            Assertions.assertTrue(processOutputContains(entries, "Simulating output only. No writes to tables will occur"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Event Table Name property for "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table row key: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table column:"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table column update message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table security: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table column security message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table value: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table value message.");
             
         } finally {
             
@@ -750,7 +749,7 @@ public class CBMutationOutputFormatterTest {
             
             CBMutationOutputFormatter uut = new CBMutationOutputFormatter();
             
-            Assert.assertNotNull("CBMutationOutputFormatter constructor failed to generate an instance.", uut);
+            Assertions.assertNotNull(uut, "CBMutationOutputFormatter constructor failed to generate an instance.");
             
             URL url = CBMutationOutputFormatterTest.class.getResource("/datawave/ingest/mapreduce/job/IngestJob-test-type.xml");
             Configuration conf = new Configuration();
@@ -770,7 +769,7 @@ public class CBMutationOutputFormatterTest {
             
             RecordWriter<Text,Mutation> rw = uut.getRecordWriter(attempt);
             
-            Assert.assertNotNull("CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter", rw);
+            Assertions.assertNotNull(rw, "CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter");
             
             Text key = new Text("test-table");
             Mutation value = new Mutation("hello, world".getBytes());
@@ -782,18 +781,18 @@ public class CBMutationOutputFormatterTest {
             
             List<String> entries = uutAppender.retrieveLogsEntries();
             
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.",
-                            processOutputContains(entries, "Event Table Name property for "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
-                            processOutputContains(entries, "Table test-table row key: "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table column update message.",
-                            processOutputContains(entries, "Table test-table column:"));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table column security message.",
-                            processOutputContains(entries, "Table test-table security: "));
-            Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to table value message.",
-                            processOutputContains(entries, "Table test-table value: "));
+            Assertions.assertTrue(processOutputContains(entries, "Simulating output only. No writes to tables will occur"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Event Table Name property for "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create Event Table name message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table row key: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table column:"),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table column update message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table security: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table column security message.");
+            Assertions.assertTrue(processOutputContains(entries, "Table test-table value: "),
+                            "CBMutationOutputFormatter$getRecordWriter#write failed to table value message.");
             
         } finally {
             

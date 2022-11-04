@@ -1,7 +1,6 @@
 package datawave.query.function;
 
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
@@ -10,8 +9,8 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.LimitFieldsTestingIngest;
@@ -25,22 +24,21 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -52,10 +50,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
@@ -64,11 +65,11 @@ import java.util.stream.Collectors;
  */
 public abstract class HitsAreAlwaysIncludedTest {
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends HitsAreAlwaysIncludedTest {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
@@ -79,6 +80,12 @@ public abstract class HitsAreAlwaysIncludedTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        }
+        
+        @AfterAll
+        public static void teardown() {
+            TypeRegistry.reset();
         }
         
         @Override
@@ -88,11 +95,11 @@ public abstract class HitsAreAlwaysIncludedTest {
         }
     }
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends HitsAreAlwaysIncludedTest {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
@@ -103,6 +110,12 @@ public abstract class HitsAreAlwaysIncludedTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        }
+        
+        @AfterAll
+        public static void teardown() {
+            TypeRegistry.reset();
         }
         
         @Override
@@ -142,24 +155,13 @@ public abstract class HitsAreAlwaysIncludedTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @AfterClass
-    public static void teardown() {
-        TypeRegistry.reset();
-    }
-    
-    @Before
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
-        logic.setFullTableScanEnabled(true);
-        deserializer = new KryoDocumentDeserializer();
-    }
-    
     protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> expectedHits,
                     Collection<String> goodResults) throws Exception;
     
     protected void runTestQuery(Connector connector, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
                     Collection<String> expectedHits, Collection<String> goodResults) throws Exception {
+        logic.setFullTableScanEnabled(true);
+        deserializer = new KryoDocumentDeserializer();
         
         QueryImpl settings = new QueryImpl();
         settings.setBeginDate(startDate);
@@ -182,24 +184,24 @@ public abstract class HitsAreAlwaysIncludedTest {
             log.trace(entry.getKey() + " => " + d);
             docs.add(d);
             
-            Attribute hitAttribute = d.get(JexlEvaluation.HIT_TERM_FIELD);
+            Attribute<?> hitAttribute = d.get(JexlEvaluation.HIT_TERM_FIELD);
             
             if (hitAttribute instanceof Attributes) {
                 Attributes attributes = (Attributes) hitAttribute;
-                for (Attribute attr : attributes.getAttributes()) {
+                for (Attribute<?> attr : attributes.getAttributes()) {
                     if (attr instanceof Content) {
                         Content content = (Content) attr;
-                        Assert.assertTrue(expectedHits.remove(content.getContent()));
+                        Assertions.assertTrue(expectedHits.remove(content.getContent()));
                     }
                 }
             } else if (hitAttribute instanceof Content) {
                 Content content = (Content) hitAttribute;
-                Assert.assertTrue(content.getContent() + " is not an expected hit", expectedHits.remove(content.getContent()));
+                Assertions.assertTrue(expectedHits.remove(content.getContent()), content.getContent() + " is not an expected hit");
             } else {
-                Assert.fail("Did not find hit term field");
+                fail("Did not find hit term field");
             }
             
-            Assert.assertTrue(expectedHits + " expected hits was not empty", expectedHits.isEmpty());
+            Assertions.assertTrue(expectedHits.isEmpty(), expectedHits + " expected hits was not empty");
             
             // remove from goodResults as we find the expected return fields
             log.debug("goodResults: " + goodResults);
@@ -209,7 +211,7 @@ public abstract class HitsAreAlwaysIncludedTest {
                 
                 Attribute<? extends Comparable<?>> attribute = dictionaryEntry.getValue();
                 if (attribute instanceof Attributes) {
-                    for (Attribute attr : ((Attributes) attribute).getAttributes()) {
+                    for (Attribute<?> attr : ((Attributes) attribute).getAttributes()) {
                         String toFind = dictionaryEntry.getKey() + ":" + attr;
                         boolean found = goodResults.remove(toFind);
                         if (found)
@@ -230,25 +232,27 @@ public abstract class HitsAreAlwaysIncludedTest {
                 
             }
             
-            Assert.assertTrue(goodResults + " good results was not empty", goodResults.isEmpty());
+            Assertions.assertTrue(goodResults.isEmpty(), goodResults + " good results was not empty");
         }
-        Assert.assertTrue("No docs were returned!", !docs.isEmpty());
+        Assertions.assertFalse(docs.isEmpty(), "No docs were returned!");
     }
     
     @Test
     public void checkThePattern() {
         String[] tokens = LimitFields.getCommonalityAndGroupingContext("FOO_3.FOO.3.3");
-        Assert.assertEquals(2, tokens.length);
-        Assert.assertEquals(tokens[0], "FOO");
-        Assert.assertEquals(tokens[1], "3");
+        assert tokens != null;
+        Assertions.assertEquals(2, tokens.length);
+        Assertions.assertEquals(tokens[0], "FOO");
+        Assertions.assertEquals(tokens[1], "3");
         
         tokens = LimitFields.getCommonalityAndGroupingContext("FOO_3");
-        Assert.assertNull(tokens);
+        Assertions.assertNull(tokens);
         
         tokens = LimitFields.getCommonalityAndGroupingContext("FOO_3_BAR.FOO.3");
-        Assert.assertEquals(2, tokens.length);
-        Assert.assertEquals(tokens[0], "FOO");
-        Assert.assertEquals(tokens[1], "3");
+        assert tokens != null;
+        Assertions.assertEquals(2, tokens.length);
+        Assertions.assertEquals(tokens[0], "FOO");
+        Assertions.assertEquals(tokens[1], "3");
     }
     
     @Test
@@ -414,12 +418,19 @@ public abstract class HitsAreAlwaysIncludedTest {
     
     protected void ivaratorConfig() throws IOException {
         final URL hdfsConfig = this.getClass().getResource("/testhadoop.config");
-        Assert.assertNotNull(hdfsConfig);
+        Assertions.assertNotNull(hdfsConfig);
         this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
         
+        int leftLimit = 97; // letter 'a'
+        int rightLimit = 122; // letter 'z'
+        int targetStringLength = 10;
+        Random random = new Random();
+        
+        String randomFileNAme = random.ints(leftLimit, rightLimit + 1).limit(targetStringLength)
+                        .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
+        
         final List<String> dirs = new ArrayList<>();
-        final List<String> fstDirs = new ArrayList<>();
-        Path ivCache = Paths.get(Files.createTempDir().toURI());
+        Path ivCache = new File("/tmp/test/" + randomFileNAme).toPath();
         dirs.add(ivCache.toUri().toString());
         String uriList = String.join(",", dirs);
         log.info("hdfs dirs(" + uriList + ")");

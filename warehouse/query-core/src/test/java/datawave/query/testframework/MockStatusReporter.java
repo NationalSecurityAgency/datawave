@@ -9,7 +9,7 @@ import org.apache.hadoop.mapreduce.StatusReporter;
  */
 public class MockStatusReporter extends StatusReporter {
     
-    private Counters counters = new Counters();
+    private final Counters counters = new Counters();
     private String status = null;
     private int progress = 0;
     

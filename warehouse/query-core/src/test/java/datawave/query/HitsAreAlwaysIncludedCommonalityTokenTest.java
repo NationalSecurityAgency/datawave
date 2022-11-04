@@ -23,16 +23,15 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.inject.Inject;
 import java.text.DateFormat;
@@ -55,11 +54,11 @@ import java.util.UUID;
  */
 public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends HitsAreAlwaysIncludedCommonalityTokenTest {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
@@ -70,6 +69,7 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @Override
@@ -79,11 +79,11 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
         }
     }
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends HitsAreAlwaysIncludedCommonalityTokenTest {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
@@ -94,6 +94,7 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @Override
@@ -133,17 +134,9 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @AfterClass
+    @AfterAll
     public static void teardown() {
         TypeRegistry.reset();
-    }
-    
-    @Before
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
-        logic.setFullTableScanEnabled(true);
-        deserializer = new KryoDocumentDeserializer();
     }
     
     protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
@@ -151,6 +144,8 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
     
     protected void runTestQuery(Connector connector, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
                     Collection<String> goodResults) throws Exception {
+        logic.setFullTableScanEnabled(true);
+        deserializer = new KryoDocumentDeserializer();
         
         QueryImpl settings = new QueryImpl();
         settings.setBeginDate(startDate);
@@ -180,12 +175,12 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
                 for (Attribute attr : attributes.getAttributes()) {
                     if (attr instanceof Content) {
                         Content content = (Content) attr;
-                        Assert.assertTrue(goodResults.contains(content.getContent()));
+                        Assertions.assertTrue(goodResults.contains(content.getContent()));
                     }
                 }
             } else if (hitAttribute instanceof Content) {
                 Content content = (Content) hitAttribute;
-                Assert.assertTrue(goodResults.contains(content.getContent()));
+                Assertions.assertTrue(goodResults.contains(content.getContent()));
             }
             
             // remove from goodResults as we find the expected return fields
@@ -217,9 +212,9 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
                 
             }
             
-            Assert.assertTrue(goodResults + " was not empty", goodResults.isEmpty());
+            Assertions.assertTrue(goodResults.isEmpty(), goodResults + " was not empty");
         }
-        Assert.assertTrue("No docs were returned!", !docs.isEmpty());
+        Assertions.assertFalse(docs.isEmpty(), "No docs were returned!");
     }
     
     @Test

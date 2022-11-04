@@ -67,7 +67,7 @@ public class FlattenDataType extends AbstractDataTypeConfig {
     
     // ==================================
     // data manager for flatten is based upon the flatten mode - metadata may be different for each mode
-    private static volatile Map<FlattenMode,RawDataManager> manager = new EnumMap<>(FlattenMode.class);
+    private static final Map<FlattenMode,RawDataManager> manager = new EnumMap<>(FlattenMode.class);
     
     public static RawDataManager getManager(final FlattenData data) {
         FlattenMode mode = data.getMode();

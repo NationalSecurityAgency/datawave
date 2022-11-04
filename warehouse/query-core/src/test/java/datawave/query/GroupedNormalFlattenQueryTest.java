@@ -5,7 +5,7 @@ import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.FlattenData;
@@ -14,9 +14,10 @@ import datawave.query.testframework.FlattenDataType.FlattenBaseFields;
 import datawave.query.testframework.RawDataManager;
 import datawave.query.testframework.RawMetaData;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -40,8 +41,8 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
  */
 public class GroupedNormalFlattenQueryTest extends AbstractFunctionalQuery {
     
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = new AccumuloSetupExtension();
     
     private static final Logger log = Logger.getLogger(GroupedNormalFlattenQueryTest.class);
     
@@ -61,7 +62,7 @@ public class GroupedNormalFlattenQueryTest extends AbstractFunctionalQuery {
         }
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         accumuloSetup.setData(FileType.JSON, flatten);
         connector = accumuloSetup.loadTables(log);
@@ -158,37 +159,37 @@ public class GroupedNormalFlattenQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
     }
     
-    @Test(expected = FullTableScansDisallowedException.class)
-    public void testErrorCity() throws Exception {
+    @Test
+    public void testErrorCity() {
         log.info("------  testErrorCity  ------");
         String city = "'auSTin'";
         String query = GroupedNormalField.SMALL_CITY.name() + EQ_OP + city;
-        runTest(query, query);
+        Assertions.assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
     
-    @Test(expected = FullTableScansDisallowedException.class)
-    public void testErrorFounded() throws Exception {
+    @Test
+    public void testErrorFounded() {
         log.info("------  testErrorFounded  ------");
         String date = "1888";
         String query = GroupedNormalField.SMALL_FOUNDED.name() + EQ_OP + date;
-        runTest(query, query);
+        Assertions.assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
     
-    @Test(expected = FullTableScansDisallowedException.class)
-    public void testErrorCounty() throws Exception {
+    @Test
+    public void testErrorCounty() {
         log.info("------  testErrorCounty  ------");
         String county = "'gRant'";
         String query = GroupedNormalField.CAPITAL_COUNTIES.name() + EQ_OP + county;
-        runTest(query, query);
+        Assertions.assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
     
-    @Test(expected = FullTableScansDisallowedException.class)
-    public void testErrorCityOrState() throws Exception {
+    @Test
+    public void testErrorCityOrState() {
         log.info("------  testErrorCityOrState  ------");
         String city = "'auStin'";
         String state = "'KansAs'";
         String query = GroupedNormalField.STATE + EQ_OP + state + OR_OP + GroupedNormalField.SMALL_CITY.name() + EQ_OP + city;
-        runTest(query, query);
+        Assertions.assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
     
     // end of unit tests
@@ -221,7 +222,7 @@ public class GroupedNormalFlattenQueryTest extends AbstractFunctionalQuery {
         static final List<String> headers;
         
         static {
-            headers = Stream.of(GroupedNormalField.values()).map(e -> e.name()).collect(Collectors.toList());
+            headers = Stream.of(GroupedNormalField.values()).map(Enum::name).collect(Collectors.toList());
         }
         
         static final Map<String,RawMetaData> metadataMapping = new HashMap<>();

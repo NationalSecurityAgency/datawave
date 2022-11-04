@@ -12,23 +12,22 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-
 public class FetchDataTypesVisitorTest {
     
-    private static ShardQueryConfiguration config = new ShardQueryConfiguration();
-    private static MockMetadataHelper helper = new MockMetadataHelper();
+    private static final ShardQueryConfiguration config = new ShardQueryConfiguration();
+    private static final MockMetadataHelper helper = new MockMetadataHelper();
     
-    private Set<String> dataTypeFilter = Collections.singleton("datatype1");
+    private final Set<String> dataTypeFilter = Collections.singleton("datatype1");
     
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         // 1. Configure the ShardQueryConfig
         config.setBeginDate(new Date(0));
@@ -98,6 +97,6 @@ public class FetchDataTypesVisitorTest {
         
         Multimap<String,Type<?>> dataTypes = FetchDataTypesVisitor.fetchDataTypes(helper, dataTypeFilter, script);
         
-        assertEquals(expected, dataTypes);
+        Assertions.assertEquals(expected, dataTypes);
     }
 }

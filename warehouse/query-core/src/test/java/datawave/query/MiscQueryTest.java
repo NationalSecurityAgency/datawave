@@ -5,7 +5,7 @@ import datawave.query.attributes.Document;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.BaseShardIdRange;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
@@ -17,10 +17,10 @@ import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.ShardIdValues;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,12 +42,12 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class MiscQueryTest extends AbstractFunctionalQuery {
     
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = new AccumuloSetupExtension();
     
     private static final Logger log = Logger.getLogger(MiscQueryTest.class);
     
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
@@ -73,12 +73,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         // not sure if this is a valid test as it requires full table scan
         String query = CityField.CITY.name() + NE_OP + CityField.CODE.name();
         String expect = CityField.CITY.name() + NE_OP + "all";
-        try {
-            runTest(query, expect);
-            Assert.fail("full table scan exception expected");
-        } catch (FullTableScansDisallowedException e) {
-            // expected
-        }
+        Assertions.assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, expect));
         
         this.logic.setFullTableScanEnabled(true);
         runTest(query, expect);
@@ -222,21 +217,16 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
             
             this.logic.setInitialMaxTermThreshold(1);
             this.logic.setFinalMaxTermThreshold(1);
-            try {
-                runTest(query, query);
-                Assert.fail("threshold exception expected");
-            } catch (DatawaveFatalQueryException e) {
-                // expected
-            }
+            Assertions.assertThrows(DatawaveFatalQueryException.class, () -> runTest(query, query));
         }
     }
     
-    @Test(expected = FullTableScansDisallowedException.class)
-    public void testErrorQuery() throws Exception {
+    @Test
+    public void testErrorQuery() {
         log.info("------  testErrorQuery  ------");
         String query = "error-query";
         String expect = "a == 'a'";
-        runTest(query, expect);
+        Assertions.assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, expect));
     }
     
     // ============================================
@@ -266,8 +256,8 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         public void assertValid(Document doc) {
             for (Map.Entry<String,Attribute<? extends Comparable<?>>> entry : doc.entrySet()) {
                 String key = entry.getKey();
-                Assert.assertFalse("excluded key found(" + key + ")", exclude.contains(key));
-                Assert.assertTrue("invalid key(" + key + ")", validKeys.contains(key));
+                Assertions.assertFalse(exclude.contains(key), "excluded key found(" + key + ")");
+                Assertions.assertTrue(validKeys.contains(key), "invalid key(" + key + ")");
             }
         }
     }

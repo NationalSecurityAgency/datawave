@@ -1,21 +1,7 @@
 package datawave.query.iterator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.TimeZone;
-import java.util.TreeMap;
-
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
@@ -31,24 +17,35 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.CachedConfiguration;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TimeZone;
+import java.util.TreeMap;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SourceManagerTest {
     private static final SimpleDateFormat shardFormatter = new SimpleDateFormat("yyyyMMdd HHmmss");
-    private static long ts = -1;
     
-    private SortedMapIterator data;
     private SourceCounter counter;
     private SortedListKeyValueIterator dataIterator;
     
-    @Before
+    @BeforeEach
     public void setup() throws ParseException, IOException {
         
-        data = new SortedMapIterator(createTestData());
+        SortedMapIterator data = new SortedMapIterator(createTestData());
         
         counter = new SourceCounter();
         
@@ -73,19 +70,19 @@ public class SourceManagerTest {
         // individual next loops
         int copy1Count = 0;
         while (copy1.hasTop()) {
-            assertNotEquals("unexpected topKey on iteration=" + copy1Count, null, copy1.getTopKey());
+            assertNotEquals(null, copy1.getTopKey(), "unexpected topKey on iteration=" + copy1Count);
             copy1Count++;
             copy1.next();
         }
         
         int copy2Count = 0;
         while (copy2.hasTop()) {
-            assertNotEquals("unexpected topKey on iteration=" + copy2Count, null, copy2.getTopKey());
+            assertNotEquals(null, copy2.getTopKey(), "unexpected topKey on iteration=" + copy2Count);
             copy2Count++;
             copy2.next();
         }
         
-        assertTrue("both copies should have the same number of next calls; copy1=" + copy1Count + " copy2=" + copy2Count, copy1Count == copy2Count);
+        assertEquals(copy1Count, copy2Count, "both copies should have the same number of next calls; copy1=" + copy1Count + " copy2=" + copy2Count);
     }
     
     @Test
@@ -106,7 +103,7 @@ public class SourceManagerTest {
         // alternating next loops
         int alternatingCount = 0;
         while (copy1.hasTop() && copy2.hasTop()) {
-            assertTrue(copy1.getTopKey().equals(copy2.getTopKey()));
+            assertEquals(copy1.getTopKey(), copy2.getTopKey());
             alternatingCount++;
             copy1.next();
             copy2.next();
@@ -157,9 +154,9 @@ public class SourceManagerTest {
         }
         
         assertTrue(mixedCopy2Count > mixedCopy1Count);
-        assertTrue(mixedCopy2Count == 26);
+        assertEquals(26, mixedCopy2Count);
         // since re-seek after the first one should be 2x expected
-        assertTrue(mixedCopy1Count == 9 * 2);
+        assertEquals(9 * 2, mixedCopy1Count);
     }
     
     @Test
@@ -195,8 +192,8 @@ public class SourceManagerTest {
         }
         
         assertTrue(mixedCopy2Count > mixedCopy1Count);
-        assertTrue(mixedCopy2Count == 26);
-        assertTrue(mixedCopy1Count == 0);
+        assertEquals(26, mixedCopy2Count);
+        assertEquals(0, mixedCopy1Count);
     }
     
     @Test
@@ -243,7 +240,7 @@ public class SourceManagerTest {
     }
     
     @Test
-    public void ensureDeepCopiesCalledLazily() throws IOException {
+    public void ensureDeepCopiesCalledLazily() {
         SourceMaker maker = new SourceMaker();
         SourceManager manager = new SourceManager(maker);
         manager.setInitialSize(10);
@@ -269,7 +266,7 @@ public class SourceManagerTest {
     public static SortedMap<Key,Value> createTestData(String preId) throws ParseException {
         
         shardFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
-        ts = shardFormatter.parse("20121126 123023").getTime();
+        long ts = shardFormatter.parse("20121126 123023").getTime();
         long ts2 = ts + 10000;
         long ts3 = ts + 200123;
         
@@ -307,7 +304,7 @@ public class SourceManagerTest {
         return map;
     }
     
-    public class SourceCounter extends org.apache.accumulo.core.iterators.WrappingIterator {
+    public static class SourceCounter extends org.apache.accumulo.core.iterators.WrappingIterator {
         long counter = 0;
         
         long nextCalls = 0;
@@ -324,7 +321,7 @@ public class SourceManagerTest {
         }
     }
     
-    public class SourceMaker extends org.apache.accumulo.core.iterators.WrappingIterator {
+    public static class SourceMaker extends org.apache.accumulo.core.iterators.WrappingIterator {
         
         protected List<SourceMaker> children = Lists.newArrayList();
         long nextCalls = 0;
@@ -342,7 +339,7 @@ public class SourceManagerTest {
         }
     }
     
-    public class MockIteratorEnvironment implements IteratorEnvironment {
+    public static class MockIteratorEnvironment implements IteratorEnvironment {
         
         AccumuloConfiguration conf;
         

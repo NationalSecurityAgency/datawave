@@ -4,23 +4,23 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FieldIndexOnlyQueryCompressedOptionsTest {
     
     private FieldIndexOnlyQueryIterator mockIterator;
     private Map<String,String> optionsMap;
-    private Key key1;
-    private Key key2;
     private Range testRange;
-    private ByteSequence mockSeq;
     private Collection<ByteSequence> byteSeq;
     
-    @Before
+    @BeforeEach
     public void setup() {
         
         mockIterator = new FieldIndexOnlyQueryIterator();
@@ -44,12 +44,12 @@ public class FieldIndexOnlyQueryCompressedOptionsTest {
         mockIterator.compressedMappings = true;
         mockIterator.documentOptions = optionsMap;
         
-        key1 = new Key("key_1");
-        key2 = new Key("key_2");
+        Key key1 = new Key("key_1");
+        Key key2 = new Key("key_2");
         testRange = new Range(key1, key2);
         
-        mockSeq = EasyMock.createMock(ByteSequence.class);
-        byteSeq = new ArrayList<ByteSequence>();
+        ByteSequence mockSeq = EasyMock.createMock(ByteSequence.class);
+        byteSeq = new ArrayList<>();
         byteSeq.add(mockSeq);
         
     }
@@ -63,7 +63,7 @@ public class FieldIndexOnlyQueryCompressedOptionsTest {
             e.getMessage();
         }
         
-        Assert.assertTrue(mockIterator.validateOptions(optionsMap));
+        Assertions.assertTrue(mockIterator.validateOptions(optionsMap));
     }
     
     @Test
@@ -75,7 +75,7 @@ public class FieldIndexOnlyQueryCompressedOptionsTest {
             e.getMessage();
         }
         
-        Assert.assertTrue(mockIterator.compressedMappings);
+        Assertions.assertTrue(mockIterator.compressedMappings);
         
     }
     

@@ -1,33 +1,32 @@
 package datawave.util;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import java.util.Comparator;
 import java.util.Date;
 import java.util.function.Function;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@RunWith(Enclosed.class)
 public class OperationEvaluatorTest {
     
     /**
      * Tests for {@link OperationEvaluator#calculate(int, int, String)} and {@link OperationEvaluator#compare(int, int, String)}
      */
-    public static class IntegerTests extends EvaluatorTestSuite<Integer,Integer> {
+    @Nested
+    public class IntegerTests extends EvaluatorTestSuite<Integer,Integer> {
         
-        @Before
+        @BeforeEach
         public void beforeEach() {
             givenCalculateFunction((args) -> OperationEvaluator.calculate(args.left, args.right, args.operator));
             givenCompareFunction((args) -> OperationEvaluator.compare(args.left, args.right, args.operator));
         }
         
-        @After
+        @AfterEach
         public void afterEach() {
             clearArgs();
         }
@@ -92,15 +91,16 @@ public class OperationEvaluatorTest {
     /**
      * Tests for {@link OperationEvaluator#calculate(long, long, String)} and {@link OperationEvaluator#compare(long, long, String)}
      */
-    public static class LongTests extends EvaluatorTestSuite<Long,Long> {
+    @Nested
+    public class LongTests extends EvaluatorTestSuite<Long,Long> {
         
-        @Before
+        @BeforeEach
         public void beforeEach() {
             givenCalculateFunction((args) -> OperationEvaluator.calculate(args.left, args.right, args.operator));
             givenCompareFunction((args) -> OperationEvaluator.compare(args.left, args.right, args.operator));
         }
         
-        @After
+        @AfterEach
         public void afterEach() {
             clearArgs();
         }
@@ -165,15 +165,16 @@ public class OperationEvaluatorTest {
     /**
      * Tests for {@link OperationEvaluator#calculate(float, float, String)} and {@link OperationEvaluator#compare(float, float, String)}
      */
-    public static class FloatTests extends EvaluatorTestSuite<Float,Float> {
+    @Nested
+    public class FloatTests extends EvaluatorTestSuite<Float,Float> {
         
-        @Before
+        @BeforeEach
         public void beforeEach() {
             givenCalculateFunction((args) -> OperationEvaluator.calculate(args.left, args.right, args.operator));
             givenCompareFunction((args) -> OperationEvaluator.compare(args.left, args.right, args.operator));
         }
         
-        @After
+        @AfterEach
         public void afterEach() {
             clearArgs();
         }
@@ -238,15 +239,16 @@ public class OperationEvaluatorTest {
     /**
      * Tests for {@link OperationEvaluator#calculate(double, double, String)} and {@link OperationEvaluator#compare(double, double, String)}
      */
-    public static class DoubleTests extends EvaluatorTestSuite<Double,Double> {
+    @Nested
+    public class DoubleTests extends EvaluatorTestSuite<Double,Double> {
         
-        @Before
+        @BeforeEach
         public void beforeEach() {
             givenCalculateFunction((args) -> OperationEvaluator.calculate(args.left, args.right, args.operator));
             givenCompareFunction((args) -> OperationEvaluator.compare(args.left, args.right, args.operator));
         }
         
-        @After
+        @AfterEach
         public void afterEach() {
             clearArgs();
         }
@@ -311,15 +313,16 @@ public class OperationEvaluatorTest {
     /**
      * Tests for {@link OperationEvaluator#calculate(Date, Date, String)} and {@link OperationEvaluator#compare(Date, Date, String)}
      */
-    public static class DateTests extends EvaluatorTestSuite<Date,Long> {
+    @Nested
+    public class DateTests extends EvaluatorTestSuite<Date,Long> {
         
-        @Before
+        @BeforeEach
         public void beforeEach() {
             givenCalculateFunction((args) -> OperationEvaluator.calculate(args.left, args.right, args.operator));
             givenCompareFunction((args) -> OperationEvaluator.compare(args.left, args.right, args.operator));
         }
         
-        @After
+        @AfterEach
         public void afterEach() {
             clearArgs();
         }
@@ -384,14 +387,15 @@ public class OperationEvaluatorTest {
     /**
      * Tests for {@link OperationEvaluator#compare(Comparable, Comparable, String)}.
      */
-    public static class ComparableTests extends EvaluatorTestSuite<String,Void> {
+    @Nested
+    public class ComparableTests extends EvaluatorTestSuite<String,Void> {
         
-        @Before
+        @BeforeEach
         public void beforeEach() {
             givenCompareFunction((args) -> OperationEvaluator.compare(args.left, args.right, args.operator));
         }
         
-        @After
+        @AfterEach
         public void afterEach() {
             clearArgs();
         }
@@ -431,14 +435,15 @@ public class OperationEvaluatorTest {
     /**
      * Tests for {@link OperationEvaluator#compare(Object, Object, String, Comparator)}.
      */
-    public static class ComparatorTests extends EvaluatorTestSuite<String,Void> {
+    @Nested
+    public class ComparatorTests extends EvaluatorTestSuite<String,Void> {
         
-        @Before
+        @BeforeEach
         public void beforeEach() {
             givenCompareFunction((args) -> OperationEvaluator.compare(args.left, args.right, args.operator, Comparator.reverseOrder()));
         }
         
-        @After
+        @AfterEach
         public void afterEach() {
             clearArgs();
         }
@@ -516,7 +521,7 @@ public class OperationEvaluatorTest {
         
         public void assertCalculateResult(CALCULATE_OUTPUT expected) {
             CALCULATE_OUTPUT actual = calculate();
-            assertEquals("Expected " + expected + " but received " + actual, expected, actual);
+            assertEquals(expected, actual, "Expected " + expected + " but received " + actual);
         }
         
         public void assertCompareResult(boolean expected) {

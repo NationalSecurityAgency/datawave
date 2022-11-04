@@ -1,14 +1,12 @@
 package datawave.user;
 
+import org.junit.jupiter.api.Test;
+
 import java.util.TreeSet;
-
-import datawave.webservice.ProtobufSerializationTestBase;
-
-import org.junit.Test;
 
 public class UserAuthorizationsTest extends ProtobufSerializationTestBase {
     @Test
-    public void testFieldConfiguration() {
+    public void testFieldConfiguration() throws InstantiationException, IllegalAccessException {
         String[] expecteds = new String[] {"SCHEMA", "auths", "serialVersionUID"};
         testFieldNames(expecteds, UserAuthorizations.class);
     }

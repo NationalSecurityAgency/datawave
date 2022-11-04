@@ -1,37 +1,37 @@
 package datawave.webservice.common.connection;
 
-import static org.easymock.MockType.STRICT;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import com.google.common.collect.Lists;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.webservice.common.cache.AccumuloTableCache;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.common.connection.config.ConnectionPoolConfiguration;
+import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.commons.pool2.PooledObject;
+import org.apache.commons.pool2.impl.DefaultPooledObject;
+import org.easymock.EasyMock;
+import org.easymock.EasyMockExtension;
+import org.easymock.EasyMockSupport;
+import org.easymock.Mock;
+import org.easymock.TestSubject;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.google.common.collect.Lists;
-import datawave.webservice.common.cache.AccumuloTableCache;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.common.connection.config.ConnectionPoolConfiguration;
-import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
-import org.apache.accumulo.core.client.Connector;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import org.apache.commons.pool2.PooledObject;
-import org.apache.commons.pool2.impl.DefaultPooledObject;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
-import org.easymock.TestSubject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.reflect.Whitebox;
+import static org.easymock.MockType.STRICT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     
     @TestSubject
@@ -49,15 +49,14 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     @Mock(type = STRICT)
     private WrappedConnector metricsConnection;
     
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
-        
-        MyAccumuloConnectionPoolFactory warehouseFactory = Whitebox.newInstance(MyAccumuloConnectionPoolFactory.class);
-        Whitebox.setInternalState(warehouseFactory, "username", "root");
-        Whitebox.setInternalState(warehouseFactory, "password", "");
-        MyAccumuloConnectionPoolFactory metricsFactory = Whitebox.newInstance(MyAccumuloConnectionPoolFactory.class);
-        Whitebox.setInternalState(metricsFactory, "username", "root");
-        Whitebox.setInternalState(metricsFactory, "password", "");
+        MyAccumuloConnectionPoolFactory warehouseFactory = EasyMock.partialMockBuilder(MyAccumuloConnectionPoolFactory.class).createMock();
+        ReflectionTestUtils.setField(warehouseFactory, "username", "root");
+        ReflectionTestUtils.setField(warehouseFactory, "password", "");
+        MyAccumuloConnectionPoolFactory metricsFactory = EasyMock.partialMockBuilder(MyAccumuloConnectionPoolFactory.class).createMock();
+        ReflectionTestUtils.setField(metricsFactory, "username", "root");
+        ReflectionTestUtils.setField(metricsFactory, "password", "");
         warehouseFactory.setConnector(warehouseConnection);
         metricsFactory.setConnector(metricsConnection);
         
@@ -65,9 +64,9 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         configs.put("WAREHOUSE", null);
         configs.put("METRICS", null);
         ConnectionPoolsConfiguration conf = new ConnectionPoolsConfiguration();
-        Whitebox.setInternalState(conf, "defaultPool", "WAREHOUSE");
-        Whitebox.setInternalState(conf, "poolNames", Lists.newArrayList("WAREHOUSE", "METRICS"));
-        Whitebox.setInternalState(conf, "pools", configs);
+        ReflectionTestUtils.setField(conf, "defaultPool", "WAREHOUSE");
+        ReflectionTestUtils.setField(conf, "poolNames", Lists.newArrayList("WAREHOUSE", "METRICS"));
+        ReflectionTestUtils.setField(conf, "pools", configs);
         
         String defaultPoolName = conf.getDefaultPool();
         HashMap<String,Map<Priority,AccumuloConnectionPool>> pools = new HashMap<>();
@@ -92,12 +91,12 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
             p.put(Priority.LOW, acp);
             pools.put(entry.getKey(), Collections.unmodifiableMap(p));
         }
-        Whitebox.setInternalState(bean, ConnectionPoolsConfiguration.class, conf);
-        Whitebox.setInternalState(bean, "defaultPoolName", defaultPoolName);
-        Whitebox.setInternalState(bean, "pools", pools);
+        ReflectionTestUtils.setField(bean, "connectionPoolsConfiguration", conf);
+        ReflectionTestUtils.setField(bean, "defaultPoolName", defaultPoolName);
+        ReflectionTestUtils.setField(bean, "pools", pools);
     }
     
-    @After
+    @AfterEach
     public void cleanup() throws Exception {
         System.clearProperty("dw.accumulo.classLoader.context");
     }
@@ -113,7 +112,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
-        assertNull("scannerClassLoaderContext was set when it shouldn't have been", Whitebox.getInternalState(con, "scannerClassLoaderContext"));
+        assertNull(ReflectionTestUtils.getField(con, "scannerClassLoaderContext"), "scannerClassLoaderContext was set when it shouldn't have been");
     }
     
     @Test
@@ -141,7 +140,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
-        assertEquals("alternateContext", Whitebox.getInternalState(con, "scannerClassLoaderContext"));
+        assertEquals("alternateContext", ReflectionTestUtils.getField(con, "scannerClassLoaderContext"));
     }
     
     @Test

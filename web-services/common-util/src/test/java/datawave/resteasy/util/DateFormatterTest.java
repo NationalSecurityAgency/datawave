@@ -1,24 +1,25 @@
 package datawave.resteasy.util;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DateFormatterTest {
     
     private DateFormatter formatter = new DateFormatter(null);
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testDateFormatterFail1() {
-        formatter.fromString("20120101120000");
+        assertThrows(RuntimeException.class, () -> formatter.fromString("20120101120000"));
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testDateFormatterFail2() {
-        formatter.fromString("20120101 250000");
+        assertThrows(RuntimeException.class, () -> formatter.fromString("20120101 250000"));
     }
     
     @Test

@@ -1,29 +1,28 @@
 package datawave.security.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AuthorizationsUtilTest {
     private static final String USER_DN = "userDN";
@@ -34,7 +33,7 @@ public class AuthorizationsUtilTest {
     private DatawavePrincipal proxiedServerPrincipal1;
     private DatawavePrincipal proxiedServerPrincipal2;
     
-    @Before
+    @BeforeEach
     public void initialize() {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         methodAuths = "A,C";
@@ -69,31 +68,28 @@ public class AuthorizationsUtilTest {
         assertEquals(expected, AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, proxiedUserPrincipal));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDowngradeAuthorizationsUserRequestsAuthTheyDontHave() {
-        AuthorizationsUtil.getDowngradedAuthorizations("A,C,E", proxiedUserPrincipal);
-        fail("Exception not thrown!");
+        assertThrows(IllegalArgumentException.class, () -> AuthorizationsUtil.getDowngradedAuthorizations("A,C,E", proxiedUserPrincipal));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDowngradeAuthorizationsServerRequestsAuthTheyDontHave1() {
         // p1, p3 - call will succeed if p1 is primaryUser, throw exception if p3 is primaryUser
-        AuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal1);
-        fail("Exception not thrown!");
+        assertThrows(IllegalArgumentException.class, () -> AuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal1));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDowngradeAuthorizationsServerRequestsAuthTheyDontHave2() {
         // p1, p2, p3 - call will succeed if p1 is primaryUser, throw exception if p2 is primaryUser
-        AuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal2);
-        fail("Exception not thrown!");
+        assertThrows(IllegalArgumentException.class, () -> AuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal2));
     }
     
     @Test
     public void testUserAuthsFirstInMergedSet() {
         HashSet<Authorizations> mergedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, proxiedUserPrincipal);
         assertEquals(3, mergedAuths.size());
-        assertEquals("Merged user authorizations were not first in the return set", new Authorizations("A", "C"), mergedAuths.iterator().next());
+        assertEquals(new Authorizations("A", "C"), mergedAuths.iterator().next(), "Merged user authorizations were not first in the return set");
     }
     
     @Test
@@ -111,12 +107,11 @@ public class AuthorizationsUtilTest {
         assertEquals(new Authorizations(), AuthorizationsUtil.union(new Authorizations(), new Authorizations()));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testUserRequestsAuthTheyDontHave() {
         // This is the case where we could throw an error or write something to the logs
         methodAuths = "A,C,F";
-        AuthorizationsUtil.mergeAuthorizations(methodAuths, userAuths);
-        fail("Exception not thrown!");
+        assertThrows(IllegalArgumentException.class, () -> AuthorizationsUtil.mergeAuthorizations(methodAuths, userAuths));
     }
     
     @Test

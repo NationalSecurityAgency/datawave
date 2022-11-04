@@ -3,18 +3,18 @@ package datawave.query.iterator;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class QueryOptionsTest {
     
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() {
         Logger.getLogger(QueryOptions.class).setLevel(Level.TRACE);
     }
@@ -25,7 +25,7 @@ public class QueryOptionsTest {
         Map<String,Set<String>> expectedDataTypeMap = new HashMap<>();
         expectedDataTypeMap.put("k", Sets.newHashSet("v"));
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(singleValueData);
-        assertEquals("Failed to parse single value option string", expectedDataTypeMap, fieldDataTypeMap);
+        assertEquals(expectedDataTypeMap, fieldDataTypeMap, "Failed to parse single value option string");
     }
     
     @Test
@@ -35,7 +35,7 @@ public class QueryOptionsTest {
         expectedDataTypeMap.put("k", Sets.newHashSet("v"));
         expectedDataTypeMap.put("key", Sets.newHashSet("value"));
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(multiValueData);
-        assertEquals("Failed to parse multi-value option string", expectedDataTypeMap, fieldDataTypeMap);
+        assertEquals(expectedDataTypeMap, fieldDataTypeMap, "Failed to parse multi-value option string");
     }
     
     @Test
@@ -43,15 +43,14 @@ public class QueryOptionsTest {
         String emptyData = "";
         Map<String,Set<String>> expectedDataTypeMap = new HashMap<>();
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(emptyData);
-        assertEquals("Failed to parse empty option string", expectedDataTypeMap, fieldDataTypeMap);
+        assertEquals(expectedDataTypeMap, fieldDataTypeMap, "Failed to parse empty option string");
     }
     
     @Test
     public void testBuildFieldDataTypeMapFromNullString() {
-        String nulldata = null;
         Map<String,Set<String>> expectedDataTypeMap = new HashMap<>();
-        Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(nulldata);
-        assertEquals("Failed to parse null option string", expectedDataTypeMap, fieldDataTypeMap);
+        Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(null);
+        assertEquals(expectedDataTypeMap, fieldDataTypeMap, "Failed to parse null option string");
     }
     
     @Test
@@ -59,7 +58,7 @@ public class QueryOptionsTest {
         String badData = "k:k2:k3:v;";
         Map<String,Set<String>> expectedDataTypeMap = new HashMap<>();
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(badData);
-        assertEquals("Failed to parse bad option string", expectedDataTypeMap, fieldDataTypeMap);
+        assertEquals(expectedDataTypeMap, fieldDataTypeMap, "Failed to parse bad option string");
     }
     
     @Test
@@ -67,7 +66,7 @@ public class QueryOptionsTest {
         String data = "k:v;";
         Set<String> expectedDataTypeKeys = Sets.newHashSet("k");
         Set<String> dataTypeKeys = QueryOptions.fetchDataTypeKeys(data);
-        assertEquals("Failed to parse single value option string", expectedDataTypeKeys, dataTypeKeys);
+        assertEquals(expectedDataTypeKeys, dataTypeKeys, "Failed to parse single value option string");
     }
     
     @Test
@@ -75,7 +74,7 @@ public class QueryOptionsTest {
         String data = "k:v;key:value";
         Set<String> expectedDataTypeKeys = Sets.newHashSet("k", "key");
         Set<String> dataTypeKeys = QueryOptions.fetchDataTypeKeys(data);
-        assertEquals("Failed to parse multi-value option string", expectedDataTypeKeys, dataTypeKeys);
+        assertEquals(expectedDataTypeKeys, dataTypeKeys, "Failed to parse multi-value option string");
     }
     
     @Test
@@ -83,14 +82,13 @@ public class QueryOptionsTest {
         String data = "";
         Set<String> expectedDataTypeKeys = Sets.newHashSet();
         Set<String> dataTypeKeys = QueryOptions.fetchDataTypeKeys(data);
-        assertEquals("Failed to parse empty option string", expectedDataTypeKeys, dataTypeKeys);
+        assertEquals(expectedDataTypeKeys, dataTypeKeys, "Failed to parse empty option string");
     }
     
     @Test
     public void testFetchDataTypeKeysFromNullString() {
-        String data = null;
         Set<String> expectedDataTypeKeys = Sets.newHashSet();
-        Set<String> dataTypeKeys = QueryOptions.fetchDataTypeKeys(data);
-        assertEquals("Failed to parse null option string", expectedDataTypeKeys, dataTypeKeys);
+        Set<String> dataTypeKeys = QueryOptions.fetchDataTypeKeys(null);
+        assertEquals(expectedDataTypeKeys, dataTypeKeys, "Failed to parse null option string");
     }
 }

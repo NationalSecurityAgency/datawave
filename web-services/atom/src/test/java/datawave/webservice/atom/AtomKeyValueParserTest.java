@@ -1,7 +1,5 @@
 package datawave.webservice.atom;
 
-import java.io.IOException;
-
 import org.apache.abdera.Abdera;
 import org.apache.abdera.i18n.iri.IRI;
 import org.apache.abdera.model.Entry;
@@ -9,20 +7,17 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.ValueFormatException;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 
 public class AtomKeyValueParserTest {
     
     public AtomKeyValueParser kv;
     
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-    
-    @Before
+    @BeforeEach
     public void before() {
         kv = new AtomKeyValueParser();
     }
@@ -31,12 +26,12 @@ public class AtomKeyValueParserTest {
     public void testGettersAndSetters() {
         kv.setValue("valueForTests");
         
-        Assert.assertNull(kv.getCollectionName());
-        Assert.assertNull(kv.getId());
-        Assert.assertNull(kv.getUpdated());
-        Assert.assertNull(kv.getColumnVisibility());
-        Assert.assertNull(kv.getUuid());
-        Assert.assertEquals("valueForTests", kv.getValue());
+        Assertions.assertNull(kv.getCollectionName());
+        Assertions.assertNull(kv.getId());
+        Assertions.assertNull(kv.getUpdated());
+        Assertions.assertNull(kv.getColumnVisibility());
+        Assertions.assertNull(kv.getUuid());
+        Assertions.assertEquals("valueForTests", kv.getValue());
     }
     
     @SuppressWarnings("static-access")
@@ -46,9 +41,9 @@ public class AtomKeyValueParserTest {
         String encodedID = kv.encodeId(id);
         String decodedID = kv.decodeId(encodedID);
         
-        Assert.assertNotEquals(id, encodedID);
-        Assert.assertNotEquals(decodedID, encodedID);
-        Assert.assertEquals(id, decodedID);
+        Assertions.assertNotEquals(id, encodedID);
+        Assertions.assertNotEquals(decodedID, encodedID);
+        Assertions.assertEquals(id, decodedID);
     }
     
     @Test
@@ -60,9 +55,9 @@ public class AtomKeyValueParserTest {
         IRI iri = new IRI("https://hostForTests:portForTests/DataWave/Atom/null/null");
         
         Entry entry = kv.toEntry(abdera, host, port);
-        Assert.assertEquals(iri, entry.getId());
-        Assert.assertEquals("(null) null with null @ null null", entry.getTitle());
-        Assert.assertNull(entry.getUpdated());
+        Assertions.assertEquals(iri, entry.getId());
+        Assertions.assertEquals("(null) null with null @ null null", entry.getTitle());
+        Assertions.assertNull(entry.getUpdated());
     }
     
     @SuppressWarnings("static-access")
@@ -74,10 +69,10 @@ public class AtomKeyValueParserTest {
         
         AtomKeyValueParser resultKV = kv.parse(key, value);
         
-        Assert.assertEquals("row1", resultKV.getCollectionName());
-        Assert.assertNotEquals(resultKV.getId(), kv.decodeId(resultKV.getId()));
-        Assert.assertEquals("color", resultKV.getUuid());
-        Assert.assertEquals("fi", resultKV.getValue());
+        Assertions.assertEquals("row1", resultKV.getCollectionName());
+        Assertions.assertNotEquals(resultKV.getId(), kv.decodeId(resultKV.getId()));
+        Assertions.assertEquals("color", resultKV.getUuid());
+        Assertions.assertEquals("fi", resultKV.getValue());
     }
     
     @SuppressWarnings("static-access")
@@ -86,13 +81,8 @@ public class AtomKeyValueParserTest {
         Key key = new Key(new Text("row1"), new Text("fi\0color"), new Text("red\0truck\0t-uid001"));
         byte[] vals = new byte[4];
         Value value = new Value(vals);
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("Atom entry is missing row parts: row1 fi%00;color:red%00;truck%00;t-uid001 [] 9223372036854775807 false");
-        try {
-            kv.parse(key, value);
-        } catch (IOException e) {
-            // Empty on purpose
-        }
+        IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class, () -> kv.parse(key, value));
+        Assertions.assertEquals("Atom entry is missing row parts: row1 fi%00;color:red%00;truck%00;t-uid001 [] 9223372036854775807 false", e.getMessage());
     }
     
     @SuppressWarnings("static-access")
@@ -114,13 +104,8 @@ public class AtomKeyValueParserTest {
         Key key = new Key(new Text("row1\0"), new Text("fi\0color"), new Text("red\0truck\0t-uid001"));
         byte[] vals = new byte[4];
         Value value = new Value(vals);
-        thrown.expect(ValueFormatException.class);
-        thrown.expectMessage("trying to convert to long, but byte array isn't long enough, wanted 8 found 0");
-        try {
-            kv.parse(key, value);
-        } catch (IOException e) {
-            // Empty on purpose
-        }
+        ValueFormatException e = Assertions.assertThrows(ValueFormatException.class, () -> kv.parse(key, value));
+        Assertions.assertEquals("trying to convert to long, but byte array isn't long enough, wanted 8 found 0", e.getMessage());
     }
     
     @SuppressWarnings("static-access")
@@ -129,13 +114,8 @@ public class AtomKeyValueParserTest {
         Key key = new Key(new Text("row1\0row2and3"), new Text("fi"), new Text("red\0truck\0t-uid001"));
         byte[] vals = new byte[4];
         Value value = new Value(vals);
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("Atom entry is missing column qualifier parts: ");
-        try {
-            kv.parse(key, value);
-        } catch (IOException e) {
-            // Empty catch because of ExpectedException
-        }
+        IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class, () -> kv.parse(key, value));
+        Assertions.assertTrue(e.getMessage().startsWith("Atom entry is missing column qualifier parts: "));
     }
     
     @SuppressWarnings("static-access")
@@ -144,12 +124,7 @@ public class AtomKeyValueParserTest {
         Key key = new Key(new Text("row1\0row2and3"), new Text("fi\0"), new Text("red\0truck\0t-uid001"));
         byte[] vals = new byte[4];
         Value value = new Value(vals);
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("Atom entry is missing column qualifier parts: ");
-        try {
-            kv.parse(key, value);
-        } catch (IOException e) {
-            // Empty catch because of ExpectedException
-        }
+        IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class, () -> kv.parse(key, value));
+        Assertions.assertTrue(e.getMessage().startsWith("Atom entry is missing column qualifier parts: "));
     }
 }

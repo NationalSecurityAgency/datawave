@@ -1,12 +1,7 @@
 package datawave.ingest.wikipedia;
 
-import static org.junit.Assert.assertNotNull;
-
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelper;
@@ -14,7 +9,6 @@ import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentIndexingColumnBasedHandler;
 import datawave.policy.ExampleIngestPolicyEnforcer;
-
 import datawave.util.TableName;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -23,11 +17,13 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Assert;
-import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 /**
  * 
@@ -39,18 +35,18 @@ public class WikipediaTestBed {
     protected Multimap<String,String> expectedRawFieldsRecord1 = HashMultimap.create(), expectedRawFieldsRecord2 = HashMultimap.create(),
                     expectedNormalizedFieldsRecord1 = HashMultimap.create(), expectedNormalizedFieldsRecord2 = HashMultimap.create();
     
-    @Before
+    @BeforeEach
     public void initializeInputData() throws Exception {
         
         conf = new Configuration();
         conf.set("all" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, ExampleIngestPolicyEnforcer.class.getName());
         
         URL url = ClassLoader.getSystemResource("config/ingest/wikipedia-config.xml");
-        Assert.assertNotNull("URL to wikipedia-config.xml was null", url);
+        Assertions.assertNotNull(url, "URL to wikipedia-config.xml was null");
         conf.addResource(url);
         
         url = ClassLoader.getSystemResource("config/ingest/metadata-config.xml");
-        Assert.assertNotNull("URL to metadata-config.xml was null", url);
+        Assertions.assertNotNull(url, "URL to metadata-config.xml was null");
         conf.addResource(url);
         
         conf.setInt(ShardedDataTypeHandler.NUM_SHARDS, 1);
@@ -79,7 +75,7 @@ public class WikipediaTestBed {
                 data = fileObj.toURI().toURL();
             }
         }
-        assertNotNull("Did not find test resource", data);
+        Assertions.assertNotNull(data, "Did not find test resource");
         
         File dataFile = new File(data.toURI());
         Path p = new Path(dataFile.toURI().toString());

@@ -5,21 +5,19 @@
  */
 package datawave.util.flag;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import datawave.util.flag.InputFile.TrackedDir;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -29,7 +27,7 @@ public class SimpleMoverTest extends AbstractFlagConfig {
     private static Cache<Path,Path> directoryCache = CacheBuilder.newBuilder().maximumSize(100).expireAfterWrite(10, TimeUnit.MINUTES).concurrencyLevel(10)
                     .build();
     
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         this.fmc = getDefaultFMC();
         this.fmc.setBaseHDFSDir(this.fmc.getBaseHDFSDir().replace("target", "target/SimpleMoverTest"));
@@ -51,7 +49,7 @@ public class SimpleMoverTest extends AbstractFlagConfig {
         
         SimpleMover instance = new SimpleMover(directoryCache, inFile, TrackedDir.FLAGGED_DIR, fs);
         InputFile result = instance.call();
-        assertTrue("Should have moved to flagged", result.isMoved());
+        assertTrue(result.isMoved(), "Should have moved to flagged");
         assertTrue(result.getCurrentDir().equals(result.getFlagged()));
     }
     
@@ -73,7 +71,7 @@ public class SimpleMoverTest extends AbstractFlagConfig {
         SimpleMover instance = new SimpleMover(directoryCache, entry, TrackedDir.FLAGGING_DIR, fs);
         
         InputFile result = instance.call();
-        assertFalse("should not have moved due to collision", result.isMoved());
+        assertFalse(result.isMoved(), "should not have moved due to collision");
         assertTrue(result.getCurrentDir().equals(result.getPath()));
     }
     

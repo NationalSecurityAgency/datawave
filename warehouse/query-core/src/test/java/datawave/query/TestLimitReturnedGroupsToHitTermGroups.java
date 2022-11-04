@@ -6,7 +6,6 @@ import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
@@ -24,16 +23,15 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.inject.Inject;
 import java.text.DateFormat;
@@ -57,11 +55,11 @@ import java.util.UUID;
  */
 public abstract class TestLimitReturnedGroupsToHitTermGroups {
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class ShardRange extends TestLimitReturnedGroupsToHitTermGroups {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
@@ -74,6 +72,11 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
+        @AfterAll
+        public static void teardown() {
+            TypeRegistry.reset();
+        }
+        
         @Override
         protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                         throws Exception {
@@ -81,11 +84,11 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         }
     }
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends TestLimitReturnedGroupsToHitTermGroups {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
@@ -96,6 +99,11 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
             PrintUtility.printTable(connector, auths, TableName.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+        
+        @AfterAll
+        public static void teardown() {
+            TypeRegistry.reset();
         }
         
         @Override
@@ -135,24 +143,16 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @AfterClass
-    public static void teardown() {
-        TypeRegistry.reset();
-    }
-    
-    @Before
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        log.setLevel(Level.DEBUG);
-        logic.setFullTableScanEnabled(true);
-        deserializer = new KryoDocumentDeserializer();
-    }
-    
     protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                     throws Exception;
     
     protected void runTestQuery(Connector connector, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
                     Collection<String> goodResults) throws Exception {
+        
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        log.setLevel(Level.DEBUG);
+        logic.setFullTableScanEnabled(true);
+        deserializer = new KryoDocumentDeserializer();
         
         QueryImpl settings = new QueryImpl();
         settings.setBeginDate(startDate);
@@ -212,9 +212,9 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
             }
         }
         
-        Assert.assertTrue(goodResults + " was not empty", goodResults.isEmpty());
-        Assert.assertTrue("unexpected fields returned: " + unexpectedFields.toString(), unexpectedFields.isEmpty());
-        Assert.assertTrue("No docs were returned!", !docs.isEmpty());
+        Assertions.assertTrue(goodResults.isEmpty(), goodResults + " was not empty");
+        Assertions.assertTrue(unexpectedFields.isEmpty(), "unexpected fields returned: " + unexpectedFields.toString());
+        Assertions.assertTrue(!docs.isEmpty(), "No docs were returned!");
     }
     
     @Test

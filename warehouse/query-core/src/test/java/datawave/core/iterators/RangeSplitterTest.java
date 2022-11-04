@@ -4,10 +4,10 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * 
@@ -16,16 +16,10 @@ public class RangeSplitterTest {
     
     Logger log = Logger.getLogger(RangeSplitterTest.class);
     
-    /**
-     * @throws java.lang.Exception
-     */
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {}
     
-    /**
-     * @throws java.lang.Exception
-     */
-    @After
+    @AfterEach
     public void tearDown() throws Exception {}
     
     /**
@@ -41,17 +35,18 @@ public class RangeSplitterTest {
         int count = 0;
         for (Range range : splitter) {
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            Assertions.assertTrue(range.isStartKeyInclusive());
+            Assertions.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                Assertions.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                Assertions.assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assert lastRange != null;
+        Assertions.assertEquals(end, lastRange.getEndKey());
+        Assertions.assertEquals(10, count);
     }
     
     /**
@@ -69,17 +64,18 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            Assertions.assertTrue(range.isStartKeyInclusive());
+            Assertions.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                Assertions.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                Assertions.assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assert lastRange != null;
+        Assertions.assertEquals(end, lastRange.getEndKey());
+        Assertions.assertEquals(10, count);
     }
     
     /**
@@ -97,17 +93,18 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            Assertions.assertTrue(range.isStartKeyInclusive());
+            Assertions.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                Assertions.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                Assertions.assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assert lastRange != null;
+        Assertions.assertEquals(end, lastRange.getEndKey());
+        Assertions.assertEquals(10, count);
     }
     
     /**
@@ -125,17 +122,18 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            Assertions.assertTrue(range.isStartKeyInclusive());
+            Assertions.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                Assertions.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                Assertions.assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assert lastRange != null;
+        Assertions.assertEquals(end, lastRange.getEndKey());
+        Assertions.assertEquals(10, count);
     }
     
     /**
@@ -153,17 +151,18 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            Assertions.assertTrue(range.isStartKeyInclusive());
+            Assertions.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                Assertions.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                Assertions.assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assert lastRange != null;
+        Assertions.assertEquals(end, lastRange.getEndKey());
+        Assertions.assertEquals(10, count);
     }
     
     /**
@@ -181,17 +180,18 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            Assertions.assertTrue(range.isStartKeyInclusive());
+            Assertions.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                Assertions.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                Assertions.assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assert lastRange != null;
+        Assertions.assertEquals(end, lastRange.getEndKey());
+        Assertions.assertEquals(10, count);
     }
     
     /**
@@ -209,17 +209,18 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            Assertions.assertTrue(range.isStartKeyInclusive());
+            Assertions.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                Assertions.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                Assertions.assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assert lastRange != null;
+        Assertions.assertEquals(end, lastRange.getEndKey());
+        Assertions.assertEquals(10, count);
     }
     
     /**
@@ -237,17 +238,18 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            Assertions.assertTrue(range.isStartKeyInclusive());
+            Assertions.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                Assertions.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                Assertions.assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(1, count);
+        assert lastRange != null;
+        Assertions.assertEquals(end, lastRange.getEndKey());
+        Assertions.assertEquals(1, count);
     }
     
     /**
@@ -265,17 +267,18 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            Assertions.assertTrue(range.isStartKeyInclusive());
+            Assertions.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                Assertions.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                Assertions.assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(1, count);
+        assert lastRange != null;
+        Assertions.assertEquals(end, lastRange.getEndKey());
+        Assertions.assertEquals(1, count);
     }
     
     /**
@@ -284,8 +287,7 @@ public class RangeSplitterTest {
     @Test
     public void testRangeSplitterNullEndKey() {
         Key start = new Key("row", "cf", "a");
-        Key end = null;
-        Range r = new Range(start, true, end, false);
+        Range r = new Range(start, true, null, false);
         RangeSplitter splitter = new RangeSplitter(r, 10);
         Range lastRange = null;
         int count = 0;
@@ -293,17 +295,18 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            Assertions.assertTrue(range.isStartKeyInclusive());
+            Assertions.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                Assertions.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                Assertions.assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertNull(lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assert lastRange != null;
+        Assertions.assertNull(lastRange.getEndKey());
+        Assertions.assertEquals(10, count);
     }
     
     /**
@@ -311,9 +314,8 @@ public class RangeSplitterTest {
      */
     @Test
     public void testRangeSplitterNullStartKey() {
-        Key start = null;
         Key end = new Key("row", "cf", "a");
-        Range r = new Range(start, true, end, false);
+        Range r = new Range(null, true, end, false);
         RangeSplitter splitter = new RangeSplitter(r, 10);
         Range lastRange = null;
         int count = 0;
@@ -321,17 +323,18 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            Assertions.assertTrue(range.isStartKeyInclusive());
+            Assertions.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                Assertions.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertNull(range.getStartKey());
+                Assertions.assertNull(range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assert lastRange != null;
+        Assertions.assertEquals(end, lastRange.getEndKey());
+        Assertions.assertEquals(10, count);
     }
     
     /**
@@ -349,17 +352,18 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            Assertions.assertTrue(range.isStartKeyInclusive());
+            Assertions.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                Assertions.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                Assertions.assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assert lastRange != null;
+        Assertions.assertEquals(end, lastRange.getEndKey());
+        Assertions.assertEquals(10, count);
     }
     
     /**
@@ -377,17 +381,18 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertTrue(range.isStartKeyInclusive());
-            Assert.assertFalse(range.isEndKeyInclusive());
+            Assertions.assertTrue(range.isStartKeyInclusive());
+            Assertions.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
-                Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
+                Assertions.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
-                Assert.assertEquals(start, range.getStartKey());
+                Assertions.assertEquals(start, range.getStartKey());
             }
             lastRange = range;
         }
-        Assert.assertEquals(end, lastRange.getEndKey());
-        Assert.assertEquals(10, count);
+        assert lastRange != null;
+        Assertions.assertEquals(end, lastRange.getEndKey());
+        Assertions.assertEquals(10, count);
     }
     
 }

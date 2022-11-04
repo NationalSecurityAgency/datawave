@@ -4,17 +4,17 @@
  */
 package datawave.util.flag.processor;
 
+import datawave.util.flag.InputFile;
+import datawave.util.flag.config.FlagDataTypeConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
-
-import datawave.util.flag.InputFile;
-import datawave.util.flag.config.FlagDataTypeConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * No groupings, just returns files that are pending in no specific order
@@ -47,7 +47,7 @@ public class SimpleFlagDistributor implements FlagDistributor {
     public Collection<InputFile> next(SizeValidator validator) {
         int size = inputs.size();
         if (size == 0)
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         Collection<InputFile> list = new HashSet<>();
         if (size < fc.getMaxFlags()) {
             list.addAll(inputs);

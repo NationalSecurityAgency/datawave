@@ -19,12 +19,14 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Set;
 import java.util.TimeZone;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FunctionIndexQueryExpansionVisitorTest {
     
@@ -34,7 +36,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     
     private DateIndexHelper dateIndexHelper;
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         config = new ShardQueryConfiguration();
         metadataHelper = new MockMetadataHelper();
@@ -244,8 +246,8 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
     
     // scored phrase does not support 'scoredPhrase(Iterable, ...)'
-    @Test(expected = IllegalArgumentException.class)
-    public void expandContentScoredPhraseFunctionIntoMultipleFields_exception() throws ParseException {
+    @Test
+    public void expandContentScoredPhraseFunctionIntoMultipleFields_exception() {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
         Set<String> tfFields = Sets.newHashSet("FOO", "BAR");
         
@@ -257,7 +259,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
         
         String original = "content:scoredPhrase((FOO || BAR), -1.5, termOffsetMap, 'abc', 'def')";
         String expected = "(content:scoredPhrase(FOO, -1.5, termOffsetMap, 'abc', 'def') && FOO == 'def' && FOO == 'abc') || (content:scoredPhrase(BAR, -1.5, termOffsetMap, 'abc', 'def') && BAR == 'def' && BAR == 'abc')";
-        runTest(original, expected);
+        assertThrows(IllegalArgumentException.class, () -> runTest(original, expected));
     }
     
     // no expansion function also applies to index query expansion

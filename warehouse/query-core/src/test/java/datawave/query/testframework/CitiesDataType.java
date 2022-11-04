@@ -94,7 +94,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         private static final List<String> Headers;
         
         static {
-            Headers = Stream.of(CityField.values()).map(e -> e.name()).collect(Collectors.toList());
+            Headers = Stream.of(CityField.values()).map(Enum::name).collect(Collectors.toList());
         }
         
         /**
@@ -164,7 +164,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         
         private static final Map<String,RawMetaData> metadataMapping = new HashMap<>();
         
-        private RawMetaData metadata;
+        private final RawMetaData metadata;
         
         CityField(final Normalizer<?> normalizer) {
             this(normalizer, false);

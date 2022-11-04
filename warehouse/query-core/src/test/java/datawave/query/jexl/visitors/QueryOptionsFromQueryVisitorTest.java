@@ -6,13 +6,13 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class QueryOptionsFromQueryVisitorTest {
     
@@ -174,7 +174,7 @@ public class QueryOptionsFromQueryVisitorTest {
             log.error("Expected " + PrintingVisitor.formattedQueryString(expected));
             log.error("Actual " + PrintingVisitor.formattedQueryString(actual));
         }
-        assertTrue(comparison.getReason(), comparison.isEqual());
+        assertTrue(comparison.isEqual(), comparison.getReason());
     }
     
     private void assertLineage(JexlNode node) {

@@ -1,17 +1,5 @@
 package datawave.webservice.mr;
 
-import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import javax.ejb.EJBContext;
-
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -34,19 +22,29 @@ import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.results.mr.MapReduceJobDescription;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
 import org.easymock.TestSubject;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.reflect.Whitebox;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(EasyMockRunner.class)
-@PrepareForTest(Job.class)
+import javax.ejb.EJBContext;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static org.easymock.EasyMock.expect;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@ExtendWith(EasyMockExtension.class)
 public class MapReduceBeanTest extends EasyMockSupport {
     @TestSubject
     private TestMapReduceBean bean = new TestMapReduceBean();
@@ -62,7 +60,7 @@ public class MapReduceBeanTest extends EasyMockSupport {
     @Mock
     private QueryLogicFactory queryLogicFactory;
     @Mock
-    private MapReduceStatePersisterBean mapReduceState;
+    private MapReduceStatePersisterBean mapRedbeanuceState;
     @Mock
     private ConnectionPoolsConfiguration connectionPoolsConfiguration;
     
@@ -72,7 +70,7 @@ public class MapReduceBeanTest extends EasyMockSupport {
     private static final String userDN = "CN=Guy Some Other soguy, OU=acme";
     private static final String[] auths = new String[] {"AUTHS"};
     
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
@@ -81,7 +79,7 @@ public class MapReduceBeanTest extends EasyMockSupport {
         principal = new DatawavePrincipal(Collections.singletonList(user));
         
         applicationContext = new ClassPathXmlApplicationContext("classpath:*datawave/mapreduce/MapReduceJobs.xml");
-        Whitebox.setInternalState(bean, MapReduceConfiguration.class, applicationContext.getBean(MapReduceConfiguration.class));
+        ReflectionTestUtils.setField(bean, "mapReduceConfiguration", applicationContext.getBean(MapReduceConfiguration.class));
     }
     
     @Test
@@ -104,34 +102,34 @@ public class MapReduceBeanTest extends EasyMockSupport {
         
     }
     
-    @Test(expected = BadRequestException.class)
+    @Test
     public void testSubmitInvalidJobName() throws Exception {
         expect(ctx.getCallerPrincipal()).andReturn(principal);
         replayAll();
         
-        bean.submit("BadJobName", null);
+        assertThrows(BadRequestException.class, () -> bean.submit("BadJobName", null));
         verifyAll();
     }
     
-    @Test(expected = DatawaveWebApplicationException.class)
+    @Test
     public void testSubmitWithNullRequiredParameters() throws Exception {
         expect(ctx.getCallerPrincipal()).andReturn(principal);
         replayAll();
         
-        bean.submit("TestJob", null);
+        assertThrows(DatawaveWebApplicationException.class, () -> bean.submit("TestJob", null));
         verifyAll();
     }
     
-    @Test(expected = DatawaveWebApplicationException.class)
+    @Test
     public void testSubmitWithMissingRequiredParameters() throws Exception {
         expect(ctx.getCallerPrincipal()).andReturn(principal);
         replayAll();
         
-        bean.submit("TestJob", "queryId:1243");
+        assertThrows(DatawaveWebApplicationException.class, () -> bean.submit("TestJob", "queryId:1243"));
         verifyAll();
     }
     
-    @Test(expected = DatawaveWebApplicationException.class)
+    @Test
     public void testInvalidInputFormat() throws Exception {
         Job mockJob = createMock(Job.class);
         bean.setJob(mockJob);
@@ -146,11 +144,11 @@ public class MapReduceBeanTest extends EasyMockSupport {
         expect(ctx.getCallerPrincipal()).andReturn(principal);
         replayAll();
         
-        bean.submit("TestJob", "queryId:1243;format:XML");
+        assertThrows(DatawaveWebApplicationException.class, () -> bean.submit("TestJob", "queryId:1243;format:XML"));
         verifyAll();
     }
     
-    @Test(expected = NoResultsException.class)
+    @Test
     public void testNoResults() throws Exception {
         Job mockJob = createMock(Job.class);
         bean.setJob(mockJob);
@@ -172,11 +170,11 @@ public class MapReduceBeanTest extends EasyMockSupport {
         expect(ctx.getCallerPrincipal()).andReturn(principal);
         replayAll();
         
-        bean.submit("TestJob", "queryId:1243;format:XML");
+        assertThrows(NoResultsException.class, () -> bean.submit("TestJob", "queryId:1243;format:XML"));
         verifyAll();
     }
     
-    @Test(expected = UnauthorizedException.class)
+    @Test
     public void testInvalidUserAuthorization() throws Exception {
         // Create principal that does not have AuthorizedUser role
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, "CN=ca, OU=acme"), UserType.USER, Arrays.asList(auths),
@@ -186,7 +184,7 @@ public class MapReduceBeanTest extends EasyMockSupport {
         expect(ctx.getCallerPrincipal()).andReturn(p);
         replayAll();
         
-        bean.submit("TestJob", "queryId:1243");
+        assertThrows(UnauthorizedException.class, () -> bean.submit("TestJob", "queryId:1243"));
         verifyAll();
     }
     

@@ -6,9 +6,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import datawave.ingest.json.util.JsonObjectFlattener;
 import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -22,10 +22,10 @@ public class JsonIngestFlattenerTest {
     protected static String jsonFile = "/input/tvmaze-seinfeld.json";
     protected static String json;
     
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws URISyntaxException, IOException {
         URL data = JsonIngestFlattenerTest.class.getResource(jsonFile);
-        Assert.assertNotNull(data);
+        Assertions.assertNotNull(data);
         json = new String(Files.readAllBytes(Paths.get(data.toURI())));
     }
     
@@ -40,13 +40,13 @@ public class JsonIngestFlattenerTest {
         // printJson(json);
         // printMap(fieldMap);
         
-        Assert.assertEquals(74, fieldMap.keySet().size());
-        Assert.assertEquals(74, fieldMap.values().size());
-        Assert.assertTrue(fieldMap.containsKey("URL.EMBEDDED_0.CAST_3.PERSON_0.URL_0"));
-        Assert.assertEquals("Jerry Seinfeld", fieldMap.get("NAME.EMBEDDED_0.CAST_0.CHARACTER_0.NAME_0").iterator().next());
-        Assert.assertEquals("Cosmo Kramer", fieldMap.get("NAME.EMBEDDED_0.CAST_1.CHARACTER_0.NAME_0").iterator().next());
-        Assert.assertEquals("George Louis Costanza", fieldMap.get("NAME.EMBEDDED_0.CAST_2.CHARACTER_0.NAME_0").iterator().next());
-        Assert.assertEquals("Elaine Marie Benes", fieldMap.get("NAME.EMBEDDED_0.CAST_3.CHARACTER_0.NAME_0").iterator().next());
+        Assertions.assertEquals(74, fieldMap.keySet().size());
+        Assertions.assertEquals(74, fieldMap.values().size());
+        Assertions.assertTrue(fieldMap.containsKey("URL.EMBEDDED_0.CAST_3.PERSON_0.URL_0"));
+        Assertions.assertEquals("Jerry Seinfeld", fieldMap.get("NAME.EMBEDDED_0.CAST_0.CHARACTER_0.NAME_0").iterator().next());
+        Assertions.assertEquals("Cosmo Kramer", fieldMap.get("NAME.EMBEDDED_0.CAST_1.CHARACTER_0.NAME_0").iterator().next());
+        Assertions.assertEquals("George Louis Costanza", fieldMap.get("NAME.EMBEDDED_0.CAST_2.CHARACTER_0.NAME_0").iterator().next());
+        Assertions.assertEquals("Elaine Marie Benes", fieldMap.get("NAME.EMBEDDED_0.CAST_3.CHARACTER_0.NAME_0").iterator().next());
     }
     
     @Test
@@ -60,18 +60,18 @@ public class JsonIngestFlattenerTest {
         // printJson(json);
         // printMap(fieldMap);
         
-        Assert.assertEquals(74, fieldMap.keySet().size());
-        Assert.assertEquals(74, fieldMap.values().size());
+        Assertions.assertEquals(74, fieldMap.keySet().size());
+        Assertions.assertEquals(74, fieldMap.values().size());
         
-        Assert.assertEquals(1, fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_0.CHARACTER_0.NAME_0").size());
-        Assert.assertEquals(1, fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_1.CHARACTER_0.NAME_0").size());
-        Assert.assertEquals(1, fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_2.CHARACTER_0.NAME_0").size());
-        Assert.assertEquals(1, fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_3.CHARACTER_0.NAME_0").size());
+        Assertions.assertEquals(1, fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_0.CHARACTER_0.NAME_0").size());
+        Assertions.assertEquals(1, fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_1.CHARACTER_0.NAME_0").size());
+        Assertions.assertEquals(1, fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_2.CHARACTER_0.NAME_0").size());
+        Assertions.assertEquals(1, fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_3.CHARACTER_0.NAME_0").size());
         
-        Assert.assertEquals("Jerry Seinfeld", fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_0.CHARACTER_0.NAME_0").iterator().next());
-        Assert.assertEquals("Cosmo Kramer", fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_1.CHARACTER_0.NAME_0").iterator().next());
-        Assert.assertEquals("George Louis Costanza", fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_2.CHARACTER_0.NAME_0").iterator().next());
-        Assert.assertEquals("Elaine Marie Benes", fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_3.CHARACTER_0.NAME_0").iterator().next());
+        Assertions.assertEquals("Jerry Seinfeld", fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_0.CHARACTER_0.NAME_0").iterator().next());
+        Assertions.assertEquals("Cosmo Kramer", fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_1.CHARACTER_0.NAME_0").iterator().next());
+        Assertions.assertEquals("George Louis Costanza", fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_2.CHARACTER_0.NAME_0").iterator().next());
+        Assertions.assertEquals("Elaine Marie Benes", fieldMap.get("EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_3.CHARACTER_0.NAME_0").iterator().next());
         
     }
     
@@ -88,18 +88,15 @@ public class JsonIngestFlattenerTest {
         
     }
     
-    @Test(expected = java.lang.IllegalStateException.class)
+    @Test
     public void testTesterNullArgs() throws IOException {
-        
-        JsonIngestFlattener.Test.main(null);
-        
+        Assertions.assertThrows(IllegalStateException.class, () -> JsonIngestFlattener.Test.main(null));
     }
     
-    @Test(expected = java.lang.IllegalStateException.class)
+    @Test
     public void testTesterJsonFileDoesNotExist() throws IOException {
-        
-        JsonIngestFlattener.Test.main(new String[] {"--file", "/this/file/definitely/does/not/exist.json"});
-        
+        Assertions.assertThrows(IllegalStateException.class,
+                        () -> JsonIngestFlattener.Test.main(new String[] {"--file", "/this/file/definitely/does/not/exist.json"}));
     }
     
     private void printMap(Multimap<String,String> fieldMap) {

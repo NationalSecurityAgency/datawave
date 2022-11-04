@@ -1,48 +1,48 @@
 package datawave.webservice.query.cache;
 
+import com.google.common.collect.Sets;
+import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
+import datawave.webservice.query.logic.QueryLogic;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.util.Pair;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.Clock;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
-import datawave.webservice.query.logic.QueryLogic;
-
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.util.Pair;
-import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-import com.google.common.collect.Sets;
+import static org.mockito.Mockito.when;
 
 /**
  * 
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({CreatedQueryLogicCacheBean.class})
-// <-- Have to do this to make the static System mock work
+@ExtendWith(MockitoExtension.class)
 public class CreatedQueryLogicCacheBeanTest {
     
-    protected CreatedQueryLogicCacheBean qlCache = null;
-    protected ConcurrentHashMap<Pair<String,Long>,Triple> internalCache = null;
-    protected QueryLogic<?> queryLogic;
-    protected Connector conn;
+    protected CreatedQueryLogicCacheBean qlCache;
+    protected ConcurrentHashMap<Pair<String,Long>,Triple> internalCache;
+    @Mock
+    QueryLogic<?> queryLogic;
+    @Mock
+    Connector conn;
     
-    @Before
+    @Mock
+    Clock mockClock;
+    
+    @BeforeEach
     public void setupCacheBean() throws IllegalAccessException, SecurityException, NoSuchMethodException {
         qlCache = new CreatedQueryLogicCacheBean();
-        queryLogic = PowerMock.createMock(QueryLogic.class);
-        conn = PowerMock.createMock(Connector.class);
         internalCache = new ConcurrentHashMap<>();
-        
-        PowerMock.field(CreatedQueryLogicCacheBean.class, "cache").set(qlCache, internalCache);
-        
-        PowerMock.mockStatic(System.class, System.class.getMethod("currentTimeMillis"));
+        ReflectionTestUtils.setField(qlCache, "cache", internalCache);
     }
     
     @Test
@@ -51,15 +51,13 @@ public class CreatedQueryLogicCacheBeanTest {
         String userId = "me";
         long timestamp = 1l;
         
-        EasyMock.expect(System.currentTimeMillis()).andReturn(timestamp);
-        
-        PowerMock.replayAll();
-        
-        boolean ret = qlCache.add(queryId, userId, queryLogic, conn);
-        
-        PowerMock.verifyAll();
-        
-        Assert.assertTrue("Expected the cache add to return true", ret);
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(timestamp);
+            
+            boolean ret = qlCache.add(queryId, userId, queryLogic, conn);
+            Assertions.assertTrue(ret, "Expected the cache add to return true");
+        }
     }
     
     @Test
@@ -68,31 +66,28 @@ public class CreatedQueryLogicCacheBeanTest {
         String userId = "me";
         long timestamp = 1l;
         
-        EasyMock.expect(System.currentTimeMillis()).andReturn(timestamp);
-        
-        PowerMock.replayAll();
-        
-        boolean ret = qlCache.add(queryId, userId, queryLogic, conn);
-        
-        PowerMock.verifyAll();
-        
-        Assert.assertTrue("Expected the cache add to return true", ret);
-        Assert.assertEquals(1, internalCache.size());
-        
-        PowerMock.resetAll();
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(timestamp);
+            
+            boolean ret = qlCache.add(queryId, userId, queryLogic, conn);
+            
+            Assertions.assertTrue(ret, "Expected the cache add to return true");
+            Assertions.assertEquals(1, internalCache.size());
+            
+        }
         
         long timestamp2 = 2l;
         
-        EasyMock.expect(System.currentTimeMillis()).andReturn(timestamp2);
-        
-        PowerMock.replayAll();
-        
-        ret = qlCache.add(queryId, userId, queryLogic, conn);
-        
-        PowerMock.verifyAll();
-        
-        Assert.assertTrue("New timestamp should have caused duplicate entry", ret);
-        Assert.assertEquals(2, internalCache.size());
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(timestamp2);
+            
+            boolean ret = qlCache.add(queryId, userId, queryLogic, conn);
+            
+            Assertions.assertTrue(ret, "New timestamp should have caused duplicate entry");
+            Assertions.assertEquals(2, internalCache.size());
+        }
     }
     
     @Test
@@ -102,17 +97,16 @@ public class CreatedQueryLogicCacheBeanTest {
         String userId = "me";
         long timestamp = 1l;
         
-        EasyMock.expect(System.currentTimeMillis()).andReturn(timestamp);
-        
-        PowerMock.replayAll();
-        
-        boolean ret = qlCache.add(queryId, userId, queryLogic, conn);
-        qlCache.poll(queryId);
-        
-        PowerMock.verifyAll();
-        
-        Assert.assertTrue("Expected the cache add to return true", ret);
-        Assert.assertEquals(0, internalCache.size());
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(timestamp);
+            
+            boolean ret = qlCache.add(queryId, userId, queryLogic, conn);
+            qlCache.poll(queryId);
+            
+            Assertions.assertTrue(ret, "Expected the cache add to return true");
+            Assertions.assertEquals(0, internalCache.size());
+        }
     }
     
     @Test
@@ -122,22 +116,28 @@ public class CreatedQueryLogicCacheBeanTest {
         String userId = "me";
         long timestamp1 = 1l, timestamp2 = 2l;
         
-        EasyMock.expect(System.currentTimeMillis()).andReturn(timestamp1);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(timestamp2);
+        boolean ret1;
         
-        PowerMock.replayAll();
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(timestamp1);
+            
+            ret1 = qlCache.add(queryId, userId, queryLogic, conn);
+        }
         
-        boolean ret1 = qlCache.add(queryId, userId, queryLogic, conn);
-        boolean ret2 = qlCache.add(queryId, userId, queryLogic, conn);
-        qlCache.poll(queryId);
-        
-        PowerMock.verifyAll();
-        
-        // We should never be allowing collisions of query-ids, as such, if multiple are present
-        // from different times, we should not be trying to assert anything on order
-        Assert.assertTrue("Expected the cache add to return true for first", ret1);
-        Assert.assertTrue("Expected the cache add to return true for second", ret2);
-        Assert.assertEquals(1, internalCache.size());
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(timestamp2);
+            
+            boolean ret2 = qlCache.add(queryId, userId, queryLogic, conn);
+            qlCache.poll(queryId);
+            
+            // We should never be allowing collisions of query-ids, as such, if multiple are present
+            // from different times, we should not be trying to assert anything on order
+            Assertions.assertTrue(ret1, "Expected the cache add to return true for first");
+            Assertions.assertTrue(ret2, "Expected the cache add to return true for second");
+            Assertions.assertEquals(1, internalCache.size());
+        }
     }
     
     @Test
@@ -146,34 +146,41 @@ public class CreatedQueryLogicCacheBeanTest {
         String userId = "me";
         long timestamp1 = 1l, timestamp2 = 2l, timestamp3 = 3l;
         
-        EasyMock.expect(System.currentTimeMillis()).andReturn(timestamp1);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(timestamp2);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(timestamp3);
+        boolean ret1;
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(timestamp1);
+            ret1 = qlCache.add(queryId1, userId, queryLogic, conn);
+        }
         
-        PowerMock.replayAll();
-        
-        boolean ret1 = qlCache.add(queryId1, userId, queryLogic, conn);
-        boolean ret2 = qlCache.add(queryId2, userId, queryLogic, conn);
-        boolean ret3 = qlCache.add(queryId3, userId, queryLogic, conn);
-        
-        Map<String,Pair<QueryLogic<?>,Connector>> oldEntries = qlCache.entriesOlderThan(5l, 2l), olderEntries = qlCache.entriesOlderThan(5l, 3l), noEntries = qlCache
-                        .entriesOlderThan(5l, 4l);
-        
-        PowerMock.verifyAll();
-        
-        // We should never be allowing collisions of query-ids, as such, if multiple are present
-        // from different times, we should not be trying to assert anything on order
-        Assert.assertTrue("Expected the cache add to return true for first", ret1);
-        Assert.assertTrue("Expected the cache add to return true for second", ret2);
-        Assert.assertTrue("Expected the cache add to return true for third", ret3);
-        
-        Assert.assertEquals(2, oldEntries.size());
-        Assert.assertEquals(Sets.newHashSet(queryId1, queryId2), oldEntries.keySet());
-        
-        Assert.assertEquals(1, olderEntries.size());
-        Assert.assertEquals(Collections.singleton(queryId1), olderEntries.keySet());
-        
-        Assert.assertEquals(0, noEntries.size());
+        boolean ret2;
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(timestamp2);
+            ret2 = qlCache.add(queryId2, userId, queryLogic, conn);
+        }
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(timestamp3);
+            boolean ret3 = qlCache.add(queryId3, userId, queryLogic, conn);
+            
+            Map<String,Pair<QueryLogic<?>,Connector>> oldEntries = qlCache.entriesOlderThan(5l, 2l), olderEntries = qlCache.entriesOlderThan(5l, 3l), noEntries = qlCache
+                            .entriesOlderThan(5l, 4l);
+            
+            // We should never be allowing collisions of query-ids, as such, if multiple are present
+            // from different times, we should not be trying to assert anything on order
+            Assertions.assertTrue(ret1, "Expected the cache add to return true for first");
+            Assertions.assertTrue(ret2, "Expected the cache add to return true for second");
+            Assertions.assertTrue(ret3, "Expected the cache add to return true for third");
+            
+            Assertions.assertEquals(2, oldEntries.size());
+            Assertions.assertEquals(Sets.newHashSet(queryId1, queryId2), oldEntries.keySet());
+            
+            Assertions.assertEquals(1, olderEntries.size());
+            Assertions.assertEquals(Collections.singleton(queryId1), olderEntries.keySet());
+            
+            Assertions.assertEquals(0, noEntries.size());
+        }
     }
     
     @Test
@@ -182,34 +189,35 @@ public class CreatedQueryLogicCacheBeanTest {
         String user1 = "me", user2 = "you";
         long timestamp1 = 1l, timestamp2 = 2l;
         
-        EasyMock.expect(System.currentTimeMillis()).andReturn(timestamp1);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(timestamp2);
+        boolean ret1;
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(timestamp1);
+            ret1 = qlCache.add(queryId1, user1, queryLogic, conn);
+        }
         
-        PowerMock.replayAll();
-        
-        boolean ret1 = qlCache.add(queryId1, user1, queryLogic, conn);
-        boolean ret2 = qlCache.add(queryId2, user2, queryLogic, conn);
-        
-        Pair<QueryLogic<?>,Connector> user2FetchQuery1 = qlCache.pollIfOwnedBy(queryId1, user2), user1FetchQuery2 = qlCache.pollIfOwnedBy(queryId2, user1);
-        
-        PowerMock.verifyAll();
-        
-        Assert.assertTrue("Did not successfully insert record 1", ret1);
-        Assert.assertTrue("Did not successfully insert record 2", ret2);
-        
-        Assert.assertNull(user1FetchQuery2);
-        Assert.assertNull(user2FetchQuery1);
-        
-        Assert.assertEquals(2, internalCache.size());
-        
-        PowerMock.resetAll();
-        
-        Pair<QueryLogic<?>,Connector> user1FetchQuery1 = qlCache.pollIfOwnedBy(queryId1, user1), user2FetchQuery2 = qlCache.pollIfOwnedBy(queryId2, user2);
-        
-        Assert.assertNotNull(user1FetchQuery1);
-        Assert.assertNotNull(user2FetchQuery2);
-        
-        Assert.assertEquals(0, internalCache.size());
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(timestamp2);
+            boolean ret2 = qlCache.add(queryId2, user2, queryLogic, conn);
+            
+            Pair<QueryLogic<?>,Connector> user2FetchQuery1 = qlCache.pollIfOwnedBy(queryId1, user2), user1FetchQuery2 = qlCache.pollIfOwnedBy(queryId2, user1);
+            
+            Assertions.assertTrue(ret1, "Did not successfully insert record 1");
+            Assertions.assertTrue(ret2, "Did not successfully insert record 2");
+            
+            Assertions.assertNull(user1FetchQuery2);
+            Assertions.assertNull(user2FetchQuery1);
+            
+            Assertions.assertEquals(2, internalCache.size());
+            
+            Pair<QueryLogic<?>,Connector> user1FetchQuery1 = qlCache.pollIfOwnedBy(queryId1, user1), user2FetchQuery2 = qlCache.pollIfOwnedBy(queryId2, user2);
+            
+            Assertions.assertNotNull(user1FetchQuery1);
+            Assertions.assertNotNull(user2FetchQuery2);
+            
+            Assertions.assertEquals(0, internalCache.size());
+        }
     }
     
     @Test
@@ -218,33 +226,24 @@ public class CreatedQueryLogicCacheBeanTest {
         String userId = "me";
         long timestamp = 1l;
         
-        EasyMock.expect(System.currentTimeMillis()).andReturn(timestamp);
-        
-        PowerMock.replayAll();
-        
-        boolean ret1 = qlCache.add(queryId1, userId, queryLogic, conn);
-        
-        Map<String,Pair<QueryLogic<?>,Connector>> snapshot = qlCache.snapshot();
-        
-        PowerMock.verifyAll();
-        
-        Assert.assertTrue("Expected the cache add to return true", ret1);
-        Assert.assertEquals(1, internalCache.size());
-        Assert.assertEquals(1, snapshot.size());
-        
-        PowerMock.resetAll();
-        
-        EasyMock.expect(System.currentTimeMillis()).andReturn(timestamp);
-        
-        PowerMock.replayAll();
-        
-        boolean ret2 = qlCache.add(queryId2, userId, queryLogic, conn);
-        
-        PowerMock.verifyAll();
-        
-        Assert.assertTrue("Expected the cache add to return true", ret2);
-        Assert.assertEquals(2, internalCache.size());
-        Assert.assertEquals(1, snapshot.size());
+        try (MockedStatic<Clock> c = Mockito.mockStatic(Clock.class)) {
+            c.when(() -> Clock.systemDefaultZone()).thenReturn(mockClock);
+            when(mockClock.millis()).thenReturn(timestamp);
+            
+            boolean ret1 = qlCache.add(queryId1, userId, queryLogic, conn);
+            
+            Map<String,Pair<QueryLogic<?>,Connector>> snapshot = qlCache.snapshot();
+            
+            Assertions.assertTrue(ret1, "Expected the cache add to return true");
+            Assertions.assertEquals(1, internalCache.size());
+            Assertions.assertEquals(1, snapshot.size());
+            
+            boolean ret2 = qlCache.add(queryId2, userId, queryLogic, conn);
+            
+            Assertions.assertTrue(ret2, "Expected the cache add to return true");
+            Assertions.assertEquals(2, internalCache.size());
+            Assertions.assertEquals(1, snapshot.size());
+        }
     }
     
 }

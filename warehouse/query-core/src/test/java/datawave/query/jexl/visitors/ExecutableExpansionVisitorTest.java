@@ -41,20 +41,18 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.inject.Inject;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -68,11 +66,12 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 public abstract class ExecutableExpansionVisitorTest {
-    @RunWith(Arquillian.class)
+    
+    @ExtendWith(ArquillianExtension.class)
     public static class ShardRangeExecutableExpansion extends ExecutableExpansionVisitorTest {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
@@ -84,20 +83,20 @@ public abstract class ExecutableExpansionVisitorTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
     
-    @RunWith(Arquillian.class)
+    @ExtendWith(ArquillianExtension.class)
     public static class DocumentRange extends ExecutableExpansionVisitorTest {
         protected static Connector connector = null;
         
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.DocumentRange.class.toString(), log);
@@ -109,11 +108,11 @@ public abstract class ExecutableExpansionVisitorTest {
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
@@ -147,27 +146,18 @@ public abstract class ExecutableExpansionVisitorTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @AfterClass
+    @AfterAll
     public static void teardown() {
         TypeRegistry.reset();
     }
     
-    @Before
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
-        logic.setFullTableScanEnabled(false);
-        logic.setMaxDepthThreshold(11);
-        logic.setInitialMaxTermThreshold(12);
-        logic.setFinalMaxTermThreshold(12);
-        deserializer = new KryoDocumentDeserializer();
-    }
-    
-    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                    throws ParseException, Exception;
+    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
-                    throws ParseException, Exception {
+                    throws Exception {
+        logic.setFullTableScanEnabled(false);
+        deserializer = new KryoDocumentDeserializer();
+        
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
@@ -185,10 +175,10 @@ public abstract class ExecutableExpansionVisitorTest {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
         
-        HashSet<String> expectedSet = new HashSet<String>(expected);
+        HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
-        resultSet = new HashSet<String>();
-        Set<Document> docs = new HashSet<Document>();
+        resultSet = new HashSet<>();
+        Set<Document> docs = new HashSet<>();
         for (Map.Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
             
@@ -198,14 +188,15 @@ public abstract class ExecutableExpansionVisitorTest {
             if (attr == null)
                 attr = d.get("UUID.0");
             
-            Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(), attr instanceof TypeAttribute
-                            || attr instanceof PreNormalizedAttribute);
+            Assertions.assertNotNull(attr, "Result Document did not contain a 'UUID'");
+            Assertions.assertTrue(attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute,
+                            "Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName());
             
+            assert attr instanceof TypeAttribute<?>;
             TypeAttribute<?> UUIDAttr = (TypeAttribute<?>) attr;
             
             String UUID = UUIDAttr.getType().getDelegate().toString();
-            Assert.assertTrue("Received unexpected UUID: " + UUID, expected.contains(UUID));
+            Assertions.assertTrue(expected.contains(UUID), "Received unexpected UUID: " + UUID);
             
             resultSet.add(UUID);
             docs.add(d);
@@ -223,12 +214,16 @@ public abstract class ExecutableExpansionVisitorTest {
         if (!expected.containsAll(resultSet)) {
             log.error("Expected results " + expected + " differ form actual results " + resultSet);
         }
-        Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
-        Assert.assertEquals("Unexpected number of records", expected.size(), resultSet.size());
+        Assertions.assertTrue(expected.containsAll(resultSet), "Expected results " + expected + " differ form actual results " + resultSet);
+        Assertions.assertEquals(expected.size(), resultSet.size(), "Unexpected number of records");
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testMixedIndexOnly() throws Exception {
+    @Test
+    public void testMixedIndexOnly() {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -238,15 +233,21 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         String[] queryStrings = {"filter:isNull(LOCATION) || LOCATION == 'chicago'"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList(), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.emptyList(), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
-            Assert.fail("should not have gotten here");
+            List<String> expected = expectedLists[i];
+            String query = queryStrings[i];
+            Assertions.assertThrows(DatawaveFatalQueryException.class,
+                            () -> runTestQuery(expected, query, format.parse("20091231"), format.parse("20150101"), extraParameters));
         }
     }
     
     @Test
     public void testExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -256,7 +257,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:isNull(MAGIC) || LOCATION == 'chicago')"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -285,24 +286,27 @@ public abstract class ExecutableExpansionVisitorTest {
         String expandedQuery = JexlStringBuildingVisitor.buildQuery(FunctionIndexQueryExpansionVisitor.expandFunctions(logic.getConfig(), helper, null,
                         JexlASTHelper.parseJexlQuery(query)));
         String[] queryStrings = {expandedQuery};
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList(), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.emptyList(), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
         
         String finalQuery = JexlStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
-        Assert.assertNotEquals(
+        Assertions.assertNotEquals(
                         "(GENDER == 'male') && (NOME == 'this' || NOME == 'that') && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey')",
                         finalQuery);
         
         ASTJexlScript expectedQuery = JexlASTHelper
                         .parseJexlQuery("((((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a')) || (((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a'))) && (GENDER == 'male') && (NOME == 'this' || NOME == 'that') && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey')");
-        Assert.assertTrue(TreeEqualityVisitor.isEqual(expectedQuery, logic.getConfig().getQueryTree()));
+        Assertions.assertTrue(TreeEqualityVisitor.isEqual(expectedQuery, logic.getConfig().getQueryTree()));
     }
     
     @Test
     public void testNestedOrExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -312,7 +316,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         String[] queryStrings = {"UUID == 'capone' && ( LOCATION == 'newyork' || (filter:isNull(MAGIC) || LOCATION == 'chicago'))"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -320,6 +324,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testMethodNoExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -329,7 +337,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         String[] queryStrings = {"UUID == 'capone' && ( AGE.size() > 1 || AGE == '18')"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -337,6 +345,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testMethodExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -346,7 +358,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         String[] queryStrings = {"UUID == 'capone' && ( QUOTE.size() == 1 || QUOTE == 'kind')"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -354,6 +366,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testNonEventExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -363,7 +379,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         String[] queryStrings = {"UUID == 'capone' && (QUOTE == 'kind'|| BIRTH_DATE == '123')"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -371,6 +387,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testFilterExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -380,7 +400,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind')"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -388,6 +408,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testDisableExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -399,7 +423,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind')"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE")};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE")};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -407,6 +431,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testDelayedBridgeExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -417,7 +445,7 @@ public abstract class ExecutableExpansionVisitorTest {
         String[] queryStrings = {"UUID == 'capone' && ( LOCATION == 'newyork' || !(filter:isNull(MAGIC) || LOCATION == 'chicago'))",
                 "UUID == 'capone' && ( LOCATION == 'newyork' || !filter:isNull(MAGIC) || LOCATION == 'chicago')"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList(), Arrays.asList("CAPONE")};
+        List<String>[] expectedLists = new List[] {Collections.emptyList(), Collections.singletonList("CAPONE")};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -425,6 +453,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testMultipleExpansionsRequired() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -434,7 +466,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind') && (QUOTE == 'kind'|| BIRTH_DATE == '123')"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -442,6 +474,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testMinimumExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -451,7 +487,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -459,6 +495,10 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testMinimumExpansionParse() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -480,14 +520,18 @@ public abstract class ExecutableExpansionVisitorTest {
             
             EasyMock.verify(config, helper);
             
-            Assert.assertFalse(JexlStringBuildingVisitor.buildQuery(queryTree).equals(JexlStringBuildingVisitor.buildQuery(newTree)));
+            Assertions.assertNotEquals(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(newTree));
             String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
-            Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(newTree));
+            Assertions.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(newTree));
         }
     }
     
     @Test
     public void testArbitraryNodeExpansionFailNoFlatten() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -511,12 +555,16 @@ public abstract class ExecutableExpansionVisitorTest {
             
             EasyMock.verify(config, helper);
             
-            Assert.assertFalse(data instanceof ExecutableExpansionVisitor.ExpansionTracker);
+            Assertions.assertFalse(data instanceof ExecutableExpansionVisitor.ExpansionTracker);
         }
     }
     
     @Test
     public void testArbitraryNodeExpansionFlatten() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -542,12 +590,16 @@ public abstract class ExecutableExpansionVisitorTest {
             EasyMock.verify(config, helper);
             
             String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
-            Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(rebuilt));
+            Assertions.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(rebuilt));
         }
     }
     
     @Test
     public void testNestedExpansionWithFailures() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'A' && (QUOTE == 'kind' || BIRTH_DATE == '234'|| (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE =='555' )))");
@@ -572,14 +624,18 @@ public abstract class ExecutableExpansionVisitorTest {
             
             EasyMock.verify(config, helper);
             
-            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(rebuilt, config, helper));
+            Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(rebuilt, config, helper));
             String expected = "(QUOTE == 'kind' && UUID == 'A') || (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE == '555') && UUID == 'A') || (BIRTH_DATE == '234' && UUID == 'A')";
-            Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(rebuilt));
+            Assertions.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(rebuilt));
         }
     }
     
     @Test
     public void testExceededThresholdExpansionExternal() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -609,25 +665,29 @@ public abstract class ExecutableExpansionVisitorTest {
             EasyMock.verify(config, helper);
             
             // included ExceededValueThresholdMarker before
-            Assert.assertTrue(
-                            JexlStringBuildingVisitor.buildQuery(queryTree),
+            Assertions.assertTrue(
                             JexlStringBuildingVisitor
                                             .buildQuery(queryTree)
-                                            .equals("((_Value_ = true) && (UUID == 'capone')) && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+                                            .equals("((_Value_ = true) && (UUID == 'capone')) && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"),
+                            JexlStringBuildingVisitor.buildQuery(queryTree));
             
             // not executable
-            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            Assertions.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
             // what came out is executable
-            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // it looks like what we'd expect
             String expected = "(QUOTE == 'kind' && ((_Value_ = true) && (UUID == 'capone'))) || "
                             + "((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && ((_Value_ = true) && (UUID == 'capone')))";
-            Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
+            Assertions.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
         }
     }
     
     @Test
     public void testExceededThresholdExpansionInternal() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -664,23 +724,27 @@ public abstract class ExecutableExpansionVisitorTest {
             EasyMock.verify(config, helper);
             
             // included ExceededValueThresholdMarker before
-            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
+            Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree).equals(
                             "UUID == 'capone' && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || "
-                                            + "((_Value_ = true) && (BIRTH_DATE == '123')))"));
+                                            + "((_Value_ = true) && (BIRTH_DATE == '123')))"), JexlStringBuildingVisitor.buildQuery(queryTree));
             
             // not executable
-            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            Assertions.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
             // what came out is executable
-            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // it looks like what we'd expect
             String expected = "(QUOTE == 'kind' && UUID == 'capone') || " + "(((_Value_ = true) && (BIRTH_DATE == '123')) && UUID == 'capone') || "
                             + "(filter:includeRegex(QUOTE, '.*kind.*') && UUID == 'capone')";
-            Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
+            Assertions.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
         }
     }
     
     @Test
     public void testExceededOrThresholdExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -723,16 +787,15 @@ public abstract class ExecutableExpansionVisitorTest {
             String id = queryString.substring(queryString.indexOf("id = '") + 6, queryString.indexOf("') && (field"));
             
             // included ExceededValueThresholdMarker before
-            Assert.assertTrue(
-                            queryString,
+            Assertions.assertTrue(
                             queryString.equals("UUID == 'capone' && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || "
                                             + "((_List_ = true) && ((id = '" + id
-                                            + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}'))))"));
+                                            + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}'))))"), queryString);
             
             // not executable
-            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            Assertions.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
             // what came out is executable
-            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             
             queryString = JexlStringBuildingVisitor.buildQuery(newTree);
             id = queryString.substring(queryString.indexOf("id = '") + 6, queryString.indexOf("') && (field"));
@@ -742,12 +805,16 @@ public abstract class ExecutableExpansionVisitorTest {
             String expected = "(QUOTE == 'kind' && UUID == 'capone') || " + "(((_List_ = true) && ((id = '" + id
                             + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}'))) && UUID == 'capone') || "
                             + "(filter:includeRegex(QUOTE, '.*kind.*') && UUID == 'capone')";
-            Assert.assertEquals(expected, queryString);
+            Assertions.assertEquals(expected, queryString);
         }
     }
     
     @Test
     public void testExceededOrThresholdCannotExpand() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))");
@@ -771,32 +838,36 @@ public abstract class ExecutableExpansionVisitorTest {
             
             if (queryTree == origQueryTree) {
                 // included ExceededValueThresholdMarker before
-                Assert.assertTrue(
-                                JexlStringBuildingVisitor.buildQuery(queryTree),
+                Assertions.assertTrue(
                                 JexlStringBuildingVisitor
                                                 .buildQuery(queryTree)
-                                                .equals("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))"));
+                                                .equals("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))"),
+                                JexlStringBuildingVisitor.buildQuery(queryTree));
             } else {
                 // included ExceededValueThresholdMarker before
-                Assert.assertTrue(
-                                JexlStringBuildingVisitor.buildQuery(queryTree),
+                Assertions.assertTrue(
                                 JexlStringBuildingVisitor
                                                 .buildQuery(queryTree)
-                                                .equals("UUID == 'capone' && ((_List_ = true) && ((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))"));
+                                                .equals("UUID == 'capone' && ((_List_ = true) && ((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))"),
+                                JexlStringBuildingVisitor.buildQuery(queryTree));
             }
             
             // starts off executable
-            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
             // what came out is executable
-            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // the visitor changed nothing
-            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
-                            JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)));
+            Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)),
+                            JexlStringBuildingVisitor.buildQuery(newTree));
         }
     }
     
     @Test
     public void testDelayed() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery("UUID == 'capone' && (QUOTE == 'kind' || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
@@ -823,21 +894,26 @@ public abstract class ExecutableExpansionVisitorTest {
             EasyMock.verify(config, helper);
             
             // included ExceededValueThresholdMarker before
-            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
-                            "UUID == 'capone' && (QUOTE == 'kind' || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
+            Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree).equals(
+                            "UUID == 'capone' && (QUOTE == 'kind' || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"),
+                            JexlStringBuildingVisitor.buildQuery(queryTree));
             
             // starts off executable
-            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            Assertions.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
             // what came out is executable
-            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // the visitor changed nothing
             String expected = "(QUOTE == 'kind' && UUID == 'capone') || (((_Delayed_ = true) && BIRTH_DATE == '123') && UUID == 'capone')";
-            Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
+            Assertions.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
         }
     }
     
     @Test
     public void testDelayedDoubleExpansion() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery("UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || "
                         + "((_Delayed_ = true) && BIRTH_DATE == '123'))");
@@ -866,21 +942,26 @@ public abstract class ExecutableExpansionVisitorTest {
             EasyMock.verify(config, helper);
             
             // included ExceededValueThresholdMarker before
-            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
-                            "UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
+            Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree).equals(
+                            "UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"),
+                            JexlStringBuildingVisitor.buildQuery(queryTree));
             
             // starts off executable
-            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
             // what came out is executable
-            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // the visitor changed nothing
-            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
-                            JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)));
+            Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)),
+                            JexlStringBuildingVisitor.buildQuery(newTree));
         }
     }
     
     @Test
     public void testSingleOr() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery("UUID == 'capone' && (QUOTE =='kind' || BIRTH_DATE == '123')");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
@@ -912,17 +993,21 @@ public abstract class ExecutableExpansionVisitorTest {
             EasyMock.verify(config, helper);
             
             // starts executable
-            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
             // what came out is executable
-            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // the visitor changed nothing
-            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
-                            JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)));
+            Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)),
+                            JexlStringBuildingVisitor.buildQuery(newTree));
         }
     }
     
     @Test
     public void testSingleOrNonExecutableCantFix() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery("BIRTH_DATE =='123' && (filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '234')");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
@@ -954,17 +1039,21 @@ public abstract class ExecutableExpansionVisitorTest {
             EasyMock.verify(config, helper);
             
             // starts executable
-            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            Assertions.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
             // what came out is executable
-            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            Assertions.assertFalse(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // the visitor changed nothing
-            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
-                            JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)));
+            Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)),
+                            JexlStringBuildingVisitor.buildQuery(newTree));
         }
     }
     
     @Test
     public void testNoReferenceOrReferenceExpressions() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         // make sure this works when references/referenceExpressions are/aren't included
         ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
@@ -990,25 +1079,30 @@ public abstract class ExecutableExpansionVisitorTest {
             EasyMock.verify(config, helper);
             
             // starts executable
-            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            Assertions.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
             // what came out is executable
-            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            Assertions.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // the visitor changed nothing
-            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree), JexlStringBuildingVisitor.buildQuery(newTree).equals(
+            Assertions.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree).equals(
                             "(QUOTE == 'kind' && UUID == 'capone') || "
-                                            + "((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')"));
+                                            + "((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')"),
+                            JexlStringBuildingVisitor.buildQuery(newTree));
         }
     }
     
     @Test
     public void testIndexOnlyNoType() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
         
         String[] queryStrings = {"(UUID == 'capone' &&  SENTENCE == '11y')"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -1016,13 +1110,17 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testTypedAndNotIndexed() throws Exception {
+        logic.setMaxDepthThreshold(11);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
         
         String[] queryStrings = {"(UUID == 'capone' && BIRTH_DATE == '1910-12-28T00:00:05.000Z')"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }

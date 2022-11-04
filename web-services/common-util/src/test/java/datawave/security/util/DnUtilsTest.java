@@ -1,12 +1,12 @@
 package datawave.security.util;
 
-import static org.junit.Assert.assertEquals;
+import com.google.common.collect.Lists;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 
-import org.junit.Test;
-
-import com.google.common.collect.Lists;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DnUtilsTest {
     
@@ -56,60 +56,60 @@ public class DnUtilsTest {
         assertEquals(userDnForTest, userDN);
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testTest() {
         String[] dns = new String[] {"sdn"};
-        DnUtils.getUserDN(dns, true);
+        assertThrows(IllegalArgumentException.class, () -> DnUtils.getUserDN(dns, true));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBuildNormalizedProxyDNTooMissingIssuers() {
-        DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2<SDN3>", null);
+        assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2<SDN3>", null));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBuildNormalizedProxyDNTooFewIssuers() {
-        DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2<SDN3>", "IDN2");
+        assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2<SDN3>", "IDN2"));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBuildNormalizedProxyDNTooFewSubjects() {
-        DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2", "IDN2<IDN3>");
+        assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2", "IDN2<IDN3>"));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBuildNormalizedProxyDNSubjectEqualsIssuer() {
-        DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2", "SDN2");
+        assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2", "SDN2"));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBuildNormalizedProxyDNSubjectDNInIssuer() {
-        DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2", "CN=foo,OU=My Department");
+        assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2", "CN=foo,OU=My Department"));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBuildNormalizedDNListTooMissingIssuers() {
-        DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2<SDN3>", null);
+        assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2<SDN3>", null));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBuildNormalizedDNListTooFewIssuers() {
-        DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2<SDN3>", "IDN2");
+        assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2<SDN3>", "IDN2"));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBuildNormalizedDNListTooFewSubjects() {
-        DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2", "IDN2<IDN3>");
+        assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2", "IDN2<IDN3>"));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBuildNormalizedDNListSubjectEqualsIssuer() {
-        DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2", "SDN2");
+        assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2", "SDN2"));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBuildNormalizedDNListSubjectDNInIssuer() {
-        DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2", "CN=foo,OU=My Department");
+        assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2", "CN=foo,OU=My Department"));
     }
     
 }

@@ -6,9 +6,9 @@ import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.security.authorization.DatawavePrincipal;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,7 +20,7 @@ public class BaseQueryMetricHandlerTest {
     
     private TestQueryMetricHandler queryMetricHandler;
     
-    @Before
+    @BeforeEach
     public void setup() {
         this.queryMetricHandler = new TestQueryMetricHandler();
     }
@@ -34,21 +34,21 @@ public class BaseQueryMetricHandlerTest {
         metric.setLifecycle(BaseQueryMetric.Lifecycle.DEFINED);
         metric.setQuery("FIELD:value AND #UNKNOWNFUNCTION(parameter)");
         this.queryMetricHandler.populateMetricSelectors(metric, parser);
-        Assert.assertNull(metric.getPositiveSelectors());
+        Assertions.assertNull(metric.getPositiveSelectors());
         
         metric.setQuery("FIELD1:value1 NOT FIELD2:value2 AND #ISNOTNULL(OTHER)");
         this.queryMetricHandler.populateMetricSelectors(metric, parser);
-        Assert.assertEquals(1, metric.getPositiveSelectors().size());
-        Assert.assertEquals("FIELD1:value1", metric.getPositiveSelectors().get(0));
-        Assert.assertEquals(1, metric.getNegativeSelectors().size());
-        Assert.assertEquals("FIELD2:value2", metric.getNegativeSelectors().get(0));
+        Assertions.assertEquals(1, metric.getPositiveSelectors().size());
+        Assertions.assertEquals("FIELD1:value1", metric.getPositiveSelectors().get(0));
+        Assertions.assertEquals(1, metric.getNegativeSelectors().size());
+        Assertions.assertEquals("FIELD2:value2", metric.getNegativeSelectors().get(0));
     }
     
     @Test
     public void testNumUpdates() {
         QueryMetric metric = new QueryMetric();
         this.queryMetricHandler.incrementNumUpdates(metric, Collections.singleton(metric));
-        Assert.assertEquals(1, metric.getNumUpdates());
+        Assertions.assertEquals(1, metric.getNumUpdates());
         
         metric.setNumUpdates(0);
         List<QueryMetric> metricList = new ArrayList<>();
@@ -62,13 +62,13 @@ public class BaseQueryMetricHandlerTest {
         metric3.setNumUpdates(5);
         metricList.add(metric3);
         this.queryMetricHandler.incrementNumUpdates(metric, metricList);
-        Assert.assertEquals(9, metric.getNumUpdates());
+        Assertions.assertEquals(9, metric.getNumUpdates());
     }
     
     private static class TestQueryMetricHandler extends BaseQueryMetricHandler<QueryMetric> {
         
         @Override
-        public void updateMetric(QueryMetric metric, DatawavePrincipal datawavePrincipal) throws Exception {
+        public void updateMetric(QueryMetric metric, DatawavePrincipal datawavePrincipal) {
             
         }
         
@@ -98,7 +98,7 @@ public class BaseQueryMetricHandlerTest {
         }
         
         @Override
-        public void flush() throws Exception {
+        public void flush() {
             
         }
         

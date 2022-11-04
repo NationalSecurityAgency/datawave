@@ -1,22 +1,20 @@
 package datawave.user;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
-import java.util.TreeSet;
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
-
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A simple JAXB result holder for user authorizations. This class is intended to contain a string of ACCUMULO user authorizations.
@@ -101,7 +99,7 @@ public class UserAuthorizations implements Message<UserAuthorizations>, Serializ
             while ((number = input.readFieldNumber(this)) != 0) {
                 switch (number) {
                     case 1:
-                        if (message.auths == null || message.auths == Collections.EMPTY_SET)
+                        if (message.auths == null)
                             message.auths = new TreeSet<String>();
                         message.auths.add(input.readString());
                         break;

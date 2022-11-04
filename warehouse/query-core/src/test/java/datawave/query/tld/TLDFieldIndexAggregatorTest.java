@@ -1,44 +1,37 @@
 package datawave.query.tld;
 
 import com.google.common.collect.Maps;
-import datawave.data.type.NoOpType;
 import datawave.query.Constants;
-
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
-import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
-import org.easymock.Capture;
 import org.easymock.EasyMock;
-import org.easymock.IAnswer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TLDFieldIndexAggregatorTest {
     private TLDFieldIndexAggregator aggregator;
     
-    @Before
+    @BeforeEach
     public void setup() {
         aggregator = new TLDFieldIndexAggregator(null, null, -1);
     }
@@ -96,21 +89,19 @@ public class TLDFieldIndexAggregatorTest {
         
         assertTrue(doc.get("FIELD1").isToKeep());
         Set<Attribute> attributes = ((Set<Attribute>) doc.get("FIELD1").getData());
-        assertTrue(attributes.size() == 4);
-        Iterator<Attribute> attrItr = attributes.iterator();
-        while (attrItr.hasNext()) {
-            Attribute attr = attrItr.next();
+        assertEquals(4, attributes.size());
+        for (Attribute attr : attributes) {
             assertFalse(attr.isToKeep());
             assertTrue(expectedFieldValues.remove(attr.getData().toString()));
         }
         
-        assertTrue(expectedFieldValues.size() == 0);
+        assertEquals(0, expectedFieldValues.size());
         // FOO kept
         assertTrue(doc.get("FOO").isToKeep());
         // FOO2 not kept
-        assertTrue(!doc.get("FOO2").isToKeep());
+        assertFalse(doc.get("FOO2").isToKeep());
         // out of document range not included
-        assertTrue(doc.get("XENO") == null);
+        assertNull(doc.get("XENO"));
     }
     
     @Test

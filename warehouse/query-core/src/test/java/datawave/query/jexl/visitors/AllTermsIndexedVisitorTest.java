@@ -9,10 +9,12 @@ import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AllTermsIndexedVisitorTest {
     
@@ -20,7 +22,7 @@ public class AllTermsIndexedVisitorTest {
     private static MockMetadataHelper helper;
     private static ShardQueryConfiguration config;
     
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         helper = new MockMetadataHelper();
         helper.setIndexedFields(indexedFields);
@@ -45,124 +47,124 @@ public class AllTermsIndexedVisitorTest {
         testIsIndexed(query);
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNonIndexedSingleTerm() throws ParseException {
+    @Test
+    public void testNonIndexedSingleTerm() {
         String query = "BAR == 'foo'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNonIndexedConjunction() throws ParseException {
+    @Test
+    public void testNonIndexedConjunction() {
         String query = "BAR == 'foo' && BAR2 == 'foo'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNonIndexedDisjunction() throws ParseException {
+    @Test
+    public void testNonIndexedDisjunction() {
         String query = "FOO == 'bar' || BAR == 'foo'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNonIndexedDoubleDisjunction() throws ParseException {
+    @Test
+    public void testNonIndexedDoubleDisjunction() {
         String query = "BAR == 'foo' || BAR2 == 'foo'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNonIndexedTripleDisjunction() throws ParseException {
+    @Test
+    public void testNonIndexedTripleDisjunction() {
         String query = "FOO == 'bar' || BAR == 'foo' || BAR2 == 'foo'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testFunction() throws ParseException {
+    @Test
+    public void testFunction() {
         String query = "FOO == 'bar' || content:phrase(termOffsetMap, 'bar', 'too')";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testOnlyFunction() throws ParseException {
+    @Test
+    public void testOnlyFunction() {
         String query = "content:phrase(termOffsetMap, 'bar', 'too')";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testFunctionOverIndexedField() throws ParseException {
+    @Test
+    public void testFunctionOverIndexedField() {
         String query = "content:phrase(termOffsetMap, FOO, 'bar', 'too')";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testRegex() throws ParseException {
+    @Test
+    public void testRegex() {
         String query = "FOO =~ 'bar.*'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testRegexWithExtraTerm() throws ParseException {
+    @Test
+    public void testRegexWithExtraTerm() {
         String query = "FOO =~ 'bar.*' || FOO == 'bar'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNegatedRegex() throws ParseException {
+    @Test
+    public void testNegatedRegex() {
         String query = "FOO !~ 'bar.*'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testNegatedRegexWithExtraTerm() throws ParseException {
+    @Test
+    public void testNegatedRegexWithExtraTerm() {
         String query = "FOO !~ 'bar.*' || FOO == 'bar'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testLessThan() throws ParseException {
+    @Test
+    public void testLessThan() {
         String query = "FOO < '+aE1'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testLessThanWithExtraTerm() throws ParseException {
+    @Test
+    public void testLessThanWithExtraTerm() {
         String query = "FOO < '+aE1' || FOO == 'bar'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testLessThanEquals() throws ParseException {
+    @Test
+    public void testLessThanEquals() {
         String query = "FOO <= '+aE1'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testLessThanEqualsWithExtraTerm() throws ParseException {
+    @Test
+    public void testLessThanEqualsWithExtraTerm() {
         String query = "FOO <= '+aE1' || FOO == 'bar'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testGreaterThan() throws ParseException {
+    @Test
+    public void testGreaterThan() {
         String query = "FOO > '+aE1'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testGreaterThanWithExtraTerm() throws ParseException {
+    @Test
+    public void testGreaterThanWithExtraTerm() {
         String query = "FOO > '+aE1' || FOO == 'bar'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
-    public void testGreaterThanEquals() throws ParseException {
+    @Test
+    public void testGreaterThanEquals() {
         String query = "FOO >= '+aE1'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testGreaterThanEqualsWithExtraTerm() throws ParseException {
         String query = "FOO >= '+aE1' || FOO == 'bar'";
-        testIsIndexed(query);
+        assertThrows(DatawaveFatalQueryException.class, () -> testIsIndexed(query));
     }
     
     private void testIsIndexed(String query) throws ParseException {

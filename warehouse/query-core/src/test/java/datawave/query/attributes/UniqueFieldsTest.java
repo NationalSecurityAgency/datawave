@@ -8,23 +8,23 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 import java.util.SortedSet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UniqueFieldsTest {
     
     private static final ObjectMapper objectMapper = new ObjectMapper();
     
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         objectMapper.registerModule(new GuavaModule());
     }
@@ -324,7 +324,7 @@ public class UniqueFieldsTest {
     
     @Test
     public void testParsingInvalidGranularity() {
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> UniqueFields.from("fieldA[BAD]"));
+        Exception exception = Assertions.assertThrows(IllegalArgumentException.class, () -> UniqueFields.from("fieldA[BAD]"));
         assertEquals("Invalid unique granularity given: BAD", exception.getMessage());
     }
     

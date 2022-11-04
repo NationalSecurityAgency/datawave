@@ -8,9 +8,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskInputOutputContextImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -18,7 +18,7 @@ public class SplitBasedHashPartitionerTest {
     private static final String TEST_FILE_LOCATION = "datawave/ingest/mapreduce/job/full_splits.txt";
     private static final String TABLE_NAME = "someTableName"; // matches entry in test file: full_splits.txt
     
-    @Before
+    @BeforeEach
     public void before() {
         final String testFilePath = SplitBasedHashPartitionerTest.class.getClassLoader().getResource(TEST_FILE_LOCATION).getPath();
         
@@ -110,8 +110,8 @@ public class SplitBasedHashPartitionerTest {
     }
     
     private void verifyPartitionInRange(int partition, int startRangeInclusive, int endRangeExclusive) {
-        Assert.assertTrue("partition: " + partition, startRangeInclusive <= partition);
-        Assert.assertTrue("partition: " + partition, partition < endRangeExclusive);
+        Assertions.assertTrue(startRangeInclusive <= partition, "partition: " + partition);
+        Assertions.assertTrue(partition < endRangeExclusive, "partition: " + partition);
     }
     
     private BulkIngestKey createKeyFor(String row) {

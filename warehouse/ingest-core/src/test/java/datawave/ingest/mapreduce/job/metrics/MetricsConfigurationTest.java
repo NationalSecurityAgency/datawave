@@ -3,12 +3,12 @@ package datawave.ingest.mapreduce.job.metrics;
 import com.google.common.collect.Multimap;
 import datawave.util.TableName;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MetricsConfigurationTest {
     

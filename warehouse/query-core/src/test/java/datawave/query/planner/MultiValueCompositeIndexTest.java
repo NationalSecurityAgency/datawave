@@ -24,9 +24,9 @@ import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.testframework.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.testframework.MockStatusReporter;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
@@ -49,22 +49,22 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
-import java.io.UnsupportedEncodingException;
+import java.io.File;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,11 +86,11 @@ import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class MultiValueCompositeIndexTest {
     
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static File temporaryFolder = new File("tmp/test/MultiValueCompositeIndexTest");
     
     private static final int NUM_SHARDS = 241;
     private static final String DATA_TYPE_NAME = "wkt";
@@ -127,13 +127,13 @@ public class MultiValueCompositeIndexTest {
         public List<Integer> numData;
         
         public String toString() {
-            return String.join("|", wktData) + "||" + String.join("|", numData.stream().map(x -> x.toString()).collect(Collectors.toList()));
+            return String.join("|", wktData) + "||" + numData.stream().map(Object::toString).collect(Collectors.joining("|"));
         }
         
         public static TestData fromString(String td) {
             String[] splitData = td.split("\\|\\|");
             return new TestData((splitData.length >= 1) ? Arrays.asList(splitData[0].split("\\|")) : new ArrayList<>(), (splitData.length >= 2) ? Arrays
-                            .asList(splitData[1].split("\\|")).stream().map(x -> Integer.parseInt(x)).collect(Collectors.toList()) : new ArrayList<>());
+                            .stream(splitData[1].split("\\|")).map(Integer::parseInt).collect(Collectors.toList()) : new ArrayList<>());
         }
         
         @Override
@@ -196,7 +196,7 @@ public class MultiValueCompositeIndexTest {
         
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() throws Exception {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
         
@@ -215,15 +215,13 @@ public class MultiValueCompositeIndexTest {
         Multimap<BulkIngestKey,Value> keyValues = HashMultimap.create();
         int recNum = 1;
         
-        for (int i = 0; i < testData.size(); i++) {
-            TestData entry = testData.get(i);
-            
+        for (TestData entry : testData) {
             record.clear();
-            record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
+            record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 1, null));
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
             record.setDate(formatter.parse(COMPOSITE_BEGIN_DATE).getTime());
-            record.setRawData(entry.toString().getBytes("UTF8"));
+            record.setRawData(entry.toString().getBytes(StandardCharsets.UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
             
@@ -253,15 +251,13 @@ public class MultiValueCompositeIndexTest {
         
         writeKeyValues(connector, keyValues);
         
-        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.toURI().toString()));
     }
     
     public static void setupConfiguration(Configuration conf) {
-        String compositeFieldName = GEO_FIELD;
-        conf.set(DATA_TYPE_NAME + "." + compositeFieldName + BaseIngestHelper.COMPOSITE_FIELD_MAP,
-                        String.join(",", new String[] {GEO_FIELD, WKT_BYTE_LENGTH_FIELD}));
+        conf.set(DATA_TYPE_NAME + "." + GEO_FIELD + BaseIngestHelper.COMPOSITE_FIELD_MAP, String.join(",", new String[] {GEO_FIELD, WKT_BYTE_LENGTH_FIELD}));
         
-        conf.set(DATA_TYPE_NAME + BaseIngestHelper.INDEX_FIELDS, GEO_FIELD + ((!compositeFieldName.equals(GEO_FIELD)) ? "," + compositeFieldName : ""));
+        conf.set(DATA_TYPE_NAME + BaseIngestHelper.INDEX_FIELDS, GEO_FIELD + "");
         conf.set(DATA_TYPE_NAME + "." + GEO_FIELD + BaseIngestHelper.FIELD_TYPE, GeometryType.class.getName());
         conf.set(DATA_TYPE_NAME + "." + WKT_BYTE_LENGTH_FIELD + BaseIngestHelper.FIELD_TYPE, NumberType.class.getName());
         
@@ -319,10 +315,10 @@ public class MultiValueCompositeIndexTest {
         // @formatter:on
         
         List<QueryData> queries = getQueryRanges(query, false);
-        Assert.assertEquals(3, queries.size());
+        Assertions.assertEquals(3, queries.size());
         
         List<DefaultEvent> events = getQueryResults(query, false);
-        Assert.assertEquals(3, events.size());
+        Assertions.assertEquals(3, events.size());
         
         for (DefaultEvent event : events) {
             List<String> wkt = new ArrayList<>();
@@ -336,10 +332,10 @@ public class MultiValueCompositeIndexTest {
             }
             
             TestData result = new TestData(wkt, wktByteLength);
-            Assert.assertTrue(testData.contains(result));
+            Assertions.assertTrue(testData.contains(result));
         }
         
-        Assert.assertEquals(3, events.size());
+        Assertions.assertEquals(3, events.size());
     }
     
     @Test
@@ -353,10 +349,10 @@ public class MultiValueCompositeIndexTest {
         // @formatter:on
         
         List<QueryData> queries = getQueryRanges(query, true);
-        Assert.assertEquals(732, queries.size());
+        Assertions.assertEquals(732, queries.size());
         
         List<DefaultEvent> events = getQueryResults(query, true);
-        Assert.assertEquals(3, events.size());
+        Assertions.assertEquals(3, events.size());
         
         for (DefaultEvent event : events) {
             List<String> wkt = new ArrayList<>();
@@ -370,10 +366,10 @@ public class MultiValueCompositeIndexTest {
             }
             
             TestData result = new TestData(wkt, wktByteLength);
-            Assert.assertTrue(testData.contains(result));
+            Assertions.assertTrue(testData.contains(result));
         }
         
-        Assert.assertEquals(3, events.size());
+        Assertions.assertEquals(3, events.size());
     }
     
     private List<QueryData> getQueryRanges(String queryString, boolean useIvarator) throws Exception {
@@ -414,7 +410,7 @@ public class MultiValueCompositeIndexTest {
         auths.add(new Authorizations(AUTHS));
         
         Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
+        query.initialize(USER, Collections.singletonList(USER_DN), null, queryParams, null);
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
@@ -443,7 +439,7 @@ public class MultiValueCompositeIndexTest {
         auths.add(new Authorizations(AUTHS));
         
         Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
+        query.initialize(USER, Collections.singletonList(USER_DN), null, queryParams, null);
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
@@ -464,6 +460,7 @@ public class MultiValueCompositeIndexTest {
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
         
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
+        assert hdfsSiteConfig != null;
         logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
         logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
         
@@ -487,21 +484,17 @@ public class MultiValueCompositeIndexTest {
         public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer record) {
             Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
             
-            try {
-                TestData entry = TestData.fromString(new String(record.getRawData(), "UTF8"));
-                
-                for (int i = 0; i < entry.wktData.size(); i++) {
-                    NormalizedContentInterface geo_nci = new NormalizedFieldAndValue(GEO_FIELD, entry.wktData.get(i), Integer.toString(i), null);
-                    eventFields.put(GEO_FIELD, geo_nci);
-                }
-                
-                for (int i = 0; i < entry.numData.size(); i++) {
-                    NormalizedContentInterface wktByteLength_nci = new NormalizedFieldAndValue(WKT_BYTE_LENGTH_FIELD, Integer.toString(entry.numData.get(i)),
-                                    Integer.toString(i), null);
-                    eventFields.put(WKT_BYTE_LENGTH_FIELD, wktByteLength_nci);
-                }
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+            TestData entry = TestData.fromString(new String(record.getRawData(), StandardCharsets.UTF_8));
+            
+            for (int i = 0; i < entry.wktData.size(); i++) {
+                NormalizedContentInterface geo_nci = new NormalizedFieldAndValue(GEO_FIELD, entry.wktData.get(i), Integer.toString(i), null);
+                eventFields.put(GEO_FIELD, geo_nci);
+            }
+            
+            for (int i = 0; i < entry.numData.size(); i++) {
+                NormalizedContentInterface wktByteLength_nci = new NormalizedFieldAndValue(WKT_BYTE_LENGTH_FIELD, Integer.toString(entry.numData.get(i)),
+                                Integer.toString(i), null);
+                eventFields.put(WKT_BYTE_LENGTH_FIELD, wktByteLength_nci);
             }
             
             return normalizeMap(eventFields);

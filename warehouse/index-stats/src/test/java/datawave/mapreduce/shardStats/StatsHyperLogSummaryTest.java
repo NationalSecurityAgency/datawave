@@ -5,8 +5,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,18 +44,18 @@ public class StatsHyperLogSummaryTest {
             log.debug("before(" + before + ")");
             log.debug("after(" + after + ")");
             
-            Assert.assertEquals(before, after);
-            Assert.assertEquals(0, before.compareTo(after));
-            Assert.assertEquals(before.getCount(), after.getCount());
+            Assertions.assertEquals(before, after);
+            Assertions.assertEquals(0, before.compareTo(after));
+            Assertions.assertEquals(before.getCount(), after.getCount());
             
             HyperLogLogPlus logPlusBefore = before.getHyperLogPlus();
             HyperLogLogPlus logPlusAfter = after.getHyperLogPlus();
             
-            Assert.assertEquals(logPlusBefore.cardinality(), logPlusAfter.cardinality());
+            Assertions.assertEquals(logPlusBefore.cardinality(), logPlusAfter.cardinality());
             // may not be true for large sample set but for small sample it is correct
-            Assert.assertEquals(this.uniqueCount, logPlusAfter.cardinality());
-            Assert.assertEquals(this.uniqueCount, after.getUniqueCount());
-            Assert.assertEquals(this.uniqueCount, before.getUniqueCount());
+            Assertions.assertEquals(this.uniqueCount, logPlusAfter.cardinality());
+            Assertions.assertEquals(this.uniqueCount, after.getUniqueCount());
+            Assertions.assertEquals(this.uniqueCount, before.getUniqueCount());
         }
     }
     

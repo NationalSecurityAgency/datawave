@@ -1,9 +1,9 @@
 package datawave.webservice.common.audit;
 
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.reflect.Whitebox;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.Arrays;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AuditBeanTest {
     
@@ -23,13 +23,13 @@ public class AuditBeanTest {
     
     private Map<String,List<String>> params = new HashMap<>();
     
-    @Before
+    @BeforeEach
     public void setup() {
         auditBean = new AuditBean();
         auditor = new TestAuditor();
         
-        Whitebox.setInternalState(auditBean, AuditParameterBuilder.class, new DefaultAuditParameterBuilder());
-        Whitebox.setInternalState(auditBean, AuditService.class, auditor);
+        ReflectionTestUtils.setField(auditBean, "auditParameterBuilder", new DefaultAuditParameterBuilder());
+        ReflectionTestUtils.setField(auditBean, "auditService", auditor);
         
         params.put(AuditParameters.USER_DN, Collections.singletonList("someUser"));
         params.put(AuditParameters.QUERY_STRING, Collections.singletonList("someQuery"));

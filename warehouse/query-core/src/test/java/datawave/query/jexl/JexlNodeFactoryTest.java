@@ -10,13 +10,13 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JexlNodeFactoryTest {
     
@@ -41,7 +41,7 @@ public class JexlNodeFactoryTest {
         
         // let's get the literal...
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(original);
-        assertEquals("Expected 1 ER node, but got " + erNodes.size(), 1, erNodes.size());
+        assertEquals(1, erNodes.size(), "Expected 1 ER node, but got " + erNodes.size());
         ASTERNode erNode = erNodes.get(0);
         Object literal = JexlASTHelper.getLiteralValue(erNode);
         
@@ -58,7 +58,7 @@ public class JexlNodeFactoryTest {
         JexlNode original = JexlASTHelper.parseJexlQuery("FOO =~ 'bar.*'");
         // and get the erNode...
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(original);
-        assertEquals("Expected 1 ERNode but got " + erNodes.size(), 1, erNodes.size());
+        assertEquals(1, erNodes.size(), "Expected 1 ERNode but got " + erNodes.size());
         ASTERNode erNode = erNodes.get(0);
         
         List<String> fieldValues = Lists.newArrayList("bar1", "bar2", "bar3");
@@ -77,7 +77,7 @@ public class JexlNodeFactoryTest {
         JexlNode original = JexlASTHelper.parseJexlQuery("!(FOO =~ 'bar.*')");
         // and get the erNode...
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(original);
-        assertEquals("Expected 1 ERNode but got " + erNodes.size(), 1, erNodes.size());
+        assertEquals(1, erNodes.size(), "Expected 1 ERNode but got " + erNodes.size());
         ASTERNode erNode = erNodes.get(0);
         
         List<String> fieldValues = Lists.newArrayList("bar1", "bar2", "bar3");
@@ -96,7 +96,7 @@ public class JexlNodeFactoryTest {
         JexlNode original = JexlASTHelper.parseJexlQuery("FOO =~ 'bar.*'");
         // and get the erNode...
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(original);
-        assertEquals("Expected 1 ERNode but got " + erNodes.size(), 1, erNodes.size());
+        assertEquals(1, erNodes.size(), "Expected 1 ERNode but got " + erNodes.size());
         ASTERNode erNode = erNodes.get(0);
         
         IndexLookupMap lookupMap = new IndexLookupMap(500, 5000); // defaults from ShardQueryConfig
@@ -116,7 +116,7 @@ public class JexlNodeFactoryTest {
         JexlNode original = JexlASTHelper.parseJexlQuery("_ANYFIELD_ =~ 'bar.*'");
         // and get the erNode...
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(original);
-        assertEquals("Expected 1 ERNode but got " + erNodes.size(), 1, erNodes.size());
+        assertEquals(1, erNodes.size(), "Expected 1 ERNode but got " + erNodes.size());
         ASTERNode erNode = erNodes.get(0);
         
         IndexLookupMap lookupMap = new IndexLookupMap(1, 5000); // defaults from ShardQueryConfig
@@ -136,7 +136,7 @@ public class JexlNodeFactoryTest {
         JexlNode original = JexlASTHelper.parseJexlQuery("_ANYFIELD_ =~ 'bar.*'");
         // and get the erNode...
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(original);
-        assertEquals("Expected 1 ERNode but got " + erNodes.size(), 1, erNodes.size());
+        assertEquals(1, erNodes.size(), "Expected 1 ERNode but got " + erNodes.size());
         ASTERNode erNode = erNodes.get(0);
         
         IndexLookupMap lookupMap = new IndexLookupMap(500, 1); // defaults from ShardQueryConfig

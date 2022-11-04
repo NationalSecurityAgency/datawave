@@ -10,7 +10,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -19,7 +19,6 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.QueryLogicTestHarness.DocumentChecker;
-import datawave.query.testframework.cardata.CarsDataType;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
@@ -29,10 +28,10 @@ import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,12 +46,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
     
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = new AccumuloSetupExtension();
     
     private static final Logger log = Logger.getLogger(FacetedQueryLogicTest.class);
     
@@ -60,7 +59,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         super(CitiesDataType.getManager());
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() throws Exception {
         Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
@@ -78,7 +77,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         connector = accumuloSetup.loadTables(log, TEARDOWN.EVERY_OTHER, INTERRUPT.NEVER);
     }
     
-    @Before
+    @BeforeEach
     public void querySetUp() throws IOException {
         log.debug("---------  querySetUp  ---------");
         
@@ -217,17 +216,17 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
             StringBuilder errors = new StringBuilder();
             
             if (!observedFacets.isEmpty()) {
-                errors.append("Observed unexpected results: " + observedFacets.toString());
+                errors.append("Observed unexpected results: ").append(observedFacets);
             }
             
             if (!expectedFacets.isEmpty()) {
                 if (errors.length() > 0) {
                     errors.append(", ");
                 }
-                errors.append("Did not observe expected results: " + expectedFacets.toString());
+                errors.append("Did not observe expected results: ").append(expectedFacets);
             }
             
-            assertTrue(errors.toString(), observedFacets.isEmpty() && expectedFacets.isEmpty());
+            assertTrue(observedFacets.isEmpty() && expectedFacets.isEmpty(), errors.toString());
         }
         
         private static Set<String> getValues(Attribute<?> attr) {

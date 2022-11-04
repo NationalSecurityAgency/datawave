@@ -2,20 +2,21 @@ package datawave.ingest.mapreduce.job;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
+import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
-import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static datawave.ingest.mapreduce.job.ConstraintChecker.INITIALIZERS;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests verifying that Constraints are used properly within both BulkContextWriter and LiveContextWriter.
@@ -40,7 +41,7 @@ public class ContextWriterConstraintTest {
     private BulkContextWriter bulkContextWriter;
     private LiveContextWriter liveContextWriter;
     
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         Configuration conf = new Configuration();
         conf.setInt(AbstractContextWriter.CONTEXT_WRITER_MAX_CACHE_SIZE, 4);
@@ -57,17 +58,17 @@ public class ContextWriterConstraintTest {
         liveContextWriter.setup(conf, false);
     }
     
-    @Test(expected = ConstraintChecker.ConstraintViolationException.class)
+    @Test
     public void shouldFailBulkIngestOnConstraintViolation() throws Exception {
-        bulkContextWriter.write(badKey, value, bulkContext);
+        assertThrows(ConstraintChecker.ConstraintViolationException.class, () -> bulkContextWriter.write(badKey, value, bulkContext));
     }
     
-    @Test(expected = ConstraintChecker.ConstraintViolationException.class)
+    @Test
     public void shouldFailBulkIngestOnConstraintViolationDuringMultiWrite() throws Exception {
         Multimap<BulkIngestKey,Value> pairs = TreeMultimap.create();
         pairs.put(badKey, value);
         
-        bulkContextWriter.write(pairs, bulkContext);
+        assertThrows(ConstraintChecker.ConstraintViolationException.class, () -> bulkContextWriter.write(pairs, bulkContext));
     }
     
     @Test
@@ -80,17 +81,17 @@ public class ContextWriterConstraintTest {
         bulkContextWriter.write(indexBadKey, value, bulkContext);
     }
     
-    @Test(expected = ConstraintChecker.ConstraintViolationException.class)
+    @Test
     public void shouldFailLiveIngestOnConstraintViolation() throws Exception {
-        liveContextWriter.write(badKey, value, liveContext);
+        assertThrows(ConstraintChecker.ConstraintViolationException.class, () -> liveContextWriter.write(badKey, value, liveContext));
     }
     
-    @Test(expected = ConstraintChecker.ConstraintViolationException.class)
+    @Test
     public void shouldFailLiveIngestOnConstraintViolationDuringMultiWrite() throws Exception {
         Multimap<BulkIngestKey,Value> pairs = TreeMultimap.create();
         pairs.put(badKey, value);
         
-        liveContextWriter.write(pairs, liveContext);
+        assertThrows(ConstraintChecker.ConstraintViolationException.class, () -> liveContextWriter.write(pairs, liveContext));
     }
     
     @Test
