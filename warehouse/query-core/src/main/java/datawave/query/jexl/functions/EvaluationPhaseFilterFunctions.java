@@ -50,7 +50,7 @@ public class EvaluationPhaseFilterFunctions {
     private static final Logger log = Logger.getLogger(EvaluationPhaseFilterFunctions.class);
     
     /**
-     * This public property is required for unit testing purposes. Required for proper unit test data-context reset. Refereneced in the DatawaveInterpreterTest
+     * This public property is required for unit testing purposes. Required for proper unit test data-context reset. Referenced in the DatawaveInterpreterTest
      * class while testing EvaluationPhaseFilterFunctions.
      * 
      * @param multiSetIsNotNullEmptySetFound
