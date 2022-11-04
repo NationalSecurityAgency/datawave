@@ -157,6 +157,8 @@ public class UniqueGranularityTest {
                         objectMapper.writeValueAsString(UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND));
         assertEquals("\"" + UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND.getName() + "\"",
                         objectMapper.writeValueAsString(UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND));
+        assertEquals("\"" + UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR_OF_DAY.getName() + "\"",
+                        objectMapper.writeValueAsString(UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR_OF_DAY));
     }
     
     @Test
@@ -172,5 +174,7 @@ public class UniqueGranularityTest {
                         objectMapper.readValue("\"" + UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND.getName() + "\"", UniqueGranularity.class));
         assertEquals(UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND,
                         objectMapper.readValue("\"" + UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND.getName() + "\"", UniqueGranularity.class));
+        assertEquals(UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR_OF_DAY,
+                        objectMapper.readValue("\"" + UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR_OF_DAY.getName() + "\"", UniqueGranularity.class));
     }
 }
