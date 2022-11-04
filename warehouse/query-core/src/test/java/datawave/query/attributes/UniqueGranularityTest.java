@@ -31,6 +31,15 @@ public class UniqueGranularityTest {
     }
     
     @Test
+    public void testTruncateTemporalToAMPM() {
+        assertEquals("AM_PM", UniqueGranularity.TRUNCATE_TEMPORAL_TO_AMPM.getName());
+        assertNull(UniqueGranularity.TRUNCATE_TEMPORAL_TO_AMPM.transform(null));
+        assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_AMPM.transform("nonDateValue"));
+        assertEquals("2019-01-15T03:30:15AM", UniqueGranularity.TRUNCATE_TEMPORAL_TO_AMPM.transform("2019-01-15 03:30:15"));
+        assertEquals("2019-01-15T15:30:15PM", UniqueGranularity.TRUNCATE_TEMPORAL_TO_AMPM.transform("2019-01-15 15:30:15"));
+    }
+    
+    @Test
     public void testTruncateTemporalToHour() {
         assertEquals("HOUR", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR.getName());
         assertNull(UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR.transform(null));

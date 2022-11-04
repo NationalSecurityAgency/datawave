@@ -68,6 +68,8 @@ public enum UniqueGranularity {
     
     TRUNCATE_TEMPORAL_TO_MILLISECOND("MILLISECOND", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS")),
     
+    TRUNCATE_TEMPORAL_TO_AMPM("AM_PM", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ssaa")),
+    
     /**
      * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the original
      * value will be returned.
@@ -104,6 +106,8 @@ public enum UniqueGranularity {
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK;
             case "WEEK_OF_MONTH":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_WEEK_OF_MONTH;
+            case "AM_PM":
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_AMPM;
             default:
                 throw new IllegalArgumentException("No " + UniqueGranularity.class.getSimpleName() + " exists with the name " + name);
         }
