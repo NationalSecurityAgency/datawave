@@ -214,11 +214,11 @@ public class ScannerFactory {
     }
     
     public synchronized Collection<ScannerBase> currentScanners() {
-        return new HashSet<>(instances);
+        return Collections.unmodifiableSet(instances);
     }
     
     public synchronized Collection<ScannerSession> currentSessions() {
-        return new HashSet<>(sessionInstances);
+        return Collections.unmodifiableSet(sessionInstances);
     }
     
     public synchronized boolean lockdown() {
