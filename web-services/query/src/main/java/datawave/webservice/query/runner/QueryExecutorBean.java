@@ -33,6 +33,9 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
+import datawave.webservice.common.exception.NotFoundException;
+import datawave.webservice.common.exception.PreConditionFailedException;
+import datawave.webservice.common.exception.QueryCanceledException;
 import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -2016,6 +2019,7 @@ public class QueryExecutorBean implements QueryExecutor {
             closedQueryCache.add(id); // remember that we auto-closed this query
             throw e;
         } catch (DatawaveWebApplicationException e) {
+            log.error("Failed Query", e);
             if (query != null) {
                 query.setActiveCall(false);
                 if (query.getLogic().getCollectQueryMetrics()) {
@@ -2032,7 +2036,9 @@ public class QueryExecutorBean implements QueryExecutor {
             } catch (Exception ex) {
                 log.error("Error marking transaction for roll back", ex);
             }
-            if (e.getCause() instanceof NoResultsException) {
+            // close out the query if at least it was a valid request
+            if (!((e instanceof BadRequestException) || (e instanceof NotFoundException) || (e instanceof QueryCanceledException)
+                            || (e instanceof UnauthorizedException) || (e instanceof PreConditionFailedException))) {
                 close(id);
                 closedQueryCache.add(id); // remember that we auto-closed this query
             }
@@ -2064,6 +2070,7 @@ public class QueryExecutorBean implements QueryExecutor {
             } else {
                 try {
                     close(id);
+                    closedQueryCache.add(id); // remember that we auto-closed this query
                 } catch (Exception ce) {
                     log.error(qe, ce);
                 }
