@@ -1,5 +1,6 @@
 package datawave.query.tables;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -212,13 +213,21 @@ public class ScannerFactory {
         }
         return removed;
     }
-    
+
+    /**
+     * Returns a NEW collection of scanner instances to the caller.
+     * @return a NEW collection of scanners
+     */
     public synchronized Collection<ScannerBase> currentScanners() {
-        return Collections.unmodifiableSet(instances);
+        return new ArrayList<>(instances);
     }
-    
+
+    /**
+     * Returns a NEW collection of scanner session instances to the caller.
+     * @return a NEW collection of scanner session instances
+     */
     public synchronized Collection<ScannerSession> currentSessions() {
-        return Collections.unmodifiableSet(sessionInstances);
+        return new ArrayList<>(sessionInstances);
     }
     
     public synchronized boolean lockdown() {
