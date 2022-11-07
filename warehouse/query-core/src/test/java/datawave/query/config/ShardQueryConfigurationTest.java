@@ -114,7 +114,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Sets.newHashSet(), config.getDatatypeFilter());
         Assert.assertEquals(Lists.newArrayList(), config.getIndexHoles());
         Assert.assertEquals(Sets.newHashSet(), config.getProjectFields());
-        Assert.assertEquals(Sets.newHashSet(), config.getBlacklistedFields());
+        Assert.assertEquals(Sets.newHashSet(), config.getDisallowedFields());
         Assert.assertEquals(Sets.newHashSet(), config.getIndexedFields());
         Assert.assertEquals(Sets.newHashSet(), config.getNormalizedFields());
         Assert.assertEquals(HashMultimap.create(), config.getDataTypes());
@@ -272,7 +272,7 @@ public class ShardQueryConfigurationTest {
         other.setDatatypeFilter(dataTypeFilter);
         other.setIndexHoles(indexHoles);
         other.setProjectFields(projectFields);
-        other.setBlacklistedFields(blacklistedFields);
+        other.setDisallowedFields(blacklistedFields);
         other.setIndexedFields(indexedFields);
         other.setNormalizedFields(normalizedFields);
         other.setDataTypes(dataTypes);
@@ -341,7 +341,7 @@ public class ShardQueryConfigurationTest {
         IndexHole expectedIndexHole = new IndexHole(new String[] {"0", "1"}, new String[] {"2", "3"});
         Assert.assertEquals(Lists.newArrayList(expectedIndexHole), config.getIndexHoles());
         Assert.assertEquals(Sets.newHashSet("projectFieldA"), config.getProjectFields());
-        Assert.assertEquals(Sets.newHashSet("blacklistedFieldA"), config.getBlacklistedFields());
+        Assert.assertEquals(Sets.newHashSet("blacklistedFieldA"), config.getDisallowedFields());
         Assert.assertEquals(Sets.newHashSet("indexedFieldA"), config.getIndexedFields());
         // This assert is different from the setter as setNormalizedFieldsAsDatatypes will overwrite the normalizedFields with
         // a new keyset.
@@ -428,8 +428,8 @@ public class ShardQueryConfigurationTest {
     public void testGetSetBlacklistedFields() {
         String expected = "blacklistA,blacklistB";
         Set<String> blacklistedFields = Sets.newHashSet("blacklistA", "blacklistB");
-        config.setBlacklistedFields(blacklistedFields);
-        Assert.assertEquals(expected, config.getBlacklistedFieldsAsString());
+        config.setDisallowedFields(blacklistedFields);
+        Assert.assertEquals(expected, config.getDisallowedFieldsAsString());
     }
     
     @Test

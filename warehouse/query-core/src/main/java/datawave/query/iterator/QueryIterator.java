@@ -130,7 +130,7 @@ import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOC
  * applies a series of transformations and predicates to satisfy the Datawave query requirements.
  *
  * <br>
- * 
+ *
  * <h1>Document Keys</h1>
  * <p>
  * The source of Document Keys is one of the following:
@@ -142,7 +142,7 @@ import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOC
  * {@link Entry}&lt;Key,Value&gt;
  *
  * <br>
- * 
+ *
  * <h1>Transformations/Predicates</h1>
  * <p>
  * The following transformations/predicates are applied (order sensitive):
@@ -157,7 +157,6 @@ import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOC
  * <li>PostProcessing Enrichment - Variable enrichment, e.g. term frequency enrichment</li>
  * <li>Serialize Document to a Value, e.g. Kryo, Writable, etc</li>
  * </ol>
- *
  */
 public class QueryIterator extends QueryOptions implements YieldingKeyValueIterator<Key,Value>, JexlContextCreator.JexlContextValueComparator,
                 SourceFactory<Key,Value> {
@@ -1299,11 +1298,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected DocumentProjection getProjection() {
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         
-        if (this.useWhiteListedFields) {
-            projection.setIncludes(this.whiteListedFields);
+        if (this.useAllowedFields) {
+            projection.setIncludes(this.allowedFields);
             return projection;
-        } else if (this.useBlackListedFields) {
-            projection.setExcludes(this.blackListedFields);
+        } else if (this.useDisallowedFields) {
+            projection.setExcludes(this.disallowedFields);
             return projection;
         } else {
             String msg = "Configured to use projection, but no whitelist or blacklist was provided";
@@ -1417,19 +1416,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 boolean hitListOption = Boolean.parseBoolean(hitListOptionString);
                 if (hitListOption) {
                     isQueryFullySatisfiedInitialState = false; // if hit
-                                                               // list is
-                                                               // on, don't
-                                                               // attempt
-                                                               // satisfiability
+                    // list is
+                    // on, don't
+                    // attempt
+                    // satisfiability
                     // don't even make a SatisfactionVisitor.....
                 }
             }
             if (isQueryFullySatisfiedInitialState) {
                 SatisfactionVisitor satisfactionVisitor = this.createSatisfiabilityVisitor(true); // we'll
-                                                                                                  // charge
-                                                                                                  // in
-                                                                                                  // with
-                                                                                                  // optimism
+                // charge
+                // in
+                // with
+                // optimism
                 
                 // visit() and get the root which is the root of a tree of
                 // Boolean Logic Iterator<Key>'s
@@ -1633,7 +1632,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     /**
      * This can be overridden to supply a value comparator for use within the jexl context. Useful when using the HitListArithmetic which pulls back which value
      * tuples were actually hit upon.
-     * 
+     *
      * @param from
      * @return A comparator for values within the jexl context.
      */

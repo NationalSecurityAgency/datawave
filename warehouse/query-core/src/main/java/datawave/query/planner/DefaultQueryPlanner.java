@@ -196,7 +196,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * Disables Whindex (value-specific) field mappings for GeoWave functions.
-     * 
+     *
      * @see WhindexVisitor
      */
     protected boolean disableWhindexFieldMappings = false;
@@ -218,7 +218,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * Number of documents to combine for concurrent evaluation
-     *
      */
     protected int docsToCombineForEvaluation = -1;
     
@@ -1685,7 +1684,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Multimap<String,String> inverseReverseModel = invertMultimap(queryModel.getReverseQueryMapping());
         
         inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
-        Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields(), groupFields = config
+        Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getDisallowedFields(), limitFields = config.getLimitFields(), groupFields = config
                         .getGroupFields();
         
         if (projectFields != null && !projectFields.isEmpty()) {
@@ -1724,12 +1723,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setExcerptFields(excerptFields);
         }
         
-        if (config.getBlacklistedFields() != null && !config.getBlacklistedFields().isEmpty()) {
+        if (config.getDisallowedFields() != null && !config.getDisallowedFields().isEmpty()) {
             blacklistedFields = queryModel.remapParameter(blacklistedFields, inverseReverseModel);
             if (log.isTraceEnabled()) {
                 log.trace("Updated blacklist set using query model to: " + blacklistedFields);
             }
-            config.setBlacklistedFields(Sets.newHashSet(blacklistedFields));
+            config.setDisallowedFields(Sets.newHashSet(blacklistedFields));
         }
         
         if (config.getLimitFields() != null && !config.getLimitFields().isEmpty()) {
@@ -2235,12 +2234,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             
             addOption(cfg, QueryOptions.PROJECTION_FIELDS, config.getProjectFieldsAsString(), false);
-        } else if (null != config.getBlacklistedFields() && !config.getBlacklistedFields().isEmpty()) {
+        } else if (null != config.getDisallowedFields() && !config.getDisallowedFields().isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug("Setting scan option: " + QueryOptions.BLACKLISTED_FIELDS + " to " + config.getBlacklistedFieldsAsString());
+                log.debug("Setting scan option: " + QueryOptions.DISALLOWED_FIELDS + " to " + config.getDisallowedFieldsAsString());
             }
             
-            addOption(cfg, QueryOptions.BLACKLISTED_FIELDS, config.getBlacklistedFieldsAsString(), false);
+            addOption(cfg, QueryOptions.DISALLOWED_FIELDS, config.getDisallowedFieldsAsString(), false);
         }
         
         // We don't need to do any expansion of the start or end date/time

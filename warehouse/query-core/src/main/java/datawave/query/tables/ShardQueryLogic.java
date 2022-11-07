@@ -110,19 +110,19 @@ import java.util.concurrent.TimeUnit;
  *                   querying the metadata table. Depending on the conjunctions in the query (or, and, not) and the
  *                   eventFields that are indexed, the query may be sent down the optimized path or the full scan path.
  * </pre>
- *
+ * <p>
  * We are not supporting all of the operators that JEXL supports at this time. We are supporting the following operators:
- * 
+ *
  * <pre>
  *  ==, !=, &gt;, &ge;, &lt;, &le;, =~, !~, and the reserved word 'null'
  * </pre>
- *
+ * <p>
  * Custom functions can be created and registered with the Jexl engine. The functions can be used in the queries in conjunction with other supported operators.
  * A sample function has been created, called between, and is bound to the 'f' namespace. An example using this function is : "f:between(LATITUDE,60.0, 70.0)"
- * 
+ *
  * <h1>Constraints on Query Structure</h1> Queries that are sent to this class need to be formatted such that there is a space on either side of the operator.
  * We are rewriting the query in some cases and the current implementation is expecting a space on either side of the operator.
- * 
+ *
  * <h1>Notes on Optimization</h1> Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
  *
  * <pre>
@@ -152,9 +152,9 @@ import java.util.concurrent.TimeUnit;
  *     Filtering must be enabled by setting {@link ShardQueryConfiguration#useFilters} to true and providing a list of {@link datawave.query.index.lookup.DataTypeFilter} class
  *     names in {@link ShardQueryConfiguration#filterClassNames}.
  *  6. Projection can be accomplished by setting the {@link QueryParameters RETURN_FIELDS} parameter to a '/'-separated list of field names.
- * 
+ *
  * </pre>
- * 
+ *
  * @see datawave.query.enrich
  */
 public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
@@ -424,17 +424,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         validateConfiguration(config);
         
-        if (getCardinalityConfiguration() != null && (!config.getBlacklistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
+        if (getCardinalityConfiguration() != null && (!config.getDisallowedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
             // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
             // Modify the projectFields and blacklistFields only for this stage, then return to the original values.
             // Not advisable to create a copy of the config object due to the embedded timers.
-            Set<String> originalBlacklistedFields = new HashSet<>(config.getBlacklistedFields());
+            Set<String> originalBlacklistedFields = new HashSet<>(config.getDisallowedFields());
             Set<String> originalProjectFields = new HashSet<>(config.getProjectFields());
             
             // either projectFields or blacklistedFields can be used, but not both
             // this will be caught when loadQueryParameters is called
-            if (!config.getBlacklistedFields().isEmpty()) {
-                config.setBlacklistedFields(getCardinalityConfiguration().getRevisedBlacklistFields(queryModel, originalBlacklistedFields));
+            if (!config.getDisallowedFields().isEmpty()) {
+                config.setDisallowedFields(getCardinalityConfiguration().getRevisedBlacklistFields(queryModel, originalBlacklistedFields));
             }
             if (!config.getProjectFields().isEmpty()) {
                 config.setProjectFields(getCardinalityConfiguration().getRevisedProjectFields(queryModel, originalProjectFields));
@@ -442,7 +442,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             
             this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
             
-            config.setBlacklistedFields(originalBlacklistedFields);
+            config.setDisallowedFields(originalBlacklistedFields);
             config.setProjectFields(originalProjectFields);
         } else {
             this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
@@ -616,7 +616,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private void addConfigBasedTransformers() {
         if (getConfig() != null) {
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
-            ((DocumentTransformer) this.transformerInstance).setBlacklistedFields(getConfig().getBlacklistedFields());
+            ((DocumentTransformer) this.transformerInstance).setBlacklistedFields(getConfig().getDisallowedFields());
             
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(UniqueTransform.class);
@@ -741,7 +741,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                     throw new QueryException("Whitelist and blacklist projection options are mutually exclusive");
                 }
                 
-                config.setBlacklistedFields(new HashSet<>(blacklistedFieldsList));
+                config.setDisallowedFields(new HashSet<>(blacklistedFieldsList));
                 
                 if (log.isDebugEnabled()) {
                     log.debug("Blacklisted fields: " + tBlacklistedFields);
@@ -1234,11 +1234,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public Set<String> getBlacklistedFields() {
-        return getConfig().getBlacklistedFields();
+        return getConfig().getDisallowedFields();
     }
     
     public void setBlacklistedFields(Set<String> blacklistedFields) {
-        getConfig().setBlacklistedFields(blacklistedFields);
+        getConfig().setDisallowedFields(blacklistedFields);
     }
     
     public Set<String> getLimitFields() {
@@ -1318,7 +1318,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public String getBlacklistedFieldsString() {
-        return getConfig().getBlacklistedFieldsAsString();
+        return getConfig().getDisallowedFieldsAsString();
     }
     
     public boolean getIncludeGroupingContext() {
@@ -1948,7 +1948,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     /**
      * Returns a value indicating whether index-only filter functions (e.g., #INCLUDE, #EXCLUDE) should be enabled. If true, the use of such filters can
      * potentially consume a LOT of memory.
-     * 
+     *
      * @return true, if index-only filter functions should be enabled.
      */
     public boolean isIndexOnlyFilterFunctionsEnabled() {
@@ -1958,7 +1958,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     /**
      * Sets a value indicating whether index-only filter functions (e.g., #INCLUDE and #EXCLUDE) should be enabled. If true, the use of such filters can
      * potentially consume a LOT of memory.
-     * 
+     *
      * @param enabled
      *            indicates whether index-only filter functions (e.g., <i>filter:includeRegex()</i> and <i>not(filter:includeRegex())</i>) should be enabled
      */

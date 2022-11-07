@@ -17,25 +17,26 @@ import com.google.common.collect.Sets;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
-import datawave.query.attributes.ExcerptFields;
-import datawave.query.function.JexlEvaluation;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.Type;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.Equality;
 import datawave.query.function.GetStartKey;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.function.PrefixEquality;
 import datawave.query.iterator.filter.EventKeyDataTypeFilter;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
 import datawave.query.iterator.filter.KeyIdentity;
 import datawave.query.iterator.filter.StringToText;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.DefaultArithmetic;
@@ -49,7 +50,6 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
 import datawave.query.tracking.ActiveQueryLog;
-import datawave.query.attributes.UniqueFields;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
@@ -95,8 +95,8 @@ import java.util.zip.GZIPOutputStream;
 
 /**
  * QueryOptions are set on the iterators.
- *
- * Some options are passed through from the QueryParemeters.
+ * <p>
+ * Some options are passed through from the QueryParameters.
  */
 public class QueryOptions implements OptionDescriber {
     private static final Logger log = Logger.getLogger(QueryOptions.class);
@@ -123,7 +123,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String FULL_TABLE_SCAN_ONLY = "full.table.scan.only";
     
     public static final String PROJECTION_FIELDS = "projection.fields";
-    public static final String BLACKLISTED_FIELDS = "blacklisted.fields";
+    public static final String DISALLOWED_FIELDS = "blacklisted.fields";
     public static final String INDEX_ONLY_FIELDS = "index.only.fields";
     public static final String INDEXED_FIELDS = "indexed.fields";
     public static final String COMPOSITE_FIELDS = "composite.fields";
@@ -276,10 +276,10 @@ public class QueryOptions implements OptionDescriber {
     protected JexlArithmetic arithmetic = new DefaultArithmetic();
     
     protected boolean projectResults = false;
-    protected boolean useWhiteListedFields = false;
-    protected Set<String> whiteListedFields = new HashSet<>();
-    protected boolean useBlackListedFields = false;
-    protected Set<String> blackListedFields = new HashSet<>();
+    protected boolean useAllowedFields = false;
+    protected Set<String> allowedFields = new HashSet<>();
+    protected boolean useDisallowedFields = false;
+    protected Set<String> disallowedFields = new HashSet<>();
     protected Map<String,Integer> limitFieldsMap = new HashMap<>();
     protected boolean limitFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
@@ -423,10 +423,10 @@ public class QueryOptions implements OptionDescriber {
         this.fullTableScanOnly = other.fullTableScanOnly;
         
         this.projectResults = other.projectResults;
-        this.useWhiteListedFields = other.useWhiteListedFields;
-        this.whiteListedFields = other.whiteListedFields;
-        this.useBlackListedFields = other.useBlackListedFields;
-        this.blackListedFields = other.blackListedFields;
+        this.useAllowedFields = other.useAllowedFields;
+        this.allowedFields = other.allowedFields;
+        this.useDisallowedFields = other.useDisallowedFields;
+        this.disallowedFields = other.disallowedFields;
         
         this.fiAggregator = other.fiAggregator;
         
@@ -1043,7 +1043,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(Constants.RETURN_TYPE, "The method to use to serialize data for return to the client");
         options.put(FULL_TABLE_SCAN_ONLY, "If true, do not perform boolean logic, just scan the documents");
         options.put(PROJECTION_FIELDS, "Attributes to return to the client");
-        options.put(BLACKLISTED_FIELDS, "Attributes to *not* return to the client");
+        options.put(DISALLOWED_FIELDS, "Attributes to *not* return to the client");
         options.put(FILTER_MASKED_VALUES, "Filter the masked values when both the masked and unmasked variants are in the result set.");
         options.put(INCLUDE_DATATYPE, "Include the data type as a field in the document.");
         options.put(INCLUDE_RECORD_ID, "Include the record id as a field in the document.");
@@ -1131,7 +1131,7 @@ public class QueryOptions implements OptionDescriber {
         this.options = options;
         
         // If we don't have a query, make sure it's because
-        // we don't aren't performing any Jexl evaluation
+        // we aren't performing any Jexl evaluation
         if (options.containsKey(DISABLE_EVALUATION)) {
             this.disableEvaluation = Boolean.parseBoolean(options.get(DISABLE_EVALUATION));
         }
@@ -1218,33 +1218,33 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(PROJECTION_FIELDS)) {
             this.projectResults = true;
-            this.useWhiteListedFields = true;
+            this.useAllowedFields = true;
             
             String fieldList = options.get(PROJECTION_FIELDS);
             if (fieldList != null && EVERYTHING.equals(fieldList)) {
-                this.whiteListedFields = UniversalSet.instance();
+                this.allowedFields = UniversalSet.instance();
             } else if (fieldList != null && !fieldList.trim().equals("")) {
-                this.whiteListedFields = new HashSet<>();
-                Collections.addAll(this.whiteListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
+                this.allowedFields = new HashSet<>();
+                Collections.addAll(this.allowedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
             if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
-                this.whiteListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
+                this.allowedFields.add(JexlEvaluation.HIT_TERM_FIELD);
             }
         }
         
-        if (options.containsKey(BLACKLISTED_FIELDS)) {
+        if (options.containsKey(DISALLOWED_FIELDS)) {
             if (this.projectResults) {
-                log.error("QueryOptions.PROJECTION_FIELDS and QueryOptions.BLACKLISTED_FIELDS are mutually exclusive");
+                log.error("QueryOptions.PROJECTION_FIELDS and QueryOptions.DISALLOWED_FIELDS are mutually exclusive");
                 return false;
             }
             
             this.projectResults = true;
-            this.useBlackListedFields = true;
+            this.useDisallowedFields = true;
             
-            String fieldList = options.get(BLACKLISTED_FIELDS);
+            String fieldList = options.get(DISALLOWED_FIELDS);
             if (fieldList != null && !fieldList.trim().equals("")) {
-                this.blackListedFields = new HashSet<>();
-                Collections.addAll(this.blackListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
+                this.disallowedFields = new HashSet<>();
+                Collections.addAll(this.disallowedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
         }
         

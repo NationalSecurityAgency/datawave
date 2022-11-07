@@ -99,7 +99,7 @@ public class TLDQueryIterator extends QueryIterator {
     
     /**
      * Distinct from getEvaluation filter as the FI filter is used to prevent FI hits on nonEventFields that are not indexOnly fields
-     * 
+     *
      * @return
      */
     protected EventDataQueryFilter getFIEvaluationFilter() {
@@ -126,7 +126,7 @@ public class TLDQueryIterator extends QueryIterator {
             
             /**
              * Keep any FI that is index only and part of the TLD or is not part of the TLD
-             * 
+             *
              * @param k
              * @return
              */
@@ -181,8 +181,8 @@ public class TLDQueryIterator extends QueryIterator {
     public EventDataQueryFilter getEvaluationFilter() {
         if (this.evaluationFilter == null && script != null) {
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, typeMetadata, useWhiteListedFields ? whiteListedFields : null,
-                            useBlackListedFields ? blackListedFields : null, maxFieldHitsBeforeSeek, maxKeysBeforeSeek,
+            this.evaluationFilter = new TLDEventDataFilter(script, typeMetadata, useAllowedFields ? allowedFields : null,
+                            useDisallowedFields ? disallowedFields : null, maxFieldHitsBeforeSeek, maxKeysBeforeSeek,
                             limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.EMPTY_MAP, limitFieldsField, getNonEventFields());
         }
         return this.evaluationFilter != null ? evaluationFilter.clone() : null;
