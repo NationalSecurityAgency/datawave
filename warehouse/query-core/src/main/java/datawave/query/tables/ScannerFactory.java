@@ -213,17 +213,19 @@ public class ScannerFactory {
         }
         return removed;
     }
-
+    
     /**
      * Returns a NEW collection of scanner instances to the caller.
+     * 
      * @return a NEW collection of scanners
      */
     public synchronized Collection<ScannerBase> currentScanners() {
         return new ArrayList<>(instances);
     }
-
+    
     /**
      * Returns a NEW collection of scanner session instances to the caller.
+     * 
      * @return a NEW collection of scanner session instances
      */
     public synchronized Collection<ScannerSession> currentSessions() {
