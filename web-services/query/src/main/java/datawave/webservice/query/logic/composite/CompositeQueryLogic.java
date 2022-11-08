@@ -289,9 +289,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 }
             }
         }
-        if (null == this.transformer) {
-            this.transformer = new CompositeQueryLogicTransformer(delegates);
-        }
+        this.transformer = new CompositeQueryLogicTransformer(delegates);
         return this.transformer;
     }
     
