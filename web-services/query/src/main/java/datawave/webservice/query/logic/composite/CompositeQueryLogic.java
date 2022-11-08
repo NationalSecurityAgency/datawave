@@ -179,9 +179,11 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 GenericQueryConfiguration config = null;
                 try {
                     config = logic.initialize(connection, settings, runtimeQueryAuthorizations);
-                    logicQueryStringBuilder.append("(table=" + config.getTableName());
-                    logicQueryStringBuilder.append(",query=" + config.getQueryString());
-                    logicQueryStringBuilder.append(") ");
+                    if (logicQueryStringBuilder.length() > 0) {
+                        logicQueryStringBuilder.append(" || ");
+                    }
+                    logicQueryStringBuilder.append("( ( logic = '").append(logic.getLogicName()).append("' )");
+                    logicQueryStringBuilder.append(" && ").append(config.getQueryString()).append(" )");
                     QueryLogicHolder holder = new QueryLogicHolder(logic);
                     holder.setConfig(config);
                     holder.setSettings(settings);
