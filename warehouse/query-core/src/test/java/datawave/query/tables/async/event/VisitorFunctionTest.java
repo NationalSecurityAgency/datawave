@@ -42,12 +42,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
     public void setup() {
         config = new ShardQueryConfiguration();
         helper = createMock(MetadataHelper.class);
-        metric = new BaseQueryMetric() {
-            @Override
-            public void populate(Query query) {
-                
-            }
-        }; // TODO: Must double check if this is proper way of going about this. AND re-add unit tests based on subPlans.
+        metric = createMock(BaseQueryMetric.class);
     }
     
     private void setupExpects() throws TableNotFoundException, IOException, URISyntaxException {
@@ -82,7 +77,10 @@ public class VisitorFunctionTest extends EasyMockSupport {
     @Test
     public void underTermThresholdTest() throws IOException, TableNotFoundException, URISyntaxException {
         setupExpects();
-        
+
+        metric.addSubPlan("20210101_0", "FIELD1 == 'a'");
+        EasyMock.expectLastCall();
+
         // test specific expects
         config.setCleanupShardsAndDaysQueryHints(false);
         config.setBypassExecutabilityCheck(true);
@@ -113,7 +111,10 @@ public class VisitorFunctionTest extends EasyMockSupport {
     @Test
     public void overTermThresholdTest() throws IOException, TableNotFoundException, URISyntaxException {
         setupExpects();
-        
+
+        metric.addSubPlan("20210101_0", "FIELD1 == 'a'");
+        EasyMock.expectLastCall();
+
         config.setCleanupShardsAndDaysQueryHints(false);
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
@@ -158,7 +159,10 @@ public class VisitorFunctionTest extends EasyMockSupport {
     @Test(expected = DatawaveFatalQueryException.class)
     public void overTermThresholdCantReduceTest() throws IOException, TableNotFoundException, URISyntaxException {
         setupExpects();
-        
+
+        metric.addSubPlan("20210101_0", "FIELD1 == 'a'");
+        EasyMock.expectLastCall();
+
         config.setCleanupShardsAndDaysQueryHints(false);
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
@@ -204,7 +208,10 @@ public class VisitorFunctionTest extends EasyMockSupport {
     @Test
     public void overTermThresholdAfterFirstReductionOverrideSecondTest() throws IOException, TableNotFoundException, URISyntaxException {
         setupExpects();
-        
+
+        metric.addSubPlan("20210101_0", "FIELD1 == 'a'");
+        EasyMock.expectLastCall();
+
         config.setCleanupShardsAndDaysQueryHints(false);
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
@@ -252,7 +259,10 @@ public class VisitorFunctionTest extends EasyMockSupport {
     @Test
     public void rangeOverTermThresholdTest() throws IOException, TableNotFoundException, URISyntaxException {
         setupExpects();
-        
+
+        metric.addSubPlan("20210101_0", "FIELD1 == 'a'");
+        EasyMock.expectLastCall();
+
         config.setCleanupShardsAndDaysQueryHints(false);
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
