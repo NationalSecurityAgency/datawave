@@ -101,6 +101,7 @@ public class UniqueGranularityTest {
         assertNull(UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK.transform(null));
         assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK.transform("nonDateValue"));
         assertEquals("Wed", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK.transform("2022-11-02 12:58:15"));
+        assertEquals("Fri", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK.transform("2022-11-04 12:58:15"));
     }
     
     @Test
