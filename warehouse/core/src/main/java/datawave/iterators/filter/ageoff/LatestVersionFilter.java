@@ -18,7 +18,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This filter is designed to optionally support filtering for dataTypes against a configured timestamp version.
@@ -44,7 +45,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class LatestVersionFilter extends Filter {
-    private static final Logger log = Logger.getLogger(LatestVersionFilter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LatestVersionFilter.class);
     
     private static final String IS_INDEX_TABLE_PROPERTY_NAME = "table.custom." + AgeOffConfigParams.IS_INDEX_TABLE;
     static final String DATATYPE_LIST_OPTION_NAME = "dataTypes";
@@ -112,7 +113,6 @@ public class LatestVersionFilter extends Filter {
                 return dataTimestamp >= configuredTimestamp;
             case UNDEFINED:
             default:
-                log.warn("DataType {} was not configured for 'eq' or 'gte'");
                 // By default: accept all data at compaction scopes, no data at scan scope
                 return !this.isScanScope;
         }
@@ -153,14 +153,14 @@ public class LatestVersionFilter extends Filter {
         
         String dataTypeListOptionValue = options.get(DATATYPE_LIST_OPTION_NAME);
         if (Strings.isNullOrEmpty(dataTypeListOptionValue)) {
-            log.trace(DATATYPE_LIST_OPTION_NAME + " is null or empty.  Configure data type list.");
+            LOG.trace(DATATYPE_LIST_OPTION_NAME + " is null or empty.  Configure data type list.");
             return configurationsMap;
         }
         
         String[] dataTypes = StringUtils.split(dataTypeListOptionValue, ",");
         for (String dataTypeStr : dataTypes) {
             if (null == dataTypeStr || dataTypeStr.trim().length() == 0) {
-                log.warn("Invalid dataType found in " + DATATYPE_LIST_OPTION_NAME + "=" + dataTypeListOptionValue);
+                LOG.warn("Invalid dataType found in " + DATATYPE_LIST_OPTION_NAME + "=" + dataTypeListOptionValue);
                 continue;
             }
             
@@ -188,6 +188,9 @@ public class LatestVersionFilter extends Filter {
         // set mode
         String dataTypeMode = (null != options) ? options.get(dataType + "." + DATATYPE_MODE_OPTION_NAME) : null;
         filterConfiguration.mode = Mode.parseOptionValue(dataTypeMode);
+        if (filterConfiguration.mode == Mode.UNDEFINED) {
+            LOG.warn("DataType {} was not configured for 'eq' or 'gte'", dataType);
+        }
         
         // set version timestamp
         filterConfiguration.timestampVersion = getTimestampVersion(options, iterEnv, dataType);
@@ -208,7 +211,7 @@ public class LatestVersionFilter extends Filter {
     @VisibleForTesting
     long getTimestampVersion(Map<String,String> options, IteratorEnvironment iterEnv, ByteSequence dataType) {
         if (null == dataType || 0 == dataType.length()) {
-            log.warn("dataType is null or empty");
+            LOG.warn("dataType is null or empty");
             return 0;
         }
         
@@ -220,24 +223,24 @@ public class LatestVersionFilter extends Filter {
                 try {
                     return Long.parseLong(timestampVersionStr, 10);
                 } catch (final NumberFormatException e) {
-                    log.warn("Could not parse " + DATATYPE_TIMESTAMP_PROPERTY_NAME_PREFIX + dataType + "=" + timestampVersionStr);
+                    LOG.warn("Could not parse " + DATATYPE_TIMESTAMP_PROPERTY_NAME_PREFIX + dataType + "=" + timestampVersionStr);
                 }
             }
         }
         
         if (null == iterEnv || null == iterEnv.getConfig()) {
-            log.warn("Problem evaluating Options and AccumuloConfiguration");
+            LOG.warn("Problem evaluating Options and AccumuloConfiguration");
             return 0;
         }
         
         String timestampVersionStr = iterEnv.getConfig().get(expectedPropertyName);
         if (Strings.isNullOrEmpty(timestampVersionStr)) {
-            log.warn("No AccumuloConfiguration property value found in IteratorEnvironment for " + DATATYPE_TIMESTAMP_PROPERTY_NAME_PREFIX + dataType);
+            LOG.warn("No AccumuloConfiguration property value found in IteratorEnvironment for " + DATATYPE_TIMESTAMP_PROPERTY_NAME_PREFIX + dataType);
         } else {
             try {
                 return Long.parseLong(timestampVersionStr, 10);
             } catch (final NumberFormatException e) {
-                log.warn("Could not parse " + DATATYPE_TIMESTAMP_PROPERTY_NAME_PREFIX + dataType + "=" + timestampVersionStr);
+                LOG.warn("Could not parse " + DATATYPE_TIMESTAMP_PROPERTY_NAME_PREFIX + dataType + "=" + timestampVersionStr);
             }
         }
         return 0; // default
@@ -311,7 +314,7 @@ public class LatestVersionFilter extends Filter {
                 // verify it can be parsed
                 Boolean.parseBoolean(configuredOptionsMap.get(IS_INDEX_TABLE_OPTION_NAME));
             } catch (Exception exception) {
-                log.warn("Failed to parse boolean " + IS_INDEX_TABLE_OPTION_NAME + "=" + configuredOptionsMap.get(IS_INDEX_TABLE_OPTION_NAME));
+                LOG.warn("Failed to parse boolean " + IS_INDEX_TABLE_OPTION_NAME + "=" + configuredOptionsMap.get(IS_INDEX_TABLE_OPTION_NAME));
                 return false;
             }
         }
@@ -329,33 +332,33 @@ public class LatestVersionFilter extends Filter {
         // verify the data type list is present and can be split on commas
         String dataTypeListOptionValue = configuredOptionsMap.get(DATATYPE_LIST_OPTION_NAME);
         if (Strings.isNullOrEmpty(dataTypeListOptionValue)) {
-            log.warn(DATATYPE_LIST_OPTION_NAME + " is null or empty.  Configure data type list.");
+            LOG.warn(DATATYPE_LIST_OPTION_NAME + " is null or empty.  Configure data type list.");
             // tolerate null or empty list
             return true;
         } else {
             try {
                 dataTypes = StringUtils.split(dataTypeListOptionValue, ",");
             } catch (Exception exception) {
-                log.warn("Error splitting comma separated list " + DATATYPE_LIST_OPTION_NAME + "=" + dataTypeListOptionValue);
+                LOG.warn("Error splitting comma separated list " + DATATYPE_LIST_OPTION_NAME + "=" + dataTypeListOptionValue);
                 return false;
             }
         }
         
         if (dataTypes.length == 0) {
-            log.warn(DATATYPE_LIST_OPTION_NAME + " has no values.");
+            LOG.warn(DATATYPE_LIST_OPTION_NAME + " has no values.");
             // tolerate empty list
             return true;
         }
         
         for (String dataType : dataTypes) {
             if (Strings.isNullOrEmpty(dataType)) {
-                log.warn("One of the data types appears to be empty " + DATATYPE_LIST_OPTION_NAME + "=" + dataTypeListOptionValue);
+                LOG.warn("One of the data types appears to be empty " + DATATYPE_LIST_OPTION_NAME + "=" + dataTypeListOptionValue);
                 return false;
             }
             // If a mode is provided, ensure it's valid
             String dataTypeMode = configuredOptionsMap.get(DATATYPE_MODE_OPTION_NAME);
             if (!Strings.isNullOrEmpty(dataTypeMode) && Mode.UNDEFINED == Mode.parseOptionValue(dataTypeMode)) {
-                log.warn("Could not parse " + DATATYPE_MODE_OPTION_NAME + "=" + dataTypeMode);
+                LOG.warn("Could not parse " + DATATYPE_MODE_OPTION_NAME + "=" + dataTypeMode);
                 return false;
             }
         }

@@ -139,6 +139,7 @@ public class DataTypeParserTest {
     
     @Test
     public void toleratesEmptyTokenInFi() {
+        assertForColumnData("a", "fi\000ignore", "\000a\000b", IS_SHARD_TABLE);
         assertForColumnData("", "fi\000ignore", "\000\000", IS_SHARD_TABLE);
         assertForColumnData("", "fi\000ignore", "\000\000\000\000", IS_SHARD_TABLE);
         assertForColumnData("", "fi\000ignore", "\000\000\000\000\000", IS_SHARD_TABLE);

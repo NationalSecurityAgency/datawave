@@ -29,6 +29,8 @@ public class DataTypeParser {
     private static final int MIN_LENGTH_SHARD_ID = 10;
     
     /**
+     * Extracts the dataType from a key based on whether it's an indexTable key or shard key.
+     * 
      * @param key
      *            Accumulo key to parse
      * @param isIndexTable
@@ -36,9 +38,6 @@ public class DataTypeParser {
      * @return a ByteSequence containing the data type name, possibly returning null or empty for unexpected column data.
      */
     public static final ByteSequence parseKey(Key key, boolean isIndexTable) {
-        /**
-         * Supports the shard and index table. There should not be a failure, however if either one is used on the incorrect table
-         */
         if (isIndexTable) {
             return extractDatatypeForIndexTable(key);
         } else {
@@ -47,7 +46,7 @@ public class DataTypeParser {
     }
     
     private static final ByteSequence extractDatatypeForShardTable(Key k) {
-        // ASSUMES THAT THE KEY STARTS WITH A CORRECTLY SIZED BYTE ARRAY
+        // Assumes that the key starts with a correctly sized byte array
         byte[] cf = k.getColumnFamilyData().getBackingArray();
         
         if (cf.length >= 3 && cf[0] == FI_CF_CHAR_1 && cf[1] == FI_CF_CHAR_2 && cf[2] == NULL_BYTE) {
@@ -62,93 +61,60 @@ public class DataTypeParser {
     }
     
     private static ArrayByteSequence parseDataTypeForEvent(byte[] cf) {
-        int nullIndex = -1;
-        
         int cfLength = cf.length;
         for (int i = 0; i < cfLength; i++) {
             if (cf[i] == NULL_BYTE) {
-                nullIndex = i;
-                break;
+                return (i > 0) ? new ArrayByteSequence(cf, 0, i) : null;
             }
-        }
-        // data column
-        if (nullIndex > 0) {
-            return new ArrayByteSequence(cf, 0, nullIndex);
         }
         return null;
     }
     
     private static ArrayByteSequence parseDataTypeForDocOrTf(Key k) {
-        // get the column qualifier, so that we can use it throughout
-        // ASSUMES THAT THE KEY STARTS WITH A CORRECTLY SIZED BYTE ARRAY
+        // Assumes that the key starts with a correctly sized byte array
         final byte[] cq = k.getColumnQualifierData().getBackingArray();
         
-        int cqLength = cq.length;
-        
-        int nullIndex = -1;
-        
         // don't need to check the last byte as we expect more than one null if formatted correctly
-        for (int i = 0; i < cqLength - 1; i++) {
+        for (int i = 0; i < cq.length - 1; i++) {
             if (cq[i] == NULL_BYTE) {
-                nullIndex = i;
-                break;
+                return (i > 0) ? new ArrayByteSequence(cq, 0, i) : null;
             }
-        }
-        
-        // the data type is the first part of this entry.
-        if (nullIndex > 0) {
-            return new ArrayByteSequence(cq, 0, nullIndex);
         }
         return null;
     }
     
     private static ArrayByteSequence parseDataTypeForFi(Key k) {
-        // get the column qualifier, so that we can use it throughout
-        // ASSUMES THAT THE KEY STARTS WITH A CORRECTLY SIZED BYTE ARRAY
+        // Assumes that the key starts with a correctly sized byte array
         final byte[] cq = k.getColumnQualifierData().getBackingArray();
         
-        int cqLength = cq.length;
+        int lastNullIndex = -1;
         
-        int nullIndex = -1;
-        
-        int uidIndex = -1;
-        for (int i = cqLength - 1; i >= 0; i--) {
+        for (int i = cq.length - 1; i >= 0; i--) {
             if (cq[i] == NULL_BYTE) {
-                if (uidIndex == -1)
-                    uidIndex = i;
+                if (lastNullIndex == -1)
+                    lastNullIndex = i;
                 else {
-                    nullIndex = i + 1;
+                    // already found the last nullIndex, so this is the second to last one
+                    return new ArrayByteSequence(cq, i + 1, (lastNullIndex - (i + 1)));
                 }
-                if (uidIndex > 0 && nullIndex > 0)
-                    break;
             }
         }
         
-        if (uidIndex > 0 && nullIndex > 0) {
-            return new ArrayByteSequence(cq, nullIndex, (uidIndex - nullIndex));
-        }
         return null;
     }
     
     private static ByteSequence extractDatatypeForIndexTable(Key k) {
-        // get the column qualifier, so that we can use it throughout
-        // ASSUMES THAT THE KEY STARTS WITH A CORRECTLY SIZED BYTE ARRAY
+        // Assumes that the key starts with a correctly sized byte array
         final byte[] cq = k.getColumnQualifierData().getBackingArray();
         
         int cqLength = cq.length;
         
-        int nullIndex = -1;
-        
         for (int i = MIN_LENGTH_SHARD_ID; i < cqLength; i++) {
             if (cq[i] == NULL_BYTE) {
-                nullIndex = i + 1;
-                break;
+                return new ArrayByteSequence(cq, i + 1, (cqLength - (i + 1)));
             }
         }
         
-        if (nullIndex > 0) {
-            return new ArrayByteSequence(cq, nullIndex, (cqLength - nullIndex));
-        }
         return null;
     }
 }
