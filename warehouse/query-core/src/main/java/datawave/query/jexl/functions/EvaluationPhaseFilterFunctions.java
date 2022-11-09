@@ -1,7 +1,6 @@
 package datawave.query.jexl.functions;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
@@ -9,7 +8,6 @@ import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
 import datawave.util.OperationEvaluator;
 import org.apache.commons.collections4.SetUtils;
-import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec;
 import org.apache.log4j.Logger;
 
 import java.text.DateFormat;
@@ -50,6 +48,18 @@ public class EvaluationPhaseFilterFunctions {
     public static final String CASE_INSENSITIVE = ".*\\(\\?[idmsux]*-[dmsux]*i[idmsux]*\\).*";
     
     private static final Logger log = Logger.getLogger(EvaluationPhaseFilterFunctions.class);
+    
+    /**
+     * This public property is required for unit testing purposes. Required for proper unit test data-context reset. Referenced in the DatawaveInterpreterTest
+     * class while testing EvaluationPhaseFilterFunctions.
+     *
+     * @param multiSetIsNotNullEmptySetFound
+     */
+    public static void setMultiSetIsNotNullEmptySetFound(boolean multiSetIsNotNullEmptySetFound) {
+        EvaluationPhaseFilterFunctions.multiSetIsNotNullEmptySetFound = multiSetIsNotNullEmptySetFound;
+    }
+    
+    private static boolean multiSetIsNotNullEmptySetFound = false;
     
     public static boolean occurrence(Iterable<?> fieldValues, String operator, int count) {
         return compareSizeToCount(fieldValues, operator, count);
@@ -157,21 +167,22 @@ public class EvaluationPhaseFilterFunctions {
      *
      * @param iterable
      *            Collection of objects to iterate and utilize to populate return list of FunctionalSet objects.
-     * @return List of {@link FunctionalSet} of hit terms found.
+     * @return the {@link FunctionalSet} of hit terms found
      */
     public static FunctionalSet<ValueTuple> isNotNull(Iterable<?> iterable) {
+        // Return variable containing 1st valid hit / result.
         FunctionalSet<ValueTuple> firstResultSet = null;
         
-        if (iterable != null) {
+        if (iterable != null && !multiSetIsNotNullEmptySetFound) {
             for (Object o : iterable) {
                 FunctionalSet<ValueTuple> currentResultSet = isNotNull(o);
                 
-                if (currentResultSet.equals(FunctionalSet.emptySet())) {
-                    return FunctionalSet.emptySet();
-                } else if (firstResultSet == null)
+                if (firstResultSet == null) {
                     firstResultSet = currentResultSet;
+                }
             }
         } else {
+            multiSetIsNotNullEmptySetFound = true;
             return FunctionalSet.emptySet();
         }
         
@@ -190,7 +201,7 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     /**
-     * Returns whether {@code iterable} is considered an equivalently null field value.
+     * Returns whether {@code iterable} is contains an equivalently null field value.
      *
      * @param iterable
      *            a iterable collection of objects.
