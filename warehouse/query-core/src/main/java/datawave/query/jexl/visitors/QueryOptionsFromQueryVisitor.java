@@ -50,8 +50,8 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private static final Set<String> RESERVED = ImmutableSet.of(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION,
                     QueryFunctions.UNIQUE_FUNCTION, QueryFunctions.UNIQUE_BY_DAY_FUNCTION, QueryFunctions.UNIQUE_BY_HOUR_FUNCTION,
                     QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION, QueryFunctions.UNIQUE_BY_MONTH_FUNCTION, QueryFunctions.UNIQUE_BY_SECOND_FUNCTION,
-                    QueryFunctions.UNIQUE_BY_MILLISECOND_FUNCTION, QueryFunctions.UNIQUE_BY_AMPM_FUNCTION, QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.UNIQUE_BY_YEAR_FUNCTION,
-                    QueryFunctions.EXCERPT_FIELDS_FUNCTION);
+                    QueryFunctions.UNIQUE_BY_MILLISECOND_FUNCTION, QueryFunctions.UNIQUE_BY_AMPM_FUNCTION, QueryFunctions.GROUPBY_FUNCTION,
+                    QueryFunctions.UNIQUE_BY_YEAR_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION);
     
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T collect(T node, Object data) {
