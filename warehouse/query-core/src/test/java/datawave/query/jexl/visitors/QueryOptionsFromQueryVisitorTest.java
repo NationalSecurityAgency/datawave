@@ -167,6 +167,21 @@ public class QueryOptionsFromQueryVisitorTest {
         assertResult("f:unique('field1','field2[DAY]') AND f:unique_by_year('field1','field2','field3') AND f:unique_by_year('field4')", "");
         assertOption(QueryParameters.UNIQUE_FIELDS, "field1[ALL,YEAR],field2[DAY,YEAR],field3[YEAR],field4[YEAR]");
     }
+
+    @Test
+    public void testUniqueByAmPm() throws ParseException {
+        // Verify an empty function results in an empty unique parameter.
+        assertResult("f:unique_by_ampm()", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "");
+
+        // Verify fields are added with the MINUTE granularity.
+        assertResult("f:unique_by_ampm('field1','field2','field3')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[AM_PM],field2[AM_PM],field3[AM_PM]");
+
+        // Verify fields from multiple functions are merged.
+        assertResult("f:unique('field1','field2[DAY]') AND f:unique_by_ampm('field1','field2','field3') AND f:unique_by_ampm('field4')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[ALL,AM_PM],field2[DAY,AM_PM],field3[AM_PM],field4[AM_PM]");
+    }
     
     @Test
     public void testUniqueByMinute() throws ParseException {
