@@ -30,6 +30,9 @@ public class QueryFunctions {
     public static final String UNIQUE_BY_DAY_FUNCTION = "unique_by_day";
     public static final String UNIQUE_BY_HOUR_FUNCTION = "unique_by_hour";
     public static final String UNIQUE_BY_MINUTE_FUNCTION = "unique_by_minute";
+    public static final String UNIQUE_BY_MONTH_FUNCTION = "unique_by_month";
+    public static final String UNIQUE_BY_SECOND_FUNCTION = "unique_by_second";
+    public static final String UNIQUE_BY_MILLISECOND_FUNCTION = "unique_by_millisecond";
     public static final String GROUPBY_FUNCTION = "groupby";
     public static final String EXCERPT_FIELDS_FUNCTION = "excerpt_fields";
     public static final String MATCH_REGEX = "matchRegex";
