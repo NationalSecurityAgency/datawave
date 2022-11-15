@@ -170,4 +170,10 @@ public class QueryParameters {
      * Used to specify phrase excerpts that should be returned.
      */
     public static final String EXCERPT_FIELDS = "excerpt.fields";
+    
+    public static final String SUM_FIELDS = "sum.fields";
+    public static final String MAX_FIELDS = "max.fields";
+    public static final String MIN_FIELDS = "min.fields";
+    public static final String COUNT_FIELDS = "count.fields";
+    public static final String AVERAGE_FIELDS = "average.fields";
 }

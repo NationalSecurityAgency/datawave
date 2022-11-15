@@ -16,6 +16,7 @@ import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
+import datawave.query.common.grouping.AggregatedFields;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ShardQueryConfiguration;
@@ -631,11 +632,19 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             
             if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(GroupingTransform.class);
+                // @formatter:off
+                AggregatedFields.Factory aggregateFieldsFactory = new AggregatedFields.Factory()
+                                .withSumFields(getConfig().getSumFields())
+                                .withMaxFields(getConfig().getMaxFields())
+                                .withMinFields(getConfig().getMinFields())
+                                .withCountFields(getConfig().getCountFields())
+                                .withAverageFields(getConfig().getAverageFields());
+                // @formatter:on
                 if (alreadyExists != null) {
-                    ((GroupingTransform) alreadyExists).updateConfig(getConfig().getGroupFields(), getQueryModel());
+                    ((GroupingTransform) alreadyExists).updateConfig(getConfig().getGroupFields(), getQueryModel(), aggregateFieldsFactory);
                 } else {
                     ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(getQueryModel(), getConfig().getGroupFields(),
-                                    this.markingFunctions, this.getQueryExecutionForPageTimeout()));
+                                    this.markingFunctions, this.getQueryExecutionForPageTimeout(), aggregateFieldsFactory));
                 }
             }
         }
@@ -793,6 +802,51 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             int groupFieldsBatchSize = Integer.parseInt(groupFieldsBatchSizeString);
             this.setGroupFieldsBatchSize(groupFieldsBatchSize);
             config.setGroupFieldsBatchSize(groupFieldsBatchSize);
+        }
+        
+        // Get the SUM_FIELDS fields parameter if given.
+        String sumFields = settings.findParameter(QueryParameters.SUM_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(sumFields)) {
+            Set<String> fields = Sets.newHashSet(StringUtils.split(sumFields, Constants.PARAM_VALUE_SEP));
+            if (!fields.isEmpty()) {
+                this.setSumFields(fields);
+            }
+        }
+        
+        // Get the MAX_FIELDS fields parameter if given.
+        String maxFields = settings.findParameter(QueryParameters.MAX_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(maxFields)) {
+            Set<String> fields = Sets.newHashSet(StringUtils.split(maxFields, Constants.PARAM_VALUE_SEP));
+            if (!fields.isEmpty()) {
+                this.setMaxFields(fields);
+            }
+        }
+        
+        // Get the MIN_FIELDS fields parameter if given.
+        String minFields = settings.findParameter(QueryParameters.MIN_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(minFields)) {
+            Set<String> fields = Sets.newHashSet(StringUtils.split(minFields, Constants.PARAM_VALUE_SEP));
+            if (!fields.isEmpty()) {
+                this.setMinFields(fields);
+            }
+        }
+        
+        // Get the COUNT_FIELDS fields parameter if given.
+        String countFields = settings.findParameter(QueryParameters.COUNT_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(countFields)) {
+            Set<String> fields = Sets.newHashSet(StringUtils.split(countFields, Constants.PARAM_VALUE_SEP));
+            if (!fields.isEmpty()) {
+                this.setCountFields(fields);
+            }
+        }
+        
+        // Get the AVERAGE_FIELDS fields parameter if given.
+        String averageFields = settings.findParameter(QueryParameters.AVERAGE_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(averageFields)) {
+            Set<String> fields = Sets.newHashSet(StringUtils.split(averageFields, Constants.PARAM_VALUE_SEP));
+            if (!fields.isEmpty()) {
+                this.setAverageFields(fields);
+            }
         }
         
         // Get the UNIQUE_FIELDS parameter if given
@@ -1288,6 +1342,46 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public int getGroupFieldsBatchSize() {
         return getConfig().getGroupFieldsBatchSize();
+    }
+    
+    public Set<String> getSumFields() {
+        return getConfig().getSumFields();
+    }
+    
+    public void setSumFields(Set<String> fields) {
+        getConfig().setSumFields(fields);
+    }
+    
+    public Set<String> getMaxFields() {
+        return getConfig().getMaxFields();
+    }
+    
+    public void setMaxFields(Set<String> fields) {
+        getConfig().setMaxFields(fields);
+    }
+    
+    public Set<String> getMinFields() {
+        return getConfig().getMinFields();
+    }
+    
+    public void setMinFields(Set<String> fields) {
+        getConfig().setMinFields(fields);
+    }
+    
+    public Set<String> getCountFields() {
+        return getConfig().getCountFields();
+    }
+    
+    public void setCountFields(Set<String> fields) {
+        getConfig().setCountFields(fields);
+    }
+    
+    public Set<String> getAverageFields() {
+        return getConfig().getAverageFields();
+    }
+    
+    public void setAverageFields(Set<String> fields) {
+        getConfig().setAverageFields(fields);
     }
     
     public UniqueFields getUniqueFields() {
@@ -2049,7 +2143,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGESIZE);
         optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGETIMEOUT);
         optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_EXPIRATION);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE);
+        optionalParams.add(QueryParameters.SUM_FIELDS);
+        optionalParams.add(QueryParameters.MAX_FIELDS);
+        optionalParams.add(QueryParameters.MIN_FIELDS);
+        optionalParams.add(QueryParameters.COUNT_FIELDS);
+        optionalParams.add(QueryParameters.AVERAGE_FIELDS);
         return optionalParams;
     }
     

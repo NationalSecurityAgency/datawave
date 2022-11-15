@@ -203,7 +203,11 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             case QueryFunctions.EXCERPT_FIELDS_FUNCTION:
             case QueryFunctions.MATCH_REGEX:
             case QueryFunctions.INCLUDE_TEXT:
-            case QueryFunctions.NO_EXPANSION:
+            case QueryFunctions.SUM:
+            case QueryFunctions.COUNT:
+            case QueryFunctions.MIN:
+            case QueryFunctions.MAX:
+            case QueryFunctions.AVERAGE:
                 if (numArgs == 0) {
                     throw new IllegalArgumentException("Expected at least one argument to the " + name + " function");
                 }

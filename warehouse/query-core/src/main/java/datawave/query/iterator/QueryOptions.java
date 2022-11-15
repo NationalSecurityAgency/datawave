@@ -140,6 +140,11 @@ public class QueryOptions implements OptionDescriber {
     public static final String LIMIT_FIELDS_FIELD = "limit.fields.field";
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
+    public static final String SUM_FIELDS = "sum.fields";
+    public static final String MAX_FIELDS = "max.fields";
+    public static final String MIN_FIELDS = "min.fields";
+    public static final String COUNT_FIELDS = "count.fields";
+    public static final String AVERAGE_FIELDS = "average.fields";
     public static final String UNIQUE_FIELDS = "unique.fields";
     public static final String HITS_ONLY = "hits.only";
     public static final String HIT_LIST = "hit.list";
@@ -293,6 +298,11 @@ public class QueryOptions implements OptionDescriber {
     
     protected Set<String> groupFields = Sets.newHashSet();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
+    protected Set<String> sumFields = Sets.newHashSet();
+    protected Set<String> maxFields = Sets.newHashSet();
+    protected Set<String> minFields = Sets.newHashSet();
+    protected Set<String> countFields = Sets.newHashSet();
+    protected Set<String> averageFields = Sets.newHashSet();
     protected UniqueFields uniqueFields = new UniqueFields();
     
     protected Set<String> hitsOnlySet = new HashSet<>();
@@ -497,6 +507,11 @@ public class QueryOptions implements OptionDescriber {
         this.limitFieldsField = other.limitFieldsField;
         this.groupFields = other.groupFields;
         this.groupFieldsBatchSize = other.groupFieldsBatchSize;
+        this.sumFields = other.sumFields;
+        this.maxFields = other.maxFields;
+        this.minFields = other.minFields;
+        this.countFields = other.countFields;
+        this.averageFields = other.averageFields;
         this.hitsOnlySet = other.hitsOnlySet;
         
         this.compressedMappings = other.compressedMappings;
@@ -1007,6 +1022,46 @@ public class QueryOptions implements OptionDescriber {
         this.groupFieldsBatchSize = groupFieldsBatchSize;
     }
     
+    public Set<String> getSumFields() {
+        return sumFields;
+    }
+    
+    public void setSumFields(Set<String> sumFields) {
+        this.sumFields = sumFields;
+    }
+    
+    public Set<String> getMaxFields() {
+        return maxFields;
+    }
+    
+    public void setMaxFields(Set<String> maxFields) {
+        this.maxFields = maxFields;
+    }
+    
+    public Set<String> getMinFields() {
+        return minFields;
+    }
+    
+    public void setMinFields(Set<String> minFields) {
+        this.minFields = minFields;
+    }
+    
+    public Set<String> getCountFields() {
+        return countFields;
+    }
+    
+    public void setCountFields(Set<String> countFields) {
+        this.countFields = countFields;
+    }
+    
+    public Set<String> getAverageFields() {
+        return averageFields;
+    }
+    
+    public void setAverageFields(Set<String> averageFields) {
+        this.averageFields = averageFields;
+    }
+    
     public UniqueFields getUniqueFields() {
         return uniqueFields;
     }
@@ -1113,6 +1168,11 @@ public class QueryOptions implements OptionDescriber {
         options.put(LIMIT_FIELDS, "limit fields");
         options.put(GROUP_FIELDS, "group fields");
         options.put(GROUP_FIELDS_BATCH_SIZE, "group fields.batch.size");
+        options.put(SUM_FIELDS, "Fields to sum up (when grouped by group fields)");
+        options.put(MAX_FIELDS, "Fields to find the max of (when grouped by group fields)");
+        options.put(MIN_FIELDS, "Fields to find the min of (when grouped by group fields)");
+        options.put(COUNT_FIELDS, "Fields to count (when grouped by group fields)");
+        options.put(AVERAGE_FIELDS, "Fields to find the average of (when grouped by group fields)");
         options.put(UNIQUE_FIELDS, "unique fields");
         options.put(HIT_LIST, "hit list");
         options.put(NON_INDEXED_DATATYPES, "Normalizers to apply only at aggregation time");
@@ -1457,6 +1517,41 @@ public class QueryOptions implements OptionDescriber {
             String groupFieldsBatchSize = options.get(GROUP_FIELDS_BATCH_SIZE);
             int batchSize = Integer.parseInt(groupFieldsBatchSize);
             this.setGroupFieldsBatchSize(batchSize);
+        }
+        
+        if (options.containsKey(SUM_FIELDS)) {
+            String fields = options.get(SUM_FIELDS);
+            for (String param : Splitter.on(",").omitEmptyStrings().trimResults().split(fields)) {
+                this.getSumFields().add(param);
+            }
+        }
+        
+        if (options.containsKey(MAX_FIELDS)) {
+            String fields = options.get(MAX_FIELDS);
+            for (String param : Splitter.on(",").omitEmptyStrings().trimResults().split(fields)) {
+                this.getMaxFields().add(param);
+            }
+        }
+        
+        if (options.containsKey(MIN_FIELDS)) {
+            String fields = options.get(MIN_FIELDS);
+            for (String param : Splitter.on(",").omitEmptyStrings().trimResults().split(fields)) {
+                this.getMinFields().add(param);
+            }
+        }
+        
+        if (options.containsKey(COUNT_FIELDS)) {
+            String fields = options.get(COUNT_FIELDS);
+            for (String param : Splitter.on(",").omitEmptyStrings().trimResults().split(fields)) {
+                this.getCountFields().add(param);
+            }
+        }
+        
+        if (options.containsKey(AVERAGE_FIELDS)) {
+            String fields = options.get(AVERAGE_FIELDS);
+            for (String param : Splitter.on(",").omitEmptyStrings().trimResults().split(fields)) {
+                this.getAverageFields().add(param);
+            }
         }
         
         if (options.containsKey(UNIQUE_FIELDS)) {

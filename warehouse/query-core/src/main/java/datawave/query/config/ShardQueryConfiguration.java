@@ -415,6 +415,31 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean lazySetMechanismEnabled = false;
     
     /**
+     * The fields to find the sum (in conjunction with the group by function).
+     */
+    private Set<String> sumFields = new HashSet<>();
+    
+    /**
+     * The fields for which to find the max value (in conjunction with the group by function).
+     */
+    private Set<String> maxFields = new HashSet<>();
+    
+    /**
+     * The fields for which to find the min value (in conjunction with the group by function).
+     */
+    private Set<String> minFields = new HashSet<>();
+    
+    /**
+     * The fields for which to find total count (in conjunction with the group by function).
+     */
+    private Set<String> countFields = new HashSet<>();
+    
+    /**
+     * The fields for which to find the average value (in conjunction with the group by function).
+     */
+    private Set<String> averageFields = new HashSet<>();
+    
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -610,6 +635,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
         this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
+        this.setSumFields(other.getSumFields() == null ? null : Sets.newHashSet(other.getSumFields()));
+        this.setMaxFields(other.getMaxFields() == null ? null : Sets.newHashSet(other.getMaxFields()));
+        this.setMinFields(other.getMinFields() == null ? null : Sets.newHashSet(other.getMinFields()));
+        this.setCountFields(other.getCountFields() == null ? null : Sets.newHashSet(other.getCountFields()));
+        this.setAverageFields(other.getAverageFields() == null ? null : Sets.newHashSet(other.getAverageFields()));
     }
     
     /**
@@ -2379,5 +2409,45 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
         this.lazySetMechanismEnabled = lazySetMechanismEnabled;
+    }
+    
+    public Set<String> getSumFields() {
+        return sumFields;
+    }
+    
+    public void setSumFields(Set<String> sumFields) {
+        this.sumFields = sumFields;
+    }
+    
+    public Set<String> getMaxFields() {
+        return maxFields;
+    }
+    
+    public void setMaxFields(Set<String> maxFields) {
+        this.maxFields = maxFields;
+    }
+    
+    public Set<String> getMinFields() {
+        return minFields;
+    }
+    
+    public void setMinFields(Set<String> minFields) {
+        this.minFields = minFields;
+    }
+    
+    public Set<String> getCountFields() {
+        return countFields;
+    }
+    
+    public void setCountFields(Set<String> countFields) {
+        this.countFields = countFields;
+    }
+    
+    public Set<String> getAverageFields() {
+        return averageFields;
+    }
+    
+    public void setAverageFields(Set<String> averageFields) {
+        this.averageFields = averageFields;
     }
 }

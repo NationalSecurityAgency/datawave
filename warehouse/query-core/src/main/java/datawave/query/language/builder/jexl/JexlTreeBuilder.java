@@ -3,7 +3,9 @@ package datawave.query.language.builder.jexl;
 import java.util.List;
 
 import datawave.query.language.functions.jexl.AtomValuesMatchFunction;
+import datawave.query.language.functions.jexl.Average;
 import datawave.query.language.functions.jexl.Compare;
+import datawave.query.language.functions.jexl.Count;
 import datawave.query.language.functions.jexl.DateFunction;
 import datawave.query.language.functions.jexl.EvaluationOnly;
 import datawave.query.language.functions.jexl.ExcerptFields;
@@ -27,9 +29,12 @@ import datawave.query.language.functions.jexl.Loaded;
 import datawave.query.language.functions.jexl.MatchesAtLeastCountOf;
 import datawave.query.language.functions.jexl.MatchesInGroupFunction;
 import datawave.query.language.functions.jexl.MatchesInGroupLeft;
+import datawave.query.language.functions.jexl.Max;
+import datawave.query.language.functions.jexl.Min;
 import datawave.query.language.functions.jexl.NoExpansion;
 import datawave.query.language.functions.jexl.OccurrenceFunction;
 import datawave.query.language.functions.jexl.Options;
+import datawave.query.language.functions.jexl.Sum;
 import datawave.query.language.functions.jexl.Text;
 import datawave.query.language.functions.jexl.TimeFunction;
 import datawave.query.language.functions.jexl.Unique;
@@ -63,7 +68,7 @@ public class JexlTreeBuilder extends QueryTreeBuilder {
             new DateFunction(), new OccurrenceFunction(), new MatchesInGroupFunction(), new MatchesInGroupLeft(), new GetAllMatches(),
             new MatchesAtLeastCountOf(), new Jexl(), new TimeFunction(), new AtomValuesMatchFunction(), new Options(), new Unique(), new GroupBy(),
             new EvaluationOnly(), new UniqueByDay(), new UniqueByHour(), new UniqueByTenthOfHour(), new UniqueByMonth(), new UniqueByYear(),
-            new UniqueByMinute(), new NoExpansion(), new Compare(), new ExcerptFields()};
+            new UniqueByMinute(), new NoExpansion(), new Compare(), new ExcerptFields(), new Sum(), new Min(), new Max(), new Average(), new Count()};
     
     public static final List<JexlQueryFunction> DEFAULT_ALLOWED_FUNCTION_LIST;
     

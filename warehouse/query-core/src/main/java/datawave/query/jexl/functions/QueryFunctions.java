@@ -33,6 +33,11 @@ public class QueryFunctions {
     public static final String MATCH_REGEX = "matchRegex";
     public static final String INCLUDE_TEXT = "includeText";
     public static final String NO_EXPANSION = "noExpansion";
+    public static final String SUM = "sum";
+    public static final String MAX = "max";
+    public static final String MIN = "min";
+    public static final String COUNT = "count";
+    public static final String AVERAGE = "average";
     
     protected static Logger log = Logger.getLogger(QueryFunctions.class);
     

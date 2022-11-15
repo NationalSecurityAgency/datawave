@@ -11,6 +11,7 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.log4j.Logger;
 
 import java.util.Map;
+import java.util.Set;
 
 public class QueryOptionsSwitch {
     
@@ -50,6 +51,22 @@ public class QueryOptionsSwitch {
                 case QueryParameters.EXCERPT_FIELDS:
                     ExcerptFields excerptFields = ExcerptFields.from(value);
                     config.setExcerptFields(excerptFields);
+                    break;
+                case QueryParameters.SUM_FIELDS:
+                    config.setSumFields(Sets.newHashSet(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    break;
+                case QueryParameters.MAX_FIELDS:
+                    config.setMaxFields(Sets.newHashSet(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    break;
+                case QueryParameters.MIN_FIELDS:
+                    config.setMinFields(Sets.newHashSet(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    break;
+                case QueryParameters.COUNT_FIELDS:
+                    config.setCountFields(Sets.newHashSet(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    break;
+                case QueryParameters.AVERAGE_FIELDS:
+                    config.setAverageFields(Sets.newHashSet(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    break;
             }
         }
     }
