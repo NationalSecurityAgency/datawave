@@ -33,6 +33,7 @@ import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTUnknownFieldERNode;
 import org.apache.commons.jexl2.parser.ASTUnsatisfiableERNode;
+import org.apache.commons.jexl2.parser.DroppedExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
@@ -188,7 +189,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             boolean exceededTermMarker = false;
             for (JexlNode markedParent : markedParents) {
                 QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(markedParent);
-                if (instance.isType(ASTEvaluationOnly.class)) {
+                if (instance.isAnyTypeOf(ASTEvaluationOnly.class, DroppedExpression.class)) {
                     evalOnly = true;
                 } else if (instance.isType(ExceededValueThresholdMarkerJexlNode.class)) {
                     exceededValueMarker = true;

@@ -62,7 +62,7 @@ public class FetchDataTypesVisitor extends BaseVisitor {
         this(helper, datatypeFilter, false);
     }
 
-    public static HashMultimap<String,Type<?>> fetchDataTypes(MetadataHelper helper, Set<String> datatypeFilter, ASTJexlScript script, boolean useCache) {
+    public static HashMultimap<String,Type<?>> fetchDataTypes(MetadataHelper helper, Set<String> datatypeFilter, JexlNode script, boolean useCache) {
         FetchDataTypesVisitor visitor = new FetchDataTypesVisitor(helper, datatypeFilter, useCache);
 
         return (HashMultimap<String,Type<?>>) script.jjtAccept(visitor, HashMultimap.create());
