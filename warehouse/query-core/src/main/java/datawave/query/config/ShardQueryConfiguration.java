@@ -225,6 +225,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Multimap<String,String> compositeToFieldMap = ArrayListMultimap.create();
     private Map<String,Date> compositeTransitionDates = new HashMap<>();
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
+    private Map<String,Date> whindexCreationDates = new HashMap<>();
+    
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
     private Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
     
@@ -498,6 +500,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCompositeToFieldMap(null == other.getCompositeToFieldMap() ? null : ArrayListMultimap.create(other.getCompositeToFieldMap()));
         this.setCompositeTransitionDates(null == other.getCompositeTransitionDates() ? null : Maps.newHashMap(other.getCompositeTransitionDates()));
         this.setCompositeFieldSeparators(null == other.getCompositeFieldSeparators() ? null : Maps.newHashMap(other.getCompositeFieldSeparators()));
+        this.setWhindexCreationDates(null == other.getWhindexCreationDates() ? null : Maps.newHashMap(other.getWhindexCreationDates()));
         this.setSortedUIDs(other.isSortedUIDs());
         this.setQueryTermFrequencyFields(null == other.getQueryTermFrequencyFields() ? null : Sets.newHashSet(other.getQueryTermFrequencyFields()));
         this.setTermFrequenciesRequired(other.isTermFrequenciesRequired());
@@ -1504,6 +1507,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setCompositeFieldSeparators(Map<String,String> compositeFieldSeparators) {
         this.compositeFieldSeparators = compositeFieldSeparators;
+    }
+    
+    public Map<String,Date> getWhindexCreationDates() {
+        return whindexCreationDates;
+    }
+    
+    public void setWhindexCreationDates(Map<String,Date> whindexCreationDates) {
+        this.whindexCreationDates = whindexCreationDates;
     }
     
     public Multimap<String,Type<?>> getNormalizedFieldsDatatypes() {
