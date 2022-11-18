@@ -54,7 +54,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         this(config, scannerFactory, helper, null, threadName);
     }
     
-    // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
+    // The constructor should not be made public so that we can ensure that the executor is set up and shutdown correctly
     protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
                     Map<String,IndexLookup> lookupMap, String threadName) throws TableNotFoundException {
         this.config = config;
@@ -132,12 +132,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
      */
     protected JexlNode buildIndexLookup(JexlNode node, boolean ignoreComposites, boolean keepOriginalNode, Supplier<IndexLookup> indexLookupSupplier) {
         String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(node), true);
-        IndexLookup lookup = lookupMap.get(nodeString);
         
-        if (null == lookup) {
-            lookup = indexLookupSupplier.get();
-            lookupMap.put(nodeString, lookup);
-        }
+        IndexLookup lookup = lookupMap.computeIfAbsent(nodeString, k -> indexLookupSupplier.get());
         
         return createFutureJexlNode(lookup, node, ignoreComposites, keepOriginalNode);
     }
@@ -188,7 +184,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     }
     
     /**
-     * Each Index Expansion visitor should define it's own method for creating a final expanded node from a FutureJexlNode
+     * Each Index Expansion visitor should define its own method for creating a final expanded node from a FutureJexlNode
      * 
      * @param futureJexlNode
      *            the future jexl
