@@ -577,6 +577,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          * Create Edge Values from Edge Definitions
          */
         for (EdgeDefinition edgeDef : edgeDefs) {
+            arithmetic.clearMatchingGroups();
             Map<String,Set<String>> matchingGroups = new HashMap<>();
             String jexlPreconditions = null;
             

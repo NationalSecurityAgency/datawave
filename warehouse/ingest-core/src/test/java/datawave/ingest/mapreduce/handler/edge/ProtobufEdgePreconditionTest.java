@@ -86,6 +86,8 @@ public class ProtobufEdgePreconditionTest {
     
     @Test
     public void testUnawarePrecon() {
+        // FELINE == 'tabby'
+        
         fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
         fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
         fields.put("FELINE", new NormalizedFieldAndValue("FELINE", "tabby", "PET", "0"));
@@ -117,6 +119,8 @@ public class ProtobufEdgePreconditionTest {
     
     @Test
     public void testAwarePreconSameGroup() {
+        // CANINE == 'shepherd'
+        
         fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
         fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
         fields.put("CANINE", new NormalizedFieldAndValue("CANINE", "shepherd", "PET", "0"));
@@ -143,6 +147,8 @@ public class ProtobufEdgePreconditionTest {
     
     @Test
     public void testAwarePreconDifferentGroup() {
+        // CANINE == 'shepherd'
+        
         fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
         fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
         fields.put("CANINE", new NormalizedFieldAndValue("CANINE", "shepherd", "PET", "0"));
@@ -172,6 +178,8 @@ public class ProtobufEdgePreconditionTest {
     
     @Test
     public void testAwareFieldComparison() {
+        // PART == SOUND
+        
         fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
         fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
         fields.put("PART", new NormalizedFieldAndValue("PART", "bark", "TREE", "0"));
@@ -200,7 +208,32 @@ public class ProtobufEdgePreconditionTest {
     }
     
     @Test
+    public void testAwareFieldComparisonNullCheck() {
+        // PART == SOUND
+        
+        fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
+        fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
+        fields.put("SPECIES", new NormalizedFieldAndValue("SPECIES", "spruce", "TREE", "0"));
+        fields.put("SPECIES", new NormalizedFieldAndValue("SPECIES", "feline", "ANIMAL", "0"));
+        fields.put("SPECIES", new NormalizedFieldAndValue("SPECIES", "canine", "ANIMAL", "1"));
+        
+        ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
+        TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
+        edgeHandler.setup(context);
+        
+        Set<String> expectedKeys = new HashSet<>();
+        
+        RawRecordContainer myEvent = getEvent(conf);
+        
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 0, true, false);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        
+    }
+    
+    @Test
     public void testAwareOrGroupsNotEqual() {
+        // SAE_GRADE == '5W_30' || SAE_GRADE == '5W_40'
+        
         fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
         fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
         fields.put("SAE_GRADE", new NormalizedFieldAndValue("SAE_GRADE", "5W_30", "OIL", "0"));
@@ -236,4 +269,38 @@ public class ProtobufEdgePreconditionTest {
         
     }
     
+    @Test
+    public void testAwareGreaterThanSameGroup() {
+        // CANINE == 'shepherd'
+        
+        fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
+        fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
+        fields.put("CANINE", new NormalizedFieldAndValue("CANINE", "shepherd", "PET", "0"));
+        fields.put("WEIGHT", new NormalizedFieldAndValue("WEIGHT", "60", "PET", "0"));
+        fields.put("ACTIVITY", new NormalizedFieldAndValue("ACTIVITY", "tug", "PET", "0"));
+        
+        fields.put("CANINE", new NormalizedFieldAndValue("CANINE", "bernese", "PET", "1"));
+        fields.put("WEIGHT", new NormalizedFieldAndValue("WEIGHT", "80", "PET", "1"));
+        fields.put("ACTIVITY", new NormalizedFieldAndValue("ACTIVITY", "fetch", "PET", "1"));
+        
+        fields.put("CANINE", new NormalizedFieldAndValue("CANINE", "chihuahua", "PET", "2"));
+        fields.put("WEIGHT", new NormalizedFieldAndValue("WEIGHT", "7", "PET", "2"));
+        fields.put("ACTIVITY", new NormalizedFieldAndValue("ACTIVITY", "bite", "PET", "2"));
+        
+        ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
+        TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
+        edgeHandler.setup(context);
+        
+        Set<String> expectedKeys = new HashSet<>();
+        expectedKeys.add("bernese%00;fetch");
+        expectedKeys.add("fetch%00;bernese");
+        expectedKeys.add("fetch");
+        expectedKeys.add("bernese");
+        
+        RawRecordContainer myEvent = getEvent(conf);
+        
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        
+    }
 }

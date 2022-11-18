@@ -19,6 +19,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
         super(false);
     }
     
+    /*
+     * Currently only EQ options are supplied.
+     */
+    
     @Override
     public boolean equals(final Object left, final Object right) {
         boolean matches = false;
@@ -66,27 +70,226 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                     }
                 }
             }
+        } else {
+            Object newLeft = EventFieldValueTuple.getValue(left);
+            Object newRight = EventFieldValueTuple.getValue(right);
+            
+            if (super.equals(newLeft, newRight)) {
+                addMatchingGroup(newLeft);
+                addMatchingGroup(newRight);
+                matches = true;
+                
+            }
         }
-        // handle cases where right is instance of List
+        
+        return matches;
+    }
+    
+    @Override
+    public boolean lessThan(final Object left, final Object right) {
+        boolean matches = false;
+        
+        if (left instanceof List && !(right instanceof List)) {
+            Object newRight = EventFieldValueTuple.getValue(right);
+            
+            Iterator iter = ((List) left).iterator();
+            while (iter.hasNext()) {
+                Object tuple = iter.next();
+                Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(tuple));
+                if (super.lessThan(newLeft, newRight)) {
+                    addMatchingGroup(tuple);
+                    matches = true;
+                }
+            }
+            
+        } else if (right instanceof Set) {
+            Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
+            
+            Iterator iter = ((List) right).iterator();
+            while (iter.hasNext()) {
+                Object tuple = iter.next();
+                Object newRight = Long.parseLong(EventFieldValueTuple.getValue(tuple));
+                if (super.lessThan(newLeft, newRight)) {
+                    addMatchingGroup(tuple);
+                    matches = true;
+                }
+            }
+        }
+        
+        else {
+            Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
+            Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
+            
+            if (super.lessThan(newLeft, newRight)) {
+                addMatchingGroup(newLeft);
+                addMatchingGroup(newRight);
+                matches = true;
+                
+            }
+        }
+        
+        return matches;
+    }
+    
+    @Override
+    public boolean lessThanOrEqual(final Object left, final Object right) {
+        boolean matches = false;
+        
+        if (left instanceof List && !(right instanceof List)) {
+            Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
+            
+            Iterator iter = ((List) left).iterator();
+            while (iter.hasNext()) {
+                Object tuple = iter.next();
+                Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(tuple));
+                if (super.lessThanOrEqual(newLeft, newRight)) {
+                    addMatchingGroup(tuple);
+                    matches = true;
+                }
+            }
+            
+        } else if (right instanceof Set) {
+            Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
+            
+            Iterator iter = ((List) right).iterator();
+            while (iter.hasNext()) {
+                Object tuple = iter.next();
+                Object newRight = Long.parseLong(EventFieldValueTuple.getValue(tuple));
+                if (super.lessThanOrEqual(newLeft, newRight)) {
+                    addMatchingGroup(tuple);
+                    matches = true;
+                }
+            }
+        }
+        
+        else {
+            Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
+            Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
+            
+            if (super.lessThanOrEqual(newLeft, newRight)) {
+                addMatchingGroup(newLeft);
+                addMatchingGroup(newRight);
+                matches = true;
+                
+            }
+        }
+        
+        return matches;
+    }
+    
+    @Override
+    public boolean greaterThan(final Object left, final Object right) {
+        boolean matches = false;
+        
+        if (left instanceof List && !(right instanceof List)) {
+            Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
+            
+            Iterator iter = ((List) left).iterator();
+            while (iter.hasNext()) {
+                Object tuple = iter.next();
+                Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(tuple));
+                if (super.greaterThan(newLeft, newRight)) {
+                    addMatchingGroup(tuple);
+                    matches = true;
+                }
+            }
+            
+        } else if (right instanceof Set) {
+            Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
+            
+            Iterator iter = ((List) right).iterator();
+            while (iter.hasNext()) {
+                Object tuple = iter.next();
+                Object newRight = Long.parseLong(EventFieldValueTuple.getValue(tuple));
+                if (super.greaterThan(newLeft, newRight)) {
+                    addMatchingGroup(tuple);
+                    matches = true;
+                }
+            }
+        }
+        
+        else {
+            Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
+            Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
+            
+            if (super.greaterThan(newLeft, newRight)) {
+                addMatchingGroup(newLeft);
+                addMatchingGroup(newRight);
+                matches = true;
+                
+            }
+        }
+        
+        return matches;
+    }
+    
+    @Override
+    public boolean greaterThanOrEqual(final Object left, final Object right) {
+        boolean matches = false;
+        
+        if (left instanceof List && !(right instanceof List)) {
+            Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
+            
+            Iterator iter = ((List) left).iterator();
+            while (iter.hasNext()) {
+                Object tuple = iter.next();
+                Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(tuple));
+                if (super.greaterThanOrEqual(newLeft, newRight)) {
+                    addMatchingGroup(tuple);
+                    matches = true;
+                }
+            }
+            
+        } else if (right instanceof Set) {
+            Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
+            
+            Iterator iter = ((List) right).iterator();
+            while (iter.hasNext()) {
+                Object tuple = iter.next();
+                Object newRight = Long.parseLong(EventFieldValueTuple.getValue(tuple));
+                if (super.greaterThanOrEqual(newLeft, newRight)) {
+                    addMatchingGroup(tuple);
+                    matches = true;
+                }
+            }
+        }
+        
+        else {
+            Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
+            Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
+            
+            if (super.greaterThanOrEqual(newLeft, newRight)) {
+                addMatchingGroup(newLeft);
+                addMatchingGroup(newRight);
+                matches = true;
+                
+            }
+        }
         
         return matches;
     }
     
     private void addMatchingGroup(Object o) {
-        String fieldName = EventFieldValueTuple.getFieldName(o);
-        String commonality = EventField.getCommonality(fieldName);
-        String group = EventField.getGroupingContext(fieldName);
-        Set<String> groups = matchingGroups.get(commonality);
-        if (groups == null) {
-            groups = new HashSet<>();
-            groups.add(group);
-            matchingGroups.put(commonality, groups);
-        } else
-            groups.add(group);
+        if (o instanceof EventFieldValueTuple) {
+            String fieldName = EventFieldValueTuple.getFieldName(o);
+            String commonality = EventField.getCommonality(fieldName);
+            String group = EventField.getGroupingContext(fieldName);
+            Set<String> groups = matchingGroups.get(commonality);
+            if (groups == null) {
+                groups = new HashSet<>();
+                groups.add(group);
+                matchingGroups.put(commonality, groups);
+            } else
+                groups.add(group);
+        }
     }
     
     public Map<String,Set<String>> getMatchingGroups() {
         return matchingGroups;
+    }
+    
+    public void clearMatchingGroups() {
+        matchingGroups = new HashMap<>();
     }
     
 }
