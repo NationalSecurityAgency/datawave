@@ -7,6 +7,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import datawave.configuration.spring.SpringBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.event.FieldBase;
 
@@ -18,7 +19,6 @@ public class EventQueryDataDecorator {
     private String fieldName = null;
     private Map<String,String> patternMap = new LinkedHashMap<>();
     private Logger log = Logger.getLogger(EventQueryDataDecorator.class);
-    @Inject
     private ResponseObjectFactory responseObjectFactory;
     
     private EventQueryDataDecorator() {}
