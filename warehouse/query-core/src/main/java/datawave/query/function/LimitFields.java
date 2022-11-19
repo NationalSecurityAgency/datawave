@@ -257,13 +257,13 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             }
         }
         
-        // If there was not a matching value, determine if this attribute is part of the same group and instance as some other hit.
+        // If there was not a matching value, determine if this attribute is part of the same group and instance (subgroup) as some other hit.
         if (!hitTermMap.isEmpty()) {
-            Optional<Pair<String,String>> keyTokens = getGroupAndInstance(key);
+            Optional<Pair<String,String>> keyTokens = getGroupAndSubGroup(key);
             if (keyTokens.isPresent()) {
                 for (String hitTermKey : hitTermMap.keySet()) {
                     // get the commonality from the hit term key
-                    Optional<Pair<String,String>> hitTermKeyTokens = getGroupAndInstance(hitTermKey);
+                    Optional<Pair<String,String>> hitTermKeyTokens = getGroupAndSubGroup(hitTermKey);
                     if (hitTermKeyTokens.isPresent() && keyTokens.get().equals(hitTermKeyTokens.get())) {
                         return true;
                     }
@@ -275,14 +275,14 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     }
     
     /**
-     * Return a {@link Pair} where {@link Pair#getValue0()} returns the group and {@link Pair#getValue1()} returns the instance if they can be parsed from the
-     * given key. Otherwise, an empty {@link Optional} will be returned.
+     * Return a {@link Pair} where {@link Pair#getValue0()} returns the group and {@link Pair#getValue1()} returns the instance (the subgroup) if they can be
+     * parsed from the given key. Otherwise, an empty {@link Optional} will be returned.
      * 
      * @param key
      *            the key to parse the group and instance from
      * @return a {@link Pair} with the group and instance, or an empty {@link Optional} if they cannot be parsed
      */
-    private Optional<Pair<String,String>> getGroupAndInstance(String key) {
+    private Optional<Pair<String,String>> getGroupAndSubGroup(String key) {
         String[] splits = StringUtils.split(key, '.');
         if (splits.length >= 3) {
             // Return the first group and last group (aka the instance in the first group).
@@ -329,7 +329,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     }
     
     /**
-     * If the key begins with grouping context, return a subset of the key without the grouping context.
+     * Return a subset of the key without the grouping context.
      *
      * @param key
      *            the key
