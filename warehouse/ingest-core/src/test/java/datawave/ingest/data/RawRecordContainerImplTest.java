@@ -19,6 +19,7 @@ import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.config.MarkingsHelper;
 
+import datawave.util.TypeRegistryTestSetup;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,8 +54,7 @@ public class RawRecordContainerImplTest {
         conf.set("samplecsv" + TypeRegistry.INGEST_HELPER, TestCSVIngestHelper.class.getName());
         conf.set("samplecsv.reader.class", TestCSVReader.class.getName());
         conf.set("samplecsv" + MarkingsHelper.DEFAULT_MARKING, "PUBLIC|PRIVATE");
-        TypeRegistry.reset();
-        TypeRegistry.getInstance(conf);
+        TypeRegistryTestSetup.resetTypeRegistry(conf);
         dataType = TypeRegistry.getType("samplecsv");
     }
     

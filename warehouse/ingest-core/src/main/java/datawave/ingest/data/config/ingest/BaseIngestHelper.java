@@ -11,6 +11,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.ingest.config.IngestConfiguration;
 import datawave.ingest.config.IngestConfigurationFactory;
+import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelperImpl;
@@ -695,6 +696,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             copy.setError(ex);
         }
         return copy;
+    }
+    
+    @Override
+    public void getEventFields(RawRecordContainer value, Multimap<String,NormalizedContentInterface> fields) {
+        // default implementation calls legacy method
+        fields.putAll(this.getEventFields(value));
     }
     
     /**

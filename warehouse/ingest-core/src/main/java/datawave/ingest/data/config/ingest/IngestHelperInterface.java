@@ -43,12 +43,18 @@ public interface IngestHelperInterface extends DataTypeHelper {
     }
     
     /**
-     * Fully parse the raw record and return a map of field names and values.
-     * 
-     * @param value
-     * @return
+     * Deprecated. Use #getEventFields(value, fields)
      */
+    @Deprecated
     Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer value);
+    
+    /**
+     * Fully parse the raw record and update the provided multimap of field names and values, with a partial update in the event of an exception.
+     *
+     * @param value
+     * @param fields
+     */
+    void getEventFields(RawRecordContainer value, Multimap<String,NormalizedContentInterface> fields);
     
     Multimap<String,NormalizedContentInterface> normalizeMap(Multimap<String,NormalizedContentInterface> fields);
     

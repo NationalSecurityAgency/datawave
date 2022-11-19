@@ -7,6 +7,7 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 
 import datawave.data.normalizer.NormalizationException;
 
+import datawave.util.TypeRegistryTestSetup;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 import org.junit.Before;
@@ -32,8 +33,7 @@ public class AbstractNormalizerTest {
     public void setUp() {
         Configuration conf = new Configuration();
         conf.set("test" + TypeRegistry.INGEST_HELPER, TestBaseIngestHelper.class.getName());
-        TypeRegistry.reset();
-        TypeRegistry.getInstance(conf);
+        TypeRegistryTestSetup.resetTypeRegistry(conf);
         normalizer.setup(TypeRegistry.getType("test"), "test", conf);
     }
     

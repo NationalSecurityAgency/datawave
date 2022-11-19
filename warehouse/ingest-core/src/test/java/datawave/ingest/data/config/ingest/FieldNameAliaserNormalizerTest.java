@@ -7,6 +7,7 @@ import datawave.TestBaseIngestHelper;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelper.Properties;
 
+import datawave.util.TypeRegistryTestSetup;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 import org.junit.Before;
@@ -21,10 +22,7 @@ public class FieldNameAliaserNormalizerTest {
         conf = new Configuration();
         conf.set(Properties.DATA_NAME, "test");
         conf.set("test" + TypeRegistry.INGEST_HELPER, TestBaseIngestHelper.class.getName());
-        
-        TypeRegistry.reset();
-        TypeRegistry.getInstance(conf);
-        
+        TypeRegistryTestSetup.resetTypeRegistry(conf);
     }
     
     @Test(expected = IllegalArgumentException.class)

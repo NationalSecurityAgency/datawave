@@ -20,7 +20,7 @@ import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
-import datawave.ingest.mapreduce.EventMapper;
+import datawave.ingest.mapreduce.FieldHarvester;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDataBundle;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
@@ -500,7 +500,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         }
         
         // Get the load date of the event from the fields map
-        Collection<NormalizedContentInterface> loadDates = fields.get(EventMapper.LOAD_DATE_FIELDNAME);
+        Collection<NormalizedContentInterface> loadDates = fields.get(FieldHarvester.LOAD_DATE_FIELDNAME);
         if (!loadDates.isEmpty()) {
             NormalizedContentInterface nci = loadDates.iterator().next();
             Date date = new Date(Long.parseLong(nci.getEventFieldValue()));

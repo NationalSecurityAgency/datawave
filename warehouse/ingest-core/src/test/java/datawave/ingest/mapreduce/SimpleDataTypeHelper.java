@@ -43,7 +43,13 @@ public class SimpleDataTypeHelper implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         if (method.getName().equals("getEventFields")) {
-            return fields;
+            if (args.length == 1) {
+                return fields;
+            } else {
+                // see getEventFields(value, fields)
+                ((Multimap<String,NormalizedContentInterface>) args[1]).putAll(fields);
+                return Void.TYPE;
+            }
         } else {
             throw new UnsupportedOperationException("Sorry, " + this.getClass() + " does not currently support the " + method.getName()
                             + " method. Feel free to implement it!");

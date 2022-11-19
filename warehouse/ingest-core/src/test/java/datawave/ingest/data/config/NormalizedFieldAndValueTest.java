@@ -21,7 +21,7 @@ public class NormalizedFieldAndValueTest {
         private Map<String,String> _markings;
         private Throwable _error;
         
-        protected NonGroupedInstance() {
+        public NonGroupedInstance() {
             _fieldName = "TestNonGroupedInstance";
             
             _indexedFieldName = "TestIndexedField";
@@ -141,7 +141,7 @@ public class NormalizedFieldAndValueTest {
         private String _group;
         private String _subGroup;
         
-        protected GroupedInstance() {
+        public GroupedInstance() {
             _fieldName = "TestNonGroupedInstance";
             
             _indexedFieldName = "TestIndexedField";
