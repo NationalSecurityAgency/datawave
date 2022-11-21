@@ -11,7 +11,7 @@ public class ValidPatternVisitorTest {
     
     @Test
     public void testValidER() throws ParseException {
-        String queryString = "BAR == '1' && FOO =~ '1234.*\\d'";
+        String queryString = "BAR == '1' && f:groupby('BAR')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         ValidPatternVisitor.check(script);
     }
