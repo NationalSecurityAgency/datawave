@@ -21,6 +21,8 @@ public class GeoFeatureVisitorTest {
     private static final String ALL_OTHER_FIELDS_QUERY = "(" + EQ_FIELD_QUERY + " || " + ER_FIELD_QUERY + ")";
     private static final String ALL_COMBINED_FIELDS_QUERY = "(((" + GEO_FIELD_QUERY + " || " + GEOM_FIELD_QUERY + ")" + " && " + POINT_FIELD_QUERY + ") || "
                     + "(" + EQ_FIELD_QUERY + " || " + ER_FIELD_QUERY + "))";
+    private static final String GEO_WITHIN_BOUNDING_BOX_QUERY = "geo:within_bounding_box(GEO_FIELD, '40_170', '50_-170')";
+    private static final String GEO_WITHIN_CIRCLE_QUERY = "geo:within_circle(FIELD_1 || FIELD_2, '0_0', '10')";
     
     @Test
     public void testGeoQueryOnly() throws Exception {
@@ -95,5 +97,33 @@ public class GeoFeatureVisitorTest {
         assertTrue(geoFeatures.contains(new QueryGeometry("geowave:intersects(GEOM_FIELD, 'POLYGON((-90 -90, 90 -90, 90 90, -90 90, -90 -90))')",
                         "{\"type\":\"Polygon\",\"coordinates\":[[[-90,-90],[90,-90],[90,90],[-90,90],[-90,-90]]]}")));
         assertTrue(geoFeatures.contains(new QueryGeometry("geowave:intersects(POINT_FIELD, 'POINT(0 0)')", "{\"type\":\"Point\",\"coordinates\":[0.0,0.0]}")));
+    }
+    
+    @Test
+    public void testGeoWithinBoundingBox() throws Exception {
+        Set<QueryGeometry> geoFeatures = new LinkedHashSet<>();
+        
+        JexlNode queryNode = JexlASTHelper.parseAndFlattenJexlQuery(GEO_WITHIN_BOUNDING_BOX_QUERY);
+        geoFeatures.addAll(GeoFeatureVisitor.getGeoFeatures(queryNode));
+        
+        assertEquals(1, geoFeatures.size());
+        assertTrue(geoFeatures
+                        .contains(new QueryGeometry(
+                                        "geo:within_bounding_box(GEO_FIELD, '40_170', '50_-170')",
+                                        "{\"type\":\"GeometryCollection\",\"geometries\":[{\"type\":\"Polygon\",\"coordinates\":[[[170,40],[180,40],[180,50],[170,50],[170,40]]]},{\"type\":\"Polygon\",\"coordinates\":[[[-180,40],[-170,40],[-170,50],[-180,50],[-180,40]]]}]}")));
+    }
+    
+    @Test
+    public void testGeoWithinCircle() throws Exception {
+        Set<QueryGeometry> geoFeatures = new LinkedHashSet<>();
+        
+        JexlNode queryNode = JexlASTHelper.parseAndFlattenJexlQuery(GEO_WITHIN_CIRCLE_QUERY);
+        geoFeatures.addAll(GeoFeatureVisitor.getGeoFeatures(queryNode));
+        
+        assertEquals(1, geoFeatures.size());
+        assertTrue(geoFeatures
+                        .contains(new QueryGeometry(
+                                        "geo:within_circle((FIELD_1 || FIELD_2), '0_0', '10')",
+                                        "{\"type\":\"Polygon\",\"coordinates\":[[[10,0.0],[9.9452,1.0453],[9.7815,2.0791],[9.5106,3.0902],[9.1355,4.0674],[8.6603,5],[8.0902,5.8779],[7.4314,6.6913],[6.6913,7.4314],[5.8779,8.0902],[5,8.6603],[4.0674,9.1355],[3.0902,9.5106],[2.0791,9.7815],[1.0453,9.9452],[6.0E-16,10],[-1.0453,9.9452],[-2.0791,9.7815],[-3.0902,9.5106],[-4.0674,9.1355],[-5,8.6603],[-5.8779,8.0902],[-6.6913,7.4314],[-7.4314,6.6913],[-8.0902,5.8779],[-8.6603,5],[-9.1355,4.0674],[-9.5106,3.0902],[-9.7815,2.0791],[-9.9452,1.0453],[-10,1.2E-15],[-9.9452,-1.0453],[-9.7815,-2.0791],[-9.5106,-3.0902],[-9.1355,-4.0674],[-8.6603,-5],[-8.0902,-5.8779],[-7.4314,-6.6913],[-6.6913,-7.4314],[-5.8779,-8.0902],[-5,-8.6603],[-4.0674,-9.1355],[-3.0902,-9.5106],[-2.0791,-9.7815],[-1.0453,-9.9452],[-1.8E-15,-10],[1.0453,-9.9452],[2.0791,-9.7815],[3.0902,-9.5106],[4.0674,-9.1355],[5,-8.6603],[5.8779,-8.0902],[6.6913,-7.4314],[7.4314,-6.6913],[8.0902,-5.8779],[8.6603,-5],[9.1355,-4.0674],[9.5106,-3.0902],[9.7815,-2.0791],[9.9452,-1.0453],[10,0.0]]]}")));
     }
 }

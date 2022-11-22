@@ -115,6 +115,7 @@ public class RemoteEventQueryLogicHttpTest {
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
         System.setProperty(DnUtils.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
         KeyPairGenerator generater = KeyPairGenerator.getInstance("RSA");
+        generater.initialize(keysize);
         KeyPair keypair = generater.generateKeyPair();
         PrivateKey privKey = keypair.getPrivate();
         final X509Certificate[] chain = new X509Certificate[1];

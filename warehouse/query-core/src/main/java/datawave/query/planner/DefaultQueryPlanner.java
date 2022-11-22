@@ -1278,6 +1278,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     protected ASTJexlScript timedApplyWhindexFieldMappings(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
                     MetadataHelper metadataHelper, Query settings) throws DatawaveQueryException {
+        try {
+            config.setWhindexCreationDates(metadataHelper.getWhindexCreationDateMap(config.getDatatypeFilter()));
+        } catch (TableNotFoundException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
+            throw new DatawaveFatalQueryException(qe);
+        }
         return visitorManager.timedVisit(timers, "Apply Whindex Field Mappings",
                         () -> (WhindexVisitor.apply(script, config, settings.getBeginDate(), metadataHelper)));
     }
