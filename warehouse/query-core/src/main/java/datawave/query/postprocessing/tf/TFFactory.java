@@ -15,6 +15,10 @@ import java.util.Map.Entry;
 public class TFFactory {
     private static final Logger log = Logger.getLogger(TFFactory.class);
     
+    private TFFactory() {
+        // private constructor for a static utility
+    }
+    
     /**
      * Construct a {@link TermOffsetFunction} from the provided {@link TermFrequencyConfig}.
      *
@@ -41,11 +45,12 @@ public class TFFactory {
     
     /**
      * Factory method for creating the TF function used for generating the map context.
-     * 
-     * @param query
+     *
+     * @param config
+     *            a {@link TermFrequencyConfig} object
      * @param dataTypes
-     * @param sourceDeepCopy
-     * @return
+     *            a MultiMap of data type names to their respective classes
+     * @return a new {@link TermOffsetFunction}
      */
     public static com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> getFunction(TermFrequencyConfig config,
                     Multimap<String,Class<? extends Type<?>>> dataTypes) {
