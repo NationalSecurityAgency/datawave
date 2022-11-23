@@ -25,7 +25,7 @@ public class EventFieldValueTuple {
         if (o instanceof EventFieldValueTuple) {
             return ((EventFieldValueTuple) o).getValue();
         } else {
-            return o.toString();
+            return (o == null ? null : o.toString());
         }
     }
     
@@ -33,7 +33,7 @@ public class EventFieldValueTuple {
         if (o instanceof EventFieldValueTuple) {
             return ((EventFieldValueTuple) o).getFieldName();
         }
-        return o.toString();
+        return (o == null ? null : o.toString());
     }
     
 }
