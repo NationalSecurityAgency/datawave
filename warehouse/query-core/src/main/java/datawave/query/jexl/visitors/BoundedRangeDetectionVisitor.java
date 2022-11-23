@@ -43,13 +43,11 @@ public class BoundedRangeDetectionVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         if (QueryPropertyMarker.findInstance(node).isType(BoundedRange.class)) {
-            LiteralRange range = JexlASTHelper.findRange().getRange(node);
+            LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
             try {
-                if (helper.getNonEventFields(config.getDatatypeFilter()).contains(range.getFieldName())) {
-                    if (null != data) {
-                        AtomicBoolean hasBounded = (AtomicBoolean) data;
-                        hasBounded.set(true);
-                    }
+                if (null != data && helper.getNonEventFields(config.getDatatypeFilter()).contains(range.getFieldName())) {
+                    AtomicBoolean hasBounded = (AtomicBoolean) data;
+                    hasBounded.set(true);
                 }
             } catch (TableNotFoundException e) {
                 throw new DatawaveFatalQueryException("Cannot access metadata", e);
@@ -64,11 +62,9 @@ public class BoundedRangeDetectionVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTERNode node, Object data) {
         try {
-            if (helper.getNonEventFields(config.getDatatypeFilter()).contains(JexlASTHelper.getIdentifier(node))) {
-                if (null != data) {
-                    AtomicBoolean hasBounded = (AtomicBoolean) data;
-                    hasBounded.set(true);
-                }
+            if (null != data && helper.getNonEventFields(config.getDatatypeFilter()).contains(JexlASTHelper.getIdentifier(node))) {
+                AtomicBoolean hasBounded = (AtomicBoolean) data;
+                hasBounded.set(true);
             }
         } catch (TableNotFoundException e) {
             throw new DatawaveFatalQueryException("Cannot access metadata", e);
