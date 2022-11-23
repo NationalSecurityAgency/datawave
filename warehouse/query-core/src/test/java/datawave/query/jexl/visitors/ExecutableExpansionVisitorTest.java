@@ -139,7 +139,8 @@ public abstract class ExecutableExpansionVisitorTest {
         // basically this is avoiding WELD exceptions for beans that cannot be created because of various injection points
         // that would be null in this environment. For example the QueryMetricQueryLogic would fail to be created because
         // we do not have a caller principal, and the io.astefunutti.metrics.cdi classes are not available to this test case.
-        // Also we are adding the MockAlternative annotation which somehow (not sure why) enables looking at alternative beans.
+        // Also we are adding the beans.xml to enable resolving some beans. The MockAlternative is a placeholder for any
+        // mock bean alternatives we may use if annotated as such.
         return ShrinkWrap
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
