@@ -842,7 +842,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             while (cachedRowSet.next() && cachedRowSet.getRow() <= rowEnd && !hitPageByteTrigger) {
                 if (log.isTraceEnabled())
                     log.trace("CRS.position: " + cachedRowSet.getRow() + ", size: " + cachedRowSet.size());
-                CacheableQueryRow row = CacheableQueryRowReader.createRow(cachedRowSet, this.fixedFieldsInEvent, this.queryLogic.getResponseObjectFactory());
+                CacheableQueryRow row = CacheableQueryRowReader.createRow(cachedRowSet, this.fixedFieldsInEvent, this.responseObjectFactory);
                 cacheableQueryRowList.add(row);
                 if (pageByteTrigger != 0) {
                     resultBytes += ObjectSizeOf.Sizer.getObjectSize(row);

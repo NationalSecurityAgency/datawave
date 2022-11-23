@@ -101,7 +101,7 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
         builder.append("<div id=\"myTable_wrapper\" class=\"dataTables_wrapper no-footer\">\n");
         builder.append("<table id=\"myTable\" class=\"dataTable no-footer\" role=\"grid\" aria-describedby=\"myTable_info\">\n");
         
-        if (response instanceof EdgeQueryResponseBase) {
+        if (response instanceof EventQueryResponseBase) {
             EventQueryResponseBase tempResponse = (EventQueryResponseBase) response;
             
             HashSet<String> fieldnameSet = buildTableColumnHeadings(builder, tempResponse);
@@ -170,6 +170,8 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
                 putTableCell(builder, String.valueOf(stat.selectivity));
                 putTableCell(builder, String.valueOf(stat.unique));
             }
+        } else {
+            throw new RuntimeException("Cannot handle a " + response.getClass().getSimpleName() + " response type");
         }
         
         builder.append("</tbody>");

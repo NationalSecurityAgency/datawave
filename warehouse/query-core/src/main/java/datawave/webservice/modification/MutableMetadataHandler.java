@@ -930,6 +930,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 }
                 
                 e = eResponse.getEvents().get(0);
+            } else {
+                log.error("Received a " + response.getClass().getSimpleName() + " but expected a subclass of EventQueryResponseBase");
             }
         } catch (Exception ex) {
             log.error(ex);
