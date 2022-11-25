@@ -56,7 +56,12 @@ public enum UniqueGranularity {
      */
     TRUNCATE_TEMPORAL_TO_MILLISECOND("MILLISECOND", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS")),
     
-    TRUNCATE_TEMPORAL_TO_MINUTE_TEN("TENTH", new DateTimeValueFormatter("mm", true)),
+    /**
+     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the tenth of an hour. Otherwise, the
+     * original value will be returned.
+     */
+    TRUNCATE_TEMPORAL_TO_TENTH("TENTH", new DateTimeValueFormatter("mm", true)),
+    
     /**
      * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the original
      * value will be returned.
@@ -82,7 +87,7 @@ public enum UniqueGranularity {
             case "MILLISECOND":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND;
             case "TENTH":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE_TEN;
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH;
             case "MONTH":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH;
             case "YEAR":

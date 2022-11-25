@@ -184,6 +184,21 @@ public class QueryOptionsFromQueryVisitorTest {
     }
     
     @Test
+    public void testUniqueByTenth() throws ParseException {
+        // Verify an empty function results in an empty unique parameter.
+        assertResult("f:unique_by_tenth()", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "");
+        
+        // Verify fields are added with the MINUTE granularity.
+        assertResult("f:unique_by_tenth('field1','field2','field3')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[TENTH],field2[TENTH],field3[TENTH]");
+        
+        // Verify fields from multiple functions are merged.
+        assertResult("f:unique('field1','field2[DAY]') AND f:unique_by_tenth('field1','field2','field3') AND f:unique_by_tenth('field4')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[ALL,TENTH],field2[DAY,TENTH],field3[TENTH],field4[TENTH]");
+    }
+    
+    @Test
     public void testNonFunctionNodesWithJunctions() throws ParseException {
         // Verify that only the function node is removed.
         assertResult("f:unique_by_minute('field1') AND FOO == 'bar'", "FOO == 'bar'");

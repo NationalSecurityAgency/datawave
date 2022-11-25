@@ -3,7 +3,6 @@ package datawave.query.jexl.visitors;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import datawave.query.QueryParameters;
-import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
 import datawave.query.jexl.functions.QueryFunctions;
@@ -179,7 +178,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 }
                 case QueryFunctions.UNIQUE_BY_TENTH_FUNCTION: {
                     UniqueFields uniqueFields = new UniqueFields();
-                    putFieldsFromChildren(node, uniqueFields, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE_TEN);
+                    putFieldsFromChildren(node, uniqueFields, UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH);
                     updateUniqueFieldsOption(optionsMap, uniqueFields);
                     return null;
                 }

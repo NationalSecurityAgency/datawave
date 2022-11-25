@@ -191,7 +191,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 break;
             case QueryFunctions.UNIQUE_FUNCTION:
             case QueryFunctions.UNIQUE_BY_DAY_FUNCTION:
-            case QueryFunctions.UNIQUE_BY_HOUR_FUNCTION:
+            case QueryFunctions.UNIQUE_BY_YEAR_FUNCTION:
             case QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION:
             case QueryFunctions.UNIQUE_BY_MONTH_FUNCTION:
             case QueryFunctions.UNIQUE_BY_TENTH_FUNCTION:
