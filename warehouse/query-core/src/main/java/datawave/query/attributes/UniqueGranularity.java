@@ -45,36 +45,6 @@ public enum UniqueGranularity {
     TRUNCATE_TEMPORAL_TO_YEAR("YEAR", new DateTimeValueFormatter("yyyy")),
     
     /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the era. Otherwise, the original
-     * value will be returned.
-     */
-    TRUNCATE_TEMPORAL_TO_ERA("ERA", new DateTimeValueFormatter("G")),
-    
-    /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the day of the week in the month.
-     * Otherwise, the original value will be returned.
-     */
-    TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK_IN_MONTH("DAY_OF_WEEK_IN_MONTH", new DateTimeValueFormatter("F")),
-    
-    /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the day of the week. Otherwise, the
-     * original value will be returned.
-     */
-    TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK("DAY_OF_WEEK", new DateTimeValueFormatter("EEE")),
-    
-    /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the hour of day. Otherwise, the
-     * original value will be returned.
-     */
-    TRUNCATE_TEMPORAL_TO_HOUR_OF_DAY("HOUR_OF_DAY", new DateTimeValueFormatter("kk")),
-    
-    /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the week of month. Otherwise, the
-     * original value will be returned.
-     */
-    TRUNCATE_TEMPORAL_TO_WEEK_OF_MONTH("WEEK_OF_MONTH", new DateTimeValueFormatter("W")),
-    
-    /**
      * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the second. Otherwise, the original
      * value will be returned.
      */
@@ -85,12 +55,6 @@ public enum UniqueGranularity {
      * original value will be returned.
      */
     TRUNCATE_TEMPORAL_TO_MILLISECOND("MILLISECOND", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS")),
-    
-    /**
-     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the AM/PM. Otherwise, the original
-     * value will be returned.
-     */
-    TRUNCATE_TEMPORAL_TO_AMPM("AM_PM", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ssaa")),
     
     /**
      * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the original
@@ -120,18 +84,6 @@ public enum UniqueGranularity {
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH;
             case "YEAR":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_YEAR;
-            case "ERA":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_ERA;
-            case "DAY_OF_WEEK_IN_MONTH":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK_IN_MONTH;
-            case "DAY_OF_WEEK":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY_OF_WEEK;
-            case "HOUR_OF_DAY":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR_OF_DAY;
-            case "WEEK_OF_MONTH":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_WEEK_OF_MONTH;
-            case "AM_PM":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_AMPM;
             default:
                 throw new IllegalArgumentException("No " + UniqueGranularity.class.getSimpleName() + " exists with the name " + name);
         }

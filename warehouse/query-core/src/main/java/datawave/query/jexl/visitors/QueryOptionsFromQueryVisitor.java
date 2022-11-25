@@ -201,12 +201,6 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     updateUniqueFieldsOption(optionsMap, uniqueFields);
                     return null;
                 }
-                case QueryFunctions.UNIQUE_BY_AMPM_FUNCTION: {
-                    UniqueFields uniqueFields = new UniqueFields();
-                    putFieldsFromChildren(node, uniqueFields, UniqueGranularity.TRUNCATE_TEMPORAL_TO_AMPM);
-                    updateUniqueFieldsOption(optionsMap, uniqueFields);
-                    return null;
-                }
                 case QueryFunctions.GROUPBY_FUNCTION: {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);
