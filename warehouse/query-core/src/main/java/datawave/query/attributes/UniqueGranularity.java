@@ -56,6 +56,7 @@ public enum UniqueGranularity {
      */
     TRUNCATE_TEMPORAL_TO_MILLISECOND("MILLISECOND", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS")),
     
+    TRUNCATE_TEMPORAL_TO_MINUTE_TEN("TENTH", new DateTimeValueFormatter("mm", true)),
     /**
      * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the original
      * value will be returned.
@@ -80,6 +81,8 @@ public enum UniqueGranularity {
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND;
             case "MILLISECOND":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND;
+            case "TENTH":
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE_TEN;
             case "MONTH":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH;
             case "YEAR":
@@ -122,9 +125,15 @@ public enum UniqueGranularity {
         
         private static final Logger log = Logger.getLogger(DateTimeValueFormatter.class);
         private final SimpleDateFormat formatter;
+        private boolean isTenth = false;
         
         private DateTimeValueFormatter(String pattern) {
             this.formatter = new SimpleDateFormat(pattern);
+        }
+        
+        private DateTimeValueFormatter(String pattern, boolean isTenth) {
+            this.formatter = new SimpleDateFormat(pattern);
+            this.isTenth = isTenth;
         }
         
         @Override
@@ -132,7 +141,12 @@ public enum UniqueGranularity {
             try {
                 // Attempt to format the denormalized date value.
                 Date date = DateNormalizer.DATE_NORMALIZER.denormalize(value);
-                return formatter.format(date);
+                String formattedDate = formatter.format(date);
+                if (!isTenth) {
+                    return formatter.format(date);
+                } else {
+                    return formattedDate.substring(0, 1);
+                }
             } catch (Exception e) {
                 if (log.isDebugEnabled()) {
                     log.debug("Failed to format value " + value + " as date with pattern " + formatter.toPattern(), e);

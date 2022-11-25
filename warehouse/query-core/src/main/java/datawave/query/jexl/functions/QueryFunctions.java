@@ -19,7 +19,6 @@ import java.util.stream.StreamSupport;
 /**
  * NOTE: The JexlFunctionArgumentDescriptorFactory is implemented by QueryFunctionsDescriptor. This is kept as a separate class to reduce accumulo dependencies
  * on other jars.
- * 
  **/
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.QueryFunctionsDescriptor")
 public class QueryFunctions {
@@ -30,10 +29,10 @@ public class QueryFunctions {
     public static final String UNIQUE_BY_DAY_FUNCTION = "unique_by_day";
     public static final String UNIQUE_BY_HOUR_FUNCTION = "unique_by_hour";
     public static final String UNIQUE_BY_MINUTE_FUNCTION = "unique_by_minute";
+    public static final String UNIQUE_BY_TENTH_FUNCTION = "unique_by_tenth";
     public static final String UNIQUE_BY_MONTH_FUNCTION = "unique_by_month";
     public static final String UNIQUE_BY_SECOND_FUNCTION = "unique_by_second";
     public static final String UNIQUE_BY_YEAR_FUNCTION = "unique_by_year";
-    public static final String UNIQUE_BY_AMPM_FUNCTION = "unique_by_ampm";
     public static final String UNIQUE_BY_MILLISECOND_FUNCTION = "unique_by_millisecond";
     public static final String GROUPBY_FUNCTION = "groupby";
     public static final String EXCERPT_FIELDS_FUNCTION = "excerpt_fields";
@@ -243,12 +242,12 @@ public class QueryFunctions {
             final boolean caseInsensitive = regex.matches(EvaluationPhaseFilterFunctions.CASE_INSENSITIVE);
             // @formatter:off
             return StreamSupport.stream(values.spliterator(), false)
-                            .filter(Objects::nonNull)
-                            .filter((value) -> isMatchForPattern(pattern, caseInsensitive, value))
-                            .findFirst()
-                            .map(EvaluationPhaseFilterFunctions::getHitTerm)
-                            .map(FunctionalSet::singleton)
-                            .orElseGet(FunctionalSet::emptySet);
+                    .filter(Objects::nonNull)
+                    .filter((value) -> isMatchForPattern(pattern, caseInsensitive, value))
+                    .findFirst()
+                    .map(EvaluationPhaseFilterFunctions::getHitTerm)
+                    .map(FunctionalSet::singleton)
+                    .orElseGet(FunctionalSet::emptySet);
             // @formatter:on
         }
         return FunctionalSet.emptySet();
@@ -267,12 +266,12 @@ public class QueryFunctions {
         if (values != null) {
             // @formatter:off
             return StreamSupport.stream(values.spliterator(), false)
-                            .filter(Objects::nonNull)
-                            .filter((value) -> ValueTuple.getStringValue(value).equals(valueToMatch))
-                            .findFirst()
-                            .map(ValueTuple::toValueTuple)
-                            .map(FunctionalSet::singleton)
-                            .orElseGet(FunctionalSet::emptySet);
+                    .filter(Objects::nonNull)
+                    .filter((value) -> ValueTuple.getStringValue(value).equals(valueToMatch))
+                    .findFirst()
+                    .map(ValueTuple::toValueTuple)
+                    .map(FunctionalSet::singleton)
+                    .orElseGet(FunctionalSet::emptySet);
             // @formatter:on
         }
         return FunctionalSet.emptySet();
