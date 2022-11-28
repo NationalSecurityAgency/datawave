@@ -247,7 +247,7 @@ public class CompositeQueryLogicTest {
         
         @Override
         public Object clone() throws CloneNotSupportedException {
-            return null;
+            return new TestQueryLogic();
         }
         
         public Map<Key,Value> getData() {
@@ -295,6 +295,11 @@ public class CompositeQueryLogicTest {
         }
         
         @Override
+        public Object clone() throws CloneNotSupportedException {
+            return new TestQueryLogic2();
+        }
+        
+        @Override
         public String getLogicName() {
             return UUID.randomUUID().toString();
         }
@@ -338,7 +343,7 @@ public class CompositeQueryLogicTest {
         
         @Override
         public Object clone() throws CloneNotSupportedException {
-            return null;
+            return new DifferentTestQueryLogic();
         }
         
         @Override
@@ -363,6 +368,29 @@ public class CompositeQueryLogicTest {
     public void setup() {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
+    }
+    
+    @Test
+    public void testClone() throws Exception {
+        List<QueryLogic<?>> logics = new ArrayList<>();
+        logics.add(new TestQueryLogic());
+        logics.add(new TestQueryLogic());
+        
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+        
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setQueryLogics(logics);
+        c = (CompositeQueryLogic) c.clone();
+        
+        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        c.getTransformer(settings);
+        
+        Assert.assertEquals(2, c.getQueryLogics().size());
     }
     
     @Test
