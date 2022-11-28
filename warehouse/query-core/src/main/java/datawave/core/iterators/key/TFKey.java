@@ -17,7 +17,8 @@ public class TFKey {
     private String uidAndValue;
     
     private byte[] backing;
-    private final ArrayList<Integer> nulls = new ArrayList<>();
+    // null bytes are split points
+    private final ArrayList<Integer> splits = new ArrayList<>();
     
     public void parse(Key k) {
         this.datatype = null;
@@ -26,32 +27,32 @@ public class TFKey {
         this.field = null;
         this.uidAndValue = null;
         
-        this.nulls.clear();
+        this.splits.clear();
         this.backing = k.getColumnQualifierData().getBackingArray();
         
         // Find all possible split points
         for (int i = 0; i < k.getColumnQualifierData().length(); i++) {
             if (backing[i] == '\u0000')
-                nulls.add(i);
+                splits.add(i);
         }
     }
     
     public String getDatatype() {
-        if (datatype == null && nulls.size() > 1) {
-            int stop = nulls.get(0);
+        if (isValid() && datatype == null && splits.size() > 1) {
+            int stop = splits.get(0);
             datatype = new String(backing, 0, stop);
         }
         return datatype;
     }
     
     public String getUid() {
-        if (uid == null) {
-            if (nulls.size() == 1) {
-                int start = nulls.get(0) + 1;
+        if (isValid() && uid == null) {
+            if (splits.size() == 1) {
+                int start = splits.get(0) + 1;
                 uid = new String(backing, start, (backing.length - start));
-            } else if (nulls.size() > 1) {
-                int start = nulls.get(0) + 1;
-                int stop = nulls.get(1);
+            } else if (splits.size() > 1) {
+                int start = splits.get(0) + 1;
+                int stop = splits.get(1);
                 uid = new String(backing, start, (stop - start));
             }
         }
@@ -59,30 +60,30 @@ public class TFKey {
     }
     
     public String getValue() {
-        if (value == null && nulls.size() >= 3) {
-            int start = nulls.get(1) + 1;
-            int stop = nulls.get(nulls.size() - 1);
+        if (isValid() && value == null && splits.size() >= 3) {
+            int start = splits.get(1) + 1;
+            int stop = splits.get(splits.size() - 1);
             value = new String(backing, start, (stop - start));
         }
         return value;
     }
     
     public String getField() {
-        if (field == null && nulls.size() >= 3) {
-            int start = nulls.get(nulls.size() - 1) + 1;
+        if (isValid() && field == null && splits.size() >= 3) {
+            int start = splits.get(splits.size() - 1) + 1;
             field = new String(backing, start, (backing.length - start));
         }
         return field;
     }
     
     public String getUidAndValue() {
-        if (uidAndValue == null && getUid() != null && getValue() != null) {
+        if (isValid() && uidAndValue == null && getUid() != null && getValue() != null) {
             uidAndValue = getUid() + '\u0000' + getValue();
         }
         return uidAndValue;
     }
     
     public boolean isValid() {
-        return backing != null && nulls.size() >= 3;
+        return backing != null && splits.size() >= 3;
     }
 }
