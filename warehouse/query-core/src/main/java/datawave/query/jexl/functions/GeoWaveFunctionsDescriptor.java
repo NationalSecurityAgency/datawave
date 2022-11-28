@@ -181,10 +181,9 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             else if (indexTypes.remove(IndexType.GEOWAVE_POINT)) {
                 indexNodes.add(generateGeoWaveRanges(fieldName, geometry, envs, config, PointNormalizer.index, config.getPointMaxExpansion()));
             }
-            
             // generate ranges for geo points
-            if (indexTypes.remove(IndexType.GEO_POINT)) {
-                indexNodes.add(generateGeoRanges(fieldName, envs));
+            else if (indexTypes.remove(IndexType.GEO_POINT)) {
+                indexNodes.add(generateGeoRanges(fieldName, geometry, envs, config.getGeoMaxExpansion()));
             }
             
             JexlNode indexNode;
@@ -223,19 +222,17 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             return JexlNodeFactory.createOrNode(rangeNodes);
         }
         
-        protected static JexlNode generateGeoRanges(String fieldName, List<Envelope> envs) {
+        protected static JexlNode generateGeoRanges(String fieldName, Geometry geometry, List<Envelope> envs, int maxExpansion) {
             JexlNode indexNode;
             List<JexlNode> indexNodes = new ArrayList<>();
             for (Envelope env : envs) {
                 // @formatter:off
                 indexNodes.add(
                         GeoFunctionsDescriptor.GeoJexlArgumentDescriptor.getIndexNode(
-                                fieldName,
-                                env.getMinX(),
-                                env.getMaxX(),
-                                env.getMinY(),
-                                env.getMaxY(),
-                                GeoNormalizer.separator));
+                                geometry,
+                                envs,
+                                Collections.singletonList(fieldName),
+                                maxExpansion));
                 // @formatter:on
             }
             
