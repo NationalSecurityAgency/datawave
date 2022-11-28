@@ -38,7 +38,7 @@ public class TFKey {
     }
     
     public String getDatatype() {
-        if (isValid() && datatype == null && splits.size() > 1) {
+        if (datatype == null && isValid()) {
             int stop = splits.get(0);
             datatype = new String(backing, 0, stop);
         }
@@ -46,7 +46,7 @@ public class TFKey {
     }
     
     public String getUid() {
-        if (isValid() && uid == null) {
+        if (uid == null && isValid()) {
             if (splits.size() == 1) {
                 int start = splits.get(0) + 1;
                 uid = new String(backing, start, (backing.length - start));
@@ -60,7 +60,7 @@ public class TFKey {
     }
     
     public String getValue() {
-        if (isValid() && value == null && splits.size() >= 3) {
+        if (value == null && isValid()) {
             int start = splits.get(1) + 1;
             int stop = splits.get(splits.size() - 1);
             value = new String(backing, start, (stop - start));
@@ -69,7 +69,7 @@ public class TFKey {
     }
     
     public String getField() {
-        if (isValid() && field == null && splits.size() >= 3) {
+        if (field == null && isValid()) {
             int start = splits.get(splits.size() - 1) + 1;
             field = new String(backing, start, (backing.length - start));
         }
@@ -77,7 +77,8 @@ public class TFKey {
     }
     
     public String getUidAndValue() {
-        if (isValid() && uidAndValue == null && getUid() != null && getValue() != null) {
+        // call to isValid is made as part of the getUid and getValue calls
+        if (uidAndValue == null && getUid() != null && getValue() != null) {
             uidAndValue = getUid() + '\u0000' + getValue();
         }
         return uidAndValue;
