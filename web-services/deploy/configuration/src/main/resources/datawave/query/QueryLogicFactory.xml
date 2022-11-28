@@ -11,7 +11,7 @@
     http://www.springframework.org/schema/util
     http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
-    <bean id="ResponseObjectFactory" class="datawave.webservice.query.result.event.DefaultResponseObjectFactory"/>
+    <bean id="ResponseObjectFactory" class="${response.object.factory.class}"/>
 
     <!--  part of what enforces any Required properties to be set on loading of the context -->
     <bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor" />
