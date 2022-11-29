@@ -82,7 +82,7 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
     // used to rebuild flattened unions
     private boolean rebuiltMultiFieldedFunction = false;
     
-    private final static String IS_NOT_NULL = "isNotNull";
+    private static final String IS_NOT_NULL = "isNotNull";
     
     private RewriteNullFunctionsVisitor() {}
     
@@ -114,11 +114,9 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
         FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
         node.jjtAccept(visitor, null);
         
-        if (visitor.namespace().equals(EVAL_PHASE_FUNCTION_NAMESPACE)) {
-            if (visitor.name().equals(IS_NULL) || visitor.name().equals(IS_NOT_NULL)) {
-                JexlNode rewritten = rewriteFilterFunction(visitor);
-                JexlNodes.replaceChild(node.jjtGetParent(), node, rewritten);
-            }
+        if (visitor.namespace().equals(EVAL_PHASE_FUNCTION_NAMESPACE) && (visitor.name().equals(IS_NULL) || visitor.name().equals(IS_NOT_NULL))) {
+            JexlNode rewritten = rewriteFilterFunction(visitor);
+            JexlNodes.replaceChild(node.jjtGetParent(), node, rewritten);
         }
         
         return data;
@@ -427,11 +425,13 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTIntegerLiteral node, Object data) {
         return data;
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTFloatLiteral node, Object data) {
         return data;
     }

@@ -1,5 +1,6 @@
 package datawave.webservice.query.logic.composite;
 
+import datawave.audit.SelectorExtractor;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
@@ -10,23 +11,19 @@ import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.result.BaseResponse;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 import org.apache.commons.collections4.functors.NOPTransformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
-import javax.enterprise.inject.Typed;
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -36,29 +33,26 @@ import java.util.concurrent.CountDownLatch;
  */
 public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     
-    @Typed
-    public static class QueryLogicComparator implements Comparator<QueryLogic<?>> {
-        @Override
-        public int compare(QueryLogic<?> o1, QueryLogic<?> o2) {
-            int result = (o1.getClass().getName().compareTo(o2.getClass().getName()));
-            if (result == 0) {
-                return (o1.getTableName().compareTo(o2.getTableName()));
-            } else {
-                return result;
-            }
-        }
-    }
-    
     private class QueryLogicHolder extends Thread {
         private GenericQueryConfiguration config;
+        private QueryLogic<?> logic;
         private TransformIterator transformIterator;
         private Query settings;
         private boolean started = false;
         private long maxResults;
         
-        public QueryLogicHolder(String logicName) {
+        public QueryLogicHolder(QueryLogic<?> logic) {
             this.setDaemon(true);
-            this.setName(Thread.currentThread().getName() + "-CompositeQueryLogic-" + logicName + "-" + UUID.randomUUID());
+            this.setLogic(logic);
+            this.setName(Thread.currentThread().getName() + "-CompositeQueryLogic-" + logic.getLogicName());
+        }
+        
+        public QueryLogic<?> getLogic() {
+            return logic;
+        }
+        
+        public void setLogic(QueryLogic<?> logic) {
+            this.logic = logic;
         }
         
         public GenericQueryConfiguration getConfig() {
@@ -93,10 +87,16 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             long resultCount = 0L;
             
             log.trace("Starting thread: " + this.getName());
+            
             if (!started) {
                 startLatch.countDown();
                 started = true;
             }
+            
+            // the results queue is also an exception handler
+            setUncaughtExceptionHandler(results);
+            boolean success = false;
+            
             try {
                 Object last = new Object();
                 if (this.getMaxResults() < 0)
@@ -109,14 +109,25 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                             results.add(last);
                         }
                     } catch (InterruptedException e) {
-                        log.warn("QueryLogic thread interrupted", e);
+                        // if this was on purpose, then just log and the loop will naturally exit
+                        if (interrupted) {
+                            log.warn("QueryLogic thread interrupted", e);
+                        }
+                        // otherwise something else unexpected happened
+                        else {
+                            throw new RuntimeException(e);
+                        }
                     }
                     resultCount++;
                 }
-                
+                success = true;
+            } catch (Exception e) {
+                throw new CompositeLogicException("Failed to retrieve results", Collections.singletonList(new UnmodifiableMapEntry(logic, e)));
             } finally {
-                completionLatch.countDown();
-                log.trace("Finished thread: " + this.getName());
+                if (success) {
+                    completionLatch.countDown();
+                }
+                log.trace("Finished thread: " + this.getName() + " with success = " + success);
             }
         }
         
@@ -125,76 +136,85 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     protected static final Logger log = Logger.getLogger(CompositeQueryLogic.class);
     
     private List<QueryLogic<?>> queryLogics = null;
+    
+    // Specified whether all queries must succeed initialization
+    private boolean allMustInitialize = false;
+    
     private QueryLogicTransformer transformer;
     private Priority p = Priority.NORMAL;
     private volatile boolean interrupted = false;
-    private CountDownLatch startLatch = null;
-    private CountDownLatch completionLatch = null;
-    private Map<QueryLogic<?>,QueryLogicHolder> logicState = new TreeMap<>(new QueryLogicComparator());
-    private CompositeQueryLogicResults results = null;
+    private volatile CountDownLatch startLatch = null;
+    private volatile CountDownLatch completionLatch = null;
+    private List<Entry<QueryLogic<?>,QueryLogicHolder>> logicState = new ArrayList<>();
+    private volatile CompositeQueryLogicResults results = null;
     
     public CompositeQueryLogic() {}
     
     public CompositeQueryLogic(CompositeQueryLogic other) {
         super(other);
-        this.queryLogics = new ArrayList<>(other.queryLogics);
+        if (other.queryLogics != null) {
+            this.queryLogics = new ArrayList<>();
+            for (QueryLogic<?> logic : other.queryLogics) {
+                try {
+                    logic = (QueryLogic) logic.clone();
+                } catch (CloneNotSupportedException e) {
+                    throw new RuntimeException(e);
+                }
+                this.queryLogics.add(logic);
+            }
+            setPrincipal(other.getPrincipal());
+        }
+        this.allMustInitialize = other.allMustInitialize;
     }
     
     @Override
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
         
-        for (QueryLogic<?> logic : queryLogics) {
-            final QueryLogic<?> queryLogic = logic;
-            int count = CollectionUtils.countMatches(
-                            queryLogics,
-                            object -> {
-                                if (object instanceof QueryLogic<?>) {
-                                    if (queryLogic.getClass().equals(((QueryLogic<?>) object).getClass())
-                                                    && queryLogic.getTableName().equals(((QueryLogic<?>) object).getTableName())) {
-                                        return true;
-                                    } else {
-                                        return false;
-                                    }
-                                } else {
-                                    return false;
-                                }
-                            });
-            
-            if (count > 1) {
-                throw new RuntimeException("More than one instance of query logic class configured with the same table: " + logic.getClass().getName());
-            }
-        }
-        
-        Iterator<QueryLogic<?>> itr = queryLogics.iterator();
         StringBuilder logicQueryStringBuilder = new StringBuilder("CompositeQueryLogic: ");
-        while (itr.hasNext()) {
-            QueryLogic<?> logic = itr.next();
-            GenericQueryConfiguration config = null;
-            try {
-                config = logic.initialize(connection, settings, runtimeQueryAuthorizations);
-                logicQueryStringBuilder.append("(table=" + config.getTableName());
-                logicQueryStringBuilder.append(",query=" + config.getQueryString());
-                logicQueryStringBuilder.append(") ");
-                QueryLogicHolder holder = new QueryLogicHolder(logic.getClass().getSimpleName());
-                holder.setConfig(config);
-                holder.setSettings(settings);
-                holder.setMaxResults(logic.getMaxResults());
-                logicState.put(logic, holder);
-            } catch (Exception e) {
-                log.info(e.getMessage() + " removing query logic " + logic.getClass().getName() + " from CompositeQuery");
-                itr.remove();
-                if (itr.hasNext() == false && logicState.isEmpty()) {
-                    // all logics have failed to initialize, rethrow the last exception caught
-                    throw new IllegalStateException("All logics have failed to initialize", e);
+        List<Entry<QueryLogic<?>,Exception>> exceptions = new ArrayList<>();
+        if (this.queryLogics != null) {
+            Iterator<QueryLogic<?>> itr = this.queryLogics.iterator();
+            while (itr.hasNext()) {
+                QueryLogic<?> logic = itr.next();
+                GenericQueryConfiguration config = null;
+                try {
+                    config = logic.initialize(connection, settings, runtimeQueryAuthorizations);
+                    if (logicQueryStringBuilder.length() > 0) {
+                        logicQueryStringBuilder.append(" || ");
+                    }
+                    logicQueryStringBuilder.append("( ( logic = '").append(logic.getLogicName()).append("' )");
+                    logicQueryStringBuilder.append(" && ").append(config.getQueryString()).append(" )");
+                    QueryLogicHolder holder = new QueryLogicHolder(logic);
+                    holder.setConfig(config);
+                    holder.setSettings(settings);
+                    holder.setMaxResults(logic.getMaxResults());
+                    logicState.add(new UnmodifiableMapEntry(logic, holder));
+                } catch (Exception e) {
+                    exceptions.add(new UnmodifiableMapEntry(logic, e));
+                    log.error("Failed to initialize " + logic.getClass().getName(), e);
+                    itr.remove();
                 }
             }
         }
-        startLatch = new CountDownLatch(logicState.values().size());
-        completionLatch = new CountDownLatch(logicState.values().size());
+        
+        if (!exceptions.isEmpty()) {
+            if (logicState.isEmpty()) {
+                // all logics have failed to initialize, rethrow the last exception caught
+                throw new CompositeLogicException("All logics have failed to initialize", exceptions);
+            }
+            
+            // if all must initialize successfully, then pass up an exception
+            if (allMustInitialize) {
+                throw new CompositeLogicException("Failed to initialize all composite child logics", exceptions);
+            }
+        }
+        
+        startLatch = new CountDownLatch(logicState.size());
+        completionLatch = new CountDownLatch(logicState.size());
         this.results = new CompositeQueryLogicResults(Math.min(settings.getPagesize() * 2, 1000), completionLatch);
         if (log.isDebugEnabled()) {
             log.debug("CompositeQuery initialized with the following queryLogics: ");
-            for (Entry<QueryLogic<?>,QueryLogicHolder> entry : this.logicState.entrySet()) {
+            for (Entry<QueryLogic<?>,QueryLogicHolder> entry : this.logicState) {
                 log.debug("\tLogicName: " + entry.getKey().getClass().getSimpleName() + ", tableName: " + entry.getKey().getTableName());
             }
         }
@@ -215,7 +235,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         StringBuilder plans = new StringBuilder();
         int count = 1;
         String separator = Integer.toString(count++) + ": ";
-        for (Entry<QueryLogic<?>,QueryLogicHolder> entry : logicState.entrySet()) {
+        for (Entry<QueryLogic<?>,QueryLogicHolder> entry : logicState) {
             plans.append(separator);
             plans.append(entry.getKey().getPlan(connection, settings, runtimeQueryAuthorizations, expandFields, expandValues));
             separator = "\n" + Integer.toString(count++) + ": ";
@@ -225,12 +245,12 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     
     @Override
     public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
-        for (Entry<QueryLogic<?>,QueryLogicHolder> entry : logicState.entrySet()) {
+        for (Entry<QueryLogic<?>,QueryLogicHolder> entry : logicState) {
             entry.getKey().setupQuery(entry.getValue().getConfig());
             TransformIterator transformIterator = entry.getKey().getTransformIterator(entry.getValue().getSettings());
             entry.getValue().setTransformIterator(transformIterator);
         }
-        for (Entry<QueryLogic<?>,QueryLogicHolder> entry : logicState.entrySet()) {
+        for (Entry<QueryLogic<?>,QueryLogicHolder> entry : logicState) {
             entry.getValue().start();
         }
         // Wait until all threads have started
@@ -255,21 +275,21 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         ResultsPage emptyList = new ResultsPage();
         Class<? extends BaseResponse> responseClass = null;
         List<QueryLogicTransformer> delegates = new ArrayList<>();
-        for (QueryLogic<?> logic : queryLogics) {
-            QueryLogicTransformer t = logic.getTransformer(settings);
-            delegates.add(t);
-            BaseResponse refResponse = t.createResponse(emptyList);
-            if (null == responseClass) {
-                responseClass = refResponse.getClass();
-            } else {
-                if (!responseClass.equals(refResponse.getClass())) {
-                    throw new RuntimeException("All query logics must use transformers that return the same object type");
+        if (this.queryLogics != null) {
+            for (QueryLogic<?> logic : this.queryLogics) {
+                QueryLogicTransformer t = logic.getTransformer(settings);
+                delegates.add(t);
+                BaseResponse refResponse = t.createResponse(emptyList);
+                if (null == responseClass) {
+                    responseClass = refResponse.getClass();
+                } else {
+                    if (!responseClass.equals(refResponse.getClass())) {
+                        throw new RuntimeException("All query logics must use transformers that return the same object type");
+                    }
                 }
             }
         }
-        if (null == this.transformer) {
-            this.transformer = new CompositeQueryLogicTransformer(delegates);
-        }
+        this.transformer = new CompositeQueryLogicTransformer(delegates);
         return this.transformer;
     }
     
@@ -293,11 +313,11 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     @Override
     public void close() {
         this.interrupted = true;
-        for (Entry<QueryLogic<?>,QueryLogicHolder> entry : logicState.entrySet()) {
+        for (Entry<QueryLogic<?>,QueryLogicHolder> entry : logicState) {
             entry.getKey().close();
             entry.getValue().interrupt();
         }
-        for (Entry<QueryLogic<?>,QueryLogicHolder> entry : logicState.entrySet()) {
+        for (Entry<QueryLogic<?>,QueryLogicHolder> entry : logicState) {
             try {
                 entry.getValue().join();
             } catch (InterruptedException e) {
@@ -311,7 +331,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     }
     
     public List<QueryLogic<?>> getQueryLogics() {
-        return queryLogics;
+        return this.queryLogics;
     }
     
     public void setQueryLogics(List<QueryLogic<?>> queryLogics) {
@@ -320,23 +340,29 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     
     @Override
     public boolean canRunQuery(Principal principal) {
+        if (this.queryLogics == null) {
+            return false;
+        }
+        
         // user can run this composite query if they can run at least one of the configured query logics
-        Iterator<QueryLogic<?>> itr = queryLogics.iterator();
+        Iterator<QueryLogic<?>> itr = this.queryLogics.iterator();
         while (itr.hasNext()) {
             QueryLogic<?> logic = itr.next();
             if (!logic.canRunQuery(principal)) {
                 itr.remove();
             }
         }
-        return (!queryLogics.isEmpty());
+        return (!this.queryLogics.isEmpty());
     }
     
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> params = new TreeSet<>();
         // Create a UNION set. Should it be an intersection?
-        for (QueryLogic<?> l : this.queryLogics) {
-            params.addAll(l.getOptionalQueryParameters());
+        if (this.queryLogics != null) {
+            for (QueryLogic<?> l : this.queryLogics) {
+                params.addAll(l.getOptionalQueryParameters());
+            }
         }
         return params;
     }
@@ -344,8 +370,10 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     @Override
     public Set<String> getRequiredQueryParameters() {
         Set<String> params = new TreeSet<>();
-        for (QueryLogic<?> l : this.queryLogics) {
-            params.addAll(l.getRequiredQueryParameters());
+        if (this.queryLogics != null) {
+            for (QueryLogic<?> l : this.queryLogics) {
+                params.addAll(l.getRequiredQueryParameters());
+            }
         }
         return params;
     }
@@ -353,12 +381,89 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     @Override
     public Set<String> getExampleQueries() {
         Set<String> params = new TreeSet<>();
-        for (QueryLogic<?> l : this.queryLogics) {
-            Set<String> examples = l.getExampleQueries();
-            if (examples != null) {
-                params.addAll(examples);
+        if (this.queryLogics != null) {
+            for (QueryLogic<?> l : this.queryLogics) {
+                Set<String> examples = l.getExampleQueries();
+                if (examples != null) {
+                    params.addAll(examples);
+                }
             }
         }
         return params.isEmpty() ? null : params;
+    }
+    
+    /**
+     * We can run the query if we can and at least of one of the children can.
+     * 
+     * @return canRunQuery
+     */
+    @Override
+    public boolean canRunQuery() {
+        if (super.canRunQuery()) {
+            if (this.queryLogics != null) {
+                for (QueryLogic<?> logic : this.queryLogics) {
+                    if (logic.canRunQuery()) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * The selector extractor is dependent on the children. Return the first non-null instance.
+     * 
+     * @return selector extractor
+     */
+    @Override
+    public SelectorExtractor getSelectorExtractor() {
+        if (this.queryLogics != null) {
+            for (QueryLogic<?> logic : this.queryLogics) {
+                SelectorExtractor extractor = logic.getSelectorExtractor();
+                if (extractor != null) {
+                    return extractor;
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Setting the principal is called after the logic is created. Pass this on to the children.
+     * 
+     * @param principal
+     */
+    @Override
+    public void setPrincipal(Principal principal) {
+        super.setPrincipal(principal);
+        if (this.queryLogics != null) {
+            for (QueryLogic<?> logic : this.queryLogics) {
+                logic.setPrincipal(principal);
+            }
+        }
+    }
+    
+    /**
+     * Setting the page processing start time is called after the logic is created. Pass this on to the children.
+     * 
+     * @param pageProcessingStartTime
+     */
+    @Override
+    public void setPageProcessingStartTime(long pageProcessingStartTime) {
+        super.setPageProcessingStartTime(pageProcessingStartTime);
+        if (this.queryLogics != null) {
+            for (QueryLogic<?> logic : this.queryLogics) {
+                logic.setPageProcessingStartTime(pageProcessingStartTime);
+            }
+        }
+    }
+    
+    public boolean isAllMustInitialize() {
+        return allMustInitialize;
+    }
+    
+    public void setAllMustInitialize(boolean allMustInitialize) {
+        this.allMustInitialize = allMustInitialize;
     }
 }
