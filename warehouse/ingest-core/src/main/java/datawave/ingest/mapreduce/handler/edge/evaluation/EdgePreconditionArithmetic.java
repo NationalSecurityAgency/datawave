@@ -7,7 +7,7 @@ import org.apache.commons.jexl2.JexlArithmetic;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,10 +27,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
     public boolean equals(final Object left, final Object right) {
         boolean matches = false;
         
-        if (left instanceof List && !(right instanceof List)) {
+        if (left instanceof Collection && !(right instanceof Collection)) {
             Object newRight = EventFieldValueTuple.getValue(right);
             
-            Iterator iter = ((List) left).iterator();
+            Iterator iter = ((Collection) left).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
                 Object newLeft = EventFieldValueTuple.getValue(tuple);
@@ -40,10 +40,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                 }
             }
             
-        } else if (!(left instanceof List) && (right instanceof List)) {
+        } else if (!(left instanceof Collection) && (right instanceof Collection)) {
             Object newLeft = EventFieldValueTuple.getValue(left);
             
-            Iterator iter = ((List) right).iterator();
+            Iterator iter = ((Collection) right).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
                 Object newRight = EventFieldValueTuple.getValue(tuple);
@@ -53,12 +53,12 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                 }
             }
             
-        } else if ((left instanceof List) && (right instanceof List)) {
+        } else if ((left instanceof Collection) && (right instanceof Collection)) {
             
-            Iterator iter = ((List) right).iterator();
+            Iterator iter = ((Collection) right).iterator();
             while (iter.hasNext()) {
                 Object lefttuple = iter.next();
-                Iterator iter2 = ((List) left).iterator();
+                Iterator iter2 = ((Collection) left).iterator();
                 while (iter2.hasNext()) {
                     Object righttuple = iter2.next();
                     Object newLeft = EventFieldValueTuple.getValue(lefttuple);
@@ -86,13 +86,37 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
     }
     
     @Override
+    public boolean matches(Object left, Object right) {
+        
+        if (left == null && right == null) {
+            // if both are null L == R
+            return true;
+        }
+        if (left == null || right == null) {
+            // we know both aren't null, therefore L != R
+            return false;
+        }
+        final String arg = left.toString();
+        boolean matches = false;
+        if (right instanceof java.util.regex.Pattern) {
+            matches = ((java.util.regex.Pattern) right).matcher(arg).matches();
+            if (matches) {
+                addMatchingGroup(left);
+            }
+        } else {
+            matches = arg.matches(right.toString());
+        }
+        return matches;
+    }
+    
+    @Override
     public boolean lessThan(final Object left, final Object right) {
         boolean matches = false;
         
-        if (left instanceof List && !(right instanceof List)) {
+        if (left instanceof Collection && !(right instanceof Collection)) {
             Object newRight = EventFieldValueTuple.getValue(right);
             
-            Iterator iter = ((List) left).iterator();
+            Iterator iter = ((Collection) left).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
                 Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(tuple));
@@ -102,10 +126,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                 }
             }
             
-        } else if (right instanceof Set) {
+        } else if (right instanceof Collection) {
             Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
             
-            Iterator iter = ((List) right).iterator();
+            Iterator iter = ((Collection) right).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
                 Object newRight = Long.parseLong(EventFieldValueTuple.getValue(tuple));
@@ -135,10 +159,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
     public boolean lessThanOrEqual(final Object left, final Object right) {
         boolean matches = false;
         
-        if (left instanceof List && !(right instanceof List)) {
+        if (left instanceof Collection && !(right instanceof Collection)) {
             Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
             
-            Iterator iter = ((List) left).iterator();
+            Iterator iter = ((Collection) left).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
                 Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(tuple));
@@ -148,10 +172,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                 }
             }
             
-        } else if (right instanceof Set) {
+        } else if (right instanceof Collection) {
             Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
             
-            Iterator iter = ((List) right).iterator();
+            Iterator iter = ((Collection) right).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
                 Object newRight = Long.parseLong(EventFieldValueTuple.getValue(tuple));
@@ -181,10 +205,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
     public boolean greaterThan(final Object left, final Object right) {
         boolean matches = false;
         
-        if (left instanceof List && !(right instanceof List)) {
+        if (left instanceof Collection && !(right instanceof Collection)) {
             Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
             
-            Iterator iter = ((List) left).iterator();
+            Iterator iter = ((Collection) left).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
                 Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(tuple));
@@ -194,10 +218,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                 }
             }
             
-        } else if (right instanceof Set) {
+        } else if (right instanceof Collection) {
             Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
             
-            Iterator iter = ((List) right).iterator();
+            Iterator iter = ((Collection) right).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
                 Object newRight = Long.parseLong(EventFieldValueTuple.getValue(tuple));
@@ -227,10 +251,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
     public boolean greaterThanOrEqual(final Object left, final Object right) {
         boolean matches = false;
         
-        if (left instanceof List && !(right instanceof List)) {
+        if (left instanceof Collection && !(right instanceof Collection)) {
             Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
             
-            Iterator iter = ((List) left).iterator();
+            Iterator iter = ((Collection) left).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
                 Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(tuple));
@@ -240,10 +264,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                 }
             }
             
-        } else if (right instanceof Set) {
+        } else if (right instanceof Collection) {
             Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
             
-            Iterator iter = ((List) right).iterator();
+            Iterator iter = ((Collection) right).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
                 Object newRight = Long.parseLong(EventFieldValueTuple.getValue(tuple));
@@ -272,8 +296,8 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
     private void addMatchingGroup(Object o) {
         if (o instanceof EventFieldValueTuple) {
             String fieldName = EventFieldValueTuple.getFieldName(o);
-            String commonality = EventField.getCommonality(fieldName);
-            String group = EventField.getGroupingContext(fieldName);
+            String commonality = EventField.getGroup(fieldName);
+            String group = EventField.getSubgroup(fieldName);
             Set<String> groups = matchingGroups.get(commonality);
             if (groups == null) {
                 groups = new HashSet<>();

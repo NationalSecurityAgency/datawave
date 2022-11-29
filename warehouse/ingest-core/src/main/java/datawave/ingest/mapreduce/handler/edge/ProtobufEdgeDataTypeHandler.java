@@ -487,30 +487,12 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          * If enabled, set the filtered context from the NormalizedContentInterface and create the script cache
          */
         if (evaluatePreconditions) {
-            long start = System.currentTimeMillis();
-            edgePreconditionContext.setFilteredContextForNormalizedContentInterface(fields);
-            edgePreconditionEvaluation.setJexlContext(edgePreconditionContext);
-            if (log.isTraceEnabled()) {
-                long time = System.currentTimeMillis() - start;
-                // only worth logging those that took some time....
-                if (time > 1) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Time to set terms on the filtered context & EdgePreconditionJexlEvaluations: " + time + "ms.");
-                    }
-                }
-            }
+            setupPreconditionEvaluation(fields);
+            
         }
         
         // Get the load date of the event from the fields map
-        Collection<NormalizedContentInterface> loadDates = fields.get(EventMapper.LOAD_DATE_FIELDNAME);
-        if (!loadDates.isEmpty()) {
-            NormalizedContentInterface nci = loadDates.iterator().next();
-            Date date = new Date(Long.parseLong(nci.getEventFieldValue()));
-            loadDateStr = DateHelper.format(date);
-        } else {
-            // If fields does not include the load date then use the current system time as load date
-            loadDateStr = DateHelper.format(new Date(now.get()));
-        }
+        loadDateStr = getLoadDateString(fields);
         
         /*
          * normalize field names with groups
@@ -757,6 +739,36 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         postProcessEdges(event, context, contextWriter, edgesCreated, loadDateStr);
         
         return edgesCreated;
+    }
+    
+    private void setupPreconditionEvaluation(Multimap<String,NormalizedContentInterface> fields) {
+        long start = System.currentTimeMillis();
+        edgePreconditionContext.setFilteredContextForNormalizedContentInterface(fields);
+        edgePreconditionEvaluation.setJexlContext(edgePreconditionContext);
+        if (log.isTraceEnabled()) {
+            long time = System.currentTimeMillis() - start;
+            // only worth logging those that took some time....
+            if (time > 1) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Time to set terms on the filtered context & EdgePreconditionJexlEvaluations: " + time + "ms.");
+                }
+            }
+        }
+    }
+    
+    // this could be moved to a more generic class
+    private String getLoadDateString(Multimap<String,NormalizedContentInterface> fields) {
+        String loadDateStr;
+        Collection<NormalizedContentInterface> loadDates = fields.get(EventMapper.LOAD_DATE_FIELDNAME);
+        if (!loadDates.isEmpty()) {
+            NormalizedContentInterface nci = loadDates.iterator().next();
+            Date date = new Date(Long.parseLong(nci.getEventFieldValue()));
+            loadDateStr = DateHelper.format(date);
+        } else {
+            // If fields does not include the load date then use the current system time as load date
+            loadDateStr = DateHelper.format(new Date(now.get()));
+        }
+        return loadDateStr;
     }
     
     protected void postProcessEdges(RawRecordContainer event, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
