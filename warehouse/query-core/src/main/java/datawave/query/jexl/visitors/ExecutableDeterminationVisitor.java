@@ -409,11 +409,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             }
             
             // odd number of nots apply negation
-            if (notCount % 2 == 1) {
-                return true;
-            } else {
-                return false;
-            }
+            return notCount % 2 == 1;
         }
     }
     
@@ -508,7 +504,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             log.trace("node:" + PrintingVisitor.formattedQueryString(node));
             log.trace("states are:" + states);
         }
-        if (states.size() == 0) {
+        if (states.isEmpty()) {
             // no child states, so nothing to evaluate
             state = STATE.IGNORABLE;
         } else if (states.size() == 1) {
@@ -580,7 +576,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             states.add((STATE) (node.jjtGetChild(i).jjtAccept(this, data + PREFIX)));
         }
-        if (states.size() == 0) {
+        if (states.isEmpty()) {
             // no child states, so nothing to evaluate
             state = STATE.IGNORABLE;
         } else if (states.size() == 1) {
@@ -637,10 +633,8 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         } else {
             state = unlessAnyNonExecutable(node, data + PREFIX);
             // the only non-executable case here would be with a null literal, which only cannot be computed if index only
-            if (state == STATE.NON_EXECUTABLE) {
-                if (isIndexOnly(node)) {
-                    state = STATE.ERROR;
-                }
+            if (state == STATE.NON_EXECUTABLE && isIndexOnly(node)) {
+                state = STATE.ERROR;
             }
         }
         if (output != null) {
@@ -815,7 +809,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
                         }
                     }
                 }
-                if (this.indexedFields.contains(JexlASTHelper.deconstructIdentifier(identifier)) == false) {
+                if (!this.indexedFields.contains(JexlASTHelper.deconstructIdentifier(identifier))) {
                     return true;
                 }
             }
@@ -1193,6 +1187,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTIntegerLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
@@ -1202,6 +1197,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTFloatLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
