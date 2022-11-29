@@ -74,6 +74,7 @@ public class WhindexVisitor extends RebuildingVisitor {
     private final Set<String> mappingFields;
     private final Map<String,Map<String,String>> valueSpecificFieldMappings;
     private final Multimap<String,String> fieldValueMappings;
+    private final Map<String,Date> creationDates;
     private final MetadataHelper metadataHelper;
     
     private final HashMap<JexlNode,WhindexTerm> jexlNodeToWhindexMap = new HashMap<>();
@@ -91,13 +92,15 @@ public class WhindexVisitor extends RebuildingVisitor {
     }
     
     private WhindexVisitor(ShardQueryConfiguration config, Date beginDate, MetadataHelper metadataHelper) {
-        this(config.getWhindexMappingFields(), config.getWhindexFieldMappings(), beginDate, metadataHelper);
+        this(config.getWhindexMappingFields(), config.getWhindexFieldMappings(), config.getWhindexCreationDates(), beginDate, metadataHelper);
     }
     
-    private WhindexVisitor(Set<String> mappingFields, Map<String,Map<String,String>> fieldMappings, Date beginDate, MetadataHelper metadataHelper) {
+    private WhindexVisitor(Set<String> mappingFields, Map<String,Map<String,String>> fieldMappings, Map<String,Date> creationDates, Date beginDate,
+                    MetadataHelper metadataHelper) {
         this.mappingFields = mappingFields;
         this.metadataHelper = metadataHelper;
         this.fieldValueMappings = LinkedHashMultimap.create();
+        this.creationDates = creationDates;
         this.valueSpecificFieldMappings = pruneFieldMappings(fieldMappings, beginDate);
     }
     
@@ -123,13 +126,15 @@ public class WhindexVisitor extends RebuildingVisitor {
      *            The value-specific fields required to create a Whindex
      * @param fieldMappings
      *            The value-specific field mappings which can be used to create a Whindex
+     * @param creationDates
+     *            The value-specific field mapping creation dates
      * @param script
      *            The jexl node representing the query
      * @return An expanded version of the passed-in script containing whindex nodes
      */
-    public static <T extends JexlNode> T apply(T script, Set<String> mappingFields, Map<String,Map<String,String>> fieldMappings, Date beginDate,
-                    MetadataHelper metadataHelper) {
-        WhindexVisitor visitor = new WhindexVisitor(mappingFields, fieldMappings, beginDate, metadataHelper);
+    public static <T extends JexlNode> T apply(T script, Set<String> mappingFields, Map<String,Map<String,String>> fieldMappings,
+                    Map<String,Date> creationDates, Date beginDate, MetadataHelper metadataHelper) {
+        WhindexVisitor visitor = new WhindexVisitor(mappingFields, fieldMappings, creationDates, beginDate, metadataHelper);
         
         return apply(script, visitor);
     }
@@ -178,7 +183,7 @@ public class WhindexVisitor extends RebuildingVisitor {
     }
     
     private boolean fieldPredatesBeginDate(String field, Date beginDate) {
-        Date firstSeenDate = metadataHelper.getEarliestOccurrenceOfField(field);
+        Date firstSeenDate = creationDates.get(field);
         return firstSeenDate != null && firstSeenDate.before(beginDate);
     }
     
