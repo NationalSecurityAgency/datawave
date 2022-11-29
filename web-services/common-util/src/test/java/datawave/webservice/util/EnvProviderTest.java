@@ -4,6 +4,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class EnvProviderTest {
     
@@ -19,5 +20,10 @@ public class EnvProviderTest {
         String target = "env:" + RandomStringUtils.randomAlphanumeric(25);
         String resolved = EnvProvider.resolve(target);
         assertEquals(target, resolved);
+    }
+    
+    @Test
+    public void testNullTarget() {
+        assertNull(EnvProvider.resolve(null));
     }
 }

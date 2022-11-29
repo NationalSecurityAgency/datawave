@@ -3,7 +3,6 @@ package datawave.query.tables;
 import com.google.common.base.Function;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -1090,7 +1089,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             try {
                 int nClosed = 0;
                 scannerFactory.lockdown();
-                for (ScannerBase bs : Lists.newArrayList(scannerFactory.currentScanners())) {
+                for (ScannerBase bs : scannerFactory.currentScanners()) {
                     scannerFactory.close(bs);
                     ++nClosed;
                 }
@@ -1100,7 +1099,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 
                 nClosed = 0;
                 
-                for (ScannerSession bs : Lists.newArrayList(scannerFactory.currentSessions())) {
+                for (ScannerSession bs : scannerFactory.currentSessions()) {
                     scannerFactory.close(bs);
                     ++nClosed;
                 }
@@ -2311,6 +2310,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setPointMaxExpansion(int pointMaxExpansion) {
         getConfig().setPointMaxExpansion(pointMaxExpansion);
+    }
+    
+    public int getGeoMaxExpansion() {
+        return getConfig().getGeoMaxExpansion();
+    }
+    
+    public void setGeoMaxExpansion(int geoMaxExpansion) {
+        getConfig().setGeoMaxExpansion(geoMaxExpansion);
     }
     
     public int getGeoWaveRangeSplitThreshold() {
