@@ -77,7 +77,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     
     public void setRemoteId(String id) {
         getConfig().setRemoteId(id);
-        getConfig().setQueryString(remoteQueryService.getQueryMetricsURI(id).toString());
+        getConfig().setQueryString("( metrics = '" + remoteQueryService.getQueryMetricsURI(id).toString() + "' )");
     }
     
     public String getRemoteQueryLogic() {
