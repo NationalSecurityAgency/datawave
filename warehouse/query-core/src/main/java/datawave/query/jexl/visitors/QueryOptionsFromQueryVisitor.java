@@ -131,7 +131,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         UNIQUE_BY_SECOND("unique_by_second", UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND),
         UNIQUE_BY_MILLISECOND("unique_by_millisecond", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND),
         UNIQUE_BY_YEAR("unique_by_year", UniqueGranularity.TRUNCATE_TEMPORAL_TO_YEAR),
-        UNIQUE_BY_TENTH_OF_HOUR("unique_by_tenth_of_hour", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        UNIQUE_BY_TENTH_OF_HOUR("unique_by_tenth_of_hour", UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR);
         
         public final String name;
         public final UniqueGranularity function;
