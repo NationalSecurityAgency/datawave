@@ -53,6 +53,7 @@ public class VariableNameVisitor extends BaseVisitor {
         return printer.variableNames;
     }
     
+    @Override
     public Object visit(ASTIdentifier node, Object data) {
         this.variableNames.add(node.image);
         return super.visit(node, data);
