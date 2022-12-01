@@ -186,8 +186,8 @@ public class QueryOptionsFromQueryVisitorTest {
     @Test
     public void testUniqueByTenth() throws ParseException {
         // Verify an empty function results in an empty unique parameter.
-        // assertResult("f:unique_by_tenth_of_hour()", "");
-        // assertOption(QueryParameters.UNIQUE_FIELDS, "");
+        assertResult("f:unique_by_tenth_of_hour()", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "");
         
         // Verify fields are added with the MINUTE granularity.
         assertResult("f:unique_by_tenth_of_hour('field1','field2','field3')", "");
