@@ -80,11 +80,11 @@ public class UniqueGranularityTest {
     
     @Test
     public void testTenthMinuteTruncation() {
-        assertEquals("TENTH", UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH.getName());
-        assertNull(UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH.transform(null));
-        assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH.transform("nonDateValue"));
-        assertEquals("3", UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH.transform("2019-01-15 12:30:15"));
-        assertEquals("1", UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH.transform("2019-01-15 3:10:15"));
+        assertEquals("TENTH_OF_HOUR", UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.getName());
+        assertNull(UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform(null));
+        assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform("nonDateValue"));
+        assertEquals("3", UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform("2019-01-15 12:30:15"));
+        assertEquals("1", UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform("2019-01-15 3:10:15"));
     }
     
     @Test

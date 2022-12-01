@@ -211,7 +211,7 @@
 	</ol>
 	<h3>Unique Functions</h3>
 	<p class="left">In queries, unique functions are available to find unique results for fields that are
-		specified, to the granularity of YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, or MILLISECOND. The field passed to the function needs to be a
+		specified, to the granularity of YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, TENTH or MILLISECOND. The field passed to the function needs to be a
 		dateTime field if using a time granularity, otherwise the original field will be returned as a unique result. Multiple granularity levels can
 		be provided to the same field in multiple ways, and granularities will be merged across multiple functions if necessary.
 		Potential function options that the user may use are listed below.</p>
@@ -227,7 +227,7 @@
 		<li>#unique_by_hour(datetimeField): Same result as above.</li>
 		<li>#unique(datetimeField[MINUTE]): Find every unique result of <b>datetimeField</b> to the minute.</li>
 		<li>#unique_by_minute(datetimeField): Same result as above.</li>
-		<li>#unique(datetimeField[TENTH]): Find every unique result of <b>datetimeField</b> to the minute, in the tens digit.</li>
+		<li>#unique(datetimeField[TENTH_OF_HOUR]): Find every unique result of <b>datetimeField</b> to the minute, in the tens digit.</li>
 		<li>#unique_by_tenth(datetimeField): Same result as above.</li>
 		<li>#unique(datetimeField[SECOND]): Find every unique result of <b>datetimeField</b> to the second.</li>
 		<li>#unique_by_second(datetimeField): Same result as above.</li>

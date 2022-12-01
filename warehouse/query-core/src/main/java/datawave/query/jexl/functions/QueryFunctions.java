@@ -1,6 +1,7 @@
 package datawave.query.jexl.functions;
 
 import datawave.data.type.util.NumericalEncoder;
+import datawave.query.attributes.UniqueGranularity;
 import datawave.query.attributes.ValueTuple;
 
 import datawave.query.collections.FunctionalSet;
@@ -12,6 +13,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
@@ -29,7 +31,7 @@ public class QueryFunctions {
     public static final String UNIQUE_BY_DAY_FUNCTION = "unique_by_day";
     public static final String UNIQUE_BY_HOUR_FUNCTION = "unique_by_hour";
     public static final String UNIQUE_BY_MINUTE_FUNCTION = "unique_by_minute";
-    public static final String UNIQUE_BY_TENTH_FUNCTION = "unique_by_tenth";
+    public static final String UNIQUE_BY_TENTH_OF_HOUR_FUNCTION = "unique_by_tenth_of_hour";
     public static final String UNIQUE_BY_MONTH_FUNCTION = "unique_by_month";
     public static final String UNIQUE_BY_SECOND_FUNCTION = "unique_by_second";
     public static final String UNIQUE_BY_YEAR_FUNCTION = "unique_by_year";

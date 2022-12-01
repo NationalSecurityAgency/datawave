@@ -11,7 +11,7 @@ import java.util.ArrayList;
 public class UniqueByTenth extends UniqueByFunction {
     
     public UniqueByTenth() {
-        super(QueryFunctions.UNIQUE_BY_TENTH_FUNCTION, new ArrayList<>());
+        super(QueryFunctions.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, new ArrayList<>());
     }
     
     @Override

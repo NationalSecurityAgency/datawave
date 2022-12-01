@@ -60,7 +60,7 @@ public enum UniqueGranularity {
      * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the tenth of an hour. Otherwise, the
      * original value will be returned.
      */
-    TRUNCATE_TEMPORAL_TO_TENTH("TENTH", new DateTimeValueFormatter("mm", true)),
+    TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR("TENTH_OF_HOUR", new DateTimeValueFormatter("mm", true)),
     
     /**
      * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the original
@@ -86,8 +86,8 @@ public enum UniqueGranularity {
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND;
             case "MILLISECOND":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND;
-            case "TENTH":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH;
+            case "TENTH_OF_HOUR":
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR;
             case "MONTH":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH;
             case "YEAR":
@@ -148,7 +148,7 @@ public enum UniqueGranularity {
                 Date date = DateNormalizer.DATE_NORMALIZER.denormalize(value);
                 String formattedDate = formatter.format(date);
                 if (!isTenth) {
-                    return formatter.format(date);
+                    return formattedDate;
                 } else {
                     return formattedDate.substring(0, 1);
                 }
