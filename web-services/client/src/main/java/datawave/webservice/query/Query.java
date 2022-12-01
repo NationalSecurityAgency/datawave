@@ -108,4 +108,6 @@ public abstract class Query {
     public abstract Map<String,List<String>> getOptionalQueryParameters();
     
     public abstract void removeParameter(String key);
+    
+    public abstract void populateTrackingMap(Map<String,String> trackingMap);
 }
