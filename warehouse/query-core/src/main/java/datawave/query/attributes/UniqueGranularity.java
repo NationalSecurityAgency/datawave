@@ -76,22 +76,22 @@ public enum UniqueGranularity {
         switch (name) {
             case "ALL":
                 return UniqueGranularity.ALL;
+            case "YEAR":
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_YEAR;
+            case "MONTH":
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH;
             case "DAY":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY;
             case "HOUR":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR;
+            case "TENTH_OF_HOUR":
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR;
             case "MINUTE":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE;
             case "SECOND":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND;
             case "MILLISECOND":
                 return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND;
-            case "TENTH_OF_HOUR":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR;
-            case "MONTH":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH;
-            case "YEAR":
-                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_YEAR;
             default:
                 throw new IllegalArgumentException("No " + UniqueGranularity.class.getSimpleName() + " exists with the name " + name);
         }
