@@ -28,14 +28,6 @@ public class QueryFunctions {
     public static final String QUERY_FUNCTION_NAMESPACE = "f";
     public static final String OPTIONS_FUNCTION = "options";
     public static final String UNIQUE_FUNCTION = "unique";
-    public static final String UNIQUE_BY_DAY_FUNCTION = "unique_by_day";
-    public static final String UNIQUE_BY_HOUR_FUNCTION = "unique_by_hour";
-    public static final String UNIQUE_BY_MINUTE_FUNCTION = "unique_by_minute";
-    public static final String UNIQUE_BY_TENTH_OF_HOUR_FUNCTION = "unique_by_tenth_of_hour";
-    public static final String UNIQUE_BY_MONTH_FUNCTION = "unique_by_month";
-    public static final String UNIQUE_BY_SECOND_FUNCTION = "unique_by_second";
-    public static final String UNIQUE_BY_YEAR_FUNCTION = "unique_by_year";
-    public static final String UNIQUE_BY_MILLISECOND_FUNCTION = "unique_by_millisecond";
     public static final String GROUPBY_FUNCTION = "groupby";
     public static final String EXCERPT_FIELDS_FUNCTION = "excerpt_fields";
     public static final String MATCH_REGEX = "matchRegex";

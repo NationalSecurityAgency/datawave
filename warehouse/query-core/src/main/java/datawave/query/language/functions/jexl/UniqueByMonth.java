@@ -1,6 +1,7 @@
 package datawave.query.language.functions.jexl;
 
 import datawave.query.jexl.functions.QueryFunctions;
+import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.language.functions.QueryFunction;
 
 import java.util.ArrayList;
@@ -11,7 +12,7 @@ import java.util.ArrayList;
 public class UniqueByMonth extends UniqueByFunction {
     
     public UniqueByMonth() {
-        super(QueryFunctions.UNIQUE_BY_MONTH_FUNCTION, new ArrayList<>());
+        super(QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MONTH_FUNCTION, new ArrayList<>());
     }
     
     @Override
