@@ -15,7 +15,6 @@ import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +22,6 @@ import java.util.Map.Entry;
 
 public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,EventBase> {
     
-    private Logger log = Logger.getLogger(ContentQueryTransformer.class);
     protected final Authorizations auths;
     protected final ResponseObjectFactory responseObjectFactory;
     
