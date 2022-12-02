@@ -24,3 +24,5 @@ hadoop
 **/scripts/shutdown_*
 **/scripts/health_*
 **/scripts/modification_*
+**/scripts/mapReduceQuery_*
+**/scripts/oozieQuery_*

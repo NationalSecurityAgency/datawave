@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DATAWAVE_ENDPOINT=https://localhost:8443/query/v1
+DATAWAVE_ENDPOINT=https://localhost:8443/query/v1/query
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 

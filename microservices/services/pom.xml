@@ -20,6 +20,9 @@
         <module>query-executor/api</module>
         <module>query-metric/api</module>
         <module>query-storage/api</module>
+        <module>mapreduce-query/api</module>
+        <module>mapreduce-query/layout-factory</module>
+        <module>mapreduce-query/jobs</module>
         <module>modification/api</module>
     </modules>
     <profiles>
@@ -39,6 +42,7 @@
                 <module>query-executor/service</module>
                 <module>query-metric/service</module>
                 <module>query-storage/service</module>
+                <module>mapreduce-query/service</module>
                 <module>modification/service</module>
             </modules>
         </profile>

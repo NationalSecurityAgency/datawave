@@ -58,7 +58,6 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>query-api</artifactId>
-            <classifier>jboss</classifier>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>

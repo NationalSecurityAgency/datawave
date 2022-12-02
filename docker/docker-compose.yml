@@ -14,8 +14,12 @@ services:
     ports:
       # resource manager web ui
       - "8088:8088"
+      # resource manager
+      - "8032:8032"
       # node manager web ui
       - "8042:8042"
+      # namenode server
+      - "9000:9000"
       # namenode web ui
       - "9870:9870"
       # datanode web ui
@@ -342,11 +346,13 @@ services:
     image: datawave/query-service:1.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query
+      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,mrquery
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - AUDIT_SERVER_URL=http://audit:8080/audit
+      - HADOOP_HOST=${DW_HADOOP_HOST}
+      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
       - "BACKEND=${BACKEND:-kafka}"
     ports:
       - "8080:8080"
@@ -355,10 +361,49 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
+      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
     networks:
       - demo
     healthcheck:
       test: curl -f http://localhost:8080/query/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      audit:
+        condition: service_healthy
+      authorization:
+        condition: service_healthy
+      metrics:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      executor-pool1:
+        condition: service_started
+
+  mapreduce-query:
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005","-jar","app.jar"]
+    image: datawave/mapreduce-query-service:1.0-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth,query,mrquery
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+      - HADOOP_HOST=${DW_HADOOP_HOST}
+      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+    ports:
+      - "50005:5005"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/mrquery/mgmt/health
       interval: 10s
       timeout: 1s
       start_period: 30s
@@ -382,7 +427,7 @@ services:
       - --spring.application.name=executor-pool1
       - --spring.cloud.config.name=executor
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query,pool1
+      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,pool1
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
@@ -431,7 +476,7 @@ services:
       - --spring.application.name=executor-pool2
       - --spring.cloud.config.name=executor
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query,pool2
+      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,pool2
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
@@ -475,7 +520,7 @@ services:
     image: datawave/query-storage-service:1.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,remoteauth,storage,query
+      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,query
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
@@ -553,7 +598,7 @@ services:
     profiles:
       - management
       - full
-    image: hazelcast/management-center:4.2021.06
+    image: hazelcast/management-center:5.1.2
     environment:
       - |-
         JAVA_OPTS=

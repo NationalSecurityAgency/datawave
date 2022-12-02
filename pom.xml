@@ -87,6 +87,7 @@
         <version.microservice.base-rest-responses>1.3-SNAPSHOT</version.microservice.base-rest-responses>
         <version.microservice.common-utils>1.2-SNAPSHOT</version.microservice.common-utils>
         <version.microservice.dictionary-api>1.3-SNAPSHOT</version.microservice.dictionary-api>
+        <version.microservice.mapreduce-query-api>1.0-SNAPSHOT</version.microservice.mapreduce-query-api>
         <version.microservice.metadata-utils>1.10-SNAPSHOT</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>1.4-SNAPSHOT</version.microservice.metrics-reporter>
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
@@ -339,6 +340,11 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>mapreduce-query-api</artifactId>
+                <version>${version.microservice.mapreduce-query-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>metadata-utils</artifactId>
                 <version>${version.microservice.metadata-utils}</version>
             </dependency>
@@ -346,6 +352,11 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>metrics-reporter</artifactId>
                 <version>${version.microservice.metrics-reporter}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>query-api</artifactId>
+                <version>${version.microservice.query-api}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>

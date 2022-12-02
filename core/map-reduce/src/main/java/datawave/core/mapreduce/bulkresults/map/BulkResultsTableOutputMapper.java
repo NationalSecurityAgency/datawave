@@ -1,16 +1,19 @@
-package datawave.webservice.mr.bulkresults.map;
+package datawave.core.mapreduce.bulkresults.map;
 
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.mapreduce.bulkresults.map.SerializationFormat;
 import datawave.webservice.query.Query;
 import datawave.webservice.result.BaseQueryResponse;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
+import org.springframework.util.Assert;
 
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
@@ -45,9 +48,17 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
             throw new RuntimeException("Error instantiating query impl class " + context.getConfiguration().get(BulkResultsFileOutputMapper.QUERY_IMPL_CLASS),
                             e);
         }
-        QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(QUERY_LOGIC_NAME);
-        t = logic.getTransformer(query);
+        final Configuration configuration = context.getConfiguration();
         
+        this.setApplicationContext(configuration.get(SPRING_CONFIG_LOCATIONS), configuration.get(SPRING_CONFIG_BASE_PACKAGES),
+                        configuration.get(SPRING_CONFIG_STARTING_CLASS));
+        
+        String logicName = context.getConfiguration().get(QUERY_LOGIC_NAME);
+        
+        QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(logicName);
+        t = logic.getTransformer(query);
+        Assert.notNull(logic.getMarkingFunctions());
+        Assert.notNull(logic.getResponseObjectFactory());
         this.tableName = new Text(context.getConfiguration().get(TABLE_NAME));
         this.format = SerializationFormat.valueOf(context.getConfiguration().get(BulkResultsFileOutputMapper.RESULT_SERIALIZATION_FORMAT));
         

@@ -7,7 +7,7 @@ TIMEOUT=10
 
 # First argument is the script to run
 # Second argument is the expected number of events
-# Third argument is the expected number of pages
+# Third argument is the expected number of pages/files
 runTest () {
     ATTEMPTS=3
     ATTEMPT=1
@@ -22,8 +22,11 @@ runTest () {
                 if [[ "$QUERY_RESPONSE" == *"Returned $3 pages"* ]] ; then
                     echo "SUCCESS: Returned $2 events and $3 pages"
                     return 0
+                elif [[ "$QUERY_RESPONSE" == *"Returned $3 files"* ]] ; then
+                    echo "SUCCESS: Returned $2 events and $3 files"
+                    return 0
                 else
-                    echo "FAILED: Unexpected number of pages returned"
+                    echo "FAILED: Unexpected number of pages/files returned"
                     echo
                     echo "TEST RESPONSE"
                     echo "$QUERY_RESPONSE"
@@ -94,6 +97,8 @@ runTest lookup.sh 1
 runTest lookupContent.sh 2
 # runTest metrics.sh 0 0
 runTest query.sh 12 2
+runTest mapReduceQuery.sh 12 2
+runTest oozieQuery.sh 0 0
 
 $SCRIPT_DIR/cleanup.sh
 

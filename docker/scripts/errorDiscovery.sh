@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DATAWAVE_ENDPOINT=https://localhost:8443/query/v1
+DATAWAVE_ENDPOINT=https://localhost:8443/query/v1/query
 METRICS_ENDPOINT=https://localhost:8543/querymetric/v1
 
 PAUSE='false'

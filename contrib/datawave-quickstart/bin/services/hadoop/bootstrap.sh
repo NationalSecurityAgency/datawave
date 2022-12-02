@@ -27,7 +27,7 @@ HADOOP_HOME="${DW_CLOUD_HOME}/${DW_HADOOP_SYMLINK}"
 
 # core-site.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_CORE_SITE_CONF="fs.defaultFS ${DW_HADOOP_DFS_URI_SERVER}
-hadoop.tmp.dir file:/${DW_CLOUD_DATA}/hadoop/tmp
+hadoop.tmp.dir file://${DW_CLOUD_DATA}/hadoop/tmp
 io.compression.codecs org.apache.hadoop.io.compress.GzipCodec"
 
 # hdfs-site.xml (Format: <property-name><space><property-value>{<newline>})
@@ -95,6 +95,7 @@ yarn.scheduler.capacity.node-locality-delay 40"
 export HADOOP_HOME
 export HADOOP_CONF_DIR="${HADOOP_HOME}/etc/hadoop"
 export HADOOP_LOG_DIR="${HADOOP_HOME}/logs"
+export YARN_LOG_DIR="${DW_CLOUD_DATA}/hadoop/yarn/log"
 export HADOOP_YARN_HOME="${HADOOP_HOME}"
 export HADOOP_MAPRED_HOME="${HADOOP_HOME}"
 export HADOOP_PID_DIR="${DW_CLOUD_DATA}/hadoop/pids"

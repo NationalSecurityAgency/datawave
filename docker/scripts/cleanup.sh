@@ -22,3 +22,5 @@ rm -r -f edgeEvent_*
 rm -r -f hitHighlights_*
 rm -r -f metrics_*
 rm -r -f modification_*
+rm -r -f mapReduceQuery_*
+rm -r -f oozieQuery_*
