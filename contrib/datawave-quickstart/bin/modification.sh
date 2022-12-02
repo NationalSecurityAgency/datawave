@@ -3,6 +3,7 @@
 #    DW_MODIFICATION_URI=https://localhost:9443/DataWave/Modification
 #
 # if using feature/queryMicroservices deployed modification service
+#    DW_BASE_URI=-https://localhost:9443/DataWave
 #    DW_MODIFICATION_URI=https://localhost:9343/modification/v1
 #
 
