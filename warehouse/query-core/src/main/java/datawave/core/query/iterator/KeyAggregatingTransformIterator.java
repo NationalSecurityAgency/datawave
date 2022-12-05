@@ -1,4 +1,4 @@
-package datawave.webservice.query.iterator;
+package datawave.core.query.iterator;
 
 import java.util.ArrayList;
 import java.util.Comparator;

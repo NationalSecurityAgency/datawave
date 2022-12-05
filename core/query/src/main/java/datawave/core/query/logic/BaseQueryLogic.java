@@ -5,6 +5,7 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
+import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -43,9 +44,11 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     // This will only be set when deployed via Wildfly
     protected Principal principal;
+    protected DatawavePrincipal serverPrincipal;
     
     // This will only be set when deployed as a microservice
     protected ProxiedUserDetails currentUser;
+    protected ProxiedUserDetails serverUser;
     
     protected Set<String> requiredRoles;
     protected MarkingFunctions markingFunctions;
@@ -122,12 +125,28 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         this.principal = principal;
     }
     
+    public DatawavePrincipal getServerPrincipal() {
+        return serverPrincipal;
+    }
+    
+    public void setServerPrincipal(DatawavePrincipal serverPrincipal) {
+        this.serverPrincipal = serverPrincipal;
+    }
+    
     public ProxiedUserDetails getCurrentUser() {
         return currentUser;
     }
     
     public void setCurrentUser(ProxiedUserDetails currentUser) {
         this.currentUser = currentUser;
+    }
+    
+    public ProxiedUserDetails getServerUser() {
+        return serverUser;
+    }
+    
+    public void setServerUser(ProxiedUserDetails serverUser) {
+        this.serverUser = serverUser;
     }
     
     public Set<String> getRequiredRoles() {

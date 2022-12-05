@@ -19,7 +19,7 @@ ENV YARN_NODEMANAGER_USER=root
 ENV DW_BIND_HOST=0.0.0.0
 
 # Bind accumulo specifically to localhost
-# This can be overridden at runtime to match the service name using DOCKER_HOST
+# This can be overridden at runtime to match the service name using DW_CONTAINER_HOST
 ENV DW_ACCUMULO_BIND_HOST=localhost
 
 # Build context should be the DataWave source root, minus .git and other dirs. See .dockerignore

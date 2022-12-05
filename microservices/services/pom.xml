@@ -27,9 +27,11 @@
     </modules>
     <profiles>
         <profile>
-            <id>microservices</id>
+            <id>services</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <property>
+                    <name>!skipServices</name>
+                </property>
             </activation>
             <modules>
                 <module>accumulo/service</module>

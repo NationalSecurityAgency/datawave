@@ -10,7 +10,7 @@ services:
     command: ["datawave-bootstrap.sh", "--accumulo"]
     image: datawave/quickstart-compose:3.32.0-SNAPSHOT
     environment:
-      - DOCKER_HOST=quickstart
+      - DW_CONTAINER_HOST=quickstart
     ports:
       # resource manager web ui
       - "8088:8088"

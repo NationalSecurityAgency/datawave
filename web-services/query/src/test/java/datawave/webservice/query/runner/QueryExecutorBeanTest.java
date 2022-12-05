@@ -9,6 +9,7 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
+import datawave.core.query.predict.QueryPredictor;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.query.DefaultQueryParameters;

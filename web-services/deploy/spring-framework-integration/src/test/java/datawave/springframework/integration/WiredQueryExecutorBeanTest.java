@@ -20,6 +20,7 @@ import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
+import datawave.security.system.ServerPrincipal;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.edgedictionary.EdgeDictionaryResponseTypeProducer;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -53,6 +54,12 @@ public class WiredQueryExecutorBeanTest {
     
     @Inject
     ApplicationContext ctx;
+    
+    @Produces
+    @ServerPrincipal
+    public DatawavePrincipal produceServerPrincipal() {
+        return new DatawavePrincipal();
+    }
     
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
