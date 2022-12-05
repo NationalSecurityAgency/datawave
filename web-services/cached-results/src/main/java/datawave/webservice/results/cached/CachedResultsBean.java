@@ -425,7 +425,7 @@ public class CachedResultsBean {
             // Get a accumulo connection
             priority = logic.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            addQueryToTrackingMap(trackingMap, q);
+            q.populateTrackingMap(trackingMap);
             accumuloConnectionRequestBean.requestBegin(queryId);
             try {
                 connector = connectionFactory.getConnection(priority, trackingMap);
@@ -2506,23 +2506,6 @@ public class CachedResultsBean {
             throw e;
         }
         return viewCreated;
-    }
-    
-    private void addQueryToTrackingMap(Map<String,String> trackingMap, Query q) {
-        
-        if (trackingMap == null || q == null) {
-            return;
-        }
-        
-        if (q.getOwner() != null) {
-            trackingMap.put("query.user", q.getOwner());
-        }
-        if (q.getId() != null) {
-            trackingMap.put("query.id", q.getId().toString());
-        }
-        if (q.getId() != null) {
-            trackingMap.put("query.query", q.getQuery());
-        }
     }
     
     public QueryPredictor getPredictor() {

@@ -768,6 +768,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
+        this.query.populateTrackingMap(null);
         this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
@@ -940,6 +941,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
+        this.query.populateTrackingMap(null);
         this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
@@ -1448,6 +1450,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
+        this.query.populateTrackingMap(null);
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
         expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
@@ -1620,6 +1623,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
+        this.query.populateTrackingMap(null);
         this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
@@ -1740,6 +1744,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.NONE);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
+        this.query.populateTrackingMap(null);
         expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
         expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
         expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).andReturn(true);
@@ -2370,6 +2375,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
+        this.query.populateTrackingMap(null);
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         expect(this.qlCache.add(newQuery1.getId().toString(), userSid, this.queryLogic1, this.connector)).andReturn(true);
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(false);
@@ -3344,6 +3350,7 @@ public class ExtendedQueryExecutorBeanTest {
         //
         //
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(new HashMap<>());
+        this.query.populateTrackingMap(new HashMap<>());
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
         connectionRequestBean.requestBegin(queryName);
@@ -3885,6 +3892,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
+        this.query.populateTrackingMap(null);
         this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
@@ -4020,6 +4028,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
+        this.query.populateTrackingMap(null);
         this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
