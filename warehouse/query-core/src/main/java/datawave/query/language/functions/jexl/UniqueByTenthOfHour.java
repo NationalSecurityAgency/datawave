@@ -1,22 +1,21 @@
 package datawave.query.language.functions.jexl;
 
-import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.language.functions.QueryFunction;
 
 import java.util.ArrayList;
 
 /**
- * Function to return a unique result for every hour of the day for a given list of fields. This function is equivalent to {@code #unique(field[DAY])}.
+ * Function to return a unique result for every tenth of an hour for a given list of fields. This function is equivalent to {@code #unique(field[DAY])}.
  */
-public class UniqueByTenth extends UniqueByFunction {
+public class UniqueByTenthOfHour extends UniqueByFunction {
     
-    public UniqueByTenth() {
+    public UniqueByTenthOfHour() {
         super(QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, new ArrayList<>());
     }
     
     @Override
     public QueryFunction duplicate() {
-        return new UniqueByTenth();
+        return new UniqueByTenthOfHour();
     }
 }

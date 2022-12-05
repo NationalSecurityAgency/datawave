@@ -6,8 +6,6 @@ import datawave.query.QueryParameters;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
 import datawave.query.jexl.functions.QueryFunctions;
-import datawave.query.language.functions.jexl.UniqueByFunction;
-import datawave.query.language.functions.jexl.UniqueByYear;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
@@ -20,6 +18,7 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -134,12 +133,6 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                         UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR), UNIQUE_BY_YEAR(
                         UniqueFunction.UNIQUE_BY_YEAR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_YEAR);
         
-        public String getName() {
-            return name;
-        }
-        
-        public final String name;
-        public final UniqueGranularity function;
         public static final String UNIQUE_BY_DAY_FUNCTION = "unique_by_day";
         public static final String UNIQUE_BY_HOUR_FUNCTION = "unique_by_hour";
         public static final String UNIQUE_BY_MINUTE_FUNCTION = "unique_by_minute";
@@ -149,37 +142,25 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         public static final String UNIQUE_BY_MILLISECOND_FUNCTION = "unique_by_millisecond";
         public static final String UNIQUE_BY_YEAR_FUNCTION = "unique_by_year";
         
-        UniqueFunction(String name, UniqueGranularity function) {
+        public final String name;
+        public final UniqueGranularity granularity;
+        
+        UniqueFunction(String name, UniqueGranularity granularity) {
             this.name = name;
-            this.function = function;
+            this.granularity = granularity;
+        }
+        
+        public String getName() {
+            return name;
         }
         
         public static UniqueFunction findByName(String name) {
-            switch (name) {
-                case "unique_by_day":
-                    return UNIQUE_BY_DAY;
-                case "unique_by_hour":
-                    return UNIQUE_BY_HOUR;
-                case "unique_by_minute":
-                    return UNIQUE_BY_MINUTE;
-                case "unique_by_second":
-                    return UNIQUE_BY_SECOND;
-                case "unique_by_millisecond":
-                    return UNIQUE_BY_MILLISECOND;
-                case "unique_by_tenth_of_hour":
-                    return UNIQUE_BY_TENTH_OF_HOUR;
-                case "unique_by_month":
-                    return UNIQUE_BY_MONTH;
-                case "unique_by_year":
-                    return UNIQUE_BY_YEAR;
-                default:
-                    throw new IllegalArgumentException("No " + UniqueFunction.class.getSimpleName() + " exists with the name " + name);
-            }
+            return UniqueFunction.valueOf(name.toUpperCase());
         }
     }
     
-    private void updateUniqueFields(ASTFunctionNode node, UniqueFields uniqueFields, Map<String,String> optionsMap, UniqueFunction granularity) {
-        putFieldsFromChildren(node, uniqueFields, granularity.function);
+    private void updateUniqueFields(ASTFunctionNode node, UniqueFields uniqueFields, Map<String,String> optionsMap, UniqueFunction uniqueFunction) {
+        putFieldsFromChildren(node, uniqueFields, uniqueFunction.granularity);
         updateUniqueFieldsOption(optionsMap, uniqueFields);
     }
     
