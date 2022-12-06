@@ -234,6 +234,7 @@ public abstract class GroupingTest {
                     case "GEN":
                     case "BIRTHDAY":
                     case "TYPE":
+                    case "MOTIVE":
                         firstKey = fieldBase.getValueString();
                         break;
                     case "AGE":
@@ -545,6 +546,49 @@ public abstract class GroupingTest {
         
         extraParameters.put("group.fields", "GENDER,DEPENDENTS");
         // extraParameters.put("group.fields.batch.size", "12");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    @Test
+    public void testGroupingEntriesWithSameContextSingle() throws Exception {
+        // Testing multivalued entries with no grouping context
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        Map<String,Integer> expectedMap = ImmutableMap.of("FEAR", 2, "MONEY", 1);
+        // Map<String,Integer> expectedMap = ImmutableMap.of("WISEGUY", 3);
+        
+        extraParameters.put("group.fields", "MOTIVE");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    public void testGroupingEntriesWithSameContextAll() throws Exception {
+        // Testing multivalued entries with no grouping context
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID == 'CORLEONE'";
+        
+        Map<String,Integer> expectedMap = ImmutableMap.of("FEAR", 1, "MONEY", 1);
+        // Map<String,Integer> expectedMap = ImmutableMap.of("WISEGUY", 3);
+        
+        extraParameters.put("group.fields", "MOTIVE");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {

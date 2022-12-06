@@ -172,7 +172,9 @@ public class GroupingUtil {
                 log.trace("{} contains {}", groupFieldsSet, shorterName);
                 
                 if (field.getData() instanceof Collection<?>) {
-                    // This handles multivalued entries that do not have grouping context
+                    // This handles multivalued entries that do not have grouping context.
+                    // Also handles multivalued entries from separate entries, but the field names contain
+                    //  the same context number
                     // Create GroupingTypeAttribute and put in ordered map ordered on the attribute type
                     SortedSetMultimap<Type<?>,GroupingTypeAttribute<?>> attrSortedMap = TreeMultimap.create();
                     for (Object typeAttribute : ((Collection<?>) field.getData())) {
@@ -185,7 +187,15 @@ public class GroupingUtil {
                     // Add GroupingTypeAttribute to fieldMap with a grouping context that is based on ordered attribute type
                     int i = 0;
                     for (Map.Entry<Type<?>,GroupingTypeAttribute<?>> sortedEntry : attrSortedMap.entries()) {
-                        String fieldNameWithContext = fieldName + "." + i++;
+                        String fieldNameWithContext = null;
+                        if (containsContext) {
+                            // multivalued entries from separate entries, but the field names contain the same context number
+                            fieldNameWithContext = shortName + "." + i++;
+                        } else {
+                            // multivalued entries that do not have grouping context
+                            fieldNameWithContext = fieldName + "." + i++;
+                        }
+
                         fieldMap.put(fieldNameWithContext, sortedEntry.getValue());
                         fieldToFieldWithContextMap.put(shortName, fieldNameWithContext);
                     }
