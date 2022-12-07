@@ -6,7 +6,8 @@ import datawave.query.language.functions.QueryFunction;
 import java.util.ArrayList;
 
 /**
- * Function to return a unique result for every tenth of an hour for a given list of fields. This function is equivalent to {@code #unique(field[DAY])}.
+ * Function to return a unique result for every tenth of an hour for a given list of fields. This function is equivalent to
+ * {@code #unique(field[TENTH_OF_HOUR])}.
  */
 public class UniqueByTenthOfHour extends UniqueByFunction {
     
