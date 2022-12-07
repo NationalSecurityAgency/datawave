@@ -241,8 +241,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         
         registry.put(EDGE_DEFAULT_DATA_TYPE, null);
         
-        // HashSet<String> edgeRelationships, collectionType;
-        
         if (ctx.containsBean(EDGE_SPRING_RELATIONSHIPS) && ctx.containsBean(EDGE_SPRING_COLLECTIONS)) {
             edgeRelationships.addAll((HashSet<String>) ctx.getBean(EDGE_SPRING_RELATIONSHIPS));
             collectionType.addAll((HashSet<String>) ctx.getBean(EDGE_SPRING_COLLECTIONS));
@@ -294,17 +292,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          * Third, you want neither of these done. Both booleans are set to false. The jexl context isn't set up and the conditional edges will be removed as to
          * not waste time evaluating edges where the conditions won't be met
          */
-        if (evaluatePreconditions) {
-            edgePreconditionContext = new EdgePreconditionJexlContext(edges);
-            edgePreconditionEvaluation = new EdgePreconditionJexlEvaluation();
-            edgePreconditionCacheHelper = new EdgePreconditionCacheHelper(arithmetic);
-            scriptCache = edgePreconditionCacheHelper.createScriptCacheFromEdges(edges);
-        } else if (!includeAllEdges) {
-            
-            // Else remove edges with a precondition. No conditional edge defs will be evaluated possibly resulting in fewer edges
-            log.info("Removing conditional edge definitions, possibly resulting in fewer edges being created");
-            removeEdgesWithPreconditions();
-        }
+        
+        setUpPreconditions();
+        
         registry.remove(EDGE_DEFAULT_DATA_TYPE);
         
         // loop through edge definitions and collect any ones that have blacklisted fields
@@ -360,9 +350,10 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             edgePreconditionEvaluation = new EdgePreconditionJexlEvaluation();
             edgePreconditionCacheHelper = new EdgePreconditionCacheHelper(arithmetic);
             scriptCache = edgePreconditionCacheHelper.createScriptCacheFromEdges(edges);
-        } else {
+        } else if (!includeAllEdges) {
             
-            // Else remove edges with a precondition
+            // Else remove edges with a precondition. No conditional edge defs will be evaluated possibly resulting in fewer edges
+            log.info("Removing conditional edge definitions, possibly resulting in fewer edges being created");
             removeEdgesWithPreconditions();
         }
     }
@@ -455,28 +446,39 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     protected BloomFilter<Key> activityLogBloom = null;
     protected BloomFilter<Key> durationLogBloom = null;
+    Multimap<String,NormalizedContentInterface> normalizedFields;
+    Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList;
+    Map<Key,Set<Metadata>> eventMetadataRegistry;
+    EdgeDefinitionConfigurationHelper edgeDefConfigs = null;
     
     @Override
     public long process(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)
                     throws IOException, InterruptedException {
-        long edgesCreated = 0;
-        long activityDate = -1;
-        boolean validActivityDate = false;
-        boolean activityEqualsEvent = false;
-        String edgeAttribute2 = null, edgeAttribute3 = null;
         
-        String loadDateStr = null;
+        long edgesCreated = 0;
         
         if (event.fatalError()) {
             return edgesCreated;
         } // early short circuit return
         
+        long activityDate = -1;
+        boolean validActivityDate = false;
+        boolean activityEqualsEvent = false;
+        
+        String loadDateStr = null;
+        
+        normalizedFields = HashMultimap.create();
+        depthFirstList = new HashMap<>();
+        
+        // Track metadata for this event
+        eventMetadataRegistry = new HashMap<>();
+        
         // get edge definitions for this event type
         Type dataType = event.getDataType();
         String typeName = dataType.typeName();
         List<EdgeDefinition> edgeDefs = null;
-        EdgeDefinitionConfigurationHelper edgeDefConfigs = null;
+        
         if (!edges.containsKey(typeName)) {
             return edgesCreated; // short circuit, no edges defined for this type
         }
@@ -497,54 +499,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         /*
          * normalize field names with groups
          */
-        Multimap<String,NormalizedContentInterface> normalizedFields = HashMultimap.create();
-        Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList = new HashMap<>();
-        Multimap<String,NormalizedContentInterface> tmp = null;
-        for (Entry<String,NormalizedContentInterface> e : fields.entries()) {
-            NormalizedContentInterface value = e.getValue();
-            String subGroup = null;
-            if (value instanceof GroupedNormalizedContentInterface) {
-                subGroup = ((GroupedNormalizedContentInterface) value).getSubGroup();
-            }
-            String fieldName = getGroupedFieldName(value);
-            tmp = depthFirstList.get(fieldName);
-            if (tmp == null) {
-                tmp = HashMultimap.create();
-            }
-            tmp.put(subGroup, value);
-            depthFirstList.put(fieldName, tmp);
-            
-            normalizedFields.put(fieldName, value);
-        }
-        
-        // get the edgeAttribute2 from the event fields map
-        if (normalizedFields.containsKey(edgeDefConfigs.getEdgeAttribute2())) {
-            edgeAttribute2 = normalizedFields.get(edgeDefConfigs.getEdgeAttribute2()).iterator().next().getIndexedFieldValue();
-        }
-        
-        // get the edgeAttribute3 from the event fields map
-        if (normalizedFields.containsKey(edgeDefConfigs.getEdgeAttribute3())) {
-            edgeAttribute3 = normalizedFields.get(edgeDefConfigs.getEdgeAttribute3()).iterator().next().getIndexedFieldValue();
-        }
-        
-        // get the activity date from the event fields map
-        if (normalizedFields.containsKey(edgeDefConfigs.getActivityDateField())) {
-            String actDate = normalizedFields.get(edgeDefConfigs.getActivityDateField()).iterator().next().getEventFieldValue();
-            try {
-                activityDate = DateNormalizer.parseDate(actDate, DateNormalizer.FORMAT_STRINGS).getTime();
-                validActivityDate = validateActivityDate(activityDate, event.getDate());
-            } catch (ParseException e1) {
-                log.error("Parse exception when getting the activity date: " + actDate + " for edge creation " + e1.getMessage());
-            }
-        }
-        
-        // If the activity date is valid check to see if it is on the same day as the event date
-        if (validActivityDate) {
-            activityEqualsEvent = compareActivityAndEvent(activityDate, event.getDate());
-        }
-        
-        // Track metadata for this event
-        Map<Key,Set<Metadata>> eventMetadataRegistry = new HashMap<>();
+        normalizeAndGroupFields(fields);
         
         if (useStatsLogBloomFilter) {
             activityLogBloom = BloomFilter.create(new KeyFunnel(), 5000000);
@@ -562,6 +517,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             arithmetic.clearMatchingGroups();
             Map<String,Set<String>> matchingGroups = new HashMap<>();
             String jexlPreconditions = null;
+            
+            // don't bother checking the preconditions if we don't even have the necessary fields in the event
+            if (eventLacksEdgeFields(edgeDef)) {
+                continue;
+            }
             
             /**
              * Fail fast for setting up precondition evaluations
@@ -597,28 +557,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 }
             }
             
-            String enrichmentFieldName = getEnrichmentFieldName(edgeDef);
-            
-            Multimap<String,NormalizedContentInterface> mSource = null;
-            Multimap<String,NormalizedContentInterface> mSink = null;
-            
             String sourceGroup = getGroup(edgeDef.getSourceFieldName());
             String sinkGroup = getGroup(edgeDef.getSinkFieldName());
             
-            if (depthFirstList.containsKey(edgeDef.getSourceFieldName()) && depthFirstList.containsKey(edgeDef.getSinkFieldName())) {
-                mSource = depthFirstList.get(edgeDef.getSourceFieldName());
-                mSink = depthFirstList.get(edgeDef.getSinkFieldName());
-            } else {
-                continue;
-            }
-            
-            // bail if the event doesn't contain any values for the source or sink field
-            if (null == mSource || null == mSink) {
-                continue;
-            }
-            if (mSource.isEmpty() || mSink.isEmpty()) {
-                continue;
-            }
+            Multimap<String,NormalizedContentInterface> mSource = depthFirstList.get(edgeDef.getSourceFieldName());
+            Multimap<String,NormalizedContentInterface> mSink = depthFirstList.get(edgeDef.getSinkFieldName());
             
             // leave the old logic alone
             if (!edgeDef.hasJexlPrecondition() || !edgeDef.isGroupAware()
@@ -626,108 +569,31 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 
                 // If within the same group, then within each subgroup that are in common for both the sink and source
                 if (sourceGroup.equals(sinkGroup) && (sourceGroup != NO_GROUP)) {
+                    
                     Set<String> commonKeys = mSource.keySet();
                     commonKeys.retainAll(mSink.keySet());
-                    /**
-                     *
-                     * We are using the intersection of 2 sets here to make sure we only loop over edges that we will create. Previously we would loop over all
-                     * the possible edges even if they were at different levels of nesting.
-                     *
-                     */
-                    for (String subGroup : commonKeys) {
-                        for (NormalizedContentInterface ifaceSource : mSource.get(subGroup)) {
-                            for (NormalizedContentInterface ifaceSink : mSink.get(subGroup)) {
-                                EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, subGroup, ifaceSink, sinkGroup, subGroup,
-                                                edgeAttribute2, edgeAttribute3, normalizedFields, depthFirstList, loadDateStr, activityDate, validActivityDate);
-                                if (edgeValue != null) {
-                                    
-                                    // have to write out the keys as the edge values are generated, so counters get updated
-                                    // and the system doesn't timeout.
-                                    edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsEvent, event.getDate());
-                                    
-                                    if (this.enableMetadata) {
-                                        registerEventMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPreconditions);
-                                    }
-                                }
-                                
-                            }
-                        }
-                    }
+                    
+                    edgesCreated += linkSubgroups(commonKeys, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
+                    
                 }
                 // Otherwise we want to multiplex across all values for the sink and source regardless of subgroup
                 else {
-                    for (String sourceSubGroup : mSource.keySet()) {
-                        for (NormalizedContentInterface ifaceSource : mSource.get(sourceSubGroup)) {
-                            for (String sinkSubGroup : mSink.keySet()) {
-                                for (NormalizedContentInterface ifaceSink : mSink.get(sinkSubGroup)) {
-                                    EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, sourceSubGroup, ifaceSink, sinkGroup,
-                                                    sinkSubGroup, edgeAttribute2, edgeAttribute3, normalizedFields, depthFirstList, loadDateStr, activityDate,
-                                                    validActivityDate);
-                                    if (edgeValue != null) {
-                                        
-                                        // have to write out the keys as the edge values are generated, so counters get updated
-                                        // and the system doesn't timeout.
-                                        edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsEvent, event.getDate());
-                                        
-                                        if (this.enableMetadata) {
-                                            registerEventMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPreconditions);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    edgesCreated += multiplex(mSource.keySet(), mSink.keySet(), edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
+                    
                 }
                 
             } else {
                 if (sourceGroup.equals(sinkGroup) && (sourceGroup != NO_GROUP)) {
                     Set<String> commonKeys = matchingGroups.get(sourceGroup);
-                    for (String subGroup : commonKeys) {
-                        for (NormalizedContentInterface ifaceSource : mSource.get(subGroup)) {
-                            for (NormalizedContentInterface ifaceSink : mSink.get(subGroup)) {
-                                EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, subGroup, ifaceSink, sinkGroup, subGroup,
-                                                edgeAttribute2, edgeAttribute3, normalizedFields, depthFirstList, loadDateStr, activityDate, validActivityDate);
-                                if (edgeValue != null) {
-                                    
-                                    // have to write out the keys as the edge values are generated, so counters get updated
-                                    // and the system doesn't timeout.
-                                    edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsEvent, event.getDate());
-                                    
-                                    if (this.enableMetadata) {
-                                        registerEventMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPreconditions);
-                                    }
-                                }
-                                
-                            }
-                        }
-                    }
+                    
+                    edgesCreated += linkSubgroups(commonKeys, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
                     
                 } else {
                     Set<String> sourceSubGroups = matchingGroups.get(sourceGroup) != null ? matchingGroups.get(sourceGroup) : mSource.keySet();
                     Set<String> sinkSubGroups = matchingGroups.get(sinkGroup) != null ? matchingGroups.get(sinkGroup) : mSink.keySet();
                     
-                    for (String sourceSubGroup : sourceSubGroups) {
-                        for (NormalizedContentInterface ifaceSource : mSource.get(sourceSubGroup)) {
-                            for (String sinkSubGroup : sinkSubGroups) {
-                                for (NormalizedContentInterface ifaceSink : mSink.get(sinkSubGroup)) {
-                                    EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, sourceSubGroup, ifaceSink, sinkGroup,
-                                                    sinkSubGroup, edgeAttribute2, edgeAttribute3, normalizedFields, depthFirstList, loadDateStr, activityDate,
-                                                    validActivityDate);
-                                    if (edgeValue != null) {
-                                        
-                                        // have to write out the keys as the edge values are generated, so counters get updated
-                                        // and the system doesn't timeout.
-                                        edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsEvent, event.getDate());
-                                        
-                                        if (this.enableMetadata) {
-                                            registerEventMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPreconditions);
-                                        }
-                                    }
-                                    
-                                }
-                            }
-                        }
-                    }
+                    edgesCreated += multiplex(sourceSubGroups, sinkSubGroups, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
+                    
                 }
             }
             
@@ -739,6 +605,170 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         postProcessEdges(event, context, contextWriter, edgesCreated, loadDateStr);
         
         return edgesCreated;
+    }
+    
+    private boolean eventLacksEdgeFields(EdgeDefinition edgeDef) {
+        
+        Multimap<String,NormalizedContentInterface> mSource = null;
+        Multimap<String,NormalizedContentInterface> mSink = null;
+        
+        if (depthFirstList.containsKey(edgeDef.getSourceFieldName()) && depthFirstList.containsKey(edgeDef.getSinkFieldName())) {
+            mSource = depthFirstList.get(edgeDef.getSourceFieldName());
+            mSink = depthFirstList.get(edgeDef.getSinkFieldName());
+        } else {
+            return true;
+        }
+        
+        // bail if the event doesn't contain any values for the source or sink field
+        if (null == mSource || null == mSink) {
+            return true;
+        }
+        if (mSource.isEmpty() || mSink.isEmpty()) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    private long getActivityDate() {
+        if (normalizedFields.containsKey(edgeDefConfigs.getActivityDateField())) {
+            String actDate = normalizedFields.get(edgeDefConfigs.getActivityDateField()).iterator().next().getEventFieldValue();
+            try {
+                return DateNormalizer.parseDate(actDate, DateNormalizer.FORMAT_STRINGS).getTime();
+            } catch (ParseException e1) {
+                log.error("Parse exception when getting the activity date: " + actDate + " for edge creation " + e1.getMessage());
+            }
+        }
+        return 0L;
+    }
+    
+    private String getEdgeAttr3(EdgeDefinitionConfigurationHelper edgeDefConfigs) {
+        // get the edgeAttribute3 from the event fields map
+        if (normalizedFields.containsKey(edgeDefConfigs.getEdgeAttribute3())) {
+            return normalizedFields.get(edgeDefConfigs.getEdgeAttribute3()).iterator().next().getIndexedFieldValue();
+        }
+        return null;
+    }
+    
+    private String getEdgeAttr2(EdgeDefinitionConfigurationHelper edgeDefConfigs) {
+        // get the edgeAttribute2 from the event fields map
+        if (normalizedFields.containsKey(edgeDefConfigs.getEdgeAttribute2())) {
+            return normalizedFields.get(edgeDefConfigs.getEdgeAttribute2()).iterator().next().getIndexedFieldValue();
+        }
+        return null;
+    }
+    
+    /**
+     *
+     * We are using the intersection of 2 sets here to make sure we only loop over edges that we will create. Previously we would loop over all the possible
+     * edges even if they were at different levels of nesting.
+     *
+     */
+    private long linkSubgroups(Set<String> commonKeys, EdgeDefinition edgeDef, RawRecordContainer event, String sourceGroup, String sinkGroup,
+                    TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)
+                    throws IOException, InterruptedException {
+        
+        long edgesCreated = 0L;
+        
+        Multimap<String,NormalizedContentInterface> mSource = depthFirstList.get(edgeDef.getSourceFieldName());
+        Multimap<String,NormalizedContentInterface> mSink = depthFirstList.get(edgeDef.getSinkFieldName());
+        
+        // get the activity date from the event fields map
+        long activityDate = getActivityDate();
+        boolean validActivityDate = validateActivityDate(activityDate, event.getDate());
+        boolean activityEqualsEvent = false;
+        
+        // If the activity date is valid check to see if it is on the same day as the event date
+        if (validActivityDate) {
+            activityEqualsEvent = compareActivityAndEvent(activityDate, event.getDate());
+        }
+        
+        EdgeKey.DATE_TYPE date_type = getEdgeKeyDateType(validActivityDate, activityEqualsEvent, event.getDate());
+        
+        for (String subGroup : commonKeys) {
+            for (NormalizedContentInterface ifaceSource : mSource.get(subGroup)) {
+                for (NormalizedContentInterface ifaceSink : mSink.get(subGroup)) {
+                    EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, subGroup, ifaceSink, sinkGroup, subGroup);
+                    if (edgeValue != null) {
+                        
+                        // have to write out the keys as the edge values are generated, so counters get updated
+                        // and the system doesn't timeout.
+                        edgesCreated += writeEdgesForDateType(edgeValue, context, contextWriter, date_type);
+                        
+                        if (this.enableMetadata) {
+                            registerEventMetadata(edgeValue, edgeDef);
+                        }
+                    }
+                    
+                }
+            }
+        }
+        return edgesCreated;
+        
+    }
+    
+    private long multiplex(Set<String> sourceSubGroups, Set<String> sinkSubGroups, EdgeDefinition edgeDef, RawRecordContainer event, String sourceGroup,
+                    String sinkGroup, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
+                    ContextWriter<KEYOUT,VALUEOUT> contextWriter) throws IOException, InterruptedException {
+        
+        long edgesCreated = 0L;
+        
+        Multimap<String,NormalizedContentInterface> mSource = depthFirstList.get(edgeDef.getSourceFieldName());
+        Multimap<String,NormalizedContentInterface> mSink = depthFirstList.get(edgeDef.getSinkFieldName());
+        
+        // get the activity date from the event fields map
+        long activityDate = getActivityDate();
+        boolean validActivityDate = validateActivityDate(activityDate, event.getDate());
+        boolean activityEqualsEvent = false;
+        
+        // If the activity date is valid check to see if it is on the same day as the event date
+        if (validActivityDate) {
+            activityEqualsEvent = compareActivityAndEvent(activityDate, event.getDate());
+        }
+        
+        EdgeKey.DATE_TYPE date_type = getEdgeKeyDateType(validActivityDate, activityEqualsEvent, event.getDate());
+        
+        for (String sourceSubGroup : sourceSubGroups) {
+            for (NormalizedContentInterface ifaceSource : mSource.get(sourceSubGroup)) {
+                for (String sinkSubGroup : sinkSubGroups) {
+                    for (NormalizedContentInterface ifaceSink : mSink.get(sinkSubGroup)) {
+                        EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, sourceSubGroup, ifaceSink, sinkGroup, sinkSubGroup);
+                        if (edgeValue != null) {
+                            
+                            // have to write out the keys as the edge values are generated, so counters get updated
+                            // and the system doesn't timeout.
+                            edgesCreated += writeEdgesForDateType(edgeValue, context, contextWriter, date_type);
+                            
+                            if (this.enableMetadata) {
+                                registerEventMetadata(edgeValue, edgeDef);
+                            }
+                        }
+                        
+                    }
+                }
+            }
+        }
+        return edgesCreated;
+    }
+    
+    private void normalizeAndGroupFields(Multimap<String,NormalizedContentInterface> fields) {
+        Multimap<String,NormalizedContentInterface> tmp = null;
+        for (Entry<String,NormalizedContentInterface> e : fields.entries()) {
+            NormalizedContentInterface value = e.getValue();
+            String subGroup = null;
+            if (value instanceof GroupedNormalizedContentInterface) {
+                subGroup = ((GroupedNormalizedContentInterface) value).getSubGroup();
+            }
+            String fieldName = getGroupedFieldName(value);
+            tmp = depthFirstList.get(fieldName);
+            if (tmp == null) {
+                tmp = HashMultimap.create();
+            }
+            tmp.put(subGroup, value);
+            depthFirstList.put(fieldName, tmp);
+            
+            normalizedFields.put(fieldName, value);
+        }
     }
     
     private void setupPreconditionEvaluation(Multimap<String,NormalizedContentInterface> fields) {
@@ -775,78 +805,29 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                     ContextWriter<KEYOUT,VALUEOUT> contextWriter, long edgesCreated, String loadDateStr) throws IOException, InterruptedException {}
     
     protected EdgeDataBundle createEdge(EdgeDefinition edgeDef, RawRecordContainer event, NormalizedContentInterface ifaceSource, String sourceGroup,
-                    String sourceSubGroup, NormalizedContentInterface ifaceSink, String sinkGroup, String sinkSubGroup, String edgeAttribute2,
-                    String edgeAttribute3, Multimap<String,NormalizedContentInterface> normalizedFields,
-                    Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList, String loadDate, long activityDate, boolean validActivityDate) {
+                    String sourceSubGroup, NormalizedContentInterface ifaceSink, String sinkGroup, String sinkSubGroup) {
         // Get the edge value
         EdgeDataBundle edgeDataBundle = new EdgeDataBundle(edgeDef, ifaceSource, ifaceSink, event, this.getHelper(event.getDataType()));
         
-        if (edgeAttribute2 != null) {
-            edgeDataBundle.setEdgeAttribute2(edgeAttribute2);
-        }
-        if (edgeAttribute3 != null) {
-            edgeDataBundle.setEdgeAttribute3(edgeAttribute3);
-        }
+        edgeDataBundle.setEdgeAttribute2(getEdgeAttr2(edgeDefConfigs));
+        edgeDataBundle.setEdgeAttribute3(getEdgeAttr3(edgeDefConfigs));
         
-        edgeDataBundle.setLoadDate(loadDate);
+        long activityDate = getActivityDate();
+        
+        edgeDataBundle.setLoadDate(getLoadDateString(normalizedFields));
         edgeDataBundle.setActivityDate(activityDate);
-        edgeDataBundle.setValidActivityDate(validActivityDate);
+        edgeDataBundle.setValidActivityDate(validateActivityDate(activityDate, event.getDate()));
         
         // setup duration
         if (edgeDef.hasDuration()) {
-            if (edgeDef.getUDDuration()) {
-                NormalizedContentInterface upnci = getNullKeyedNCI(edgeDef.getUpTime(), normalizedFields);
-                NormalizedContentInterface downnci = getNullKeyedNCI(edgeDef.getDownTime(), normalizedFields);
-                if (null != upnci && null != downnci) {
-                    edgeDataBundle.initDuration(upnci, downnci);
-                }
-            } else {
-                NormalizedContentInterface elnci = getNullKeyedNCI(edgeDef.getElapsedTime(), normalizedFields);
-                if (null != elnci) {
-                    edgeDataBundle.initDuration(elnci);
-                }
-            }
+            setEdgeDuration(edgeDef, edgeDataBundle);
         }
         
         String typeName = event.getDataType().typeName();
         
         // if the edgeDef is an enrichment definition, fill in the enrichedValue
         if (edgeDef.isEnrichmentEdge()) {
-            if (edgeTypeLookup.containsKey(typeName)) {
-                // if the group is the same as the sink or source,
-                // then ensure we use the correct subgroup, otherwise we will enrich with the first value found
-                Collection<NormalizedContentInterface> ifaceEnrichs = normalizedFields.get(edgeDef.getEnrichmentField());
-                if (null != ifaceEnrichs && !ifaceEnrichs.isEmpty()) {
-                    String enrichGroup = getGroup(edgeDef.getEnrichmentField());
-                    if (enrichGroup != NO_GROUP) {
-                        if (enrichGroup.equals(sourceGroup)) {
-                            ifaceEnrichs = depthFirstList.get(edgeDef.getEnrichmentField()).get(sourceSubGroup);
-                        } else if (enrichGroup.equals(sinkGroup)) {
-                            ifaceEnrichs = depthFirstList.get(edgeDef.getEnrichmentField()).get(sinkSubGroup);
-                        }
-                    }
-                    if (null != ifaceEnrichs && !ifaceEnrichs.isEmpty()) {
-                        if (ifaceEnrichs.size() > 1) {
-                            log.warn("The enrichment field for " + edgeDef.getEnrichmentField() + " contains multiple values...choosing first valid entry");
-                            
-                        }
-                        for (NormalizedContentInterface ifaceEnrich : ifaceEnrichs) {
-                            // the value of the enrichment field is a edge type lookup
-                            String enrichedIndex = ifaceEnrich.getIndexedFieldValue();
-                            // if we know this enrichment mode, then use it
-                            if (edgeTypeLookup.get(typeName).containsKey(enrichedIndex)) {
-                                edgeDataBundle.setEnrichedIndex(enrichedIndex); // required for eventMetadataRegistry
-                                edgeDataBundle.setEnrichedValue(edgeTypeLookup.get(typeName).get(enrichedIndex));
-                                break;
-                            }
-                        }
-                    }
-                    
-                }
-            } else {
-                log.error("Cannot enrich edge because Enrichment Edge Types are not defined for data type: " + typeName);
-                
-            }
+            setEnrichmentInfo(edgeDef, edgeDataBundle, typeName, sourceGroup, sourceSubGroup, sinkGroup, sinkSubGroup);
         }
         
         if (event.isRequiresMasking()) {
@@ -860,13 +841,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             return null;
         }
         
-        // Set edge type if this is an enrichment edge
-        if (edgeDef.isEnrichmentEdge()) {
-            if (null != edgeDataBundle.getEnrichedValue()) {
-                edgeDataBundle.setEdgeType(edgeDataBundle.getEnrichedValue());
-            }
-        }
-        
         // check value blacklist
         if (this.enableBlacklist && isBlacklistValue(typeName, edgeDataBundle.getSource().getValue(ValueType.INDEXED))
                         || isBlacklistValue(typeName, edgeDataBundle.getSink().getValue(ValueType.INDEXED))) {
@@ -876,14 +850,69 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         return edgeDataBundle;
     }
     
-    protected void maskEdge(EdgeDataBundle edgeDataBundle, RawRecordContainer record) {}
-    
-    protected void registerEventMetadata(Map<Key,Set<Metadata>> eventMetadataRegistry, String enrichmentFieldName, EdgeDataBundle edgeValue) {
-        registerEventMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, null);
+    private void setEdgeDuration(EdgeDefinition edgeDef, EdgeDataBundle edgeDataBundle) {
+        if (edgeDef.getUDDuration()) {
+            NormalizedContentInterface upnci = getNullKeyedNCI(edgeDef.getUpTime(), normalizedFields);
+            NormalizedContentInterface downnci = getNullKeyedNCI(edgeDef.getDownTime(), normalizedFields);
+            if (null != upnci && null != downnci) {
+                edgeDataBundle.initDuration(upnci, downnci);
+            }
+        } else {
+            NormalizedContentInterface elnci = getNullKeyedNCI(edgeDef.getElapsedTime(), normalizedFields);
+            if (null != elnci) {
+                edgeDataBundle.initDuration(elnci);
+            }
+        }
     }
     
-    protected void registerEventMetadata(Map<Key,Set<Metadata>> eventMetadataRegistry, String enrichmentFieldName, EdgeDataBundle edgeValue,
-                    String jexlPrecondition) {
+    private void setEnrichmentInfo(EdgeDefinition edgeDef, EdgeDataBundle edgeDataBundle, String typeName, String sourceGroup, String sourceSubGroup,
+                    String sinkGroup, String sinkSubGroup) {
+        if (edgeTypeLookup.containsKey(typeName)) {
+            // if the group is the same as the sink or source,
+            // then ensure we use the correct subgroup, otherwise we will enrich with the first value found
+            Collection<NormalizedContentInterface> ifaceEnrichs = normalizedFields.get(edgeDef.getEnrichmentField());
+            if (null != ifaceEnrichs && !ifaceEnrichs.isEmpty()) {
+                String enrichGroup = getGroup(edgeDef.getEnrichmentField());
+                if (enrichGroup != NO_GROUP) {
+                    if (enrichGroup.equals(sourceGroup)) {
+                        ifaceEnrichs = depthFirstList.get(edgeDef.getEnrichmentField()).get(sourceSubGroup);
+                    } else if (enrichGroup.equals(sinkGroup)) {
+                        ifaceEnrichs = depthFirstList.get(edgeDef.getEnrichmentField()).get(sinkSubGroup);
+                    }
+                }
+                if (null != ifaceEnrichs && !ifaceEnrichs.isEmpty()) {
+                    if (ifaceEnrichs.size() > 1) {
+                        log.warn("The enrichment field for " + edgeDef.getEnrichmentField() + " contains multiple values...choosing first valid entry");
+                        
+                    }
+                    for (NormalizedContentInterface ifaceEnrich : ifaceEnrichs) {
+                        // the value of the enrichment field is a edge type lookup
+                        String enrichedIndex = ifaceEnrich.getIndexedFieldValue();
+                        // if we know this enrichment mode, then use it
+                        if (edgeTypeLookup.get(typeName).containsKey(enrichedIndex)) {
+                            edgeDataBundle.setEnrichedIndex(enrichedIndex); // required for eventMetadataRegistry
+                            edgeDataBundle.setEnrichedValue(edgeTypeLookup.get(typeName).get(enrichedIndex));
+                            break;
+                        }
+                    }
+                }
+                
+            }
+        } else {
+            log.error("Cannot enrich edge because Enrichment Edge Types are not defined for data type: " + typeName);
+            
+        }
+        if (null != edgeDataBundle.getEnrichedValue()) {
+            edgeDataBundle.setEdgeType(edgeDataBundle.getEnrichedValue());
+        }
+    }
+    
+    protected void maskEdge(EdgeDataBundle edgeDataBundle, RawRecordContainer record) {}
+    
+    protected void registerEventMetadata(EdgeDataBundle edgeValue, EdgeDefinition edgeDef) {
+        String enrichmentFieldName = getEnrichmentFieldName(edgeDef);
+        String jexlPrecondition = edgeDef.getJexlPrecondition();
+        
         // add to the eventMetadataRegistry map
         Key baseKey = createMetadataEdgeKey(edgeValue, edgeValue.getSource(), edgeValue.getSource().getIndexedFieldValue(), edgeValue.getSink(), edgeValue
                         .getSink().getIndexedFieldValue(), this.getVisibility(edgeValue));
@@ -980,27 +1009,34 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         }
     }
     
+    protected EdgeKey.DATE_TYPE getEdgeKeyDateType(boolean validActivtyDate, boolean sameActivityDate, long eventDate) {
+        EdgeKey.DATE_TYPE dateType = null;
+        if (eventDate < newFormatStartDate) {
+            dateType = EdgeKey.DATE_TYPE.OLD_EVENT;
+        } else if (validActivtyDate) {
+            if (sameActivityDate) {
+                dateType = EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT;
+            } else {
+                dateType = EdgeKey.DATE_TYPE.ACTIVITY_ONLY;
+                // also need to write EVENT_ONLY for some reason
+            }
+        } else {
+            dateType = EdgeKey.DATE_TYPE.EVENT_ONLY;
+        }
+        return dateType;
+    }
+    
     /*
      * This part makes the determination as to what type of edge key to build
      */
-    protected long writeEdges(EdgeDataBundle value, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
-                    ContextWriter<KEYOUT,VALUEOUT> contextWriter, boolean validActivtyDate, boolean sameActivityDate, long eventDate) throws IOException,
-                    InterruptedException {
+    protected long writeEdgesForDateType(EdgeDataBundle value, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
+                    ContextWriter<KEYOUT,VALUEOUT> contextWriter, EdgeKey.DATE_TYPE dateType) throws IOException, InterruptedException {
         
         long edgesCreated = 0;
-        if (eventDate < newFormatStartDate) {
-            edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.OLD_EVENT);
-        } else {
-            if (validActivtyDate) {
-                if (sameActivityDate) {
-                    edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT);
-                } else {
-                    edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.ACTIVITY_ONLY);
-                    edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.EVENT_ONLY);
-                }
-            } else {
-                edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.EVENT_ONLY);
-            }
+        
+        edgesCreated += writeEdges(value, context, contextWriter, dateType);
+        if (dateType.equals(EdgeKey.DATE_TYPE.ACTIVITY_ONLY)) {
+            edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.EVENT_ONLY);
         }
         
         return edgesCreated;
@@ -1120,7 +1156,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     private Key createEdgeKey(EdgeDataBundle edgeValue, VertexValue source, String sourceValue, VertexValue sink, String sinkValue, Text visibility,
                     long timestamp, EdgeKey.DATE_TYPE date_type) {
-        String typeName = edgeValue.getDataTypeName();
         datawave.edge.util.EdgeKey.EdgeKeyBuilder builder = datawave.edge.util.EdgeKey.newBuilder(EDGE_FORMAT.STANDARD).escape();
         builder.setSourceData(sourceValue).setSinkData(sinkValue).setType(edgeValue.getEdgeType()).setYyyymmdd(edgeValue.getYyyyMMdd(date_type))
                         .setSourceRelationship(source.getRelationshipType()).setSinkRelationship(sink.getRelationshipType())
@@ -1133,7 +1168,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     }
     
     protected Key createStatsKey(STATS_TYPE statsType, EdgeDataBundle edgeValue, VertexValue vertex, String value, Text visibility, EdgeKey.DATE_TYPE date_type) {
-        String typeName = edgeValue.getDataTypeName();
         datawave.edge.util.EdgeKey.EdgeKeyBuilder builder = datawave.edge.util.EdgeKey.newBuilder(EDGE_FORMAT.STATS).escape();
         builder.setSourceData(value).setStatsType(statsType).setType(edgeValue.getEdgeType()).setYyyymmdd(edgeValue.getYyyyMMdd(date_type))
                         .setSourceRelationship(vertex.getRelationshipType()).setSourceAttribute1(vertex.getCollectionType())

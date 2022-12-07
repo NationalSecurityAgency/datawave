@@ -1,7 +1,6 @@
 package datawave.ingest.mapreduce.handler.edge;
 
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import datawave.data.hash.UID;
 import datawave.data.normalizer.DateNormalizer;
@@ -15,18 +14,13 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.FakeIngestHelper;
 import datawave.ingest.mapreduce.SimpleDataTypeHandler;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDataBundle;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.ingest.test.StandaloneStatusReporter;
-import datawave.ingest.test.StandaloneTaskAttemptContext;
 import datawave.ingest.time.Now;
 import datawave.metadata.protobuf.EdgeMetadata;
-import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -39,7 +33,6 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -59,7 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.TreeSet;
 
 public class ProtobufEdgeDeleteModeTest {
     
@@ -296,6 +288,9 @@ public class ProtobufEdgeDeleteModeTest {
                 normalizedFields.put(fieldName, value);
             }
             
+            this.normalizedFields = normalizedFields;
+            this.edgeDefConfigs = edgeDefConfigs;
+            
             // get the activity date from the event fields map
             if (normalizedFields.containsKey(edgeDefConfigs.getActivityDateField())) {
                 String actDate = normalizedFields.get(edgeDefConfigs.getActivityDateField()).iterator().next().getEventFieldValue();
@@ -314,6 +309,7 @@ public class ProtobufEdgeDeleteModeTest {
             
             // Track metadata for this event
             Map<Key,Set<EdgeMetadata.MetadataValue.Metadata>> eventMetadataRegistry = new HashMap<>();
+            this.eventMetadataRegistry = eventMetadataRegistry;
             
             activityLog = new HashSet<>();
             durationLog = new HashSet<>();
@@ -361,8 +357,7 @@ public class ProtobufEdgeDeleteModeTest {
                         for (String sinkSubGroup : mSink.keySet()) {
                             for (NormalizedContentInterface ifaceSink : mSink.get(sinkSubGroup)) {
                                 EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, sourceSubGroup, ifaceSink, sinkGroup,
-                                                sinkSubGroup, edgeAttribute2, edgeAttribute3, normalizedFields, depthFirstList, loadDateStr, activityDate,
-                                                validActivityDate);
+                                                sinkSubGroup);
                                 if (edgeValue != null) {
                                     
                                     // NOTE: The only difference in this test class
@@ -370,10 +365,10 @@ public class ProtobufEdgeDeleteModeTest {
                                     
                                     // have to write out the keys as the edge values are generated, so counters get updated
                                     // and the system doesn't timeout.
-                                    edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsEvent, event.getDate());
+                                    edgesCreated += writeEdgesForDateType(edgeValue, context, contextWriter, getEdgeKeyDateType(true, true, event.getDate()));
                                     
                                     if (this.enableMetadata) {
-                                        registerEventMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPreconditions);
+                                        registerEventMetadata(edgeValue, edgeDef);
                                     }
                                 }
                             }
