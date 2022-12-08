@@ -192,6 +192,11 @@ public class TermFrequencyIterator extends WrappingIterator {
             
             tfKey.parse(k);
             
+            if (!tfKey.isValid()) {
+                log.error("Invalid tf key found: " + tfKey.getDatatype() + ":" + tfKey.getUid() + ":" + tfKey.getField());
+                continue;
+            }
+            
             if (fieldValueAccepted()) {
                 topKey = k;
                 topValue = source.getTopValue();
