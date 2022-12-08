@@ -139,7 +139,7 @@ public class GroupingRequiredFilterFunctions {
     private static String getSubgroup(String fieldName) {
         String[] splits = StringUtils.split(fieldName, '.');
         if (splits.length >= 2) {
-            // return the first group and last group (a.k.a the instance in the first group)
+            // return the last group
             return splits[splits.length - 1];
         }
         return null;
