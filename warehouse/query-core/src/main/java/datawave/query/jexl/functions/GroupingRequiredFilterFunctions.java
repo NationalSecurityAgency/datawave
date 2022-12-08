@@ -1,6 +1,7 @@
 package datawave.query.jexl.functions;
 
 import datawave.query.attributes.ValueTuple;
+import datawave.util.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -116,8 +117,9 @@ public class GroupingRequiredFilterFunctions {
                     ValueTuple currentMatch) {
         if (fieldValue != null) {
             String fieldName = ValueTuple.getFieldName(fieldValue);
+            String subgroup = getSubgroup(fieldName);
             boolean contextHasMatch = false;
-            if (fieldName.endsWith(context)) {
+            if (subgroup != null && subgroup.equals(context)) {
                 // includeRegex will return either an emptyCollection, or a SingletonCollection containing
                 // the first match that was found
                 Collection<ValueTuple> rightSideMatches = EvaluationPhaseFilterFunctions.includeRegex(fieldValue, regex);
@@ -131,6 +133,17 @@ public class GroupingRequiredFilterFunctions {
         } else {
             return false;
         }
+    }
+    
+    // move all these kinds of methods into a central utility once we refactor this
+    private static String getSubgroup(String fieldName) {
+        String[] splits = StringUtils.split(fieldName, '.');
+        if (splits.length >= 2) {
+            // return the first group and last group (a.k.a the instance in the first group)
+            return splits[splits.length - 1];
+        }
+        return null;
+        
     }
     
     /**
@@ -202,7 +215,8 @@ public class GroupingRequiredFilterFunctions {
     private static void manageMatchesInGroupRemainingArgs(Object fieldValue, String regex, String context, Collection<ValueTuple> allMatches,
                     ValueTuple currentMatch) {
         String fieldName = ValueTuple.getFieldName(fieldValue);
-        if (fieldName.endsWith(context)) {
+        String subgroup = getSubgroup(fieldName);
+        if (subgroup != null && subgroup.equals(context)) {
             // includeRegex will return either an emptyCollection, or a SingletonCollection containing
             // the first match that was found
             Collection<ValueTuple> rightSideMatches = EvaluationPhaseFilterFunctions.includeRegex(fieldValue, regex);
