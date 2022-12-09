@@ -1,39 +1,38 @@
 package datawave.query.transformer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map.Entry;
-
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
 import datawave.query.table.parser.ContentKeyValueFactory;
 import datawave.query.table.parser.ContentKeyValueFactory.ContentKeyValue;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.logic.BaseQueryLogicTransformer;
-import datawave.webservice.query.result.event.DefaultEvent;
-import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.DefaultEventQueryResponse;
-
+import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 
-public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,DefaultEvent> {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+
+public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,EventBase> {
     
-    private Authorizations auths = null;
-    private Logger log = Logger.getLogger(ContentQueryTransformer.class);
+    protected final Authorizations auths;
+    protected final ResponseObjectFactory responseObjectFactory;
     
-    public ContentQueryTransformer(Query query, MarkingFunctions markingFunctions) {
+    public ContentQueryTransformer(Query query, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
+        this.responseObjectFactory = responseObjectFactory;
     }
     
     @Override
-    public DefaultEvent transform(Entry<Key,Value> entry) {
+    public EventBase transform(Entry<Key,Value> entry) {
         
         if (entry.getKey() == null && entry.getValue() == null)
             return null;
@@ -49,8 +48,8 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
             throw new IllegalArgumentException("Unable to parse visibility", e1);
         }
         
-        DefaultEvent e = new DefaultEvent();
-        DefaultField field = new DefaultField();
+        EventBase e = responseObjectFactory.getEvent();
+        FieldBase field = responseObjectFactory.getField();
         
         e.setMarkings(ckv.getMarkings());
         
@@ -65,21 +64,19 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
         field.setTimestamp(entry.getKey().getTimestamp());
         field.setValue(ckv.getContents());
         
-        List<DefaultField> fields = new ArrayList<>();
+        List<FieldBase> fields = new ArrayList<>();
         fields.add(field);
         e.setFields(fields);
         
         return e;
-        
     }
     
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
-        
-        DefaultEventQueryResponse response = new DefaultEventQueryResponse();
+        EventQueryResponseBase response = responseObjectFactory.getEventQueryResponse();
         List<EventBase> eventList = new ArrayList<>();
         for (Object o : resultList) {
-            DefaultEvent result = (DefaultEvent) o;
+            EventBase result = (EventBase) o;
             eventList.add(result);
         }
         response.setEvents(eventList);
