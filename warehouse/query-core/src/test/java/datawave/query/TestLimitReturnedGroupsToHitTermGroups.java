@@ -274,6 +274,22 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
     }
     
     @Test
+    public void testGroupWithRegexAndMatchesInGroup() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "CANINE=-1,BIRD=-1");
+        extraParameters.put("return.fields", "CANINE,BIRD");
+        
+        String queryString = "CANINE =~ '.*a.*' AND grouping:matchesInGroup(CANINE, '.*a.*', BIRD, '.*o.*')";
+        
+        // definitely should NOT include group 3, 12, or 13. fox are crow are included because matchesInGroup cares about fieldname and subgroup, not group
+        Set<String> goodResults = Sets.newHashSet("BIRD.WILD.2:crow", "CANINE.WILD.2:fox", "CANINE.PET.2:chihuahua", "BIRD.PET.2:parrot");
+        
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+    
+    @Test
     public void testMultipleIncludeGroupingFalse() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "false");

@@ -2,6 +2,7 @@ package datawave.webservice.query.remote;
 
 import com.codahale.metrics.Counter;
 import com.fasterxml.jackson.databind.ObjectReader;
+import datawave.configuration.spring.SpringBean;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
@@ -23,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.xbill.DNS.TextParseException;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
@@ -58,7 +60,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     
     private ObjectReader eventQueryResponseReader;
     
-    private ResponseObjectFactory responseObjectFactory = new DefaultResponseObjectFactory();
+    private ResponseObjectFactory responseObjectFactory;
     
     private RemoteHttpServiceConfiguration config = new RemoteHttpServiceConfiguration();
     
