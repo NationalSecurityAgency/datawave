@@ -10,7 +10,9 @@
     http://www.springframework.org/schema/context/spring-context-4.0.xsd
     http://www.springframework.org/schema/util
     http://www.springframework.org/schema/util/spring-util-4.0.xsd">
-    
+
+    <bean id="ResponseObjectFactory" class="${response.object.factory.class}"/>
+
     <!--  part of what enforces any Required properties to be set on loading of the context -->
     <bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor" />
 
@@ -144,6 +146,7 @@
     <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
         <property name="roleManager" ref="easyRoleManager" />
         <property name="markingFunctions" ref="markingFunctions" />
+        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
     </bean>
 
     <!-- Here is an example of configuring a remote query service and a remote event query -->
@@ -151,7 +154,8 @@
         <property name="queryServiceScheme" value="https" />
         <property name="queryServiceHost" value="localhost" />
         <property name="queryServicePort" value="9443" />
-	<property name="queryServiceURI" value="/DataWave/Query/" />
+        <property name="queryServiceURI" value="/DataWave/Query/" />
+        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
     </bean>
 
     <bean id="RemoteEventQuery" parent="baseQueryLogic" class="datawave.query.tables.RemoteEventQueryLogic">
