@@ -16,12 +16,12 @@ public class EdgePreconditionCacheHelper {
     
     private JexlEngine engine;
     
-    public EdgePreconditionCacheHelper() {
-        createEngine();
+    public EdgePreconditionCacheHelper(EdgePreconditionArithmetic arithmetic) {
+        createEngine(arithmetic);
     }
     
-    private void createEngine() {
-        this.setEngine(new JexlEngine(null, new MultiMapArithmetic(false), null, null));
+    private void createEngine(EdgePreconditionArithmetic arithmetic) {
+        this.setEngine(new EdgeJexlEngine(null, arithmetic, null, null));
         this.getEngine().setDebug(false); // Turn off debugging to make things go faster
         this.getEngine().setCache(50); // Set cache size lower than default value of 512
     }
