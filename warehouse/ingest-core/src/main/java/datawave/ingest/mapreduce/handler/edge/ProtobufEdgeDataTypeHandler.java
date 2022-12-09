@@ -91,11 +91,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     private static final String EDGE_DEFAULT_DATA_TYPE = "default";
     
-    public static final String EDGE_TABLE_BLACKLIST_VALUES = ".protobufedge.table.blacklist.values";
-    public static final String EDGE_TABLE_BLACKLIST_FIELDS = ".protobufedge.table.blacklist.fields";
+    public static final String EDGE_TABLE_DENYLIST_VALUES = ".protobufedge.table.denylist.values";
+    public static final String EDGE_TABLE_DENYLIST_FIELDS = ".protobufedge.table.denylist.fields";
     
     public static final String EDGE_TABLE_METADATA_ENABLE = "protobufedge.table.metadata.enable";
-    public static final String EDGE_TABLE_BLACKIST_ENABLE = "protobufedge.table.blacklist.enable";
+    public static final String EDGE_TABLE_BLACKIST_ENABLE = "protobufedge.table.denylist.enable";
     
     public static final String EDGE_SPRING_CONFIG = "protobufedge.spring.config";
     
@@ -119,9 +119,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     private Map<String,Map<String,String>> edgeTypeLookup = new HashMap<>();
     
-    private Map<String,Set<String>> blacklistFieldLookup = new HashMap<>();
-    private Map<String,Set<String>> blacklistValueLookup = new HashMap<>();
-    private boolean enableBlacklist = false;
+    private Map<String,Set<String>> denylistFieldLookup = new HashMap<>();
+    private Map<String,Set<String>> denylistValueLookup = new HashMap<>();
+    private boolean enableDenylist = false;
     
     private boolean evaluatePreconditions = false;
     private boolean includeAllEdges;
@@ -175,7 +175,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         this.useStatsLogBloomFilter = conf.getBoolean(EDGE_STATS_LOG_USE_BLOOM, false);
         this.metadataTableName = ConfigurationHelper.isNull(conf, METADATA_TABLE_NAME, String.class);
         
-        this.enableBlacklist = ConfigurationHelper.isNull(conf, EDGE_TABLE_BLACKIST_ENABLE, Boolean.class);
+        this.enableDenylist = ConfigurationHelper.isNull(conf, EDGE_TABLE_BLACKIST_ENABLE, Boolean.class);
         this.enableMetadata = ConfigurationHelper.isNull(conf, EDGE_TABLE_METADATA_ENABLE, Boolean.class);
         
         setUpFailurePolicy = FailurePolicy.valueOf(conf.get(EDGE_SETUP_FAILURE_POLICY));
@@ -192,34 +192,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             this.versioningCache = new EdgeKeyVersioningCache(conf);
         }
         
-        try {
-            // Only one known edge key version so we simply grab the first one here
-            
-            // expected to be in the "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" format
-            String startDate = versioningCache.getEdgeKeyVersionDateChange().entrySet().iterator().next().getValue();
-            newFormatStartDate = DateNormalizer.parseDate(startDate, DateNormalizer.FORMAT_STRINGS).getTime();
-            log.info("Edge key version change date set to: " + startDate);
-        } catch (IOException e) {
-            log.error("IO Exception could not get edge key version cache, will not generate edges!");
-            if (setUpFailurePolicy == FailurePolicy.FAIL_JOB) {
-                throw new RuntimeException("IO Exception could not get edge key version cache " + e.getMessage());
-            } else {
-                return; // no edges will be created but the ingest job will continue
-            }
-        } catch (ParseException e) {
-            log.error("Unable to parse the switchover date will not generate edges!");
-            if (setUpFailurePolicy == FailurePolicy.FAIL_JOB) {
-                throw new RuntimeException("Protobufedge handler config not set correctly " + e.getMessage());
-            } else {
-                return; // no edges will be created but the ingest job will continue
-            }
-        } catch (NoSuchElementException e) {
-            log.error("edge key version cache existed but was empty, will not generate edges");
-            if (setUpFailurePolicy == FailurePolicy.FAIL_JOB) {
-                throw new RuntimeException("Edge key versioning cache is empty " + e.getMessage());
-            } else {
-                return; // no edges will be created but the ingest job will continue
-            }
+        if (!versionCacheIsValid()) {
+            return; // no edges will be created but the ingest job will continue
         }
         
         // long term store edge definitions indexed by data type.
@@ -255,26 +229,26 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         
         for (Entry<String,Type> entry : registry.entrySet()) {
             if (ctx.containsBean(entry.getKey())) {
-                EdgeDefinitionConfigurationHelper thing = (EdgeDefinitionConfigurationHelper) ctx.getBean(entry.getKey());
+                EdgeDefinitionConfigurationHelper edgeConfHelper = (EdgeDefinitionConfigurationHelper) ctx.getBean(entry.getKey());
                 
                 // Always call init first before getting getting edge defs. This performs validation on the config file
                 // and builds the edge pairs/groups
-                thing.init(edgeRelationships, collectionType);
+                edgeConfHelper.init(edgeRelationships, collectionType);
                 
-                edges.put(entry.getKey(), thing);
-                if (thing.getEnrichmentTypeMappings() != null) {
-                    edgeTypeLookup.put(entry.getKey(), thing.getEnrichmentTypeMappings());
+                edges.put(entry.getKey(), edgeConfHelper);
+                if (edgeConfHelper.getEnrichmentTypeMappings() != null) {
+                    edgeTypeLookup.put(entry.getKey(), edgeConfHelper.getEnrichmentTypeMappings());
                 }
             }
             
-            if (ctx.containsBean(entry.getKey() + EDGE_TABLE_BLACKLIST_VALUES)) {
-                Set<String> values = (HashSet<String>) ctx.getBean(entry.getKey() + EDGE_TABLE_BLACKLIST_VALUES);
-                blacklistValueLookup.put(entry.getKey(), new HashSet<>(values));
+            if (ctx.containsBean(entry.getKey() + EDGE_TABLE_DENYLIST_VALUES)) {
+                Set<String> values = (HashSet<String>) ctx.getBean(entry.getKey() + EDGE_TABLE_DENYLIST_VALUES);
+                denylistValueLookup.put(entry.getKey(), new HashSet<>(values));
             }
             
-            if (ctx.containsBean(entry.getKey() + EDGE_TABLE_BLACKLIST_FIELDS)) {
-                Set<String> fields = (HashSet<String>) ctx.getBean(entry.getKey() + EDGE_TABLE_BLACKLIST_FIELDS);
-                blacklistFieldLookup.put(entry.getKey(), new HashSet<>(fields));
+            if (ctx.containsBean(entry.getKey() + EDGE_TABLE_DENYLIST_FIELDS)) {
+                Set<String> fields = (HashSet<String>) ctx.getBean(entry.getKey() + EDGE_TABLE_DENYLIST_FIELDS);
+                denylistFieldLookup.put(entry.getKey(), new HashSet<>(fields));
             }
             
         }
@@ -297,39 +271,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         
         registry.remove(EDGE_DEFAULT_DATA_TYPE);
         
-        // loop through edge definitions and collect any ones that have blacklisted fields
-        if (this.enableBlacklist) {
-            Map<String,Set<EdgeDefinition>> blacklistedEdges = new HashMap<>();
-            for (String dType : edges.keySet()) {
-                if (!blacklistedEdges.containsKey(dType)) {
-                    blacklistedEdges.put(dType, new HashSet<>());
-                }
-                for (EdgeDefinition edgeDef : edges.get(dType).getEdges()) {
-                    if (isBlacklistField(dType, edgeDef.getSourceFieldName()) || isBlacklistField(dType, edgeDef.getSinkFieldName())) {
-                        blacklistedEdges.get(dType).add(edgeDef);
-                        log.warn("Removing Edge Definition due to blacklisted Field: DataType: " + dType + " Definition: " + edgeDef.getSourceFieldName() + "-"
-                                        + edgeDef.getSinkFieldName());
-                    } else if (edgeDef.isEnrichmentEdge()) {
-                        if (isBlacklistField(dType, edgeDef.getEnrichmentField())) {
-                            blacklistedEdges.get(dType).add(edgeDef);
-                        }
-                    }
-                }
-            }
-            // remove the blacklistedEdges
-            int blacklistedFieldCount = 0;
-            for (String dType : blacklistedEdges.keySet()) {
-                for (EdgeDefinition edgeDef : blacklistedEdges.get(dType)) {
-                    edges.get(dType).getEdges().remove(edgeDef);
-                    blacklistedFieldCount++;
-                }
-            }
-            if (blacklistedFieldCount > 0) {
-                log.info("Removed " + blacklistedFieldCount + " edge definitions because they contain blacklisted fields.");
-            }
-        } else {
-            log.info("Blacklisting of edges is disabled.");
-        }
+        removeDenyListedEdges();
         
         log.info("Found edge definitions for " + edges.keySet().size() + " data types.");
         
@@ -341,6 +283,75 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         log.info(sb.toString());
         log.info("ProtobufEdgeDataTypeHandler configured.");
         
+    }
+    
+    private void removeDenyListedEdges() {
+        // loop through edge definitions and collect any ones that have denylisted fields
+        if (this.enableDenylist) {
+            Map<String,Set<EdgeDefinition>> denylistedEdges = new HashMap<>();
+            for (String dType : edges.keySet()) {
+                if (!denylistedEdges.containsKey(dType)) {
+                    denylistedEdges.put(dType, new HashSet<>());
+                }
+                for (EdgeDefinition edgeDef : edges.get(dType).getEdges()) {
+                    if (isDenylistField(dType, edgeDef.getSourceFieldName()) || isDenylistField(dType, edgeDef.getSinkFieldName())) {
+                        denylistedEdges.get(dType).add(edgeDef);
+                        log.warn("Removing Edge Definition due to denylisted Field: DataType: " + dType + " Definition: " + edgeDef.getSourceFieldName() + "-"
+                                        + edgeDef.getSinkFieldName());
+                    } else if (edgeDef.isEnrichmentEdge()) {
+                        if (isDenylistField(dType, edgeDef.getEnrichmentField())) {
+                            denylistedEdges.get(dType).add(edgeDef);
+                        }
+                    }
+                }
+            }
+            // remove the denylistedEdges
+            int denylistedFieldCount = 0;
+            for (String dType : denylistedEdges.keySet()) {
+                for (EdgeDefinition edgeDef : denylistedEdges.get(dType)) {
+                    edges.get(dType).getEdges().remove(edgeDef);
+                    denylistedFieldCount++;
+                }
+            }
+            if (denylistedFieldCount > 0) {
+                log.info("Removed " + denylistedFieldCount + " edge definitions because they contain denylisted fields.");
+            }
+        } else {
+            log.info("Denylisting of edges is disabled.");
+        }
+    }
+    
+    private boolean versionCacheIsValid() {
+        try {
+            // Only one known edge key version so we simply grab the first one here
+            
+            // expected to be in the "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" format
+            String startDate = versioningCache.getEdgeKeyVersionDateChange().entrySet().iterator().next().getValue();
+            newFormatStartDate = DateNormalizer.parseDate(startDate, DateNormalizer.FORMAT_STRINGS).getTime();
+            log.info("Edge key version change date set to: " + startDate);
+        } catch (IOException e) {
+            log.error("IO Exception could not get edge key version cache, will not generate edges!");
+            if (setUpFailurePolicy == FailurePolicy.FAIL_JOB) {
+                throw new RuntimeException("IO Exception could not get edge key version cache " + e.getMessage());
+            } else {
+                return false; // no edges will be created but the ingest job will continue
+            }
+        } catch (ParseException e) {
+            log.error("Unable to parse the switchover date will not generate edges!");
+            if (setUpFailurePolicy == FailurePolicy.FAIL_JOB) {
+                throw new RuntimeException("Protobufedge handler config not set correctly " + e.getMessage());
+            } else {
+                return false; // no edges will be created but the ingest job will continue
+            }
+        } catch (NoSuchElementException e) {
+            log.error("edge key version cache existed but was empty, will not generate edges");
+            if (setUpFailurePolicy == FailurePolicy.FAIL_JOB) {
+                throw new RuntimeException("Edge key versioning cache is empty " + e.getMessage());
+            } else {
+                return false; // no edges will be created but the ingest job will continue
+            }
+        }
+        return true;
     }
     
     public void setUpPreconditions() {
@@ -412,30 +423,30 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         this.edges = edges;
     }
     
-    public Map<String,Set<String>> getBlacklistFieldLookup() {
-        return blacklistFieldLookup;
+    public Map<String,Set<String>> getDenylistFieldLookup() {
+        return denylistFieldLookup;
     }
     
-    public Map<String,Set<String>> getBlacklistValueLookup() {
-        return blacklistValueLookup;
+    public Map<String,Set<String>> getDenylistValueLookup() {
+        return denylistValueLookup;
     }
     
-    private boolean isBlacklistField(String dataType, String fieldName) {
-        if (blacklistFieldLookup.containsKey(dataType)) {
-            return this.blacklistFieldLookup.get(dataType).contains(fieldName);
-        } else if (blacklistFieldLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
-            // perhaps there is no blacklist, which is fine
-            return this.blacklistFieldLookup.get(EDGE_DEFAULT_DATA_TYPE).contains(fieldName);
+    private boolean isDenylistField(String dataType, String fieldName) {
+        if (denylistFieldLookup.containsKey(dataType)) {
+            return this.denylistFieldLookup.get(dataType).contains(fieldName);
+        } else if (denylistFieldLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
+            // perhaps there is no denylist, which is fine
+            return this.denylistFieldLookup.get(EDGE_DEFAULT_DATA_TYPE).contains(fieldName);
         }
         return false;
     }
     
-    private boolean isBlacklistValue(String dataType, String fieldValue) {
-        if (blacklistValueLookup.containsKey(dataType)) {
-            return this.blacklistValueLookup.get(dataType).contains(fieldValue);
-        } else if (blacklistValueLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
-            // perhaps there is no blacklist, which is fine
-            return this.blacklistValueLookup.get(EDGE_DEFAULT_DATA_TYPE).contains(fieldValue);
+    private boolean isDenylistValue(String dataType, String fieldValue) {
+        if (denylistValueLookup.containsKey(dataType)) {
+            return this.denylistValueLookup.get(dataType).contains(fieldValue);
+        } else if (denylistValueLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
+            // perhaps there is no denylist, which is fine
+            return this.denylistValueLookup.get(EDGE_DEFAULT_DATA_TYPE).contains(fieldValue);
         }
         return false;
     }
@@ -462,10 +473,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             return edgesCreated;
         } // early short circuit return
         
-        long activityDate = -1;
-        boolean validActivityDate = false;
-        boolean activityEqualsEvent = false;
-        
         String loadDateStr = null;
         
         normalizedFields = HashMultimap.create();
@@ -490,7 +497,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          */
         if (evaluatePreconditions) {
             setupPreconditionEvaluation(fields);
-            
         }
         
         // Get the load date of the event from the fields map
@@ -573,12 +579,12 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                     Set<String> commonKeys = mSource.keySet();
                     commonKeys.retainAll(mSink.keySet());
                     
-                    edgesCreated += linkSubgroups(commonKeys, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
+                    edgesCreated += pairSubgroups(commonKeys, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
                     
                 }
-                // Otherwise we want to multiplex across all values for the sink and source regardless of subgroup
+                // Otherwise we want to multiplexSubgroups across all values for the sink and source regardless of subgroup
                 else {
-                    edgesCreated += multiplex(mSource.keySet(), mSink.keySet(), edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
+                    edgesCreated += multiplexSubgroups(mSource.keySet(), mSink.keySet(), edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
                     
                 }
                 
@@ -586,13 +592,13 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 if (sourceGroup.equals(sinkGroup) && (sourceGroup != NO_GROUP)) {
                     Set<String> commonKeys = matchingGroups.get(sourceGroup);
                     
-                    edgesCreated += linkSubgroups(commonKeys, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
+                    edgesCreated += pairSubgroups(commonKeys, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
                     
                 } else {
                     Set<String> sourceSubGroups = matchingGroups.get(sourceGroup) != null ? matchingGroups.get(sourceGroup) : mSource.keySet();
                     Set<String> sinkSubGroups = matchingGroups.get(sinkGroup) != null ? matchingGroups.get(sinkGroup) : mSink.keySet();
                     
-                    edgesCreated += multiplex(sourceSubGroups, sinkSubGroups, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
+                    edgesCreated += multiplexSubgroups(sourceSubGroups, sinkSubGroups, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
                     
                 }
             }
@@ -664,7 +670,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
      * edges even if they were at different levels of nesting.
      *
      */
-    private long linkSubgroups(Set<String> commonKeys, EdgeDefinition edgeDef, RawRecordContainer event, String sourceGroup, String sinkGroup,
+    private long pairSubgroups(Set<String> commonKeys, EdgeDefinition edgeDef, RawRecordContainer event, String sourceGroup, String sinkGroup,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)
                     throws IOException, InterruptedException {
         
@@ -707,8 +713,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         
     }
     
-    private long multiplex(Set<String> sourceSubGroups, Set<String> sinkSubGroups, EdgeDefinition edgeDef, RawRecordContainer event, String sourceGroup,
-                    String sinkGroup, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
+    private long multiplexSubgroups(Set<String> sourceSubGroups, Set<String> sinkSubGroups, EdgeDefinition edgeDef, RawRecordContainer event,
+                    String sourceGroup, String sinkGroup, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
                     ContextWriter<KEYOUT,VALUEOUT> contextWriter) throws IOException, InterruptedException {
         
         long edgesCreated = 0L;
@@ -841,9 +847,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             return null;
         }
         
-        // check value blacklist
-        if (this.enableBlacklist && isBlacklistValue(typeName, edgeDataBundle.getSource().getValue(ValueType.INDEXED))
-                        || isBlacklistValue(typeName, edgeDataBundle.getSink().getValue(ValueType.INDEXED))) {
+        // check value denylist
+        if (this.enableDenylist && isDenylistValue(typeName, edgeDataBundle.getSource().getValue(ValueType.INDEXED))
+                        || isDenylistValue(typeName, edgeDataBundle.getSink().getValue(ValueType.INDEXED))) {
             return null;
         }
         
