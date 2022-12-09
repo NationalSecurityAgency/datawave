@@ -36,6 +36,13 @@ public class IsNotNullPruningVisitorTest {
         String expected = "filter:includeRegex(FOO, 'ba.*')";
         test(query, expected);
     }
+
+    @Test
+    public void testNotNullTermAndGetAllMatches() {
+        String query = "!(FOO == null) && filter:getAllMatches(FOO, 'ba.*')";
+        String expected = "filter:getAllMatches(FOO, 'ba.*')";
+        test(query, expected);
+    }
     
     // test pruning single 'is not null' term via multiple anchor fields
     
@@ -120,6 +127,18 @@ public class IsNotNullPruningVisitorTest {
         expected = "filter:includeRegex(FOO, 'ba.*')";
         test(query, expected);
     }
+
+    @Test
+    public void testMultipleGetMatchesTermsAndIncludeRegex() {
+        String query = "!(FOO == null) && !(FOO == null) && filter:getAllMatches(FOO, 'ba.*')";
+        String expected = "filter:getAllMatches(FOO, 'ba.*')";
+        test(query, expected);
+
+        // unordered
+        query = "!(FOO == null) && filter:getAllMatches(FOO, 'ba.*') && !(FOO == null)";
+        expected = "filter:getAllMatches(FOO, 'ba.*')";
+        test(query, expected);
+    }
     
     // prune single 'is not null' term from multiple unique terms
     
@@ -141,6 +160,13 @@ public class IsNotNullPruningVisitorTest {
     public void testMultipleUniqueNotNullTermsAndIncludeRegex() {
         String query = "!(FOO == null) && !(FOO2 == null) && filter:includeRegex(FOO, 'br.*')";
         String expected = "!(FOO2 == null) && filter:includeRegex(FOO, 'br.*')";
+        test(query, expected);
+    }
+
+    @Test
+    public void testMultipleUniqueNotNullTermsAndAllMatches() {
+        String query = "!(FOO == null) && !(FOO2 == null) && filter:getAllMatches(FOO, 'br.*')";
+        String expected = "!(FOO2 == null) && filter:getAllMatches(FOO, 'br.*')";
         test(query, expected);
     }
     
@@ -181,7 +207,20 @@ public class IsNotNullPruningVisitorTest {
         expected = "filter:includeRegex(FOO, 'ba.*') && filter:includeRegex(FOO2, 'xy.*')";
         test(query, expected);
     }
-    
+
+
+    @Test
+    public void testUnionOfNotNullTermsAndAllMatches() {
+        String query = "(!(FOO == null) || !(FOO2 == null)) && filter:getAllMatches(FOO, 'ba.*') && filter:getAllMatches(FOO2, 'xy.*')";
+        String expected = "filter:getAllMatches(FOO, 'ba.*') && filter:getAllMatches(FOO2, 'xy.*')";
+        test(query, expected);
+
+        // order should not matter
+        query = "filter:getAllMatches(FOO, 'ba.*') && filter:getAllMatches(FOO2, 'xy.*') && (!(FOO == null) || !(FOO2 == null))";
+        expected = "filter:getAllMatches(FOO, 'ba.*') && filter:getAllMatches(FOO2, 'xy.*')";
+        test(query, expected);
+    }
+
     // test pruning nested expressions
     
     @Test
