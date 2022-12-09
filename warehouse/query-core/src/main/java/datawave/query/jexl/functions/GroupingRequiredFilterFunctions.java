@@ -1,7 +1,6 @@
 package datawave.query.jexl.functions;
 
 import datawave.query.attributes.ValueTuple;
-import datawave.util.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -137,10 +136,9 @@ public class GroupingRequiredFilterFunctions {
     
     // move all these kinds of methods into a central utility once we refactor this
     private static String getSubgroup(String fieldName) {
-        String[] splits = StringUtils.split(fieldName, '.');
-        if (splits.length >= 2) {
-            // return the last group
-            return splits[splits.length - 1];
+        int index = fieldName.lastIndexOf('.');
+        if (index > 0) {
+            return fieldName.substring(index + 1);
         }
         return null;
         
