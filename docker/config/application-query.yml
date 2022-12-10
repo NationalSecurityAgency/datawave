@@ -250,12 +250,14 @@ datawave:
           eventQuery:
             auditType: "NONE"
             logicDescription: "Lucene query for event/document UUIDs"
-            mandatoryQuerySyntax: "LUCENE-UUID"
+            mandatoryQuerySyntax: 
+              - "LUCENE-UUID"
             connPoolName: "UUID"
           errorEventQuery:
             auditType: "NONE"
             logicDescription: "Lucene query for event/document UUIDs for events that encountered errors at ingest time"
-            mandatoryQuerySyntax: "LUCENE-UUID"
+            mandatoryQuerySyntax: 
+              - "LUCENE-UUID"
             connPoolName: "UUID"
             tableName: ${warehouse.errorTables.shard.name}
             dateIndexTableName: ${warehouse.errorTables.dateIndex.name}
