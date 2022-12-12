@@ -101,7 +101,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     private boolean sawEquivalenceRegexSource = false;
     private boolean sawEquivalenceRegexSink = false;
     
-    private static final String AND_ERR_MSG = "And node had unexpected return type";
+    private static final String AND_ERR_MSG = "AND node had unexpected return type";
     private static final String QUERY_SYNTAX_ERR = "Error: problem with query syntax";
     private static final String PARSE_ERR = "Problem parsing query";
     private static final String OR_EXCLUSION_ERR = "Can't OR exclusion expressions";
