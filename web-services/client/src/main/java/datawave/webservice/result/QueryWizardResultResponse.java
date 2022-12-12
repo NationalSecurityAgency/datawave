@@ -1,23 +1,24 @@
 package datawave.webservice.result;
 
+import datawave.webservice.HtmlProvider;
+import datawave.webservice.query.result.EdgeQueryResponseBase;
+import datawave.webservice.query.result.edge.EdgeBase;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
+import datawave.webservice.query.result.istat.FieldStat;
+import datawave.webservice.query.result.istat.IndexStatsResponse;
+import datawave.webservice.query.result.metadata.MetadataFieldBase;
+
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorOrder;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import datawave.webservice.HtmlProvider;
-import datawave.webservice.query.result.edge.EdgeBase;
-import datawave.webservice.query.result.event.DefaultField;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.istat.FieldStat;
-import datawave.webservice.query.result.istat.IndexStatsResponse;
-import datawave.webservice.query.result.metadata.MetadataFieldBase;
-
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 @XmlRootElement(name = "QueryWizardNextResult")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -100,8 +101,8 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
         builder.append("<div id=\"myTable_wrapper\" class=\"dataTables_wrapper no-footer\">\n");
         builder.append("<table id=\"myTable\" class=\"dataTable no-footer\" role=\"grid\" aria-describedby=\"myTable_info\">\n");
         
-        if (response instanceof DefaultEventQueryResponse) {
-            DefaultEventQueryResponse tempResponse = (DefaultEventQueryResponse) response;
+        if (response instanceof EventQueryResponseBase) {
+            EventQueryResponseBase tempResponse = (EventQueryResponseBase) response;
             
             HashSet<String> fieldnameSet = buildTableColumnHeadings(builder, tempResponse);
             HashMap<String,String> fieldNameToValueMap = new HashMap<>();
@@ -114,8 +115,8 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
                 builder.append("<tr>");
                 putTableCell(builder, dataType);
                 for (Object field : event.getFields()) {
-                    if (field instanceof DefaultField) {
-                        DefaultField defaultField = (DefaultField) field;
+                    if (field instanceof FieldBase) {
+                        FieldBase defaultField = (FieldBase) field;
                         fieldNameToValueMap.put(defaultField.getName(), defaultField.getValueString());
                     }
                 }
@@ -132,8 +133,8 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
                 fieldNameToValueMap.clear();
                 builder.append("</tr>");
             }
-        } else if (response instanceof DefaultEdgeQueryResponse) {
-            DefaultEdgeQueryResponse tempResponse = (DefaultEdgeQueryResponse) response;
+        } else if (response instanceof EdgeQueryResponseBase) {
+            EdgeQueryResponseBase tempResponse = (EdgeQueryResponseBase) response;
             builder.append("<thead><tr><th>Source</th><th>Sink</th><th>Edge Type</th><th>Activity Date</th><th>Edge Relationship</th></tr></thead>");
             builder.append("<tbody>");
             for (EdgeBase edge : tempResponse.getEdges()) {
@@ -145,11 +146,11 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
                 putTableCell(builder, edge.getEdgeRelationship());
                 builder.append("</tr>");
             }
-        } else if (response instanceof DefaultMetadataQueryResponse) {
-            DefaultMetadataQueryResponse tempResponse = (DefaultMetadataQueryResponse) response;
+        } else if (response instanceof MetadataQueryResponseBase) {
+            MetadataQueryResponseBase tempResponse = (MetadataQueryResponseBase) response;
             builder.append("<thead><tr><th>Field Name</th><th>Internal Field Name</th><th>Data Type</th><th>Last Updated</th><th>Index only</th></tr></thead>");
             builder.append("<tbody>");
-            for (MetadataFieldBase field : tempResponse.getFields()) {
+            for (MetadataFieldBase field : ((List<MetadataFieldBase>) (tempResponse.getFields()))) {
                 builder.append("<tr>");
                 putTableCell(builder, field.getFieldName());
                 putTableCell(builder, field.getInternalFieldName());
@@ -169,6 +170,8 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
                 putTableCell(builder, String.valueOf(stat.selectivity));
                 putTableCell(builder, String.valueOf(stat.unique));
             }
+        } else {
+            throw new RuntimeException("Cannot handle a " + response.getClass().getSimpleName() + " response type");
         }
         
         builder.append("</tbody>");
@@ -187,14 +190,14 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
         return builder.toString();
     }
     
-    private HashSet<String> buildTableColumnHeadings(StringBuilder builder, DefaultEventQueryResponse tempResponse) {
+    private HashSet<String> buildTableColumnHeadings(StringBuilder builder, EventQueryResponseBase tempResponse) {
         
         HashSet<String> fieldnameSet = new HashSet<>();
         builder.append("<thead><tr><th>DataType</th>");
         for (EventBase event : tempResponse.getEvents()) {
             for (Object field : event.getFields()) {
-                if (field instanceof DefaultField) {
-                    fieldnameSet.add(((DefaultField) field).getName());
+                if (field instanceof FieldBase) {
+                    fieldnameSet.add(((FieldBase) field).getName());
                 }
             }
         }
