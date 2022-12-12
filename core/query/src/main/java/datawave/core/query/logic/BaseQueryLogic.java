@@ -84,6 +84,10 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setConnPoolName(other.getConnPoolName());
         setRequiredRoles(other.getRequiredRoles());
         setSelectorExtractor(other.getSelectorExtractor());
+        setPrincipal(other.getPrincipal());
+        setServerPrincipal(other.getServerPrincipal());
+        setCurrentUser(other.getCurrentUser());
+        setServerUser(other.getServerUser());
     }
     
     public GenericQueryConfiguration getConfig() {
