@@ -8,7 +8,7 @@ import datawave.query.index.stats.IndexStatsRecord;
 import datawave.query.index.stats.IndexStatsSummingIterator;
 import datawave.query.index.stats.MinMaxIterator;
 import datawave.security.util.ScannerHelper;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;

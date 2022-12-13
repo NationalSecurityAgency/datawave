@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.ColumnVisibilityOrFilter;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -49,29 +50,6 @@ public class FieldAgeOffFilter extends AppliedRule {
      * Null byte
      */
     private static final int NULL = 0x00;
-    /**
-     * Document column
-     */
-    private static final Text DOCUMENT_COLUMN = new Text("d");
-    private static final byte[] DOCUMENT_COLUMN_BYTES = DOCUMENT_COLUMN.getBytes();
-    
-    /**
-     * Term frequency column.
-     */
-    private static final Text TF_COLUMN = new Text("tf");
-    /**
-     * tf column bytes.
-     */
-    private static final byte[] TF_COLUMN_BYTES = TF_COLUMN.getBytes();
-    
-    /**
-     * Fi column
-     */
-    private static final Text FI_COLUMN = new Text("fi");
-    /**
-     * Fi column bytes.
-     */
-    private static final byte[] FI_COLUMN_BYTES = FI_COLUMN.getBytes();
     
     /**
      * Minimum shard length
@@ -146,17 +124,17 @@ public class FieldAgeOffFilter extends AppliedRule {
             final byte[] cf = k.getColumnFamilyData().getBackingArray();
             
             byte[] column = null;
-            if (cf.length >= 3 && cf[0] == FI_COLUMN_BYTES[0] && cf[1] == FI_COLUMN_BYTES[1] && cf[2] == NULL) {
-                column = FI_COLUMN_BYTES;
-            } else if (cf.length == 2 && cf[0] == TF_COLUMN_BYTES[0]) {
+            if (cf.length >= 3 && cf[0] == ShardFamilyConstants.FI_BYTES[0] && cf[1] == ShardFamilyConstants.FI_BYTES[1] && cf[2] == NULL) {
+                column = ShardFamilyConstants.FI_BYTES;
+            } else if (cf.length == 2 && cf[0] == ShardFamilyConstants.TF_BYTES[0]) {
                 // no need to check second character as we cannot have a datatype of 't' with an empty UID
-                column = TF_COLUMN_BYTES;
-            } else if (cf.length == 1 && cf[0] == DOCUMENT_COLUMN_BYTES[0]) {
+                column = ShardFamilyConstants.TF_BYTES;
+            } else if (cf.length == 1 && cf[0] == ShardFamilyConstants.DOCUMENT_BYTES[0]) {
                 // if the document column family is encountered, do not attempt to filter its field
                 return true;
             }
             
-            if (column == TF_COLUMN_BYTES) {
+            if (column == ShardFamilyConstants.TF_BYTES) {
                 // CASE 1
                 // The field type is the last fourth part of this entry cq. Use a substring from the last null character to the end of the colQual
                 int nullIndex = -1;
@@ -172,11 +150,11 @@ public class FieldAgeOffFilter extends AppliedRule {
                     field = new ArrayByteSequence(cq, start, length);
                 }
                 
-            } else if (column == FI_COLUMN_BYTES) {
+            } else if (column == ShardFamilyConstants.FI_BYTES) {
                 
                 // CASE 2
                 // For the fi, grab the rest of the string after fi\0
-                int start = FI_COLUMN_BYTES.length + 1;
+                int start = ShardFamilyConstants.FI_BYTES.length + 1;
                 int length = cf.length - start;
                 field = new ArrayByteSequence(cf, start, length);
                 

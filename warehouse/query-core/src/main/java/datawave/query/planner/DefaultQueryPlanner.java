@@ -110,6 +110,7 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
 import datawave.query.util.Tuple2;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
@@ -2399,7 +2400,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         // Set the list of nonEventKeyPrefixes
         if (null != config.getNonEventKeyPrefixes() && !config.getNonEventKeyPrefixes().isEmpty()) {
-            addOption(cfg, QueryOptions.IGNORE_COLUMN_FAMILIES, QueryOptions.buildIgnoredColumnFamiliesString(Sets.newHashSet("d", "tf")), false);
+            addOption(cfg, QueryOptions.IGNORE_COLUMN_FAMILIES,
+                            QueryOptions.buildIgnoredColumnFamiliesString(Sets.newHashSet(ShardFamilyConstants.DOCUMENT, ShardFamilyConstants.TF)), false);
         }
         
         // Include the option to filter masked values

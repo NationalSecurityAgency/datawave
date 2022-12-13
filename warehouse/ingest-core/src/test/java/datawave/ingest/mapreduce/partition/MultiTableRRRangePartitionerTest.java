@@ -5,7 +5,7 @@
 package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;

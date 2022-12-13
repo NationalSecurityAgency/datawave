@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.junit.Assert;
@@ -35,7 +36,7 @@ public class RowHashingPartitionerTest {
     public void testShardAndCFPartitioning() {
         RowHashingPartitioner sdp = new RowHashingPartitioner();
         Configuration conf = new Configuration();
-        conf.set(RowHashingPartitioner.COLUMN_FAMILIES, "tf");
+        conf.set(RowHashingPartitioner.COLUMN_FAMILIES, ShardFamilyConstants.TF);
         sdp.setConf(conf);
         assertColumnFamilyPartitioning(sdp);
     }
@@ -45,9 +46,10 @@ public class RowHashingPartitionerTest {
         Text tbl = new Text("table");
         for (int i = 0; i < 10; ++i) {
             String shard = "20110101_" + i;
-            int expectedReducer = sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, "tf", "fluff")), null, nRed);
+            int expectedReducer = sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, ShardFamilyConstants.TF, "fluff")), null, nRed);
             for (int j = 0; j < 2; ++j) {
-                Assert.assertEquals(expectedReducer, sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, "tf", Integer.toHexString(j))), null, nRed));
+                Assert.assertEquals(expectedReducer,
+                                sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, ShardFamilyConstants.TF, Integer.toHexString(j))), null, nRed));
             }
         }
     }

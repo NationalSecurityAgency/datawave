@@ -11,6 +11,7 @@ import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.TypeMetadata;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -104,7 +105,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         replayAll();
         
         // expected key structure
-        Key key = new Key("row", "fi" + Constants.NULL + "FIELD", "value" + Constants.NULL + "datatype" + Constants.NULL + "123.345.456");
+        Key key = new Key("row", ShardFamilyConstants.FI + Constants.NULL + "FIELD", "value" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456");
         filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), mockAttributeFactory, null, null, -1, -1);
         String field = filter.getCurrentField(key);
         
@@ -121,7 +122,8 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         replayAll();
         
         // expected key structure
-        Key key = new Key("row", "fi" + Constants.NULL + "FIELD.name", "value" + Constants.NULL + "datatype" + Constants.NULL + "123.345.456");
+        Key key = new Key("row", ShardFamilyConstants.FI + Constants.NULL + "FIELD.name", "value" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456");
         filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), mockAttributeFactory, null, null, -1, -1);
         String field = filter.getCurrentField(key);
         
@@ -138,7 +140,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         replayAll();
         
         // expected key structure
-        Key key = new Key("row", "tf", "datatype" + Constants.NULL + "123.234.345" + Constants.NULL + "value" + Constants.NULL + "FIELD");
+        Key key = new Key("row", ShardFamilyConstants.TF, "dataType" + Constants.NULL + "123.234.345" + Constants.NULL + "value" + Constants.NULL + "FIELD");
         filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), mockAttributeFactory, null, null, -1, -1);
         String field = filter.getCurrentField(key);
         
@@ -154,7 +156,8 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         replayAll();
         
         // expected key structure
-        Key key = new Key("row", "tf", "datatype" + Constants.NULL + "123.234.345" + Constants.NULL + "value" + Constants.NULL + "FIELD.name");
+        Key key = new Key("row", ShardFamilyConstants.TF, "dataType" + Constants.NULL + "123.234.345" + Constants.NULL + "value" + Constants.NULL
+                        + "FIELD.name");
         filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), mockAttributeFactory, null, null, -1, -1);
         String field = filter.getCurrentField(key);
         

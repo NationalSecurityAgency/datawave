@@ -3,7 +3,7 @@ package datawave.query.util;
 import com.github.benmanes.caffeine.cache.Cache;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.MockAccumuloRecordWriter;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableNotFoundException;

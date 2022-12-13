@@ -21,7 +21,7 @@ import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.VisibilityWiseGuysIngest;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;

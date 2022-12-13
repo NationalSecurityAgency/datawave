@@ -10,7 +10,7 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.mapreduce.job.writer.DedupeContextWriter;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.query.QueryTestTableHelper;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;

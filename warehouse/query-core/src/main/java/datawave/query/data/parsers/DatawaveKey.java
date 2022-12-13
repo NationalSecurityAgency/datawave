@@ -2,6 +2,7 @@ package datawave.query.data.parsers;
 
 import java.util.Arrays;
 
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
@@ -15,32 +16,6 @@ public class DatawaveKey {
      * Null byte
      */
     public static final int NULL = 0x00;
-    /**
-     * Document column
-     */
-    public static final Text DOCUMENT_COLUMN = new Text("d");
-    
-    /**
-     * Document column
-     */
-    public static final byte[] DOCUMENT_COLUMN_BYTES = DOCUMENT_COLUMN.getBytes();
-    /**
-     * Term frequency column.
-     */
-    public static final Text TF_COLUMN = new Text("tf");
-    
-    /**
-     * Term frequency column.
-     */
-    public static final byte[] TF_COLUMN_BYTES = TF_COLUMN.getBytes();
-    /**
-     * Fi column
-     */
-    public static final Text FI_COLUMN = new Text("fi");
-    /**
-     * Fi column bytes.
-     */
-    public static final byte[] FI_COLUMN_BYTES = FI_COLUMN.getBytes();
     
     protected Key key;
     protected KeyType myType;
@@ -94,10 +69,10 @@ public class DatawaveKey {
         
         // over the course of many evolutions the jit compiler should inline these array checks
         // along with the FI check, below.
-        if (Arrays.equals(cf, TF_COLUMN_BYTES)) {
+        if (Arrays.equals(cf, ShardFamilyConstants.TF_BYTES)) {
             this.shardId = currentKey.getRow().toString();
             return parseTermFrequency(cq);
-        } else if (Arrays.equals(cf, DOCUMENT_COLUMN_BYTES)) {
+        } else if (Arrays.equals(cf, ShardFamilyConstants.DOCUMENT_BYTES)) {
             this.shardId = currentKey.getRow().toString();
             return parseDocumentKey(cq);
         } else {
@@ -110,7 +85,7 @@ public class DatawaveKey {
             }
             
             // for the fi, find the last and second to last null byte, then grab that region
-            if (WritableComparator.compareBytes(cf, 0, nullIndex, FI_COLUMN_BYTES, 0, FI_COLUMN_BYTES.length) == 0) {
+            if (WritableComparator.compareBytes(cf, 0, nullIndex, ShardFamilyConstants.FI_BYTES, 0, ShardFamilyConstants.FI_BYTES.length) == 0) {
                 // fi column
                 this.shardId = currentKey.getRow().toString();
                 

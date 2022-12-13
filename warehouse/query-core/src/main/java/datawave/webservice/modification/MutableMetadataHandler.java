@@ -15,6 +15,7 @@ import datawave.query.data.parsers.DatawaveKey.KeyType;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.util.ScannerHelper;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -1093,7 +1094,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 }
             }
             for (String field : fields) {
-                Key startKey = new Key(shardId, "fi" + NULL_BYTE + field);
+                Key startKey = new Key(shardId, ShardFamilyConstants.FI + NULL_BYTE + field);
                 Key endKey = startKey.followingKey(PartialKey.ROW_COLFAM);
                 Range range = new Range(startKey, true, endKey, false);
                 ranges.add(range);
@@ -1101,8 +1102,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         } else {
             for (Type<?> n : dataTypes) {
                 String indexedValue = n.normalize(fieldValue);
-                Key startKey = new Key(shardId, "fi" + NULL_BYTE + fieldName, indexedValue + NULL_BYTE + datatype + NULL_BYTE);
-                Key endKey = new Key(shardId, "fi" + NULL_BYTE + fieldName, indexedValue + NULL_BYTE + datatype + NULL_BYTE + MAX_CHAR);
+                Key startKey = new Key(shardId, ShardFamilyConstants.FI + NULL_BYTE + fieldName, indexedValue + NULL_BYTE + datatype + NULL_BYTE);
+                Key endKey = new Key(shardId, ShardFamilyConstants.FI + NULL_BYTE + fieldName, indexedValue + NULL_BYTE + datatype + NULL_BYTE + MAX_CHAR);
                 Range range = new Range(startKey, true, endKey, true);
                 ranges.add(range);
             }

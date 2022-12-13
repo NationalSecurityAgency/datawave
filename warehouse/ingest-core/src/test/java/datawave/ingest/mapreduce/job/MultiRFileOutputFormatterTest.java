@@ -13,7 +13,7 @@ import java.util.Set;
 
 import datawave.common.test.logging.CommonTestAppender;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;

@@ -65,7 +65,6 @@ public class EventErrorSummary implements Cloneable, JexlContext {
     public static final char ERROR_TYPE_KEY_VALUE_SPLIT_CHAR = ':';
     
     public static final String NULL_SEP = "\0";
-    public static final String FI_DESIGNATOR = "fi";
     
     public EventErrorSummary(EventErrorSummary summary) {
         this.tableName = new Text(summary.tableName);

@@ -22,7 +22,8 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
-import datawave.util.TableName;
+import datawave.tables.TableName;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -453,41 +454,41 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
                 bw = con.createBatchWriter(TableName.SHARD, bwConfig);
                 mutation = new Mutation(shard);
                 
-                mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("First") + "\u0000" + datatype + "\u0000" + firstUID, columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "UUID", lcNoDiacriticsType.normalize("First") + "\u0000" + datatype + "\u0000" + firstUID,
+                                columnVisibility, timeStamp, emptyValue);
                 
-                mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("Second") + "\u0000" + datatype + "\u0000" + secondUID, columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "UUID", lcNoDiacriticsType.normalize("Second") + "\u0000" + datatype + "\u0000" + secondUID,
+                                columnVisibility, timeStamp, emptyValue);
                 
-                mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("Third") + "\u0000" + datatype + "\u0000" + thirdUID, columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "UUID", lcNoDiacriticsType.normalize("Third") + "\u0000" + datatype + "\u0000" + thirdUID,
+                                columnVisibility, timeStamp, emptyValue);
                 
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("Haiqu") + "\u0000" + datatype + "\u0000" + firstUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("Haiqu") + "\u0000" + datatype + "\u0000" + secondUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("Haiqu") + "\u0000" + datatype + "\u0000" + thirdUID, columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("Haiqu") + "\u0000" + datatype + "\u0000" + firstUID,
+                                columnVisibility, timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("Haiqu") + "\u0000" + datatype + "\u0000" + secondUID,
+                                columnVisibility, timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("Haiqu") + "\u0000" + datatype + "\u0000" + thirdUID,
+                                columnVisibility, timeStamp, emptyValue);
                 
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("NAME0") + "\u0000" + datatype + "\u0000" + firstUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("NAME0") + "\u0000" + datatype + "\u0000" + secondUID, columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("NAME0") + "\u0000" + datatype + "\u0000" + firstUID,
+                                columnVisibility, timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("NAME0") + "\u0000" + datatype + "\u0000" + secondUID,
+                                columnVisibility, timeStamp, emptyValue);
                 
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("NAME1") + "\u0000" + datatype + "\u0000" + firstUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("NAME1") + "\u0000" + datatype + "\u0000" + secondUID, columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("NAME1") + "\u0000" + datatype + "\u0000" + firstUID,
+                                columnVisibility, timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("NAME1") + "\u0000" + datatype + "\u0000" + secondUID,
+                                columnVisibility, timeStamp, emptyValue);
                 
-                mutation.put("fi\u0000" + "BAR", lcNoDiacriticsType.normalize("BAR") + "\u0000" + datatype + "\u0000" + secondUID, columnVisibility, timeStamp,
-                                emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "BAR", lcNoDiacriticsType.normalize("BAR") + "\u0000" + datatype + "\u0000" + secondUID,
+                                columnVisibility, timeStamp, emptyValue);
                 
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("NAME8") + "\u0000" + datatype + "\u0000" + thirdUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("NAME9") + "\u0000" + datatype + "\u0000" + thirdUID, columnVisibility,
-                                timeStamp, emptyValue);
-                mutation.put("fi\u0000" + "BAR", lcNoDiacriticsType.normalize("BAZ") + "\u0000" + datatype + "\u0000" + thirdUID, columnVisibility, timeStamp,
-                                emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("NAME8") + "\u0000" + datatype + "\u0000" + thirdUID,
+                                columnVisibility, timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("NAME9") + "\u0000" + datatype + "\u0000" + thirdUID,
+                                columnVisibility, timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "BAR", lcNoDiacriticsType.normalize("BAZ") + "\u0000" + datatype + "\u0000" + thirdUID,
+                                columnVisibility, timeStamp, emptyValue);
                 
                 bw.addMutation(mutation);
             } finally {

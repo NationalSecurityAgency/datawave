@@ -1,6 +1,7 @@
 package datawave.query;
 
 import datawave.query.jexl.functions.ContentFunctions;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -15,7 +16,7 @@ public class Constants {
     
     public static final String ONE_BYTE = "\u0001";
     
-    public static final String FIELD_INDEX_PREFIX = "fi" + NULL;
+    public static final String FIELD_INDEX_PREFIX = ShardFamilyConstants.FI + NULL;
     
     public static final String MAX_UNICODE_STRING = new String(Character.toChars(Character.MAX_CODE_POINT));
     
@@ -33,11 +34,11 @@ public class Constants {
     
     public static final Text TEXT_NULL = new Text(NULL);
     
-    public static final Text FI_PREFIX = new Text("fi");
+    public static final Text FI_PREFIX = new Text(ShardFamilyConstants.FI);
     
-    public static final Text FI_PREFIX_WITH_NULL = new Text("fi\u0000");
+    public static final Text FI_PREFIX_WITH_NULL = new Text(ShardFamilyConstants.FI + "\u0000");
     
-    public static final String FI_PREFIX_WITH_NULL_STRING = "fi" + NULL_BYTE_STRING;
+    public static final String FI_PREFIX_WITH_NULL_STRING = ShardFamilyConstants.FI + NULL_BYTE_STRING;
     
     public static final byte[] EMPTY_BYTES = new byte[0];
     public static final String EMPTY_STRING = "";
@@ -68,7 +69,7 @@ public class Constants {
     public static final char PARAM_VALUE_SEP = ',';
     
     // From ingest
-    public static final Text TERM_FREQUENCY_COLUMN_FAMILY = new Text("tf");
+    public static final Text TERM_FREQUENCY_COLUMN_FAMILY = ShardFamilyConstants.TF_TXT;
     
     // content functions
     public static final String TERM_OFFSET_MAP_JEXL_VARIABLE_NAME = ContentFunctions.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME;

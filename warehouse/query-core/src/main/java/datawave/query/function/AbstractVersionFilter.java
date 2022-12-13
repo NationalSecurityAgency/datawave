@@ -20,6 +20,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.attributes.Document;
 
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -124,10 +125,6 @@ public abstract class AbstractVersionFilter<A> {
      */
     public static final String DEFAULT_UID_VERSION_PATTERN = "(\\-?+[a-z0-9]*\\.\\-?+[a-z0-9]*\\.\\-?+[a-z0-9]*)((\\+[a-z0-9]*)?+)(\\.\\d++)";
     
-    private static final Text DOCUMENT_COLUMN = new Text("d");
-    private static final Text FI_COLUMN = new Text("fi");
-    private static final byte[] FI_COLUMN_BYTES = FI_COLUMN.getBytes();
-    
     public static final String KEY_JSON = NORMALIZED_VERSION_FILTER_ROOT_KEY + ".json";
     public static final String KEY_DATA_TYPE = NORMALIZED_VERSION_FILTER_ROOT_KEY + ".datatype";
     public static final String KEY_DATA_TYPES = NORMALIZED_VERSION_FILTER_ROOT_KEY + ".datatypes";
@@ -137,7 +134,6 @@ public abstract class AbstractVersionFilter<A> {
     private static final Logger LOG = Logger.getLogger(AbstractVersionFilter.class);
     private static final NumberType NUMBER_NORMALIZER = new VersionNumberType();
     private static final String NUMBER_NORMALIZER_MAX_VALUE = NUMBER_NORMALIZER.normalize(Integer.toString(Integer.MAX_VALUE));
-    private static final Text TF_COLUMN = new Text("tf");
     
     private static boolean USE_PARENT_DENORMALIZER = true;
     
@@ -206,7 +202,7 @@ public abstract class AbstractVersionFilter<A> {
                 final Text cfText = key.getColumnFamily();
                 byte[] dataTypeUidBytes = cfText.getBytes();
                 int nullIndex = -1;
-                if (!DOCUMENT_COLUMN.equals(cfText) && !TF_COLUMN.equals(cfText)) {
+                if (!ShardFamilyConstants.DOCUMENT_TXT.equals(cfText) && !ShardFamilyConstants.TF_TXT.equals(cfText)) {
                     for (int i = 0; i < dataTypeUidBytes.length - 1; i++) {
                         if (dataTypeUidBytes[i] == '\0') {
                             nullIndex = i;
@@ -224,7 +220,7 @@ public abstract class AbstractVersionFilter<A> {
                     //
                     // Note: Again, this sort of character comparison and iteration was lifted from the DataTypeFilter,
                     // presumably as a more efficient means than expensive java.lang.String operations.
-                    if (WritableComparator.compareBytes(dataTypeUidBytes, 0, nullIndex, FI_COLUMN_BYTES, 0, FI_COLUMN_BYTES.length) == 0) {
+                    if (WritableComparator.compareBytes(dataTypeUidBytes, 0, nullIndex, ShardFamilyConstants.FI_BYTES, 0, ShardFamilyConstants.FI_BYTES.length) == 0) {
                         // Look for the data type and Uid portions of the column qualifier
                         final Text cqText = key.getColumnQualifier();
                         byte[] cqBytes = cqText.getBytes();
@@ -597,7 +593,7 @@ public abstract class AbstractVersionFilter<A> {
             // Create the range, if applicable
             if (null != fieldName) {
                 final String normalizedStub = (normalizedStubLength > 0) ? normalizedVersion.substring(0, normalizedStubLength) : StringUtils.EMPTY;
-                final Key start = new Key(row, new Text(FIELD_INDEX_PREFIX + fieldName), new Text(normalizedVersion.toString() + '\0' + dataType + '\0'
+                final Key start = new Key(row, new Text(ShardFamilyConstants.FI + fieldName), new Text(normalizedVersion.toString() + '\0' + dataType + '\0'
                                 + baseUid));
                 final Key end = new Key(row, new Text(FIELD_INDEX_PREFIX + fieldName), new Text(normalizedStub + NUMBER_NORMALIZER_MAX_VALUE + '\0' + dataType
                                 + '\0' + baseUid));

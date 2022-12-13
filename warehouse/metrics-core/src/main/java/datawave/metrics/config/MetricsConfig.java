@@ -1,6 +1,6 @@
 package datawave.metrics.config;
 
-import datawave.util.TableName;
+import datawave.tables.TableName;
 
 import java.util.concurrent.TimeUnit;
 

@@ -3,7 +3,7 @@ package datawave.ingest.mapreduce.partition;
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.ShardedTableMapFile;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;

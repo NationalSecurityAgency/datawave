@@ -27,7 +27,7 @@ import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;

@@ -13,7 +13,7 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;

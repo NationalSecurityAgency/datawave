@@ -15,7 +15,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentIndexingColumnBasedHandler;
 import datawave.policy.ExampleIngestPolicyEnforcer;
 
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;

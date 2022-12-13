@@ -2,6 +2,7 @@ package datawave.query.tld;
 
 import com.google.common.collect.Lists;
 import datawave.query.Constants;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -39,14 +40,14 @@ public class TLDTest {
     
     // Build a Forward-Index Key for the Shard table
     private Key buildFiKey(String uid) {
-        String cf = "fi" + '\u0000' + field;
+        String cf = ShardFamilyConstants.FI + '\u0000' + field;
         String cq = value + '\u0000' + datatype + '\u0000' + uid;
         return new Key(row, cf, cq);
     }
     
     // Build a Term-Frequency Key for the Shard table
     private Key buildTFKey(String uid) {
-        String cf = "tf";
+        String cf = ShardFamilyConstants.TF;
         String cq = datatype + '\u0000' + uid + '\u0000' + value + '\u0000' + field;
         long timestamp = 0L;
         return new Key(row, cf, cq, timestamp);

@@ -9,7 +9,7 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;

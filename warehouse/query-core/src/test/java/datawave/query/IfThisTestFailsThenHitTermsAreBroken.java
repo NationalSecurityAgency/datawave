@@ -23,7 +23,8 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.util.ScannerHelper;
-import datawave.util.TableName;
+import datawave.tables.TableName;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -519,14 +520,14 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                 bw = con.createBatchWriter(TableName.SHARD, bwConfig);
                 mutation = new Mutation(shard);
                 
-                mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("First") + "\u0000" + datatype + "\u0000" + firstUID, columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "UUID", lcNoDiacriticsType.normalize("First") + "\u0000" + datatype + "\u0000" + firstUID,
+                                columnVisibility, timeStamp, emptyValue);
                 
-                mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("Second") + "\u0000" + datatype + "\u0000" + secondUID, columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "UUID", lcNoDiacriticsType.normalize("Second") + "\u0000" + datatype + "\u0000" + secondUID,
+                                columnVisibility, timeStamp, emptyValue);
                 
-                mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("Third") + "\u0000" + datatype + "\u0000" + thirdUID, columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "UUID", lcNoDiacriticsType.normalize("Third") + "\u0000" + datatype + "\u0000" + thirdUID,
+                                columnVisibility, timeStamp, emptyValue);
                 
                 bw.addMutation(mutation);
             } finally {

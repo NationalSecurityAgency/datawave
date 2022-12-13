@@ -13,7 +13,8 @@ import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.util.TableName;
+import datawave.tables.TableName;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -250,58 +251,70 @@ public class CompositeTestingIngest {
             mutation = new Mutation(shard);
             // corleones
             // uuid
-            mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("One") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "UUID", lcNoDiacriticsType.normalize("One") + "\u0000" + datatype + "\u0000" + oneUUID,
+                            columnVisibility, timeStamp, emptyValue);
             // names
-            mutation.put("fi\u0000" + "COLOR", ucType.normalize("Red") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "COLOR", ucType.normalize("Blue") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE", ucType.normalize("Ford") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE", ucType.normalize("Chevy") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "COLOR", ucType.normalize("Red") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility,
+                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "COLOR", ucType.normalize("Blue") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility,
+                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE", ucType.normalize("Ford") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility,
+                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE", ucType.normalize("Chevy") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility,
+                            timeStamp, emptyValue);
             
             // sopranos
             // uuid
-            mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("Two") + "\u0000" + datatype + "\u0000" + twoUUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "UUID", lcNoDiacriticsType.normalize("Two") + "\u0000" + datatype + "\u0000" + twoUUID,
+                            columnVisibility, timeStamp, emptyValue);
             // names
-            mutation.put("fi\u0000" + "COLOR", ucType.normalize("Pink") + "\u0000" + datatype + "\u0000" + twoUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "COLOR", ucType.normalize("Green") + "\u0000" + datatype + "\u0000" + twoUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "COLOR", ucType.normalize("Pink") + "\u0000" + datatype + "\u0000" + twoUUID, columnVisibility,
+                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "COLOR", ucType.normalize("Green") + "\u0000" + datatype + "\u0000" + twoUUID, columnVisibility,
+                            timeStamp, emptyValue);
             // genders
-            mutation.put("fi\u0000" + "MAKE", ucType.normalize("Toyota") + "\u0000" + datatype + "\u0000" + twoUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE", ucType.normalize("Chevy") + "\u0000" + datatype + "\u0000" + twoUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE", ucType.normalize("Toyota") + "\u0000" + datatype + "\u0000" + twoUUID, columnVisibility,
+                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE", ucType.normalize("Chevy") + "\u0000" + datatype + "\u0000" + twoUUID, columnVisibility,
+                            timeStamp, emptyValue);
             // capones
             // uuid
-            mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("Three") + "\u0000" + datatype + "\u0000" + threeUUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "UUID", lcNoDiacriticsType.normalize("Three") + "\u0000" + datatype + "\u0000" + threeUUID,
+                            columnVisibility, timeStamp, emptyValue);
             // names
-            mutation.put("fi\u0000" + "COLOR", ucType.normalize("Cyan") + "\u0000" + datatype + "\u0000" + threeUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "COLOR", ucType.normalize("Purple") + "\u0000" + datatype + "\u0000" + threeUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE", ucType.normalize("Subaru") + "\u0000" + datatype + "\u0000" + threeUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE", ucType.normalize("Nissan") + "\u0000" + datatype + "\u0000" + threeUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "COLOR", ucType.normalize("Cyan") + "\u0000" + datatype + "\u0000" + threeUUID, columnVisibility,
+                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "COLOR", ucType.normalize("Purple") + "\u0000" + datatype + "\u0000" + threeUUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE", ucType.normalize("Subaru") + "\u0000" + datatype + "\u0000" + threeUUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE", ucType.normalize("Nissan") + "\u0000" + datatype + "\u0000" + threeUUID,
+                            columnVisibility, timeStamp, emptyValue);
             
-            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Ford" + CompositeIngest.DEFAULT_SEPARATOR + "red") + "\u0000" + datatype + "\u0000"
-                            + oneUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Ford" + CompositeIngest.DEFAULT_SEPARATOR + "blue") + "\u0000" + datatype + "\u0000"
-                            + oneUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Chevy" + CompositeIngest.DEFAULT_SEPARATOR + "red") + "\u0000" + datatype + "\u0000"
-                            + oneUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Chevy" + CompositeIngest.DEFAULT_SEPARATOR + "blue") + "\u0000" + datatype + "\u0000"
-                            + oneUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Toyota" + CompositeIngest.DEFAULT_SEPARATOR + "pink") + "\u0000" + datatype + "\u0000"
-                            + twoUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Toyota" + CompositeIngest.DEFAULT_SEPARATOR + "green") + "\u0000" + datatype + "\u0000"
-                            + twoUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("VW" + CompositeIngest.DEFAULT_SEPARATOR + "pink") + "\u0000" + datatype + "\u0000"
-                            + twoUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("VW" + CompositeIngest.DEFAULT_SEPARATOR + "green") + "\u0000" + datatype + "\u0000"
-                            + twoUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Subaru" + CompositeIngest.DEFAULT_SEPARATOR + "cyan") + "\u0000" + datatype + "\u0000"
-                            + threeUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Subaru" + CompositeIngest.DEFAULT_SEPARATOR + "purple") + "\u0000" + datatype + "\u0000"
-                            + threeUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Nissan" + CompositeIngest.DEFAULT_SEPARATOR + "cyan") + "\u0000" + datatype + "\u0000"
-                            + threeUUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Nissan" + CompositeIngest.DEFAULT_SEPARATOR + "purple") + "\u0000" + datatype + "\u0000"
-                            + threeUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE_COLOR", ucType.normalize("Ford" + CompositeIngest.DEFAULT_SEPARATOR + "red") + "\u0000"
+                            + datatype + "\u0000" + oneUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE_COLOR", ucType.normalize("Ford" + CompositeIngest.DEFAULT_SEPARATOR + "blue") + "\u0000"
+                            + datatype + "\u0000" + oneUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE_COLOR", ucType.normalize("Chevy" + CompositeIngest.DEFAULT_SEPARATOR + "red") + "\u0000"
+                            + datatype + "\u0000" + oneUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE_COLOR", ucType.normalize("Chevy" + CompositeIngest.DEFAULT_SEPARATOR + "blue") + "\u0000"
+                            + datatype + "\u0000" + oneUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE_COLOR", ucType.normalize("Toyota" + CompositeIngest.DEFAULT_SEPARATOR + "pink") + "\u0000"
+                            + datatype + "\u0000" + twoUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE_COLOR", ucType.normalize("Toyota" + CompositeIngest.DEFAULT_SEPARATOR + "green") + "\u0000"
+                            + datatype + "\u0000" + twoUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE_COLOR", ucType.normalize("VW" + CompositeIngest.DEFAULT_SEPARATOR + "pink") + "\u0000"
+                            + datatype + "\u0000" + twoUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE_COLOR", ucType.normalize("VW" + CompositeIngest.DEFAULT_SEPARATOR + "green") + "\u0000"
+                            + datatype + "\u0000" + twoUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE_COLOR", ucType.normalize("Subaru" + CompositeIngest.DEFAULT_SEPARATOR + "cyan") + "\u0000"
+                            + datatype + "\u0000" + threeUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE_COLOR", ucType.normalize("Subaru" + CompositeIngest.DEFAULT_SEPARATOR + "purple")
+                            + "\u0000" + datatype + "\u0000" + threeUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE_COLOR", ucType.normalize("Nissan" + CompositeIngest.DEFAULT_SEPARATOR + "cyan") + "\u0000"
+                            + datatype + "\u0000" + threeUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "MAKE_COLOR", ucType.normalize("Nissan" + CompositeIngest.DEFAULT_SEPARATOR + "purple")
+                            + "\u0000" + datatype + "\u0000" + threeUUID, columnVisibility, timeStamp, emptyValue);
             
             bw.addMutation(mutation);
             

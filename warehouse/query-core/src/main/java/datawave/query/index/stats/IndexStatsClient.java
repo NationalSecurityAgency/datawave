@@ -20,7 +20,7 @@ import datawave.core.iterators.filter.CsvKeyFilter;
 import datawave.iterators.IteratorSettingHelper;
 import datawave.query.Constants;
 
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;

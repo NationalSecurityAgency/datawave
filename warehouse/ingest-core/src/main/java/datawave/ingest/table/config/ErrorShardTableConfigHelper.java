@@ -7,6 +7,7 @@ import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.error.ErrorShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.StringUtils;
@@ -41,9 +42,8 @@ public class ErrorShardTableConfigHelper extends ShardTableConfigHelper {
         
         String localityGroupsConf = null;
         if (tableName.equals(shardTableName)) {
-            localityGroupsConf = conf.get(shardTableName + LOCALITY_GROUPS, ExtendedDataTypeHandler.FULL_CONTENT_LOCALITY_NAME + ':'
-                            + ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY + ',' + ExtendedDataTypeHandler.TERM_FREQUENCY_LOCALITY_NAME + ':'
-                            + ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY);
+            localityGroupsConf = conf.get(shardTableName + LOCALITY_GROUPS, ShardFamilyConstants.FULL_CONTENT_LOCALITY_NAME + ':'
+                            + ShardFamilyConstants.DOCUMENT + ',' + ShardFamilyConstants.TERM_FREQUENCY_LOCALITY_NAME + ':' + ShardFamilyConstants.TF);
             for (String localityGroupDefConf : StringUtils.split(localityGroupsConf)) {
                 String[] localityGroupDef = StringUtils.split(localityGroupDefConf, '\\', ':');
                 Set<Text> families = localityGroups.get(localityGroupDef[0]);

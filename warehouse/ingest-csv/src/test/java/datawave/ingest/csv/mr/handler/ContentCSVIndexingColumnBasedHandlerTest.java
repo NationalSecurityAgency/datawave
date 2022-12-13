@@ -19,7 +19,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;

@@ -36,6 +36,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.Uid;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.util.TextUtil;
 
 import org.apache.accumulo.core.client.BatchWriter;
@@ -587,8 +588,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, StatusReporter reporter, Text uid, byte[] visibility,
                     byte[] shardId, byte[] rawValue) throws IOException, InterruptedException, MutationsRejectedException {
         
-        Key k = createKey(shardId, new Text(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY), uid, visibility, event.getDate(),
-                        this.ingestHelper.getDeleteMode());
+        Key k = createKey(shardId, new Text(ShardFamilyConstants.DOCUMENT), uid, visibility, event.getDate(), this.ingestHelper.getDeleteMode());
         
         ByteArrayOutputStream baos = null;
         Base64.OutputStream b64os = null;
@@ -746,7 +746,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     protected void createShardFieldIndexColumn(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,
                     Value value, byte[] visibility, boolean replaceMalformedUTF8, boolean deleteMode) throws IOException, InterruptedException {
-        Text colf = new Text("fi");
+        Text colf = new Text(ShardFamilyConstants.FI);
         TextUtil.textAppend(colf, nFV.getIndexedFieldName(), replaceMalformedUTF8);
         Text colq = new Text(nFV.getIndexedFieldValue());
         TextUtil.textAppend(colq, this.eventDataTypeName, replaceMalformedUTF8);
@@ -800,8 +800,8 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
                         .append(nfv.getIndexedFieldName());
         
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId,
-                        ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), visibility, event.getDate(), deleteMode));
+        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ShardFamilyConstants.TF_BYTES, colq.toString().getBytes(),
+                        visibility, event.getDate(), deleteMode));
         
         contextWriter.write(bKey, value, context);
     }

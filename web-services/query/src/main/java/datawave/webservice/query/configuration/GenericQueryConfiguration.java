@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
 
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.logic.BaseQueryLogic;
 

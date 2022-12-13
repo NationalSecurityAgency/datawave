@@ -7,6 +7,7 @@ import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.query.Constants;
 import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -40,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
     
     private static final Text row = new Text("20220115_1");
-    private static final Text colf = ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY;
+    private static final Text colf = ShardFamilyConstants.TF_TXT;
     
     @Mock
     private IteratorEnvironment env;

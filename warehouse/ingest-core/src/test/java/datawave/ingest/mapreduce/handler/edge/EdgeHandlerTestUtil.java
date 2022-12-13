@@ -11,7 +11,8 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
-import datawave.util.TableName;
+import datawave.tables.TableName;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
@@ -35,7 +36,7 @@ public class EdgeHandlerTestUtil {
     private static Logger log = Logger.getLogger(EdgeHandlerTestUtil.class);
     
     public static boolean isDocumentKey(Key k) {
-        return isShardKey(k) && k.getColumnFamily().toString().equals(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY);
+        return isShardKey(k) && k.getColumnFamily().toString().equals(ShardFamilyConstants.DOCUMENT);
     }
     
     public static boolean isShardKey(Key k) {

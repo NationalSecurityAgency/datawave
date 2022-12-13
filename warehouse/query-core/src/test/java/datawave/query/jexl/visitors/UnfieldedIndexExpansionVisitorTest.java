@@ -11,7 +11,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;

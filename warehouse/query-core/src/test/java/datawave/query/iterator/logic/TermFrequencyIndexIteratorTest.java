@@ -14,6 +14,7 @@ import datawave.query.predicate.TLDEventDataFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.tld.TLDTermFrequencyAggregator;
 import datawave.query.util.TypeMetadata;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -453,11 +454,11 @@ public class TermFrequencyIndexIteratorTest {
     }
     
     private Key getFiKey(String row, String dataType, String uid, String fieldName, String fieldValue) {
-        return new Key(row, "fi" + Constants.NULL + fieldName, fieldValue + Constants.NULL + dataType + Constants.NULL + uid);
+        return new Key(row, ShardFamilyConstants.FI + Constants.NULL + fieldName, fieldValue + Constants.NULL + dataType + Constants.NULL + uid);
     }
     
     private Key getTfKey(String row, String dataType, String uid, String fieldName, String fieldValue) {
-        return new Key(row, "tf", dataType + Constants.NULL + uid + Constants.NULL + fieldValue + Constants.NULL + fieldName);
+        return new Key(row, ShardFamilyConstants.TF, dataType + Constants.NULL + uid + Constants.NULL + fieldValue + Constants.NULL + fieldName);
     }
     
 }

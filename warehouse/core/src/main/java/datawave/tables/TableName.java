@@ -1,4 +1,4 @@
-package datawave.util;
+package datawave.tables;
 
 /**
  * Class that contains default table names

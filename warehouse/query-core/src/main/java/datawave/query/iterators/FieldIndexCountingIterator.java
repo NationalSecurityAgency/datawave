@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.util.TextUtil;
 import datawave.iterators.IteratorSettingHelper;
 import datawave.marking.MarkingFunctions;
@@ -86,7 +87,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
     
     public static final String ONE_BYTE_STRING = "\u0001";
     public static final String DATE_FORMAT_STRING = "yyyyMMddHHmmss";
-    public static final Text fi_PREFIX_TEXT = new Text("fi\u0000");
+    public static final Text fi_PREFIX_TEXT = new Text(ShardFamilyConstants.FI + "\u0000");
     
     private Set<Text> visibilitySet = new HashSet<>();
     

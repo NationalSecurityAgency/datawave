@@ -2,6 +2,7 @@ package datawave.webservice.atom;
 
 import java.io.IOException;
 
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.abdera.Abdera;
 import org.apache.abdera.i18n.iri.IRI;
 import org.apache.abdera.model.Entry;
@@ -77,7 +78,7 @@ public class AtomKeyValueParserTest {
         Assert.assertEquals("row1", resultKV.getCollectionName());
         Assert.assertNotEquals(resultKV.getId(), kv.decodeId(resultKV.getId()));
         Assert.assertEquals("color", resultKV.getUuid());
-        Assert.assertEquals("fi", resultKV.getValue());
+        Assert.assertEquals(ShardFamilyConstants.FI, resultKV.getValue());
     }
     
     @SuppressWarnings("static-access")
@@ -126,7 +127,7 @@ public class AtomKeyValueParserTest {
     @SuppressWarnings("static-access")
     @Test
     public void testMissingColQual() {
-        Key key = new Key(new Text("row1\0row2and3"), new Text("fi"), new Text("red\0truck\0t-uid001"));
+        Key key = new Key(new Text("row1\0row2and3"), new Text(ShardFamilyConstants.FI), new Text("red\0truck\0t-uid001"));
         byte[] vals = new byte[4];
         Value value = new Value(vals);
         thrown.expect(IllegalArgumentException.class);

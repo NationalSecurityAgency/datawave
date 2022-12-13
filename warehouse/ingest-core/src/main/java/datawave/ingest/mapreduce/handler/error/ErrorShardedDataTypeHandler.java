@@ -22,6 +22,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.marking.MarkingFunctions;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
@@ -308,8 +309,8 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         
         // ShardId 'd' DataType\0UID\0Name for document content event using Event.Writable
         String colq = record.getDataType().outputName() + '\0' + record.getId() + '\0' + EVENT_CONTENT_FIELD;
-        Key k = createKey(getShardId(record), new Text(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY), new Text(colq), getVisibility(record, null),
-                        record.getDate(), this.helper.getDeleteMode());
+        Key k = createKey(getShardId(record), new Text(ShardFamilyConstants.DOCUMENT), new Text(colq), getVisibility(record, null), record.getDate(),
+                        this.helper.getDeleteMode());
         BulkIngestKey ebKey = new BulkIngestKey(getShardTableName(), k);
         contextWriter.write(ebKey, value, context);
         

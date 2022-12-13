@@ -44,7 +44,7 @@ import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELA
 import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_INTERSECT;
 import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_UNION;
 import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQuery;
-import static datawave.util.TableName.SHARD_INDEX;
+import static datawave.tables.TableName.SHARD_INDEX;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;

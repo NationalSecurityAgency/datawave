@@ -17,6 +17,7 @@ import datawave.query.util.TraceIterators;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
 import datawave.query.util.TypeMetadata;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -42,7 +43,6 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
     /**
      * Column family for term frequency records in the shard table
      */
-    public static final String TF_COLUMN_FAMILY = "tf";
     
     private static Logger LOG = Logger.getLogger(IndexOnlyFunctionIterator.class);
     
@@ -121,7 +121,7 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
             final Range parent = this.parentRange;
             final Key startKey = parent.getStartKey();
             final Text tfRow = startKey.getRow();
-            final Text tfCf = new Text(TF_COLUMN_FAMILY);
+            final Text tfCf = ShardFamilyConstants.TF_TXT;
             Text tfPartialCq = startKey.getColumnFamily();
             if ((tfPartialCq.getLength() == 0) && (null != this.documentKey)) {
                 tfPartialCq = this.documentKey.getColumnFamily();

@@ -9,6 +9,7 @@ import datawave.accumulo.inmemory.ScannerRebuilder;
 import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchDeleter;
@@ -247,7 +248,7 @@ public class RebuildingScannerTestHelper {
         
         @Override
         public boolean interrupt(Key key) {
-            if (key != null && key.getColumnFamily().toString().startsWith("fi" + Constants.NULL)) {
+            if (key != null && key.getColumnFamily().toString().startsWith(ShardFamilyConstants.FI + Constants.NULL)) {
                 return super.interrupt(key);
             }
             

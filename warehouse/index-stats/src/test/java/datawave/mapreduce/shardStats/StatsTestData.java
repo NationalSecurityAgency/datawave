@@ -2,6 +2,7 @@ package datawave.mapreduce.shardStats;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
@@ -114,7 +115,7 @@ enum StatsTestData {
     StatsTestData(String date, String fieldName, String type, String fieldValue) {
         // create mapper input key
         Text rowId = new Text(date + "_1");
-        Text colFam = new Text("fi" + StatsInit.NUL_SEPERATOR + fieldName);
+        Text colFam = new Text(ShardFamilyConstants.FI + StatsInit.NUL_SEPERATOR + fieldName);
         Text colQual = new Text(fieldValue + StatsInit.NUL_SEPERATOR + type + StatsInit.NUL_SEPERATOR + "uid");
         this.mapperInputKey = new Key(rowId, colFam, colQual);
         

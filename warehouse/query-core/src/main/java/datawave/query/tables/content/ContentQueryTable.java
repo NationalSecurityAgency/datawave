@@ -6,6 +6,7 @@ import datawave.query.config.ContentQueryConfiguration;
 import datawave.query.Constants;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.transformer.ContentQueryTransformer;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
@@ -203,7 +204,7 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
                     log.debug("Received pieces: " + shardId + ", " + datatype + ", " + uid);
                     
                     // Create and add a Range
-                    final String cf = ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY;
+                    final String cf = ShardFamilyConstants.DOCUMENT;
                     final String cq = datatype + Constants.NULL_BYTE_STRING + uid;
                     final Key startKey = new Key(shardId, cf, cq + Constants.NULL_BYTE_STRING);
                     final Key endKey = new Key(shardId, cf, cq + endKeyTerminator);

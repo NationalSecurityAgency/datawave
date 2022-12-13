@@ -7,6 +7,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.tld.TLD;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -82,7 +83,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         Object objValue = JexlASTHelper.getLiteralValue(node);
         String value = null == objValue ? "null" : objValue.toString();
         
-        StringBuilder builder = new StringBuilder("fi");
+        StringBuilder builder = new StringBuilder(ShardFamilyConstants.FI);
         builder.append(NULL_DELIMETER).append(identifier);
         
         Text cf = new Text(builder.toString());
@@ -318,7 +319,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         Object objValue = JexlASTHelper.getLiteralValue(node);
         String fieldValuie = null == objValue ? "null" : objValue.toString();
         
-        StringBuilder builder = new StringBuilder("fi");
+        StringBuilder builder = new StringBuilder(ShardFamilyConstants.FI);
         builder.append(NULL_DELIMETER).append(fieldName);
         Text cf = new Text(builder.toString());
         

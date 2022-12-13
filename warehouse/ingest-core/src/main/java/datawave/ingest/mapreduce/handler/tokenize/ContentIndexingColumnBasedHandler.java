@@ -33,6 +33,7 @@ import datawave.ingest.util.BloomFilterUtil;
 import datawave.ingest.util.BloomFilterWrapper;
 import datawave.ingest.util.Identity;
 import datawave.ingest.util.TimeoutStrategy;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.util.TextUtil;
 
 import org.apache.accumulo.core.data.Key;
@@ -595,9 +596,8 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
                         .append(nfv.getIndexedFieldName());
         
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId,
-                        ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), visibility, event.getDate(),
-                        helper.getDeleteMode()));
+        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ShardFamilyConstants.TF_BYTES, colq.toString().getBytes(),
+                        visibility, event.getDate(), helper.getDeleteMode()));
         
         values.put(bKey, value);
     }

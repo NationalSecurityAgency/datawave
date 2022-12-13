@@ -12,7 +12,7 @@ import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;

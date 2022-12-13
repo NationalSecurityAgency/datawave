@@ -8,7 +8,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.nyctlc.NYCTLCHelper;
 import datawave.ingest.nyctlc.NYCTLCIngestHelper;
 import datawave.ingest.nyctlc.NYCTLCReader;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;

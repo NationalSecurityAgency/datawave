@@ -12,7 +12,7 @@ import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;

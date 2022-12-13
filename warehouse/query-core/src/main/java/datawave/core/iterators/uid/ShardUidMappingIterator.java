@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.util.StringUtils;
 
 import org.apache.accumulo.core.data.ByteSequence;
@@ -98,9 +99,9 @@ public class ShardUidMappingIterator extends UidMappingIterator {
             } else { // assume DataType\0UID column family
                 keyValue = replaceEventUidInCF(keyValue, 1, startKey, startKeyInclusive, endKey, endKeyInclusive);
             }
-        } else if (cf.equals("d")) {
+        } else if (cf.equals(ShardFamilyConstants.DOCUMENT)) {
             keyValue = replaceEventUidInCQ(keyValue, 1, startKey, startKeyInclusive, endKey, endKeyInclusive);
-        } else if (cf.equals("tf")) {
+        } else if (cf.equals(ShardFamilyConstants.TF)) {
             keyValue = replaceEventUidInCQ(keyValue, 1, startKey, startKeyInclusive, endKey, endKeyInclusive);
         }
         return keyValue;

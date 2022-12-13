@@ -4,6 +4,7 @@ import datawave.query.function.Equality;
 import datawave.query.Constants;
 import datawave.query.function.AncestorEquality;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -89,7 +90,7 @@ public class AncestorChildExpansionIteratorTest {
     // end basic iterator contract verification
     
     private static final String FI_ROW = "shard";
-    private static final String FI_COLUMN_FAMILY = "fi" + Constants.NULL_BYTE_STRING + "field";
+    private static final String FI_COLUMN_FAMILY = ShardFamilyConstants.FI + Constants.NULL_BYTE_STRING + "field";
     private static final String FI_COLUMN_QUALIFIER_PREFIX = "value" + Constants.NULL_BYTE_STRING + "dataType" + Constants.NULL_BYTE_STRING;
     private static final String FI_VIS = "ABC";
     private static final long FI_TIMESTAMP = 1234567890;

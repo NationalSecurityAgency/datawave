@@ -3,6 +3,7 @@ package datawave.ingest.csv;
 import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -247,7 +248,7 @@ public class TableConfigurationUtilTest {
         
         Map<Integer,Map<String,String>> shardAggs = tcu.getTableAggregators("datawave.shard");
         Assert.assertEquals(1, shardAggs.size());
-        Assert.assertEquals("datawave.ingest.table.aggregator.TextIndexAggregator", shardAggs.get(10).get("tf"));
+        Assert.assertEquals("datawave.ingest.table.aggregator.TextIndexAggregator", shardAggs.get(10).get(ShardFamilyConstants.TF));
         
         Map<Integer,Map<String,String>> shardIndexAggs = tcu.getTableAggregators("datawave.shardIndex");
         Assert.assertEquals(1, shardIndexAggs.size());

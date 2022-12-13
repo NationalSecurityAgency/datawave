@@ -9,6 +9,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -218,7 +219,7 @@ public class TermFrequencyAggregatorTest {
     
     private Key getTF(String row, String field, String value, String dataType, String uid, long timestamp) {
         // CQ = dataType\0UID\0Normalized field value\0Field name
-        return new Key(row, "tf", dataType + Constants.NULL_BYTE_STRING + uid + Constants.NULL_BYTE_STRING + value + Constants.NULL_BYTE_STRING + field,
-                        timestamp);
+        return new Key(row, ShardFamilyConstants.TF, dataType + Constants.NULL_BYTE_STRING + uid + Constants.NULL_BYTE_STRING + value
+                        + Constants.NULL_BYTE_STRING + field, timestamp);
     }
 }

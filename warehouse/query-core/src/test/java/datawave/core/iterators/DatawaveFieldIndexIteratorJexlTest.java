@@ -3,6 +3,7 @@ package datawave.core.iterators;
 import datawave.query.Constants;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.conf.Configuration;
@@ -51,7 +52,7 @@ public class DatawaveFieldIndexIteratorJexlTest {
                         .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("b").withIvaratorCacheDirs(cacheDirs).build();
         
         Text row = new Text("row");
-        Text fiName = new Text("fi" + Constants.NULL + "FIELD");
+        Text fiName = new Text(ShardFamilyConstants.FI + Constants.NULL + "FIELD");
         Text fieldValue = new Text("a");
         Text fieldValueNullAppended = new Text("a" + Constants.NULL);
         
@@ -74,7 +75,7 @@ public class DatawaveFieldIndexIteratorJexlTest {
                         .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("z").withIvaratorCacheDirs(cacheDirs).build();
         
         Text row = new Text("row");
-        Text fiName = new Text("fi" + Constants.NULL + "FIELD");
+        Text fiName = new Text(ShardFamilyConstants.FI + Constants.NULL + "FIELD");
         Text fieldValue = new Text("a");
         Text fieldValueNullAppended = new Text("a" + Constants.NULL);
         
@@ -97,7 +98,7 @@ public class DatawaveFieldIndexIteratorJexlTest {
                         .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("az").withIvaratorCacheDirs(cacheDirs).build();
         
         Text row = new Text("row");
-        Text fiName = new Text("fi" + Constants.NULL + "FIELD");
+        Text fiName = new Text(ShardFamilyConstants.FI + Constants.NULL + "FIELD");
         Text fieldValue = new Text("aa");
         Text fieldValueNullAppended = new Text("aa" + Constants.NULL);
         
@@ -120,7 +121,7 @@ public class DatawaveFieldIndexIteratorJexlTest {
                         .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("z").withIvaratorCacheDirs(cacheDirs).build();
         
         Text row = new Text("row");
-        Text fiName = new Text("fi" + Constants.NULL + "FIELD");
+        Text fiName = new Text(ShardFamilyConstants.FI + Constants.NULL + "FIELD");
         Text fieldValue = new Text("aa");
         Text fieldValueNullAppended = new Text("aa" + Constants.NULL);
         

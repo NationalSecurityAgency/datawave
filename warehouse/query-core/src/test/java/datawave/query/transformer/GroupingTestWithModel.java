@@ -25,7 +25,7 @@ import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
 import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
 import datawave.query.util.VisibilityWiseGuysIngestWithModel;
 import datawave.test.JexlNodeAssert;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;

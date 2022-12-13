@@ -21,7 +21,7 @@ import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.webservice.query.QueryImpl;
 import org.junit.Assert;
 import org.junit.Before;

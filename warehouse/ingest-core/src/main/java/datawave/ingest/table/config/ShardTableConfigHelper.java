@@ -14,6 +14,7 @@ import datawave.ingest.table.balancer.ShardedTableTabletBalancer;
 import datawave.ingest.table.bloomfilter.ShardKeyFunctor;
 import datawave.ingest.table.bloomfilter.ShardIndexKeyFunctor;
 
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -93,9 +94,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         
         String localityGroupsConf = null;
         if (tableName.equals(shardTableName)) {
-            localityGroupsConf = conf.get(shardTableName + LOCALITY_GROUPS, ExtendedDataTypeHandler.FULL_CONTENT_LOCALITY_NAME + ':'
-                            + ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY + ',' + ExtendedDataTypeHandler.TERM_FREQUENCY_LOCALITY_NAME + ':'
-                            + ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY);
+            localityGroupsConf = conf.get(shardTableName + LOCALITY_GROUPS, ShardFamilyConstants.FULL_CONTENT_LOCALITY_NAME + ':'
+                            + ShardFamilyConstants.DOCUMENT + ',' + ShardFamilyConstants.TERM_FREQUENCY_LOCALITY_NAME + ':' + ShardFamilyConstants.TF);
             for (String localityGroupDefConf : StringUtils.split(localityGroupsConf)) {
                 String[] localityGroupDef = StringUtils.split(localityGroupDefConf, '\\', ':');
                 Set<Text> families = localityGroups.get(localityGroupDef[0]);
@@ -165,7 +165,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     
     protected void configureShardTable(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         // Set a text index aggregator on the "tf" (Term Frequency) column family
-        CombinerConfiguration tfConf = new CombinerConfiguration(new Column("tf"), new IteratorSetting(10, "TF",
+        CombinerConfiguration tfConf = new CombinerConfiguration(new Column(ShardFamilyConstants.TF), new IteratorSetting(10, "TF",
                         datawave.ingest.table.aggregator.TextIndexAggregator.class.getName()));
         
         setAggregatorConfigurationIfNecessary(tableName, Collections.singletonList(tfConf), tops, log);

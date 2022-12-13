@@ -20,6 +20,7 @@ import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.aggregation.DocumentData;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.Tuple3;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
@@ -51,7 +52,8 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     
     private static final ByteSequence EMPTY_BYTE_SEQUENCE = new ArrayByteSequence(new byte[] {});
     
-    protected static final Collection<ByteSequence> columnFamilies = Lists.<ByteSequence> newArrayList(new ArrayByteSequence("tf"), new ArrayByteSequence("d"));
+    protected static final Collection<ByteSequence> columnFamilies = Lists.<ByteSequence> newArrayList(new ArrayByteSequence(ShardFamilyConstants.TF),
+                    new ArrayByteSequence(ShardFamilyConstants.DOCUMENT));
     protected static final boolean inclusive = false;
     
     private final DescendantCountFunction countFunction;

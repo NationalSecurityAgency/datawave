@@ -1,6 +1,7 @@
 package datawave.query.data.parsers;
 
 import datawave.query.data.parsers.DatawaveKey.KeyType;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 import org.junit.Test;
@@ -65,7 +66,7 @@ public class DatawaveKeyTest {
     
     @Test
     public void testFiKeyWithExtraNulls() {
-        Key key = new Key(row, "fi\u0000fieldName", "fieldValue\u0000blah\u0000datatype\u0000uid", cv);
+        Key key = new Key(row, ShardFamilyConstants.FI + "\u0000fieldName", "fieldValue\u0000blah\u0000datatype\u0000uid", cv);
         parse(key);
         
         assertInvalid(false);
@@ -79,7 +80,7 @@ public class DatawaveKeyTest {
     
     @Test
     public void testFiKey() {
-        Key key = new Key(row, "fi\u0000fieldName", "fieldValue\u0000datatype\u0000uid", cv);
+        Key key = new Key(row, ShardFamilyConstants.FI + "\u0000fieldName", "fieldValue\u0000datatype\u0000uid", cv);
         parse(key);
         
         assertInvalid(false);
@@ -93,7 +94,7 @@ public class DatawaveKeyTest {
     
     @Test
     public void testFiKeyWithChildUid() {
-        Key key = new Key(row, "fi\u0000fieldName", "fieldValue\u0000datatype\u0000uid.1", cv);
+        Key key = new Key(row, ShardFamilyConstants.FI + "\u0000fieldName", "fieldValue\u0000datatype\u0000uid.1", cv);
         parse(key);
         
         assertInvalid(false);
@@ -107,14 +108,14 @@ public class DatawaveKeyTest {
     
     @Test
     public void testInvalidFiKey() {
-        Key key = new Key(row, "fi\u0000fieldName", "fieldValue\u0000datatype", cv);
+        Key key = new Key(row, ShardFamilyConstants.FI + "\u0000fieldName", "fieldValue\u0000datatype", cv);
         parse(key);
         assertInvalid(true);
     }
     
     @Test
     public void testTermFrequencyKey() {
-        Key key = new Key(row, "tf", "datatype\u0000uid\u0000fieldValue\u0000fieldName", cv);
+        Key key = new Key(row, ShardFamilyConstants.TF, "datatype\u0000uid\u0000fieldValue\u0000fieldName", cv);
         parse(key);
         
         assertInvalid(false);
@@ -128,7 +129,7 @@ public class DatawaveKeyTest {
     
     @Test
     public void testTermFrequencyKeyWithChildUid() {
-        Key key = new Key(row, "tf", "datatype\u0000uid.1\u0000fieldValue\u0000fieldName", cv);
+        Key key = new Key(row, ShardFamilyConstants.TF, "datatype\u0000uid.1\u0000fieldValue\u0000fieldName", cv);
         parse(key);
         
         assertInvalid(false);
@@ -142,7 +143,7 @@ public class DatawaveKeyTest {
     
     @Test
     public void testTermFrequencyKeyWithExtraNulls() {
-        Key key = new Key(row, "tf", "datatype\u0000uid\u0000fi\u0000eldVa\u0000lue\u0000fieldName", cv);
+        Key key = new Key(row, ShardFamilyConstants.TF, "datatype\u0000uid\u0000fi\u0000eldVa\u0000lue\u0000fieldName", cv);
         parse(key);
         
         assertInvalid(false);
@@ -151,7 +152,7 @@ public class DatawaveKeyTest {
         assertDataType(datatype);
         assertUid(uid);
         assertFieldName(fieldName);
-        assertFieldValue("fi\0eldVa\0lue");
+        assertFieldValue(ShardFamilyConstants.FI + "\0eldVa\0lue");
     }
     
     @Test

@@ -7,6 +7,7 @@ import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.mr.bulk.split.FileRangeSplit;
 import datawave.mr.bulk.split.TabletSplitSplit;
 import datawave.query.data.parsers.DatawaveKey;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -138,7 +139,7 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         
         // range should find all field index rows
         String[] colf = StringUtils.split(key.getColumnFamily().toString(), NULL_CHAR);
-        if ("fi".equals(colf[0])) {
+        if (ShardFamilyConstants.FI.equals(colf[0])) {
             this.total++;
             if (0 == this.total % this.logInputInterval) {
                 log.info("input row count(" + this.total + ")");

@@ -12,6 +12,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.query.tld.TLD;
 import datawave.query.util.TypeMetadata;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -29,9 +30,6 @@ import datawave.query.jexl.JexlASTHelper;
  * are returned.
  */
 public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
-    
-    public static final byte[] FI_CF = new Text("fi").getBytes();
-    public static final byte[] TF_CF = Constants.TERM_FREQUENCY_COLUMN_FAMILY.getBytes();
     
     private final long maxFieldsBeforeSeek;
     private final long maxKeysBeforeSeek;
@@ -282,14 +280,14 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     
     private boolean isEventKey(Key k) {
         ByteSequence cf = k.getColumnFamilyData();
-        return !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0)
-                        && !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 00);
+        return !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, ShardFamilyConstants.FI_BYTES, 0, 2) == 0)
+                        && !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, ShardFamilyConstants.TF_BYTES, 0, 2) == 00);
     }
     
     public static boolean isRootPointer(Key k) {
         ByteSequence cf = k.getColumnFamilyData();
         
-        if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0) {
+        if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, ShardFamilyConstants.FI_BYTES, 0, 2) == 0) {
             ByteSequence seq = k.getColumnQualifierData();
             int i = seq.length() - 19;
             for (; i >= 0; i--) {
@@ -308,7 +306,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
             }
             return true;
             
-        } else if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 0) {
+        } else if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, ShardFamilyConstants.TF_BYTES, 0, 2) == 0) {
             ByteSequence seq = k.getColumnQualifierData();
             
             // work front to back, just in case the TF value includes a null byte
@@ -798,7 +796,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     protected String getCurrentField(Key current) {
         ByteSequence cf = current.getColumnFamilyData();
         
-        if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0) {
+        if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, ShardFamilyConstants.FI_BYTES, 0, 2) == 0) {
             ArrayList<Integer> nullIndexes = TLD.instancesOf(0, cf, 1);
             final int startFn = nullIndexes.get(0) + 1;
             final int stopFn = cf.length();
@@ -808,7 +806,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
             System.arraycopy(cf.getBackingArray(), startFn + cf.offset(), fn, 0, stopFn - startFn);
             
             return JexlASTHelper.deconstructIdentifier(new String(fn));
-        } else if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 0) {
+        } else if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, ShardFamilyConstants.TF_BYTES, 0, 2) == 0) {
             ByteSequence cq = current.getColumnQualifierData();
             ArrayList<Integer> nullIndexes = TLD.lastInstancesOf(0, cq, 1);
             final int startFn = nullIndexes.get(0) + 1;

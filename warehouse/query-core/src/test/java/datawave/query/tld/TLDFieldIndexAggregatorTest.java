@@ -11,6 +11,7 @@ import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
 
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -174,7 +175,7 @@ public class TLDFieldIndexAggregatorTest {
     }
     
     private Key getFi(String row, String field, String value, String dataType, String uid, long timestamp) {
-        return new Key(row, "fi" + Constants.NULL_BYTE_STRING + field, value + Constants.NULL_BYTE_STRING + dataType + Constants.NULL_BYTE_STRING + uid,
-                        timestamp);
+        return new Key(row, ShardFamilyConstants.FI + Constants.NULL_BYTE_STRING + field, value + Constants.NULL_BYTE_STRING + dataType
+                        + Constants.NULL_BYTE_STRING + uid, timestamp);
     }
 }

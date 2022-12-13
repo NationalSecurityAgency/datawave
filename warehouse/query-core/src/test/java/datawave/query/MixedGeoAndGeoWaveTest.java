@@ -31,7 +31,7 @@ import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;

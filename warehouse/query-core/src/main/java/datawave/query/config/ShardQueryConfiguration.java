@@ -28,7 +28,8 @@ import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
-import datawave.util.TableName;
+import datawave.tables.schema.ShardFamilyConstants;
+import datawave.tables.TableName;
 import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -207,7 +208,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<String> filterClassNames = null;
     private List<String> indexFilteringClassNames = new ArrayList<>();
     // Used for ignoring 'd' and 'tf' column family in `shard`
-    private Set<String> nonEventKeyPrefixes = Sets.newHashSet("d", "tf");
+    private Set<String> nonEventKeyPrefixes = Sets.newHashSet(ShardFamilyConstants.DOCUMENT, ShardFamilyConstants.TF);
     // Default to having no unevaluatedFields
     private Set<String> unevaluatedFields = Collections.emptySet();
     // Filter results on datatypes. Default to having no filters

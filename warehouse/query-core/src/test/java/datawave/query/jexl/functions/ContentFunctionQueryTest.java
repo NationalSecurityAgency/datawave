@@ -32,7 +32,8 @@ import datawave.query.testframework.MockStatusReporter;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.util.TableName;
+import datawave.tables.TableName;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -450,9 +451,8 @@ public class ContentFunctionQueryTest {
             colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
                             .append(nfv.getIndexedFieldName());
             
-            BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId,
-                            ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), fieldVisibility, event.getDate(),
-                            helper.getDeleteMode()));
+            BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ShardFamilyConstants.TF_BYTES, colq.toString()
+                            .getBytes(), fieldVisibility, event.getDate(), helper.getDeleteMode()));
             values.put(bKey, new Value(info.toByteArray()));
         }
         

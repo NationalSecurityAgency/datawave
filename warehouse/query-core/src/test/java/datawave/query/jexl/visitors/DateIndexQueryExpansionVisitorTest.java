@@ -9,7 +9,7 @@ import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.test.JexlNodeAssert;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -1008,7 +1009,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         
         Multimap<BulkIngestKey,Value> values = HashMultimap.create();
         
-        Text colf = new Text("fi");
+        Text colf = new Text(ShardFamilyConstants.FI);
         TextUtil.textAppend(colf, fieldName, replaceMalformedUTF8);
         Text unmaskedColq = new Text(fieldValue);
         TextUtil.textAppend(unmaskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
@@ -1086,7 +1087,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         boolean replaceMalformedUTF8 = helper.getReplaceMalformedUTF8();
         boolean deleteMode = helper.getDeleteMode();
         
-        Text colf = new Text("fi");
+        Text colf = new Text(ShardFamilyConstants.FI);
         TextUtil.textAppend(colf, fieldName, replaceMalformedUTF8);
         Text unmaskedColq = new Text(fieldValue);
         TextUtil.textAppend(unmaskedColq, event.getDataType().outputName(), replaceMalformedUTF8);

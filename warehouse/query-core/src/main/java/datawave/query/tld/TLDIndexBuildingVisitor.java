@@ -15,6 +15,7 @@ import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.TLDTermFrequencyEventDataQueryFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -215,7 +216,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     protected Range getFiRangeForTF(LiteralRange<?> range) {
         Key startKey = rangeLimiter.getStartKey();
         
-        StringBuilder strBuilder = new StringBuilder("fi");
+        StringBuilder strBuilder = new StringBuilder(ShardFamilyConstants.FI);
         strBuilder.append(NULL_DELIMETER).append(range.getFieldName());
         Text cf = new Text(strBuilder.toString());
         

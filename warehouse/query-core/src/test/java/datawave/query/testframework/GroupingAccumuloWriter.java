@@ -11,7 +11,8 @@ import datawave.data.type.NumberType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
-import datawave.util.TableName;
+import datawave.tables.schema.ShardFamilyConstants;
+import datawave.tables.TableName;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -42,7 +43,7 @@ class GroupingAccumuloWriter {
     private static final Logger log = Logger.getLogger(GroupingAccumuloWriter.class);
     
     private static final String NULL_SEP = "\u0000";
-    private static final String FIELD_INDEX = "fi" + NULL_SEP;
+    private static final String FIELD_INDEX = ShardFamilyConstants.FI + NULL_SEP;
     private static final Value EMPTY_VALUE = new Value(new byte[0]);
     
     private final String shardField;

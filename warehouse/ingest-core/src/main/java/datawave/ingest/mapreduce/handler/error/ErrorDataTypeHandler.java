@@ -24,6 +24,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.marking.MarkingFunctions;
+import datawave.tables.schema.MetadataFamilyConstants;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
 
@@ -117,9 +118,9 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
     // Initialize a default (hash-based) UID builder
     private UIDBuilder<UID> uidBuilder = UID.builder();
     
-    public static final Text EVENT_COLF = new Text("e");
+    public static final Text EVENT_COLF = new Text(MetadataFamilyConstants.E);
     public static final Text INFO_COLF = new Text("info");
-    public static final Text FIELD_COLF = new Text("f");
+    public static final Text FIELD_COLF = new Text(MetadataFamilyConstants.F);
     
     public static final Value NULL_VALUE = new Value(new byte[0]);
     

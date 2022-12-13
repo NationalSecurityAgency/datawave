@@ -8,7 +8,8 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.util.MetadataHelperFactory;
-import datawave.util.TableName;
+import datawave.tables.TableName;
+import datawave.tables.schema.MetadataFamilyConstants;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
@@ -119,9 +120,9 @@ public class DiscoveryLogicTest {
         
         try (BatchWriter writer = connector.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
             Mutation m = new Mutation(valueField.getValue1().toUpperCase());
-            m.put("t", "datatype\u0000" + LcNoDiacriticsType.class.getName(), viz, blank);
-            m.put("i", "datatype", viz, blank);
-            m.put("ri", "datatype", viz, blank);
+            m.put(MetadataFamilyConstants.T, "datatype\u0000" + LcNoDiacriticsType.class.getName(), viz, blank);
+            m.put(MetadataFamilyConstants.I, "datatype", viz, blank);
+            m.put(MetadataFamilyConstants.RI, "datatype", viz, blank);
             writer.addMutation(m);
         }
         

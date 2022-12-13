@@ -1,7 +1,7 @@
 package datawave.ingest.mapreduce.job.metrics;
 
 import com.google.common.collect.Multimap;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 

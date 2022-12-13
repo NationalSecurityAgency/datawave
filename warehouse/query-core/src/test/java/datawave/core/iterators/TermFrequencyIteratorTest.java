@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -36,8 +37,8 @@ public class TermFrequencyIteratorTest {
     
     @Test
     public void testDocRange_singleKey_parent() throws IOException {
-        Key start = new Key("20200314_0", "tf", "datatype\0uid3");
-        Key end = new Key("20200314_0", "tf", "datatype\0uid3\uffff");
+        Key start = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid3");
+        Key end = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid3\uffff");
         Range r = new Range(start, false, end, true);
         
         Set<Key> keys = new TreeSet<>();
@@ -60,8 +61,8 @@ public class TermFrequencyIteratorTest {
     
     @Test
     public void testDocRange_singleKey_parent_multiField() throws IOException {
-        Key start = new Key("20200314_0", "tf", "datatype\0uid3");
-        Key end = new Key("20200314_0", "tf", "datatype\0uid3\uffff");
+        Key start = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid3");
+        Key end = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid3\uffff");
         Range r = new Range(start, false, end, true);
         
         Set<Key> keys = new TreeSet<>();
@@ -87,8 +88,8 @@ public class TermFrequencyIteratorTest {
     
     @Test
     public void testDocRange_singleKey_child() throws IOException {
-        Key start = new Key("20200314_0", "tf", "datatype\0uid3");
-        Key end = new Key("20200314_0", "tf", "datatype\0uid3\uffff");
+        Key start = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid3");
+        Key end = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid3\uffff");
         Range r = new Range(start, false, end, true);
         
         Set<Key> keys = new TreeSet<>();
@@ -111,8 +112,8 @@ public class TermFrequencyIteratorTest {
     
     @Test
     public void testDocRange_singleKey_child_multiField() throws IOException {
-        Key start = new Key("20200314_0", "tf", "datatype\0uid3");
-        Key end = new Key("20200314_0", "tf", "datatype\0uid3\uffff");
+        Key start = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid3");
+        Key end = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid3\uffff");
         Range r = new Range(start, false, end, true);
         
         Set<Key> keys = new TreeSet<>();
@@ -138,8 +139,8 @@ public class TermFrequencyIteratorTest {
     
     @Test
     public void testDocRange_minMaxKeys() throws IOException {
-        Key start = new Key("20200314_0", "tf", "datatype\0uid0");
-        Key end = new Key("20200314_0", "tf", "datatype\0uid0.1\uffff");
+        Key start = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid0");
+        Key end = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid0.1\uffff");
         Range r = new Range(start, false, end, true);
         
         Set<Key> keys = new TreeSet<>();
@@ -163,8 +164,8 @@ public class TermFrequencyIteratorTest {
     
     @Test
     public void testDocRange_rotatingChildKeys() throws IOException {
-        Key start = new Key("20200314_0", "tf", "datatype\0uid0");
-        Key end = new Key("20200314_0", "tf", "datatype\0uid0\uffff");
+        Key start = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid0");
+        Key end = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid0\uffff");
         Range r = new Range(start, false, end, true);
         
         Set<Key> keys = new TreeSet<>();
@@ -196,8 +197,8 @@ public class TermFrequencyIteratorTest {
     
     @Test
     public void testParentFirstChildAggregation() throws IOException {
-        Key start = new Key("20200314_0", "tf", "datatype\0uid0");
-        Key end = new Key("20200314_0", "tf", "datatype\0uid0.1\uffff");
+        Key start = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid0");
+        Key end = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid0.1\uffff");
         Range r = new Range(start, false, end, true);
         
         Set<Key> keys = new TreeSet<>();
@@ -221,8 +222,8 @@ public class TermFrequencyIteratorTest {
     
     @Test
     public void testFullScanRange_singleKey_first() throws IOException {
-        Key start = new Key("20200314_0", "tf", "datatype\0uid0");
-        Key end = new Key("20200314_0", "tf", "datatype\0uid9.9\uffff");
+        Key start = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid0");
+        Key end = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid9.9\uffff");
         Range r = new Range(start, false, end, true);
         
         Set<Key> keys = new TreeSet<>();
@@ -245,8 +246,8 @@ public class TermFrequencyIteratorTest {
     
     @Test
     public void testFullScanRange_singleKey_middle() throws IOException {
-        Key start = new Key("20200314_0", "tf", "datatype\0uid0");
-        Key end = new Key("20200314_0", "tf", "datatype\0uid9.9\uffff");
+        Key start = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid0");
+        Key end = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid9.9\uffff");
         Range r = new Range(start, false, end, true);
         
         Set<Key> keys = new TreeSet<>();
@@ -269,8 +270,8 @@ public class TermFrequencyIteratorTest {
     
     @Test
     public void testFullScanRange_minMaxKeys() throws IOException {
-        Key start = new Key("20200314_0", "tf", "datatype\0uid0");
-        Key end = new Key("20200314_0", "tf", "datatype\0uid9.9\uffff");
+        Key start = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid0");
+        Key end = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid9.9\uffff");
         Range r = new Range(start, false, end, true);
         
         Set<Key> keys = new TreeSet<>();
@@ -294,8 +295,8 @@ public class TermFrequencyIteratorTest {
     
     @Test
     public void testFullScanRange_rotatingSingleKeyPerParent() throws IOException {
-        Key start = new Key("20200314_0", "tf", "datatype\0uid0");
-        Key end = new Key("20200314_0", "tf", "datatype\0uid9.9\uffff");
+        Key start = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid0");
+        Key end = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid9.9\uffff");
         Range r = new Range(start, false, end, true);
         
         Set<Key> keys = new TreeSet<>();
@@ -329,8 +330,8 @@ public class TermFrequencyIteratorTest {
     @Test
     public void testSearchEveryField() throws IOException {
         // Full scan range
-        Key start = new Key("20200314_0", "tf", "datatype\0uid0");
-        Key end = new Key("20200314_0", "tf", "datatype\0uid9.9\uffff");
+        Key start = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid0");
+        Key end = new Key("20200314_0", ShardFamilyConstants.TF, "datatype\0uid9.9\uffff");
         Range r = new Range(start, false, end, true);
         
         // Hit in every doc
@@ -437,7 +438,7 @@ public class TermFrequencyIteratorTest {
         
         // Build TF keys like 'row:tf:datatype\0uid\0fieldValue\0fieldName'
         Text row = new Text("20200314_0");
-        Text cf = new Text("tf");
+        Text cf = new Text(ShardFamilyConstants.TF);
         
         // Generates 67.6k keys
         TreeMap<Key,Value> data = new TreeMap<>();
@@ -480,7 +481,7 @@ public class TermFrequencyIteratorTest {
     }
     
     private Key getTfKey(String row, String dataType, String uid, String fieldName, String fieldValue) {
-        return new Key(row, "tf", dataType + NULL + uid + NULL + fieldValue + NULL + fieldName);
+        return new Key(row, ShardFamilyConstants.TF, dataType + NULL + uid + NULL + fieldValue + NULL + fieldName);
     }
     
     public Multimap<String,String> buildFieldValues(String field, String... values) {

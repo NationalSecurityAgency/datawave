@@ -12,7 +12,8 @@ import datawave.data.type.Type;
 import datawave.data.type.util.Geometry;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
-import datawave.util.TableName;
+import datawave.tables.TableName;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -595,106 +596,124 @@ public class WiseGuysIngest {
             mutation = new Mutation(shard);
             // corleones
             // uuid
-            mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("CORLEONE") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "UUID", lcNoDiacriticsType.normalize("CORLEONE") + "\u0000" + datatype + "\u0000" + corleoneUID,
+                            columnVisibility, timeStamp, emptyValue);
             
             // uuid
-            mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("ANDOLINI") + "\u0000" + datatype + "\u0000" + corleoneChildUID, columnVisibility,
-                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "UUID", lcNoDiacriticsType.normalize("ANDOLINI") + "\u0000" + datatype + "\u0000"
+                            + corleoneChildUID, columnVisibility, timeStamp, emptyValue);
             
             // names
-            mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("SANTINO") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("FREDO") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("MICHAEL") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("CONSTANZIA") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("LUCA") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("VINCENT") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "NOME", lcNoDiacriticsType.normalize("SANTINO") + "\u0000" + datatype + "\u0000" + corleoneUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "NOME", lcNoDiacriticsType.normalize("FREDO") + "\u0000" + datatype + "\u0000" + corleoneUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "NOME", lcNoDiacriticsType.normalize("MICHAEL") + "\u0000" + datatype + "\u0000" + corleoneUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "NOME",
+                            lcNoDiacriticsType.normalize("CONSTANZIA") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "NOME", lcNoDiacriticsType.normalize("LUCA") + "\u0000" + datatype + "\u0000" + corleoneUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "NOME", lcNoDiacriticsType.normalize("VINCENT") + "\u0000" + datatype + "\u0000" + corleoneUID,
+                            columnVisibility, timeStamp, emptyValue);
             // genders
-            mutation.put("fi\u0000" + "GENERE", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "GENERE", lcNoDiacriticsType.normalize("FEMALE") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "GENERE", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + corleoneUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "GENERE", lcNoDiacriticsType.normalize("FEMALE") + "\u0000" + datatype + "\u0000" + corleoneUID,
+                            columnVisibility, timeStamp, emptyValue);
             // ages
-            mutation.put("fi\u0000" + "ETA", numberType.normalize("24") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "ETA", numberType.normalize("22") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "ETA", numberType.normalize("20") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "ETA", numberType.normalize("18") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "ETA", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "ETA", numberType.normalize("12") + "\u0000" + datatype + "\u0000" + corleoneChildUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "ETA", numberType.normalize("24") + "\u0000" + datatype + "\u0000" + corleoneUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "ETA", numberType.normalize("22") + "\u0000" + datatype + "\u0000" + corleoneUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "ETA", numberType.normalize("20") + "\u0000" + datatype + "\u0000" + corleoneUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "ETA", numberType.normalize("18") + "\u0000" + datatype + "\u0000" + corleoneUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "ETA", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + corleoneUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "ETA", numberType.normalize("12") + "\u0000" + datatype + "\u0000" + corleoneChildUID,
+                            columnVisibility, timeStamp, emptyValue);
             
             // geo
             for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)")) {
-                mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
+                                timeStamp, emptyValue);
             }
             
             // sopranos
             // uuid
-            mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("SOPRANO") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
-                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "UUID", lcNoDiacriticsType.normalize("SOPRANO") + "\u0000" + datatype + "\u0000" + sopranoUID,
+                            columnVisibility, timeStamp, emptyValue);
             // names
-            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("ANTHONY") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("MEADOW") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
-                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("ANTHONY") + "\u0000" + datatype + "\u0000" + sopranoUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("MEADOW") + "\u0000" + datatype + "\u0000" + sopranoUID,
+                            columnVisibility, timeStamp, emptyValue);
             // genders
-            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("FEMALE") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
-                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + sopranoUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "GENDER", lcNoDiacriticsType.normalize("FEMALE") + "\u0000" + datatype + "\u0000" + sopranoUID,
+                            columnVisibility, timeStamp, emptyValue);
             // ages
-            mutation.put("fi\u0000" + "AGE", numberType.normalize("16") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "AGE", numberType.normalize("18") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "AGE", numberType.normalize("16") + "\u0000" + datatype + "\u0000" + sopranoUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "AGE", numberType.normalize("18") + "\u0000" + datatype + "\u0000" + sopranoUID,
+                            columnVisibility, timeStamp, emptyValue);
             
             // geo
             for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)")) {
-                mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
+                                timeStamp, emptyValue);
             }
             
             // capones
             // uuid
-            mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("CAPONE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "UUID", lcNoDiacriticsType.normalize("CAPONE") + "\u0000" + datatype + "\u0000" + caponeUID,
+                            columnVisibility, timeStamp, emptyValue);
             // names
-            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("ALPHONSE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("FRANK") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("RALPH") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("MICHAEL") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
-                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("ALPHONSE") + "\u0000" + datatype + "\u0000" + caponeUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("FRANK") + "\u0000" + datatype + "\u0000" + caponeUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("RALPH") + "\u0000" + datatype + "\u0000" + caponeUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "NAME", lcNoDiacriticsType.normalize("MICHAEL") + "\u0000" + datatype + "\u0000" + caponeUID,
+                            columnVisibility, timeStamp, emptyValue);
             // genders
-            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID,
+                            columnVisibility, timeStamp, emptyValue);
             // ages
-            mutation.put("fi\u0000" + "AGE", numberType.normalize("30") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "AGE", numberType.normalize("34") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "AGE", numberType.normalize("20") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "AGE", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "AGE", numberType.normalize("30") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "AGE", numberType.normalize("34") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "AGE", numberType.normalize("20") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "AGE", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp, emptyValue);
             
             // geo
             for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)")) {
-                mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
+                mutation.put(ShardFamilyConstants.FI + "\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
+                                timeStamp, emptyValue);
             }
             
             // add some index-only fields
-            mutation.put("fi\u0000" + "LOCATION", "chicago" + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "POSIZIONE", "newyork" + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "LOCATION", "newjersey" + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "SENTENCE", "11y" + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "LOCATION", "chicago" + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
+                            emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "POSIZIONE", "newyork" + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
+                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "LOCATION", "newjersey" + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
+                            timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "SENTENCE", "11y" + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
+                            emptyValue);
             
             bw.addMutation(mutation);
             
@@ -985,14 +1004,15 @@ public class WiseGuysIngest {
     
     private static void addFiTfTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid) throws MutationsRejectedException {
         Mutation fi = new Mutation(shard);
-        fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
-                        emptyValue);
+        fi.put(ShardFamilyConstants.FI + "\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid,
+                        columnVisibility, timeStamp, emptyValue);
         
         String[] tokens = phrase.split(" ");
         for (String token : tokens) {
-            fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
-                            emptyValue);
-            fi.put("tf", datatype + "\u0000" + uid + "\u0000" + lcNoDiacriticsType.normalize(token) + "\u0000" + field, columnVisibility, timeStamp, emptyValue);
+            fi.put(ShardFamilyConstants.FI + "\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid,
+                            columnVisibility, timeStamp, emptyValue);
+            fi.put(ShardFamilyConstants.TF, datatype + "\u0000" + uid + "\u0000" + lcNoDiacriticsType.normalize(token) + "\u0000" + field, columnVisibility,
+                            timeStamp, emptyValue);
         }
         bw.addMutation(fi);
     }

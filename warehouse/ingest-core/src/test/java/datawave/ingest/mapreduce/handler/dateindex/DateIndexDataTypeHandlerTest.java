@@ -16,7 +16,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.table.config.DateIndexTableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;

@@ -11,7 +11,7 @@ import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.ResultsPage;
@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

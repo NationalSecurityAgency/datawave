@@ -6,7 +6,8 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
-import datawave.util.TableName;
+import datawave.tables.TableName;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -274,79 +275,79 @@ public class CommonalityTokenTestDataIngest {
             
             mutation = new Mutation(shard);
             // cats
-            mutation.put("fi\u0000" + "CAT", lcNoDiacriticsType.normalize("tabby") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CAT", lcNoDiacriticsType.normalize("calico") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CAT", lcNoDiacriticsType.normalize("tom") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CAT", lcNoDiacriticsType.normalize("siamese") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CAT", lcNoDiacriticsType.normalize("cougar") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CAT", lcNoDiacriticsType.normalize("tiger") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CAT", lcNoDiacriticsType.normalize("leopard") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CAT", lcNoDiacriticsType.normalize("puma") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CAT", lcNoDiacriticsType.normalize("tabby") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CAT", lcNoDiacriticsType.normalize("calico") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CAT", lcNoDiacriticsType.normalize("tom") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CAT", lcNoDiacriticsType.normalize("siamese") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CAT", lcNoDiacriticsType.normalize("cougar") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CAT", lcNoDiacriticsType.normalize("tiger") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CAT", lcNoDiacriticsType.normalize("leopard") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CAT", lcNoDiacriticsType.normalize("puma") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
             // dogs
-            mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("beagle") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("basset") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("chihuahua") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("dachshund") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("bernese") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("shepherd") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("wolf") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("coyote") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("fox") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("dingo") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CANINE", lcNoDiacriticsType.normalize("beagle") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CANINE", lcNoDiacriticsType.normalize("basset") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CANINE", lcNoDiacriticsType.normalize("chihuahua") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CANINE", lcNoDiacriticsType.normalize("dachshund") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CANINE", lcNoDiacriticsType.normalize("bernese") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CANINE", lcNoDiacriticsType.normalize("shepherd") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CANINE", lcNoDiacriticsType.normalize("wolf") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CANINE", lcNoDiacriticsType.normalize("coyote") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CANINE", lcNoDiacriticsType.normalize("fox") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "CANINE", lcNoDiacriticsType.normalize("dingo") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
             
             // fish
-            mutation.put("fi\u0000" + "FISH", lcNoDiacriticsType.normalize("beta") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "FISH", lcNoDiacriticsType.normalize("goldfish") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "FISH", lcNoDiacriticsType.normalize("angelfish") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "FISH", lcNoDiacriticsType.normalize("guppy") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "FISH", lcNoDiacriticsType.normalize("shark") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "FISH", lcNoDiacriticsType.normalize("tuna") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "FISH", lcNoDiacriticsType.normalize("mackerel") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "FISH", lcNoDiacriticsType.normalize("salmon") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "FISH", lcNoDiacriticsType.normalize("beta") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "FISH", lcNoDiacriticsType.normalize("goldfish") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "FISH", lcNoDiacriticsType.normalize("angelfish") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "FISH", lcNoDiacriticsType.normalize("guppy") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "FISH", lcNoDiacriticsType.normalize("shark") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "FISH", lcNoDiacriticsType.normalize("tuna") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "FISH", lcNoDiacriticsType.normalize("mackerel") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "FISH", lcNoDiacriticsType.normalize("salmon") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
             
             // birds
-            mutation.put("fi\u0000" + "BIRD", lcNoDiacriticsType.normalize("parakeet") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "BIRD", lcNoDiacriticsType.normalize("canary") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "BIRD", lcNoDiacriticsType.normalize("parrot") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "BIRD", lcNoDiacriticsType.normalize("budgie") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "BIRD", lcNoDiacriticsType.normalize("eagle") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "BIRD", lcNoDiacriticsType.normalize("hawk") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "BIRD", lcNoDiacriticsType.normalize("crow") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "BIRD", lcNoDiacriticsType.normalize("buzzard") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "BIRD", lcNoDiacriticsType.normalize("parakeet") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "BIRD", lcNoDiacriticsType.normalize("canary") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "BIRD", lcNoDiacriticsType.normalize("parrot") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "BIRD", lcNoDiacriticsType.normalize("budgie") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "BIRD", lcNoDiacriticsType.normalize("eagle") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "BIRD", lcNoDiacriticsType.normalize("hawk") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "BIRD", lcNoDiacriticsType.normalize("crow") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
+            mutation.put(ShardFamilyConstants.FI + "\u0000" + "BIRD", lcNoDiacriticsType.normalize("buzzard") + "\u0000" + datatype + "\u0000" + myUID,
+                            columnVisibility, timeStamp, emptyValue);
             
             bw.addMutation(mutation);
             

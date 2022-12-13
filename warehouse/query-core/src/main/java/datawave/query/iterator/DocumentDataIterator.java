@@ -17,6 +17,7 @@ import datawave.query.function.KeyToDocumentData;
 import datawave.query.iterator.aggregation.DocumentData;
 import datawave.query.iterator.filter.KeyIdentity;
 
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -34,7 +35,8 @@ import com.google.common.collect.Lists;
 public class DocumentDataIterator implements Iterator<DocumentData> {
     private static final Logger log = Logger.getLogger(DocumentDataIterator.class);
     
-    private static final Collection<ByteSequence> columnFamilies = Lists.<ByteSequence> newArrayList(new ArrayByteSequence("tf"), new ArrayByteSequence("d"));
+    private static final Collection<ByteSequence> columnFamilies = Lists.<ByteSequence> newArrayList(new ArrayByteSequence(ShardFamilyConstants.TF),
+                    new ArrayByteSequence(ShardFamilyConstants.DOCUMENT));
     private static final boolean inclusive = false;
     
     protected SortedKeyValueIterator<Key,Value> source;

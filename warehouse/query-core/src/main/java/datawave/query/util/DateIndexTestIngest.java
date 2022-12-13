@@ -1,6 +1,6 @@
 package datawave.query.util;
 
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;

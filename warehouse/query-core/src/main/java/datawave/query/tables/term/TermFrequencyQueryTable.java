@@ -10,6 +10,7 @@ import java.util.Set;
 import datawave.query.config.TermFrequencyQueryConfiguration;
 import datawave.query.transformer.TermFrequencyQueryTransformer;
 import datawave.query.util.QueryScannerHelper;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.Connector;
@@ -115,7 +116,7 @@ public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
                 END = ALL;
             }
             
-            final String tf = ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.toString();
+            final String tf = ShardFamilyConstants.TF;
             Key startKey = new Key(shardId, tf, datatype + NULL + uid + NULL);
             Key endKey = new Key(shardId, tf, datatype + NULL + uid + END);
             Range r = new Range(startKey, true, endKey, false);

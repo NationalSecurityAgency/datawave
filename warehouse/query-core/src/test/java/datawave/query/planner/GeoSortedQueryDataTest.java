@@ -20,7 +20,7 @@ import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
 import datawave.query.testframework.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.util.TableName;
+import datawave.tables.TableName;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParameters;

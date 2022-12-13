@@ -7,6 +7,7 @@ import datawave.ingest.mapreduce.job.MultiRFileOutputFormatter;
 import datawave.mr.bulk.BulkInputFormat;
 import datawave.mr.bulk.MultiRfileInputformat;
 import datawave.query.Constants;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -208,16 +209,16 @@ public class StatsJob extends IngestJob {
                 // create a range for each shard
                 for (int n = 0; n < numShards; n++) {
                     String shardNum = shard + '_' + n;
-                    Key firstKey = new Key(shardNum, "fi" + '\0');
-                    Key endKey = new Key(shardNum, "fi" + '\0' + Constants.MAX_UNICODE_STRING);
+                    Key firstKey = new Key(shardNum, ShardFamilyConstants.FI + '\0');
+                    Key endKey = new Key(shardNum, ShardFamilyConstants.FI + '\0' + Constants.MAX_UNICODE_STRING);
                     
                     Range r = new Range(firstKey, true, endKey, false);
                     ranges.add(r);
                     log.info(r.toString());
                 }
             } else {
-                Key firstKey = new Key(shard, "fi" + '\0');
-                Key endKey = new Key(shard, "fi" + '\0' + Constants.MAX_UNICODE_STRING);
+                Key firstKey = new Key(shard, ShardFamilyConstants.FI + '\0');
+                Key endKey = new Key(shard, ShardFamilyConstants.FI + '\0' + Constants.MAX_UNICODE_STRING);
                 
                 Range r = new Range(firstKey, true, endKey, false);
                 ranges.add(r);

@@ -6,6 +6,8 @@ import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
+import datawave.tables.schema.MetadataFamilyConstants;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.webservice.common.cache.AccumuloTableCache;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
@@ -83,7 +85,9 @@ public class ModelBean {
     private static final long BATCH_WRITER_MAX_MEMORY = 10845760;
     private static final int BATCH_WRITER_MAX_THREADS = 2;
     
-    private static final HashSet<String> RESERVED_COLF_VALUES = Sets.newHashSet("e", "i", "ri", "f", "tf", "m", "desc", "edge", "t", "n", "h");
+    private static final HashSet<String> RESERVED_COLF_VALUES = Sets.newHashSet(MetadataFamilyConstants.E, MetadataFamilyConstants.I,
+                    MetadataFamilyConstants.RI, MetadataFamilyConstants.F, ShardFamilyConstants.TF, MetadataFamilyConstants.M, MetadataFamilyConstants.DESC,
+                    MetadataFamilyConstants.EDGE, MetadataFamilyConstants.T, MetadataFamilyConstants.N, MetadataFamilyConstants.H);
     
     @Inject
     @ConfigProperty(name = "dw.model.defaultTableName", defaultValue = DEFAULT_MODEL_TABLE_NAME)

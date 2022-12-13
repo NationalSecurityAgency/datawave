@@ -18,6 +18,7 @@ import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileKeySortedSet;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.query.util.sortedset.HdfsBackedSortedSet;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -397,12 +398,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.queryId = builder.queryId;
         this.ivaratorSourcePool = builder.ivaratorSourcePool;
         
-        if (builder.fieldName.toString().startsWith("fi" + NULL_BYTE)) {
+        if (builder.fieldName.toString().startsWith(ShardFamilyConstants.FI + NULL_BYTE)) {
             this.fieldName = new Text(builder.fieldName.toString().substring(3));
             this.fiName = builder.fieldName;
         } else {
             this.fieldName = builder.fieldName;
-            this.fiName = new Text("fi" + NULL_BYTE + builder.fieldName);
+            this.fiName = new Text(ShardFamilyConstants.FI + NULL_BYTE + builder.fieldName);
         }
         log.trace("fName : " + fiName.toString().replaceAll(NULL_BYTE, "%00"));
         

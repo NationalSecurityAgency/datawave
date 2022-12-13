@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import datawave.data.hash.UIDConstants;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.util.StringUtils;
 
 import org.apache.accumulo.core.data.ByteSequence;
@@ -208,7 +209,7 @@ public class DescendentFilterIterator extends SkippingIterator implements Option
                     log.trace("---:> prefix: " + prefix);
                 }
                 
-                if (prefix.equals("fi")) {
+                if (prefix.equals(ShardFamilyConstants.FI)) {
                     if (log.isTraceEnabled()) {
                         log.trace("---:> field index key");
                     }

@@ -16,6 +16,8 @@ import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.policy.IngestPolicyEnforcer;
+import datawave.tables.TableName;
+import datawave.tables.schema.ShardFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
@@ -57,8 +59,7 @@ public class ContentIndexingColumnBasedHandlerTest {
     private static final String LIST_VALUE_WITH_SPACE = "12.34, 56.78";
     private static final String LIST_VALUE_WITH_EMPTY_ENTRY = "12.34, , 56.78";
     private static final String SHARD_ID = "SHARD1";
-    private static final Text SHARD_TABLE_NAME = new Text("shard");
-    private static final String TF = "tf";
+    private static final Text SHARD_TABLE_NAME = new Text(TableName.SHARD);
     
     private static String[] tokenizeAlphanumResults = {"12", "34", "56", "78", "12.34,56.78"};
     private static String[] tokenizeAlphanumResultsWithSpace = {"12", "34", "56", "78", "12.34", "56.78"};
@@ -376,7 +377,7 @@ public class ContentIndexingColumnBasedHandlerTest {
     private boolean assertExpectedTfRecords(Multimap<String,Pair<String,Integer>> expectedTfValues, Multimap<BulkIngestKey,Value> tfEntries,
                     StringBuilder errorMessage) {
         for (Map.Entry<String,Pair<String,Integer>> entry : expectedTfValues.entries()) {
-            Text expectedColf = new Text(TF);
+            Text expectedColf = new Text(ShardFamilyConstants.TF);
             
             Text expectedColq = new Text(TEST_TYPE + INTRA_COL_DELIMETER + TEST_UUID + INTRA_COL_DELIMETER + entry.getValue().getLeft() + INTRA_COL_DELIMETER
                             + entry.getKey());

@@ -27,6 +27,7 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.TermFrequencyDataFilter;
 import datawave.query.util.sortedset.FileSortedSet;
+import datawave.tables.schema.ShardFamilyConstants;
 import datawave.util.UniversalSet;
 import datawave.query.iterator.SourceFactory;
 import datawave.query.iterator.SourceManager;
@@ -479,7 +480,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected Range getFiRangeForTF(LiteralRange<?> range) {
         Key startKey = rangeLimiter.getStartKey();
         
-        StringBuilder strBuilder = new StringBuilder("fi");
+        StringBuilder strBuilder = new StringBuilder(ShardFamilyConstants.FI);
         strBuilder.append(NULL_DELIMETER).append(range.getFieldName());
         Text cf = new Text(strBuilder.toString());
         
@@ -843,7 +844,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         Object objValue = range.getLower();
         String value = null == objValue ? "null" : objValue.toString();
         
-        StringBuilder builder = new StringBuilder("fi");
+        StringBuilder builder = new StringBuilder(ShardFamilyConstants.FI);
         builder.append(NULL_DELIMETER).append(identifier);
         Text cf = new Text(builder.toString());
         
@@ -861,7 +862,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         Object objValue = JexlASTHelper.getLiteralValue(node);
         String value = null == objValue ? "null" : objValue.toString();
         
-        StringBuilder builder = new StringBuilder("fi");
+        StringBuilder builder = new StringBuilder(ShardFamilyConstants.FI);
         builder.append(NULL_DELIMETER).append(identifier);
         Text cf = new Text(builder.toString());
         
