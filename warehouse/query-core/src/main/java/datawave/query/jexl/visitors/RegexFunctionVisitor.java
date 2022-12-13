@@ -66,9 +66,6 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                 JexlNode regexNode = buildRegexNode(identifier, functionMetadata.name(), arguments.get(1).image);
                 if (regexNode != null) {
                     children.add(regexNode);
-                } else {
-                    // failure to rewrite a regex means a copy of the original node is returned
-                    return returnNode;
                 }
             }
             

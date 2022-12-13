@@ -39,6 +39,21 @@ import java.util.Set;
 
 public class IteratorBuildingVisitorTest {
     
+    @Test
+    public void testStringReplaceAllVsReplace() {
+        String expected = "\n\tOrIterator:";
+        String first = "OrIterator:";
+        String replaceAll = first.replaceAll("OrIterator:", "\n\tOrIterator:");
+        Assert.assertEquals(expected, replaceAll);
+        
+        expected = "\n\tOrIterator:";
+        first = "OrIterator:";
+        String replace = first.replace("OrIterator:", "\n\tOrIterator:");
+        Assert.assertEquals(expected, replace);
+        
+        Assert.assertEquals(replace, replaceAll);
+    }
+    
     private IteratorBuildingVisitor getDefault() {
         IteratorBuildingVisitor visitor = new IteratorBuildingVisitor();
         visitor.setSource(new SourceFactory(Collections.emptyIterator()), new BaseIteratorEnvironment());
