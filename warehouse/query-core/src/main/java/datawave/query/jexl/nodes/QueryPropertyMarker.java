@@ -393,7 +393,7 @@ public abstract class QueryPropertyMarker extends ASTReference {
         /**
          * Return whether this instance is any delayed predicate type.
          *
-         * @return true if this instance is a delayed predicate type, or false otherwise
+         * @return true if this instance is a `delayed` predicate type, or false otherwise
          */
         public boolean isDelayedPredicate() {
             return isAnyTypeOf(DELAYED_PREDICATES);

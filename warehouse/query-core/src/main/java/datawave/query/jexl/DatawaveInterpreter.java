@@ -11,6 +11,7 @@ import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.NoEvaluation;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.accumulo.core.data.Range;
@@ -440,8 +441,14 @@ public class DatawaveInterpreter extends Interpreter {
     
     public Object visit(ASTAndNode node, Object data) {
         
+        QueryPropertyMarker.Instance marker = QueryPropertyMarker.findInstance(node);
+        // if marked as no-eval, then nothing to do
+        if (marker.isType(NoEvaluation.class)) {
+            return null;
+        }
+        
         // we could have arrived here after the node was dereferenced
-        if (QueryPropertyMarker.findInstance(node).isType(ExceededOrThresholdMarkerJexlNode.class)) {
+        if (marker.isType(ExceededOrThresholdMarkerJexlNode.class)) {
             return visitExceededOrThresholdMarker(node);
         }
         

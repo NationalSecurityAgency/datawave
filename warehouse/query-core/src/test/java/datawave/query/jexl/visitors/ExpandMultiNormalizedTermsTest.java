@@ -233,7 +233,7 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "((_Bounded_ = true) && (FOO > 1 && FOO < 10))";
-        String expected = "((((_Bounded_ = true) && (FOO > '+aE1' && FOO < '+bE1'))) || (((_Bounded_ = true) && (FOO > '1' && FOO < '10'))))";
+        String expected = "((((_Bounded_ = true) && (FOO > '+aE1' && FOO < '+bE1'))) || (((_NoEval_ = true) && ((_Bounded_ = true) && (FOO > '1' && FOO < '10')))))";
         expandTerms(original, expected);
     }
     

@@ -5,6 +5,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.LcType;
+import datawave.data.type.StringType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -16,6 +19,7 @@ import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.NoEvaluation;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -42,6 +46,7 @@ import org.apache.log4j.Logger;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -155,13 +160,43 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         }
     }
     
+    // The various string types are potential candidates for no-evaluation
+    private List<Type<?>> NO_EVAL_TYPES = Arrays.asList(new Type<?>[] {new LcNoDiacriticsType(), new LcType(), new StringType()});
+    
+    /**
+     * Given the set of types, determine the subset that are to be no-evaluation
+     * 
+     * @param dataTypes
+     * @return A set of types to be no-eval
+     */
+    private Set<Type<?>> getNoEvalTypes(Set<Type<?>> dataTypes) {
+        // if only one type to start with, then nothing can be no-eval
+        if (dataTypes.size() == 1) {
+            return Collections.EMPTY_SET;
+        }
+        Set<Type<?>> noEvalTypes = new HashSet<>();
+        // find the set of types that should be no-eval
+        for (Type<?> type : NO_EVAL_TYPES) {
+            if (dataTypes.contains(type)) {
+                noEvalTypes.add(type);
+            }
+        }
+        // if we the same set of types we started with, then nothing can be no-eval
+        if (noEvalTypes.size() == dataTypes.size()) {
+            return Collections.EMPTY_SET;
+        }
+        return noEvalTypes;
+    }
+    
     private Object expandRangeForNormalizers(LiteralRange<?> range, JexlNode node) {
-        List<BoundedRange> aliasedBounds = Lists.newArrayList();
+        List<JexlNode> aliasedBounds = Lists.newArrayList();
         String field = range.getFieldName();
         
         // Get all of the indexed or normalized dataTypes for the field name
         Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(field));
         dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(field));
+        
+        Set<Type<?>> noEvalDataTypes = getNoEvalTypes(dataTypes);
         
         for (Type<?> normalizer : dataTypes) {
             JexlNode lowerBound = range.getLowerNode(), upperBound = range.getUpperNode();
@@ -188,7 +223,11 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                 continue;
             }
             
-            aliasedBounds.add(new BoundedRange(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right)));
+            JexlNode boundedRange = new BoundedRange(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right));
+            if (noEvalDataTypes.contains(normalizer)) {
+                boundedRange = new NoEvaluation(boundedRange);
+            }
+            aliasedBounds.add(boundedRange);
         }
         
         if (aliasedBounds.isEmpty()) {
