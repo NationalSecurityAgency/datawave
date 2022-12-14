@@ -160,7 +160,7 @@ public class ProtobufEdgeDeleteModeTest {
         
         RawRecordContainer myEvent = getEvent(conf);
         
-        HandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
         
         //
         // Have the data type helper handle our delete configuration...
@@ -177,7 +177,7 @@ public class ProtobufEdgeDeleteModeTest {
         
         myEvent = getEvent(conf);
         
-        HandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, true);
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, true);
     }
     
     @Test
@@ -196,7 +196,7 @@ public class ProtobufEdgeDeleteModeTest {
         
         RawRecordContainer myEvent = getEvent(conf);
         
-        HandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
         
         //
         // Order delete mode via conf property
@@ -210,7 +210,7 @@ public class ProtobufEdgeDeleteModeTest {
         
         myEvent = getEvent(conf);
         
-        HandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, true);
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, true);
         
         //
         // set conf injected value to false
@@ -224,7 +224,7 @@ public class ProtobufEdgeDeleteModeTest {
         
         myEvent = getEvent(conf);
         
-        HandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
         
     }
     
@@ -385,101 +385,6 @@ public class ProtobufEdgeDeleteModeTest {
             return edgesCreated;
         }
         
-    }
-    
-    public static class HandlerTestUtil {
-        
-        public static final Text edgeTableName = new Text(TableName.EDGE);
-        public static final String NB = "\u0000";
-        
-        private static Logger log = Logger.getLogger(HandlerTestUtil.class);
-        
-        public static boolean isDocumentKey(Key k) {
-            return isShardKey(k) && k.getColumnFamily().toString().equals(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY);
-        }
-        
-        public static boolean isShardKey(Key k) {
-            return k.getRow().toString().matches("\\d{8}_\\d+");
-        }
-        
-        public static void processEvent(Multimap<String,NormalizedContentInterface> eventFields, ExtendedDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler,
-                        RawRecordContainer event, int expectedEdgeKeys, boolean printKeysOnlyOnFail, boolean edgeDeleteMode) {
-            
-            Assert.assertNotNull("Event was null.", event);
-            Set<Key> edgeKeys = new HashSet<>();
-            Map<Text,Integer> countMap = Maps.newHashMap();
-            
-            // Process edges
-            countMap.put(edgeTableName, 0);
-            if (null != edgeHandler) {
-                HandlerTestUtil.MyCachingContextWriter contextWriter = new HandlerTestUtil.MyCachingContextWriter();
-                StandaloneTaskAttemptContext<Text,RawRecordContainerImpl,BulkIngestKey,Value> ctx = new StandaloneTaskAttemptContext<>(
-                                ((RawRecordContainerImpl) event).getConf(), new StandaloneStatusReporter());
-                
-                try {
-                    contextWriter.setup(ctx.getConfiguration(), false);
-                    edgeHandler.process(null, event, eventFields, ctx, contextWriter);
-                    contextWriter.commit(ctx);
-                    for (Map.Entry<BulkIngestKey,Value> entry : contextWriter.getCache().entries()) {
-                        if (entry.getKey().getTableName().equals(edgeTableName)) {
-                            edgeKeys.add(entry.getKey().getKey());
-                        }
-                        if (!entry.getKey().getTableName().equals(edgeTableName) || entry.getKey().getKey().isDeleted() == edgeDeleteMode) {
-                            if (countMap.containsKey(entry.getKey().getTableName())) {
-                                countMap.put(entry.getKey().getTableName(), countMap.get(entry.getKey().getTableName()) + 1);
-                            } else {
-                                countMap.put(entry.getKey().getTableName(), 1);
-                            }
-                        }
-                    }
-                } catch (Throwable t) {
-                    log.error("Error during edge processing", t);
-                    throw new RuntimeException(t);
-                }
-            }
-            
-            Set<String> keyPrint = new TreeSet<>();
-            
-            // check edge keys
-            for (Key k : edgeKeys) {
-                keyPrint.add("edge key: " + k.getRow().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;")
-                                + " ::: " + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: "
-                                + k.getTimestamp() + " ::: " + k.isDeleted() + "\n");
-            }
-            
-            try {
-                if (!printKeysOnlyOnFail) {
-                    for (String keyString : keyPrint) {
-                        log.info(keyString.trim());
-                    }
-                }
-                Assert.assertEquals((int) countMap.get(edgeTableName), expectedEdgeKeys);
-            } catch (AssertionError ae) {
-                if (printKeysOnlyOnFail) {
-                    for (String keyString : keyPrint) {
-                        log.info(keyString.trim());
-                    }
-                }
-                final Text shardTableName = new Text(TableName.SHARD);
-                Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(shardTableName), countMap.get(edgeTableName)));
-            }
-        }
-        
-        private static class MyCachingContextWriter extends AbstractContextWriter<BulkIngestKey,Value> {
-            private Multimap<BulkIngestKey,Value> cache = HashMultimap.create();
-            
-            @Override
-            protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException,
-                            InterruptedException {
-                for (Map.Entry<BulkIngestKey,Value> entry : entries.entries()) {
-                    cache.put(entry.getKey(), entry.getValue());
-                }
-            }
-            
-            public Multimap<BulkIngestKey,Value> getCache() {
-                return cache;
-            }
-        }
     }
     
 }

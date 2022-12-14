@@ -13,6 +13,7 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
+import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.GenericResponse;
@@ -115,6 +116,7 @@ public class RemoteEventQueryLogicHttpTest {
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
         System.setProperty(DnUtils.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
         KeyPairGenerator generater = KeyPairGenerator.getInstance("RSA");
+        generater.initialize(keysize);
         KeyPair keypair = generater.generateKeyPair();
         PrivateKey privKey = keypair.getPrivate();
         final X509Certificate[] chain = new X509Certificate[1];
@@ -205,6 +207,7 @@ public class RemoteEventQueryLogicHttpTest {
         remote.setQueryServicePort(server.getAddress().getPort());
         remote.setExecutorService(null);
         remote.setObjectMapperDecorator(new DefaultMapperDecorator());
+        remote.setResponseObjectFactory(new DefaultResponseObjectFactory());
         remote.setJsseSecurityDomain(new JSSESecurityDomain() {
             @Override
             public KeyStore getKeyStore() throws SecurityException {
