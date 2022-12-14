@@ -40,11 +40,11 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * When more than one normalizer exists for a field, we want to transform the single term into a conjunction of the term with each normalizer applied to it. If
@@ -196,9 +196,9 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             // Avoid extra parens around the expansion
             if (1 == aliasedBounds.size()) {
                 // we assume the Optional container is not empty as we have already created a new BoundedRange from the node
-                return Arrays.stream(aliasedBounds.toArray()).findFirst().get();
+                return aliasedBounds.iterator().next();
             } else {
-                List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(aliasedBounds.stream().collect(Collectors.toList()));
+                List<ASTReferenceExpression> var = new ArrayList(aliasedBounds);
                 return JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[var.size()])));
             }
         }
