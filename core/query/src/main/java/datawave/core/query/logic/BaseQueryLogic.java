@@ -4,8 +4,7 @@ import datawave.audit.SelectorExtractor;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.marking.MarkingFunctions;
-import datawave.microservice.authorization.user.ProxiedUserDetails;
-import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.ProxiedDatawaveUser;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -16,7 +15,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -42,13 +40,8 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private String _connPoolName;
     private Set<String> authorizedDNs;
     
-    // This will only be set when deployed via Wildfly
-    protected Principal principal;
-    protected DatawavePrincipal serverPrincipal;
-    
-    // This will only be set when deployed as a microservice
-    protected ProxiedUserDetails currentUser;
-    protected ProxiedUserDetails serverUser;
+    protected ProxiedDatawaveUser currentUser;
+    protected ProxiedDatawaveUser serverUser;
     
     protected Set<String> requiredRoles;
     protected MarkingFunctions markingFunctions;
@@ -84,8 +77,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setConnPoolName(other.getConnPoolName());
         setRequiredRoles(other.getRequiredRoles());
         setSelectorExtractor(other.getSelectorExtractor());
-        setPrincipal(other.getPrincipal());
-        setServerPrincipal(other.getServerPrincipal());
         setCurrentUser(other.getCurrentUser());
         setServerUser(other.getServerUser());
     }
@@ -121,35 +112,19 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         this.responseObjectFactory = responseObjectFactory;
     }
     
-    public Principal getPrincipal() {
-        return principal;
-    }
-    
-    public void setPrincipal(Principal principal) {
-        this.principal = principal;
-    }
-    
-    public DatawavePrincipal getServerPrincipal() {
-        return serverPrincipal;
-    }
-    
-    public void setServerPrincipal(DatawavePrincipal serverPrincipal) {
-        this.serverPrincipal = serverPrincipal;
-    }
-    
-    public ProxiedUserDetails getCurrentUser() {
+    public ProxiedDatawaveUser getCurrentUser() {
         return currentUser;
     }
     
-    public void setCurrentUser(ProxiedUserDetails currentUser) {
+    public void setCurrentUser(ProxiedDatawaveUser currentUser) {
         this.currentUser = currentUser;
     }
     
-    public ProxiedUserDetails getServerUser() {
+    public ProxiedDatawaveUser getServerUser() {
         return serverUser;
     }
     
-    public void setServerUser(ProxiedUserDetails serverUser) {
+    public void setServerUser(ProxiedDatawaveUser serverUser) {
         this.serverUser = serverUser;
     }
     

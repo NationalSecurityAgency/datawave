@@ -9,6 +9,7 @@ import datawave.core.query.logic.CheckpointableQueryLogic;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.security.authorization.ProxiedDatawaveUser;
 import datawave.webservice.query.Query;
 import datawave.webservice.result.BaseResponse;
 import org.apache.accumulo.core.client.Connector;
@@ -441,5 +442,21 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         GenericQueryConfiguration delegateConfig = compositeConfig.getConfigs().get(compositeCheckpoint.getDelegateQueryLogic());
         
         logic.setupQuery(connection, delegateConfig, checkpoint);
+    }
+    
+    @Override
+    public void setCurrentUser(ProxiedDatawaveUser currentUser) {
+        super.setCurrentUser(currentUser);
+        for (BaseQueryLogic<?> logic : queryLogics.values()) {
+            logic.setCurrentUser(currentUser);
+        }
+    }
+    
+    @Override
+    public void setServerUser(ProxiedDatawaveUser serverUser) {
+        super.setServerUser(serverUser);
+        for (BaseQueryLogic<?> logic : queryLogics.values()) {
+            logic.setServerUser(serverUser);
+        }
     }
 }

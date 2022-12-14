@@ -92,19 +92,11 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
         getConfig().setRemoteQueryLogic(remoteQueryLogic);
     }
     
-    public Object getCallerObject() {
-        if (getPrincipal() != null) {
-            return getPrincipal();
-        } else {
-            return getCurrentUser();
-        }
-    }
-    
     @Override
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
         // @TODO: If this is a checkpointable query, then we may need to set the page size down to 1
         
-        GenericResponse<String> createResponse = remoteQueryService.createQuery(getRemoteQueryLogic(), settings.toMap(), getCallerObject());
+        GenericResponse<String> createResponse = remoteQueryService.createQuery(getRemoteQueryLogic(), settings.toMap(), currentUser);
         setRemoteId(createResponse.getResult());
         return getConfig();
     }
@@ -168,7 +160,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
         
         if (getRemoteId() != null) {
             try {
-                remoteQueryService.close(getRemoteId(), getCallerObject());
+                remoteQueryService.close(getRemoteId(), currentUser);
             } catch (Exception e) {
                 log.error("Failed to close remote query", e);
             }
@@ -290,7 +282,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
         public boolean hasNext() {
             if (data.isEmpty() && !complete) {
                 try {
-                    EventQueryResponseBase response = (EventQueryResponseBase) remoteQueryService.next(getRemoteId(), getCallerObject());
+                    EventQueryResponseBase response = (EventQueryResponseBase) remoteQueryService.next(getRemoteId(), currentUser);
                     if (response != null) {
                         if (response.getReturnedEvents() == 0) {
                             if (response.isPartialResults()) {

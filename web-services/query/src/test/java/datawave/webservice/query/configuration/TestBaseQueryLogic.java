@@ -54,6 +54,8 @@ public class TestBaseQueryLogic {
         expect(this.copy.getBaseIteratorPriority()).andReturn(100);
         expect(this.copy.getRequiredRoles()).andReturn(null);
         expect(this.copy.getSelectorExtractor()).andReturn(null);
+        expect(this.copy.getCurrentUser()).andReturn(null);
+        expect(this.copy.getServerUser()).andReturn(null);
         expect(this.copy.getBypassAccumulo()).andReturn(false);
         
         // Run the test

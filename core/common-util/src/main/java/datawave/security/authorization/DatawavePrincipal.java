@@ -25,7 +25,7 @@ import static datawave.security.authorization.DatawaveUser.ANONYMOUS_USER;
 @XmlRootElement
 @XmlType(factoryMethod = "anonymousPrincipal", propOrder = {"name", "proxiedUsers", "creationTime"})
 @XmlAccessorType(XmlAccessType.NONE)
-public class DatawavePrincipal implements Principal, Serializable {
+public class DatawavePrincipal implements ProxiedDatawaveUser, Principal, Serializable {
     private final String username;
     private final DatawaveUser primaryUser;
     @XmlElement
@@ -103,14 +103,17 @@ public class DatawavePrincipal implements Principal, Serializable {
         return users;
     }
     
+    @Override
     public Collection<DatawaveUser> getProxiedUsers() {
         return Collections.unmodifiableCollection(this.proxiedUsers);
     }
     
+    @Override
     public DatawaveUser getPrimaryUser() {
         return primaryUser;
     }
     
+    @Override
     public Collection<? extends Collection<String>> getAuthorizations() {
         // @formatter:off
         return Collections.unmodifiableCollection(
@@ -120,6 +123,7 @@ public class DatawavePrincipal implements Principal, Serializable {
         // @formatter:on
     }
     
+    @Override
     public String[] getDNs() {
         // @formatter:off
         return DatawavePrincipal.orderProxiedUsers(this.proxiedUsers).stream()
@@ -139,6 +143,7 @@ public class DatawavePrincipal implements Principal, Serializable {
         return this.username;
     }
     
+    @Override
     public String getShortName() {
         return ProxiedEntityUtils.getShortName(getPrimaryUser().getName());
     }
@@ -147,6 +152,7 @@ public class DatawavePrincipal implements Principal, Serializable {
         return getPrimaryUser().getDn();
     }
     
+    @Override
     public List<String> getProxyServers() {
         
         // @formatter:off

@@ -81,8 +81,10 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
         }
         
         if (logic instanceof BaseQueryLogic) {
-            ((BaseQueryLogic<?>) logic).setPrincipal(principal);
-            ((BaseQueryLogic<?>) logic).setServerPrincipal(serverPrincipal);
+            if (principal instanceof DatawavePrincipal) {
+                ((BaseQueryLogic<?>) logic).setCurrentUser((DatawavePrincipal) principal);
+            }
+            ((BaseQueryLogic<?>) logic).setServerUser(serverPrincipal);
         }
         
         return logic;

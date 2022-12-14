@@ -102,7 +102,7 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         QueryLogicFactoryConfiguration qlfc = new QueryLogicFactoryConfiguration();
         qlfc.setMaxPageSize(25);
         qlfc.setPageByteTrigger(1024L);
-        this.logic.setPrincipal(altPrincipal);
+        this.logic.setCurrentUser(altPrincipal);
         this.logic.setLogicName(queryName);
         expect(altPrincipal.getPrimaryUser()).andReturn(
                         new DatawaveUser(SubjectIssuerDNPair.of("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>"), UserType.USER, null, null, null, 0L));
@@ -136,7 +136,7 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         Map<String,Collection<String>> rolesMap = new HashMap<>();
         rolesMap.put(queryName, roles);
         
-        this.logic.setPrincipal(altPrincipal);
+        this.logic.setServerUser(altPrincipal);
         this.logic.setLogicName(queryName);
         expect(altPrincipal.getPrimaryUser()).andReturn(
                         new DatawaveUser(SubjectIssuerDNPair.of("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>"), UserType.USER, null, null, null, 0L));
