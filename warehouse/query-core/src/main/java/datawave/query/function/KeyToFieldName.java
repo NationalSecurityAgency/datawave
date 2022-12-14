@@ -3,6 +3,7 @@ package datawave.query.function;
 import java.nio.charset.CharacterCodingException;
 import java.util.Map.Entry;
 
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
@@ -56,9 +57,11 @@ public class KeyToFieldName implements Function<Entry<Key,Value>,Entry<Key,Strin
     public String getFieldName(Key k) {
         
         int index = -1;
-        byte[] backing = k.getColumnQualifierData().getBackingArray();
         
-        for (int i = 0; i < backing.length; i++) {
+        ByteSequence bs = k.getColumnQualifierData();
+        byte[] backing = bs.getBackingArray();
+        
+        for (int i = 0; i < bs.length(); i++) {
             if (backing[i] == 0x00 || (!includeGroupingContext && backing[i] == '.')) {
                 index = i;
                 break;
