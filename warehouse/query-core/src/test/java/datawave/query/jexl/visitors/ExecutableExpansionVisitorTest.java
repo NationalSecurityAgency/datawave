@@ -288,7 +288,17 @@ public abstract class ExecutableExpansionVisitorTest {
         logic.setInitialMaxTermThreshold(10000);
         logic.setFinalMaxTermThreshold(10000);
         
-        String query = "( (((_Bounded_ = true) && (NUMBER >= 0 && NUMBER <= 1000)) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')) || (((_Bounded_ = true) && (NUMBER >= 0 && NUMBER <= 1000)) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')) ) && GENDER == 'MALE' && (NOME == 'THIS' || NOME == 'THAT') && !filter:includeRegex(ETA, 'blah') && ( LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey' )";
+        //  @formatter:off
+        String query =
+                "( " +
+                   "(((_Bounded_ = true) && (NUMBER >= 0 && NUMBER <= 1000)) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')) || " +
+                   "(((_Bounded_ = true) && (NUMBER >= 0 && NUMBER <= 1000)) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')) " +
+                ") " +
+                "&& GENDER == 'MALE' " +
+                "&& (NOME == 'THIS' || NOME == 'THAT') " +
+                "&& !filter:includeRegex(ETA, 'blah') " +
+                "&& ( LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey' )";
+        //  @formatter:on
         String expandedQuery = JexlStringBuildingVisitor.buildQuery(FunctionIndexQueryExpansionVisitor.expandFunctions(logic.getConfig(), helper, null,
                         JexlASTHelper.parseJexlQuery(query)));
         String[] queryStrings = {expandedQuery};

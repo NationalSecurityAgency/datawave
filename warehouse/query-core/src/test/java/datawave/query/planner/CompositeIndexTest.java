@@ -387,6 +387,49 @@ public class CompositeIndexTest {
         Assert.assertEquals(9, events.size());
     }
     
+    // the bounded range is fixed by the QueryPropertyMarkerSourceConsolidator
+    @Test
+    public void testRecordOfIncorrectQueryStringWorking() throws Exception {
+        // original "((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355'))";
+        String query = "(((_Bounded_ = true) && GEO >= '0500aa' && GEO <= '050355'))";
+        List<QueryData> queries = getQueryRanges(query, false);
+        Assert.assertEquals(1, queries.size());
+        
+        List<DefaultEvent> events = getQueryResults(query, false);
+        Assert.assertEquals(1, events.size());
+        
+        List<String> wktList = new ArrayList<>();
+        wktList.addAll(Arrays.asList(wktLegacyData));
+        wktList.addAll(Arrays.asList(wktCompositeData));
+        
+        List<Integer> wktByteLengthList = new ArrayList<>();
+        wktByteLengthList.addAll(Arrays.asList(wktByteLengthLegacyData));
+        wktByteLengthList.addAll(Arrays.asList(wktByteLengthCompositeData));
+        
+        for (DefaultEvent event : events) {
+            String wkt = null;
+            Integer wktByteLength = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD))
+                    wkt = field.getValueString();
+                else if (field.getName().equals(WKT_BYTE_LENGTH_FIELD))
+                    wktByteLength = Integer.parseInt(field.getValueString());
+            }
+            
+            // shouldn't get back a null wktByteLength
+            Assert.assertNotNull(wktByteLength);
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(wktList.remove(wkt));
+            Assert.assertTrue(wktByteLengthList.remove(wktByteLength));
+        }
+        
+        Assert.assertEquals(11, wktList.size());
+        Assert.assertEquals(11, wktByteLengthList.size());
+        Assert.assertEquals(1, events.size());
+    }
+    
     @Test
     public void compositeWithIvaratorTest() throws Exception {
         // @formatter:off
