@@ -1454,6 +1454,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Path("/lookupContentUUID/{uuidType}/{uuid}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
+    @EnrichQueryMetrics(methodType = MethodType.CREATE_AND_NEXT)
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupContentUUID", absolute = true)
@@ -1524,6 +1525,7 @@ public class QueryExecutorBean implements QueryExecutor {
             "application/x-protostuff"})
     @GZIP
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
+    @EnrichQueryMetrics(methodType = MethodType.CREATE_AND_NEXT)
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupContentUUIDBatch", absolute = true)
@@ -1585,6 +1587,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
     @Path("/lookupUUID/{uuidType}/{uuid}")
+    @EnrichQueryMetrics(methodType = MethodType.CREATE_AND_NEXT)
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupUUID", absolute = true)
@@ -1655,6 +1658,7 @@ public class QueryExecutorBean implements QueryExecutor {
             "application/x-protostuff"})
     @GZIP
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
+    @EnrichQueryMetrics(methodType = MethodType.CREATE_AND_NEXT)
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupUUIDBatch", absolute = true)
