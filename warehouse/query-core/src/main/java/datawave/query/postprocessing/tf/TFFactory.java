@@ -1,35 +1,35 @@
 package datawave.query.postprocessing.tf;
 
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import datawave.query.function.Equality;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
-
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
-
 import datawave.data.type.Type;
 import datawave.query.attributes.Document;
-import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
-import datawave.query.util.TypeMetadata;
+import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
+
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class TFFactory {
     private static final Logger log = Logger.getLogger(TFFactory.class);
     
-    public static com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> getFunction(ASTJexlScript query,
-                    Set<String> contentExpansionFields, Set<String> termFrequencyFields, TypeMetadata typeMetadata, Equality equality,
-                    EventDataQueryFilter evaluationFilter, SortedKeyValueIterator<Key,Value> sourceCopy, Set<String> tfIndexOnlyFields) {
+    private TFFactory() {
+        // private constructor for a static utility
+    }
+    
+    /**
+     * Construct a {@link TermOffsetFunction} from the provided {@link TermFrequencyConfig}.
+     *
+     * @param config
+     *            a {@link TermFrequencyConfig}
+     * @return a {@link TermOffsetFunction}
+     */
+    public static com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> getFunction(TermFrequencyConfig config) {
         
         Multimap<String,Class<? extends Type<?>>> fieldMappings = LinkedListMultimap.create();
-        for (Entry<String,String> dataType : typeMetadata.fold().entries()) {
+        for (Entry<String,String> dataType : config.getTypeMetadata().fold().entries()) {
             String dataTypeName = dataType.getValue();
             
             try {
@@ -40,29 +40,30 @@ public class TFFactory {
             
         }
         
-        return getFunction(query, contentExpansionFields, termFrequencyFields, fieldMappings, equality, evaluationFilter, sourceCopy, tfIndexOnlyFields);
+        return getFunction(config, fieldMappings);
     }
     
     /**
      * Factory method for creating the TF function used for generating the map context.
-     * 
-     * @param query
+     *
+     * @param config
+     *            a {@link TermFrequencyConfig} object
      * @param dataTypes
-     * @param sourceDeepCopy
-     * @return
+     *            a MultiMap of data type names to their respective classes
+     * @return a new {@link TermOffsetFunction}
      */
-    public static com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> getFunction(ASTJexlScript query,
-                    Set<String> contentExpansionFields, Set<String> termFrequencyFields, Multimap<String,Class<? extends Type<?>>> dataTypes,
-                    Equality equality, EventDataQueryFilter evaluationFilter, SortedKeyValueIterator<Key,Value> sourceDeepCopy, Set<String> tfIndexOnlyFields) {
+    public static com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> getFunction(TermFrequencyConfig config,
+                    Multimap<String,Class<? extends Type<?>>> dataTypes) {
         
-        Multimap<String,String> termFrequencyFieldValues = TermOffsetPopulator.getTermFrequencyFieldValues(query, contentExpansionFields, termFrequencyFields,
-                        dataTypes);
+        Multimap<String,String> termFrequencyFieldValues = TermOffsetPopulator.getTermFrequencyFieldValues(config.getScript(),
+                        config.getContentExpansionFields(), config.getTfFields(), dataTypes);
         
         if (termFrequencyFieldValues.isEmpty()) {
             return new EmptyTermFrequencyFunction();
         } else {
-            return new TermOffsetFunction(new TermOffsetPopulator(termFrequencyFieldValues, contentExpansionFields, evaluationFilter, sourceDeepCopy),
-                            tfIndexOnlyFields);
+            TermOffsetPopulator offsetPopulator = new TermOffsetPopulator(termFrequencyFieldValues, config.getContentExpansionFields(),
+                            config.getEvaluationFilter(), config.getSource());
+            return new TermOffsetFunction(offsetPopulator, config.getTfFields());
         }
     }
 }

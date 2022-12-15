@@ -240,7 +240,6 @@ public abstract class GroupingTest {
                     case "AGE":
                     case "AG":
                     case "RECORD":
-                    case "DEPENDENTS":
                         secondKey = fieldBase.getValueString();
                         break;
                 }
@@ -255,7 +254,7 @@ public abstract class GroupingTest {
             } else {
                 key = secondKey;
             }
-            Assert.assertEquals("key = " + key, expected.get(key), value);
+            Assert.assertEquals(expected.get(key), value);
         }
         return response;
     }
@@ -448,7 +447,7 @@ public abstract class GroupingTest {
     }
     
     @Test
-    public void testGroupingMixedWithAndWithNoContext() throws Exception {
+    public void testGroupingMixedEntriesWithAndWithNoContext() throws Exception {
         // Testing multivalued entries with no grouping context in combination with a grouping context entries
         Map<String,String> extraParameters = new HashMap<>();
         

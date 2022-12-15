@@ -23,6 +23,8 @@ public class EdgeDefinition {
     
     private String jexlPrecondition;
     
+    private boolean isGroupAware = true;
+    
     private String sourceRelationship;
     
     private String sinkRelationship;
@@ -318,5 +320,13 @@ public class EdgeDefinition {
         } else {
             return true;
         }
+    }
+    
+    public boolean isGroupAware() {
+        return isGroupAware;
+    }
+    
+    public void setIsGroupAware(boolean aware) {
+        this.isGroupAware = aware;
     }
 }

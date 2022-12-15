@@ -3,7 +3,6 @@ package datawave.query.jexl.visitors;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import datawave.query.QueryParameters;
-import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
 import datawave.query.jexl.functions.QueryFunctions;
@@ -19,6 +18,7 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -48,8 +48,10 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private static final Joiner JOINER = Joiner.on(',').skipNulls();
     
     private static final Set<String> RESERVED = ImmutableSet.of(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION,
-                    QueryFunctions.UNIQUE_FUNCTION, QueryFunctions.UNIQUE_BY_DAY_FUNCTION, QueryFunctions.UNIQUE_BY_HOUR_FUNCTION,
-                    QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION, QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION);
+                    QueryFunctions.UNIQUE_FUNCTION, UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueFunction.UNIQUE_BY_HOUR_FUNCTION,
+                    UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MONTH_FUNCTION,
+                    UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
+                    QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION);
     
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T collect(T node, Object data) {
@@ -121,6 +123,47 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         }
     }
     
+    public enum UniqueFunction {
+        UNIQUE_BY_DAY(UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY), UNIQUE_BY_HOUR(
+                        UniqueFunction.UNIQUE_BY_HOUR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR), UNIQUE_BY_MILLISECOND(
+                        UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND), UNIQUE_BY_MINUTE(
+                        UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE), UNIQUE_BY_MONTH(
+                        UniqueFunction.UNIQUE_BY_MONTH_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH), UNIQUE_BY_SECOND(
+                        UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND), UNIQUE_BY_TENTH_OF_HOUR(
+                        UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR), UNIQUE_BY_YEAR(
+                        UniqueFunction.UNIQUE_BY_YEAR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_YEAR);
+        
+        public static final String UNIQUE_BY_DAY_FUNCTION = "unique_by_day";
+        public static final String UNIQUE_BY_HOUR_FUNCTION = "unique_by_hour";
+        public static final String UNIQUE_BY_MINUTE_FUNCTION = "unique_by_minute";
+        public static final String UNIQUE_BY_TENTH_OF_HOUR_FUNCTION = "unique_by_tenth_of_hour";
+        public static final String UNIQUE_BY_MONTH_FUNCTION = "unique_by_month";
+        public static final String UNIQUE_BY_SECOND_FUNCTION = "unique_by_second";
+        public static final String UNIQUE_BY_MILLISECOND_FUNCTION = "unique_by_millisecond";
+        public static final String UNIQUE_BY_YEAR_FUNCTION = "unique_by_year";
+        
+        public final String name;
+        public final UniqueGranularity granularity;
+        
+        UniqueFunction(String name, UniqueGranularity granularity) {
+            this.name = name;
+            this.granularity = granularity;
+        }
+        
+        public String getName() {
+            return name;
+        }
+        
+        public static UniqueFunction findByName(String name) {
+            return UniqueFunction.valueOf(name.toUpperCase());
+        }
+    }
+    
+    private void updateUniqueFields(ASTFunctionNode node, UniqueFields uniqueFields, Map<String,String> optionsMap, UniqueFunction uniqueFunction) {
+        putFieldsFromChildren(node, uniqueFields, uniqueFunction.granularity);
+        updateUniqueFieldsOption(optionsMap, uniqueFields);
+    }
+    
     /**
      * If this is a function that contains key/value options, descend the tree with a {@link List} as the data. The function args will be collected into the
      * list when visiting the child {@link ASTStringLiteral} nodes.
@@ -157,22 +200,16 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     updateUniqueFieldsOption(optionsMap, uniqueFields);
                     return null;
                 }
-                case QueryFunctions.UNIQUE_BY_DAY_FUNCTION: {
+                case UniqueFunction.UNIQUE_BY_DAY_FUNCTION:
+                case UniqueFunction.UNIQUE_BY_HOUR_FUNCTION:
+                case UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION:
+                case UniqueFunction.UNIQUE_BY_MONTH_FUNCTION:
+                case UniqueFunction.UNIQUE_BY_YEAR_FUNCTION:
+                case UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION:
+                case UniqueFunction.UNIQUE_BY_SECOND_FUNCTION:
+                case UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION: {
                     UniqueFields uniqueFields = new UniqueFields();
-                    putFieldsFromChildren(node, uniqueFields, UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
-                    updateUniqueFieldsOption(optionsMap, uniqueFields);
-                    return null;
-                }
-                case QueryFunctions.UNIQUE_BY_HOUR_FUNCTION: {
-                    UniqueFields uniqueFields = new UniqueFields();
-                    putFieldsFromChildren(node, uniqueFields, UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
-                    updateUniqueFieldsOption(optionsMap, uniqueFields);
-                    return null;
-                }
-                case QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION: {
-                    UniqueFields uniqueFields = new UniqueFields();
-                    putFieldsFromChildren(node, uniqueFields, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
-                    updateUniqueFieldsOption(optionsMap, uniqueFields);
+                    updateUniqueFields(node, uniqueFields, optionsMap, UniqueFunction.findByName(node.jjtGetChild(1).image));
                     return null;
                 }
                 case QueryFunctions.GROUPBY_FUNCTION: {

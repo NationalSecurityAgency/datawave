@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.handler.edge.evaluation;
 
 import com.google.common.base.Predicate;
+import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.Script;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,8 @@ public class EdgePreconditionJexlEvaluation implements Predicate<Script> {
     private static final Logger log = LoggerFactory.getLogger(EdgePreconditionJexlEvaluation.class);
     
     private EdgePreconditionJexlContext jexlContext;
+    
+    private JexlArithmetic arithmetic;
     
     public EdgePreconditionJexlEvaluation() {}
     
@@ -46,7 +49,7 @@ public class EdgePreconditionJexlEvaluation implements Predicate<Script> {
     
     @Override
     public boolean apply(Script compiledScript) {
-        
+        boolean matched = false;
         if (null == getJexlContext()) {
             log.trace("Dropping entry because it was null");
             
@@ -55,6 +58,7 @@ public class EdgePreconditionJexlEvaluation implements Predicate<Script> {
         
         Object o = compiledScript.execute(getJexlContext());
         return isMatched(o);
+        
     }
     
     public EdgePreconditionJexlContext getJexlContext() {
@@ -64,4 +68,5 @@ public class EdgePreconditionJexlEvaluation implements Predicate<Script> {
     public void setJexlContext(EdgePreconditionJexlContext jexlContext) {
         this.jexlContext = jexlContext;
     }
+    
 }
