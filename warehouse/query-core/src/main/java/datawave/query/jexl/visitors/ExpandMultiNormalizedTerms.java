@@ -195,10 +195,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             
             // Avoid extra parens around the expansion
             if (1 == aliasedBounds.size()) {
-                // we assume the Optional container is not empty as we have already created a new BoundedRange from the node
                 return aliasedBounds.iterator().next();
             } else {
-                List<ASTReferenceExpression> var = new ArrayList(aliasedBounds);
+                // ensure we wrap bounded ranges in parens for certain edge cases
+                List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(new ArrayList(aliasedBounds));
                 return JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[var.size()])));
             }
         }
