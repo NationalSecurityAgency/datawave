@@ -383,6 +383,8 @@ services:
         condition: service_started
 
   mapreduce-query:
+    profiles:
+      - full
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005","-jar","app.jar"]
     image: datawave/mapreduce-query-service:1.0-SNAPSHOT
     command:

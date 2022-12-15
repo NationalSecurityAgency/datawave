@@ -101,8 +101,8 @@ runTest lookup.sh 1
 runTest lookupContent.sh 2
 # runTest metrics.sh 0 0
 runTest query.sh 12 2
-runTest mapReduceQuery.sh 12 2
-runTest oozieQuery.sh 0 0
+#runTest mapReduceQuery.sh 12 2
+#runTest oozieQuery.sh 0 0
 
 $SCRIPT_DIR/cleanup.sh
 
