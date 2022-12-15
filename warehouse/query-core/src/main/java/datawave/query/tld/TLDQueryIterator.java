@@ -1,5 +1,6 @@
 package datawave.query.tld;
 
+import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import datawave.query.attributes.Document;
@@ -11,10 +12,14 @@ import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.planner.SeekingQueryPlanner;
+import datawave.query.postprocessing.tf.TFFactory;
+import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TLDEventDataFilter;
+import datawave.query.util.Tuple2;
+import datawave.query.util.Tuple3;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -266,6 +271,12 @@ public class TLDQueryIterator extends QueryIterator {
                     throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
         return createIteratorBuildingVisitor(TLDIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs).setIteratorBuilder(
                         TLDIndexIteratorBuilder.class);
+    }
+    
+    @Override
+    protected Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
+        tfConfig.setTld(true);
+        return TFFactory.getFunction(tfConfig);
     }
     
 }
