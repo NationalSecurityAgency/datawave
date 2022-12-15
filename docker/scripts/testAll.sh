@@ -31,6 +31,8 @@ runTest () {
                     echo "TEST RESPONSE"
                     echo "$QUERY_RESPONSE"
 
+                    sleep ${TIMEOUT}
+
                     if [ $ATTEMPT == $ATTEMPTS ] ; then
                         exit 1
                     fi
@@ -44,6 +46,8 @@ runTest () {
             echo
             echo "TEST RESPONSE"
             echo "$QUERY_RESPONSE"
+
+            sleep ${TIMEOUT}
 
             if [ $ATTEMPT == $ATTEMPTS ] ; then
                 exit 1
