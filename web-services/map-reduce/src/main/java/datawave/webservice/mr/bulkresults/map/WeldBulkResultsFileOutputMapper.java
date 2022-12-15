@@ -6,7 +6,7 @@ import org.jboss.weld.environment.se.Weld;
 
 import java.io.IOException;
 
-public class BulkResultsFileOutputMapper extends datawave.core.mapreduce.bulkresults.map.BulkResultsFileOutputMapper {
+public class WeldBulkResultsFileOutputMapper extends datawave.core.mapreduce.bulkresults.map.BulkResultsFileOutputMapper {
     private Weld weld;
     
     @Override

@@ -12,7 +12,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.iterator.ConfigurableVisibilityFilter;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.exception.NoResultsException;
-import datawave.webservice.mr.bulkresults.map.BulkResultsFileOutputMapper;
+import datawave.webservice.mr.bulkresults.map.WeldBulkResultsFileOutputMapper;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -167,8 +167,8 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             if (null == this.tableName) {
                 // Setup job for output to HDFS
                 // set the mapper
-                job.setMapperClass(BulkResultsFileOutputMapper.class);
-                job.getConfiguration().set(BulkResultsFileOutputMapper.RESULT_SERIALIZATION_FORMAT, format.name());
+                job.setMapperClass(WeldBulkResultsFileOutputMapper.class);
+                job.getConfiguration().set(WeldBulkResultsFileOutputMapper.RESULT_SERIALIZATION_FORMAT, format.name());
                 // Setup the output
                 job.setOutputFormatClass(outputFormatClass);
                 job.setOutputKeyClass(Key.class);
@@ -187,7 +187,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
                 // set the mapper
                 job.setMapperClass(BulkResultsTableOutputMapper.class);
                 job.getConfiguration().set(BulkResultsTableOutputMapper.TABLE_NAME, tableName);
-                job.getConfiguration().set(BulkResultsFileOutputMapper.RESULT_SERIALIZATION_FORMAT, format.name());
+                job.getConfiguration().set(WeldBulkResultsFileOutputMapper.RESULT_SERIALIZATION_FORMAT, format.name());
                 // Setup the output
                 job.setOutputKeyClass(Text.class);
                 job.setOutputValueClass(Mutation.class);
@@ -280,18 +280,18 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             BulkInputFormat.addIterator(job.getConfiguration(), cfg);
         }
         
-        job.getConfiguration().set(BulkResultsFileOutputMapper.QUERY_LOGIC_SETTINGS, base64EncodedQuery);
-        job.getConfiguration().set(BulkResultsFileOutputMapper.QUERY_IMPL_CLASS, queryImplClass.getName());
-        job.getConfiguration().set(BulkResultsFileOutputMapper.QUERY_LOGIC_NAME, logic.getLogicName());
+        job.getConfiguration().set(WeldBulkResultsFileOutputMapper.QUERY_LOGIC_SETTINGS, base64EncodedQuery);
+        job.getConfiguration().set(WeldBulkResultsFileOutputMapper.QUERY_IMPL_CLASS, queryImplClass.getName());
+        job.getConfiguration().set(WeldBulkResultsFileOutputMapper.QUERY_LOGIC_NAME, logic.getLogicName());
         
-        job.getConfiguration().set(BulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH,
+        job.getConfiguration().set(WeldBulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH,
                         "classpath*:datawave/configuration/spring/CDIBeanPostProcessor.xml," + "classpath*:datawave/query/*QueryLogicFactory.xml,"
                                         + "classpath*:/MarkingFunctionsContext.xml," + "classpath*:/MetadataHelperContext.xml,"
                                         + "classpath*:/CacheContext.xml");
-        job.getConfiguration().set(BulkResultsFileOutputMapper.SPRING_CONFIG_LOCATIONS,
-                        job.getConfiguration().get(BulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH));
+        job.getConfiguration().set(WeldBulkResultsFileOutputMapper.SPRING_CONFIG_LOCATIONS,
+                        job.getConfiguration().get(WeldBulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH));
         // Tell the Mapper/Reducer to use a specific set of application context files when doing Spring-CDI integration.
-        String cdiOpts = "'-Dcdi.spring.configs=" + job.getConfiguration().get(BulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH) + "'";
+        String cdiOpts = "'-Dcdi.spring.configs=" + job.getConfiguration().get(WeldBulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH) + "'";
         // Pass our server DN along to the child VM so it can be made available for injection.
         cdiOpts += " '-Dserver.principal=" + encodePrincipal(serverPrincipal) + "'";
         cdiOpts += " '-Dcaller.principal=" + encodePrincipal((DatawavePrincipal) principal) + "'";
@@ -346,7 +346,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             // Initialize the logic so that the configuration contains all of the iterator options
             GenericQueryConfiguration queryConfig = logic.initialize(connector, q, runtimeQueryAuthorizations);
             
-            String base64EncodedQuery = BulkResultsFileOutputMapper.serializeQuery(q);
+            String base64EncodedQuery = WeldBulkResultsFileOutputMapper.serializeQuery(q);
             
             return new QuerySettings(logic, queryConfig, base64EncodedQuery, q.getClass(), runtimeQueryAuthorizations);
         } finally {
