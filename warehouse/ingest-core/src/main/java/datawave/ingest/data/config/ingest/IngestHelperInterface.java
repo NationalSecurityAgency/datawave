@@ -29,12 +29,14 @@ public interface IngestHelperInterface extends DataTypeHelper {
     
     /**
      * @deprecated use isShardExcluded(..) instead
+     * @return a set of excluded shards
      */
     @Deprecated
     Set<String> getShardExclusions();
     
     /**
      * @param fieldName
+     *            the field name
      * @return true if the filed should be excluded from the shard table.
      */
     @SuppressWarnings("deprecation")
@@ -46,7 +48,8 @@ public interface IngestHelperInterface extends DataTypeHelper {
      * Fully parse the raw record and return a map of field names and values.
      * 
      * @param value
-     * @return
+     *            a {@link RawRecordContainer}
+     * @return a MultiMap of normalized field values
      */
     Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer value);
     
@@ -123,9 +126,9 @@ public interface IngestHelperInterface extends DataTypeHelper {
     
     Map<String,String[]> getVirtualNameAndIndex(String fieldName);
     
-    // if a field is know to be indexed by some datasource other than our own
+    // if a field is known to be indexed by some datasource other than our own
     boolean shouldHaveBeenIndexed(String fieldName);
     
-    // if a field is know to be reverse indexed by some datasource other than our own
+    // if a field is known to be reverse indexed by some datasource other than our own
     boolean shouldHaveBeenReverseIndexed(String fieldName);
 }
