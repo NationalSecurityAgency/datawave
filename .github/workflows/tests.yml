@@ -206,6 +206,11 @@ jobs:
         cd scripts
         ./testAll.sh
 
+    - name: Dump Logs
+      if: failure()
+      run: |
+        docker compose logs
+
     - name: Docker Compose Cleanup
       if: always()
       run: |
