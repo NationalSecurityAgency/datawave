@@ -38,7 +38,7 @@ openssl ${params} pkcs12 \
     -out ${TMP_PEM} -nodes 2>/dev/null
 opensslexit=$?
 umask $OLD_UMASK
-[ $opensslexit = 0 ] || errormsg "Error creating temporary certificate file"
+[ $opensslexit = 0 ] || echo "Error creating temporary certificate file"
 
 echo "$(date): Canceling query"
 curl -X POST -s -k -E ${TMP_PEM} ${DATAWAVE_ENDPOINT}/$1/cancel -w '%{http_code}\n'

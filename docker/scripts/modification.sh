@@ -40,7 +40,7 @@ openssl ${params} pkcs12 \
     -out ${TMP_PEM} -nodes 2>/dev/null
 opensslexit=$?
 umask $OLD_UMASK
-[ $opensslexit = 0 ] || errormsg "Error creating temporary certificate file"
+[ $opensslexit = 0 ] || echo "Error creating temporary certificate file"
 
 FOLDER="modification_$(date +%Y%m%d_%I%M%S.%N)"
 

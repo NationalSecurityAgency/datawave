@@ -40,12 +40,13 @@ fi
 OLD_UMASK=$(umask)
 umask 0277
 export P12_KEYSTORE_PASS
-openssl ${params} pkcs12 \
+echo "openssl ${params} pkcs12 -in ${P12_KEYSTORE} -passin env:P12_KEYSTORE_PASS -out ${TMP_PEM} -nodes"
+OUTPUT=$(openssl ${params} pkcs12 \
     -in ${P12_KEYSTORE} -passin env:P12_KEYSTORE_PASS \
-    -out ${TMP_PEM} -nodes 2>/dev/null
+    -out ${TMP_PEM} -nodes)
 opensslexit=$?
 umask $OLD_UMASK
-[ $opensslexit = 0 ] || errormsg "Error creating temporary certificate file"
+[ $opensslexit = 0 ] || [ echo "Error creating temporary certificate file" && echo "$OUTPUT" ]
 
 read_dom () {
     local IFS=\>
