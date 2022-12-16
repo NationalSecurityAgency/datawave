@@ -25,11 +25,17 @@ function getFromCliPrompt() {
 
 needsPassphrase && getFromCliPrompt
 
+params=""
+opensslVersion3="$( openssl version | awk '{ print $2 }' | grep -E ^3\. )"
+if [ ! -z "$opensslVersion3" ]; then
+    params="-provider legacy -provider default"
+fi
+
 # Create one-time passphrase and certificate
 OLD_UMASK=$(umask)
 umask 0277
 export P12_KEYSTORE_PASS
-openssl pkcs12 \
+openssl ${params} pkcs12 \
     -in ${P12_KEYSTORE} -passin env:P12_KEYSTORE_PASS \
     -out ${TMP_PEM} -nodes 2>/dev/null
 opensslexit=$?
