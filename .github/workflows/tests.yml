@@ -158,6 +158,9 @@ jobs:
   compose-build-and-test:
     runs-on: ubuntu-latest
     steps:
+    - name: Downgrade openssl, libssl-dev
+      run: |
+        sudo apt-get install -y --allow-downgrades openssl=1.0.2g-1ubuntu4.16 libssl-dev=1.0.2g-1ubuntu4.16
     - name: Checkout Code
       uses: actions/checkout@v2
       with:
