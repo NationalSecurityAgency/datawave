@@ -209,6 +209,7 @@ jobs:
     - name: Dump Logs
       if: failure()
       run: |
+        cd docker
         docker compose logs
 
     - name: Docker Compose Cleanup
