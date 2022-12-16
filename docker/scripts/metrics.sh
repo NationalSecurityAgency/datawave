@@ -40,7 +40,7 @@ fi
 OLD_UMASK=$(umask)
 umask 0277
 export P12_KEYSTORE_PASS
-openssl ${params} pkcs12 \
+openssl pkcs12 ${params} \
     -in ${P12_KEYSTORE} -passin env:P12_KEYSTORE_PASS \
     -out ${TMP_PEM} -nodes 2>/dev/null
 opensslexit=$?
