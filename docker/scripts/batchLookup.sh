@@ -46,7 +46,7 @@ OUTPUT=$(openssl ${params} pkcs12 \
     -out ${TMP_PEM} -nodes)
 opensslexit=$?
 umask $OLD_UMASK
-[ $opensslexit = 0 ] || [ echo "Error creating temporary certificate file" && echo "$OUTPUT" ]
+[ $opensslexit = 0 ] || echo "Error creating temporary certificate file" && echo "$OUTPUT"
 
 read_dom () {
     local IFS=\>
