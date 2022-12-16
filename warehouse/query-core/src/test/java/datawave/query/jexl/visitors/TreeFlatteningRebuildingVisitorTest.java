@@ -6,9 +6,12 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.Parser;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -166,17 +169,40 @@ public class TreeFlatteningRebuildingVisitorTest {
     }
     
     @Test
-    public void singleChildAndOrTest() throws Exception {
-        JexlNode eqNode = JexlASTHelper.parseJexlQuery("FIELD == 'value'");
+    public void singleChildAndOrTest() {
+        JexlNode eqNode = JexlNodeFactory.buildEQNode("FIELD", "value");
         JexlNode and1 = JexlNodeFactory.createUnwrappedAndNode(Collections.singleton(eqNode));
         JexlNode or1 = JexlNodeFactory.createUnwrappedOrNode(Collections.singleton(and1));
         
         JexlNode flattened = TreeFlatteningRebuildingVisitor.flatten(or1);
         
-        Assert.assertEquals(ASTJexlScript.class, flattened.getClass());
-        Assert.assertEquals(1, flattened.jjtGetNumChildren());
-        Assert.assertEquals(ASTEQNode.class, flattened.jjtGetChild(0).getClass());
+        Assert.assertEquals(ASTEQNode.class, flattened.getClass());
+        Assert.assertEquals(2, flattened.jjtGetNumChildren());
         Assert.assertEquals(JexlStringBuildingVisitor.buildQuery(eqNode), JexlStringBuildingVisitor.buildQuery(flattened));
+    }
+    
+    @Test
+    public void testWrappedUnionWithSingleChild() throws ParseException {
+        // have to build this up manually. Creating an Or node via JexlNodeFactory#createOrNode is smart enough
+        // to not wrap single children
+        JexlNode eq = JexlNodeFactory.buildEQNode("FIELD", "value");
+        
+        JexlNode union = new ASTOrNode(ParserTreeConstants.JJTORNODE);
+        JexlNodes.children(union, eq);
+        
+        JexlNode refExpr = JexlNodes.wrap(union);
+        JexlNode ref = JexlNodes.makeRef(refExpr);
+        ASTJexlScript script = JexlNodeFactory.createScript(ref);
+        
+        JexlNode flattened = TreeFlatteningRebuildingVisitor.flatten(script);
+        
+        Assert.assertEquals("FIELD == 'value'", JexlStringBuildingVisitor.buildQueryWithoutParse(flattened));
+    }
+    
+    @Test
+    public void testMarker() throws ParseException {
+        String query = "(CITY == 'london' || CITY == 'london-extra') && ((_Bounded_ = true) && (STATE >= 'e' && STATE <= 'r'))";
+        assertResult(query, query);
     }
     
     private void assertResult(String expected, String original) throws ParseException {
