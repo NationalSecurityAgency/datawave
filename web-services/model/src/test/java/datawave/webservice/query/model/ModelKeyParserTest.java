@@ -6,6 +6,7 @@ import java.util.Set;
 import datawave.webservice.model.Direction;
 import datawave.webservice.model.FieldMapping;
 
+import datawave.webservice.model.Mapping;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.security.Authorizations;
@@ -94,7 +95,7 @@ public class ModelKeyParserTest {
     
     @Test
     public void testForwardKeyParse() throws Exception {
-        FieldMapping mapping = ModelKeyParser.parseKey(FORWARD_KEY, AUTHS);
+        Mapping mapping = ModelKeyParser.parseKey(FORWARD_KEY, AUTHS);
         Assert.assertEquals(FORWARD_FIELD_MAPPING, mapping);
         
         // Test ForwardKeyParse with no datatype
@@ -107,7 +108,7 @@ public class ModelKeyParserTest {
     
     @Test
     public void testReverseKeyParse() throws Exception {
-        FieldMapping mapping = ModelKeyParser.parseKey(REVERSE_KEY, AUTHS);
+        Mapping mapping = ModelKeyParser.parseKey(REVERSE_KEY, AUTHS);
         Assert.assertEquals(REVERSE_FIELD_MAPPING, mapping);
         
         // Test ReverseKeyParse with no datatype
@@ -251,7 +252,7 @@ public class ModelKeyParserTest {
     
     @Test
     public void testParseKeyNullCV() throws Exception {
-        FieldMapping mapping = ModelKeyParser.parseKey(NULL_CV_KEY, AUTHS);
+        Mapping mapping = ModelKeyParser.parseKey(NULL_CV_KEY, AUTHS);
         Assert.assertEquals(NULL_CV_MAPPING, mapping);
     }
     

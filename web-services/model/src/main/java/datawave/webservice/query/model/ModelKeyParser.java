@@ -2,6 +2,8 @@ package datawave.webservice.query.model;
 
 import datawave.webservice.model.Direction;
 import datawave.webservice.model.FieldMapping;
+import datawave.webservice.model.Mapping;
+import datawave.webservice.model.PhraseMapping;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -18,8 +20,8 @@ public class ModelKeyParser {
     public static final Value NULL_VALUE = new Value(new byte[0]);
     private static Logger log = Logger.getLogger(ModelKeyParser.class);
     
-    public static FieldMapping parseKey(Key key, Set<Authorizations> auths) {
-        FieldMapping mapping = new FieldMapping();
+    public static Mapping parseKey(Key key, Set<Authorizations> auths) {
+        Mapping mapping = new Mapping();
         String row = key.getRow().toString();
         String[] colf = key.getColumnFamily().toString().split(NULL_BYTE);
         String[] colq = key.getColumnQualifier().toString().split(NULL_BYTE);
@@ -55,11 +57,17 @@ public class ModelKeyParser {
             log.error("Error parsing key: " + key);
             throw new IllegalArgumentException("Key in unknown format, colq parts: " + colq.length);
         }
-        
+        if (dataField.contains(PhraseMapping.SUBTITUTION)) {
+            mapping = new PhraseMapping();
+            ((PhraseMapping) mapping).setPhrase(dataField);
+        } else {
+            mapping = new FieldMapping();
+            ((FieldMapping) mapping).setFieldName(dataField);
+            
+        }
         mapping.setColumnVisibility(cv);
         mapping.setDatatype(datatype);
         mapping.setDirection(direction);
-        mapping.setFieldName(dataField);
         mapping.setModelFieldName(modelField);
         return mapping;
     }
@@ -78,39 +86,57 @@ public class ModelKeyParser {
         );
     }
     
-    public static Mutation createMutation(FieldMapping mapping, String modelName) {
-        ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
+    public static Mutation createMutation(Mapping mapping, String modelName) {
+        
         Mutation m;
+        String dbFieldStr;
+        if (mapping instanceof FieldMapping) {
+            dbFieldStr = ((FieldMapping) mapping).getFieldName();
+        } else {
+            dbFieldStr = ((PhraseMapping) mapping).getPhrase();
+        }
+        m = new Mutation(dbFieldStr);
+        ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
+        
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
         
         if (Direction.REVERSE.equals(mapping.getDirection())) {
             // Reverse mappings should not have indexOnly designators. If they do, scrub it off.
-            m = new Mutation(mapping.getFieldName());
             m.put(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis(), NULL_VALUE);
             return m;
         } else {
             m = new Mutation(mapping.getModelFieldName());
-            m.put(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis(), NULL_VALUE);
-            return m;
+            m.put(modelName + dataType, dbFieldStr + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis(), NULL_VALUE);
         }
+        
+        return m;
+        
     }
     
-    public static Mutation createDeleteMutation(FieldMapping mapping, String modelName) {
-        ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
+    public static Mutation createDeleteMutation(Mapping mapping, String modelName) {
         Mutation m;
+        String dbFieldStr;
+        if (mapping instanceof FieldMapping) {
+            dbFieldStr = ((FieldMapping) mapping).getFieldName();
+        } else {
+            dbFieldStr = ((PhraseMapping) mapping).getPhrase();
+        }
+        ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
         
         if (Direction.REVERSE.equals(mapping.getDirection())) {
-            m = new Mutation(mapping.getFieldName());
+            m = new Mutation(dbFieldStr);
             m.putDelete(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis());
             return m;
         } else {
             m = new Mutation(mapping.getModelFieldName());
-            m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis());
-            m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + "index_only" + NULL_BYTE + mapping.getDirection().getValue(), cv,
+            m.putDelete(modelName + dataType, dbFieldStr + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis());
+            m.putDelete(modelName + dataType, dbFieldStr + NULL_BYTE + "index_only" + NULL_BYTE + mapping.getDirection().getValue(), cv,
                             System.currentTimeMillis());
-            return m;
         }
+        
+        return m;
+        
     }
     
 }

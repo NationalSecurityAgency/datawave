@@ -12,6 +12,7 @@ import javax.xml.bind.Unmarshaller;
 import datawave.query.model.QueryModel;
 import datawave.webservice.model.Direction;
 import datawave.webservice.model.FieldMapping;
+import datawave.webservice.model.Mapping;
 import datawave.webservice.model.Model;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,11 +32,14 @@ public class TestCardinalityConfiguration {
         Model MODEL = (datawave.webservice.model.Model) u.unmarshal(mUrl);
         
         QUERY_MODEL = new QueryModel();
-        for (FieldMapping mapping : MODEL.getFields()) {
-            if (mapping.getDirection().equals(Direction.FORWARD)) {
-                QUERY_MODEL.addTermToModel(mapping.getModelFieldName(), mapping.getFieldName());
-            } else {
-                QUERY_MODEL.addTermToReverseModel(mapping.getFieldName(), mapping.getModelFieldName());
+        for (Mapping mapping : MODEL.getFields()) {
+            if (mapping instanceof FieldMapping) {
+                FieldMapping fmap = (FieldMapping) mapping;
+                if (mapping.getDirection().equals(Direction.FORWARD)) {
+                    QUERY_MODEL.addTermToModel(mapping.getModelFieldName(), fmap.getFieldName());
+                } else {
+                    QUERY_MODEL.addTermToReverseModel(fmap.getFieldName(), fmap.getModelFieldName());
+                }
             }
         }
         

@@ -4,12 +4,14 @@ import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.TreeSet;
 
-import javax.inject.Inject;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementRef;
+import javax.xml.bind.annotation.XmlElementRefs;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlElements;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import datawave.webservice.HtmlProvider;
@@ -46,8 +48,8 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
     private String name = null;
     
     @XmlElementWrapper(name = "Mappings")
-    @XmlElement(name = "Mapping")
-    private TreeSet<FieldMapping> fields = new TreeSet<FieldMapping>();
+    @XmlElements({@XmlElement(name = "FieldMapping", type = FieldMapping.class), @XmlElement(name = "PhraseMapping", type = PhraseMapping.class)})
+    private TreeSet<Mapping> fields = new TreeSet<Mapping>();
     
     public String getName() {
         return name;
@@ -57,11 +59,11 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
         this.name = name;
     }
     
-    public TreeSet<FieldMapping> getFields() {
+    public TreeSet<Mapping> getFields() {
         return fields;
     }
     
-    public void setFields(TreeSet<FieldMapping> fields) {
+    public void setFields(TreeSet<Mapping> fields) {
         this.fields = fields;
     }
     
@@ -133,13 +135,9 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
         builder.append("<thead><tr><th>Visibility</th><th>FieldName</th><th>DataType</th><th>ModelFieldName</th><th>Direction</th></tr></thead>");
         builder.append("<tbody>");
         
-        for (FieldMapping f : this.getFields()) {
-            builder.append("<td>").append(f.getColumnVisibility()).append("</td>");
-            builder.append("<td>").append(f.getFieldName()).append("</td>");
-            builder.append("<td>").append(f.getDatatype()).append("</td>");
-            builder.append("<td>").append(f.getModelFieldName()).append("</td>");
-            builder.append("<td>").append(f.getDirection()).append("</td>");
-            builder.append("</tr>");
+        for (Mapping f : this.getFields()) {
+            f.appendFields(builder);
+            
         }
         
         builder.append("</tbody>");

@@ -5,31 +5,19 @@ import java.io.Serializable;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
 
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-@XmlAccessorType(XmlAccessType.NONE)
-public class FieldMapping implements Serializable, Comparable<FieldMapping> {
-    
-    private static final long serialVersionUID = 1L;
-    
-    @XmlAttribute(name = "datatype", required = true)
-    private String datatype = null;
+@XmlRootElement(name = "FieldMapping")
+@XmlAccessorType(XmlAccessType.FIELD)
+public class FieldMapping extends Mapping implements Serializable, Comparable<Mapping> {
     
     @XmlAttribute(name = "fieldName", required = true)
     private String fieldName = null;
-    
-    @XmlAttribute(name = "modelFieldName", required = true)
-    private String modelFieldName = null;
-    
-    @XmlAttribute(name = "direction", required = true)
-    private Direction direction = null;
-    
-    @XmlAttribute(name = "columnVisibility", required = true)
-    private String columnVisibility = null;
     
     public FieldMapping() {
         super();
@@ -45,14 +33,6 @@ public class FieldMapping implements Serializable, Comparable<FieldMapping> {
         
     }
     
-    public String getDatatype() {
-        return datatype;
-    }
-    
-    public void setDatatype(String datatype) {
-        this.datatype = datatype;
-    }
-    
     public String getFieldName() {
         return fieldName;
     }
@@ -61,28 +41,9 @@ public class FieldMapping implements Serializable, Comparable<FieldMapping> {
         this.fieldName = fieldName;
     }
     
-    public String getModelFieldName() {
-        return modelFieldName;
-    }
-    
-    public void setModelFieldName(String modelFieldName) {
-        this.modelFieldName = modelFieldName;
-    }
-    
-    public Direction getDirection() {
-        return direction;
-    }
-    
-    public void setDirection(Direction direction) {
-        this.direction = direction;
-    }
-    
-    public String getColumnVisibility() {
-        return columnVisibility;
-    }
-    
-    public void setColumnVisibility(String columnVisibility) {
-        this.columnVisibility = columnVisibility;
+    @Override
+    public String getProjection() {
+        return getFieldName();
     }
     
     @Override
@@ -110,18 +71,31 @@ public class FieldMapping implements Serializable, Comparable<FieldMapping> {
     }
     
     @Override
-    public int compareTo(FieldMapping obj) {
+    public int compareTo(Mapping obj) {
         
         if (obj == null) {
             throw new IllegalArgumentException("can not compare null");
         }
         
-        if (obj == this)
-            return 0;
-        
-        return new CompareToBuilder().append(datatype, ((FieldMapping) obj).datatype).append(fieldName, ((FieldMapping) obj).fieldName)
-                        .append(modelFieldName, ((FieldMapping) obj).modelFieldName).append(direction, ((FieldMapping) obj).direction)
-                        .append(columnVisibility, ((FieldMapping) obj).columnVisibility).toComparison();
+        if (obj instanceof FieldMapping) {
+            if (obj == this)
+                return 0;
+            
+            return new CompareToBuilder().append(datatype, ((FieldMapping) obj).datatype).append(fieldName, ((FieldMapping) obj).fieldName)
+                            .append(modelFieldName, ((FieldMapping) obj).modelFieldName).append(direction, ((FieldMapping) obj).direction)
+                            .append(columnVisibility, ((FieldMapping) obj).columnVisibility).toComparison();
+        }
+        return 1;
+    }
+    
+    @Override
+    public void appendFields(StringBuilder builder) {
+        builder.append("<td>").append(getColumnVisibility()).append("</td>");
+        builder.append("<td>").append(getFieldName()).append("</td>");
+        builder.append("<td>").append(getDatatype()).append("</td>");
+        builder.append("<td>").append(getModelFieldName()).append("</td>");
+        builder.append("<td>").append(getDirection()).append("</td>");
+        builder.append("</tr>");
     }
     
 }

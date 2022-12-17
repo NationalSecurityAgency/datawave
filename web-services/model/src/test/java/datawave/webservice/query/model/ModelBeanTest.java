@@ -141,6 +141,8 @@ public class ModelBeanTest {
         connectionFactory.returnConnection(connector);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
         PowerMock.replayAll();
         
@@ -159,6 +161,7 @@ public class ModelBeanTest {
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        
         EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
         PowerMock.replayAll();
         
@@ -300,6 +303,8 @@ public class ModelBeanTest {
         connectionFactory.returnConnection(connector);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        
         PowerMock.replayAll();
         
         bean.cloneModel(MODEL_ONE.getName(), "MODEL2", (String) null);

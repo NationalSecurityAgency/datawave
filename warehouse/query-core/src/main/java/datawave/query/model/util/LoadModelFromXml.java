@@ -2,6 +2,7 @@ package datawave.query.model.util;
 
 import datawave.query.model.QueryModel;
 import datawave.webservice.model.FieldMapping;
+import datawave.webservice.model.Mapping;
 import datawave.webservice.model.Model;
 import org.apache.log4j.Logger;
 import org.xml.sax.InputSource;
@@ -36,19 +37,19 @@ public class LoadModelFromXml {
         
         if (log.isDebugEnabled()) {
             log.debug(xmlModel.getName());
-            for (FieldMapping fieldMapping : xmlModel.getFields()) {
+            for (Mapping fieldMapping : xmlModel.getFields()) {
                 log.debug(fieldMapping.toString());
             }
         }
         
         QueryModel model = new QueryModel();
-        for (FieldMapping mapping : xmlModel.getFields()) {
+        for (Mapping mapping : xmlModel.getFields()) {
             switch (mapping.getDirection()) {
                 case FORWARD:
-                    model.addTermToModel(mapping.getModelFieldName(), mapping.getFieldName());
+                    model.addTermToModel(mapping.getModelFieldName(), mapping.getProjection());
                     break;
                 case REVERSE:
-                    model.addTermToReverseModel(mapping.getFieldName(), mapping.getModelFieldName());
+                    model.addTermToReverseModel(mapping.getProjection(), mapping.getModelFieldName());
                     break;
                 default:
                     log.error("Unknown direction: " + mapping.getDirection());

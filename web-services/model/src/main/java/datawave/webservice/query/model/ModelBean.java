@@ -12,6 +12,7 @@ import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NotFoundException;
 import datawave.webservice.common.exception.PreConditionFailedException;
 import datawave.webservice.model.FieldMapping;
+import datawave.webservice.model.Mapping;
 import datawave.webservice.model.ModelList;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -356,7 +357,7 @@ public class ModelBean {
                 cfg.addOption(RegExFilter.COLF_REGEX, "^" + name + "(\\x00.*)?");
                 scanner.addScanIterator(cfg);
                 for (Entry<Key,Value> entry : scanner) {
-                    FieldMapping mapping = ModelKeyParser.parseKey(entry.getKey(), cbAuths);
+                    Mapping mapping = ModelKeyParser.parseKey(entry.getKey(), cbAuths);
                     response.getFields().add(mapping);
                 }
             }
@@ -421,7 +422,7 @@ public class ModelBean {
             connector = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.LOW, trackingMap);
             writer = connector.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS)
                             .setMaxMemory(BATCH_WRITER_MAX_MEMORY).setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
-            for (FieldMapping mapping : model.getFields()) {
+            for (Mapping mapping : model.getFields()) {
                 Mutation m = ModelKeyParser.createMutation(mapping, model.getName());
                 writer.addMutation(m);
             }
@@ -494,7 +495,7 @@ public class ModelBean {
             connector = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.LOW, trackingMap);
             writer = connector.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS)
                             .setMaxMemory(BATCH_WRITER_MAX_MEMORY).setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
-            for (FieldMapping mapping : model.getFields()) {
+            for (Mapping mapping : model.getFields()) {
                 Mutation m = ModelKeyParser.createDeleteMutation(mapping, model.getName());
                 writer.addMutation(m);
             }
