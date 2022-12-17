@@ -8,6 +8,7 @@ import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.NoEvaluation;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.nodes.QueryPropertyMarker.Instance;
 import org.apache.commons.jexl2.parser.ASTAndNode;
@@ -94,6 +95,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
             registerMarker(ExceededTermThresholdMarkerJexlNode.class);
             registerMarker(ExceededValueThresholdMarkerJexlNode.class);
             registerMarker(BoundedRange.class);
+            registerMarker(NoEvaluation.class);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException("Failed to register default marker types for " + QueryPropertyMarkerVisitor.class.getName(), e);
         }
