@@ -576,13 +576,9 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             QueryContext.ColumnContext firstColumn = (queryContexts.get(0).getColumnContext());
             for (i = 1; i < queryContexts.size(); i++) {
                 QueryContext.ColumnContext currentContext = queryContexts.get(i).getColumnContext();
-                if ((firstColumn != null && currentContext == null) || (firstColumn == null && currentContext != null)) {
+                if ((firstColumn != null && (currentContext == null || !(firstColumn.equals(queryContexts.get(i).getColumnContext()))))
+                                || (firstColumn == null && currentContext != null)) {
                     columnFamilyAreDifferent = true;
-                } else if (firstColumn != null && !(firstColumn.equals(queryContexts.get(i).getColumnContext()))) {
-                    columnFamilyAreDifferent = true;
-                }
-                
-                if (columnFamilyAreDifferent) {
                     break;
                 }
             }
