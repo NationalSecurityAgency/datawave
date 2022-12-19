@@ -36,30 +36,12 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
      */
     public EdgeQueryModel(QueryModel other) throws InvalidModelException {
         super(other);
-        if (null != this.unevalFields && !this.unevalFields.isEmpty()) {
-            this.unevalFields.clear();
-        }
         validateModel(this);
     }
     
     /** This constructor should never be used */
     @SuppressWarnings("unused")
     private EdgeQueryModel() {}
-    
-    @Override
-    public void setUnevaluatedFields(Set<String> uneval) {
-        // No-Op/Ignore
-    }
-    
-    @Override
-    public void addUnevaluatedField(String uneval) {
-        // No-Op/Ignore
-    }
-    
-    @Override
-    public boolean isUnevaluatedField(String field) {
-        return false; // Always false
-    }
     
     /**
      * Simple factory method to load a query model from the specified classpath resource.

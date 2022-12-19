@@ -1,0 +1,11 @@
+<Model xmlns="http://webservice.datawave/v1" name="Model3">
+	<Mappings>
+		<Mapping datatype="d1" fieldName="EVENT_DATE" modelFieldName="start-time" direction="FORWARD" columnVisibility="PRIVATE"/>
+		<Mapping datatype="d1" fieldName="UUID1" modelFieldName="randomized-ID" direction="FORWARD" columnVisibility="PRIVATE"/>
+		<Mapping datatype="d1" fieldName="UUID2" modelFieldName="randomized-ID" direction="FORWARD" columnVisibility="PRIVATE"/>
+		<Mapping datatype="d1" fieldName="UUID3" modelFieldName="randomized-ID" direction="FORWARD" columnVisibility="PRIVATE"/>
+		<Mapping datatype="d1" fieldName="TYPE1" modelFieldName="custom_data_type" direction="FORWARD" columnVisibility="PRIVATE"/>
+		<Mapping datatype="d1" fieldName="TYPE2" modelFieldName="custom_data_type" direction="FORWARD" columnVisibility="PRIVATE"/>
+		<Mapping datatype="d1" fieldName="TYPE3" modelFieldName="custom_data_type" direction="FORWARD" columnVisibility="PRIVATE"/>
+	</Mappings>
+</Model>
