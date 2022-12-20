@@ -85,7 +85,7 @@ public class ActiveQueryLog {
      *            the associated name by which to look up the desired {@link ActiveQueryLog}. This will typically be the name of a table or query logic.
      * @return the existing or new {@link ActiveQueryLog} for the name
      */
-    public static ActiveQueryLog getInstance(String name) {
+    public static synchronized ActiveQueryLog getInstance(String name) {
         // Return the default instance if the name is blank.
         if (StringUtils.isBlank(name)) {
             name = DEFAULT_NAME;
