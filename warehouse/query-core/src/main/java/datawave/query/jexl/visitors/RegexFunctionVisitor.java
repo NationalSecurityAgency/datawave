@@ -69,8 +69,9 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                 }
             }
             
+            // only re-parent if the same number of regex nodes were built
             if (identifiers.size() == children.size()) {
-                switch (children.size()) {
+                switch (identifiers.size()) {
                     case 0:
                         return returnNode;
                     case 1:
