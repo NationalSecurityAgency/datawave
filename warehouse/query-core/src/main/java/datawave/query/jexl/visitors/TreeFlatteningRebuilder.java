@@ -97,14 +97,12 @@ public class TreeFlatteningRebuilder {
         Deque<JexlNode> parentStack = new LinkedList<>();
         Deque<List<JexlNode>> childrenStack = new LinkedList<>();
         
-        boolean pruned;
         JexlNode newNode = null;
         
         // now that we have the post order traversal, we can operate on the nodes...
         while (!postOrderStack.isEmpty()) {
             JexlNode node = postOrderStack.pop();
             
-            pruned = false;
             boolean hasChildren = node.jjtGetNumChildren() > 0;
             
             // if this is a reference node, flatten it
@@ -114,21 +112,6 @@ public class TreeFlatteningRebuilder {
             // if this is an AND or OR node, flatten it
             else if (hasChildren && (node instanceof ASTOrNode || node instanceof ASTAndNode)) {
                 newNode = flattenAndOrNode(JexlNodes.children(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0])));
-                
-                // if the returned node is not a junction node, then we pruned. check for an extra reference expression.
-                //  @formatter:off
-                if (!(newNode instanceof ASTAndNode || newNode instanceof ASTOrNode) &&
-                        postOrderStack.size() >= 3 &&
-                        postOrderStack.peek() instanceof ASTReferenceExpression) {
-                    //  formatter:on
-                    JexlNode t1 = postOrderStack.pop();
-                    if (postOrderStack.peek() instanceof ASTReference) {
-                        postOrderStack.pop();
-                        pruned = true;
-                    } else {
-                        postOrderStack.push(t1);
-                    }
-                }
             }
             // if this is a node with children, assign the children
             else if (hasChildren && node == parentStack.peek()) {
@@ -141,15 +124,6 @@ public class TreeFlatteningRebuilder {
             
             // if we still have nodes to evaluate
             if (!postOrderStack.isEmpty()) {
-                
-                if (pruned) {
-                    if (!parentStack.isEmpty() && parentStack.peek() == postOrderStack.peek()) {
-                        childrenStack.peek().add(newNode);
-                    } else if (!postOrderStack.isEmpty()) {
-                        parentStack.push(postOrderStack.peek());
-                        childrenStack.push(Lists.newArrayList(newNode));
-                    }
-                } else
                 
                 // if the original node's parent is NOT the next one on the parent stack,
                 // then this is a new parent node. add it to the parent stack, and add a new list of children.

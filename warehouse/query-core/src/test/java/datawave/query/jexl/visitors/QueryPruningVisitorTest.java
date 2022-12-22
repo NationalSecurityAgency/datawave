@@ -1,10 +1,12 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.attributes.Document;
+import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.util.Tuple3;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -16,7 +18,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -25,9 +26,12 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class QueryPruningVisitorTest {
     private static TestLogAppender logAppender;
+    
+    private final ASTValidator validator = new ASTValidator();
     
     @BeforeClass
     public static void staticSetup() {
@@ -68,12 +72,43 @@ public class QueryPruningVisitorTest {
         test(expected, query);
     }
     
-    // this is an edge case
-    @Ignore
     @Test
     public void testTinyScope() throws ParseException {
         String query = "(false || GEO == '019821..0000000000' || false)";
         String expected = "GEO == '019821..0000000000'";
+        test(expected, query);
+    }
+    
+    @Test
+    public void testJunctionFullPrune() throws ParseException {
+        String query = "(false || false || false)";
+        String expected = "false";
+        test(expected, query);
+        
+        query = "(true && true && true)";
+        expected = "true";
+        test(expected, query);
+    }
+    
+    @Test
+    public void testNestedJunctionPruned() throws ParseException {
+        String query = "F1 == 'v1' && (true || true)";
+        String expected = "F1 == 'v1'";
+        test(expected, query);
+        
+        query = "F1 == 'v1' || (false && false)";
+        expected = "F1 == 'v1'";
+        test(expected, query);
+    }
+    
+    @Test
+    public void testFullPruneOfNestedUnion() throws ParseException {
+        String query = "F1 == 'v1' && (false || false || F2 == 'v2')";
+        String expected = "F1 == 'v1' && F2 == 'v2'";
+        test(expected, query);
+        
+        query = "F1 == 'v1' || (true && true && F2 == 'v2')";
+        expected = "F1 == 'v1' || F2 == 'v2'";
         test(expected, query);
     }
     
@@ -82,6 +117,12 @@ public class QueryPruningVisitorTest {
         JexlNode reduced = QueryPruningVisitor.reduce(script, false);
         
         assertEquals(expected, JexlStringBuildingVisitor.buildQuery(reduced));
+        
+        try {
+            assertTrue(validator.isValid(reduced));
+        } catch (InvalidQueryTreeException e) {
+            fail("Query failed validation: " + query);
+        }
     }
     
     @Test
