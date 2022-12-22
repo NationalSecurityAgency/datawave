@@ -16,8 +16,7 @@ import org.apache.accumulo.core.security.VisibilityParseException;
 /**
  * RecordReader that returns only Events that the caller can see using the Accumulo VisibilityFilter. This class expects that
  * SecureEventSequenceFileRecordReader.authorizations property is set in the configuration with a valid set of authorizations (comma separated string)
- * 
- * @param <K>
+ *
  */
 public class SecureEventSequenceFileRecordReader<K> extends EventSequenceFileRecordReader<K> {
     

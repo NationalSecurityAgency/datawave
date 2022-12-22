@@ -289,7 +289,7 @@ public interface EdgeModelAware {
         /**
          * Returns the subset of all edge-related field names which are common to all application tiers.
          * 
-         * @return
+         * @return subset of field names
          */
         public Collection<String> getBaseFieldNames() {
             return Collections.unmodifiableCollection(baseFieldMap.values());
@@ -299,7 +299,7 @@ public interface EdgeModelAware {
          * Returns the field names associated with key manipulation and processing, a superset of the fields given by the {@link Fields#getBaseFieldNames}
          * method
          * 
-         * @return
+         * @return field names associated with key manipulation and processing
          */
         public Collection<String> getKeyProcessingFieldNames() {
             HashSet<String> fields = new HashSet<>();
@@ -311,7 +311,7 @@ public interface EdgeModelAware {
         /**
          * Returns the field names associated with query result transformation, a superset of the fields given by the {@link Fields#getBaseFieldNames} method
          * 
-         * @return
+         * @return query result field names
          */
         public Collection<String> getTransformFieldNames() {
             HashSet<String> fields = new HashSet<>();
@@ -323,7 +323,7 @@ public interface EdgeModelAware {
         /**
          * Returns the mapped fields associated with edge key manipulation and processing, where the keys are represented as FieldKey.name()
          * 
-         * @return
+         * @return mapped key processing fields
          */
         public Map<String,String> getKeyProcessingFieldMap() {
             HashMap<String,String> all = new HashMap<>();
@@ -335,7 +335,7 @@ public interface EdgeModelAware {
         /**
          * Returns the mapping for fields associated with query result transformation, where the keys are represented as FieldKey.name()
          * 
-         * @return
+         * @return mapping for fields associated with query result transformation
          */
         public Map<String,String> getTransformFieldMap() {
             HashMap<String,String> all = new HashMap<>();
@@ -347,7 +347,7 @@ public interface EdgeModelAware {
         /**
          * Returns all mapped field names, where the keys are represented as FieldKey.name()
          * 
-         * @return
+         * @return map of field names
          */
         public Map<String,String> getAllFieldsMap() {
             HashMap<String,String> all = new HashMap<>();
@@ -361,7 +361,7 @@ public interface EdgeModelAware {
          * Returns the field name mapped to the specified FieldKey
          * 
          * @param key
-         * @return
+         * @return field name
          */
         public String getFieldName(FieldKey key) {
             return getAllFieldsMap().get(key.name());
