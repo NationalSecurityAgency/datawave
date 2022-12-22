@@ -384,7 +384,7 @@ public class SnowflakeUID extends UID {
      * Parses the string representation of the UID using the default radix and an unspecified number of extra parts
      * 
      * @param s
-     *          string of the UID
+     *            string of the UID
      * @return SnowflakeUID
      */
     @SuppressWarnings("unchecked")
@@ -396,7 +396,7 @@ public class SnowflakeUID extends UID {
      * Parses the string representation of the UID using the default radix, but only include up to maxExtraParts of the portion past the base hash
      * 
      * @param s
-     *          string of the UID
+     *            string of the UID
      * @param maxExtraParts
      *            is the number of pieces of the extra portion to include. -1 means all, 0 means none.
      * @return UID
@@ -410,9 +410,9 @@ public class SnowflakeUID extends UID {
      * Parses the string representation of the UID using the specified radix, but only include up to maxExtraParts of the portion past the base hash
      * 
      * @param s
-     *          string of the UID
+     *            string of the UID
      * @param radix
-     *          the desired radix
+     *            the desired radix
      * @param maxExtraParts
      *            is the number of pieces of the extra portion to include. -1 means all, 0 means none.
      * @return UID
@@ -450,7 +450,7 @@ public class SnowflakeUID extends UID {
      * Parses the string representation of the hash, but only the base part
      * 
      * @param s
-     *          string of the UID
+     *            string of the UID
      * @return UID
      */
     @SuppressWarnings("unchecked")

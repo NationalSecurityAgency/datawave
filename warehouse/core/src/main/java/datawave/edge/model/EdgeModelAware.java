@@ -200,6 +200,10 @@ public interface EdgeModelAware {
             
             /**
              * Returns the FieldKey associated with the actual (ie, configured) edge field name, ie, reverse lookup...
+             * 
+             * @param internalFieldName
+             *            configured field name to parse
+             * @return the reverse lookup field name
              */
             public static FieldKey parse(String internalFieldName) {
                 return reverseMap.get(internalFieldName);
@@ -361,6 +365,7 @@ public interface EdgeModelAware {
          * Returns the field name mapped to the specified FieldKey
          * 
          * @param key
+         *            key to pull name from
          * @return field name
          */
         public String getFieldName(FieldKey key) {

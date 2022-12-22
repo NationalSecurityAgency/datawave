@@ -84,7 +84,7 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
      * GregorianCalendar operations.
      * 
      * @param time
-     *        date object to extract from
+     *            date object to extract from
      * @return the time % MILLISECONDS_PER_DAY, or -1 if time is null.
      */
     protected static int extractTimeOfDay(Date time) {
@@ -132,7 +132,7 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
      * Combines multiple "extras" into a single extra
      * 
      * @param extras
-     *        list of extras
+     *            list of extras
      * @return merged extra
      */
     protected static String mergeExtras(final String... extras) {
@@ -180,6 +180,7 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
     
     /**
      * Creates a new UID builder based on default criteria and a date/time value, if defined
+     * 
      * @param time
      *            the time value for the builder
      * @return a default UID builder
@@ -250,7 +251,7 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
      * Parses the string representation of the hash
      * 
      * @param s
-     *          string version of hash
+     *            string version of hash
      * @return UID
      */
     public static <UID_TYPE extends UID> UID_TYPE parse(final String s) {
@@ -261,10 +262,10 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
      * Parses the string representation of the hash, but only include up to maxExtraParts of the portion past the base hash
      * 
      * @param s
-     *          string version of hash
+     *            string version of hash
      * @param maxExtraParts
      *            is the number of pieces of the extra portion to include. -1 means all, 0 means none.
-     * @return UID
+     * @return UID_TYPE
      */
     @SuppressWarnings("unchecked")
     public static <UID_TYPE extends UID> UID_TYPE parse(final String s, int maxExtraParts) {
@@ -292,8 +293,8 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
      * Parses the string representation of the hash, but only the base part
      * 
      * @param s
-     *          string version of hash
-     * @return UID
+     *            string version of hash
+     * @return UID_TYPE
      */
     public static <UID_TYPE extends UID> UID_TYPE parseBase(String s) {
         return parse(s, 0);
