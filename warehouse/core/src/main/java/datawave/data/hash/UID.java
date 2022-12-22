@@ -250,10 +250,13 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
     /**
      * Parses the string representation of the hash
      * 
+     * @param <UID_TYPE>
+     *            expected class of the UID.
      * @param s
      *            string version of hash
-     * @return UID
+     * @return UID of parsed hash
      */
+    @SuppressWarnings("unchecked")
     public static <UID_TYPE extends UID> UID_TYPE parse(final String s) {
         return parse(s, -1);
     }
@@ -261,11 +264,13 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
     /**
      * Parses the string representation of the hash, but only include up to maxExtraParts of the portion past the base hash
      * 
+     * @param <UID_TYPE>
+     *            expected class of the UID.
      * @param s
      *            string version of hash
      * @param maxExtraParts
      *            is the number of pieces of the extra portion to include. -1 means all, 0 means none.
-     * @return UID_TYPE
+     * @return UID of parsed hash
      */
     @SuppressWarnings("unchecked")
     public static <UID_TYPE extends UID> UID_TYPE parse(final String s, int maxExtraParts) {
@@ -292,9 +297,11 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
     /**
      * Parses the string representation of the hash, but only the base part
      * 
+     * @param <UID_TYPE>
+     *            expected class of the UID.
      * @param s
      *            string version of hash
-     * @return UID_TYPE
+     * @return UID of parsed hash
      */
     public static <UID_TYPE extends UID> UID_TYPE parseBase(String s) {
         return parse(s, 0);

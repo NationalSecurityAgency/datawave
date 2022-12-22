@@ -14,7 +14,8 @@ import org.apache.log4j.Logger;
 
 /**
  * Abstract implementation of the UIDBuilder
- *
+ * 
+ * @return UID_TYPE wrapped in type {@link AbstractUIDBuilder}
  */
 public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBuilder<UID_TYPE> {
     
