@@ -53,6 +53,7 @@ public class AccumuloHelper {
     
     /**
      * @throws AccumuloSecurityException
+     *             if an issue is discovered with authentication or connecting to obtain credentials
      * @return Accumulo authorization info based on username and password set in this object.
      */
     public Credentials getCredentials() throws AccumuloSecurityException {

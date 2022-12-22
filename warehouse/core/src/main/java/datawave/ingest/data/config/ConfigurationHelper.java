@@ -113,6 +113,7 @@ public class ConfigurationHelper extends Configuration {
      * @param value
      *            the parameter value
      * @param delimiter
+     *            object upon which to separate the strings
      */
     public static void setSetOfStrings(final Configuration conf, final String propertyName, final Set<String> value, final String delimiter) {
         if (value != null) {
