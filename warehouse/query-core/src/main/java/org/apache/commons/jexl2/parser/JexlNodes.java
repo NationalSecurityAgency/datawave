@@ -176,30 +176,6 @@ public class JexlNodes {
     }
     
     /**
-     * Null out parent and child references for each of the provided nodes
-     *
-     * @param nodes
-     *            a JexlNode collection
-     */
-    public static void blank(JexlNode... nodes) {
-        for (JexlNode node : nodes) {
-            node.parent = null;
-            node.children = null;
-        }
-    }
-    
-    /**
-     * Null out parent and child references
-     *
-     * @param node
-     *            a JexlNode
-     */
-    public static void blank(JexlNode node) {
-        node.parent = null;
-        node.children = null;
-    }
-    
-    /**
      * Negate the provided JexlNode
      *
      * @param node

@@ -348,9 +348,6 @@ public class QueryPruningVisitor extends BaseVisitor {
                     JexlNode parent = node.jjtGetParent();
                     JexlNode source = junction.jjtGetChild(0);
                     JexlNodes.swap(parent, node, source);
-                    
-                    // blank out the junction, refExpr, and ref nodes
-                    JexlNodes.blank(junction, refExpr, node);
                 }
             }
         }
@@ -623,9 +620,6 @@ public class QueryPruningVisitor extends BaseVisitor {
                     if (grandparent instanceof ASTReference && grandparent.jjtGetParent() != null) {
                         JexlNode greatGrandParent = grandparent.jjtGetParent();
                         JexlNodes.swap(greatGrandParent, grandparent, parent.jjtGetChild(0));
-                        
-                        // blank out the parent and grandparent
-                        JexlNodes.blank(parent, grandparent);
                     }
                 }
             }
