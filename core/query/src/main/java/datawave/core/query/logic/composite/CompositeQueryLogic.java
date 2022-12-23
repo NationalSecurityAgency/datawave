@@ -9,7 +9,7 @@ import datawave.core.query.logic.CheckpointableQueryLogic;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.security.authorization.ProxiedDatawaveUser;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.query.Query;
 import datawave.webservice.result.BaseResponse;
 import org.apache.accumulo.core.client.Connector;
@@ -445,7 +445,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     }
     
     @Override
-    public void setCurrentUser(ProxiedDatawaveUser currentUser) {
+    public void setCurrentUser(ProxiedUserDetails currentUser) {
         super.setCurrentUser(currentUser);
         for (BaseQueryLogic<?> logic : queryLogics.values()) {
             logic.setCurrentUser(currentUser);
@@ -453,7 +453,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     }
     
     @Override
-    public void setServerUser(ProxiedDatawaveUser serverUser) {
+    public void setServerUser(ProxiedUserDetails serverUser) {
         super.setServerUser(serverUser);
         for (BaseQueryLogic<?> logic : queryLogics.values()) {
             logic.setServerUser(serverUser);

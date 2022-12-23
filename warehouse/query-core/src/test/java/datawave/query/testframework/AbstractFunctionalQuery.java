@@ -10,7 +10,7 @@ import datawave.core.query.logic.QueryLogicFactory;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions.Default;
-import datawave.microservice.authorization.user.ProxiedUserDetails;
+import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -226,7 +226,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             return logic;
         }
         
-        public QueryLogic<?> getQueryLogic(String name, ProxiedUserDetails currentUser) throws IllegalArgumentException, CloneNotSupportedException {
+        public QueryLogic<?> getQueryLogic(String name, DatawaveUserDetails currentUser) throws IllegalArgumentException, CloneNotSupportedException {
             return getQueryLogic(name, (Principal) null);
         }
         

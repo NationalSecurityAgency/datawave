@@ -4,7 +4,7 @@ import datawave.configuration.spring.SpringBean;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
-import datawave.microservice.authorization.user.ProxiedUserDetails;
+import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.ServerPrincipal;
 import datawave.webservice.common.exception.UnauthorizedException;
@@ -45,7 +45,7 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
     }
     
     @Override
-    public QueryLogic<?> getQueryLogic(String name, ProxiedUserDetails currentUser)
+    public QueryLogic<?> getQueryLogic(String name, DatawaveUserDetails currentUser)
                     throws QueryException, IllegalArgumentException, CloneNotSupportedException {
         throw new UnsupportedOperationException("Using proxied user details to create a query logic is not supported for wildfly deployments");
     }

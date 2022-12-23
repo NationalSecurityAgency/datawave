@@ -1,5 +1,15 @@
 package datawave.security.util;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import datawave.accumulo.util.security.UserAuthFunctions;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang.StringUtils;
+
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,16 +20,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import datawave.accumulo.util.security.UserAuthFunctions;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.StringUtils;
 
 public class AuthorizationsUtil {
     

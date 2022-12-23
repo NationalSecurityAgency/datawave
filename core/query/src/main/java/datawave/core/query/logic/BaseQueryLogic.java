@@ -4,7 +4,7 @@ import datawave.audit.SelectorExtractor;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.marking.MarkingFunctions;
-import datawave.security.authorization.ProxiedDatawaveUser;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -40,8 +40,8 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private String _connPoolName;
     private Set<String> authorizedDNs;
     
-    protected ProxiedDatawaveUser currentUser;
-    protected ProxiedDatawaveUser serverUser;
+    protected ProxiedUserDetails currentUser;
+    protected ProxiedUserDetails serverUser;
     
     protected Set<String> requiredRoles;
     protected MarkingFunctions markingFunctions;
@@ -112,19 +112,19 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         this.responseObjectFactory = responseObjectFactory;
     }
     
-    public ProxiedDatawaveUser getCurrentUser() {
+    public ProxiedUserDetails getCurrentUser() {
         return currentUser;
     }
     
-    public void setCurrentUser(ProxiedDatawaveUser currentUser) {
+    public void setCurrentUser(ProxiedUserDetails currentUser) {
         this.currentUser = currentUser;
     }
     
-    public ProxiedDatawaveUser getServerUser() {
+    public ProxiedUserDetails getServerUser() {
         return serverUser;
     }
     
-    public void setServerUser(ProxiedDatawaveUser serverUser) {
+    public void setServerUser(ProxiedUserDetails serverUser) {
         this.serverUser = serverUser;
     }
     

@@ -1,6 +1,6 @@
 package datawave.core.query.logic;
 
-import datawave.microservice.authorization.user.ProxiedUserDetails;
+import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.webservice.query.exception.QueryException;
 
 import java.security.Principal;
@@ -38,7 +38,7 @@ public interface QueryLogicFactory {
      * @throws CloneNotSupportedException
      *             if the query logic object failed to clone
      */
-    QueryLogic<?> getQueryLogic(String name, ProxiedUserDetails currentUser) throws QueryException, IllegalArgumentException, CloneNotSupportedException;
+    QueryLogic<?> getQueryLogic(String name, DatawaveUserDetails currentUser) throws QueryException, IllegalArgumentException, CloneNotSupportedException;
     
     QueryLogic<?> getQueryLogic(String name) throws QueryException, IllegalArgumentException, CloneNotSupportedException;
     

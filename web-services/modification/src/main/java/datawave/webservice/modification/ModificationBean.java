@@ -5,7 +5,6 @@ import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
-import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.modification.DatawaveModificationException;
 import datawave.modification.ModificationService;
 import datawave.modification.configuration.ModificationConfiguration;

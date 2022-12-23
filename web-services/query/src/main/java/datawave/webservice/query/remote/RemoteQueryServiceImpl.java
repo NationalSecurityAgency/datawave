@@ -4,7 +4,7 @@ package datawave.webservice.query.remote;
 import com.codahale.metrics.Counter;
 import com.fasterxml.jackson.databind.ObjectReader;
 import datawave.core.query.remote.RemoteQueryService;
-import datawave.microservice.authorization.user.ProxiedUserDetails;
+import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.result.BaseQueryResponse;
@@ -214,8 +214,8 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         if (callerObject instanceof DatawavePrincipal) {
             DatawavePrincipal callerPrincipal = (DatawavePrincipal) callerObject;
             return "Bearer " + jwtTokenHandler.createTokenFromUsers(callerPrincipal.getName(), callerPrincipal.getProxiedUsers());
-        } else if (callerObject instanceof ProxiedUserDetails) {
-            ProxiedUserDetails callerDetails = (ProxiedUserDetails) callerObject;
+        } else if (callerObject instanceof DatawaveUserDetails) {
+            DatawaveUserDetails callerDetails = (DatawaveUserDetails) callerObject;
             return "Bearer " + jwtTokenHandler.createTokenFromUsers(callerDetails.getUsername(), callerDetails.getProxiedUsers());
         } else {
             throw new RuntimeException("Cannot use " + callerObject.getClass().getName() + " as a caller object");

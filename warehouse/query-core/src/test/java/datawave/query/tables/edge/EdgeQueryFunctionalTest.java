@@ -3,7 +3,7 @@ package datawave.query.tables.edge;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
-import datawave.microservice.authorization.user.ProxiedUserDetails;
+import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
@@ -539,7 +539,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
             return getQueryLogic(name, userRoles, true);
         }
         
-        public QueryLogic<?> getQueryLogic(String name, ProxiedUserDetails currentUser) throws QueryException {
+        public QueryLogic<?> getQueryLogic(String name, DatawaveUserDetails currentUser) throws QueryException {
             Set<String> userRoles = new HashSet<>(currentUser.getPrimaryUser().getRoles());
             return getQueryLogic(name, userRoles, true);
         }
