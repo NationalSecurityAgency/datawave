@@ -5,7 +5,6 @@ import com.codahale.metrics.annotation.Metric;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectReader;
 import datawave.configuration.RefreshableScope;
-import datawave.core.common.edgedictionary.EdgeDictionaryProvider;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
@@ -28,7 +27,7 @@ import java.util.function.Supplier;
  * Retrieves an {@link EdgeDictionaryBase} from the remote edge dictionary service.
  */
 @RefreshableScope
-public class RemoteEdgeDictionary extends RemoteHttpService implements EdgeDictionaryProvider {
+public class RemoteEdgeDictionary extends RemoteHttpService {
     private ObjectReader edgeDictReader;
     
     @Inject

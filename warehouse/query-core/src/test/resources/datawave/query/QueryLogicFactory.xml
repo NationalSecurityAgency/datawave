@@ -103,7 +103,7 @@
         <property name="edgeModelFieldsFactory" ref="edgeModelFieldsFactory" />
     </bean>
 
-    <bean id="edgeDictionaryProvider" scope="prototype" class="datawave.webservice.edgedictionary.RemoteEdgeDictionary" />
+    <bean id="edgeDictionaryProvider" scope="prototype" class="datawave.webservice.edgedictionary.EdgeDictionaryProviderImpl" />
 
     <bean id="ExtendedEdgeQuery" scope="prototype" parent="RewriteEdgeQuery" class="datawave.query.edge.DefaultExtendedEdgeQueryLogic">
         <property name="edgeQueryModel" ref="edgeQueryModel" />

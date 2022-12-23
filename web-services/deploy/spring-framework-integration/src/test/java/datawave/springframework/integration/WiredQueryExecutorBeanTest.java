@@ -22,7 +22,6 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.security.system.ServerPrincipal;
 import datawave.webservice.common.json.DefaultMapperDecorator;
-import datawave.webservice.edgedictionary.EdgeDictionaryResponseTypeProducer;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.results.cached.CachedResultsConfiguration;
@@ -79,7 +78,7 @@ public class WiredQueryExecutorBeanTest {
                                         EventQueryDataDecoratorTransformer.class, FieldIndexCountQueryLogic.class, CompositeQueryLogic.class,
                                         QueryMetricQueryLogic.class, TLDQueryLogic.class, ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class,
                                         QueryLogicFactoryImpl.class, CachedResultsConfiguration.class, DateIndexHelperFactory.class,
-                                        EdgeDictionaryResponseTypeProducer.class, RemoteEdgeDictionary.class, DefaultMapperDecorator.class)
+                                        DefaultMapperDecorator.class)
                         .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
     
@@ -108,6 +107,8 @@ public class WiredQueryExecutorBeanTest {
     private static JSSESecurityDomain mockJsseSecurityDomain = EasyMock.createMock(JSSESecurityDomain.class);
     private static DatawavePrincipal mockDatawavePrincipal = EasyMock.createMock(DatawavePrincipal.class);
     
+    private static RemoteEdgeDictionary mockRemoteEdgeDictionary = EasyMock.createMock(RemoteEdgeDictionary.class);
+    
     public static class Producer {
         @Produces
         public static JSSESecurityDomain produceSecurityDomain() {
@@ -118,6 +119,11 @@ public class WiredQueryExecutorBeanTest {
         @CallerPrincipal
         public static DatawavePrincipal produceDatawavePrincipal() {
             return mockDatawavePrincipal;
+        }
+        
+        @Produces
+        public static RemoteEdgeDictionary produceRemoteEdgeDictionary() {
+            return mockRemoteEdgeDictionary;
         }
     }
 }

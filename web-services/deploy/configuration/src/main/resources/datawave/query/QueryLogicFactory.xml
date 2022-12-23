@@ -635,6 +635,6 @@
         <property name="edgeDictionaryProvider" ref="edgeDictionaryProvider" />
     </bean>
 
-    <bean id="edgeDictionaryProvider" scope="prototype" class="datawave.webservice.edgedictionary.RemoteEdgeDictionary" />
+    <bean id="edgeDictionaryProvider" scope="prototype" class="datawave.webservice.edgedictionary.EdgeDictionaryProviderImpl" />
 
 </beans>
