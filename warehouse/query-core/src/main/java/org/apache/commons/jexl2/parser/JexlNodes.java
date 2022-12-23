@@ -183,7 +183,8 @@ public class JexlNodes {
      */
     public static void blank(JexlNode... nodes) {
         for (JexlNode node : nodes) {
-            blank(node);
+            node.parent = null;
+            node.children = null;
         }
     }
     
@@ -195,7 +196,7 @@ public class JexlNodes {
      */
     public static void blank(JexlNode node) {
         node.parent = null;
-        node.children = new JexlNode[0];
+        node.children = null;
     }
     
     /**
