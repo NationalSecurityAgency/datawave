@@ -4,6 +4,9 @@ import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class TFKeyTest {
     
@@ -27,5 +30,20 @@ public class TFKeyTest {
         assertEquals("fi\0eld\0Va\0lue", tfKey.getValue());
         assertEquals("fieldName", tfKey.getField());
         assertEquals("uid\0fi\0eld\0Va\0lue", tfKey.getUidAndValue());
+        assertTrue(tfKey.isValid());
+    }
+    
+    @Test
+    public void testParse_missingColumnQualifier() {
+        Key k = new Key("row", "tf");
+        TFKey tfKey = new TFKey();
+        tfKey.parse(k);
+        
+        assertNull(tfKey.getDatatype());
+        assertNull(tfKey.getUid());
+        assertNull(tfKey.getValue());
+        assertNull(tfKey.getField());
+        assertNull(tfKey.getUidAndValue());
+        assertFalse(tfKey.isValid());
     }
 }

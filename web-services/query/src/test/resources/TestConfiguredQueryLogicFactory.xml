@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xmlns:util="http://www.springframework.org/schema/util"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans 
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
+    http://www.springframework.org/schema/context 
+    http://www.springframework.org/schema/context/spring-context-4.0.xsd
+    http://www.springframework.org/schema/util 
+    http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+    
+	<!-- Database properties are retrieved from the database.properties file but can be overridden by system properties -->
+	<bean id="propertyPlaceholderConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location">
+			<value>classpath:database.properties</value>
+		</property>
+		<property name="systemPropertiesModeName">
+			<value>SYSTEM_PROPERTIES_MODE_OVERRIDE</value>
+		</property>
+	</bean>
+
+
+	<bean id="QueryLogicFactoryConfiguration" class="datawave.webservice.query.logic.QueryLogicFactoryConfiguration">
+		<property name="logicMap" ref="MYMAP"/>
+	</bean>
+
+	<bean id="DEFAULT" class="org.springframework.beans.factory.config.MapFactoryBean">
+		<property name="sourceMap">
+			<map>
+				<entry key="TestQuery" value="TestQuery"/>
+			</map>
+		</property>
+	</bean>
+
+	<bean id="MYMAP" parent="DEFAULT" class="org.springframework.beans.factory.config.MapFactoryBean">
+		<property name="sourceMap">
+			<map merge="true">
+				<entry key="TestQuery" value="TestQuery2"/>
+			</map>
+		</property>
+	</bean>
+
+	<bean id="TestQuery" class="datawave.webservice.query.logic.TestQueryLogic">
+		<property name="tableName" value="${metadata.table.name}" />
+		<property name="maxResults" value="12345" />
+		<property name="maxWork" value="98765" />
+		<property name="roleManager" ref="easyRoleManager" />
+	</bean>
+	
+	
+	
+
+
+	<bean id="TestQuery2" class="datawave.webservice.query.logic.TestQueryLogic">
+		<property name="tableName" value="${metadata.table.name}" />
+		<property name="maxResults" value="123456" />
+		<property name="maxWork" value="987654" />
+	</bean>
+
+    <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
+    
+    <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
+    
+
+
+
+
+</beans>

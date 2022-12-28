@@ -98,6 +98,11 @@ public abstract class BaseIndexStream implements IndexStream {
     }
     
     @Override
+    public Tuple2<String,IndexInfo> next(String context) {
+        return next();
+    }
+    
+    @Override
     public void remove() {}
     
     @Override

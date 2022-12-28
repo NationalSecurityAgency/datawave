@@ -85,13 +85,26 @@ public abstract class RemoteHttpService {
     @Inject
     protected ObjectMapperDecorator objectMapperDecorator;
     
+    public void setJsseSecurityDomain(JSSESecurityDomain jsseSecurityDomain) {
+        this.jsseSecurityDomain = jsseSecurityDomain;
+    }
+    
+    public void setExecutorService(ManagedExecutorService executorService) {
+        this.executorService = executorService;
+    }
+    
+    public void setObjectMapperDecorator(ObjectMapperDecorator objectMapperDecorator) {
+        this.objectMapperDecorator = objectMapperDecorator;
+    }
+    
     protected <T> T execute(HttpRequestBase request, IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws IOException {
+        log.info("Executing " + request.getClass().getSimpleName() + " against " + request.getURI());
         try {
             activeExecutions.incrementAndGet();
             return client.execute(
                             request,
                             r -> {
-                                if (r.getStatusLine().getStatusCode() != 200) {
+                                if (r.getStatusLine().getStatusCode() >= 300) {
                                     throw new ClientProtocolException("Unable to " + errorSupplier.get() + ": " + r.getStatusLine() + " "
                                                     + EntityUtils.toString(r.getEntity()));
                                 } else {

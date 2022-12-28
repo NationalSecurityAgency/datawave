@@ -1,19 +1,11 @@
 package datawave.security.system;
 
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.Principal;
-import java.security.cert.X509Certificate;
-import java.util.Collections;
-
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.user.UserOperationsBean;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.jboss.security.AuthenticationManager;
-import org.jboss.security.CacheableManager;
 import org.jboss.security.JSSESecurityDomain;
 
 import javax.annotation.Resource;
@@ -21,6 +13,10 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
 
 /**
  * A producer class for generating server-security related artifacts. For one, we produce the server DN of the server that we are running inside of. We allso
@@ -31,16 +27,8 @@ import javax.inject.Inject;
 @ApplicationScoped
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class ServerSecurityProducer {
-    // Allow injection of JSSESecurityDomain without having to specify the JNDI name at each injection point.
-    // Instead, users can simply do:
-    // @Inject private JSSESecurityDomain jsseSecurityDomain
-    // and the specification of the resource location is limited to this class.
-    @Produces
-    @Resource(name = "java:jboss/jaas/datawave/jsse")
+    @Inject
     private JSSESecurityDomain domain;
-    
-    @Resource(name = "java:jboss/jaas/datawave")
-    private AuthenticationManager authenticationManager;
     
     @Inject
     private DatawaveUserService datawaveUserService;
@@ -69,13 +57,6 @@ public class ServerSecurityProducer {
     @RequestScoped
     public DatawavePrincipal produceServerPrincipal() throws Exception {
         return new DatawavePrincipal(datawaveUserService.lookup(Collections.singleton(lookupServerDN())));
-    }
-    
-    @Produces
-    @AuthorizationCache
-    @SuppressWarnings("unchecked")
-    public CacheableManager<Object,Principal> produceAuthManager() {
-        return (authenticationManager instanceof CacheableManager) ? (CacheableManager<Object,Principal>) authenticationManager : null;
     }
     
     private SubjectIssuerDNPair lookupServerDN() throws KeyStoreException {

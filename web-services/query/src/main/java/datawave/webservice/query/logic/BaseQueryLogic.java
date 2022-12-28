@@ -14,7 +14,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.springframework.beans.factory.annotation.Required;
 
-import javax.inject.Inject;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Iterator;
@@ -41,9 +40,9 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected Principal principal;
     protected RoleManager roleManager;
     protected MarkingFunctions markingFunctions;
-    @Inject
     protected ResponseObjectFactory responseObjectFactory;
     protected SelectorExtractor selectorExtractor;
+    protected ResponseEnricherBuilder responseEnricherBuilder = null;
     
     public static final String BYPASS_ACCUMULO = "rfile.debug";
     
@@ -58,6 +57,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setMaxResults(other.getMaxResults());
         setBaseIteratorPriority(other.getBaseIteratorPriority());
         setBypassAccumulo(other.getBypassAccumulo());
+        setAccumuloPassword(other.getAccumuloPassword());
         
         // Other variables
         setMaxResults(other.maxResults);
@@ -75,6 +75,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setPrincipal(other.getPrincipal());
         setRoleManager(other.getRoleManager());
         setSelectorExtractor(other.getSelectorExtractor());
+        setResponseEnricherBuilder(other.getResponseEnricherBuilder());
     }
     
     public GenericQueryConfiguration getConfig() {
@@ -194,6 +195,23 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
     
     @Override
+    public final QueryLogicTransformer getEnrichedTransformer(Query settings) {
+        QueryLogicTransformer transformer = this.getTransformer(settings);
+        if (responseEnricherBuilder != null) {
+            //@formatter:off
+            ResponseEnricher enricher = responseEnricherBuilder
+                    .withConfig(getConfig())
+                    .withMarkingFunctions(getMarkingFunctions())
+                    .withResponseObjectFactory(responseObjectFactory)
+                    .withPrincipal(getPrincipal())
+                    .build();
+            //@formatter:on
+            transformer.setResponseEnricher(enricher);
+        }
+        return transformer;
+    }
+    
+    @Override
     public TransformIterator getTransformIterator(Query settings) {
         return new DatawaveTransformIterator(this.iterator(), this.getTransformer(settings));
     }
@@ -214,6 +232,14 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     public void setBypassAccumulo(boolean bypassAccumulo) {
         getConfig().setBypassAccumulo(bypassAccumulo);
+    }
+    
+    public String getAccumuloPassword() {
+        return getConfig().getAccumuloPassword();
+    }
+    
+    public void setAccumuloPassword(String accumuloPassword) {
+        getConfig().setAccumuloPassword(accumuloPassword);
     }
     
     @Override
@@ -360,5 +386,13 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     @Override
     public boolean isLongRunningQuery() {
         return false;
+    }
+    
+    public ResponseEnricherBuilder getResponseEnricherBuilder() {
+        return responseEnricherBuilder;
+    }
+    
+    public void setResponseEnricherBuilder(ResponseEnricherBuilder responseEnricherBuilder) {
+        this.responseEnricherBuilder = responseEnricherBuilder;
     }
 }

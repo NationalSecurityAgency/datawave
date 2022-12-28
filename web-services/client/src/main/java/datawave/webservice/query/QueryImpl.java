@@ -817,6 +817,8 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                 throw new RuntimeException("Error formatting date", e);
             }
         }
+        p.set(QueryParameters.QUERY_PAGETIMEOUT, Integer.toString(this.pageTimeout));
+        
         if (this.parameters != null) {
             for (Parameter parameter : parameters) {
                 p.set(parameter.getParameterName(), parameter.getParameterValue());
@@ -842,5 +844,20 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     public void removeParameter(String key) {
         this.parameters.remove(paramLookup.get(key));
         this.paramLookup.remove(key);
+    }
+    
+    @Override
+    public void populateTrackingMap(Map<String,String> trackingMap) {
+        if (trackingMap != null) {
+            if (this.owner != null) {
+                trackingMap.put("query.user", this.owner);
+            }
+            if (this.id != null) {
+                trackingMap.put("query.id", this.id);
+            }
+            if (this.query != null) {
+                trackingMap.put("query.query", this.query);
+            }
+        }
     }
 }
