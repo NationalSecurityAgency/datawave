@@ -10,10 +10,7 @@ import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-// TODO: Fix tracing for Accumulo 2.1-compatibility
-//import org.apache.htrace.Trace;
-//import org.apache.htrace.TraceInfo;
-//import org.apache.htrace.TraceScope;
+
 import org.apache.log4j.Logger;
 
 import javax.annotation.PostConstruct;
@@ -28,7 +25,6 @@ import javax.ejb.Schedule;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
-import java.util.Date;
 
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
@@ -146,23 +142,6 @@ public class QueryExpirationBean {
                 if (log.isDebugEnabled()) {
                     log.debug("Entry evicted, connection returned.");
                 }
-/*
-                TraceInfo traceInfo = query.getTraceInfo();
-                if (traceInfo != null) {
-                    try (TraceScope scope = Trace.startSpan("query:expiration", traceInfo)) {
-                        if (scope.getSpan() != null) {
-                            scope.getSpan().addKVAnnotation("expiredAt", new Date().toString());
-                        }
-                        // Spans aren't recorded if they take no time, so sleep for a
-                        // couple milliseconds just to ensure we get something saved.
-                        try {
-                            Thread.sleep(2);
-                        } catch (InterruptedException e) {
-                            // ignore
-                        }
-                    }
-                }
- */
             }
         }
         if (count > 0 && log.isDebugEnabled()) {

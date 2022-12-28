@@ -100,9 +100,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.io.Text;
-// TODO: Fix tracing for Accumulo 2.1-compatibility
-//import org.apache.htrace.Trace;
-//import org.apache.htrace.TraceScope;
+
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
@@ -361,12 +359,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     @Override
     public void next() throws IOException {
         getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.NEXT);
-//       try (TraceScope s = Trace.startSpan("QueryIterator.next()")) {
         try {
             if (log.isTraceEnabled()) {
                 log.trace("next");
             }
-//            prepareKeyValue(s);
             prepareKeyValue();
         } catch (Exception e) {
             handleException(e);
@@ -391,7 +387,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         
-//        try (TraceScope span = Trace.startSpan("QueryIterator.seek")) {
         try {
             if (this.isIncludeGroupingContext() == false
                             && (this.query.contains("grouping:") || this.query.contains("matchesInGroup") || this.query.contains("MatchesInGroup") || this.query
@@ -414,7 +409,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 if (collectTimingDetails && FinalDocumentTrackingIterator.isFinalDocumentKey(range.getStartKey())) {
                     this.seekKeySource = new EmptyTreeIterable();
                     this.serializedDocuments = EmptyIterator.emptyIterator();
-//                    prepareKeyValue(span);
                     prepareKeyValue();
                     return;
                 }
@@ -568,7 +562,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
             
             // Determine if we have items to return
-//            prepareKeyValue(span);
             prepareKeyValue();
         } catch (Exception e) {
             handleException(e);
@@ -1211,7 +1204,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
     }
     
-//    private void prepareKeyValue(TraceScope span) {
     private void prepareKeyValue() {
         if (this.serializedDocuments.hasNext()) {
             Entry<Key,Value> entry = this.serializedDocuments.next();
@@ -1222,10 +1214,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             this.key = entry.getKey();
             this.value = entry.getValue();
-            
-//            if (Trace.isTracing() && span.getSpan() != null) {
-//                span.getSpan().addKVAnnotation("Key", rowColFamToString(this.key));
-//            }
+
         } else {
             if (log.isTraceEnabled()) {
                 log.trace("Exhausted all keys");

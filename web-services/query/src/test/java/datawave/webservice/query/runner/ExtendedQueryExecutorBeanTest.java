@@ -66,11 +66,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.collections4.iterators.TransformIterator;
-// TODO: Fix tracing for Accumulo 2.1-compatibility
-//import org.apache.htrace.Span;
-//import org.apache.htrace.Trace;
-//import org.apache.htrace.TraceInfo;
-//import org.apache.htrace.TraceScope;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -82,7 +77,6 @@ import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -129,7 +123,6 @@ import static org.powermock.reflect.Whitebox.setInternalState;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.security.auth.Subject")
-//@PrepareForTest({Trace.class})
 public class ExtendedQueryExecutorBeanTest {
     private static final Throwable ILLEGAL_STATE_EXCEPTION = new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION");
     @Mock
@@ -200,23 +193,11 @@ public class ExtendedQueryExecutorBeanTest {
     @Mock
     RunningQuery runningQuery;
     
-//    @Mock
-//    TraceScope traceScope;
-    
-//   @Mock
-//    Span span;
-    
     @Mock
     QueryTraceCache traceCache;
     
-//    @Mock
-//    TraceInfo traceInfo;
-    
     @Mock
     Multimap<String,PatternWrapper> traceInfos;
-    
-//    @Mock
-//    Trace tracer;
     
     @Mock
     QueryLogicTransformer transformer;
@@ -335,14 +316,6 @@ public class ExtendedQueryExecutorBeanTest {
         this.runningQuery.closeConnection(this.connectionFactory);
         expect(this.query.getId()).andReturn(queryId);
         cache.remove(queryId.toString());
-        /*
-        expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
-        PowerMock.mockStaticPartial(Trace.class, "startSpan");
-        expect(Trace.startSpan("query:close", this.traceInfo)).andReturn(this.traceScope);
-        expect(traceScope.getSpan()).andReturn(span).times(2);
-        this.span.addKVAnnotation(eq("closedAt"), isA(String.class));
-        this.traceScope.close();
-         */
         
         // Run the test
         PowerMock.replayAll();
@@ -591,14 +564,6 @@ public class ExtendedQueryExecutorBeanTest {
         this.runningQuery.closeConnection(this.connectionFactory);
         expect(this.query.getId()).andReturn(queryId);
         cache.remove(queryId.toString());
-        /*
-        expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
-        PowerMock.mockStaticPartial(Trace.class, "startSpan");
-        expect(Trace.startSpan("query:close", this.traceInfo)).andReturn(this.traceScope);
-        expect(traceScope.getSpan()).andReturn(span).times(2);
-        this.span.addKVAnnotation(eq("closedAt"), isA(String.class));
-        this.traceScope.close();
-        */
         
         // Run the test
         PowerMock.replayAll();
@@ -1863,13 +1828,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getMaxPageSize()).andReturn(100).times(2);
         expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
         expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap(query)));
-        //PowerMock.mockStaticPartial(Trace.class, "start");
-        //expect(Trace.startSpan("query:define")).andReturn(this.traceScope);
         expect(this.queryLogic1.getConnectionPriority()).andThrow(ILLEGAL_STATE_EXCEPTION);
-        // TODO: 1.8.1: no longer done
-        // expect(this.span.parent()).andReturn(this.span);
-        // expect(this.span.parent()).andReturn(this.span);
-        //this.traceScope.close();
         
         // Run the test
         PowerMock.replayAll();

@@ -24,11 +24,9 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.StringEscapeUtils;
-// TODO: Fix tracing for Accumulo 2.1-compatibility
-//import org.apache.htrace.TraceInfo;
+
 import org.apache.log4j.Logger;
 import org.jboss.logging.NDC;
 
@@ -67,7 +65,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private Set<Authorizations> calculatedAuths = null;
     private boolean finished = false;
     private volatile boolean canceled = false;
-//    private TraceInfo traceInfo = null;
     private transient QueryMetricsBean queryMetrics = null;
     private transient RunningQueryTiming timing = null;
     private ExecutorService executor = null;
@@ -684,14 +681,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         .append((this.getTimeOfCurrentCall() == 0) ? 0 : System.currentTimeMillis() - this.getTimeOfCurrentCall()).toString();
         
     }
-
-//    public void setTraceInfo(TraceInfo traceInfo) {
-//        this.traceInfo = traceInfo;
-//    }
-
-//    public TraceInfo getTraceInfo() {
-//        return traceInfo;
-//    }
 
     public QueryMetricsBean getQueryMetrics() {
         return queryMetrics;

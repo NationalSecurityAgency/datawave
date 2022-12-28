@@ -1,15 +1,13 @@
 package datawave.query.util;
 
-// TODO: Fix tracing for Accumulo 2.1-compatibility
-//import org.apache.htrace.Trace;
-//import org.apache.htrace.TraceScope;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Iterator;
 
 /**
- *
+ * TODO: The old htrace-based tracing code has been removed from here, as the htrace project is dead
+ * and no longer used by accumulo. Leaving this class in place to make it easier to evolve the code
+ * later, for OTEL-based tracing.
  */
 public abstract class TraceIterator<F,T> implements Iterator<T> {
     
@@ -27,9 +25,7 @@ public abstract class TraceIterator<F,T> implements Iterator<T> {
     public abstract T tracedTransform(F from);
     
     public T transform(F from) {
-//        try (TraceScope ignored = Trace.startSpan(description + ": transform")) {
-            return tracedTransform(from);
-//        }
+        return tracedTransform(from);
     }
     
     /*
@@ -49,13 +45,9 @@ public abstract class TraceIterator<F,T> implements Iterator<T> {
      */
     @Override
     public T next() {
-//        try (TraceScope ignored = Trace.startSpan(description + ": next")) {
-            
-            // Probably don't need to trace these individually..
-            F next = this.source.next();
-            
-            return transform(next);
-//        }
+        // Probably don't need to trace these individually..
+        F next = this.source.next();
+        return transform(next);
     }
     
     /*
@@ -65,9 +57,6 @@ public abstract class TraceIterator<F,T> implements Iterator<T> {
      */
     @Override
     public void remove() {
-//        try (TraceScope ignored = Trace.startSpan(description + ": remove")) {
-            this.source.remove();
-//        }
+        this.source.remove();
     }
-    
 }

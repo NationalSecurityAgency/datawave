@@ -132,10 +132,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-// TODO: Fix tracing for Accumulo 2.1-compatibility
-//import org.apache.htrace.Trace;
-//import org.apache.htrace.TraceInfo;
-//import org.apache.htrace.TraceScope;
+
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -421,7 +418,6 @@ public class CachedResultsBean {
         boolean tableCreated = false;
         boolean viewCreated = false;
         CachedRunningQuery crq = null;
-//        TraceScope span = null;
         boolean queryLockedException = false;
         int rowsPerBatch = cachedResultsConfiguration.getRowsPerBatch();
         try {
@@ -432,7 +428,6 @@ public class CachedResultsBean {
             QueryLogic<?> logic = null;
             Query q = null;
             BaseQueryMetric queryMetric = null;
-//            TraceInfo traceInfo = null;
             try {
                 rq = getQueryById(queryId);
                 
@@ -463,7 +458,6 @@ public class CachedResultsBean {
                 // rq and RunningQuery.close will call close on the logic. This is causing the batch scanner to
                 // be closed after 15 minutes
                 logic = (QueryLogic<?>) logic.clone();
-//                traceInfo = rq.getTraceInfo();
             } finally {
                 if (rq != null) {
                     // the original query was cloned including the queryId
@@ -545,8 +539,6 @@ public class CachedResultsBean {
                     query.setMetric(queryMetric);
                     query.setQueryMetrics(metrics);
                     query.setClient(client);
-                    // Copy trace info from a clone of the original query
-//                    query.setTraceInfo(traceInfo);
                 } finally {
                     qlCache.poll(q.getId().toString());
                 }
@@ -582,11 +574,6 @@ public class CachedResultsBean {
             // Loop over the results and put them into the database.
             ResultsPage results = null;
             
-            // If we're tracing this query, then continue the trace for the next call.
-//            if (traceInfo != null) {
-//                span = Trace.startSpan("cachedresults:load", traceInfo);
- //           }
-            
             int rowsWritten = 0;
             boolean go = true;
             while (go) {
@@ -595,16 +582,7 @@ public class CachedResultsBean {
                     throw new QueryCanceledQueryException(DatawaveErrorCode.QUERY_CANCELED);
                 }
                 
-//                TraceScope nextSpan = (span == null) ? null : Trace.startSpan("cachedresults:next");
-                try {
-//                    if (nextSpan != null && nextSpan.getSpan() != null)
-//                        nextSpan.getSpan().addKVAnnotation("pageNumber", Long.toString(query.getLastPageNumber() + 1));
-                    
-                    results = query.next();
-                } finally {
-//                    if (nextSpan != null)
-//                        nextSpan.close();
-                }
+                results = query.next();
                 if (results.getResults().isEmpty()) {
                     go = false;
                     break;
@@ -792,26 +770,7 @@ public class CachedResultsBean {
                 CachedResultsBean.loadingQueryMap.remove(queryId);
                 CachedResultsBean.loadingQueries.remove(queryId);
             }
-/*
-            if (span != null) {
-                span.close();
-                
-                span = Trace.startSpan("query:close", query.getTraceInfo());
-                if (span.getSpan() != null) {
-                    span.getSpan().addKVAnnotation("closedAt", new Date().toString());
-                }
-                // Spans aren't recorded if they take no time, so sleep for a
-                // couple milliseconds just to ensure we get something saved.
-                try {
-                    Thread.sleep(2);
-                } catch (InterruptedException e) {
-                    // ignore
-                }
-                span.close();
-                // TODO: 1.8.1: no longer done?
-                // Tracer.getInstance().flush();
-            }
-*/
+
             if (null != query) {
                 query.setActiveCall(false);
                 try {
@@ -2370,8 +2329,8 @@ public class CachedResultsBean {
                     log.debug("retrieved cachedRunningQuery " + id + " from cache with status " + crq.getStatus());
                 }
             } catch (Exception e) {
-                log.error("Caught attempting to retrieve cached results from infinispan cache: " + e.getMessage(), e);
-                throw new IOException(e.getClass().getName() + " caught attempting to retrieve cached results from infinispan cache", e);
+                log.error("Caught attempting to retrieve cached results: " + e.getMessage(), e);
+                throw new IOException(e.getClass().getName() + " caught attempting to retrieve cached results", e);
             }
             
             log.debug("Details not in cache, checking the database");

@@ -15,10 +15,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 
-// TODO: Fix tracing for Accumulo 2.1-compatibility
-//import org.apache.htrace.Trace;
-//import org.apache.htrace.TraceScope;
-
 /**
  * An iterable interface for wrapping a tree of iterators. This class provides a convenience mechanism for holding on to a tree, allowing clients to use Java's
  * enhanced for loop with the tree, as well as tracking Accumulo's initialization sequence by deferring full initialization until seek is called.
@@ -42,11 +38,8 @@ public class AccumuloTreeIterable<S,T extends Comparable<T>> implements Iterable
     @Override
     public Iterator<Entry<T,Document>> iterator() {
         if (seenSeek) {
-            
-//            try (TraceScope ignored = Trace.startSpan("Field Index Initialize Boolean Tree")) {
-                tree.initialize();
-//            }
-            
+            tree.initialize();
+
             Iterator<Entry<S,Document>> wrapper = TraceIterators.transform(tree, from -> {
                 return Maps.immutableEntry(from, tree.document());
             }, "Field Index");
@@ -56,16 +49,14 @@ public class AccumuloTreeIterable<S,T extends Comparable<T>> implements Iterable
             throw new IllegalStateException("You have to seek this tree.");
         }
     }
-    
+
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-//        try (TraceScope ignored = Trace.startSpan("Field Index Seek Sources")) {
-            Iterable<? extends NestedIterator<?>> leaves = tree.leaves();
-            for (NestedIterator<?> leaf : leaves) {
-                if (leaf instanceof SeekableIterator) {
-                    ((SeekableIterator) leaf).seek(range, columnFamilies, inclusive);
-                }
+        Iterable<? extends NestedIterator<?>> leaves = tree.leaves();
+        for (NestedIterator<?> leaf : leaves) {
+            if (leaf instanceof SeekableIterator) {
+                ((SeekableIterator) leaf).seek(range, columnFamilies, inclusive);
             }
-            seenSeek = true;
-//        }
+        }
+        seenSeek = true;
     }
 }
