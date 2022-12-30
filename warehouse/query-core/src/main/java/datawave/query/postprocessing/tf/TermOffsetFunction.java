@@ -20,19 +20,33 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
     
     private TermOffsetPopulator tfPopulator;
     private Set<String> tfIndexOnlyFields;
+    private DocumentKeysFunction docKeyFunction;
     
     public TermOffsetFunction(TermOffsetPopulator tfPopulator, Set<String> tfIndexOnlyFields) {
+        this(tfPopulator, tfIndexOnlyFields, null);
+    }
+    
+    public TermOffsetFunction(TermOffsetPopulator tfPopulator, Set<String> tfIndexOnlyFields, DocumentKeysFunction docKeyFunction) {
         this.tfPopulator = tfPopulator;
         this.tfIndexOnlyFields = tfIndexOnlyFields;
+        this.docKeyFunction = docKeyFunction;
     }
     
     @Override
     public Tuple3<Key,Document,Map<String,Object>> apply(Tuple2<Key,Document> from) {
-        Document merged = from.second();
-        Map<String,Object> map = new HashMap<>();
-        Attribute<?> docKeyAttr = merged.get(Document.DOCKEY_FIELD_NAME);
         
-        // gather the set of doc keys
+        Set<Key> docKeys = getDocumentKeys(from);
+        Set<String> fields = getFieldsToRemove(from.second(), tfPopulator.getTermFrequencyFieldValues());
+        
+        Map<String,Object> map = new HashMap<>(tfPopulator.getContextMap(from.first(), docKeys, fields));
+        
+        Document merged = from.second();
+        merged.putAll(tfPopulator.document(), false);
+        return Tuples.tuple(from.first(), merged, map);
+    }
+    
+    private Set<Key> getDocumentKeys(Tuple2<Key,Document> from) {
+        Attribute<?> docKeyAttr = from.second().get(Document.DOCKEY_FIELD_NAME);
         Set<Key> docKeys = new HashSet<>();
         if (docKeyAttr == null) {
             docKeys.add(from.first());
@@ -50,11 +64,11 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
             throw new IllegalStateException("Unexpected Attribute type for " + Document.DOCKEY_FIELD_NAME + ": " + docKeys.getClass());
         }
         
-        Set<String> fields = getFieldsToRemove(from.second(), tfPopulator.getTermFrequencyFieldValues());
+        if (docKeyFunction != null) {
+            docKeys = docKeyFunction.getDocKeys(from.second(), docKeys);
+        }
         
-        map.putAll(tfPopulator.getContextMap(from.first(), docKeys, fields));
-        merged.putAll(tfPopulator.document(), false);
-        return Tuples.tuple(from.first(), merged, map);
+        return docKeys;
     }
     
     private Set<String> getFieldsToRemove(Document doc, Multimap<String,String> tfFVs) {
