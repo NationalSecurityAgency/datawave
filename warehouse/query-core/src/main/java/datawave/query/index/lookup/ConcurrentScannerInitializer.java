@@ -36,6 +36,8 @@ public class ConcurrentScannerInitializer implements Callable<BaseIndexStream> {
         if (stream.context() == StreamContext.INITIALIZED) {
             if (stream.hasNext()) {
                 if (stream instanceof ScannerStream) {
+                    // the Intersection and Union classes are predicated on the accuracy of the StreamContext,
+                    // so update this stream's context from INITIALIZED to PRESENT
                     stream.context = StreamContext.PRESENT;
                     return stream;
                 }
