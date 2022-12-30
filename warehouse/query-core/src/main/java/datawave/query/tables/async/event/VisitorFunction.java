@@ -12,6 +12,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.DateIndexCleanupVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
+import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
@@ -293,6 +294,20 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     // only recompile the script if changes were made to the query
                     if (madeChange) {
                         newQuery = JexlStringBuildingVisitor.buildQuery(script);
+                    }
+                    
+                    if (script != null && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
+                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE);
+                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_CACHE_DIR_CONFIG);
+                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_NUM_RETRIES);
+                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_PERSIST_VERIFY);
+                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT);
+                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD);
+                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_SCAN_TIMEOUT);
+                        
+                        newIteratorSetting.removeOption(QueryOptions.MAX_IVARATOR_OPEN_FILES);
+                        newIteratorSetting.removeOption(QueryOptions.MAX_IVARATOR_RESULTS);
+                        newIteratorSetting.removeOption(QueryOptions.MAX_IVARATOR_SOURCES);
                     }
                     
                     try {
