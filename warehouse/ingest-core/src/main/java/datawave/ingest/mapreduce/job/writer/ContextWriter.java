@@ -62,6 +62,7 @@ public interface ContextWriter<OK,OV> {
      * this method must be called before the thread terminates.
      * 
      * @param context
+     *            the context to write to
      * @throws IOException
      *             if there is an issue
      * @throws InterruptedException
