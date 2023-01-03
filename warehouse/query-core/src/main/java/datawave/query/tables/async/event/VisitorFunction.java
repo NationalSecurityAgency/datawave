@@ -295,6 +295,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         newQuery = JexlStringBuildingVisitor.buildQuery(script);
                     }
                     
+                    pruneEmptyOptions(newIteratorSetting);
+                    
                     try {
                         queryCache.put(query, newQuery);
                     } catch (NullPointerException npe) {
@@ -335,12 +337,40 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
      * Serializes the query iterator
      * 
      * @param newIteratorSetting
+     *            an instance of {@link IteratorSetting}
      */
     private void serializeQuery(IteratorSetting newIteratorSetting) {
         newIteratorSetting.addOption(QueryOptions.SERIAL_EVALUATION_PIPELINE, "true");
         newIteratorSetting.addOption(QueryOptions.MAX_EVALUATION_PIPELINES, "1");
         newIteratorSetting.addOption(QueryOptions.MAX_PIPELINE_CACHED_RESULTS, "1");
+    }
+    
+    /**
+     * Prune empty options from the iterator settings
+     *
+     * @param settings
+     *            an instance of {@link IteratorSetting}
+     */
+    private void pruneEmptyOptions(IteratorSetting settings) {
+        Set<String> optionsToRemove = new HashSet<>();
+        for (Map.Entry<String,String> entry : settings.getOptions().entrySet()) {
+            switch (entry.getKey()) {
+                case QueryOptions.INDEX_ONLY_FIELDS:
+                case QueryOptions.INDEXED_FIELDS:
+                    // these options won't be blank in production, but will be blank for some unit tests.
+                    // leave this switch statement in until unit tests can be fixed to more accurately
+                    // represent a prod-like environment.
+                    continue;
+                default:
+                    if (org.apache.commons.lang3.StringUtils.isBlank(entry.getValue())) {
+                        optionsToRemove.add(entry.getKey());
+                    }
+            }
+        }
         
+        for (String option : optionsToRemove) {
+            settings.removeOption(option);
+        }
     }
     
     // push down large fielded lists. Assumes that the hdfs query cache uri and
