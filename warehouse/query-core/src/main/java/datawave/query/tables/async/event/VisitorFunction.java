@@ -296,19 +296,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         newQuery = JexlStringBuildingVisitor.buildQuery(script);
                     }
                     
-                    if (script != null && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
-                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE);
-                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_CACHE_DIR_CONFIG);
-                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_NUM_RETRIES);
-                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_PERSIST_VERIFY);
-                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT);
-                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD);
-                        newIteratorSetting.removeOption(QueryOptions.IVARATOR_SCAN_TIMEOUT);
-                        
-                        newIteratorSetting.removeOption(QueryOptions.MAX_IVARATOR_OPEN_FILES);
-                        newIteratorSetting.removeOption(QueryOptions.MAX_IVARATOR_RESULTS);
-                        newIteratorSetting.removeOption(QueryOptions.MAX_IVARATOR_SOURCES);
-                    }
+                    pruneIvaratorConfigs(script, newIteratorSetting);
                     
                     try {
                         queryCache.put(query, newQuery);
@@ -356,6 +344,30 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         newIteratorSetting.addOption(QueryOptions.MAX_EVALUATION_PIPELINES, "1");
         newIteratorSetting.addOption(QueryOptions.MAX_PIPELINE_CACHED_RESULTS, "1");
         
+    }
+    
+    /**
+     * If the query does not require an Ivarator, remove Ivarator options from the query settings
+     *
+     * @param script
+     *            the query script
+     * @param settings
+     *            an {@link IteratorSetting}
+     */
+    protected void pruneIvaratorConfigs(ASTJexlScript script, IteratorSetting settings) {
+        if (script != null && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
+            settings.removeOption(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE);
+            settings.removeOption(QueryOptions.IVARATOR_CACHE_DIR_CONFIG);
+            settings.removeOption(QueryOptions.IVARATOR_NUM_RETRIES);
+            settings.removeOption(QueryOptions.IVARATOR_PERSIST_VERIFY);
+            settings.removeOption(QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT);
+            settings.removeOption(QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD);
+            settings.removeOption(QueryOptions.IVARATOR_SCAN_TIMEOUT);
+            
+            settings.removeOption(QueryOptions.MAX_IVARATOR_OPEN_FILES);
+            settings.removeOption(QueryOptions.MAX_IVARATOR_RESULTS);
+            settings.removeOption(QueryOptions.MAX_IVARATOR_SOURCES);
+        }
     }
     
     // push down large fielded lists. Assumes that the hdfs query cache uri and
