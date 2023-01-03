@@ -8,6 +8,7 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.MockMetadataHelper;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -22,6 +23,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -67,6 +69,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         config.setIndexedFields(indexedFields);
         config.setDatatypeFilter(dataTypes);
         config.setIvaratorCacheDirConfigs(Collections.singletonList(new IvaratorCacheDirConfig(hdfsCacheURI.toString())));
+        EasyMock.expect(helper.getIndexedFields(dataTypes)).andReturn(indexedFields).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(dataTypes)).andReturn(indexedFields).anyTimes();
         EasyMock.expect(helper.getNonEventFields(dataTypes)).andReturn(Collections.emptySet()).anyTimes();
     }
@@ -285,5 +288,28 @@ public class VisitorFunctionTest extends EasyMockSupport {
         Assert.assertTrue(updatedQuery, updatedQuery.contains("_List_"));
         Assert.assertTrue(updatedQuery, updatedQuery.contains("field = 'FIELD1'"));
         Assert.assertTrue(updatedQuery, updatedQuery.contains("ranges\":[[\"(a\",\"z)\"]"));
+    }
+    
+    @Test
+    public void testPruneEmptyIteratorOptions() throws Exception {
+        ShardQueryConfiguration cfg = new ShardQueryConfiguration();
+        MetadataHelper hlpr = new MockMetadataHelper();
+        VisitorFunction function = new VisitorFunction(cfg, hlpr);
+        
+        IteratorSetting settings = new IteratorSetting(10, "itr", QueryIterator.class);
+        settings.addOption(QueryOptions.QUERY, "FOO == 'bar'");
+        settings.addOption(QueryOptions.COMPOSITE_FIELDS, "");
+        
+        // assert initial state
+        Set<String> keys = settings.getOptions().keySet();
+        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
+        Assert.assertTrue(keys.contains(QueryOptions.COMPOSITE_FIELDS));
+        
+        function.pruneEmptyOptions(settings);
+        
+        // assert option with empty value was pruned
+        keys = settings.getOptions().keySet();
+        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
+        Assert.assertFalse(keys.contains(QueryOptions.COMPOSITE_FIELDS));
     }
 }

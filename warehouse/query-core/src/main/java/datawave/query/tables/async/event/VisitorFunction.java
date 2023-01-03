@@ -351,7 +351,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
      * @param settings
      *            an instance of {@link IteratorSetting}
      */
-    private void pruneEmptyOptions(IteratorSetting settings) {
+    protected void pruneEmptyOptions(IteratorSetting settings) {
         Set<String> optionsToRemove = new HashSet<>();
         for (Map.Entry<String,String> entry : settings.getOptions().entrySet()) {
             switch (entry.getKey()) {
