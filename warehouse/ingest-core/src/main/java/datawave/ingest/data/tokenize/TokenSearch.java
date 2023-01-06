@@ -160,6 +160,10 @@ public interface TokenSearch {
          * <br>
          * If tokenSearchClass is null/empty, then a RuntimeException will be thrown.
          * 
+         * @param tokenSearchClass
+         *            name of the tokensearch class
+         * @param args
+         *            arguments for creating the class
          * @return a tokensearch instance
          */
         public static TokenSearch newInstance(String tokenSearchClass, Object... args) {

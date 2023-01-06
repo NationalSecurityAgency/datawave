@@ -48,6 +48,7 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
      * Lucene version.
      * 
      * @param stopWords
+     *            words to create analyzer with
      */
     public StandardAnalyzer(CharArraySet stopWords) {
         super(stopWords);

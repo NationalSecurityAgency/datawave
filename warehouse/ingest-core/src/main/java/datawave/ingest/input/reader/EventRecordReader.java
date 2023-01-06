@@ -44,16 +44,18 @@ public interface EventRecordReader {
     
     /**
      * Execute policy enforcement on the given event
+     * 
      * @param event
-     * event to examine
+     *            event to examine
      * @return the event container
      */
     RawRecordContainer enforcePolicy(RawRecordContainer event);
     
     /**
      * Set the input date
+     * 
      * @param time
-     * time to set
+     *            time to set
      */
     void setInputDate(long time);
     
