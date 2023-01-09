@@ -12,6 +12,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.DateIndexCleanupVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
+import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
@@ -295,6 +296,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         newQuery = JexlStringBuildingVisitor.buildQuery(script);
                     }
                     
+                    pruneIvaratorConfigs(script, newIteratorSetting);
+                    
                     pruneEmptyOptions(newIteratorSetting);
                     
                     try {
@@ -370,6 +373,30 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         
         for (String option : optionsToRemove) {
             settings.removeOption(option);
+        }
+    }
+    
+    /**
+     * If the query does not require an Ivarator, remove Ivarator options from the query settings
+     *
+     * @param script
+     *            the query script
+     * @param settings
+     *            an {@link IteratorSetting}
+     */
+    protected void pruneIvaratorConfigs(ASTJexlScript script, IteratorSetting settings) {
+        if (script != null && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
+            settings.removeOption(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE);
+            settings.removeOption(QueryOptions.IVARATOR_CACHE_DIR_CONFIG);
+            settings.removeOption(QueryOptions.IVARATOR_NUM_RETRIES);
+            settings.removeOption(QueryOptions.IVARATOR_PERSIST_VERIFY);
+            settings.removeOption(QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT);
+            settings.removeOption(QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD);
+            settings.removeOption(QueryOptions.IVARATOR_SCAN_TIMEOUT);
+            
+            settings.removeOption(QueryOptions.MAX_IVARATOR_OPEN_FILES);
+            settings.removeOption(QueryOptions.MAX_IVARATOR_RESULTS);
+            settings.removeOption(QueryOptions.MAX_IVARATOR_SOURCES);
         }
     }
     
