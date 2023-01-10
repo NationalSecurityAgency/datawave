@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import com.google.common.collect.Multimap;
 import datawave.query.attributes.Attribute;
@@ -15,6 +16,7 @@ import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 
 public class TermOffsetFunction implements com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> {
     
@@ -47,7 +49,7 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
     
     private Set<Key> getDocumentKeys(Tuple2<Key,Document> from) {
         Attribute<?> docKeyAttr = from.second().get(Document.DOCKEY_FIELD_NAME);
-        Set<Key> docKeys = new HashSet<>();
+        Set<Key> docKeys = new TreeSet<>((left, right) -> left.compareTo(right, PartialKey.ROW_COLFAM));
         if (docKeyAttr == null) {
             docKeys.add(from.first());
         } else if (docKeyAttr instanceof DocumentKey) {
