@@ -233,6 +233,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private SecurityMarking marking;
     
     @Inject
+    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
     
     private LookupUUIDUtil lookupUUIDUtil;
@@ -317,7 +318,7 @@ public class QueryExecutorBean implements QueryExecutor {
         List<QueryLogicDescription> logicConfigurationList = new ArrayList<>();
         
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
-        Query q = new QueryImpl();
+        Query q = responseObjectFactory.getQueryImpl();
         Date now = new Date();
         q.setExpirationDate(now);
         q.setQuery("test");
@@ -1453,6 +1454,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Path("/lookupContentUUID/{uuidType}/{uuid}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
+    @EnrichQueryMetrics(methodType = MethodType.CREATE_AND_NEXT)
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupContentUUID", absolute = true)
@@ -1523,6 +1525,7 @@ public class QueryExecutorBean implements QueryExecutor {
             "application/x-protostuff"})
     @GZIP
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
+    @EnrichQueryMetrics(methodType = MethodType.CREATE_AND_NEXT)
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupContentUUIDBatch", absolute = true)
@@ -1584,6 +1587,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
     @Path("/lookupUUID/{uuidType}/{uuid}")
+    @EnrichQueryMetrics(methodType = MethodType.CREATE_AND_NEXT)
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupUUID", absolute = true)
@@ -1654,6 +1658,7 @@ public class QueryExecutorBean implements QueryExecutor {
             "application/x-protostuff"})
     @GZIP
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
+    @EnrichQueryMetrics(methodType = MethodType.CREATE_AND_NEXT)
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupUUIDBatch", absolute = true)
@@ -3260,7 +3265,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
-        Query q = new QueryImpl();
+        Query q = responseObjectFactory.getQueryImpl();
         Date now = new Date();
         q.setBeginDate(now);
         q.setEndDate(now);

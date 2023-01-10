@@ -49,7 +49,11 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     }
     
     /**
-     * return map of field names to normalized masked value
+     * Get the normalized masked value for the provided field
+     *
+     * @param key
+     *            a key in the {@link MaskedFieldHelper}
+     * @return the normalized masked value
      */
     public String getNormalizedMaskedValue(final String key) {
         if (mfHelper != null && mfHelper.contains(key)) {
@@ -118,6 +122,7 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
         return shardExclusions;
     }
     
+    @Override
     public boolean isShardExcluded(String fieldName) {
         return shardExclusions.contains(fieldName);
     }
@@ -156,6 +161,7 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
      * This is a helper routine that will return a normalized field value using the configured normalizer
      *
      * @param fieldValue
+     *            the field value
      * @return the normalized field values
      */
     protected Set<String> normalizeFieldValue(final String fieldName, final String fieldValue) throws NormalizationException {
