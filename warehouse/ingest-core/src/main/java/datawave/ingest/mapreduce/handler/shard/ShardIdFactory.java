@@ -34,7 +34,7 @@ public class ShardIdFactory {
      * 
      * @param date
      *            the date in epoch
-     * @return
+     * @return the number of shards
      */
     public int getNumShards(long date) {
         return numShards.getNumShards(date);
@@ -45,7 +45,7 @@ public class ShardIdFactory {
      * 
      * @param date
      *            the date in string format
-     * @return
+     * @return the number of shards
      */
     public int getNumShards(String date) {
         return numShards.getNumShards(date);
@@ -84,6 +84,8 @@ public class ShardIdFactory {
      * @param shardId
      *            the shard id
      * @return the date
+     * @throws ParseException
+     *             if there is an issue parsing
      */
     public static Date getDate(String shardId) throws ParseException {
         return new SimpleDateFormat("yyyyMMdd").parse(getDateString(shardId));
