@@ -88,7 +88,7 @@ public interface CompositeIngest {
         public static final String COMPOSITE_FIELD_MAP = ".data.composite.field.map";
         
         /**
-         * Parameter for specifying the separator override to use when combining component fields into a composite field. By default the max code point
+         * Parameter for specifying the separator override to use when combining component fields into a composite field. By default, the max code point
          * character will be used. The use of regex meta characters is currently NOT supported. You are also advised against using the null character "\0" as
          * this is used commonly in the index.
          *
@@ -107,7 +107,7 @@ public interface CompositeIngest {
          * Parameter for specifying whether non-grouped fields can be combined with grouped fields. Grouped fields of different groups will never be combined
          * together, one may or may not want non-grouped fields (i.e. global in context) merged with grouped fields. The possible values are: SAME_GROUP_ONLY:
          * only fields of the same group will be merged together. Two non-grouped fields are considered GROUPED_WITH_NON_GROUPED: Grouped fields can be merged
-         * with non-grouped fields. Two grouped fields in different groups will never be merged. IGNORE_GROUPS: Ignore grouping altogether. An group or
+         * with non-grouped fields. Two grouped fields in different groups will never be merged. IGNORE_GROUPS: Ignore grouping altogether. A group or
          * non-grouped can be merged. The default is GROUPED_WITH_NON_GROUPED.
          *
          * Example: Key: "myType.COMPOSITE_FIELD_NAME.data.composite.grouping.policy" Value: "true"
@@ -145,7 +145,7 @@ public interface CompositeIngest {
                                     .collect(Collectors.toList());
                     
                     // if any members are indexOnly fields, skip this one
-                    if (Sets.intersection(Sets.newHashSet(componentFields), indexOnly).size() > 0) {
+                    if (!Sets.intersection(Sets.newHashSet(componentFields), indexOnly).isEmpty()) {
                         log.warn("rejecting " + compositeField + " which includes index only field in " + indexOnly);
                         continue;
                     }
@@ -191,9 +191,14 @@ public interface CompositeIngest {
          * A convenience routine to get a configuration value
          *
          * @param type
+         *            a {@link Type}
          * @param config
+         *            a hadoop {@link Configuration}
          * @param key
-         * @return The value, null if not available
+         *            the key
+         * @param defaultVal
+         *            the default value to use if no value is found in the configuration
+         * @return The value, or the default value provided
          */
         protected String get(Type type, Configuration config, String key, String defaultVal) {
             for (String prefix : getConfPrefixes(type)) {
@@ -209,15 +214,20 @@ public interface CompositeIngest {
          * A convenience routine to get a configuration value
          *
          * @param type
+         *            a {@link Type}
          * @param config
+         *            a hadoop {@link Configuration}
          * @param key
+         *            the key
+         * @param defaultVal
+         *            the default value to use if no value is found in the configuration
          * @return The value, null if not available
          */
         protected boolean getBoolean(Type type, Configuration config, String key, boolean defaultVal) {
             for (String prefix : getConfPrefixes(type)) {
                 String value = config.get(prefix + key, null);
                 if (value != null) {
-                    return Boolean.valueOf(value);
+                    return Boolean.parseBoolean(value);
                 }
             }
             return defaultVal;
@@ -227,8 +237,13 @@ public interface CompositeIngest {
          * A convenience routine to get a configuration value
          *
          * @param type
+         *            the {@link Type}
          * @param config
+         *            a hadoop {@link Configuration}
          * @param key
+         *            the key
+         * @param defaultVal
+         *            an array of default values
          * @return The value, null if not available
          */
         protected String[] getStrings(Type type, Configuration config, String key, String[] defaultVal) {
@@ -246,7 +261,8 @@ public interface CompositeIngest {
          * &lt;datatype&gt;.&lt;instance&gt; &lt;datatype&gt; all.&lt;classname&gt; all
          *
          * @param type
-         * @return
+         *            the {@link Type}
+         * @return an array of prefixes in order of precedent
          */
         protected String[] getConfPrefixes(Type type) {
             List<String> prefixes = new ArrayList<>();
@@ -269,7 +285,9 @@ public interface CompositeIngest {
          * A helper routine to merge markings maps when merging fields of a NormalizedContentInterface
          *
          * @param markings1
+         *            a map of markings
          * @param markings2
+         *            a different map of markings
          * @return the merged markings
          */
         protected Map<String,String> mergeMarkings(Map<String,String> markings1, Map<String,String> markings2) {
@@ -281,7 +299,6 @@ public interface CompositeIngest {
                         markings1 = markingFunctions.combine(markings1, markings2);
                     } catch (MarkingFunctions.Exception e) {
                         throw new RuntimeException("Unable to combine markings.", e);
-                        
                     }
                 }
             }
