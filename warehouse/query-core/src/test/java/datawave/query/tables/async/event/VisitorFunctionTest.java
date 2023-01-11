@@ -5,13 +5,16 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.MockMetadataHelper;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Range;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.easymock.EasyMock;
@@ -285,5 +288,59 @@ public class VisitorFunctionTest extends EasyMockSupport {
         Assert.assertTrue(updatedQuery, updatedQuery.contains("_List_"));
         Assert.assertTrue(updatedQuery, updatedQuery.contains("field = 'FIELD1'"));
         Assert.assertTrue(updatedQuery, updatedQuery.contains("ranges\":[[\"(a\",\"z)\"]"));
+    }
+    
+    @Test
+    public void testPruneIvaratorConfigs() throws Exception {
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        MetadataHelper helper = new MockMetadataHelper();
+        VisitorFunction function = new VisitorFunction(config, helper);
+        
+        // this query does NOT require an Ivarator
+        String query = "FOO == 'bar'";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+        
+        IteratorSetting settings = new IteratorSetting(20, "name", QueryIterator.class);
+        settings.addOption(QueryOptions.QUERY, query);
+        settings.addOption(QueryOptions.IVARATOR_NUM_RETRIES, "3");
+        
+        // assert initial state
+        Set<String> keys = settings.getOptions().keySet();
+        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
+        Assert.assertTrue(keys.contains(QueryOptions.IVARATOR_NUM_RETRIES));
+        
+        function.pruneIvaratorConfigs(script, settings);
+        
+        // verify ivarator config was pruned
+        keys = settings.getOptions().keySet();
+        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
+        Assert.assertFalse(keys.contains(QueryOptions.IVARATOR_NUM_RETRIES));
+    }
+    
+    @Test
+    public void testIvaratorConfigNotPruned() throws Exception {
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        MetadataHelper helper = new MockMetadataHelper();
+        VisitorFunction function = new VisitorFunction(config, helper);
+        
+        // this query DOES require an Ivarator
+        String query = "((_Value_ = true) && (FOO == 'bar'))";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+        
+        IteratorSetting settings = new IteratorSetting(20, "name", QueryIterator.class);
+        settings.addOption(QueryOptions.QUERY, query);
+        settings.addOption(QueryOptions.IVARATOR_NUM_RETRIES, "3");
+        
+        // assert initial state
+        Set<String> keys = settings.getOptions().keySet();
+        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
+        Assert.assertTrue(keys.contains(QueryOptions.IVARATOR_NUM_RETRIES));
+        
+        function.pruneIvaratorConfigs(script, settings);
+        
+        // verify ivarator config were not pruned
+        keys = settings.getOptions().keySet();
+        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
+        Assert.assertTrue(keys.contains(QueryOptions.IVARATOR_NUM_RETRIES));
     }
 }
