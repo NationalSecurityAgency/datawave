@@ -592,7 +592,7 @@ public class EdgeKey {
                                                                                         * STATS / STATTYPE / TYPE / RELATIONSHIP / CATEGORY / ATTRIBUTE2 :
                                                                                         * YYYYMMDD
                                                                                         */
-        BASE(3, 1, 0, 1, 2, 3, -1, -1, -1, EDGE_FORMAT.STANDARD, false, false), /* TYPE / RELATIONSHIP / CATEGORY : YYYYMMDD */
+        BASE(2, 2, 0, 1, 3, 2, -1, -1, -1, EDGE_FORMAT.STANDARD, false, false), /* TYPE / RELATIONSHIP / CATEGORY : YYYYMMDD */
         BASE_ATTRIBUTE2(4, 1, 0, 1, 2, 4, 3, -1, -1, EDGE_FORMAT.STANDARD, true, false), /* TYPE / RELATIONSHIP / CATEGORY / ATTRIBUTE2 : YYYYMMDD */
         STATS_PROTOBUF(4, 4, 2, 3, 5, 4, 6, 7, -1, EDGE_FORMAT.STATS, true, true), /*
                                                                                     * STATS / STATTYPE / TYPE / RELATIONSHIP : YYYYMMDD / CATEGORY / ATTRIBUTE2

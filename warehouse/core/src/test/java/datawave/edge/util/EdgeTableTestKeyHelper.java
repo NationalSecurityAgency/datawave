@@ -40,7 +40,7 @@ public class EdgeTableTestKeyHelper {
         refStatsAttribute2 = new Key(statsRow, new Text("STATS/DURATION/" + TYPE + SEP + SOURCEREL + SEP + SOURCE_ATTR_1 + SEP + ATTR_2), new Text(DATE),
                         COL_VIS, 814l);
         
-        refBase = new Key(standardRow, new Text(TYPE + SEP + SOURCEREL + "-" + SINKREL + SEP + SOURCE_ATTR_1 + "-" + SINK_ATTR_1), new Text(DATE), COL_VIS,
+        refBase = new Key(standardRow, new Text(TYPE + SEP + SOURCEREL + "-" + SINKREL), new Text(DATE + SEP + SOURCE_ATTR_1 + "-" + SINK_ATTR_1), COL_VIS,
                         814l);
         
         refBaseAttribute2 = new Key(standardRow, new Text(TYPE + SEP + SOURCEREL + "-" + SINKREL + SEP + SOURCE_ATTR_1 + "-" + SINK_ATTR_1 + SEP + ATTR_2),
