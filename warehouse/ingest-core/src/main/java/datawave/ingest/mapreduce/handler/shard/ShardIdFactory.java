@@ -22,6 +22,7 @@ public class ShardIdFactory {
      * Calculates the shard id of the event
      * 
      * @param record
+     *            the record container
      * @return Shard id
      */
     public byte[] getShardIdBytes(RawRecordContainer record) {
@@ -32,6 +33,7 @@ public class ShardIdFactory {
      * this method will return numShards based on date in epoch millis
      * 
      * @param date
+     *            the date in epoch
      * @return
      */
     public int getNumShards(long date) {
@@ -42,6 +44,7 @@ public class ShardIdFactory {
      * this method will return numShards based on date string 'yyyyMMdd'
      * 
      * @param date
+     *            the date in string format
      * @return
      */
     public int getNumShards(String date) {
@@ -52,6 +55,7 @@ public class ShardIdFactory {
      * Calculates the shard id of the event
      * 
      * @param record
+     *            the event record
      * @return Shard id
      */
     public String getShardId(RawRecordContainer record) {
@@ -67,6 +71,7 @@ public class ShardIdFactory {
      * Get the date portion of the shard id
      * 
      * @param shardId
+     *            the shard id
      * @return the date yyyyMMdd
      */
     public static String getDateString(String shardId) {
@@ -77,6 +82,7 @@ public class ShardIdFactory {
      * Get the date portion of the shard id
      * 
      * @param shardId
+     *            the shard id
      * @return the date
      */
     public static Date getDate(String shardId) throws ParseException {
