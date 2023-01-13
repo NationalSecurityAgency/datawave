@@ -199,7 +199,7 @@ public abstract class GroupingTest {
         
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
-
+        
         DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
         TransformIterator iter = new DatawaveTransformIterator(logic.iterator(), transformer);
         List<Object> eventList = new ArrayList<>();
@@ -608,7 +608,7 @@ public abstract class GroupingTest {
         Date endDate = format.parse("20150101");
         
         String queryString = "UUID =~ '^[CS].*'";
-
+        
         // @formatter:off
         Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
                 .put("5-10", 4)
@@ -618,7 +618,7 @@ public abstract class GroupingTest {
                 .put("5-7", 1)
                 .build();
         // @formatter:on
-
+        
         extraParameters.put("group.fields", "MEASURE_HEIGHT");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
