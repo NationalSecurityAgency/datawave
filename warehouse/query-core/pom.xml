@@ -58,6 +58,7 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>metadata-utils</artifactId>
+            <version>1.13-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
