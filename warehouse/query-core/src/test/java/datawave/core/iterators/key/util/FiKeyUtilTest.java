@@ -51,10 +51,12 @@ public class FiKeyUtilTest {
         assertEquals("datatype", FiKeyUtil.getDatatypeString(key));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    // getUidString simply returns everything after the last null byte. If the column qualifier is wrong
+    // then the method will return the wrong value
+    @Test
     public void testParseNoUid() {
         Key key = new Key("row", "fi\0FIELD", "value\0datatype");
-        assertEquals("uid", FiKeyUtil.getDatatypeString(key));
+        assertEquals("datatype", FiKeyUtil.getUidString(key));
     }
     
 }
