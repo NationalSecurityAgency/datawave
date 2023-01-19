@@ -818,15 +818,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public String getDatatypeFilterAsString() {
-        String dataType = "";
-        if (null == this.getDatatypeFilter()) {
-            dataType = Constants.ALL_DATATYPES;
-        } else if (this.getDatatypeFilter().isEmpty()) {
-            dataType = Constants.EMPTY_STRING;
-        } else {
-            dataType = StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
-        }
-        return dataType;
+        return this.getDatatypeFilter() == null ? "" : StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
     }
     
     private Set<String> deconstruct(Collection<String> fields) {

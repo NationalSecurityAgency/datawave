@@ -111,7 +111,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Lists.newArrayList(), config.getIndexFilteringClassNames());
         Assert.assertEquals(Sets.newHashSet("d", "tf"), config.getNonEventKeyPrefixes());
         Assert.assertEquals(Sets.newHashSet(), config.getUnevaluatedFields());
-        Assert.assertEquals(Sets.newHashSet(), config.getDatatypeFilter());
+        Assert.assertEquals(null, config.getDatatypeFilter());
         Assert.assertEquals(Lists.newArrayList(), config.getIndexHoles());
         Assert.assertEquals(Sets.newHashSet(), config.getProjectFields());
         Assert.assertEquals(Sets.newHashSet(), config.getDisallowedFields());

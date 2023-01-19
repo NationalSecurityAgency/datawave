@@ -50,8 +50,6 @@ public class Constants {
     
     public static final String NO_FIELD = "_NOFIELD_";
     
-    public static final String ALL_DATATYPES = "ALL_DATATYPES";
-    
     public static final Authorizations EMPTY_AUTHS = new Authorizations();
     
     public static final ColumnVisibility EMPTY_VISIBILITY = new ColumnVisibility();
