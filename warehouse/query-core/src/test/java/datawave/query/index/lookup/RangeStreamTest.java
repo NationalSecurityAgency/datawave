@@ -1209,7 +1209,6 @@ public class RangeStreamTest {
         helper.setIndexedFields(dataTypes.keySet());
         helper.addFields(Arrays.asList("FOO", "LAUGH"));
         
-        // Create expected ranges verbosely, so it is obvious which shards contribute to the results.
         Set<Range> expectedRanges = Sets.newHashSet();
         for (String shard : Arrays.asList("20190314_0", "20190314_1", "20190314_10", "20190314_100", "20190314_9")) {
             expectedRanges.add(makeShardedRange(shard));
@@ -1526,7 +1525,6 @@ public class RangeStreamTest {
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
         
-        // Create expected ranges verbosely, so it is obvious which shards contribute to the results.
         Range range1 = makeShardedRange("20190310_21");
         // Fun story. It's hard to roll up to a day range when you seek most of the way through the day and don't have all the shards for the day.
         Range range2 = makeShardedRange("20190315_51");

@@ -342,104 +342,6 @@ public class IndexInfo implements Writable, UidIntersector {
         return true;
     }
     
-    /**
-     * Pivot on the iterable within matchIterable
-     * 
-     * @param maxPossibilities
-     * @param matchIterable
-     * @param matchNode
-     *            to be used for constructing the merged node when there are no IndexMatch objects
-     * @param otherInfiniteNodes
-     * @param delayedNodes
-     * @return
-     */
-    protected IndexInfo intersect(long maxPossibilities, Iterable<IndexMatch> matchIterable, JexlNode matchNode, List<JexlNode> otherInfiniteNodes,
-                    List<JexlNode> delayedNodes) {
-        HashMultimap<String,JexlNode> ids = HashMultimap.create();
-        Set<IndexMatch> matches = Sets.newHashSet();
-        
-        // must be true or we shouldn't be here
-        assert otherInfiniteNodes != null;
-        assert delayedNodes != null;
-        assert otherInfiniteNodes.size() + delayedNodes.size() > 0;
-        
-        for (IndexMatch match : matchIterable) {
-            JexlNode newNode = match.getNode();
-            if (null != newNode)
-                ids.put(match.uid, newNode);
-        }
-        
-        JexlNodeSet infiniteNodeSet = new JexlNodeSet();
-        infiniteNodeSet.addAll(delayedNodes);
-        for (JexlNode node : otherInfiniteNodes) {
-            if (null != node)
-                infiniteNodeSet.add(node);
-        }
-        
-        IndexInfo merged = new IndexInfo();
-        if (ids.keySet().isEmpty()) {
-            merged.count = maxPossibilities;
-        } else {
-            for (String uid : ids.keySet()) {
-                JexlNodeSet nodeSet = new JexlNodeSet();
-                nodeSet.addAll(ids.get(uid));
-                nodeSet.addAll(infiniteNodeSet);
-                
-                IndexMatch currentMatch = new IndexMatch(Sets.newHashSet(nodeSet.getNodes()), uid, IndexMatchType.AND);
-                matches.add(currentMatch);
-            }
-            merged.count = matches.size();
-        }
-        
-        JexlNode newNode;
-        if (matches.isEmpty()) {
-            JexlNodeSet nodes = new JexlNodeSet();
-            if (matchNode != null) {
-                nodes.add(matchNode);
-            }
-            if (!otherInfiniteNodes.isEmpty()) {
-                nodes.addAll(otherInfiniteNodes);
-            }
-            if (!delayedNodes.isEmpty()) {
-                nodes.addAll(delayedNodes);
-            }
-            newNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createAndNode(nodes.getNodes()));
-            
-        } else if (matches.size() == 1) {
-            
-            newNode = TreeFlatteningRebuildingVisitor.flatten(matches.iterator().next().getNode());
-            
-        } else {
-            // get the unique node sets
-            JexlNodeSet nodeSet = new JexlNodeSet();
-            for (IndexMatch match : matches) {
-                nodeSet.add(match.getNode());
-            }
-            
-            // it is counterintuitive that this is an OR, but since each indexMatch is actually a potential different query path an or is appropriate here
-            // example (A || B) && C
-            // IndexMatch - A == 'a'
-            // IndexMatch - B == 'b'
-            // IndexMatch - C == infinite
-            // the merge node's matches actually represent (A && C) || (A && B)
-            // it may be possible to reduce the tree due to the IndexMatches only coming from one side
-            // IndexMatch - A == 'a'
-            // NoData - B == 'c'
-            // IndexMatch - C == infinite
-            // the merge nodes matches now just represent (A && C)
-            if (nodeSet.size() == 1) {
-                newNode = TreeFlatteningRebuildingVisitor.flatten(nodeSet.getNodes().iterator().next());
-            } else {
-                newNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createOrNode(nodeSet.getNodes()));
-            }
-        }
-        
-        merged.myNode = newNode;
-        merged.uids = ImmutableSortedSet.copyOf(matches);
-        
-        return merged;
-    }
-    
     public IndexInfo intersect(IndexInfo o) {
         return intersect(o, new ArrayList<>(), this);
     }
@@ -463,55 +365,40 @@ public class IndexInfo implements Writable, UidIntersector {
         // infinite = (count == -1)
         // onlyEvents = (count == uids.size())
         
-        // if either side is only events and the other is infinite, roll to a shard range
-        if ((isInfinite() && o.onlyEvents()) || (o.isInfinite() && this.onlyEvents())) {
-            JexlNodeSet nodes = new JexlNodeSet();
-            if (this.getNode() != null) {
-                nodes.add(this.getNode());
-            }
-            if (o.getNode() != null) {
-                nodes.add(o.getNode());
-            }
-            if (!delayedNodes.isEmpty()) {
-                nodes.addAll(delayedNodes);
-            }
-            
-            IndexInfo merged = new IndexInfo();
-            merged.count = Math.min(count, o.count);
-            merged.uids = ImmutableSortedSet.of();
-            merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createAndNode(nodes.getNodes()));
-            return merged;
-        }
-        
         IndexInfo merged = new IndexInfo();
+        
         if (onlyEvents() && o.onlyEvents()) {
-            /*
-             * C) Both are small, so we have an easy case where we can prune much of this sub query. Must propagate delayed nodes, though.
-             */
+            
+            // if both sides are uid-only perform an intersection on the uids, propagating delayed nodes
             merged.uids = ImmutableSortedSet.copyOf(uidIntersector.intersect(uids, o.uids, delayedNodes));
             merged.count = merged.uids.size();
             
+        } else if (isInfinite() && o.isInfinite()) {
+            
+            // if both sides are infinite ranges generated by us (-1 count), persist the -1 count
+            merged.count = -1;
+            merged.uids = ImmutableSortedSet.of();
+            
         } else {
             
-            if (o.isInfinite() && isInfinite()) {
-                /*
-                 * D) Both sub trees are UNKNOWN, so we must propagate everything
-                 */
-                merged.count = -1;
-                merged.uids = ImmutableSortedSet.of();
-            } else {
-                // both are count only, presumed infinite. zero out uids and roll to shard rnage
-                merged.count = Math.min(count, o.count);
-                merged.uids = ImmutableSortedSet.of();
-            }
+            // else we are left countably infinite shard ranges. Take the minimum count.
+            merged.count = Math.min(count, o.count);
+            merged.uids = ImmutableSortedSet.of();
         }
-        JexlNodeSet nodeSet = new JexlNodeSet();
-        if (null != myNode && myNode != o.myNode)
-            nodeSet.add(myNode);
-        if (null != o.myNode)
-            nodeSet.add(o.myNode);
-        nodeSet.addAll(delayedNodes);
-        merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createAndNode(nodeSet.getNodes()));
+        
+        // now handle updating the top level node
+        JexlNodeSet nodes = new JexlNodeSet();
+        if (this.getNode() != null) {
+            nodes.add(this.getNode());
+        }
+        if (o.getNode() != null) {
+            nodes.add(o.getNode());
+        }
+        if (!delayedNodes.isEmpty()) {
+            nodes.addAll(delayedNodes);
+        }
+        merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createAndNode(nodes.getNodes()));
+        
         return merged;
     }
     
