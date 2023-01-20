@@ -3,7 +3,6 @@ package datawave.query.tables;
 import com.google.common.base.Function;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -227,7 +226,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         this.setQueryModel(other.getQueryModel());
         this.setScannerFactory(other.getScannerFactory());
         this.setScheduler(other.getScheduler());
-        this.setEventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer());
         
         log.trace("copy CTOR setting metadataHelperFactory to " + other.getMetadataHelperFactory());
         this.setMetadataHelperFactory(other.getMetadataHelperFactory());
@@ -239,7 +237,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         this.setPrimaryToSecondaryFieldMap(other.getPrimaryToSecondaryFieldMap());
         
         if (other.eventQueryDataDecoratorTransformer != null) {
-            this.eventQueryDataDecoratorTransformer = new EventQueryDataDecoratorTransformer(other.eventQueryDataDecoratorTransformer);
+            this.setEventQueryDataDecoratorTransformer(new EventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer()));
         }
     }
     
@@ -621,6 +619,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         transformer.setQm(queryModel);
         this.transformerInstance = transformer;
         addConfigBasedTransformers();
+        
         return this.transformerInstance;
     }
     
@@ -1100,6 +1099,38 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         
         log.debug("Closing ShardQueryLogic: " + System.identityHashCode(this));
         
+        if (null == scannerFactory) {
+            log.debug("ScannerFactory was never initialized because, therefore there are no connections to close: " + System.identityHashCode(this));
+        } else {
+            log.debug("Closing ShardQueryLogic scannerFactory: " + System.identityHashCode(this));
+            try {
+                int nClosed = 0;
+                scannerFactory.lockdown();
+                for (ScannerBase bs : scannerFactory.currentScanners()) {
+                    scannerFactory.close(bs);
+                    ++nClosed;
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("Cleaned up " + nClosed + " batch scanners associated with this query logic.");
+                }
+                
+                nClosed = 0;
+                
+                for (ScannerSession bs : scannerFactory.currentSessions()) {
+                    scannerFactory.close(bs);
+                    ++nClosed;
+                }
+                
+                if (log.isDebugEnabled()) {
+                    log.debug("Cleaned up " + nClosed + " scanner sessions.");
+                }
+                
+            } catch (Exception e) {
+                log.error("Caught exception trying to close scannerFactory", e);
+            }
+            
+        }
+        
         if (null != this.planner) {
             try {
                 log.debug("Closing ShardQueryLogic planner: " + System.identityHashCode(this) + '('
@@ -1132,37 +1163,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 
             } catch (IOException e) {
                 log.error("Caught exception trying to close Scheduler", e);
-            }
-        }
-        
-        if (null == scannerFactory) {
-            log.debug("ScannerFactory was never initialized because, therefore there are no connections to close: " + System.identityHashCode(this));
-        } else {
-            log.debug("Closing ShardQueryLogic scannerFactory: " + System.identityHashCode(this));
-            try {
-                int nClosed = 0;
-                scannerFactory.lockdown();
-                for (ScannerBase bs : Lists.newArrayList(scannerFactory.currentScanners())) {
-                    scannerFactory.close(bs);
-                    ++nClosed;
-                }
-                if (log.isDebugEnabled()) {
-                    log.debug("Cleaned up " + nClosed + " batch scanners associated with this query logic.");
-                }
-                
-                nClosed = 0;
-                
-                for (ScannerSession bs : Lists.newArrayList(scannerFactory.currentSessions())) {
-                    scannerFactory.close(bs);
-                    ++nClosed;
-                }
-                
-                if (log.isDebugEnabled()) {
-                    log.debug("Cleaned up " + nClosed + " scanner sessions.");
-                }
-                
-            } catch (Exception e) {
-                log.error("Caught exception trying to close scannerFactory", e);
             }
         }
         
@@ -2323,6 +2323,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     
     public void setPointMaxExpansion(int pointMaxExpansion) {
         getConfig().setPointMaxExpansion(pointMaxExpansion);
+    }
+    
+    public int getGeoMaxExpansion() {
+        return getConfig().getGeoMaxExpansion();
+    }
+    
+    public void setGeoMaxExpansion(int geoMaxExpansion) {
+        getConfig().setGeoMaxExpansion(geoMaxExpansion);
     }
     
     public int getGeoWaveRangeSplitThreshold() {

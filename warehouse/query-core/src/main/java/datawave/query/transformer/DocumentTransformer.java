@@ -10,7 +10,6 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -108,7 +107,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         }
         
         if (documentEntry.getValue().isIntermediateResult()) {
-            DefaultEvent output = new DefaultEvent();
+            EventBase output = responseObjectFactory.getEvent();
             output.setIntermediateResult(true);
             return output;
         }

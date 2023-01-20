@@ -162,4 +162,6 @@ public abstract class Query implements Externalizable {
             }
         }
     }
+    
+    public abstract void populateTrackingMap(Map<String,String> trackingMap);
 }

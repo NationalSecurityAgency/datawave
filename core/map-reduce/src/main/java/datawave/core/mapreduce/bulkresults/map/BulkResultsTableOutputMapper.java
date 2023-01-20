@@ -56,7 +56,7 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
         String logicName = context.getConfiguration().get(QUERY_LOGIC_NAME);
         
         QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(logicName);
-        t = logic.getTransformer(query);
+        t = logic.getEnrichedTransformer(query);
         Assert.notNull(logic.getMarkingFunctions());
         Assert.notNull(logic.getResponseObjectFactory());
         this.tableName = new Text(context.getConfiguration().get(TABLE_NAME));

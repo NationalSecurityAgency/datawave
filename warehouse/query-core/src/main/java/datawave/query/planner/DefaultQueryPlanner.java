@@ -66,6 +66,7 @@ import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
+import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
@@ -299,13 +300,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected boolean showReducedQueryPrune = true;
     
-    /**
-     * Set flag to enable query tree validation during planning
-     */
-    protected boolean validateAST = false;
-    
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
-    protected TimedVisitorManager visitorManager;
+    private TimedVisitorManager visitorManager = new TimedVisitorManager();
     
     public DefaultQueryPlanner() {
         this(Long.MAX_VALUE);
@@ -318,7 +314,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     public DefaultQueryPlanner(long maxRangesPerQueryPiece, boolean limitScanners) {
         this.maxRangesPerQueryPiece = maxRangesPerQueryPiece;
         setLimitScanners(limitScanners);
-        this.visitorManager = new TimedVisitorManager(log.isDebugEnabled(), validateAST);
     }
     
     protected DefaultQueryPlanner(DefaultQueryPlanner other) {
@@ -341,7 +336,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setSourceLimit(other.sourceLimit);
         setDocsToCombineForEvaluation(other.getDocsToCombineForEvaluation());
         setPushdownThreshold(other.getPushdownThreshold());
-        this.visitorManager = other.visitorManager;
+        setVisitorManager(other.getVisitorManager());
     }
     
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
@@ -1163,7 +1158,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Handle case when input field value pairs are swapped
      */
     protected ASTJexlScript timedInvertSwappedNodes(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Invert Swapped Nodes", () -> (JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(script)));
+        return visitorManager.timedVisit(timers, "Invert Swapped Nodes", () -> (InvertNodeVisitor.invertSwappedNodes(script)));
     }
     
     /**
@@ -1282,6 +1277,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     protected ASTJexlScript timedApplyWhindexFieldMappings(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
                     MetadataHelper metadataHelper, Query settings) throws DatawaveQueryException {
+        try {
+            config.setWhindexCreationDates(metadataHelper.getWhindexCreationDateMap(config.getDatatypeFilter()));
+        } catch (TableNotFoundException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
+            throw new DatawaveFatalQueryException(qe);
+        }
         return visitorManager.timedVisit(timers, "Apply Whindex Field Mappings",
                         () -> (WhindexVisitor.apply(script, config, settings.getBeginDate(), metadataHelper)));
     }
@@ -2781,12 +2782,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return showReducedQueryPrune;
     }
     
-    public boolean getValidateAST() {
-        return this.validateAST;
+    public TimedVisitorManager getVisitorManager() {
+        return visitorManager;
     }
     
-    public void setValidateAST(boolean validateAST) {
-        this.validateAST = validateAST;
+    public void setVisitorManager(TimedVisitorManager visitorManager) {
+        this.visitorManager = visitorManager;
     }
     
     public static int getMaxChildNodesToPrint() {

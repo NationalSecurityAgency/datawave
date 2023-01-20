@@ -84,7 +84,9 @@ public class DataTypeHelperImpl implements DataTypeHelper {
      * Remove whitespace, lowercase the specified fields
      * 
      * @param fieldName
+     *            the field name
      * @param fieldValue
+     *            the field value
      * @return null if the fieldValue is null or empty after {@code trim()} is applied.
      */
     
@@ -106,7 +108,15 @@ public class DataTypeHelperImpl implements DataTypeHelper {
         return getType().typeName();
     }
     
-    /** @return the property name for the type. */
+    /**
+     * Creates the property name for the datatype
+     *
+     * @param config
+     *            a hadoop {@link Configuration}
+     * @param base
+     *            the base of a property
+     * @return a period concatenated type and base
+     */
     protected String key2property(final Configuration config, String base) {
         if (type == null)
             initType(config);
@@ -116,13 +126,29 @@ public class DataTypeHelperImpl implements DataTypeHelper {
         return typeName() + base;
     }
     
-    /** Logs that a default value has been set. */
+    /**
+     * Logs that a default value has been set
+     * 
+     * @param p
+     *            the property
+     * @param v
+     *            the value
+     */
     private void logSetDefault(final String p, final String v) {
         if (logger.isDebugEnabled())
             logger.debug("Set default value: '{}' to '{}' in '{}'", p, v, typeName());
     }
     
-    /** Sets a property in the config if not already set. */
+    /**
+     * Sets a property in the config if not already set.
+     *
+     * @param config
+     *            a hadoop {@link Configuration}
+     * @param key
+     *            the property key
+     * @param value
+     *            the property value
+     */
     protected void setIfUnset(final Configuration config, final String key, final String value) {
         final String property = key2property(config, key);
         
@@ -132,7 +158,16 @@ public class DataTypeHelperImpl implements DataTypeHelper {
         }
     }
     
-    /** Sets a property in the config if not already set. */
+    /**
+     * Sets a property in the config if not already set.
+     * 
+     * @param config
+     *            a hadoop {@link Configuration}
+     * @param key
+     *            the property key
+     * @param values
+     *            an array of property values
+     */
     protected void setIfUnset(final Configuration config, final String key, final String[] values) {
         final String property = key2property(config, key);
         

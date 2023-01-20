@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import datawave.ingest.protobuf.TermWeightPosition;
@@ -54,15 +53,15 @@ public abstract class ContentFunctionEvaluator {
      * Validate the arguments.
      * 
      * @param distance
+     *            the distance
      * @param termOffsetMap
+     *            a TermOffsetMap
      * @param terms
+     *            an array of terms
+     * @return true if the arguments are valid
      */
     protected boolean isValidArguments(int distance, TermOffsetMap termOffsetMap, String[] terms) {
-        if (termOffsetMap == null || (distance < 0) || terms.length < 2) {
-            return false;
-        }
-        
-        return true;
+        return termOffsetMap != null && distance >= 0 && terms.length >= 2;
     }
     
     /**
@@ -100,17 +99,15 @@ public abstract class ContentFunctionEvaluator {
                 log.trace("Failing within() because of bad arguments");
                 log.trace(distance + " " + ((termOffsetMap == null) ? "null" : termOffsetMap.toString()) + " " + Arrays.toString(terms));
             }
-            
             return false;
         }
         
-        // generate an intersection of event ids that cover all of the terms
+        // generate an intersection of event ids that cover all the terms
         for (String term : terms) {
             if (term == null) {
                 if (log.isTraceEnabled()) {
                     log.trace("Failing process() because of a null term");
                 }
-                
                 return false;
             }
             
@@ -120,14 +117,12 @@ public abstract class ContentFunctionEvaluator {
                 if (log.isTraceEnabled()) {
                     log.trace("Failing process() because of a null offset list for " + term);
                 }
-                
                 return false;
             }
             if (tfList.fetchOffsets().isEmpty()) {
                 if (log.isTraceEnabled()) {
                     log.trace("Failing process() because of an empty offset list for " + term);
                 }
-                
                 return false;
             }
             
@@ -136,13 +131,17 @@ public abstract class ContentFunctionEvaluator {
             } else {
                 eventIds.retainAll(tfList.eventIds());
             }
+            
+            // search space pruned to zero, no reason to continue iterating through terms
+            if (eventIds.isEmpty()) {
+                break;
+            }
         }
         
         if (eventIds == null || eventIds.isEmpty()) {
             if (log.isTraceEnabled()) {
                 log.trace("Failing process() because of an empty event id intersection across the terms");
             }
-            
             return false;
         }
         
@@ -165,7 +164,7 @@ public abstract class ContentFunctionEvaluator {
                 for (String term : terms) {
                     TermFrequencyList tfList = termOffsetMap.getTermFrequencyList(term);
                     
-                    // Invert the map to take all of the offsets for a term within a field
+                    // Invert the map to take all the offsets for a term within a field
                     // and group the lists together
                     for (String field : tfList.fields()) {
                         TermFrequencyList.Zone zone = new TermFrequencyList.Zone(field, true, eventId);

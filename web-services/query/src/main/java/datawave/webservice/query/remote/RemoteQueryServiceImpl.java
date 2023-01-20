@@ -1,4 +1,3 @@
-
 package datawave.webservice.query.remote;
 
 import com.codahale.metrics.Counter;
@@ -7,26 +6,32 @@ import datawave.core.query.remote.RemoteQueryService;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
+import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
 import org.apache.http.HttpEntity;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
+import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.StreamUtils;
+import org.xbill.DNS.TextParseException;
 
 import javax.annotation.PostConstruct;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -43,37 +48,19 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     
     private static final String PLAN = "%s/plan";
     
+    private static final String METRICS = "Metrics/id/%s";
+    
     private ObjectReader voidResponseReader;
     
     private ObjectReader genericResponseReader;
     
     private ObjectReader baseQueryResponseReader;
     
-    private boolean useSrvDNS = false;
+    private ObjectReader eventQueryResponseReader;
     
-    private List<String> srvDnsServers = Collections.singletonList("127.0.0.1");
+    private ResponseObjectFactory responseObjectFactory;
     
-    private int srvDnsPort = 8600;
-    
-    private String queryServiceScheme = "https";
-    
-    private String queryServiceHost = "localhost";
-    
-    private int queryServicePort = 8443;
-    
-    private String queryServiceURI = "/query/v1/";
-    
-    private int maxConnections = 100;
-    
-    private int retryCount = 5;
-    
-    private int unavailableRetryCount = 15;
-    
-    private int unavailableRetryDelay = 2000;
-    
-    private Counter retryCounter = new Counter();
-    
-    private Counter failureCounter = new Counter();
+    private RemoteHttpServiceConfiguration config = new RemoteHttpServiceConfiguration();
     
     private boolean initialized = false;
     
@@ -85,6 +72,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
             voidResponseReader = objectMapper.readerFor(VoidResponse.class);
             genericResponseReader = objectMapper.readerFor(GenericResponse.class);
             baseQueryResponseReader = objectMapper.readerFor(BaseQueryResponse.class);
+            eventQueryResponseReader = objectMapper.readerFor(responseObjectFactory.getEventQueryResponse().getClass());
             initialized = true;
         }
     }
@@ -100,14 +88,13 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     }
     
     private GenericResponse<String> query(String endPoint, String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
-        final String postBody;
-        final StringEntity post;
+        final List<NameValuePair> nameValuePairs = new ArrayList<>();
+        queryParameters.entrySet().stream().forEach(e -> e.getValue().stream().forEach(v -> nameValuePairs.add(new BasicNameValuePair(e.getKey(), v))));
+        
+        final HttpEntity postBody;
         try {
-            URIBuilder uriBuilder = new URIBuilder();
-            queryParameters.entrySet().stream().forEach(e -> e.getValue().stream().forEach(v -> uriBuilder.addParameter(e.getKey(), v)));
-            postBody = uriBuilder.build().getQuery();
-            post = new StringEntity(postBody, ContentType.APPLICATION_FORM_URLENCODED);
-        } catch (URISyntaxException e) {
+            postBody = new UrlEncodedFormEntity(nameValuePairs, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
         
@@ -120,10 +107,9 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
                 suffix,
                 uriBuilder -> { },
                 httpPost -> {
-                    httpPost.setEntity(post);
+                    httpPost.setEntity(postBody);
                     httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
                     httpPost.setHeader(HttpHeaders.AUTHORIZATION, getBearer(callerObject));
-                    httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED);
                 },
                 entity -> {
                     return readResponse(entity, genericResponseReader);
@@ -139,7 +125,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
             httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
             httpGet.setHeader(HttpHeaders.AUTHORIZATION, getBearer(callerObject));
         }, entity -> {
-            return readResponse(entity, baseQueryResponseReader);
+            return readResponse(entity, eventQueryResponseReader, baseQueryResponseReader);
         }, () -> suffix);
     }
     
@@ -165,42 +151,71 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         }, () -> suffix);
     }
     
+    @Override
+    public URI getQueryMetricsURI(String id) {
+        try {
+            URIBuilder builder = buildURI();
+            builder.setPath(serviceURI() + String.format(METRICS, id));
+            return builder.build();
+        } catch (TextParseException | URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        
+    }
+    
     public <T> T readResponse(HttpEntity entity, ObjectReader reader) throws IOException {
         if (entity == null) {
             return null;
-        } else if (entity.isRepeatable()) {
-            try {
-                return reader.readValue(entity.getContent());
-            } catch (IOException ioe) {
-                log.error("Failed to read entity content with " + reader.getValueType() + ".  Trying as a VoidResponse.", ioe);
-                VoidResponse response = voidResponseReader.readValue(entity.getContent());
-                throw new RuntimeException(response.getMessages().toString());
-            }
         } else {
-            byte[] data = StreamUtils.copyToByteArray(entity.getContent());
+            String content = getContent(entity.getContent());
             try {
-                return reader.readValue(new ByteArrayInputStream(data));
+                return reader.readValue(content);
             } catch (IOException ioe) {
-                log.error("Failed to read entity content with " + reader.getValueType() + ".  Trying as a VoidResponse.", ioe);
-                VoidResponse response = voidResponseReader.readValue(entity.getContent());
+                log.error("Failed to read entity content.  Trying as a VoidResponse.", ioe);
+                log.error(content);
+                VoidResponse response = voidResponseReader.readValue(content);
                 throw new RuntimeException(response.getMessages().toString());
             }
         }
     }
     
+    public <T> T readResponse(HttpEntity entity, ObjectReader reader1, ObjectReader reader2) throws IOException {
+        if (entity == null) {
+            return null;
+        } else {
+            String content = getContent(entity.getContent());
+            try {
+                return reader1.readValue(content);
+            } catch (IOException ioe1) {
+                try {
+                    return reader2.readValue(content);
+                } catch (IOException ioe) {
+                    log.error("Failed to read entity content.  Trying as a VoidResponse.", ioe);
+                    log.error(content);
+                    VoidResponse response = voidResponseReader.readValue(content);
+                    throw new RuntimeException(response.getMessages().toString());
+                }
+            }
+        }
+    }
+    
+    private String getContent(InputStream content) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        InputStreamReader reader = new InputStreamReader(content, "UTF8");
+        char[] buffer = new char[1024];
+        int chars = reader.read(buffer);
+        while (chars >= 0) {
+            builder.append(buffer, 0, chars);
+            chars = reader.read(buffer);
+        }
+        return builder.toString();
+    }
+    
     public VoidResponse readVoidResponse(HttpEntity entity) throws IOException {
         if (entity == null) {
             return null;
-        } else if (entity.isRepeatable()) {
-            VoidResponse response = voidResponseReader.readValue(entity.getContent());
-            if (response.getHasResults()) {
-                return response;
-            } else {
-                throw new RuntimeException(response.getMessages().toString());
-            }
         } else {
-            byte[] data = StreamUtils.copyToByteArray(entity.getContent());
-            VoidResponse response = voidResponseReader.readValue(new ByteArrayInputStream(data));
+            VoidResponse response = voidResponseReader.readValue(entity.getContent());
             if (response.getHasResults()) {
                 return response;
             } else {
@@ -230,7 +245,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         } catch (URISyntaxException e) {
             throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
         } catch (IOException e) {
-            failureCounter.inc();
+            config.getFailureCounter().inc();
             throw new RuntimeException(e.getMessage(), e);
         }
     }
@@ -243,112 +258,128 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         } catch (URISyntaxException e) {
             throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
         } catch (IOException e) {
-            failureCounter.inc();
+            config.getFailureCounter().inc();
             throw new RuntimeException(e.getMessage(), e);
         }
     }
     
     @Override
     protected String serviceHost() {
-        return queryServiceHost;
+        return config.getServiceHost();
     }
     
     @Override
     protected int servicePort() {
-        return queryServicePort;
+        return config.getServicePort();
     }
     
     @Override
     protected String serviceURI() {
-        return queryServiceURI;
+        return config.getServiceURI();
     }
     
     @Override
     protected boolean useSrvDns() {
-        return useSrvDNS;
+        return config.isUseSrvDNS();
     }
     
     @Override
     protected List<String> srvDnsServers() {
-        return srvDnsServers;
+        return config.getSrvDnsServers();
     }
     
     @Override
     protected int srvDnsPort() {
-        return srvDnsPort;
+        return config.getSrvDnsPort();
     }
     
     @Override
     protected String serviceScheme() {
-        return queryServiceScheme;
+        return config.getServiceScheme();
     }
     
     @Override
     protected int maxConnections() {
-        return maxConnections;
+        return config.getMaxConnections();
     }
     
     @Override
     protected int retryCount() {
-        return retryCount;
+        return config.getRetryCount();
     }
     
     @Override
     protected int unavailableRetryCount() {
-        return unavailableRetryCount;
+        return config.getUnavailableRetryCount();
     }
     
     @Override
     protected int unavailableRetryDelay() {
-        return unavailableRetryDelay;
+        return config.getUnavailableRetryDelay();
     }
     
     @Override
     protected Counter retryCounter() {
-        return retryCounter;
+        return config.getRetryCounter();
     }
     
     public void setUseSrvDNS(boolean useSrvDNS) {
-        this.useSrvDNS = useSrvDNS;
+        config.setUseSrvDNS(useSrvDNS);
     }
     
     public void setSrvDnsServers(List<String> srvDnsServers) {
-        this.srvDnsServers = srvDnsServers;
+        config.setSrvDnsServers(srvDnsServers);
     }
     
     public void setSrvDnsPort(int srvDnsPort) {
-        this.srvDnsPort = srvDnsPort;
+        config.setSrvDnsPort(srvDnsPort);
     }
     
     public void setQueryServiceScheme(String queryServiceScheme) {
-        this.queryServiceScheme = queryServiceScheme;
+        config.setServiceScheme(queryServiceScheme);
     }
     
     public void setQueryServiceHost(String queryServiceHost) {
-        this.queryServiceHost = queryServiceHost;
+        config.setServiceHost(queryServiceHost);
     }
     
     public void setQueryServicePort(int queryServicePort) {
-        this.queryServicePort = queryServicePort;
+        config.setServicePort(queryServicePort);
     }
     
     public void setQueryServiceURI(String queryServiceURI) {
-        this.queryServiceURI = queryServiceURI;
+        config.setServiceURI(queryServiceURI);
     }
     
     public void setMaxConnections(int maxConnections) {
-        this.maxConnections = maxConnections;
+        config.setMaxConnections(maxConnections);
     }
     
     public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+        config.setRetryCount(retryCount);
     }
     
     public void setUnavailableRetryCount(int unavailableRetryCount) {
-        this.unavailableRetryCount = unavailableRetryCount;
+        config.setUnavailableRetryCount(unavailableRetryCount);
     }
     
     public void setUnavailableRetryDelay(int unavailableRetryDelay) {
-        this.unavailableRetryDelay = unavailableRetryDelay;
+        config.setUnavailableRetryDelay(unavailableRetryDelay);
+    }
+    
+    public ResponseObjectFactory getResponseObjectFactory() {
+        return responseObjectFactory;
+    }
+    
+    public void setResponseObjectFactory(ResponseObjectFactory responseObjectFactory) {
+        this.responseObjectFactory = responseObjectFactory;
+    }
+    
+    public RemoteHttpServiceConfiguration getConfig() {
+        return config;
+    }
+    
+    public void setConfig(RemoteHttpServiceConfiguration config) {
+        this.config = config;
     }
 }

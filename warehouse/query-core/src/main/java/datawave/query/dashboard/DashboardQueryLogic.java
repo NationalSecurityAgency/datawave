@@ -5,6 +5,7 @@ import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.dashboard.DashboardFields;
 import datawave.core.query.dashboard.DashboardSummary;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.ResponseEnricher;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.EventBase;
@@ -19,6 +20,8 @@ import java.util.List;
  * Aggregate a range of query metrics into a single DashboardSummary object.
  */
 public class DashboardQueryLogic extends ShardQueryLogic implements QueryLogicTransformer {
+    
+    private ResponseEnricher responseEnricher;
     
     protected long queryExecutionForCurrentPageStartTime;
     
@@ -42,14 +45,17 @@ public class DashboardQueryLogic extends ShardQueryLogic implements QueryLogicTr
     @SuppressWarnings("unchecked")
     public TransformIterator getTransformIterator(Query settings) {
         TransformIterator origIter = super.getTransformIterator(settings);
-        QueryLogicTransformer transformer = super.getTransformer(settings);
         DashboardSummary summary = new DashboardSummary(settings.getEndDate());
         while (origIter.hasNext()) {
-            EventBase event = (EventBase) transformer.transform(origIter.next());
+            EventBase event = (EventBase) origIter.next();
             DashboardFields.addEvent(summary, event);
         }
-        
         return new TransformIterator(Arrays.asList(summary).iterator(), this);
+    }
+    
+    @Override
+    public void setResponseEnricher(ResponseEnricher responseEnricher) {
+        this.responseEnricher = responseEnricher;
     }
     
     @Override
@@ -61,7 +67,12 @@ public class DashboardQueryLogic extends ShardQueryLogic implements QueryLogicTr
             list.add((DashboardSummary) o);
         }
         
-        return new ExtJsResponse<>(list);
+        ExtJsResponse response = new ExtJsResponse<>(list);
+        if (responseEnricher != null) {
+            return responseEnricher.enrichResponse(response);
+        } else {
+            return response;
+        }
     }
     
     @Override

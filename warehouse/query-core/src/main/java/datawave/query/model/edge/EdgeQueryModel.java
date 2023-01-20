@@ -41,29 +41,12 @@ public class EdgeQueryModel extends QueryModel {
     public EdgeQueryModel(QueryModel other, EdgeModelFields fields) throws InvalidModelException {
         super(other);
         this.fields = fields;
-        if (null != this.unevalFields && !this.unevalFields.isEmpty()) {
-            this.unevalFields.clear();
-        }
+        setLenientForwardMappings(null);
         validateModel(this);
     }
     
     public EdgeModelFields getFields() {
         return fields;
-    }
-    
-    @Override
-    public void setUnevaluatedFields(Set<String> uneval) {
-        // No-Op/Ignore
-    }
-    
-    @Override
-    public void addUnevaluatedField(String uneval) {
-        // No-Op/Ignore
-    }
-    
-    @Override
-    public boolean isUnevaluatedField(String field) {
-        return false; // Always false
     }
     
     /**

@@ -339,6 +339,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                     if (isQueryFullySatisfied == true) {
                         log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
                     }
+                    // if there is no parent
+                    if (root == null && data == null) {
+                        // make this nested the root node
+                        root = nested;
+                    }
                     return nested;
                     
                 }

@@ -6,6 +6,7 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.system.ServerPrincipal;
 import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.query.exception.QueryException;
@@ -16,6 +17,7 @@ import org.springframework.context.ApplicationContext;
 import javax.inject.Inject;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,12 +57,28 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
         return getQueryLogic(name, null, false);
     }
     
-    private QueryLogic<?> getQueryLogic(String name, Principal principal, boolean checkRoles) throws IllegalArgumentException, CloneNotSupportedException {
+    public QueryLogic<?> getQueryLogic(String queryLogic, Principal principal, boolean checkRoles) throws IllegalArgumentException, CloneNotSupportedException {
+        
+        String beanName = queryLogic;
+        if (queryLogicFactoryConfiguration.hasLogicMap()) {
+            beanName = queryLogicFactoryConfiguration.getLogicMap().get(queryLogic);
+        }
+        if (beanName == null) {
+            throw new IllegalArgumentException("Logic name '" + queryLogic + "' is not configured for this system");
+        }
+        
         QueryLogic<?> logic;
         try {
-            logic = (QueryLogic<?>) applicationContext.getBean(name);
+            logic = (QueryLogic<?>) applicationContext.getBean(beanName);
+            if (principal instanceof ProxiedUserDetails) {
+                logic.setCurrentUser((ProxiedUserDetails) principal);
+            }
         } catch (ClassCastException | NoSuchBeanDefinitionException cce) {
-            throw new IllegalArgumentException("Logic name '" + name + "' does not exist in the configuration");
+            if (beanName.equals(queryLogic)) {
+                throw new IllegalArgumentException("Logic name '" + queryLogic + "' does not exist in the configuration");
+            } else {
+                throw new IllegalArgumentException("Logic name '" + queryLogic + "' which maps to '" + beanName + "' does not exist in the configuration");
+            }
         }
         
         Set<String> userRoles = new HashSet<>();
@@ -72,7 +90,7 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
             throw new UnauthorizedException(new IllegalAccessException("User does not have required role(s): " + logic.getRequiredRoles()), new VoidResponse());
         }
         
-        logic.setLogicName(name);
+        logic.setLogicName(queryLogic);
         if (logic.getMaxPageSize() == 0) {
             logic.setMaxPageSize(queryLogicFactoryConfiguration.getMaxPageSize());
         }
@@ -93,6 +111,15 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
     @Override
     public List<QueryLogic<?>> getQueryLogicList() {
         Map<String,QueryLogic> logicMap = applicationContext.getBeansOfType(QueryLogic.class);
+        if (queryLogicFactoryConfiguration.hasLogicMap()) {
+            Map<String,QueryLogic> renamedLogicMap = new HashMap<>();
+            for (Map.Entry<String,String> entry : queryLogicFactoryConfiguration.getLogicMap().entrySet()) {
+                if (logicMap.containsKey(entry.getValue())) {
+                    renamedLogicMap.put(entry.getKey(), logicMap.get(entry.getValue()));
+                }
+            }
+            logicMap = renamedLogicMap;
+        }
         
         List<QueryLogic<?>> logicList = new ArrayList<>();
         

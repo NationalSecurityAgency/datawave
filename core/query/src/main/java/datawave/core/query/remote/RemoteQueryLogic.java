@@ -1,7 +1,7 @@
 package datawave.core.query.remote;
 
-import datawave.core.query.remote.RemoteQueryService;
+import datawave.core.query.logic.QueryLogic;
 
-public interface RemoteQueryLogic {
+public interface RemoteQueryLogic<T> extends QueryLogic<T> {
     public void setRemoteQueryService(RemoteQueryService service);
 }

@@ -4,7 +4,6 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -120,7 +119,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     }
     
     private Set<String> getIngestTableNames() {
-        Set<String> tableNames = TableConfigurationUtil.getTables(conf);
+        Set<String> tableNames = TableConfigurationUtil.extractTableNames(conf);
         if (tableNames.isEmpty()) {
             log.error("Missing data types or one of the following helperClass,readerClass,handlerClassNames,filterClassNames");
             throw new IllegalArgumentException("Missing data types or one of the following helperClass,readerClass,handlerClassNames,filterClassNames");
@@ -153,7 +152,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                     splitsPerTable.put(table, splits.size());
                     log.info("Writing " + splits.size() + " splits.");
                     for (Text split : splits) {
-                        out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())));
+                        out.println(table + this.delimiter + new String(Base64.encodeBase64(split.getBytes())));
                     }
                 }
                 if (null != getFileStatus() && exceedsMaxSplitsDeviation(splitsPerTable)) {
@@ -209,13 +208,13 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      * @throws IOException
      */
     @Override
-    protected void readCache(BufferedReader in, String delimiter) throws IOException {
+    protected void readCache(BufferedReader in) throws IOException {
         this.splits = new HashMap<>();
         String line;
         String tableName = null;
         List<Text> splits = null;
         while ((line = in.readLine()) != null) {
-            String[] parts = StringUtils.split(line, delimiter);
+            String[] parts = StringUtils.split(line, this.delimiter);
             if (tableName == null || !tableName.equals(parts[0])) {
                 tableName = parts[0];
                 splits = new ArrayList<>();

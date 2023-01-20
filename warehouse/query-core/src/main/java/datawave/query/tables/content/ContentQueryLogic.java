@@ -84,7 +84,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         } else {
             int nClosed = 0;
             factory.lockdown();
-            for (final ScannerBase bs : Lists.newArrayList(factory.currentScanners())) {
+            for (final ScannerBase bs : factory.currentScanners()) {
                 factory.close(bs);
                 ++nClosed;
             }
@@ -237,7 +237,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new ContentQueryTransformer(settings, this.markingFunctions);
+        return new ContentQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
     }
     
     @Override

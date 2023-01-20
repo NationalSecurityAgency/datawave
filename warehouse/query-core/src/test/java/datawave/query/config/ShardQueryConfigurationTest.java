@@ -294,6 +294,7 @@ public class ShardQueryConfigurationTest {
         other.setNoExpansionFields(noExpansionFields);
         other.setDisallowedRegexPatterns(disallowedRegexPatterns);
         other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
+        other.setAccumuloPassword("ChangeIt");
         
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
@@ -375,9 +376,10 @@ public class ShardQueryConfigurationTest {
         QueryModel expectedQueryModel = new QueryModel();
         Assert.assertEquals(expectedQueryModel.getForwardQueryMapping(), config.getQueryModel().getForwardQueryMapping());
         Assert.assertEquals(expectedQueryModel.getReverseQueryMapping(), config.getQueryModel().getReverseQueryMapping());
-        Assert.assertEquals(expectedQueryModel.getUnevaluatedFields(), config.getQueryModel().getUnevaluatedFields());
+        Assert.assertEquals(expectedQueryModel.getLenientForwardMappings(), config.getQueryModel().getLenientForwardMappings());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
+        Assert.assertEquals("ChangeIt", config.getAccumuloPassword());
         
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
@@ -478,7 +480,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 175;
+        int expectedObjectCount = 177;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

@@ -57,6 +57,8 @@ public class TestBaseQueryLogic {
         expect(this.copy.getCurrentUser()).andReturn(null);
         expect(this.copy.getServerUser()).andReturn(null);
         expect(this.copy.getBypassAccumulo()).andReturn(false);
+        expect(this.copy.getAccumuloPassword()).andReturn("");
+        expect(this.copy.getResponseEnricherBuilder()).andReturn(null);
         
         // Run the test
         PowerMock.replayAll();

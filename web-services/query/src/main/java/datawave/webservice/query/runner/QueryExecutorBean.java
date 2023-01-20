@@ -46,6 +46,9 @@ import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
+import datawave.webservice.common.exception.NotFoundException;
+import datawave.webservice.common.exception.PreConditionFailedException;
+import datawave.webservice.common.exception.QueryCanceledException;
 import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -233,6 +236,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private SecurityMarking marking;
     
     @Inject
+    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
     
     private LookupUUIDUtil lookupUUIDUtil;
@@ -258,6 +262,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private final int PAGE_TIMEOUT_MIN = 1;
     private final int PAGE_TIMEOUT_MAX = 60;
     private final String UUID_REGEX_RULE = "[a-fA-F\\d-]+";
+    private final String INVALID_PAGESIZE = "page.size";
     
     @Inject
     private QueryParameters qp;
@@ -316,7 +321,7 @@ public class QueryExecutorBean implements QueryExecutor {
         List<QueryLogicDescription> logicConfigurationList = new ArrayList<>();
         
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
-        Query q = new QueryImpl();
+        Query q = responseObjectFactory.getQueryImpl();
         Date now = new Date();
         q.setExpirationDate(now);
         q.setQuery("test");
@@ -398,6 +403,12 @@ public class QueryExecutorBean implements QueryExecutor {
         throw new BadRequestException(qe, response);
     }
     
+    private void handleIncorrectPageSize() {
+        log.error("Invalid parameter found: " + INVALID_PAGESIZE + ". Please use the standard 'pagesize' query option instead.");
+        GenericResponse<String> response = new GenericResponse<>();
+        throwBadRequest(DatawaveErrorCode.INVALID_PAGE_SIZE, response);
+    }
+    
     /**
      * Setup the caller data in the QueryData object
      * 
@@ -442,15 +453,25 @@ public class QueryExecutorBean implements QueryExecutor {
         
         // Pull "params" values into individual query parameters for validation on the query logic.
         // This supports the deprecated "params" value (both on the old and new API). Once we remove the deprecated
-        // parameter, this code block can go away.
+        // parameter, this code block can go away. In case users pass incorrect page size parameters, spit it back up.
         String params = queryParameters.getFirst(QueryParameters.QUERY_PARAMS);
         if (params != null) {
             for (Parameter pm : QueryUtil.parseParameters(params)) {
                 if (!queryParameters.containsKey(pm.getParameterName())) {
-                    queryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
+                    if (pm.getParameterName().equals(INVALID_PAGESIZE)) {
+                        handleIncorrectPageSize();
+                    } else {
+                        queryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
+                    }
                 }
             }
         }
+        
+        /* If the incorrect pagesize parameter comes through as a main parameter, return a similar error. */
+        if (queryParameters.containsKey(INVALID_PAGESIZE)) {
+            handleIncorrectPageSize();
+        }
+        
         queryParameters.remove(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ);
         queryParameters.remove(AuditParameters.USER_DN);
         queryParameters.remove(AuditParameters.QUERY_AUDIT_TYPE);
@@ -720,7 +741,7 @@ public class QueryExecutorBean implements QueryExecutor {
             
             priority = qd.logic.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            addQueryToTrackingMap(trackingMap, q);
+            q.populateTrackingMap(trackingMap);
             accumuloConnectionRequestBean.requestBegin(q.getId().toString(), qd.userDn, trackingMap);
             try {
                 connection = connectionFactory.getConnection(qd.userDn, qd.proxyServers, qd.logic.getConnPoolName(), priority, trackingMap);
@@ -904,7 +925,7 @@ public class QueryExecutorBean implements QueryExecutor {
             
             priority = qd.logic.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            addQueryToTrackingMap(trackingMap, q);
+            q.populateTrackingMap(trackingMap);
             accumuloConnectionRequestBean.requestBegin(q.getId().toString(), qd.userDn, trackingMap);
             try {
                 connection = connectionFactory.getConnection(qd.userDn, qd.proxyServers, qd.logic.getConnPoolName(), priority, trackingMap);
@@ -1263,7 +1284,7 @@ public class QueryExecutorBean implements QueryExecutor {
             // they call next.
             priority = query.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            addQueryToTrackingMap(trackingMap, query.getSettings());
+            query.getSettings().populateTrackingMap(trackingMap);
             QueryData qd = setUserData(ctx.getCallerPrincipal(), new QueryData());
             accumuloConnectionRequestBean.requestBegin(id, qd.userDn, trackingMap);
             try {
@@ -1396,7 +1417,7 @@ public class QueryExecutorBean implements QueryExecutor {
         
         long pageNum = query.getLastPageNumber();
         
-        BaseQueryResponse response = query.getLogic().getTransformer(query.getSettings()).createResponse(resultsPage);
+        BaseQueryResponse response = query.getLogic().getEnrichedTransformer(query.getSettings()).createResponse(resultsPage);
         if (resultsPage.getStatus() != ResultsPage.Status.NONE) {
             response.setHasResults(true);
         } else {
@@ -1449,6 +1470,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Path("/lookupContentUUID/{uuidType}/{uuid}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
+    @EnrichQueryMetrics(methodType = MethodType.CREATE_AND_NEXT)
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupContentUUID", absolute = true)
@@ -1519,6 +1541,7 @@ public class QueryExecutorBean implements QueryExecutor {
             "application/x-protostuff"})
     @GZIP
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
+    @EnrichQueryMetrics(methodType = MethodType.CREATE_AND_NEXT)
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupContentUUIDBatch", absolute = true)
@@ -1580,6 +1603,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
     @Path("/lookupUUID/{uuidType}/{uuid}")
+    @EnrichQueryMetrics(methodType = MethodType.CREATE_AND_NEXT)
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupUUID", absolute = true)
@@ -1650,6 +1674,7 @@ public class QueryExecutorBean implements QueryExecutor {
             "application/x-protostuff"})
     @GZIP
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
+    @EnrichQueryMetrics(methodType = MethodType.CREATE_AND_NEXT)
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupUUIDBatch", absolute = true)
@@ -2032,6 +2057,7 @@ public class QueryExecutorBean implements QueryExecutor {
             closedQueryCache.add(id); // remember that we auto-closed this query
             throw e;
         } catch (DatawaveWebApplicationException e) {
+            log.error("Failed Query", e);
             if (query != null) {
                 query.setActiveCall(false);
                 if (query.getLogic().getCollectQueryMetrics()) {
@@ -2048,7 +2074,9 @@ public class QueryExecutorBean implements QueryExecutor {
             } catch (Exception ex) {
                 log.error("Error marking transaction for roll back", ex);
             }
-            if (e.getCause() instanceof NoResultsException) {
+            // close out the query if at least it was a valid request
+            if (!((e instanceof BadRequestException) || (e instanceof NotFoundException) || (e instanceof QueryCanceledException)
+                            || (e instanceof UnauthorizedException) || (e instanceof PreConditionFailedException))) {
                 close(id);
                 closedQueryCache.add(id); // remember that we auto-closed this query
             }
@@ -2080,6 +2108,7 @@ public class QueryExecutorBean implements QueryExecutor {
             } else {
                 try {
                     close(id);
+                    closedQueryCache.add(id); // remember that we auto-closed this query
                 } catch (Exception ce) {
                     log.error(qe, ce);
                 }
@@ -3197,23 +3226,6 @@ public class QueryExecutorBean implements QueryExecutor {
         return queryCache;
     }
     
-    private void addQueryToTrackingMap(Map<String,String> trackingMap, Query q) {
-        
-        if (trackingMap == null || q == null) {
-            return;
-        }
-        
-        if (q.getOwner() != null) {
-            trackingMap.put(AccumuloConnectionFactory.QUERY_USER, q.getOwner());
-        }
-        if (q.getId() != null) {
-            trackingMap.put(AccumuloConnectionFactory.QUERY_ID, q.getId().toString());
-        }
-        if (q.getId() != null) {
-            trackingMap.put(AccumuloConnectionFactory.QUERY, q.getQuery());
-        }
-    }
-    
     /**
      * @param logicName
      * @param queryParameters
@@ -3275,7 +3287,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
-        Query q = new QueryImpl();
+        Query q = responseObjectFactory.getQueryImpl();
         Date now = new Date();
         q.setBeginDate(now);
         q.setEndDate(now);
@@ -3288,7 +3300,7 @@ public class QueryExecutorBean implements QueryExecutor {
         Class<?> responseClass;
         try {
             QueryLogic<?> l = queryLogicFactory.getQueryLogic(logicName, p);
-            QueryLogicTransformer t = l.getTransformer(q);
+            QueryLogicTransformer t = l.getEnrichedTransformer(q);
             BaseResponse refResponse = t.createResponse(emptyList);
             responseClass = refResponse.getClass();
         } catch (Exception e) {

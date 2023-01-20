@@ -5,6 +5,7 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.marking.MarkingFunctions;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.query.Query;
@@ -98,9 +99,11 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     QueryLogicTransformer getTransformer(Query settings);
     
+    QueryLogicTransformer getEnrichedTransformer(Query settings);
+    
     default String getResponseClass(Query query) throws QueryException {
         try {
-            QueryLogicTransformer t = this.getTransformer(query);
+            QueryLogicTransformer t = this.getEnrichedTransformer(query);
             BaseResponse refResponse = t.createResponse(new ResultsPage());
             return refResponse.getClass().getCanonicalName();
         } catch (RuntimeException e) {
@@ -397,4 +400,13 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @param pageProcessingStartTime
      */
     void setPageProcessingStartTime(long pageProcessingStartTime);
+    
+    public ProxiedUserDetails getCurrentUser();
+    
+    public void setCurrentUser(ProxiedUserDetails currentUser);
+    
+    public ProxiedUserDetails getServerUser();
+    
+    public void setServerUser(ProxiedUserDetails serverUser);
+    
 }

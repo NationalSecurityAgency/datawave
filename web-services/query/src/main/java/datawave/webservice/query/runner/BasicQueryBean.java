@@ -7,6 +7,7 @@ import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
+import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
@@ -14,6 +15,7 @@ import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
@@ -101,6 +103,10 @@ public class BasicQueryBean {
     @Resource
     private SessionContext sessionContext;
     
+    @Inject
+    @SpringBean(name = "ResponseObjectFactory")
+    private ResponseObjectFactory responseObjectFactory;
+    
     @PostConstruct
     public void init() {
         
@@ -131,7 +137,7 @@ public class BasicQueryBean {
         List<QueryLogicDescription> logicConfigurationList = new ArrayList<>();
         
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
-        Query q = new QueryImpl();
+        Query q = responseObjectFactory.getQueryImpl();
         Date now = new Date();
         q.setExpirationDate(now);
         q.setQuery("test");
@@ -219,7 +225,7 @@ public class BasicQueryBean {
         List<QueryLogic<?>> logicList = queryLogicFactory.getQueryLogicList();
         
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
-        Query q = new QueryImpl();
+        Query q = responseObjectFactory.getQueryImpl();
         Date now = new Date();
         q.setExpirationDate(now);
         q.setQuery("test");

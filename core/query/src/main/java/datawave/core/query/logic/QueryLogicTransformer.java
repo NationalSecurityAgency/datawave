@@ -7,6 +7,13 @@ import org.apache.commons.collections4.Transformer;
 
 public interface QueryLogicTransformer<I,O> extends Transformer<I,O> {
     
+    /**
+     * Set a response transform to be applied in the createResponse method.
+     * 
+     * @param responseTransform
+     */
+    void setResponseEnricher(ResponseEnricher responseTransform);
+    
     /*
      * @return a jaxb response object that is specific to this QueryLogic
      */

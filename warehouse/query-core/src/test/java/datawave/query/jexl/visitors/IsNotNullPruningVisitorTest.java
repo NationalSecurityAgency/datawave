@@ -12,6 +12,8 @@ import static org.junit.Assert.fail;
 
 public class IsNotNullPruningVisitorTest {
     
+    private final ASTValidator validator = new ASTValidator();
+    
     // test pruning single 'is not null' term via single anchor field
     
     @Test
@@ -32,6 +34,13 @@ public class IsNotNullPruningVisitorTest {
     public void testNotNullTermAndIncludeRegex() {
         String query = "!(FOO == null) && filter:includeRegex(FOO, 'ba.*')";
         String expected = "filter:includeRegex(FOO, 'ba.*')";
+        test(query, expected);
+    }
+    
+    @Test
+    public void testNotNullTermAndGetAllMatches() {
+        String query = "!(FOO == null) && filter:getAllMatches(FOO, 'ba.*')";
+        String expected = "filter:getAllMatches(FOO, 'ba.*')";
         test(query, expected);
     }
     
@@ -119,6 +128,18 @@ public class IsNotNullPruningVisitorTest {
         test(query, expected);
     }
     
+    @Test
+    public void testMultipleGetMatchesTermsAndIncludeRegex() {
+        String query = "!(FOO == null) && !(FOO == null) && filter:getAllMatches(FOO, 'ba.*')";
+        String expected = "filter:getAllMatches(FOO, 'ba.*')";
+        test(query, expected);
+        
+        // unordered
+        query = "!(FOO == null) && filter:getAllMatches(FOO, 'ba.*') && !(FOO == null)";
+        expected = "filter:getAllMatches(FOO, 'ba.*')";
+        test(query, expected);
+    }
+    
     // prune single 'is not null' term from multiple unique terms
     
     @Test
@@ -139,6 +160,13 @@ public class IsNotNullPruningVisitorTest {
     public void testMultipleUniqueNotNullTermsAndIncludeRegex() {
         String query = "!(FOO == null) && !(FOO2 == null) && filter:includeRegex(FOO, 'br.*')";
         String expected = "!(FOO2 == null) && filter:includeRegex(FOO, 'br.*')";
+        test(query, expected);
+    }
+    
+    @Test
+    public void testMultipleUniqueNotNullTermsAndAllMatches() {
+        String query = "!(FOO == null) && !(FOO2 == null) && filter:getAllMatches(FOO, 'br.*')";
+        String expected = "!(FOO2 == null) && filter:getAllMatches(FOO, 'br.*')";
         test(query, expected);
     }
     
@@ -180,6 +208,18 @@ public class IsNotNullPruningVisitorTest {
         test(query, expected);
     }
     
+    @Test
+    public void testUnionOfNotNullTermsAndAllMatches() {
+        String query = "(!(FOO == null) || !(FOO2 == null)) && filter:getAllMatches(FOO, 'ba.*') && filter:getAllMatches(FOO2, 'xy.*')";
+        String expected = "filter:getAllMatches(FOO, 'ba.*') && filter:getAllMatches(FOO2, 'xy.*')";
+        test(query, expected);
+        
+        // order should not matter
+        query = "filter:getAllMatches(FOO, 'ba.*') && filter:getAllMatches(FOO2, 'xy.*') && (!(FOO == null) || !(FOO2 == null))";
+        expected = "filter:getAllMatches(FOO, 'ba.*') && filter:getAllMatches(FOO2, 'xy.*')";
+        test(query, expected);
+    }
+    
     // test pruning nested expressions
     
     @Test
@@ -215,6 +255,18 @@ public class IsNotNullPruningVisitorTest {
         // flip which branch contains the not null
         query = "(FOO2 == 'bar2' && FOO3 == 'bar3') || (!(FOO == null) && filter:includeRegex(FOO, 'ba.*'))";
         expected = "(FOO2 == 'bar2' && FOO3 == 'bar3') || (filter:includeRegex(FOO, 'ba.*'))";
+        test(query, expected);
+    }
+    
+    @Test
+    public void testNestedNotNullTermAndAllMatches() {
+        String query = "(!(FOO == null) && filter:getAllMatches(FOO, 'ba.*')) || (FOO2 == 'bar2' && FOO3 == 'bar3')";
+        String expected = "(filter:getAllMatches(FOO, 'ba.*')) || (FOO2 == 'bar2' && FOO3 == 'bar3')";
+        test(query, expected);
+        
+        // flip which branch contains the not null
+        query = "(FOO2 == 'bar2' && FOO3 == 'bar3') || (!(FOO == null) && filter:getAllMatches(FOO, 'ba.*'))";
+        expected = "(FOO2 == 'bar2' && FOO3 == 'bar3') || (filter:getAllMatches(FOO, 'ba.*'))";
         test(query, expected);
     }
     
@@ -256,6 +308,19 @@ public class IsNotNullPruningVisitorTest {
         // with extras
         query = "!(FOO == null) && (filter:includeRegex(FOO, 'br.*') || filter:includeRegex(FOO, 'bz.*')) && (FEE == 'fi' || FO == 'fum')";
         expected = "(filter:includeRegex(FOO, 'br.*') || filter:includeRegex(FOO, 'bz.*')) && (FEE == 'fi' || FO == 'fum')";
+        test(query, expected);
+    }
+    
+    @Test
+    public void testNotNullTermAndUnionOfAllMatches() {
+        // every field in the union matches the 'not null' term's field, thus we can still prune
+        String query = "!(FOO == null) && (filter:getAllMatches(FOO, 'br.*') || filter:getAllMatches(FOO, 'bz.*'))";
+        String expected = "(filter:getAllMatches(FOO, 'br.*') || filter:getAllMatches(FOO, 'bz.*'))";
+        test(query, expected);
+        
+        // with extras
+        query = "!(FOO == null) && (filter:getAllMatches(FOO, 'br.*') || filter:getAllMatches(FOO, 'bz.*')) && (FEE == 'fi' || FO == 'fum')";
+        expected = "(filter:getAllMatches(FOO, 'br.*') || filter:getAllMatches(FOO, 'bz.*')) && (FEE == 'fi' || FO == 'fum')";
         test(query, expected);
     }
     
@@ -315,6 +380,24 @@ public class IsNotNullPruningVisitorTest {
         test(query, expected);
     }
     
+    @Test
+    public void testUnionOfNotNullTermsAndUnionOfAllMatches() {
+        // prune via single term
+        String query = "(!(FOO == null) || !(FOO == null)) && filter:getAllMatches(FOO, 'br.*')";
+        String expected = "filter:getAllMatches(FOO, 'br.*')";
+        test(query, expected);
+        
+        // prune via union of same field
+        query = "(!(FOO == null) || !(FOO == null)) && (filter:getAllMatches(FOO, 'br.*') || filter:getAllMatches(FOO, 'bz.*'))";
+        expected = "(filter:getAllMatches(FOO, 'br.*') || filter:getAllMatches(FOO, 'bz.*'))";
+        test(query, expected);
+        
+        // prune via union of same field, extra terms not affected
+        query = "(!(FOO == null) || !(FOO == null)) && (filter:getAllMatches(FOO, 'br.*') || filter:getAllMatches(FOO, 'bz.*')) && (FEE == 'fi' || FO == 'fum')";
+        expected = "(filter:getAllMatches(FOO, 'br.*') || filter:getAllMatches(FOO, 'bz.*')) && (FEE == 'fi' || FO == 'fum')";
+        test(query, expected);
+    }
+    
     // test pruning nested union of multiple unique 'is not null' terms
     
     @Test
@@ -335,6 +418,13 @@ public class IsNotNullPruningVisitorTest {
     public void testUnionOfUniqueNotNullTermsAndIncludeRegexes() {
         String query = "(!(FOO == null) || !(FOO2 == null)) && filter:includeRegex(FOO, 'br.*') && filter:includeRegex(FOO2, 'bz.*')";
         String expected = "filter:includeRegex(FOO, 'br.*') && filter:includeRegex(FOO2, 'bz.*')";
+        test(query, expected);
+    }
+    
+    @Test
+    public void testUnionOfUniqueNotNullTermsAndAllMatches() {
+        String query = "(!(FOO == null) || !(FOO2 == null)) && filter:getAllMatches(FOO, 'br.*') && filter:getAllMatches(FOO2, 'bz.*')";
+        String expected = "filter:getAllMatches(FOO, 'br.*') && filter:getAllMatches(FOO2, 'bz.*')";
         test(query, expected);
     }
     
@@ -458,6 +548,12 @@ public class IsNotNullPruningVisitorTest {
         test(query, query);
     }
     
+    @Test
+    public void testNoOpMultiFieldedGetMatches() {
+        String query = "!(FOO == null) && filter:getAllMatches((FOO||FOO2||FOO3), 'ba.*')";
+        test(query, query);
+    }
+    
     // code that handles producing a flattened query tree with respect to wrapped single terms
     // should not modify marked nodes
     @Test
@@ -484,7 +580,7 @@ public class IsNotNullPruningVisitorTest {
             ASTJexlScript visited = (ASTJexlScript) IsNotNullPruningVisitor.prune(script);
             ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
             
-            assertTrue("visit produced an invalid tree", ASTValidator.isValid(visited));
+            assertTrue("visit produced an invalid tree", validator.isValid(visited));
             assertTrue(JexlStringBuildingVisitor.buildQueryWithoutParse(visited), TreeEqualityVisitor.checkEquality(visited, expectedScript).isEqual());
             
         } catch (ParseException | InvalidQueryTreeException e) {

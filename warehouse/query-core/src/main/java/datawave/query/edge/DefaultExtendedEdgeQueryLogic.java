@@ -81,7 +81,8 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
         config.setConnector(connection);
         config.setAuthorizations(auths);
         
-        String queryString = settings.getQuery();
+        String queryString = getJexlQueryString(settings);
+        
         if (null == queryString) {
             throw new IllegalArgumentException("Query cannot be null");
         } else {

@@ -6,6 +6,8 @@ import com.google.common.collect.Iterators;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.util.TableName;
 import datawave.webservice.query.Query;
+
+import datawave.core.common.util.EnvProvider;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
@@ -20,6 +22,7 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import com.google.common.collect.Iterators;
 
 /**
  * <p>
@@ -41,6 +44,7 @@ public abstract class GenericQueryConfiguration implements Serializable {
     
     // This is just used for (de)serialization
     private Set<String> auths = Collections.emptySet();
+    
     private Set<Authorizations> authorizations = Collections.singleton(Authorizations.EMPTY);
     
     private Query query = null;
@@ -66,6 +70,9 @@ public abstract class GenericQueryConfiguration implements Serializable {
     
     protected boolean bypassAccumulo;
     
+    // use a value like 'env:PASS' to pull from the environment
+    private String accumuloPassword = "";
+    
     /**
      * Empty default constructor
      */
@@ -88,6 +95,7 @@ public abstract class GenericQueryConfiguration implements Serializable {
         this.setCheckpointable(genericConfig.isCheckpointable());
         this.setBaseIteratorPriority(genericConfig.getBaseIteratorPriority());
         this.setBypassAccumulo(genericConfig.getBypassAccumulo());
+        this.setAccumuloPassword(genericConfig.getAccumuloPassword());
         this.setAuthorizations(genericConfig.getAuthorizations());
         this.setBeginDate(genericConfig.getBeginDate());
         this.setConnector(genericConfig.getConnector());
@@ -239,6 +247,23 @@ public abstract class GenericQueryConfiguration implements Serializable {
     
     public void setBypassAccumulo(boolean bypassAccumulo) {
         this.bypassAccumulo = bypassAccumulo;
+    }
+    
+    /**
+     * @return - the accumulo password
+     */
+    public String getAccumuloPassword() {
+        return this.accumuloPassword;
+    }
+    
+    /**
+     * Sets configured password for accumulo access
+     *
+     * @param password
+     *            the password used to connect to accumulo
+     */
+    public void setAccumuloPassword(String password) {
+        this.accumuloPassword = EnvProvider.resolve(password);
     }
     
     /**

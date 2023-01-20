@@ -28,6 +28,8 @@ import datawave.query.jexl.visitors.EdgeTableRangeBuildingVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.language.parser.QueryParser;
+import datawave.query.language.tree.QueryNode;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.scheduler.SingleRangeQueryDataIterator;
 import datawave.query.tables.ScannerFactory;
@@ -62,9 +64,11 @@ import java.io.ObjectOutputStream;
 import java.io.StringReader;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
@@ -90,6 +94,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     protected MetadataHelperFactory metadataHelperFactory = null;
     
     protected EdgeModelFields edgeFields;
+    private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
+    protected Function<String,String> queryMacroFunction;
+    private Set<String> mandatoryQuerySyntax = null;
+    private QueryParser parser = null;
     
     public EdgeQueryLogic() {
         super();
@@ -106,6 +114,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         setMetadataHelperFactory(other.getMetadataHelperFactory());
         setDateFilterScanLimit(other.getDateFilterScanLimit());
         setDateFilterSkipLimit(other.getDateFilterSkipLimit());
+        setQuerySyntaxParsers(other.getQuerySyntaxParsers());
+        setMandatoryQuerySyntax(other.getMandatoryQuerySyntax());
+        setQueryMacroFunction(other.getQueryMacroFunction());
+        setParser(other.getParser());
         visitationContext = other.visitationContext;
     }
     
@@ -127,7 +139,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         config.setConnector(connection);
         config.setAuthorizations(auths);
         
-        String queryString = settings.getQuery();
+        String queryString = getJexlQueryString(settings);
+        
         if (null == queryString) {
             throw new IllegalArgumentException("Query cannot be null");
         } else {
@@ -211,6 +224,87 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         config.setQueries(Collections.singletonList(qData));
         
         return config;
+    }
+    
+    public String getJexlQueryString(Query settings) throws datawave.query.language.parser.ParseException {
+        // queryString should be JEXl after all query parsers are applied
+        String queryString;
+        String originalQuery = settings.getQuery();
+        
+        originalQuery = this.expandQueryMacros(originalQuery);
+        
+        if (null == originalQuery) {
+            throw new IllegalArgumentException("Query cannot be null");
+        }
+        
+        // Determine query syntax (i.e. JEXL, LUCENE, etc.)
+        String querySyntax = settings.findParameter(QueryParameters.QUERY_SYNTAX).getParameterValue();
+        
+        // enforce mandatoryQuerySyntax if set
+        if (null != this.mandatoryQuerySyntax) {
+            if (org.apache.commons.lang.StringUtils.isEmpty(querySyntax)) {
+                throw new IllegalStateException("Must specify one of the following syntax options: " + this.mandatoryQuerySyntax);
+            } else {
+                if (!this.mandatoryQuerySyntax.contains(querySyntax)) {
+                    throw new IllegalStateException(
+                                    "Syntax not supported, must be one of the following: " + this.mandatoryQuerySyntax + ", submitted: " + querySyntax);
+                }
+            }
+        }
+        
+        QueryParser querySyntaxParser = getParser();
+        
+        if (org.apache.commons.lang.StringUtils.isBlank(querySyntax)) {
+            // Default to the class's query parser when one is not provided
+            // Falling back to Jexl when one is not set on this class
+            if (null == querySyntaxParser) {
+                querySyntax = "JEXL";
+            }
+        }
+        if (querySyntax.equals("JEXL")) {
+            return originalQuery;
+        }
+        
+        if (null == querySyntaxParsers) {
+            throw new IllegalStateException("Query syntax parsers not configured");
+        }
+        
+        if (querySyntaxParsers.containsKey(querySyntax) && querySyntaxParsers.get(querySyntax) == null) {
+            // The querySyntax does not need to be parsed
+            return originalQuery;
+        }
+        
+        // Attempt to find and parse the query
+        querySyntaxParser = querySyntaxParsers.get(querySyntax);
+        if (null == querySyntaxParser) {
+            // No parser was specified, try to default to the parser on the
+            // class
+            querySyntaxParser = getParser();
+            
+            if (null == querySyntaxParser) {
+                throw new IllegalArgumentException("QueryParser not configured for syntax: " + querySyntax);
+            }
+        }
+        
+        QueryNode node = querySyntaxParser.parse(originalQuery);
+        queryString = node.getOriginalQuery();
+        if (log.isTraceEnabled()) {
+            log.trace(querySyntax + originalQuery + " --> jexlQueryString: " + queryString);
+        }
+        
+        return queryString;
+    }
+    
+    protected String expandQueryMacros(String query) throws datawave.query.language.parser.ParseException {
+        log.trace("query macros are :" + this.queryMacroFunction);
+        if (this.queryMacroFunction != null) {
+            query = this.queryMacroFunction.apply(query);
+        }
+        return query;
+    }
+    
+    protected EdgeQueryConfiguration setUpConfig(Query settings) {
+        return new EdgeQueryConfiguration(this).parseParameters(settings);
     }
     
     /**
@@ -864,4 +958,35 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         getConfig().setCheckpointable(checkpointable);
     }
     
+    public Map<String,QueryParser> getQuerySyntaxParsers() {
+        return querySyntaxParsers;
+    }
+    
+    public void setQuerySyntaxParsers(Map<String,QueryParser> querySyntaxParsers) {
+        this.querySyntaxParsers = querySyntaxParsers;
+    }
+    
+    public Set<String> getMandatoryQuerySyntax() {
+        return mandatoryQuerySyntax;
+    }
+    
+    public void setMandatoryQuerySyntax(Set<String> mandatoryQuerySyntax) {
+        this.mandatoryQuerySyntax = mandatoryQuerySyntax;
+    }
+    
+    public Function getQueryMacroFunction() {
+        return queryMacroFunction;
+    }
+    
+    public void setQueryMacroFunction(Function queryMacroFunction) {
+        this.queryMacroFunction = queryMacroFunction;
+    }
+    
+    public QueryParser getParser() {
+        return parser;
+    }
+    
+    public void setParser(QueryParser parser) {
+        this.parser = parser;
+    }
 }

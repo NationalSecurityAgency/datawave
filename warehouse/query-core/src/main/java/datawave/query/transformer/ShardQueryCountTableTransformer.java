@@ -102,7 +102,7 @@ public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer<E
         List<CacheableQueryRow> cqoList = new ArrayList<>();
         EventBase event = (EventBase) o;
         
-        CacheableQueryRowImpl cqo = new CacheableQueryRowImpl();
+        CacheableQueryRow cqo = responseObjectFactory.getCacheableQueryRow();
         Metadata metadata = event.getMetadata();
         cqo.setColFam(metadata.getDataType() + ":" + cqo.getEventId());
         cqo.setDataType(metadata.getDataType());

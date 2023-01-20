@@ -1,4 +1,3 @@
-
 package datawave.security.system;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;

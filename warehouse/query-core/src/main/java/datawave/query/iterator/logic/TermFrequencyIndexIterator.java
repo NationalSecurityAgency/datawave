@@ -339,8 +339,11 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         StringBuilder sb = new StringBuilder();
         sb.append("IndexIterator: ");
         sb.append(this.columnFamily.toString().replace("\0", "\\x00"));
-        sb.append(", ");
-        sb.append(this.scanRange.toString().replace("\0", "\\x00"));
+        // scanRange is now lazily set
+        if (scanRange != null) {
+            sb.append(", ");
+            sb.append(this.scanRange.toString().replace("\0", "\\x00"));
+        }
         
         return sb.toString();
     }

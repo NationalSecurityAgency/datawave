@@ -18,6 +18,7 @@ import org.apache.accumulo.core.zookeeper.ZooUtil;
 import org.apache.accumulo.tracer.AsyncSpanReceiver;
 import org.apache.accumulo.tracer.ZooTraceClient;
 import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.commons.lang.StringUtils;
 import org.apache.htrace.HTraceConfiguration;
 import org.apache.htrace.Trace;
 import org.apache.log4j.Logger;
@@ -231,7 +232,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
             if (userDN != null)
                 trackingMap.put(USER_DN, userDN);
             if (proxyServers != null)
-                trackingMap.put(PROXY_SERVERS, proxyServers.toString());
+                trackingMap.put(PROXY_SERVERS, StringUtils.join(proxyServers, " -> "));
         }
         log.info("Getting pool from " + poolName + " for priority " + priority);
         log.info("Pools = " + pools);

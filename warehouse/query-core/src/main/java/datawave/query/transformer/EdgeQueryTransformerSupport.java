@@ -118,7 +118,7 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         List<CacheableQueryRow> cqoList = new ArrayList<>();
         EdgeBase edge = (EdgeBase) o;
         
-        CacheableQueryRow cqo = new CacheableQueryRowImpl();
+        CacheableQueryRow cqo = responseObjectFactory.getCacheableQueryRow();
         cqo.setColFam("");
         cqo.setDataType("");
         cqo.setEventId(generateEventId(edge));

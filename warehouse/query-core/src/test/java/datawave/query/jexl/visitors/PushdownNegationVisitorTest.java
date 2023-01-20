@@ -313,6 +313,13 @@ public class PushdownNegationVisitorTest {
         assertEquals("!((!(f1 == 'v1') && !(f2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
+    @Test
+    public void testPushdownNegationIntoContentFunction() {
+        String query = "FOO == 'few' && !(content:phrase('TEXT', termOffsetMap, 'bar', 'baz') && (TEXT == 'bar' && TEXT == 'baz'))";
+        String expected = "FOO == 'few' && (!(content:phrase('TEXT', termOffsetMap, 'bar', 'baz')) || !(TEXT == 'bar') || !(TEXT == 'baz'))";
+        test(query, expected);
+    }
+    
     private void test(String query, String expected) {
         try {
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
