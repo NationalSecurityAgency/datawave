@@ -5,6 +5,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
@@ -134,9 +135,12 @@ public class IndexInfo implements Writable, UidIntersector {
      * simply use that node as our node. Otherwise, we will need to create an or node manually.
      * 
      * @param first
+     *            an IndexInfo
      * @param o
+     *            another IndexInfo
      * @param delayedNodes
-     * @return
+     *            a list of delayed terms
+     * @return the union of two IndexInfo objects and the list of delayed nodes
      */
     public IndexInfo union(IndexInfo first, IndexInfo o, List<JexlNode> delayedNodes) {
         IndexInfo merged = new IndexInfo();
@@ -208,10 +212,10 @@ public class IndexInfo implements Writable, UidIntersector {
      * Return the union of an IndexInfo object and a list of delayed nodes.
      *
      * @param o
-     *            - an IndexInfo object
+     *            an IndexInfo object
      * @param delayedNodes
-     *            - a list of delayed nodes
-     * @return - the resulting union
+     *            a list of delayed nodes
+     * @return the resulting union
      */
     public IndexInfo union(IndexInfo o, List<JexlNode> delayedNodes) {
         
@@ -307,8 +311,8 @@ public class IndexInfo implements Writable, UidIntersector {
      * Find the intersection of a list of delayed nodes.
      * 
      * @param delayedNodes
-     *            - a list of delayed nodes.
-     * @return - true or false, if any child nodes were added to this IndexInfo object.
+     *            a list of delayed nodes.
+     * @return true if any child nodes were added to this IndexInfo object.
      */
     public boolean intersect(List<JexlNode> delayedNodes) {
         
@@ -347,18 +351,27 @@ public class IndexInfo implements Writable, UidIntersector {
     }
     
     /**
-     * Intersection is where the logic becomes a bit more interesting. We will handle this in stages. So let's evaluate this in terms of three types of nodes <br>
-     * 1) {@code UNKNOWN -- COUNT likely > 20, but we can't be certain}<br>
-     * 2) {@code LARGE -- COUNT > 20 AT SOME POINT}<br>
-     * 3) {@code small < 20}
-     * 
-     * The reason we differentiate 1 from 2 is that 1 originates from the Index or from an Ivarat'd nodes.
-     * 
-     * Note that delayed nodes are propagated at all points.
-     * 
+     * The intersection logic is relatively straightforward as we only have three types of nodes
+     * <ol>
+     * <li>{@code INFINITE -- assume a hit exists}</li>
+     * <li>{@code LARGE -- uids > 20, were pruned and a count remains}</li>
+     * <li>{@code SMALL -- uids < 20}</li>
+     * </ol>
+     * See {@link #isInfinite()} for the definition of an infinite range.
+     * <p>
+     * We retain uids if and only if uids exist on both sides of the intersection
+     * <p>
+     * A uid and shard range will always produce a shard range. Never assume the uid hit exists on the other side.
+     * <p>
+     * In the case of two infinite ranges, we persist the -1 count for posterity
+     *
      * @param o
+     *            another {@link IndexInfo}
      * @param delayedNodes
-     * @return
+     *            a list of delayed terms
+     * @param uidIntersector
+     *            a class that helps intersect uids
+     * @return the result of an intersection operation on this IndexInfo and the other IndexInfo
      */
     public IndexInfo intersect(IndexInfo o, List<JexlNode> delayedNodes, UidIntersector uidIntersector) {
         
@@ -453,6 +466,18 @@ public class IndexInfo implements Writable, UidIntersector {
         return "{ \"count\": " + count() + " - " + uids.size() + " }";
     }
     
+    /**
+     * An infinite range is one that datawave created. This can happen several ways
+     * <ol>
+     * <li>{@link RangeStream#createFullFieldIndexScanList(ShardQueryConfiguration, JexlNode)}</li>
+     * <li>{@link RangeStream#createIndexScanList(String[])}</li>
+     * <li>{@link ShardLimitingIterator#next()}</li>
+     * <li>{@link Union} of all delayed terms</li>
+     * <li>RangeStreamScanner if certain thresholds are exceeded</li>
+     * </ol>
+     *
+     * @return true if the count is equal to negative one
+     */
     private boolean isInfinite() {
         return count == -1L;
     }
