@@ -3,16 +3,16 @@
 Validate MySQL required passwords are not empty.
 
 Usage:
-{{ include "common.validations.values.mysql.passwords" (dict "secret" "secretName" "subchart" false "context" $) }}
+{{ include "common.validations.Values.zookeeper.mysql.passwords" (dict "secret" "secretName" "subchart" false "context" $) }}
 Params:
   - secret - String - Required. Name of the secret where MySQL values are stored, e.g: "mysql-passwords-secret"
   - subchart - Boolean - Optional. Whether MySQL is used as subchart or not. Default: false
 */}}
-{{- define "common.validations.values.mysql.passwords" -}}
-  {{- $existingSecret := include "common.mysql.values.auth.existingSecret" . -}}
-  {{- $enabled := include "common.mysql.values.enabled" . -}}
-  {{- $architecture := include "common.mysql.values.architecture" . -}}
-  {{- $authPrefix := include "common.mysql.values.key.auth" . -}}
+{{- define "common.validations.Values.zookeeper.mysql.passwords" -}}
+  {{- $existingSecret := include "common.mysql.Values.zookeeper.auth.existingSecret" . -}}
+  {{- $enabled := include "common.mysql.Values.zookeeper.enabled" . -}}
+  {{- $architecture := include "common.mysql.Values.zookeeper.architecture" . -}}
+  {{- $authPrefix := include "common.mysql.Values.zookeeper.key.auth" . -}}
   {{- $valueKeyRootPassword := printf "%s.rootPassword" $authPrefix -}}
   {{- $valueKeyUsername := printf "%s.username" $authPrefix -}}
   {{- $valueKeyPassword := printf "%s.password" $authPrefix -}}
@@ -35,7 +35,7 @@ Params:
         {{- $requiredPasswords = append $requiredPasswords $requiredReplicationPassword -}}
     {{- end -}}
 
-    {{- include "common.validations.values.multiple.empty" (dict "required" $requiredPasswords "context" .context) -}}
+    {{- include "common.validations.Values.zookeeper.multiple.empty" (dict "required" $requiredPasswords "context" .context) -}}
 
   {{- end -}}
 {{- end -}}
@@ -44,15 +44,15 @@ Params:
 Auxiliary function to get the right value for existingSecret.
 
 Usage:
-{{ include "common.mysql.values.auth.existingSecret" (dict "context" $) }}
+{{ include "common.mysql.Values.zookeeper.auth.existingSecret" (dict "context" $) }}
 Params:
   - subchart - Boolean - Optional. Whether MySQL is used as subchart or not. Default: false
 */}}
-{{- define "common.mysql.values.auth.existingSecret" -}}
+{{- define "common.mysql.Values.zookeeper.auth.existingSecret" -}}
   {{- if .subchart -}}
-    {{- .context.Values.mysql.auth.existingSecret | quote -}}
+    {{- .context.Values.zookeeper.mysql.auth.existingSecret | quote -}}
   {{- else -}}
-    {{- .context.Values.auth.existingSecret | quote -}}
+    {{- .context.Values.zookeeper.auth.existingSecret | quote -}}
   {{- end -}}
 {{- end -}}
 
@@ -60,13 +60,13 @@ Params:
 Auxiliary function to get the right value for enabled mysql.
 
 Usage:
-{{ include "common.mysql.values.enabled" (dict "context" $) }}
+{{ include "common.mysql.Values.zookeeper.enabled" (dict "context" $) }}
 */}}
-{{- define "common.mysql.values.enabled" -}}
+{{- define "common.mysql.Values.zookeeper.enabled" -}}
   {{- if .subchart -}}
-    {{- printf "%v" .context.Values.mysql.enabled -}}
+    {{- printf "%v" .context.Values.zookeeper.mysql.enabled -}}
   {{- else -}}
-    {{- printf "%v" (not .context.Values.enabled) -}}
+    {{- printf "%v" (not .context.Values.zookeeper.enabled) -}}
   {{- end -}}
 {{- end -}}
 
@@ -74,15 +74,15 @@ Usage:
 Auxiliary function to get the right value for architecture
 
 Usage:
-{{ include "common.mysql.values.architecture" (dict "subchart" "true" "context" $) }}
+{{ include "common.mysql.Values.zookeeper.architecture" (dict "subchart" "true" "context" $) }}
 Params:
   - subchart - Boolean - Optional. Whether MySQL is used as subchart or not. Default: false
 */}}
-{{- define "common.mysql.values.architecture" -}}
+{{- define "common.mysql.Values.zookeeper.architecture" -}}
   {{- if .subchart -}}
-    {{- .context.Values.mysql.architecture -}}
+    {{- .context.Values.zookeeper.mysql.architecture -}}
   {{- else -}}
-    {{- .context.Values.architecture -}}
+    {{- .context.Values.zookeeper.architecture -}}
   {{- end -}}
 {{- end -}}
 
@@ -90,11 +90,11 @@ Params:
 Auxiliary function to get the right value for the key auth
 
 Usage:
-{{ include "common.mysql.values.key.auth" (dict "subchart" "true" "context" $) }}
+{{ include "common.mysql.Values.zookeeper.key.auth" (dict "subchart" "true" "context" $) }}
 Params:
   - subchart - Boolean - Optional. Whether MySQL is used as subchart or not. Default: false
 */}}
-{{- define "common.mysql.values.key.auth" -}}
+{{- define "common.mysql.Values.zookeeper.key.auth" -}}
   {{- if .subchart -}}
     mysql.auth
   {{- else -}}

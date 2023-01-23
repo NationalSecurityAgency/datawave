@@ -1,5 +1,5 @@
-{{- $replicaCount := int .Values.replicaCount }}
-{{- if and .Values.pdb.create (gt $replicaCount 1) }}
+{{- $replicaCount := int .Values.zookeeper.replicaCount }}
+{{- if and .Values.zookeeper.pdb.create (gt $replicaCount 1) }}
 apiVersion: {{ include "common.capabilities.policy.apiVersion" . }}
 kind: PodDisruptionBudget
 metadata:
@@ -7,18 +7,18 @@ metadata:
   namespace: {{ template "zookeeper.namespace" . }}
   labels: {{- include "common.labels.standard" . | nindent 4 }}
     app.kubernetes.io/component: zookeeper
-    {{- if .Values.commonLabels }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- if .Values.zookeeper.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
-  {{- if .Values.commonAnnotations }}
-  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- if .Values.zookeeper.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.pdb.minAvailable }}
-  minAvailable: {{ .Values.pdb.minAvailable }}
+  {{- if .Values.zookeeper.pdb.minAvailable }}
+  minAvailable: {{ .Values.zookeeper.pdb.minAvailable }}
   {{- end  }}
-  {{- if .Values.pdb.maxUnavailable }}
-  maxUnavailable: {{ .Values.pdb.maxUnavailable }}
+  {{- if .Values.zookeeper.pdb.maxUnavailable }}
+  maxUnavailable: {{ .Values.zookeeper.pdb.maxUnavailable }}
   {{- end  }}
   selector:
     matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}

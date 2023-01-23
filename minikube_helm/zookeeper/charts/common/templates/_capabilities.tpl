@@ -4,14 +4,14 @@
 Return the target Kubernetes version
 */}}
 {{- define "common.capabilities.kubeVersion" -}}
-{{- if .Values.global }}
-    {{- if .Values.global.kubeVersion }}
-    {{- .Values.global.kubeVersion -}}
+{{- if .Values.zookeeper.global }}
+    {{- if .Values.zookeeper.global.kubeVersion }}
+    {{- .Values.zookeeper.global.kubeVersion -}}
     {{- else }}
-    {{- default .Capabilities.KubeVersion.Version .Values.kubeVersion -}}
+    {{- default .Capabilities.KubeVersion.Version .Values.zookeeper.kubeVersion -}}
     {{- end -}}
 {{- else }}
-{{- default .Capabilities.KubeVersion.Version .Values.kubeVersion -}}
+{{- default .Capabilities.KubeVersion.Version .Values.zookeeper.kubeVersion -}}
 {{- end -}}
 {{- end -}}
 
@@ -74,9 +74,9 @@ Return the appropriate apiVersion for statefulset.
 Return the appropriate apiVersion for ingress.
 */}}
 {{- define "common.capabilities.ingress.apiVersion" -}}
-{{- if .Values.ingress -}}
-{{- if .Values.ingress.apiVersion -}}
-{{- .Values.ingress.apiVersion -}}
+{{- if .Values.zookeeper.ingress -}}
+{{- if .Values.zookeeper.ingress.apiVersion -}}
+{{- .Values.zookeeper.ingress.apiVersion -}}
 {{- else if semverCompare "<1.14-0" (include "common.capabilities.kubeVersion" .) -}}
 {{- print "extensions/v1beta1" -}}
 {{- else if semverCompare "<1.19-0" (include "common.capabilities.kubeVersion" .) -}}

@@ -4,37 +4,37 @@
 Return the proper ZooKeeper image name
 */}}
 {{- define "zookeeper.image" -}}
-{{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+{{ include "common.images.image" (dict "imageRoot" .Values.zookeeper.image "global" .Values.zookeeper.global) }}
 {{- end -}}
 
 {{/*
 Return the proper image name (for the init container volume-permissions image)
 */}}
 {{- define "zookeeper.volumePermissions.image" -}}
-{{ include "common.images.image" (dict "imageRoot" .Values.volumePermissions.image "global" .Values.global) }}
+{{ include "common.images.image" (dict "imageRoot" .Values.zookeeper.volumePermissions.image "global" .Values.zookeeper.global) }}
 {{- end -}}
 
 {{/*
 Return the proper Docker Image Registry Secret Names
 */}}
 {{- define "zookeeper.imagePullSecrets" -}}
-{{- include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.volumePermissions.image) "global" .Values.global) -}}
+{{- include "common.images.pullSecrets" (dict "images" (list .Values.zookeeper.image .Values.zookeeper.volumePermissions.image) "global" .Values.zookeeper.global) -}}
 {{- end -}}
 
 {{/*
 Check if there are rolling tags in the images
 */}}
 {{- define "zookeeper.checkRollingTags" -}}
-{{- include "common.warnings.rollingTag" .Values.image }}
-{{- include "common.warnings.rollingTag" .Values.volumePermissions.image }}
+{{- include "common.warnings.rollingTag" .Values.zookeeper.image }}
+{{- include "common.warnings.rollingTag" .Values.zookeeper.volumePermissions.image }}
 {{- end -}}
 
 {{/*
 Return ZooKeeper Namespace to use
 */}}
 {{- define "zookeeper.namespace" -}}
-{{- if .Values.namespaceOverride -}}
-    {{- .Values.namespaceOverride -}}
+{{- if .Values.zookeeper.namespaceOverride -}}
+    {{- .Values.zookeeper.namespaceOverride -}}
 {{- else -}}
     {{- .Release.Namespace -}}
 {{- end -}}
@@ -44,10 +44,10 @@ Return ZooKeeper Namespace to use
  Create the name of the service account to use
  */}}
 {{- define "zookeeper.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create -}}
-    {{ default (include "common.names.fullname" .) .Values.serviceAccount.name }}
+{{- if .Values.zookeeper.serviceAccount.create -}}
+    {{ default (include "common.names.fullname" .) .Values.zookeeper.serviceAccount.name }}
 {{- else -}}
-    {{ default "default" .Values.serviceAccount.name }}
+    {{ default "default" .Values.zookeeper.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
 
@@ -55,8 +55,8 @@ Return ZooKeeper Namespace to use
 Return the ZooKeeper client-server authentication credentials secret
 */}}
 {{- define "zookeeper.client.secretName" -}}
-{{- if .Values.auth.client.existingSecret -}}
-    {{- printf "%s" (tpl .Values.auth.client.existingSecret $) -}}
+{{- if .Values.zookeeper.auth.client.existingSecret -}}
+    {{- printf "%s" (tpl .Values.zookeeper.auth.client.existingSecret $) -}}
 {{- else -}}
     {{- printf "%s-client-auth" (include "common.names.fullname" .) -}}
 {{- end -}}
@@ -66,8 +66,8 @@ Return the ZooKeeper client-server authentication credentials secret
 Return the ZooKeeper server-server authentication credentials secret
 */}}
 {{- define "zookeeper.quorum.secretName" -}}
-{{- if .Values.auth.quorum.existingSecret -}}
-    {{- printf "%s" (tpl .Values.auth.quorum.existingSecret $) -}}
+{{- if .Values.zookeeper.auth.quorum.existingSecret -}}
+    {{- printf "%s" (tpl .Values.zookeeper.auth.quorum.existingSecret $) -}}
 {{- else -}}
     {{- printf "%s-quorum-auth" (include "common.names.fullname" .) -}}
 {{- end -}}
@@ -77,7 +77,7 @@ Return the ZooKeeper server-server authentication credentials secret
 Return true if a ZooKeeper client-server authentication credentials secret object should be created
 */}}
 {{- define "zookeeper.client.createSecret" -}}
-{{- if and .Values.auth.client.enabled (empty .Values.auth.client.existingSecret) -}}
+{{- if and .Values.zookeeper.auth.client.enabled (empty .Values.zookeeper.auth.client.existingSecret) -}}
     {{- true -}}
 {{- end -}}
 {{- end -}}
@@ -86,7 +86,7 @@ Return true if a ZooKeeper client-server authentication credentials secret objec
 Return true if a ZooKeeper server-server authentication credentials secret object should be created
 */}}
 {{- define "zookeeper.quorum.createSecret" -}}
-{{- if and .Values.auth.quorum.enabled (empty .Values.auth.quorum.existingSecret) -}}
+{{- if and .Values.zookeeper.auth.quorum.enabled (empty .Values.zookeeper.auth.quorum.existingSecret) -}}
     {{- true -}}
 {{- end -}}
 {{- end -}}
@@ -109,8 +109,8 @@ otherwise it generates a random value.
 Return the ZooKeeper configuration ConfigMap name
 */}}
 {{- define "zookeeper.configmapName" -}}
-{{- if .Values.existingConfigmap -}}
-    {{- printf "%s" (tpl .Values.existingConfigmap $) -}}
+{{- if .Values.zookeeper.existingConfigmap -}}
+    {{- printf "%s" (tpl .Values.zookeeper.existingConfigmap $) -}}
 {{- else -}}
     {{- printf "%s" (include "common.names.fullname" .) -}}
 {{- end -}}
@@ -120,7 +120,7 @@ Return the ZooKeeper configuration ConfigMap name
 Return true if a ConfigMap object should be created for ZooKeeper configuration
 */}}
 {{- define "zookeeper.createConfigmap" -}}
-{{- if and .Values.configuration (not .Values.existingConfigmap) }}
+{{- if and .Values.zookeeper.configuration (not .Values.zookeeper.existingConfigmap) }}
     {{- true -}}
 {{- end -}}
 {{- end -}}
@@ -129,7 +129,7 @@ Return true if a ConfigMap object should be created for ZooKeeper configuration
 Return true if a TLS secret should be created for ZooKeeper quorum
 */}}
 {{- define "zookeeper.quorum.createTlsSecret" -}}
-{{- if and .Values.tls.quorum.enabled .Values.tls.quorum.autoGenerated (not .Values.tls.quorum.existingSecret) }}
+{{- if and .Values.zookeeper.tls.quorum.enabled .Values.zookeeper.tls.quorum.autoGenerated (not .Values.zookeeper.tls.quorum.existingSecret) }}
     {{- true -}}
 {{- end -}}
 {{- end -}}
@@ -138,7 +138,7 @@ Return true if a TLS secret should be created for ZooKeeper quorum
 Return the secret containing ZooKeeper quorum TLS certificates
 */}}
 {{- define "zookeeper.quorum.tlsSecretName" -}}
-{{- $secretName := .Values.tls.quorum.existingSecret -}}
+{{- $secretName := .Values.zookeeper.tls.quorum.existingSecret -}}
 {{- if $secretName -}}
     {{- printf "%s" (tpl $secretName $) -}}
 {{- else -}}
@@ -150,7 +150,7 @@ Return the secret containing ZooKeeper quorum TLS certificates
 Return true if a secret containing the Keystore and Truststore password should be created for ZooKeeper quorum
 */}}
 {{- define "zookeeper.quorum.createTlsPasswordsSecret" -}}
-{{- if and .Values.tls.quorum.enabled (not .Values.tls.quorum.passwordsSecretName) }}
+{{- if and .Values.zookeeper.tls.quorum.enabled (not .Values.zookeeper.tls.quorum.passwordsSecretName) }}
     {{- true -}}
 {{- end -}}
 {{- end -}}
@@ -159,7 +159,7 @@ Return true if a secret containing the Keystore and Truststore password should b
 Return the name of the secret containing the Keystore and Truststore password
 */}}
 {{- define "zookeeper.quorum.tlsPasswordsSecret" -}}
-{{- $secretName := .Values.tls.quorum.passwordsSecretName -}}
+{{- $secretName := .Values.zookeeper.tls.quorum.passwordsSecretName -}}
 {{- if $secretName -}}
     {{- printf "%s" (tpl $secretName $) -}}
 {{- else -}}
@@ -171,7 +171,7 @@ Return the name of the secret containing the Keystore and Truststore password
 Return true if a TLS secret should be created for ZooKeeper client
 */}}
 {{- define "zookeeper.client.createTlsSecret" -}}
-{{- if and .Values.tls.client.enabled .Values.tls.client.autoGenerated (not .Values.tls.client.existingSecret) }}
+{{- if and .Values.zookeeper.tls.client.enabled .Values.zookeeper.tls.client.autoGenerated (not .Values.zookeeper.tls.client.existingSecret) }}
     {{- true -}}
 {{- end -}}
 {{- end -}}
@@ -180,7 +180,7 @@ Return true if a TLS secret should be created for ZooKeeper client
 Return the secret containing ZooKeeper client TLS certificates
 */}}
 {{- define "zookeeper.client.tlsSecretName" -}}
-{{- $secretName := .Values.tls.client.existingSecret -}}
+{{- $secretName := .Values.zookeeper.tls.client.existingSecret -}}
 {{- if $secretName -}}
     {{- printf "%s" (tpl $secretName $) -}}
 {{- else -}}
@@ -192,8 +192,8 @@ Return the secret containing ZooKeeper client TLS certificates
 Get the quorum keystore key to be retrieved from tls.quorum.existingSecret.
 */}}
 {{- define "zookeeper.quorum.tlsKeystoreKey" -}}
-{{- if and .Values.tls.quorum.existingSecret .Values.tls.quorum.existingSecretKeystoreKey -}}
-    {{- printf "%s" .Values.tls.quorum.existingSecretKeystoreKey -}}
+{{- if and .Values.zookeeper.tls.quorum.existingSecret .Values.zookeeper.tls.quorum.existingSecretKeystoreKey -}}
+    {{- printf "%s" .Values.zookeeper.tls.quorum.existingSecretKeystoreKey -}}
 {{- else -}}
     {{- printf "zookeeper.keystore.jks" -}}
 {{- end -}}
@@ -203,8 +203,8 @@ Get the quorum keystore key to be retrieved from tls.quorum.existingSecret.
 Get the quorum truststore key to be retrieved from tls.quorum.existingSecret.
 */}}
 {{- define "zookeeper.quorum.tlsTruststoreKey" -}}
-{{- if and .Values.tls.quorum.existingSecret .Values.tls.quorum.existingSecretTruststoreKey -}}
-    {{- printf "%s" .Values.tls.quorum.existingSecretTruststoreKey -}}
+{{- if and .Values.zookeeper.tls.quorum.existingSecret .Values.zookeeper.tls.quorum.existingSecretTruststoreKey -}}
+    {{- printf "%s" .Values.zookeeper.tls.quorum.existingSecretTruststoreKey -}}
 {{- else -}}
     {{- printf "zookeeper.truststore.jks" -}}
 {{- end -}}
@@ -214,8 +214,8 @@ Get the quorum truststore key to be retrieved from tls.quorum.existingSecret.
 Get the client keystore key to be retrieved from tls.client.existingSecret.
 */}}
 {{- define "zookeeper.client.tlsKeystoreKey" -}}
-{{- if and .Values.tls.client.existingSecret .Values.tls.client.existingSecretKeystoreKey -}}
-    {{- printf "%s" .Values.tls.client.existingSecretKeystoreKey -}}
+{{- if and .Values.zookeeper.tls.client.existingSecret .Values.zookeeper.tls.client.existingSecretKeystoreKey -}}
+    {{- printf "%s" .Values.zookeeper.tls.client.existingSecretKeystoreKey -}}
 {{- else -}}
     {{- printf "zookeeper.keystore.jks" -}}
 {{- end -}}
@@ -225,8 +225,8 @@ Get the client keystore key to be retrieved from tls.client.existingSecret.
 Get the client truststore key to be retrieved from tls.client.existingSecret.
 */}}
 {{- define "zookeeper.client.tlsTruststoreKey" -}}
-{{- if and .Values.tls.client.existingSecret .Values.tls.client.existingSecretTruststoreKey -}}
-    {{- printf "%s" .Values.tls.client.existingSecretTruststoreKey -}}
+{{- if and .Values.zookeeper.tls.client.existingSecret .Values.zookeeper.tls.client.existingSecretTruststoreKey -}}
+    {{- printf "%s" .Values.zookeeper.tls.client.existingSecretTruststoreKey -}}
 {{- else -}}
     {{- printf "zookeeper.truststore.jks" -}}
 {{- end -}}
@@ -236,7 +236,7 @@ Get the client truststore key to be retrieved from tls.client.existingSecret.
 Return true if a secret containing the Keystore and Truststore password should be created for ZooKeeper client
 */}}
 {{- define "zookeeper.client.createTlsPasswordsSecret" -}}
-{{- if and .Values.tls.client.enabled (not .Values.tls.client.passwordsSecretName) }}
+{{- if and .Values.zookeeper.tls.client.enabled (not .Values.zookeeper.tls.client.passwordsSecretName) }}
     {{- true -}}
 {{- end -}}
 {{- end -}}
@@ -245,7 +245,7 @@ Return true if a secret containing the Keystore and Truststore password should b
 Return the name of the secret containing the Keystore and Truststore password
 */}}
 {{- define "zookeeper.client.tlsPasswordsSecret" -}}
-{{- $secretName := .Values.tls.client.passwordsSecretName -}}
+{{- $secretName := .Values.zookeeper.tls.client.passwordsSecretName -}}
 {{- if $secretName -}}
     {{- printf "%s" (tpl $secretName $) -}}
 {{- else -}}
@@ -257,8 +257,8 @@ Return the name of the secret containing the Keystore and Truststore password
 Get the quorum keystore password key to be retrieved from tls.quorum.passwordSecretName.
 */}}
 {{- define "zookeeper.quorum.tlsPasswordKeystoreKey" -}}
-{{- if and .Values.tls.quorum.passwordsSecretName .Values.tls.quorum.passwordsSecretKeystoreKey -}}
-    {{- printf "%s" .Values.tls.quorum.passwordsSecretKeystoreKey -}}
+{{- if and .Values.zookeeper.tls.quorum.passwordsSecretName .Values.zookeeper.tls.quorum.passwordsSecretKeystoreKey -}}
+    {{- printf "%s" .Values.zookeeper.tls.quorum.passwordsSecretKeystoreKey -}}
 {{- else -}}
     {{- printf "keystore-password" -}}
 {{- end -}}
@@ -268,8 +268,8 @@ Get the quorum keystore password key to be retrieved from tls.quorum.passwordSec
 Get the quorum truststore password key to be retrieved from tls.quorum.passwordSecretName.
 */}}
 {{- define "zookeeper.quorum.tlsPasswordTruststoreKey" -}}
-{{- if and .Values.tls.quorum.passwordsSecretName .Values.tls.quorum.passwordsSecretTruststoreKey -}}
-    {{- printf "%s" .Values.tls.quorum.passwordsSecretTruststoreKey -}}
+{{- if and .Values.zookeeper.tls.quorum.passwordsSecretName .Values.zookeeper.tls.quorum.passwordsSecretTruststoreKey -}}
+    {{- printf "%s" .Values.zookeeper.tls.quorum.passwordsSecretTruststoreKey -}}
 {{- else -}}
     {{- printf "truststore-password" -}}
 {{- end -}}
@@ -279,8 +279,8 @@ Get the quorum truststore password key to be retrieved from tls.quorum.passwordS
 Get the client keystore password key to be retrieved from tls.client.passwordSecretName.
 */}}
 {{- define "zookeeper.client.tlsPasswordKeystoreKey" -}}
-{{- if and .Values.tls.client.passwordsSecretName .Values.tls.client.passwordsSecretKeystoreKey -}}
-    {{- printf "%s" .Values.tls.client.passwordsSecretKeystoreKey -}}
+{{- if and .Values.zookeeper.tls.client.passwordsSecretName .Values.zookeeper.tls.client.passwordsSecretKeystoreKey -}}
+    {{- printf "%s" .Values.zookeeper.tls.client.passwordsSecretKeystoreKey -}}
 {{- else -}}
     {{- printf "keystore-password" -}}
 {{- end -}}
@@ -290,8 +290,8 @@ Get the client keystore password key to be retrieved from tls.client.passwordSec
 Get the client truststore password key to be retrieved from tls.client.passwordSecretName.
 */}}
 {{- define "zookeeper.client.tlsPasswordTruststoreKey" -}}
-{{- if and .Values.tls.client.passwordsSecretName .Values.tls.client.passwordsSecretTruststoreKey -}}
-    {{- printf "%s" .Values.tls.client.passwordsSecretTruststoreKey -}}
+{{- if and .Values.zookeeper.tls.client.passwordsSecretName .Values.zookeeper.tls.client.passwordsSecretTruststoreKey -}}
+    {{- printf "%s" .Values.zookeeper.tls.client.passwordsSecretTruststoreKey -}}
 {{- else -}}
     {{- printf "truststore-password" -}}
 {{- end -}}
@@ -318,7 +318,7 @@ Compile all warnings into a single message.
 Validate values of ZooKeeper - Authentication enabled
 */}}
 {{- define "zookeeper.validateValues.client.auth" -}}
-{{- if and .Values.auth.client.enabled (not .Values.auth.client.existingSecret) (or (not .Values.auth.client.clientUser) (not .Values.auth.client.serverUsers)) }}
+{{- if and .Values.zookeeper.auth.client.enabled (not .Values.zookeeper.auth.client.existingSecret) (or (not .Values.zookeeper.auth.client.clientUser) (not .Values.zookeeper.auth.client.serverUsers)) }}
 zookeeper: auth.client.enabled
     In order to enable client-server authentication, you need to provide the list
     of users to be created and the user to use for clients authentication.
@@ -329,7 +329,7 @@ zookeeper: auth.client.enabled
 Validate values of ZooKeeper - Authentication enabled
 */}}
 {{- define "zookeeper.validateValues.quorum.auth" -}}
-{{- if and .Values.auth.quorum.enabled (not .Values.auth.quorum.existingSecret) (or (not .Values.auth.quorum.learnerUser) (not .Values.auth.quorum.serverUsers)) }}
+{{- if and .Values.zookeeper.auth.quorum.enabled (not .Values.zookeeper.auth.quorum.existingSecret) (or (not .Values.zookeeper.auth.quorum.learnerUser) (not .Values.zookeeper.auth.quorum.serverUsers)) }}
 zookeeper: auth.quorum.enabled
     In order to enable server-server authentication, you need to provide the list
     of users to be created and the user to use for quorum authentication.
@@ -340,7 +340,7 @@ zookeeper: auth.quorum.enabled
 Validate values of ZooKeeper - Client TLS enabled
 */}}
 {{- define "zookeeper.validateValues.client.tls" -}}
-{{- if and .Values.tls.client.enabled (not .Values.tls.client.autoGenerated) (not .Values.tls.client.existingSecret) }}
+{{- if and .Values.zookeeper.tls.client.enabled (not .Values.zookeeper.tls.client.autoGenerated) (not .Values.zookeeper.tls.client.existingSecret) }}
 zookeeper: tls.client.enabled
     In order to enable Client TLS encryption, you also need to provide
     an existing secret containing the Keystore and Truststore or
@@ -352,7 +352,7 @@ zookeeper: tls.client.enabled
 Validate values of ZooKeeper - Quorum TLS enabled
 */}}
 {{- define "zookeeper.validateValues.quorum.tls" -}}
-{{- if and .Values.tls.quorum.enabled (not .Values.tls.quorum.autoGenerated) (not .Values.tls.quorum.existingSecret) }}
+{{- if and .Values.zookeeper.tls.quorum.enabled (not .Values.zookeeper.tls.quorum.autoGenerated) (not .Values.zookeeper.tls.quorum.existingSecret) }}
 zookeeper: tls.quorum.enabled
     In order to enable Quorum TLS, you also need to provide
     an existing secret containing the Keystore and Truststore or

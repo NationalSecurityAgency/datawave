@@ -13,9 +13,9 @@ metadata:
   annotations:
     kompose.cmd: kompose convert
     kompose.version: 1.19.0 (f63a961c)
-  name: "{{ .Chart.Name }}-{{ .Values.authorizationService.meta.name }}"
+  name: "{{ .Chart.Name }}-{{ .Values.web.authorizationService.meta.name }}"
   labels:
-    application: "{{ .Chart.Name }}-{{ .Values.authorizationService.meta.name }}"
+    application: "{{ .Chart.Name }}-{{ .Values.web.authorizationService.meta.name }}"
 
 ##################################
 # Complete Service Specification #
@@ -28,7 +28,7 @@ spec:
   ###############################
 
   selector:
-    application: "{{ .Chart.Name }}-{{ .Values.authorizationDeployment.meta.name }}"
+    application: "{{ .Chart.Name }}-{{ .Values.web.authorizationDeployment.meta.name }}"
 
   ##############################
   # Service Port Configuration #
@@ -37,9 +37,9 @@ spec:
   ports:
 
     - name: http
-      port: {{ .Values.authorizationService.ports.http }}
+      port: {{ .Values.web.authorizationService.ports.http }}
       targetPort: 8080
 
     - name: https
-      port: {{ .Values.authorizationService.ports.https }}
+      port: {{ .Values.web.authorizationService.ports.https }}
       targetPort: 8443

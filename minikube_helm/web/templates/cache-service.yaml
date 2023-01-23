@@ -13,9 +13,9 @@ metadata:
   annotations:
     kompose.cmd: kompose convert
     kompose.version: 1.19.0 (f63a961c)
-  name: "{{ .Chart.Name }}-{{ .Values.cacheService.meta.name }}"
+  name: "{{ .Chart.Name }}-{{ .Values.web.cacheService.meta.name }}"
   labels:
-    application: "{{ .Chart.Name }}-{{ .Values.cacheService.meta.name }}"
+    application: "{{ .Chart.Name }}-{{ .Values.web.cacheService.meta.name }}"
 
 ##################################
 # Complete Service Specification #
@@ -28,7 +28,7 @@ spec:
   ###############################
 
   selector:
-    application: "{{ .Chart.Name }}-{{ .Values.cacheDeployment.meta.name }}"
+    application: "{{ .Chart.Name }}-{{ .Values.web.cacheDeployment.meta.name }}"
 
   ##############################
   # Service Port Configuration #
@@ -37,21 +37,21 @@ spec:
   ports:
 
     - name: hazelcast1
-      port: {{ .Values.cacheService.ports.hazelcast1 }}
+      port: {{ .Values.web.cacheService.ports.hazelcast1 }}
       targetPort: 5701
 
     - name: hazelcast2
-      port: {{ .Values.cacheService.ports.hazelcast2 }}
+      port: {{ .Values.web.cacheService.ports.hazelcast2 }}
       targetPort: 5702
 
     - name: hazelcast3
-      port: {{ .Values.cacheService.ports.hazelcast3 }}
+      port: {{ .Values.web.cacheService.ports.hazelcast3 }}
       targetPort: 5703
 
     - name: http
-      port: {{ .Values.cacheService.ports.http }}
+      port: {{ .Values.web.cacheService.ports.http }}
       targetPort: 8080
 
     - name: https
-      port: {{ .Values.cacheService.ports.https }}
+      port: {{ .Values.web.cacheService.ports.https }}
       targetPort: 8443

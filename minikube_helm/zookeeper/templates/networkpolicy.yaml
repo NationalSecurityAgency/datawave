@@ -1,15 +1,15 @@
-{{- if .Values.networkPolicy.enabled }}
+{{- if .Values.zookeeper.networkPolicy.enabled }}
 kind: NetworkPolicy
 apiVersion: {{ include "common.capabilities.networkPolicy.apiVersion" . }}
 metadata:
   name: {{ include "common.names.fullname" . }}
   namespace: {{ template "zookeeper.namespace" . }}
   labels: {{- include "common.labels.standard" . | nindent 4 }}
-    {{- if .Values.commonLabels }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- if .Values.zookeeper.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
-  {{- if .Values.commonAnnotations }}
-  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- if .Values.zookeeper.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   podSelector:
@@ -19,11 +19,11 @@ spec:
   ingress:
     # Allow inbound connections to ZooKeeper
     - ports:
-        - port: {{ .Values.containerPorts.client }}
-        {{- if .Values.metrics.enabled }}
-        - port: {{ .Values.metrics.containerPort }}
+        - port: {{ .Values.zookeeper.containerPorts.client }}
+        {{- if .Values.zookeeper.metrics.enabled }}
+        - port: {{ .Values.zookeeper.metrics.containerPort }}
         {{- end }}
-      {{- if not .Values.networkPolicy.allowExternal }}
+      {{- if not .Values.zookeeper.networkPolicy.allowExternal }}
       from:
         - podSelector:
             matchLabels:
@@ -33,8 +33,8 @@ spec:
       {{- end }}
     # Allow internal communications between nodes
     - ports:
-        - port: {{ .Values.containerPorts.follower }}
-        - port: {{ .Values.containerPorts.election }}
+        - port: {{ .Values.zookeeper.containerPorts.follower }}
+        - port: {{ .Values.zookeeper.containerPorts.election }}
       from:
         - podSelector:
             matchLabels: {{- include "common.labels.matchLabels" . | nindent 14 }}

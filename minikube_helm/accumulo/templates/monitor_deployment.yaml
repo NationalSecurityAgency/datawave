@@ -20,7 +20,7 @@ metadata:
     {{- include "accumulo.labels" . | nindent 4 }}
     app.kubernetes.io/component: monitor
 spec:
-  replicas: {{ .Values.monitor.replicaCount }}
+  replicas: {{ .Values.accumulo.monitor.replicaCount }}
   selector:
     matchLabels:
       {{- include "accumulo.selectorLabels" . | nindent 6 }}
@@ -31,42 +31,47 @@ spec:
         {{- include "accumulo.labels" . | nindent 8 }}
         app.kubernetes.io/component: monitor
     spec:
+      initContainers:
+      - name: init-accumulo
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup accumulo-master; do echo waiting for accumulo; sleep 2; done; sleep 20"]
+
       containers:
       - name: accumulo-monitor
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        image: {{ .Values.accumulo.image.repository }}:{{ .Values.accumulo.image.tag }}
+        imagePullPolicy: {{ .Values.accumulo.image.pullPolicy }}
         args:
         - monitor
         env:
         - name: ACCUMULO_CONF_DIR
-          value: {{ .Values.config.path }}
+          value: {{ .Values.accumulo.config.path }}
         ports:
         - name: http
           protocol: TCP
           containerPort: 9995
-        # livenessProbe:
-        #   httpGet:
-        #     path: /
-        #     port: http
-        # readinessProbe:
-        #   httpGet:
-        #     path: /
-        #     port: http
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
         resources:
-          {{- toYaml .Values.monitor.resources | nindent 10 }}
-      {{- with .Values.monitor.affinity }}
+          {{- toYaml .Values.accumulo.monitor.resources | nindent 10 }}
+      {{- with .Values.accumulo.monitor.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.monitor.nodeSelector }}
+      {{- with .Values.accumulo.monitor.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.monitor.tolerations }}
+      {{- with .Values.accumulo.monitor.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.image.pullSecrets }}
+      {{- with .Values.accumulo.image.pullSecrets }}
       imagePullSecrets:
       {{- range . }}
       - name: {{ . }}

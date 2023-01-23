@@ -5,38 +5,38 @@ metadata:
   namespace: {{ template "zookeeper.namespace" . }}
   labels: {{- include "common.labels.standard" . | nindent 4 }}
     app.kubernetes.io/component: zookeeper
-    {{- if .Values.commonLabels }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- if .Values.zookeeper.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
-  {{- if or .Values.commonAnnotations .Values.service.annotations }}
+  {{- if or .Values.zookeeper.commonAnnotations .Values.zookeeper.service.annotations }}
   annotations:
-    {{- if .Values.service.headless.annotations }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.service.headless.annotations "context" $ ) | nindent 4 }}
+    {{- if .Values.zookeeper.service.headless.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.service.headless.annotations "context" $ ) | nindent 4 }}
     {{- end }}
-    {{- if .Values.commonAnnotations }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- if .Values.zookeeper.commonAnnotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
   {{- end }}
 spec:
   type: ClusterIP
   clusterIP: None
-  publishNotReadyAddresses: {{ .Values.service.headless.publishNotReadyAddresses }}
+  publishNotReadyAddresses: {{ .Values.zookeeper.service.headless.publishNotReadyAddresses }}
   ports:
-    {{- if not .Values.service.disableBaseClientPort }}
+    {{- if not .Values.zookeeper.service.disableBaseClientPort }}
     - name: tcp-client
-      port: {{ .Values.service.ports.client }}
+      port: {{ .Values.zookeeper.service.ports.client }}
       targetPort: client
     {{- end }}
-    {{- if .Values.tls.client.enabled }}
+    {{- if .Values.zookeeper.tls.client.enabled }}
     - name: tcp-client-tls
-      port: {{ .Values.service.ports.tls }}
+      port: {{ .Values.zookeeper.service.ports.tls }}
       targetPort: client-tls
     {{- end }}
     - name: tcp-follower
-      port: {{ .Values.service.ports.follower }}
+      port: {{ .Values.zookeeper.service.ports.follower }}
       targetPort: follower
     - name: tcp-election
-      port: {{ .Values.service.ports.election }}
+      port: {{ .Values.zookeeper.service.ports.election }}
       targetPort: election
   selector: {{- include "common.labels.matchLabels" . | nindent 4 }}
     app.kubernetes.io/component: zookeeper

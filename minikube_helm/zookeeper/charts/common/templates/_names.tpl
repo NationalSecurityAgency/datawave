@@ -3,7 +3,7 @@
 Expand the name of the chart.
 */}}
 {{- define "common.names.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- default .Chart.Name .Values.zookeeper.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
@@ -19,10 +19,10 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 If release name contains chart name it will be used as a full name.
 */}}
 {{- define "common.names.fullname" -}}
-{{- if .Values.fullnameOverride -}}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- if .Values.zookeeper.fullnameOverride -}}
+{{- .Values.zookeeper.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- $name := default .Chart.Name .Values.zookeeper.nameOverride -}}
 {{- if contains $name .Release.Name -}}
 {{- .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -36,7 +36,7 @@ Create a default fully qualified dependency name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 Usage:
-{{ include "common.names.dependency.fullname" (dict "chartName" "dependency-chart-name" "chartValues" .Values.dependency-chart "context" $) }}
+{{ include "common.names.dependency.fullname" (dict "chartName" "dependency-chart-name" "chartValues" .Values.zookeeper.dependency-chart "context" $) }}
 */}}
 {{- define "common.names.dependency.fullname" -}}
 {{- if .chartValues.fullnameOverride -}}
@@ -55,8 +55,8 @@ Usage:
 Allow the release namespace to be overridden for multi-namespace deployments in combined charts.
 */}}
 {{- define "common.names.namespace" -}}
-{{- if .Values.namespaceOverride -}}
-{{- .Values.namespaceOverride -}}
+{{- if .Values.zookeeper.namespaceOverride -}}
+{{- .Values.zookeeper.namespaceOverride -}}
 {{- else -}}
 {{- .Release.Namespace -}}
 {{- end -}}

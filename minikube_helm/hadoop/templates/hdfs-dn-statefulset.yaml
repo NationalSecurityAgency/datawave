@@ -11,7 +11,7 @@ metadata:
     component: hdfs-dn
 spec:
   serviceName: {{ include "hadoop.fullname" . }}-hdfs-dn
-  replicas: {{ .Values.hdfs.dataNode.replicas }}
+  replicas: {{ .Values.hadoop.hdfs.dataNode.replicas }}
   selector:
     matchLabels:
       app: {{ include "hadoop.name" . }}
@@ -26,7 +26,7 @@ spec:
     spec:
       affinity:
         podAntiAffinity:
-        {{- if eq .Values.antiAffinity "hard" }}
+        {{- if eq .Values.hadoop.antiAffinity "hard" }}
           requiredDuringSchedulingIgnoredDuringExecution:
           - topologyKey: "kubernetes.io/hostname"
             labelSelector:
@@ -34,7 +34,7 @@ spec:
                 app:  {{ include "hadoop.name" . }}
                 release: {{ .Release.Name | quote }}
                 component: hdfs-dn
-        {{- else if eq .Values.antiAffinity "soft" }}
+        {{- else if eq .Values.hadoop.antiAffinity "soft" }}
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 5
             podAffinityTerm:
@@ -46,16 +46,20 @@ spec:
                   component: hdfs-dn
         {{- end }}
       terminationGracePeriodSeconds: 0
+      initContainers:
+      - name: init-hdfs
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup hdfs-nn; do echo waiting for hdfs-nn; sleep 2; done"]
       containers:
       - name: hdfs-dn
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+        image: "{{ .Values.hadoop.image.repository }}:{{ .Values.hadoop.image.tag }}"
+        imagePullPolicy: {{ .Values.hadoop.image.pullPolicy | quote }}
         command:
            - "/bin/bash"
            - "/tmp/hadoop-config/bootstrap.sh"
            - "-d"
         resources:
-{{ toYaml .Values.hdfs.dataNode.resources | indent 10 }}
+{{ toYaml .Values.hadoop.hdfs.dataNode.resources | indent 10 }}
         readinessProbe:
           httpGet:
             path: /
@@ -78,7 +82,7 @@ spec:
         configMap:
           name: {{ include "hadoop.fullname" . }}
       - name: dfs
-      {{- if .Values.persistence.dataNode.enabled }}
+      {{- if .Values.hadoop.persistence.dataNode.enabled }}
         persistentVolumeClaim:
           claimName: {{ include "hadoop.fullname" . }}-hdfs-dn
       {{- else }}

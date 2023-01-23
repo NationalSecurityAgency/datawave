@@ -10,9 +10,9 @@ kind: ConfigMap
 ######################################
 
 metadata:
-  name: "{{ .Chart.Name }}-{{ .Values.messagingMap.meta.name }}"
+  name: "{{ .Chart.Name }}-{{ .Values.web.messagingMap.meta.name }}"
   labels:
-    application: "{{ .Chart.Name }}-{{ .Values.messagingMap.meta.name }}"
+    application: "{{ .Chart.Name }}-{{ .Values.web.messagingMap.meta.name }}"
 
 ##########################
 # Configuration Map Data #

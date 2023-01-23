@@ -13,9 +13,9 @@ metadata:
   annotations:
     kompose.cmd: kompose convert
     kompose.version: 1.19.0 (f63a961c)
-  name: "{{ .Chart.Name }}-{{ .Values.dictionaryService.meta.name }}"
+  name: "{{ .Chart.Name }}-{{ .Values.web.dictionaryService.meta.name }}"
   labels:
-    application: "{{ .Chart.Name }}-{{ .Values.dictionaryService.meta.name }}"
+    application: "{{ .Chart.Name }}-{{ .Values.web.dictionaryService.meta.name }}"
 
 ##################################
 # Complete Service Specification #
@@ -28,7 +28,7 @@ spec:
   ###############################
 
   selector:
-    application: "{{ .Chart.Name }}-{{ .Values.dictionaryDeployment.meta.name }}"
+    application: "{{ .Chart.Name }}-{{ .Values.web.dictionaryDeployment.meta.name }}"
 
   ##############################
   # Service Port Configuration #
@@ -37,9 +37,9 @@ spec:
   ports:
 
     - name: http
-      port: {{ .Values.dictionaryService.ports.http }}
+      port: {{ .Values.web.dictionaryService.ports.http }}
       targetPort: 8080
 
     - name: https
-      port: {{ .Values.dictionaryService.ports.https }}
+      port: {{ .Values.web.dictionaryService.ports.https }}
       targetPort: 8443

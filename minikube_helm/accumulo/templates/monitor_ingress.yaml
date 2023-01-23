@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 */ -}}
-{{- if .Values.monitor.ingress.enabled }}
+{{- if .Values.accumulo.monitor.ingress.enabled }}
 {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
 apiVersion: networking.k8s.io/v1
 {{- else }}
@@ -27,7 +27,7 @@ metadata:
   labels:
     {{- include "accumulo.labels" . | nindent 4 }}
     app.kubernetes.io/component: monitor
-  {{- with .Values.monitor.ingress.annotations }}
+  {{- with .Values.accumulo.monitor.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -35,7 +35,7 @@ spec:
   rules:
   - http:
       paths:
-      - path: {{ required "Ingress path required, please set: .Values.monitor.ingress.pathPrefix" .Values.monitor.ingress.pathPrefix }}
+      - path: {{ required "Ingress path required, please set: .Values.accumulo.monitor.ingress.pathPrefix" .Values.accumulo.monitor.ingress.pathPrefix }}
 {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
         pathType: Prefix
         backend:
@@ -48,7 +48,7 @@ spec:
           serviceName: {{ include "accumulo.fullname" . }}-monitor
           servicePort: http
 {{- end }}
-    {{- if ne .Values.monitor.ingress.host "" }}
-    host: {{ .Values.monitor.ingress.host }}
+    {{- if ne .Values.accumulo.monitor.ingress.host "" }}
+    host: {{ .Values.accumulo.monitor.ingress.host }}
     {{- end }}
 {{- end }}

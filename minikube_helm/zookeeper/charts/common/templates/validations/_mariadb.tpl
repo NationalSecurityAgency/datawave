@@ -3,16 +3,16 @@
 Validate MariaDB required passwords are not empty.
 
 Usage:
-{{ include "common.validations.values.mariadb.passwords" (dict "secret" "secretName" "subchart" false "context" $) }}
+{{ include "common.validations.Values.zookeeper.mariadb.passwords" (dict "secret" "secretName" "subchart" false "context" $) }}
 Params:
   - secret - String - Required. Name of the secret where MariaDB values are stored, e.g: "mysql-passwords-secret"
   - subchart - Boolean - Optional. Whether MariaDB is used as subchart or not. Default: false
 */}}
-{{- define "common.validations.values.mariadb.passwords" -}}
-  {{- $existingSecret := include "common.mariadb.values.auth.existingSecret" . -}}
-  {{- $enabled := include "common.mariadb.values.enabled" . -}}
-  {{- $architecture := include "common.mariadb.values.architecture" . -}}
-  {{- $authPrefix := include "common.mariadb.values.key.auth" . -}}
+{{- define "common.validations.Values.zookeeper.mariadb.passwords" -}}
+  {{- $existingSecret := include "common.mariadb.Values.zookeeper.auth.existingSecret" . -}}
+  {{- $enabled := include "common.mariadb.Values.zookeeper.enabled" . -}}
+  {{- $architecture := include "common.mariadb.Values.zookeeper.architecture" . -}}
+  {{- $authPrefix := include "common.mariadb.Values.zookeeper.key.auth" . -}}
   {{- $valueKeyRootPassword := printf "%s.rootPassword" $authPrefix -}}
   {{- $valueKeyUsername := printf "%s.username" $authPrefix -}}
   {{- $valueKeyPassword := printf "%s.password" $authPrefix -}}
@@ -35,7 +35,7 @@ Params:
         {{- $requiredPasswords = append $requiredPasswords $requiredReplicationPassword -}}
     {{- end -}}
 
-    {{- include "common.validations.values.multiple.empty" (dict "required" $requiredPasswords "context" .context) -}}
+    {{- include "common.validations.Values.zookeeper.multiple.empty" (dict "required" $requiredPasswords "context" .context) -}}
 
   {{- end -}}
 {{- end -}}
@@ -44,15 +44,15 @@ Params:
 Auxiliary function to get the right value for existingSecret.
 
 Usage:
-{{ include "common.mariadb.values.auth.existingSecret" (dict "context" $) }}
+{{ include "common.mariadb.Values.zookeeper.auth.existingSecret" (dict "context" $) }}
 Params:
   - subchart - Boolean - Optional. Whether MariaDB is used as subchart or not. Default: false
 */}}
-{{- define "common.mariadb.values.auth.existingSecret" -}}
+{{- define "common.mariadb.Values.zookeeper.auth.existingSecret" -}}
   {{- if .subchart -}}
-    {{- .context.Values.mariadb.auth.existingSecret | quote -}}
+    {{- .context.Values.zookeeper.mariadb.auth.existingSecret | quote -}}
   {{- else -}}
-    {{- .context.Values.auth.existingSecret | quote -}}
+    {{- .context.Values.zookeeper.auth.existingSecret | quote -}}
   {{- end -}}
 {{- end -}}
 
@@ -60,13 +60,13 @@ Params:
 Auxiliary function to get the right value for enabled mariadb.
 
 Usage:
-{{ include "common.mariadb.values.enabled" (dict "context" $) }}
+{{ include "common.mariadb.Values.zookeeper.enabled" (dict "context" $) }}
 */}}
-{{- define "common.mariadb.values.enabled" -}}
+{{- define "common.mariadb.Values.zookeeper.enabled" -}}
   {{- if .subchart -}}
-    {{- printf "%v" .context.Values.mariadb.enabled -}}
+    {{- printf "%v" .context.Values.zookeeper.mariadb.enabled -}}
   {{- else -}}
-    {{- printf "%v" (not .context.Values.enabled) -}}
+    {{- printf "%v" (not .context.Values.zookeeper.enabled) -}}
   {{- end -}}
 {{- end -}}
 
@@ -74,15 +74,15 @@ Usage:
 Auxiliary function to get the right value for architecture
 
 Usage:
-{{ include "common.mariadb.values.architecture" (dict "subchart" "true" "context" $) }}
+{{ include "common.mariadb.Values.zookeeper.architecture" (dict "subchart" "true" "context" $) }}
 Params:
   - subchart - Boolean - Optional. Whether MariaDB is used as subchart or not. Default: false
 */}}
-{{- define "common.mariadb.values.architecture" -}}
+{{- define "common.mariadb.Values.zookeeper.architecture" -}}
   {{- if .subchart -}}
-    {{- .context.Values.mariadb.architecture -}}
+    {{- .context.Values.zookeeper.mariadb.architecture -}}
   {{- else -}}
-    {{- .context.Values.architecture -}}
+    {{- .context.Values.zookeeper.architecture -}}
   {{- end -}}
 {{- end -}}
 
@@ -90,11 +90,11 @@ Params:
 Auxiliary function to get the right value for the key auth
 
 Usage:
-{{ include "common.mariadb.values.key.auth" (dict "subchart" "true" "context" $) }}
+{{ include "common.mariadb.Values.zookeeper.key.auth" (dict "subchart" "true" "context" $) }}
 Params:
   - subchart - Boolean - Optional. Whether MariaDB is used as subchart or not. Default: false
 */}}
-{{- define "common.mariadb.values.key.auth" -}}
+{{- define "common.mariadb.Values.zookeeper.key.auth" -}}
   {{- if .subchart -}}
     mariadb.auth
   {{- else -}}

@@ -57,6 +57,7 @@ package:
       - zookeeper/*.tgz
       - hadoop/*.tgz
       - ingest/*.tgz
+      - web/*.tgz
 
 ##########################
 # Release Pipeline Stage #
@@ -65,8 +66,8 @@ package:
 release:
   stage: release
   script: |-
-     for chart in hadoop accumulo zookeeper ingest web; do echo curl -H "X-JFrog-Art-Api:AKCp8krL24AEao8yJQmsMyGrBJMsyh8cy82NsuMLyciixspc6nT7iwKibavAy2EqokX3hZoD4" -T ${chart}/${chart}-minikube-*.tgz "${ARTIFACTORY_REPOSITORY}" -k; done
-     for chart in hadoop accumulo zookeeper ingest web; do  curl -H "X-JFrog-Art-Api:AKCp8krL24AEao8yJQmsMyGrBJMsyh8cy82NsuMLyciixspc6nT7iwKibavAy2EqokX3hZoD4" -T ${chart}/${chart}-minikube-*.tgz "${ARTIFACTORY_REPOSITORY}" -k; done
+     for chart in hadoop accumulo zookeeper ingest web; do echo curl -H "X-JFrog-Art-Api:AKCp8krL24AEao8yJQmsMyGrBJMsyh8cy82NsuMLyciixspc6nT7iwKibavAy2EqokX3hZoD4" -T ${chart}/dwv-${chart}-*.tgz "${ARTIFACTORY_REPOSITORY}" -k; done
+     for chart in hadoop accumulo zookeeper ingest web; do  curl -H "X-JFrog-Art-Api:AKCp8krL24AEao8yJQmsMyGrBJMsyh8cy82NsuMLyciixspc6nT7iwKibavAy2EqokX3hZoD4" -T ${chart}/dwv-${chart}-*.tgz "${ARTIFACTORY_REPOSITORY}" -k; done
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
   needs:

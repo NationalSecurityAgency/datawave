@@ -11,7 +11,7 @@ preferredDuringSchedulingIgnoredDuringExecution:
         - key: {{ .key }}
           operator: In
           values:
-            {{- range .values }}
+            {{- range .Values.zookeeper }}
             - {{ . | quote }}
             {{- end }}
     weight: 1
@@ -28,7 +28,7 @@ requiredDuringSchedulingIgnoredDuringExecution:
         - key: {{ .key }}
           operator: In
           values:
-            {{- range .values }}
+            {{- range .Values.zookeeper }}
             - {{ . | quote }}
             {{- end }}
 {{- end -}}
@@ -47,7 +47,7 @@ Return a nodeAffinity definition
 
 {{/*
 Return a soft podAffinity/podAntiAffinity definition
-{{ include "common.affinities.pods.soft" (dict "component" "FOO" "extraMatchLabels" .Values.extraMatchLabels "context" $) -}}
+{{ include "common.affinities.pods.soft" (dict "component" "FOO" "extraMatchLabels" .Values.zookeeper.extraMatchLabels "context" $) -}}
 */}}
 {{- define "common.affinities.pods.soft" -}}
 {{- $component := default "" .component -}}
@@ -70,7 +70,7 @@ preferredDuringSchedulingIgnoredDuringExecution:
 
 {{/*
 Return a hard podAffinity/podAntiAffinity definition
-{{ include "common.affinities.pods.hard" (dict "component" "FOO" "extraMatchLabels" .Values.extraMatchLabels "context" $) -}}
+{{ include "common.affinities.pods.hard" (dict "component" "FOO" "extraMatchLabels" .Values.zookeeper.extraMatchLabels "context" $) -}}
 */}}
 {{- define "common.affinities.pods.hard" -}}
 {{- $component := default "" .component -}}

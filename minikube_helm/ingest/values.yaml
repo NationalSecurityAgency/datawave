@@ -1,15 +1,16 @@
-nameOverride: ""
-fullnameOverride: ""
-labels: {}
-image:
-  repository: warehouses/minikube/datawave-ingest
-  tag: 3.28.0
-  pullPolicy: Always
-  pullSecrets: []
 ingest:
-  replicaCount: 1
-  resources: {}
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-  datawaveVersion: 3.28.0
+  nameOverride: ""
+  fullnameOverride: ""
+  labels: {}
+  image:
+    repository: containeryard.evoforge.org/warehouses/datawave/ingest-dev 
+    tag: 3.35.0-SNAPSHOT
+    pullPolicy: Always
+    pullSecrets: []
+  deployment:
+    replicaCount: 1
+    resources: {}
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    datawaveVersion: 3.35.0

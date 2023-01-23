@@ -3,15 +3,15 @@
 #################################
 
 apiVersion: v2
-name: datawave
+name: dwv-web
 type: application
-version: 3.0.0
+version: 3.28.0
 
 #################################
 # Basic Metadata for this Chart #
 #################################
 
-appVersion: 2.8.8-hadoop3
+appVersion: 3.28.0
 description: Deploys an Entire DataWave Web Stack w/ Dependencies
 home: https://gitlab.evoforge.org/datawave/cloud_deploy/datawave_query/helm
 icon: https://code.nsa.gov/datawave/images/datawave-logo.png

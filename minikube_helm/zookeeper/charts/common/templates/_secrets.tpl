@@ -3,7 +3,7 @@
 Generate secret name.
 
 Usage:
-{{ include "common.secrets.name" (dict "existingSecret" .Values.path.to.the.existingSecret "defaultNameSuffix" "mySuffix" "context" $) }}
+{{ include "common.secrets.name" (dict "existingSecret" .Values.zookeeper.path.to.the.existingSecret "defaultNameSuffix" "mySuffix" "context" $) }}
 
 Params:
   - existingSecret - ExistingSecret/String - Optional. The path to the existing secrets in the values.yaml given by the user
@@ -36,7 +36,7 @@ Params:
 Generate secret key.
 
 Usage:
-{{ include "common.secrets.key" (dict "existingSecret" .Values.path.to.the.existingSecret "key" "keyName") }}
+{{ include "common.secrets.key" (dict "existingSecret" .Values.zookeeper.path.to.the.existingSecret "key" "keyName") }}
 
 Params:
   - existingSecret - ExistingSecret/String - Optional. The path to the existing secrets in the values.yaml given by the user
@@ -101,12 +101,12 @@ The order in which this function returns a secret password:
   {{- $password = $providedPasswordValue | toString | b64enc | quote }}
 {{- else }}
 
-  {{- if .context.Values.enabled }}
+  {{- if .context.Values.zookeeper.enabled }}
     {{- $subchart = $chartName }}
   {{- end -}}
 
   {{- $requiredPassword := dict "valueKey" $providedPasswordKey "secret" .secret "field" .key "subchart" $subchart "context" $.context -}}
-  {{- $requiredPasswordError := include "common.validations.values.single.empty" $requiredPassword -}}
+  {{- $requiredPasswordError := include "common.validations.Values.zookeeper.single.empty" $requiredPassword -}}
   {{- $passwordValidationErrors := list $requiredPasswordError -}}
   {{- include "common.errors.upgrade.passwords.empty" (dict "validationErrors" $passwordValidationErrors "context" $.context) -}}
 

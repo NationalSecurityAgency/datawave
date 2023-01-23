@@ -1,7 +1,7 @@
 {{/* vim: set filetype=mustache: */}}
 {{/*
 Return  the proper Storage Class
-{{ include "common.storage.class" ( dict "persistence" .Values.path.to.the.persistence "global" $) }}
+{{ include "common.storage.class" ( dict "persistence" .Values.zookeeper.path.to.the.persistence "global" $) }}
 */}}
 {{- define "common.storage.class" -}}
 

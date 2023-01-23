@@ -2,7 +2,7 @@
 {{/*
 Warning about using rolling tag.
 Usage:
-{{ include "common.warnings.rollingTag" .Values.path.to.the.imageRoot }}
+{{ include "common.warnings.rollingTag" .Values.zookeeper.path.to.the.imageRoot }}
 */}}
 {{- define "common.warnings.rollingTag" -}}
 

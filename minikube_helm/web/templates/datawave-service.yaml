@@ -10,9 +10,9 @@ kind: Service
 ######################################
 
 metadata:
-  name: "{{ .Chart.Name }}-{{ .Values.datawaveService.meta.name }}"
+  name: "{{ .Chart.Name }}-{{ .Values.web.datawaveService.meta.name }}"
   labels:
-    application: "{{ .Chart.Name }}-{{ .Values.datawaveService.meta.name }}"
+    application: "{{ .Chart.Name }}-{{ .Values.web.datawaveService.meta.name }}"
 
 ##################################
 # Complete Service Specification #
@@ -25,7 +25,7 @@ spec:
   ###############################
 
   selector:
-    application: "{{ .Chart.Name }}-{{ .Values.datawaveDeployment.meta.name }}"
+    application: "{{ .Chart.Name }}-{{ .Values.web.datawaveDeployment.meta.name }}"
 
   ##############################
   # Service Port Configuration #
@@ -34,5 +34,5 @@ spec:
   ports:
 
     - name: https
-      port: {{ .Values.datawaveService.ports.https }}
+      port: {{ .Values.web.datawaveService.ports.https }}
       targetPort: 8443

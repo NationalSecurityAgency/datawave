@@ -10,9 +10,9 @@ kind: Deployment
 ######################################
 
 metadata:
-  name: "{{ .Chart.Name }}-{{ .Values.datawaveDeployment.meta.name }}"
+  name: "{{ .Chart.Name }}-{{ .Values.web.datawaveDeployment.meta.name }}"
   labels:
-    application: "{{ .Chart.Name }}-{{ .Values.datawaveDeployment.meta.name }}"
+    application: "{{ .Chart.Name }}-{{ .Values.web.datawaveDeployment.meta.name }}"
 
 #####################################
 # Complete Deployment Specification #
@@ -24,13 +24,13 @@ spec:
   # Replication / Update Configuration #
   ######################################
 
-  replicas: {{ .Values.datawaveDeployment.replication.replicaCount }}
-  revisionHistoryLimit: {{ .Values.datawaveDeployment.replication.revisionHistoryLimit }}
+  replicas: {{ .Values.web.datawaveDeployment.replication.replicaCount }}
+  revisionHistoryLimit: {{ .Values.web.datawaveDeployment.replication.revisionHistoryLimit }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: {{ .Values.datawaveDeployment.replication.maxSurge }}
-      maxUnavailable: {{ .Values.datawaveDeployment.replication.maxUnavailable }}
+      maxSurge: {{ .Values.web.datawaveDeployment.replication.maxSurge }}
+      maxUnavailable: {{ .Values.web.datawaveDeployment.replication.maxUnavailable }}
 
   ###################################
   # Resource Selector Configuration #
@@ -38,7 +38,7 @@ spec:
 
   selector:
     matchLabels:
-      application: "{{ .Chart.Name }}-{{ .Values.datawaveDeployment.meta.name }}"
+      application: "{{ .Chart.Name }}-{{ .Values.web.datawaveDeployment.meta.name }}"
   
   #####################################
   # Deployment Template Configuration #
@@ -52,14 +52,14 @@ spec:
 
     metadata:
       labels:
-        application: "{{ .Chart.Name }}-{{ .Values.datawaveDeployment.meta.name }}"
+        application: "{{ .Chart.Name }}-{{ .Values.web.datawaveDeployment.meta.name }}"
 
     #######################################
     # Deployment Resources Specifications #
     #######################################
 
     spec:
-      restartPolicy: "{{ .Values.datawaveDeployment.restartPolicy }}"
+      restartPolicy: "{{ .Values.web.datawaveDeployment.restartPolicy }}"
 
       ##############################################
       # Containers Associated with this Deployment #
@@ -67,18 +67,15 @@ spec:
 
       containers:
 
-        - name: "{{ .Chart.Name }}-{{ .Values.datawaveDeployment.meta.name }}"
-          image: "{{ .Values.dockerRegistry.url }}/{{ .Values.datawaveDeployment.image.name }}:{{ .Values.datawaveDeployment.image.tag }}"
-          imagePullPolicy: "{{ .Values.datawaveDeployment.image.pullPolicy }}"
+        - name: "{{ .Chart.Name }}-{{ .Values.web.datawaveDeployment.meta.name }}"
+          image: "{{ .Values.web.dockerRegistry.url }}/{{ .Values.web.datawaveDeployment.image.name }}:{{ .Values.web.datawaveDeployment.image.tag }}"
+          imagePullPolicy: "{{ .Values.web.datawaveDeployment.image.pullPolicy }}"
           ports:
             - containerPort: 8443
           resources: {}
           volumeMounts:
-            - name: "{{ .Chart.Name }}-{{ .Values.volumes.certificates.name }}"
-              mountPath: "{{ .Values.volumes.certificates.destination }}"
-              readOnly: true
-            - name: "{{ .Chart.Name }}-{{ .Values.volumes.hadoop.name }}"
-              mountPath: "{{ .Values.volumes.hadoop.destination }}"
+            - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.certificates.name }}"
+              mountPath: "{{ .Values.web.volumes.certificates.destination }}"
               readOnly: true
       
       ###########################################
@@ -87,11 +84,7 @@ spec:
 
       volumes:
         
-        - name: "{{ .Chart.Name }}-{{ .Values.volumes.certificates.name }}"
+        - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.certificates.name }}"
           secret:
-            secretName: "{{ .Chart.Name }}-{{ .Values.certificatesSecret.meta.name }}"
+            secretName: "{{ .Chart.Name }}-{{ .Values.web.certificatesSecret.meta.name }}"
             optional: false
-        
-        - name: "{{ .Chart.Name }}-{{ .Values.volumes.hadoop.name }}"
-          hostPath:
-            path: "{{ .Values.volumes.hadoop.source }}"

@@ -111,7 +111,7 @@ data:
     <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
     <configuration>
     
-{{- if .Values.hdfs.webhdfs.enabled -}}
+{{- if .Values.hadoop.hdfs.webhdfs.enabled -}}
       <property>
           <name>dfs.webhdfs.enabled</name>
           <value>true</value>

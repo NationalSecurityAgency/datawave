@@ -10,7 +10,7 @@ kind: ClusterRoleBinding
 ######################################
 
 metadata:
-  name: "{{ .Chart.Name }}-{{ .Values.rbac.meta.name }}"
+  name: "{{ .Chart.Name }}-{{ .Values.web.rbac.meta.name }}"
 
 ######################
 # Role Configuration #

@@ -52,13 +52,7 @@ RUN if [ ! -f "./accumulo-${ACCUMULO_VERSION}-bin.tar.gz" ]; then \
 RUN tar -xf ./accumulo-${ACCUMULO_VERSION}-bin.tar.gz accumulo-${ACCUMULO_VERSION}/bin/ accumulo-${ACCUMULO_VERSION}/lib/ && \
 	rm -f ./accumulo-${ACCUMULO_VERSION}-bin.tar.gz && \
 	accumulo-${ACCUMULO_VERSION}/bin/build_native_library.sh && \
-	tar -xf ./hadoop-${HADOOP_VERSION}.tar.gz \
-		hadoop-${HADOOP_VERSION}/lib/native/ \
-		hadoop-${HADOOP_VERSION}/share/hadoop/client/ \
-		hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/ \
-		hadoop-${HADOOP_VERSION}/share/hadoop/hdfs/hadoop-hdfs-${HADOOP_VERSION}.jar \
-		hadoop-${HADOOP_VERSION}/share/hadoop/yarn/ \
-	&& \
+	tar -xf ./hadoop-${HADOOP_VERSION}.tar.gz && \
 	rm -f ./hadoop-${HADOOP_VERSION}.tar.gz && \
 	cp ./hadoop-${HADOOP_VERSION}/share/hadoop/yarn/timelineservice/lib/commons-lang-*.jar ./hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/ && \
 	rm -rf ./hadoop-${HADOOP_VERSION}/share/hadoop/yarn && \

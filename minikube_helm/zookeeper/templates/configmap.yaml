@@ -5,13 +5,13 @@ metadata:
   name: {{ template "common.names.fullname" . }}
   namespace: {{ template "zookeeper.namespace" . }}
   labels: {{- include "common.labels.standard" . | nindent 4 }}
-    {{- if .Values.commonLabels }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- if .Values.zookeeper.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
-  {{- if .Values.commonAnnotations }}
-  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- if .Values.zookeeper.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
   zoo.cfg: |-
-    {{- include "common.tplvalues.render" ( dict "value" .Values.configuration "context" $ ) | nindent 4 }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.configuration "context" $ ) | nindent 4 }}
 {{- end }}

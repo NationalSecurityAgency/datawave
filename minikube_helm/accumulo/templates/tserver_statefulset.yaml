@@ -21,7 +21,7 @@ metadata:
     app.kubernetes.io/component: tserver
 spec:
   podManagementPolicy: Parallel
-  replicas: {{ .Values.tabletServers.replicaCount }}
+  replicas: {{ .Values.accumulo.tabletServers.replicaCount }}
   serviceName: {{ template "accumulo.fullname" . }}-tservers
   selector:
     matchLabels:
@@ -33,30 +33,35 @@ spec:
         {{- include "accumulo.labels" . | nindent 8 }}
         app.kubernetes.io/component: tserver
     spec:
+      initContainers:
+      - name: init-accumulo
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup accumulo-master; do echo waiting for accumulo; sleep 2; done"]
+
       containers:
       - name: accumulo-tserver
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        image: {{ .Values.accumulo.image.repository }}:{{ .Values.accumulo.image.tag }}
+        imagePullPolicy: {{ .Values.accumulo.image.pullPolicy }}
         args:
         - tserver
         env:
         - name: ACCUMULO_CONF_DIR
-          value: {{ .Values.config.path }}
+          value: {{ .Values.accumulo.config.path }}
         resources:
-          {{- toYaml .Values.tabletServers.resources | nindent 10 }}
-      {{- with .Values.tabletServers.affinity }}
+          {{- toYaml .Values.accumulo.tabletServers.resources | nindent 10 }}
+      {{- with .Values.accumulo.tabletServers.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tabletServers.nodeSelector }}
+      {{- with .Values.accumulo.tabletServers.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tabletServers.tolerations }}
+      {{- with .Values.accumulo.tabletServers.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.image.pullSecrets }}
+      {{- with .Values.accumulo.image.pullSecrets }}
       imagePullSecrets:
       {{- range . }}
       - name: {{ . }}

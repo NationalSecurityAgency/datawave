@@ -3,7 +3,7 @@
 Expand the name of the chart.
 */}}
 {{- define "accumulo.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- default .Chart.Name .Values.accumulo.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
@@ -12,10 +12,10 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 If release name contains chart name it will be used as a full name.
 */}}
 {{- define "accumulo.fullname" -}}
-{{- if .Values.fullnameOverride -}}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- if .Values.accumulo.fullnameOverride -}}
+{{- .Values.accumulo.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- $name := default .Chart.Name .Values.accumulo.nameOverride -}}
 {{- if contains $name .Release.Name -}}
 {{- .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -41,8 +41,8 @@ helm.sh/chart: {{ include "accumulo.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- if .Values.labels }}
-{{ toYaml .Values.labels }}
+{{- if .Values.accumulo.labels }}
+{{ toYaml .Values.accumulo.labels }}
 {{- end -}}
 {{- end -}}
 
@@ -58,22 +58,22 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "accumulo.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create -}}
-    {{ default (include "accumulo.fullname" .) .Values.serviceAccount.name }}
+{{- if .Values.accumulo.serviceAccount.create -}}
+    {{ default (include "accumulo.fullname" .) .Values.accumulo.serviceAccount.name }}
 {{- else -}}
-    {{ default "default" .Values.serviceAccount.name }}
+    {{ default "default" .Values.accumulo.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
 
 {{- define "accumulo.zookeepers" -}}
-    {{- required ".Values.zookeeper.enabled = false, so .Values.zookeeper.externalHosts must be set" .Values.zookeeper.externalHosts }}
+    {{- required ".Values.accumulo.zookeeper.enabled = false, so .Values.accumulo.zookeeper.externalHosts must be set" .Values.accumulo.zookeeper.externalHosts }}
 {{- end -}}
 
 {{- define "accumulo.callSubChartTemplate" }}
 {{- $dot := index . 0 }}
 {{- $subchart := index . 1 | splitList "." }}
 {{- $template := index . 2 }}
-{{- $values := $dot.Values }}
+{{- $values := $dot.Values.accumulo }}
 {{- range $subchart }}
 {{- $values = index $values . }}
 {{- end }}
@@ -81,6 +81,6 @@ Create the name of the service account to use
 {{- end }}
 
 {{- define "accumulo.hdfsNamenodeHostname" -}}
-    {{ required ".Values.hdfs.namenode.hostname needs to be set as .Values.hdfs.enabled = false" .Values.hdfs.namenode.hostname }}
-  :{{ .Values.hdfs.namenode.ports.clientRpc }}
+    {{ required ".Values.accumulo.hdfs.namenode.hostname needs to be set as .Values.accumulo.hdfs.enabled = false" .Values.accumulo.hdfs.namenode.hostname }}
+  :{{ .Values.accumulo.hdfs.namenode.ports.clientRpc }}
 {{- end -}}

@@ -4,15 +4,15 @@
 Validate Redis&reg; required passwords are not empty.
 
 Usage:
-{{ include "common.validations.values.redis.passwords" (dict "secret" "secretName" "subchart" false "context" $) }}
+{{ include "common.validations.Values.zookeeper.redis.passwords" (dict "secret" "secretName" "subchart" false "context" $) }}
 Params:
   - secret - String - Required. Name of the secret where redis values are stored, e.g: "redis-passwords-secret"
   - subchart - Boolean - Optional. Whether redis is used as subchart or not. Default: false
 */}}
-{{- define "common.validations.values.redis.passwords" -}}
-  {{- $enabled := include "common.redis.values.enabled" . -}}
-  {{- $valueKeyPrefix := include "common.redis.values.keys.prefix" . -}}
-  {{- $standarizedVersion := include "common.redis.values.standarized.version" . }}
+{{- define "common.validations.Values.zookeeper.redis.passwords" -}}
+  {{- $enabled := include "common.redis.Values.zookeeper.enabled" . -}}
+  {{- $valueKeyPrefix := include "common.redis.Values.zookeeper.keys.prefix" . -}}
+  {{- $standarizedVersion := include "common.redis.Values.zookeeper.standarized.version" . }}
 
   {{- $existingSecret := ternary (printf "%s%s" $valueKeyPrefix "auth.existingSecret") (printf "%s%s" $valueKeyPrefix "existingSecret") (eq $standarizedVersion "true") }}
   {{- $existingSecretValue := include "common.utils.getValueFromKey" (dict "key" $existingSecret "context" .context) }}
@@ -29,7 +29,7 @@ Params:
       {{- $requiredPasswords = append $requiredPasswords $requiredRedisPassword -}}
     {{- end -}}
 
-    {{- include "common.validations.values.multiple.empty" (dict "required" $requiredPasswords "context" .context) -}}
+    {{- include "common.validations.Values.zookeeper.multiple.empty" (dict "required" $requiredPasswords "context" .context) -}}
   {{- end -}}
 {{- end -}}
 
@@ -37,13 +37,13 @@ Params:
 Auxiliary function to get the right value for enabled redis.
 
 Usage:
-{{ include "common.redis.values.enabled" (dict "context" $) }}
+{{ include "common.redis.Values.zookeeper.enabled" (dict "context" $) }}
 */}}
-{{- define "common.redis.values.enabled" -}}
+{{- define "common.redis.Values.zookeeper.enabled" -}}
   {{- if .subchart -}}
-    {{- printf "%v" .context.Values.redis.enabled -}}
+    {{- printf "%v" .context.Values.zookeeper.redis.enabled -}}
   {{- else -}}
-    {{- printf "%v" (not .context.Values.enabled) -}}
+    {{- printf "%v" (not .context.Values.zookeeper.enabled) -}}
   {{- end -}}
 {{- end -}}
 
@@ -51,11 +51,11 @@ Usage:
 Auxiliary function to get the right prefix path for the values
 
 Usage:
-{{ include "common.redis.values.key.prefix" (dict "subchart" "true" "context" $) }}
+{{ include "common.redis.Values.zookeeper.key.prefix" (dict "subchart" "true" "context" $) }}
 Params:
   - subchart - Boolean - Optional. Whether redis is used as subchart or not. Default: false
 */}}
-{{- define "common.redis.values.keys.prefix" -}}
+{{- define "common.redis.Values.zookeeper.keys.prefix" -}}
   {{- if .subchart -}}redis.{{- else -}}{{- end -}}
 {{- end -}}
 
@@ -63,11 +63,11 @@ Params:
 Checks whether the redis chart's includes the standarizations (version >= 14)
 
 Usage:
-{{ include "common.redis.values.standarized.version" (dict "context" $) }}
+{{ include "common.redis.Values.zookeeper.standarized.version" (dict "context" $) }}
 */}}
-{{- define "common.redis.values.standarized.version" -}}
+{{- define "common.redis.Values.zookeeper.standarized.version" -}}
 
-  {{- $standarizedAuth := printf "%s%s" (include "common.redis.values.keys.prefix" .) "auth" -}}
+  {{- $standarizedAuth := printf "%s%s" (include "common.redis.Values.zookeeper.keys.prefix" .) "auth" -}}
   {{- $standarizedAuthValues := include "common.utils.getValueFromKey" (dict "key" $standarizedAuth "context" .context) }}
 
   {{- if $standarizedAuthValues -}}

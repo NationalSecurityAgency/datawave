@@ -2,7 +2,7 @@ CHART NAME: {{ .Chart.Name }}
 CHART VERSION: {{ .Chart.Version }}
 APP VERSION: {{ .Chart.AppVersion }}
 
-{{- if and (not .Values.auth.client.enabled) (eq .Values.service.type "LoadBalancer") }}
+{{- if and (not .Values.zookeeper.auth.client.enabled) (eq .Values.zookeeper.service.type "LoadBalancer") }}
 -------------------------------------------------------------------------------
  WARNING
 
@@ -19,11 +19,11 @@ APP VERSION: {{ .Chart.AppVersion }}
 
 ** Please be patient while the chart is being deployed **
 
-{{- if .Values.diagnosticMode.enabled }}
+{{- if .Values.zookeeper.diagnosticMode.enabled }}
 The chart has been deployed in diagnostic mode. All probes have been disabled and the command has been overwritten with:
 
-  command: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.command "context" $) | nindent 4 }}
-  args: {{- include "common.tplvalues.render" (dict "value" .Values.diagnosticMode.args "context" $) | nindent 4 }}
+  command: {{- include "common.tplvalues.render" (dict "value" .Values.zookeeper.diagnosticMode.command "context" $) | nindent 4 }}
+  args: {{- include "common.tplvalues.render" (dict "value" .Values.zookeeper.diagnosticMode.args "context" $) | nindent 4 }}
 
 Get the list of pods by executing:
 
@@ -39,9 +39,9 @@ In order to replicate the container startup scripts execute this command:
 
 {{- else }}
 
-ZooKeeper can be accessed via port {{ .Values.service.ports.client }} on the following DNS name from within your cluster:
+ZooKeeper can be accessed via port {{ .Values.zookeeper.service.ports.client }} on the following DNS name from within your cluster:
 
-    {{ template "common.names.fullname" . }}.{{ template "zookeeper.namespace" . }}.svc.{{ .Values.clusterDomain }}
+    {{ template "common.names.fullname" . }}.{{ template "zookeeper.namespace" . }}.svc.{{ .Values.zookeeper.clusterDomain }}
 
 To connect to your ZooKeeper server run the following commands:
 
@@ -50,24 +50,24 @@ To connect to your ZooKeeper server run the following commands:
 
 To connect to your ZooKeeper server from outside the cluster execute the following commands:
 
-{{- if eq .Values.service.type "NodePort" }}
+{{- if eq .Values.zookeeper.service.type "NodePort" }}
 
     export NODE_IP=$(kubectl get nodes --namespace {{ template "zookeeper.namespace" . }} -o jsonpath="{.items[0].status.addresses[0].address}")
     export NODE_PORT=$(kubectl get --namespace {{ template "zookeeper.namespace" . }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "common.names.fullname" . }})
     zkCli.sh $NODE_IP:$NODE_PORT
 
-{{- else if eq .Values.service.type "LoadBalancer" }}
+{{- else if eq .Values.zookeeper.service.type "LoadBalancer" }}
 
   NOTE: It may take a few minutes for the LoadBalancer IP to be available.
         Watch the status with: 'kubectl get svc --namespace {{ template "zookeeper.namespace" . }} -w {{ template "common.names.fullname" . }}'
 
     export SERVICE_IP=$(kubectl get svc --namespace {{ template "zookeeper.namespace" . }} {{ template "common.names.fullname" . }} --template "{{ "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}" }}")
-    zkCli.sh $SERVICE_IP:{{ .Values.service.ports.client }}
+    zkCli.sh $SERVICE_IP:{{ .Values.zookeeper.service.ports.client }}
 
-{{- else if eq .Values.service.type "ClusterIP" }}
+{{- else if eq .Values.zookeeper.service.type "ClusterIP" }}
 
-    kubectl port-forward --namespace {{ template "zookeeper.namespace" . }} svc/{{ template "common.names.fullname" . }} {{ .Values.service.ports.client }}:{{ .Values.containerPorts.client }} &
-    zkCli.sh 127.0.0.1:{{ .Values.service.ports.client }}
+    kubectl port-forward --namespace {{ template "zookeeper.namespace" . }} svc/{{ template "common.names.fullname" . }} {{ .Values.zookeeper.service.ports.client }}:{{ .Values.zookeeper.containerPorts.client }} &
+    zkCli.sh 127.0.0.1:{{ .Values.zookeeper.service.ports.client }}
 
 {{- end }}
 {{- end }}

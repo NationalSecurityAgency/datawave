@@ -3,8 +3,8 @@
 Through error when upgrading using empty passwords values that must not be empty.
 
 Usage:
-{{- $validationError00 := include "common.validations.values.single.empty" (dict "valueKey" "path.to.password00" "secret" "secretName" "field" "password-00") -}}
-{{- $validationError01 := include "common.validations.values.single.empty" (dict "valueKey" "path.to.password01" "secret" "secretName" "field" "password-01") -}}
+{{- $validationError00 := include "common.validations.Values.zookeeper.single.empty" (dict "valueKey" "path.to.password00" "secret" "secretName" "field" "password-00") -}}
+{{- $validationError01 := include "common.validations.Values.zookeeper.single.empty" (dict "valueKey" "path.to.password01" "secret" "secretName" "field" "password-01") -}}
 {{ include "common.errors.upgrade.passwords.empty" (dict "validationErrors" (list $validationError00 $validationError01) "context" $) }}
 
 Required password params:

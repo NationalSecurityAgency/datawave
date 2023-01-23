@@ -31,18 +31,24 @@ spec:
         {{- include "accumulo.labels" . | nindent 8 }}
         app.kubernetes.io/component: master
     spec:
-      hostname: accumulo-master
+      initContainers:
+      - name: check-hadoop-jars
+        image: "{{ .Values.accumulo.initContainer.image }}:{{ .Values.accumulo.initContainer.tag }}"
+        command: 
+        - "/bin/sh"
+        args: ["-c", "while [ `hdfs dfs -ls hdfs://hdfs-nn:9000/datawave/accumulo-vfs-classpath | wc -l` -lt 5 ]; do echo \"Waiting for jars to load\"; sleep 10; done"]
+      hostname: accumulo-master 
       containers:
       - name: accumulo-master
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        image: {{ .Values.accumulo.image.repository }}:{{ .Values.accumulo.image.tag }}
+        imagePullPolicy: {{ .Values.accumulo.image.pullPolicy }}
         args:
         - master
         env:
         - name: ACCUMULO_CONF_DIR
-          value: {{ .Values.config.path }}
+          value: {{ .Values.accumulo.config.path }}
         - name: ACCUMULO_INSTANCE_NAME
-          value: {{ .Values.instanceId }}
+          value: {{ .Values.accumulo.instanceId }}
         - name: ACCUMULO_ROOT_PASSWORD
           value: root
         volumeMounts:
@@ -50,25 +56,25 @@ spec:
             mountPath: /cmds
             readOnly: true
         resources:
-          {{- toYaml .Values.master.resources | nindent 10 }}
+          {{- toYaml .Values.accumulo.master.resources | nindent 10 }}
       volumes:
         - name: cmds
           secret:
             secretName: {{ include "accumulo.fullname" . }}-cmds
             optional: false
-      {{- with .Values.master.affinity }}
+      {{- with .Values.accumulo.master.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.master.nodeSelector }}
+      {{- with .Values.accumulo.master.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.master.tolerations }}
+      {{- with .Values.accumulo.master.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.image.pullSecrets }}
+      {{- with .Values.accumulo.image.pullSecrets }}
       imagePullSecrets:
       {{- range . }}
       - name: {{ . }}

@@ -1,4 +1,4 @@
 apiVersion: v1
-name: accumulo-minikube
+name: dwv-accumulo
 version: 1.10.2
 appVersion: 1.10.2

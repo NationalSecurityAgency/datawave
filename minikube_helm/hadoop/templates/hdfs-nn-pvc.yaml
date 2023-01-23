@@ -1,4 +1,4 @@
-{{- if .Values.persistence.nameNode.enabled -}}
+{{- if .Values.hadoop.persistence.nameNode.enabled -}}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -10,15 +10,15 @@ metadata:
     component: hdfs-nn
 spec:
   accessModes:
-  - {{ .Values.persistence.nameNode.accessMode | quote }}
+  - {{ .Values.hadoop.persistence.nameNode.accessMode | quote }}
   resources:
     requests:
-      storage: {{ .Values.persistence.nameNode.size | quote }}
-{{- if .Values.persistence.nameNode.storageClass }}
-{{- if (eq "-" .Values.persistence.nameNode.storageClass) }}
+      storage: {{ .Values.hadoop.persistence.nameNode.size | quote }}
+{{- if .Values.hadoop.persistence.nameNode.storageClass }}
+{{- if (eq "-" .Values.hadoop.persistence.nameNode.storageClass) }}
   storageClassName: ""
 {{- else }}
-  storageClassName: "{{ .Values.persistence.nameNode.storageClass }}"
+  storageClassName: "{{ .Values.hadoop.persistence.nameNode.storageClass }}"
 {{- end }}
 {{- end }}
 {{- end -}}

@@ -10,9 +10,9 @@ kind: Deployment
 ######################################
 
 metadata:
-  name: "{{ .Chart.Name }}-{{ .Values.configurationDeployment.meta.name }}"
+  name: "{{ .Chart.Name }}-{{ .Values.web.configurationDeployment.meta.name }}"
   labels:
-    application: "{{ .Chart.Name }}-{{ .Values.configurationDeployment.meta.name }}"
+    application: "{{ .Chart.Name }}-{{ .Values.web.configurationDeployment.meta.name }}"
 
 #####################################
 # Complete Deployment Specification #
@@ -24,13 +24,13 @@ spec:
   # Replication / Update Configuration #
   ######################################
 
-  replicas: {{ .Values.configurationDeployment.replication.replicaCount }}
-  revisionHistoryLimit: {{ .Values.configurationDeployment.replication.revisionHistoryLimit }}
+  replicas: {{ .Values.web.configurationDeployment.replication.replicaCount }}
+  revisionHistoryLimit: {{ .Values.web.configurationDeployment.replication.revisionHistoryLimit }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: {{ .Values.configurationDeployment.replication.maxSurge }}
-      maxUnavailable: {{ .Values.configurationDeployment.replication.maxUnavailable }}
+      maxSurge: {{ .Values.web.configurationDeployment.replication.maxSurge }}
+      maxUnavailable: {{ .Values.web.configurationDeployment.replication.maxUnavailable }}
 
   ###################################
   # Resource Selector Configuration #
@@ -38,7 +38,7 @@ spec:
 
   selector:
     matchLabels:
-      application: "{{ .Chart.Name }}-{{ .Values.configurationDeployment.meta.name }}"
+      application: "{{ .Chart.Name }}-{{ .Values.web.configurationDeployment.meta.name }}"
   
   #####################################
   # Deployment Template Configuration #
@@ -52,14 +52,14 @@ spec:
 
     metadata:
       labels:
-        application: "{{ .Chart.Name }}-{{ .Values.configurationDeployment.meta.name }}"
+        application: "{{ .Chart.Name }}-{{ .Values.web.configurationDeployment.meta.name }}"
 
     #######################################
     # Deployment Resources Specifications #
     #######################################
 
     spec:
-      restartPolicy: "{{ .Values.configurationDeployment.restartPolicy }}"
+      restartPolicy: "{{ .Values.web.configurationDeployment.restartPolicy }}"
 
       ##############################################
       # Containers Associated with this Deployment #
@@ -67,30 +67,30 @@ spec:
 
       containers:
 
-        - name: "{{ .Chart.Name }}-{{ .Values.configurationDeployment.meta.name }}"
+        - name: "{{ .Chart.Name }}-{{ .Values.web.configurationDeployment.meta.name }}"
           args:
             - "--spring.cloud.config.server.native.searchLocations=file:///microservice-config"
             - "--spring.output.ansi.enabled=ALWAYS"
             - "--spring.profiles.active=native,open_actuator"
           env:
             - name: KEY_ALIAS
-              value: "{{ .Values.secrets.keystore.alias }}"
+              value: "{{ .Values.web.secrets.keystore.alias }}"
             - name: KEYSTORE_LOCATION
-              value: "{{ .Values.secrets.keystore.path }}"
+              value: "{{ .Values.web.secrets.keystore.path }}"
             - name: KEYSTORE_PASSWORD
-              value: "{{ .Values.secrets.keystore.password }}"
+              value: "{{ .Values.web.secrets.keystore.password }}"
             - name: MESSAGING_SERVER_HOSTNAME
-              value: "{{ .Chart.Name }}-{{ .Values.messagingService.meta.name }}"
-          image: "{{ .Values.dockerRegistry.url }}/{{ .Values.configurationDeployment.image.name }}:{{ .Values.configurationDeployment.image.tag }}"
-          imagePullPolicy: "{{ .Values.configurationDeployment.image.pullPolicy }}"
+              value: "{{ .Chart.Name }}-{{ .Values.web.messagingService.meta.name }}"
+          image: "{{ .Values.web.dockerRegistry.url }}/{{ .Values.web.configurationDeployment.image.name }}:{{ .Values.web.configurationDeployment.image.tag }}"
+          imagePullPolicy: "{{ .Values.web.configurationDeployment.image.pullPolicy }}"
           ports:
             - containerPort: 8888
           resources: {}
           volumeMounts:
-            - name: "{{ .Chart.Name }}-{{ .Values.volumes.certificates.name }}"
-              mountPath: "{{ .Values.volumes.certificates.destination }}"
-            - name: "{{ .Chart.Name }}-{{ .Values.volumes.microserviceConfig.name }}"
-              mountPath: "{{ .Values.volumes.microserviceConfig.destination }}"
+            - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.certificates.name }}"
+              mountPath: "{{ .Values.web.volumes.certificates.destination }}"
+            - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.microserviceConfig.name }}"
+              mountPath: "{{ .Values.web.volumes.microserviceConfig.destination }}"
               readOnly: true
 
       #############################################################
@@ -99,21 +99,22 @@ spec:
 
       initContainers:
 
+
         - name: "{{ .Chart.Name }}-init-messaging"
-          image: "{{ .Values.initialization.image.name }}:{{ .Values.initialization.image.tag }}"
-          command: [ "sh", "-c", "{{ .Values.scripts.init.messaging }}" ]
-      
+          image: "{{ .Values.web.initialization.image.name }}:{{ .Values.web.initialization.image.tag }}"
+          command: [ "sh", "-c", " until nslookup {{ .Chart.Name }}-{{ .Values.web.messagingService.meta.name }}; do echo 'Waiting for Cache...'; sleep 2; done" ]
+
       ###########################################
       # Volumes Associated with this Deployment #
       ###########################################
 
       volumes:
         
-        - name: "{{ .Chart.Name }}-{{ .Values.volumes.certificates.name }}"
+        - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.certificates.name }}"
           secret:
-            secretName: "{{ .Chart.Name }}-{{ .Values.certificatesSecret.meta.name }}"
+            secretName: "{{ .Chart.Name }}-{{ .Values.web.certificatesSecret.meta.name }}"
             optional: false
 
-        - name: "{{ .Chart.Name }}-{{ .Values.volumes.microserviceConfig.name }}"
+        - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.microserviceConfig.name }}"
           configMap:
-            name: "{{ .Chart.Name }}-{{ .Values.configurationMap.meta.name }}"
+            name: "{{ .Chart.Name }}-{{ .Values.web.configurationMap.meta.name }}"
