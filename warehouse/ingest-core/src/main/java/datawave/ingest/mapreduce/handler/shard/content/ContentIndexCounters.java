@@ -166,6 +166,7 @@ public class ContentIndexCounters {
      * Sets the value which determines at what value a counter should be written to the context.
      * 
      * @param bufferSize
+     *            the buffer size to set
      */
     public void setBufferSize(int bufferSize) {
         this.bufferSize = bufferSize;
@@ -175,6 +176,7 @@ public class ContentIndexCounters {
      * Flushes all counter values to the context and sets the values to zero.
      * 
      * @param reporter
+     *            the reporter holding the entries
      */
     public void flush(StatusReporter reporter) {
         if (reporter != null) {
