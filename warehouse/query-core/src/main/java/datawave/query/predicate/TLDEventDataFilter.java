@@ -804,19 +804,19 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * If the current key is rejected due to a field limit and a field limit field is specified generate a value with the field in it
      * 
-     * @param toLimit
-     *            the
-     * @return
+     * @param key
+     *            the key to limit
+     * @return a key with the limit field specified, or null if no limit was configured
      */
     @Override
-    public Key transform(Key toLimit) {
-        ParseInfo info = getParseInfo(toLimit);
-        if (this.limitFieldsField != null && isFieldLimit(info.getField())) {
-            String limitedField = getParseInfo(toLimit).getField();
-            return new Key(toLimit.getRow(), toLimit.getColumnFamily(), new Text(limitFieldsField + Constants.NULL + limitedField));
-        } else {
-            return null;
+    public Key transform(Key key) {
+        if (this.limitFieldsField != null) {
+            ParseInfo info = getParseInfo(key);
+            if (isFieldLimit(info.getField())) {
+                return new Key(key.getRow(), key.getColumnFamily(), new Text(limitFieldsField + Constants.NULL + info.getField()));
+            }
         }
+        return null;
     }
     
     @Override
