@@ -807,8 +807,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         if (this.limitFieldsField != null) {
             ParseInfo info = getParseInfo(key);
             if (isFieldLimit(info.getField())) {
-                String limitedField = getParseInfo(key).getField();
-                return new Key(key.getRow(), key.getColumnFamily(), new Text(limitFieldsField + Constants.NULL + limitedField));
+                return new Key(key.getRow(), key.getColumnFamily(), new Text(limitFieldsField + Constants.NULL + info.getField()));
             }
         }
         return null;
