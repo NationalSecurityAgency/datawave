@@ -117,6 +117,7 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
      * associated with this helper. If no corresponding type for the specified value is present in the <code>eventDataTypeMap</code> return the original type.
      *
      * @param fieldValue
+     *            the field value
      * @return the type.
      */
     protected Type getType(String fieldValue) {
@@ -175,7 +176,8 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
      * Create string array by splitting id with '-att-'
      *
      * @param id
-     * @return
+     *            the id to split
+     * @return a string array of the split components
      */
     public static String[] getIdComponents(String id) {
         
