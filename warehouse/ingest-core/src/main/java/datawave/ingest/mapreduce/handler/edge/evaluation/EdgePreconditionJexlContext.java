@@ -35,6 +35,7 @@ public class EdgePreconditionJexlContext extends MultimapContext {
      * This constructor creates a context based on a single list of edge definitions
      * 
      * @param edges
+     *            the edge definitions
      */
     public EdgePreconditionJexlContext(List<EdgeDefinition> edges) {
         super();
@@ -45,6 +46,7 @@ public class EdgePreconditionJexlContext extends MultimapContext {
      * This constructor creates a context from a Map of edge definitions by datatype
      * 
      * @param edgesByDataType
+     *            a map of edge definitions
      */
     public EdgePreconditionJexlContext(Map<String,EdgeDefinitionConfigurationHelper> edgesByDataType) {
         super();
