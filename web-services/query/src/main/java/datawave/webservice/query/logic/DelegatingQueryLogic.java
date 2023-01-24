@@ -4,6 +4,7 @@ import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.remote.RemoteUserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
@@ -338,5 +339,10 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     @Override
     public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         delegate.validate(parameters);
+    }
+    
+    @Override
+    public RemoteUserOperations getUserOperations() {
+        return delegate.getUserOperations();
     }
 }

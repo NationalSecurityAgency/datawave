@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -64,34 +65,34 @@ public class AuthorizationsUtilTest {
     }
     
     @Test
-    public void testDowngradeAuthorizations() {
+    public void testDowngradeAuthorizations() throws AuthorizationException {
         HashSet<Authorizations> expected = Sets.newHashSet(new Authorizations("A", "C"), new Authorizations("A", "B", "E"), new Authorizations("A", "F", "G"));
-        assertEquals(expected, AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, proxiedUserPrincipal));
+        assertEquals(expected, AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, proxiedUserPrincipal, null));
     }
     
     @Test(expected = IllegalArgumentException.class)
-    public void testDowngradeAuthorizationsUserRequestsAuthTheyDontHave() {
-        AuthorizationsUtil.getDowngradedAuthorizations("A,C,E", proxiedUserPrincipal);
+    public void testDowngradeAuthorizationsUserRequestsAuthTheyDontHave() throws AuthorizationException {
+        AuthorizationsUtil.getDowngradedAuthorizations("A,C,E", proxiedUserPrincipal, null);
         fail("Exception not thrown!");
     }
     
     @Test(expected = IllegalArgumentException.class)
-    public void testDowngradeAuthorizationsServerRequestsAuthTheyDontHave1() {
+    public void testDowngradeAuthorizationsServerRequestsAuthTheyDontHave1() throws AuthorizationException {
         // p1, p3 - call will succeed if p1 is primaryUser, throw exception if p3 is primaryUser
-        AuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal1);
+        AuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal1, null);
         fail("Exception not thrown!");
     }
     
     @Test(expected = IllegalArgumentException.class)
-    public void testDowngradeAuthorizationsServerRequestsAuthTheyDontHave2() {
+    public void testDowngradeAuthorizationsServerRequestsAuthTheyDontHave2() throws AuthorizationException {
         // p1, p2, p3 - call will succeed if p1 is primaryUser, throw exception if p2 is primaryUser
-        AuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal2);
+        AuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal2, null);
         fail("Exception not thrown!");
     }
     
     @Test
-    public void testUserAuthsFirstInMergedSet() {
-        HashSet<Authorizations> mergedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, proxiedUserPrincipal);
+    public void testUserAuthsFirstInMergedSet() throws AuthorizationException {
+        HashSet<Authorizations> mergedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, proxiedUserPrincipal, null);
         assertEquals(3, mergedAuths.size());
         assertEquals("Merged user authorizations were not first in the return set", new Authorizations("A", "C"), mergedAuths.iterator().next());
     }

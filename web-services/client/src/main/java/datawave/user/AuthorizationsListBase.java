@@ -64,6 +64,14 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
         auths.put(new SubjectIssuerDNPair(dn, issuerDN), new TreeSet<String>(dnAuths));
     }
     
+    public String getUserDn() {
+        return userDn;
+    }
+    
+    public String getIssuerDn() {
+        return issuerDn;
+    }
+    
     public void setUserAuths(String userDn, String issuerDn, Collection<String> userAuths) {
         this.userDn = userDn;
         this.issuerDn = issuerDn;

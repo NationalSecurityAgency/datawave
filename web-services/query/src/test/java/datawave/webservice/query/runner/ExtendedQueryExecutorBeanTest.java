@@ -395,6 +395,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
         expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
+        expect(this.queryLogic1.getUserOperations()).andReturn(null);
         cache.put(eq(queryId.toString()), isA(RunningQuery.class));
         cache.remove(queryId.toString());
         this.queryLogic1.close();
@@ -798,6 +799,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
         expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
+        expect(this.queryLogic1.getUserOperations()).andReturn(null);
         expect(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         expect(this.queryLogic1.getTransformIterator(this.query)).andReturn(this.transformIterator);
@@ -970,6 +972,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
         expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
+        expect(this.queryLogic1.getUserOperations()).andReturn(null);
         expect(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         expect(this.queryLogic1.getTransformIterator(this.query)).andReturn(this.transformIterator);
@@ -1132,6 +1135,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
         expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
+        expect(this.queryLogic1.getUserOperations()).andReturn(null);
         expect(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         expect(this.queryLogic1.getTransformIterator(this.query)).andReturn(this.transformIterator);
@@ -1463,6 +1467,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(true);
+        expect(this.queryLogic1.getUserOperations()).andReturn(null);
         
         this.metrics.updateMetric(this.queryMetric);
         cache.unlock(queryId.toString());
@@ -2472,6 +2477,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
         expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
+        expect(this.queryLogic1.getUserOperations()).andReturn(null);
         this.cache.put(eq(queryId.toString()), isA(RunningQuery.class));
         
         // Run the test
@@ -2974,6 +2980,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
         expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
+        expect(this.queryLogic1.getUserOperations()).andReturn(null);
         expect(this.query.toMap()).andReturn(map);
         expect(this.query.getColumnVisibility()).andReturn(authorization);
         expect(this.query.getBeginDate()).andReturn(null);
@@ -3552,6 +3559,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getPrimaryUser()).andReturn(dwUser);
         expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations));
         expect(this.principal.getProxiedUsers()).andReturn(Collections.singletonList(dwUser));
+        expect(this.queryLogic1.getUserOperations()).andReturn(null);
         expect(this.query.getOwner()).andReturn(userSid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
@@ -3680,6 +3688,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.PASSIVE);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
+        expect(this.queryLogic1.getUserOperations()).andReturn(null);
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
         this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);

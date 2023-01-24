@@ -32,9 +32,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.easymock.EasyMock.anyObject;
@@ -112,6 +114,7 @@ public class RunningQueryTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
+        expect(logic.getUserOperations()).andReturn(null);
         replay(logic);
         
         RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
@@ -133,6 +136,7 @@ public class RunningQueryTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
+        expect(logic.getUserOperations()).andReturn(null);
         replay(logic);
         
         RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
@@ -152,6 +156,10 @@ public class RunningQueryTest {
         auths[1] = "C";
         Authorizations expected = new Authorizations(auths);
         
+        expect(logic.getCollectQueryMetrics()).andReturn(false);
+        expect(logic.getUserOperations()).andReturn(null);
+        replay(logic);
+        
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
@@ -169,7 +177,7 @@ public class RunningQueryTest {
         String[] auths = new String[2];
         auths[0] = "A";
         auths[1] = "C";
-        List<QueryLogic<?>> logics = new ArrayList<>();
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("NONTESTROLE");
@@ -180,13 +188,15 @@ public class RunningQueryTest {
         roles2.add("NONTESTROLE");
         logic2.setTableName("thatTable");
         logic2.setRoleManager(new DatawaveRoleManager(roles2));
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQuery1", logic1);
+        logics.put("TestQuery2", logic2);
         CompositeQueryLogic compositeQueryLogic = new CompositeQueryLogic();
         compositeQueryLogic.setQueryLogics(logics);
         
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
+        
+        compositeQueryLogic.setPrincipal(principal);
         try {
             RunningQuery query = new RunningQuery(connector, connectionPriority, compositeQueryLogic, settings, null, principal, new QueryMetricFactoryImpl());
         } catch (NullPointerException npe) {

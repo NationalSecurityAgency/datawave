@@ -287,7 +287,7 @@ public class QueryExecutorBean implements QueryExecutor {
         };
         queryTraceCache.addListener(traceCacheListener);
         
-        this.lookupUUIDUtil = new LookupUUIDUtil(this.lookupUUIDConfiguration, this, this.ctx, this.responseObjectFactory);
+        this.lookupUUIDUtil = new LookupUUIDUtil(this.lookupUUIDConfiguration, this, this.ctx, this.responseObjectFactory, this.queryLogicFactory);
     }
     
     @PreDestroy
@@ -900,7 +900,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 accumuloConnectionRequestBean.requestEnd(q.getId().toString());
             }
             
-            Set<Authorizations> calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), qd.p);
+            Set<Authorizations> calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), qd.p, qd.logic.getUserOperations());
             String plan = qd.logic.getPlan(connection, q, calculatedAuths, expandFields, expandValues);
             response.setResult(plan);
             

@@ -334,7 +334,8 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             connector = connectionFactory.getConnection(logic.getConnectionPriority(), trackingMap);
             
             // Merge user auths with the auths that they use in the Query
-            Set<Authorizations> runtimeQueryAuthorizations = AuthorizationsUtil.getDowngradedAuthorizations(q.getQueryAuthorizations(), principal);
+            Set<Authorizations> runtimeQueryAuthorizations = AuthorizationsUtil.getDowngradedAuthorizations(q.getQueryAuthorizations(), principal,
+                            logic.getUserOperations());
             
             // Initialize the logic so that the configuration contains all of the iterator options
             GenericQueryConfiguration queryConfig = logic.initialize(connector, q, runtimeQueryAuthorizations);

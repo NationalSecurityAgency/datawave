@@ -7,6 +7,7 @@ import datawave.query.transformer.EventQueryTransformerSupport;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.common.remote.RemoteQueryService;
+import datawave.webservice.common.remote.RemoteUserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.EmptyObjectException;
@@ -40,6 +41,8 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     private RemoteQueryConfiguration config;
     
     private RemoteQueryService remoteQueryService;
+    
+    private RemoteUserOperations remoteUserOperatons;
     
     private QueryLogicTransformer transformerInstance = null;
     
@@ -255,4 +258,13 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
         
     }
     
+    @Override
+    public void setRemoteUserOperations(RemoteUserOperations userService) {
+        this.remoteUserOperatons = userService;
+    }
+    
+    @Override
+    public RemoteUserOperations getUserOperations() {
+        return remoteUserOperatons;
+    }
 }

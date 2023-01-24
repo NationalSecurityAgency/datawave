@@ -12,10 +12,13 @@ import java.util.List;
 import java.util.Set;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.accumulo.util.security.UserAuthFunctions;
+import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import org.apache.accumulo.core.security.Authorizations;
@@ -64,12 +67,22 @@ public class AuthorizationsUtil {
         return mergedAuths;
     }
     
-    public static Set<Authorizations> getDowngradedAuthorizations(String requestedAuths, Principal principal) {
+    public static DatawaveUser mergeAuths(DatawaveUser user1, Set<String> auths) {
+        return new DatawaveUser(user1.getDn(), user1.getUserType(), user1.getEmail(), Sets.union(new HashSet<>(user1.getAuths()), auths), user1.getRoles(),
+                        user1.getRoleToAuthMapping(), user1.getCreationTime(), user1.getExpirationTime());
+    }
+    
+    public static Set<Authorizations> getDowngradedAuthorizations(String requestedAuths, Principal principal, RemoteUserService userService)
+                    throws AuthorizationException {
         if (principal instanceof DatawavePrincipal) {
-            return getDowngradedAuthorizations(requestedAuths, (DatawavePrincipal) principal);
+            return getDowngradedAuthorizations(requestedAuths, (DatawavePrincipal) principal, userService);
         } else {
             return Collections.singleton(new Authorizations());
         }
+    }
+    
+    public static interface RemoteUserService {
+        DatawavePrincipal getRemoteUser(DatawavePrincipal localUser) throws AuthorizationException;
     }
     
     /**
@@ -86,8 +99,11 @@ public class AuthorizationsUtil {
      * @return A set of {@link Authorizations}, one per entity represented in {@code principal}. The user's auths are replaced by {@code requestedAuths} so long
      *         as the user actually had all of the auths. If {@code requestedAuths} is {@code null}, then the user's auths are returned as-is.
      */
-    public static LinkedHashSet<Authorizations> getDowngradedAuthorizations(String requestedAuths, DatawavePrincipal principal) {
-        
+    public static LinkedHashSet<Authorizations> getDowngradedAuthorizations(String requestedAuths, DatawavePrincipal principal, RemoteUserService userService)
+                    throws AuthorizationException {
+        if (userService != null) {
+            principal = userService.getRemoteUser((DatawavePrincipal) principal);
+        }
         final DatawaveUser primaryUser = principal.getPrimaryUser();
         UserAuthFunctions uaf = UserAuthFunctions.getInstance();
         return uaf.mergeAuthorizations(uaf.getRequestedAuthorizations(requestedAuths, primaryUser), principal.getProxiedUsers(), u -> u != primaryUser);
@@ -105,9 +121,13 @@ public class AuthorizationsUtil {
      *            the requested downgrade authorizations
      * @return requested, unless the user represented by {@code principal} does not have one or more of the auths in {@code requested}
      */
-    public static String downgradeUserAuths(Principal principal, String requested) {
+    public static String downgradeUserAuths(Principal principal, String requested, RemoteUserService userService) throws AuthorizationException {
         if (requested == null || requested.trim().isEmpty()) {
             throw new IllegalArgumentException("Requested authorizations must not be empty");
+        }
+        
+        if (userService != null) {
+            principal = userService.getRemoteUser((DatawavePrincipal) principal);
         }
         
         List<String> requestedList = AuthorizationsUtil.splitAuths(requested);

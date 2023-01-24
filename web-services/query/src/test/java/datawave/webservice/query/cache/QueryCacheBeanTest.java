@@ -124,6 +124,7 @@ public class QueryCacheBeanTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(q.getDnList())).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
+        expect(logic.getUserOperations()).andReturn(null);
         
         PowerMock.replayAll();
         

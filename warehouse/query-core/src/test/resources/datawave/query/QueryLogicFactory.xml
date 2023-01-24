@@ -278,4 +278,7 @@
     
     <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
     
+    <util:list id="RemoteUserServices" value-type="datawave.webservice.common.remote.RemoteUserOperations">
+   </util:list>
+
 </beans>

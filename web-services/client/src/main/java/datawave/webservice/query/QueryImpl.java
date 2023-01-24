@@ -392,6 +392,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         this.optionalQueryParameters = optionalQueryParameters;
     }
     
+    @Override
     public QueryImpl duplicate(String newQueryName) {
         QueryImpl query = new QueryImpl();
         query.setQueryLogicName(this.getQueryLogicName());
@@ -413,6 +414,12 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         if (null != this.parameters && !this.parameters.isEmpty())
             query.setParameters(new HashSet<Parameter>(this.parameters));
         query.setDnList(this.dnList);
+        if (null != this.optionalQueryParameters && !this.optionalQueryParameters.isEmpty()) {
+            Map<String,List<String>> optionalDuplicate = new HashMap<>();
+            this.optionalQueryParameters.entrySet().stream().forEach(e -> optionalDuplicate.put(e.getKey(), new ArrayList(e.getValue())));
+            query.setOptionalQueryParameters(optionalDuplicate);
+        }
+        query.setUncaughtExceptionHandler(this.getUncaughtExceptionHandler());
         return query;
     }
     
