@@ -70,6 +70,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         config.setIndexedFields(indexedFields);
         config.setDatatypeFilter(dataTypes);
         config.setIvaratorCacheDirConfigs(Collections.singletonList(new IvaratorCacheDirConfig(hdfsCacheURI.toString())));
+        EasyMock.expect(helper.getIndexedFields(dataTypes)).andReturn(indexedFields).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(dataTypes)).andReturn(indexedFields).anyTimes();
         EasyMock.expect(helper.getNonEventFields(dataTypes)).andReturn(Collections.emptySet()).anyTimes();
     }
@@ -331,16 +332,34 @@ public class VisitorFunctionTest extends EasyMockSupport {
         settings.addOption(QueryOptions.QUERY, query);
         settings.addOption(QueryOptions.IVARATOR_NUM_RETRIES, "3");
         
-        // assert initial state
-        Set<String> keys = settings.getOptions().keySet();
-        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
-        Assert.assertTrue(keys.contains(QueryOptions.IVARATOR_NUM_RETRIES));
-        
         function.pruneIvaratorConfigs(script, settings);
         
         // verify ivarator config were not pruned
-        keys = settings.getOptions().keySet();
+        Set<String> keys = settings.getOptions().keySet();
         Assert.assertTrue(keys.contains(QueryOptions.QUERY));
         Assert.assertTrue(keys.contains(QueryOptions.IVARATOR_NUM_RETRIES));
+    }
+    
+    @Test
+    public void testPruneEmptyIteratorOptions() throws Exception {
+        ShardQueryConfiguration cfg = new ShardQueryConfiguration();
+        MetadataHelper hlpr = new MockMetadataHelper();
+        VisitorFunction function = new VisitorFunction(cfg, hlpr);
+        
+        IteratorSetting settings = new IteratorSetting(10, "itr", QueryIterator.class);
+        settings.addOption(QueryOptions.QUERY, "FOO == 'bar'");
+        settings.addOption(QueryOptions.COMPOSITE_FIELDS, "");
+        
+        // assert initial state
+        Set<String> keys = settings.getOptions().keySet();
+        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
+        Assert.assertTrue(keys.contains(QueryOptions.COMPOSITE_FIELDS));
+        
+        function.pruneEmptyOptions(settings);
+        
+        // assert option with empty value was pruned
+        keys = settings.getOptions().keySet();
+        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
+        Assert.assertFalse(keys.contains(QueryOptions.COMPOSITE_FIELDS));
     }
 }

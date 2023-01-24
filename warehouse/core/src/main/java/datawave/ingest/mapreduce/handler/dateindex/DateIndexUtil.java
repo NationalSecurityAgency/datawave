@@ -21,6 +21,7 @@ public class DateIndexUtil {
      * Format the date into yyyyMMdd
      * 
      * @param date
+     *            then date to be formatted
      * @return the string representation in yyyyMMdd format
      */
     public static String format(Date date) {
@@ -31,8 +32,10 @@ public class DateIndexUtil {
      * Get the date with time set to 00:00:00
      * 
      * @param dateStr
+     *            string representation of the date
      * @return the date
      * @throws ParseException
+     *             if there is a problem parsing the date
      */
     public static Date getBeginDate(String dateStr) throws ParseException {
         return format.get().parse(dateStr);
@@ -42,8 +45,10 @@ public class DateIndexUtil {
      * Get the date with time set to 23:59:59
      * 
      * @param dateStr
+     *            string representation of the date
      * @return the date
      * @throws ParseException
+     *             if there is a problem parsing the date
      */
     public static Date getEndDate(String dateStr) throws ParseException {
         Calendar cal = Calendar.getInstance();
@@ -59,6 +64,7 @@ public class DateIndexUtil {
      * Given a specific shard, return the bit array with the shard'th bit set.
      * 
      * @param shard
+     *            the shard
      * @return a BitSet with the shard'th bit set
      */
     public static BitSet getBits(int shard) {

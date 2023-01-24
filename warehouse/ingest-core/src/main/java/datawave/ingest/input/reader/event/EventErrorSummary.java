@@ -112,7 +112,9 @@ public class EventErrorSummary implements Cloneable, JexlContext {
      * Add a key value to this error summary.
      * 
      * @param key
+     *            the key
      * @param value
+     *            the value
      */
     public void addKeyValue(Key key, Value value) {
         validateRow(key.getRow());
@@ -255,12 +257,21 @@ public class EventErrorSummary implements Cloneable, JexlContext {
      * Determine whether this event error summary matches a set of criteria
      * 
      * @param jobName
+     *            the job name
      * @param dataType
+     *            the data type
      * @param uid
+     *            the uid
      * @param specifiedUUIDs
+     *            set of specified UUIDs
      * @param errorType
+     *            the error type
      * @param dateRange
+     *            the date range
      * @param jexlQuery
+     *            the jexl query
+     * @param maxProcessCount
+     *            the max process count
      * @return true if matches, false otherwise
      */
     public boolean matches(String jobName, String dataType, String uid, Set<String> specifiedUUIDs, String errorType, Date[] dateRange, String jexlQuery,
@@ -316,6 +327,7 @@ public class EventErrorSummary implements Cloneable, JexlContext {
      * the errors contains error as a key, and one of the values contains the specified error text.
      * 
      * @param errorType
+     *            the error type string
      * @return true if matches
      */
     public boolean matchesError(String errorType) {
@@ -342,6 +354,12 @@ public class EventErrorSummary implements Cloneable, JexlContext {
     
     /**
      * Determine if an uuid in the list returned from accumulo exists in the input uuid set.
+     * 
+     * @param reprocessUUIDSet
+     *            set of UUIDs
+     * @param uuidList
+     *            list of uuids to match against the set
+     * @return flag if the uuid matched
      */
     protected boolean uuidMatchFound(Set<String> reprocessUUIDSet, List<String> uuidList) {
         for (String uuid : uuidList) {
@@ -354,8 +372,14 @@ public class EventErrorSummary implements Cloneable, JexlContext {
     /**
      * A method used to purge this error summary from the error processing table
      * 
+     * @param context
+     *            the context
+     * @param writer
+     *            the writer
      * @throws InterruptedException
+     *             if the process is interrupted
      * @throws IOException
+     *             if there is an issue with accessing the table
      */
     @SuppressWarnings({"rawtypes"})
     public void purge(ContextWriter writer, TaskInputOutputContext context) throws IOException, InterruptedException {
@@ -365,8 +389,18 @@ public class EventErrorSummary implements Cloneable, JexlContext {
     /**
      * A method used to purge this error summary from the error processing table
      * 
+     * @param writer
+     *            the writer
+     * @param context
+     *            the context
+     * @param event
+     *            the event container
+     * @param typeMap
+     *            the type map
      * @throws InterruptedException
+     *             if the process is interrupted
      * @throws IOException
+     *             if there is an issue with accessing the table
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void purge(ContextWriter writer, TaskInputOutputContext context, RawRecordContainer event, Map typeMap) throws IOException, InterruptedException {
