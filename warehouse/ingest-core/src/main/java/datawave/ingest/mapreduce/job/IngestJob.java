@@ -555,6 +555,7 @@ public class IngestJob implements Tool {
      *             if class is not found
      * @throws URISyntaxException
      *             if there are issues with URI syntax
+     * @return the configuration
      */
     protected Configuration parseArguments(String[] args, Configuration conf) throws ClassNotFoundException, URISyntaxException, IllegalArgumentException {
         List<String> activeResources = new ArrayList<>();
@@ -1176,6 +1177,8 @@ public class IngestJob implements Tool {
      *            the work directory
      * @param flagFileName
      *            the flag file name
+     * @throws IOException
+     *             for read or write related issues
      */
     
     protected void writeFlagFile(FileSystem fs, Path workDir, String flagFileName) throws IOException {
@@ -1294,6 +1297,10 @@ public class IngestJob implements Tool {
      *            type of compression to use for the output format
      * @param compressionTableBlackList
      *            a set of table names for which we will not compress the rfile output
+     * @param maxEntries
+     *            the max entries
+     * @param maxSize
+     *            the max size
      */
     public static void configureMultiRFileOutputFormatter(Configuration config, String compressionType, Set<String> compressionTableBlackList, int maxEntries,
                     long maxSize) {
@@ -1474,6 +1481,8 @@ public class IngestJob implements Tool {
      *            the table name to write in the counter
      * @param mutation
      *            a Mutation containing the key-value pairs to log to counters
+     * @param location
+     *            the location
      */
     @SuppressWarnings("rawtypes")
     public static void verboseCounters(TaskInputOutputContext context, String location, Text tableName, Mutation mutation) {
@@ -1490,8 +1499,11 @@ public class IngestJob implements Tool {
      *            the task context
      * @param key
      *            the ingest key
+     * @param location
+     *            the location
      * @param values
      *            the value
+     * @return the iterable for the value list
      */
     @SuppressWarnings("rawtypes")
     public static Iterable<Value> verboseCounters(TaskInputOutputContext context, String location, BulkIngestKey key, Iterable<Value> values) {
@@ -1508,6 +1520,8 @@ public class IngestJob implements Tool {
      *
      * @param context
      *            hadoop task context for writing counter values
+     * @param location
+     *            the location
      * @param key
      *            hadoop key to log all key-value pairs to counters
      * @param value
@@ -1524,6 +1538,8 @@ public class IngestJob implements Tool {
      *
      * @param context
      *            hadoop task context for writing counter values
+     * @param location
+     *            the location string
      * @param tableName
      *            the table name to write in the counter
      * @param row
