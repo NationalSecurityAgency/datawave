@@ -407,9 +407,7 @@ public class IndexInfo implements Writable, UidIntersector {
         if (o.getNode() != null) {
             nodes.add(o.getNode());
         }
-        if (!delayedNodes.isEmpty()) {
-            nodes.addAll(delayedNodes);
-        }
+        nodes.addAll(delayedNodes);
         merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createAndNode(nodes.getNodes()));
         
         return merged;
