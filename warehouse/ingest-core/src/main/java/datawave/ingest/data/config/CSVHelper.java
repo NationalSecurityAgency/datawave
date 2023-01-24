@@ -238,18 +238,27 @@ public class CSVHelper extends DataTypeHelperImpl {
         this.multiValuedDropField = config.get(this.getType().typeName() + MULTI_VALUED_DROP_FIELD, this.multiValuedDropField);
     }
     
-    /** Whether or not the data format has required fields. */
+    /**
+     * Whether or not the data format has required fields.
+     * 
+     * @return flag noting if the format has required fields
+     */
     public boolean hasRequiredFields() {
         return _hasReqFields;
     }
     
-    /** Whether or not the data format has required fields. */
+    /**
+     * Whether or not the data format has required fields.
+     * 
+     * @param fieldName
+     *            the field name
+     * @return flag if field is required or not
+     */
     public boolean isFieldRequired(final String fieldName) {
         return _hasReqFields && _requiredFields.contains(fieldName);
     }
     
     /**
-     *
      * @return datatype specific field header
      */
     public String[] getHeader() {

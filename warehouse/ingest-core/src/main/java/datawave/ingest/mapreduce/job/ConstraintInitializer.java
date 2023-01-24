@@ -13,7 +13,9 @@ public interface ConstraintInitializer {
      * Creates and adds constraints to the given constraint map (map of table name to constraints).
      *
      * @param conf
+     *            a configuration
      * @param constraintsMap
+     *            the constraints map
      */
     void addConstraints(Configuration conf, Multimap<Text,VisibilityConstraint> constraintsMap);
 }

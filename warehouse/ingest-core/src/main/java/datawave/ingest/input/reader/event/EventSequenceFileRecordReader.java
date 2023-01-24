@@ -12,6 +12,7 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileRecordReader;
  * 
  * 
  * @param <K>
+ *            the type of the record reader
  */
 public class EventSequenceFileRecordReader<K> extends SequenceFileRecordReader<K,RawRecordContainer> {
     
