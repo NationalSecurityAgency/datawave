@@ -93,6 +93,8 @@ public class NumShards {
      * this method will take configuration (comma-separated yyyyMMdd_numShards) i.e.) 20170101_13,20170201_17
      * 
      * @param multipleNumShardsConfiguration
+     *            name of the numshards keys
+     *
      */
     private void configureDyanmicNumShards(String multipleNumShardsConfiguration) {
         // this could happen if the feature is enabled, but not yet configured. treat it like it's not enabled.
@@ -162,7 +164,7 @@ public class NumShards {
      * this will read multiple numshards cache from the filesystem and return a formatted string. comma-separated date based shards. i.e.)
      * 20170101_11,20170201_13
      * 
-     * @return
+     * @return a formatted string of the date based shards
      */
     public String readMultipleNumShardsConfig() {
         if (isCacheValid()) {

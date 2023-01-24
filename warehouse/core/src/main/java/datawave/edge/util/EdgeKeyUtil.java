@@ -75,6 +75,8 @@ public class EdgeKeyUtil {
      *
      * @param key
      *            - Accumulo key to parse
+     * @param protobuffEdgeFormat
+     *            - flag to check if the format is protobuf or not
      *
      * @return Map of @EdgeKeyUtil.FieldName to value String representing the value for this key.
      *
@@ -206,13 +208,14 @@ public class EdgeKeyUtil {
      * Create escaped ranges over Edge Keys given only the source vertex
      * 
      * @param source
+     *            - the source vertex
      * @param sourceRegex
      *            - flag indicating if range should include all keys with matching prefixes
      * @param includeStats
      *            - flag indicating if stats edges should be included in the range
      * @param includeRelationships
      *            - flag indicating if relationship edges should be included in the range
-     * @return
+     * @return escaped ranges for the edge keys
      */
     public static Range createEscapedRange(String source, boolean sourceRegex, boolean includeStats, boolean includeRelationships) {
         Key start, end;
@@ -235,13 +238,15 @@ public class EdgeKeyUtil {
     }
     
     /**
-     * reate escaped ranges over Edge Keys given source and sink vertex's
+     * Create escaped ranges over Edge Keys given source and sink vertex's
      * 
      * @param source
+     *            - the source vertex
      * @param sink
+     *            - the sink vertex
      * @param sinkRegex
      *            - flag indicating if range should include all keys with matching source+sink prefixes
-     * @return
+     * @return escaped ranges for the given keys
      */
     public static Range createEscapedRange(String source, String sink, boolean sinkRegex) {
         Key start, end;

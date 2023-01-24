@@ -32,6 +32,8 @@ public interface TextNormalizer {
      * @param value
      *            The value to normalize
      * @return a normalized value
+     * @throws NormalizationException
+     *             if there are issues with the normalization
      */
     String normalizeFieldValue(String field, String value) throws NormalizationException;
     
@@ -43,6 +45,8 @@ public interface TextNormalizer {
      * @param regex
      *            The regex to normalize
      * @return a normalized value
+     * @throws NormalizationException
+     *             if there are issues with the normalization
      */
     String normalizeFieldRegex(String field, String regex) throws NormalizationException;
     

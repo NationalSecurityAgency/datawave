@@ -21,6 +21,7 @@ public class ConstraintChecker {
      * Factory method to create a new ConstraintChecker from a Configuration.
      *
      * @param conf
+     *            a configuration
      * @return constraint checker
      */
     public static ConstraintChecker create(Configuration conf) {
@@ -70,7 +71,9 @@ public class ConstraintChecker {
      * Runs the configured validation on the given table/visibility.
      *
      * @param table
+     *            the table
      * @param visibility
+     *            the visibility
      * @throws ConstraintViolationException
      *             If the constraints are not satisfied
      */
