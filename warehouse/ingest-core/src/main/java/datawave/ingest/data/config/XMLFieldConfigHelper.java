@@ -53,6 +53,9 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
      * Attempt to load the field config fieldHelper from the specified file, which is expected to be found on the classpath.
      * 
      * @param fieldConfigFile
+     *            the field configuration file name
+     * @param baseIngestHelper
+     *            the ingest helper
      * @throws IllegalArgumentException
      *             if the file can't be found or an exception occurs when reading the file.
      * @return null if no a null value was specified for fieldConfigFile - or a populated FieldConfigHelper.
@@ -268,7 +271,15 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         this.noMatchReverseTokenized = noMatchReverseTokenized;
     }
     
-    /** Return true if any of the specified patterns matches the field name provided */
+    /**
+     * Return true if any of the specified patterns matches the field name provided.
+     * 
+     * @param fieldName
+     *            the field name
+     * @param patterns
+     *            the patterns to check
+     * @return whether any patterns were found or not
+     * */
     private boolean findMatchingPattern(String fieldName, Collection<Matcher> patterns) {
         for (Matcher m : patterns) {
             if (m.reset(fieldName).matches()) {

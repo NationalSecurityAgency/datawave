@@ -34,6 +34,9 @@ public class BoundedOffsetQueue<T> implements OffsetQueue<T> {
     
     /**
      * Create a bounded offset queue
+     * 
+     * @param maxNumOffsets
+     *            the max size of offsets
      */
     public BoundedOffsetQueue(int maxNumOffsets) {
         OffsetListComparator comparator = new OffsetListComparator();
