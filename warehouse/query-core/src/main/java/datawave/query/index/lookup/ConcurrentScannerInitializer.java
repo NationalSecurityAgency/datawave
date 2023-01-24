@@ -35,13 +35,12 @@ public class ConcurrentScannerInitializer implements Callable<BaseIndexStream> {
     public BaseIndexStream call() throws Exception {
         if (stream.context() == StreamContext.INITIALIZED) {
             if (stream.hasNext()) {
-                if (stream instanceof ScannerStream) {
-                    // the Intersection and Union classes are predicated on the accuracy of the StreamContext,
-                    // so update this stream's context from INITIALIZED to PRESENT
-                    stream.context = StreamContext.PRESENT;
-                    return stream;
-                }
-                return ScannerStream.withData(stream, stream.currentNode());
+                // The RangeStream created a scanner with a context of INITIALIZED and a next value exists.
+                // Update the scanner context to PRESENT.
+                // This avoids the unfortunate situation when a scanner stream is double initialized using
+                // a constructor meant for the SHARDS_AND_DAYS case (where seeking is effectively disabled)
+                stream.context = StreamContext.PRESENT;
+                return stream;
             } else {
                 return ScannerStream.noData(stream.currentNode());
             }
