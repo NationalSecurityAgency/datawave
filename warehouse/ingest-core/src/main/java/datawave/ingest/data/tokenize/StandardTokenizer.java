@@ -121,6 +121,9 @@ public class StandardTokenizer extends Tokenizer {
     
     /**
      * Set the max allowed token length. Any token longer than this is skipped.
+     * 
+     * @param length
+     *            length of token
      */
     public void setMaxTokenLength(int length) {
         if (length < 1) {
@@ -133,19 +136,28 @@ public class StandardTokenizer extends Tokenizer {
         
     }
     
-    /** @see #setMaxTokenLength */
+    /**
+     * @see #setMaxTokenLength
+     * @return max token length
+     * */
     public int getMaxTokenLength() {
         return maxTokenLength;
     }
     
     /**
      * Set the token truncation length. Any token longer than this is truncated.
+     * 
+     * @param length
+     *            length of token truncation
      */
     public void setTokenTruncateLength(int length) {
         this.defaultTokenTruncateLength = length;
     }
     
-    /** @see #setMaxTokenLength */
+    /**
+     * @see #setMaxTokenLength
+     * @return token truncate length
+     * */
     public int getTokenTruncateLength() {
         return defaultTokenTruncateLength;
     }
@@ -249,6 +261,8 @@ public class StandardTokenizer extends Tokenizer {
     }
     
     /**
+     * @param scanner
+     *            The scanner to check
      * @return true if the scanner is positioned at a meta break character.
      */
     private static final boolean isMetaBreak(Lexer scanner) {

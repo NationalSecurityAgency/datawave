@@ -111,6 +111,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
      * Set and override the table name.
      * 
      * @param tableName
+     *            the table name
      */
     public void setTableName(final Text tableName) {
         this.tableName.set(tableName);
