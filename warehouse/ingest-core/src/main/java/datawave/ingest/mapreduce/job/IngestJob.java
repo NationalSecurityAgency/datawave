@@ -548,9 +548,13 @@ public class IngestJob implements Tool {
      * Parse the arguments and update the configuration as needed
      *
      * @param args
+     *            the args
      * @param conf
+     *            the config
      * @throws ClassNotFoundException
+     *             if class is not found
      * @throws URISyntaxException
+     *             if there are issues with URI syntax
      */
     protected Configuration parseArguments(String[] args, Configuration conf) throws ClassNotFoundException, URISyntaxException, IllegalArgumentException {
         List<String> activeResources = new ArrayList<>();
@@ -771,15 +775,25 @@ public class IngestJob implements Tool {
      * Configure the partitioner and the output formatter.
      *
      * @param job
+     *            the job
      * @param cbHelper
+     *            the accumulo helper
      * @param conf
+     *            the config
      * @param outputFs
+     *            the file system
      * @throws AccumuloSecurityException
+     *             for issues with accumulo security
      * @throws AccumuloException
+     *             for general accumulo issues
      * @throws IOException
+     *             for issues with read or write
      * @throws URISyntaxException
+     *             for issues with URI syntax
      * @throws TableExistsException
+     *             if the table already exists
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     protected void configureBulkPartitionerAndOutputFormatter(Job job, AccumuloHelper cbHelper, Configuration conf, FileSystem outputFs)
                     throws AccumuloSecurityException, AccumuloException, IOException, URISyntaxException, TableExistsException, TableNotFoundException {
@@ -1085,10 +1099,14 @@ public class IngestJob implements Tool {
      * @param fs
      *            used by extending classes such as MapFileMergeJob
      * @param inputFileLists
+     *            the input file lists
      * @param inputFileListMarker
+     *            the input file list marker
      * @param inputPaths
-     * @return
+     *            the input paths
+     * @return a list of paths
      * @throws IOException
+     *             if there is an issue with read or write
      */
     protected Path[] getFilesToProcess(FileSystem fs, boolean inputFileLists, String inputFileListMarker, String inputPaths) throws IOException {
         String[] paths = StringUtils.trimAndRemoveEmptyStrings(StringUtils.split(inputPaths, ','));
@@ -1130,6 +1148,15 @@ public class IngestJob implements Tool {
     
     /**
      * Writes the input paths for this job into the work directory in a file named "job.paths"
+     * 
+     * @param fs
+     *            the filesystem
+     * @param workDir
+     *            the work directory
+     * @param inputPaths
+     *            the input paths
+     * @throws IOException
+     *             for issues with read or write
      */
     protected void writeInputPathsFile(FileSystem fs, Path workDir, Path[] inputPaths) throws IOException {
         FSDataOutputStream os = fs.create(new Path(workDir, "job.paths"));
@@ -1142,7 +1169,15 @@ public class IngestJob implements Tool {
     
     /**
      * Writes the flag file for this job into the work directory in a file with the same name
+     * 
+     * @param fs
+     *            the file system
+     * @param workDir
+     *            the work directory
+     * @param flagFileName
+     *            the flag file name
      */
+    
     protected void writeFlagFile(FileSystem fs, Path workDir, String flagFileName) throws IOException {
         File flagFile = new File(flagFileName);
         if (!flagFile.exists() || !flagFile.isFile() || !flagFile.canRead()) {
@@ -1185,6 +1220,15 @@ public class IngestJob implements Tool {
     
     /**
      * Marks the input files given to this job as loaded by moving them from the "flagged" directory to the "loaded" directory.
+     * 
+     * @param fs
+     *            the filesystem
+     * @param inputPaths
+     *            the input paths
+     * @param jobID
+     *            the job id
+     * @throws IOException
+     *             if there is an issue with read or write
      */
     protected void markFilesLoaded(FileSystem fs, Path[] inputPaths, JobID jobID) throws IOException {
         for (Path src : inputPaths) {
@@ -1211,6 +1255,11 @@ public class IngestJob implements Tool {
      * Some properties cannot be set using the new API. However, we know internally that the configuration Hadoop uses is really just the old JobConf which
      * exposes the methods we want. In particular, we have to turn off speculative execution since we are loading data and don't want Hadoop to spawn many
      * speculative tasks that will load duplicate data.
+     * 
+     * @param conf
+     *            the configuration
+     * @param value
+     *            a boolean value
      */
     protected void setMapSpeculativeExecution(Configuration conf, boolean value) {
         if (conf instanceof org.apache.hadoop.mapred.JobConf) {
@@ -1223,6 +1272,11 @@ public class IngestJob implements Tool {
      * Some properties cannot be set using the new API. However, we know internally that the configuration Hadoop uses is really just the old JobConf which
      * exposes the methods we want. In particular, we have to turn off speculative execution since we are loading data and don't want Hadoop to spawn many
      * speculative tasks that will load duplicate data.
+     * 
+     * @param conf
+     *            the configuration
+     * @param value
+     *            a boolean value
      */
     protected void setReduceSpeculativeExecution(Configuration conf, boolean value) {
         if (conf instanceof org.apache.hadoop.mapred.JobConf) {
@@ -1433,8 +1487,11 @@ public class IngestJob implements Tool {
      * Output some verbose counters. Since the input is an iterable, this will cache the values in a list and return the new iterable.
      *
      * @param context
+     *            the task context
      * @param key
+     *            the ingest key
      * @param values
+     *            the value
      */
     @SuppressWarnings("rawtypes")
     public static Iterable<Value> verboseCounters(TaskInputOutputContext context, String location, BulkIngestKey key, Iterable<Value> values) {
