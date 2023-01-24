@@ -94,6 +94,7 @@ public class EventFieldNormalizerHelper {
      * Get the normalizer for the event field value
      * 
      * @param fieldName
+     *            the name of the field
      * @return the normalizer. NoOpNormalizer instance of none is configured.
      */
     public Type<?> getType(String fieldName) {
@@ -137,7 +138,9 @@ public class EventFieldNormalizerHelper {
      * Get a field name from a property name given the pattern. Returns null if not an actually match
      * 
      * @param property
+     *            the property name to check
      * @param propertyPattern
+     *            the pattern of the property name to match against
      * @return the field name extracted from the property name
      */
     protected String getFieldName(String property, String propertyPattern) {

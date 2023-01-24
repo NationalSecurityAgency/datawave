@@ -106,7 +106,9 @@ public class EdgeValueHelper {
      * Creates a long[24] array and sets element N, where N is the hour of the day (0 - 23). The element will be set to 1 if deleteRecord is false, else -1.
      * 
      * @param hour
+     *            - hour of the day
      * @param delete
+     *            - flag to mark deleteRecord
      * @return bytes of long[24]
      */
     public static List<Long> getLongListForHour(int hour, boolean delete) {
@@ -136,7 +138,9 @@ public class EdgeValueHelper {
      * false, else -1.
      * 
      * @param elapsed
+     *            - variable length of time elapsed
      * @param deleteRecord
+     *            - flag to determine if the element at the index is set
      * @return bytes of long[7]
      */
     public static List<Long> getLongListForDuration(int elapsed, boolean deleteRecord) {
@@ -171,8 +175,11 @@ public class EdgeValueHelper {
      * is false.
      * 
      * @param len
+     *            - length of list
      * @param index
+     *            - position of element
      * @param delete
+     *            - boolean flag on the value at the index
      * @return List&lt;Long&gt; of length len.
      */
     public static List<Long> initUnitList(int len, int index, boolean delete) {
