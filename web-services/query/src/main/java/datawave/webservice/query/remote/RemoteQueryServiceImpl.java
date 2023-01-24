@@ -2,12 +2,11 @@ package datawave.webservice.query.remote;
 
 import com.codahale.metrics.Counter;
 import com.fasterxml.jackson.databind.ObjectReader;
-import datawave.configuration.spring.SpringBean;
+import datawave.security.auth.DatawaveAuthenticationMechanism;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
 import datawave.webservice.common.remote.RemoteQueryService;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
@@ -24,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import org.xbill.DNS.TextParseException;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
@@ -38,9 +36,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQueryService {
     private static final Logger log = LoggerFactory.getLogger(RemoteQueryServiceImpl.class);
+    
+    public static final String PROXIED_ENTITIES_HEADER = DatawaveAuthenticationMechanism.PROXIED_ENTITIES_HEADER;
+    public static final String PROXIED_ISSUERS_HEADER = DatawaveAuthenticationMechanism.PROXIED_ISSUERS_HEADER;
     
     private static final String CREATE = "%s/create";
     
@@ -111,7 +113,8 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
                 httpPost -> {
                     httpPost.setEntity(postBody);
                     httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-                    httpPost.setHeader(HttpHeaders.AUTHORIZATION, getBearer(callerObject));
+                    httpPost.setHeader(PROXIED_ENTITIES_HEADER, getEntities(callerObject));
+                    httpPost.setHeader(PROXIED_ISSUERS_HEADER, getIssuers(callerObject));
                 },
                 entity -> {
                     return readResponse(entity, genericResponseReader);
@@ -125,7 +128,8 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         final String suffix = String.format(NEXT, id);
         return executeGetMethodWithRuntimeException(suffix, uriBuilder -> {}, httpGet -> {
             httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-            httpGet.setHeader(HttpHeaders.AUTHORIZATION, getBearer(callerObject));
+            httpGet.setHeader(PROXIED_ENTITIES_HEADER, getEntities(callerObject));
+            httpGet.setHeader(PROXIED_ISSUERS_HEADER, getIssuers(callerObject));
         }, entity -> {
             return readResponse(entity, eventQueryResponseReader, baseQueryResponseReader);
         }, () -> suffix);
@@ -136,7 +140,8 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         final String suffix = String.format(CLOSE, id);
         return executePostMethodWithRuntimeException(suffix, uriBuilder -> {}, httpPost -> {
             httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-            httpPost.setHeader(HttpHeaders.AUTHORIZATION, getBearer(callerObject));
+            httpPost.setHeader(PROXIED_ENTITIES_HEADER, getEntities(callerObject));
+            httpPost.setHeader(PROXIED_ISSUERS_HEADER, getIssuers(callerObject));
         }, entity -> {
             return readVoidResponse(entity);
         }, () -> suffix);
@@ -147,7 +152,8 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         final String suffix = String.format(PLAN, id);
         return executePostMethodWithRuntimeException(suffix, uriBuilder -> {}, httpPost -> {
             httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-            httpPost.setHeader(HttpHeaders.AUTHORIZATION, getBearer(callerObject));
+            httpPost.setHeader(PROXIED_ENTITIES_HEADER, getEntities(callerObject));
+            httpPost.setHeader(PROXIED_ISSUERS_HEADER, getIssuers(callerObject));
         }, entity -> {
             return readResponse(entity, genericResponseReader);
         }, () -> suffix);
@@ -226,11 +232,21 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         }
     }
     
-    protected String getBearer(Object callerObject) {
-        init();
+    public static String getEntities(Object callerObject) {
         if (callerObject instanceof DatawavePrincipal) {
             DatawavePrincipal callerPrincipal = (DatawavePrincipal) callerObject;
-            return "Bearer " + jwtTokenHandler.createTokenFromUsers(callerPrincipal.getName(), callerPrincipal.getProxiedUsers());
+            return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().subjectDN()).append('>'))
+                            .collect(Collectors.joining());
+        } else {
+            throw new RuntimeException("Cannot use " + callerObject.getClass().getName() + " as a caller object");
+        }
+    }
+    
+    public static String getIssuers(Object callerObject) {
+        if (callerObject instanceof DatawavePrincipal) {
+            DatawavePrincipal callerPrincipal = (DatawavePrincipal) callerObject;
+            return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().issuerDN()).append('>'))
+                            .collect(Collectors.joining());
         } else {
             throw new RuntimeException("Cannot use " + callerObject.getClass().getName() + " as a caller object");
         }
