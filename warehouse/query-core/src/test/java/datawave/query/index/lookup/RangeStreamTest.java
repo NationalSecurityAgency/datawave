@@ -58,7 +58,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class RangeStreamTest {
     
-    private static InMemoryInstance instance = new InMemoryInstance(RangeStreamTest.class.toString());
+    private static final InMemoryInstance instance = new InMemoryInstance(RangeStreamTest.class.toString());
     private static Connector connector;
     private ShardQueryConfiguration config;
     
@@ -1508,7 +1508,6 @@ public class RangeStreamTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-        // config.setBeginDate(new Date(0));
         config.setBeginDate(sdf.parse("20190310"));
         config.setEndDate(sdf.parse("20190320"));
         
@@ -1520,7 +1519,7 @@ public class RangeStreamTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);
-        config.setShardsPerDayThreshold(2);
+        config.setShardsPerDayThreshold(0); // set to zero to roll up to day ranges
         
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
