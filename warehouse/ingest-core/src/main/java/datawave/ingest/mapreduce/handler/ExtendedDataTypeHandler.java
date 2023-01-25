@@ -20,6 +20,7 @@ import com.google.common.collect.Multimap;
  * 
  * 
  * @param <KEYIN>
+ *            type for extendeddatatypehandler
  */
 public interface ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends DataTypeHandler<KEYIN> {
     

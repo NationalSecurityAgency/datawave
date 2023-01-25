@@ -244,6 +244,7 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
      * Internal utility method for generating a Snowflake machine ID from command-line options
      * 
      * @param options
+     *            command line options being used
      * @return a Snowflake machine ID
      */
     protected static int newMachineId(final Map<String,Option> options) {
