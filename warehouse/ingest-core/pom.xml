@@ -15,6 +15,22 @@
             <artifactId>stream</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-impl</artifactId>
             <version>2.3.3</version>
@@ -24,8 +40,32 @@
             <artifactId>java-statsd-client</artifactId>
         </dependency>
         <dependency>
+            <groupId>commons-cli</groupId>
+            <artifactId>commons-cli</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+        </dependency>
+        <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
@@ -34,8 +74,48 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-common-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>accumulo-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>common-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>metadata-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>type-utils</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
@@ -43,14 +123,23 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil</artifactId>
+            <version>${version.fastutil}</version>
+        </dependency>
+        <dependency>
             <groupId>jakarta.xml.bind</groupId>
             <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>2.3.3</version>
+            <version>${version.jakarta.xml.bind-api}</version>
         </dependency>
         <dependency>
             <groupId>jline</groupId>
             <artifactId>jline</artifactId>
-            <version>2.12</version>
+            <version>${version.jline}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
@@ -62,11 +151,37 @@
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
             <artifactId>commons-jexl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client-api</artifactId>
+            <version>${version.hadoop}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client-runtime</artifactId>
+            <version>${version.hadoop}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -105,12 +220,21 @@
             <artifactId>lucene-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.xml.bind</groupId>
+            <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
+            <version>${version.jboss}</version>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
@@ -127,6 +251,27 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jcl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+            <version>${version.xml-apis}</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
@@ -183,7 +328,7 @@
         <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>javax.mail-api</artifactId>
-            <version>1.5.4</version>
+            <version>${version.javax.mail-api}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -198,8 +343,31 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <version>${version.hamcrest}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-core</artifactId>
+            <version>${version.powermock}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-reflect</artifactId>
+            <version>${version.powermock}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

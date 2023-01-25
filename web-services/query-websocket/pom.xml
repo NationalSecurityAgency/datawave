@@ -12,6 +12,22 @@
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
@@ -19,8 +35,46 @@
             <artifactId>jackson-module-jaxb-annotations</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>common-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-common-util</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -34,8 +88,122 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-annotation</artifactId>
+            <version>${version.dropwizard-metrics}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-annotation</artifactId>
+            <version>${version.dropwizard-metrics}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+            <version>${version.dropwizard-metrics}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.undertow</groupId>
+            <artifactId>undertow-core</artifactId>
+            <version>${version.undertow-core}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.undertow</groupId>
+            <artifactId>undertow-servlet</artifactId>
+            <version>${version.undertow-servlet}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>${version.jakarta.annotation-api}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>${version.jakarta.xml.bind-api}</version>
+        </dependency>
+        <dependency>
             <groupId>javax.enterprise</groupId>
             <artifactId>cdi-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>${version.javax.inject}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>${version.javax.ws.rs-api}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${version.commons-lang3}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-container-test-api</artifactId>
+            <version>${version.arquillian}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-container-test-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <version>${version.jboss.logging}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.interceptor</groupId>
+            <artifactId>jboss-interceptors-api_1.2_spec</artifactId>
+            <version>${version.jboss}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_4.0_spec</artifactId>
+            <version>${version.jboss-servlet-api-4.0}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.ws.rs</groupId>
+            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+            <version>${version.jboss}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.ws.rs</groupId>
+            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+            <version>${version.jboss}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.xnio</groupId>
+            <artifactId>xnio-api</artifactId>
+            <version>${version.jboss.xnio}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-reflect</artifactId>
+            <version>${version.powermock}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>javax.json</groupId>
@@ -61,6 +229,24 @@
             <groupId>org.jboss.spec.javax.websocket</groupId>
             <artifactId>jboss-websocket-api_1.1_spec</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.junit</groupId>
+            <artifactId>arquillian-junit-core</artifactId>
+            <version>${version.arquillian}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.shrinkwrap</groupId>
+            <artifactId>shrinkwrap-api</artifactId>
+            <version>${version.jboss.shrinkwrap}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-core</artifactId>
+            <version>${version.powermock}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
