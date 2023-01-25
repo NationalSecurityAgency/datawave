@@ -11,25 +11,24 @@
     <name>${project.artifactId}</name>
     <dependencies>
         <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-jaxb-annotations</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
         </dependency>
         <dependency>
-            <groupId>dnsjava</groupId>
-            <artifactId>dnsjava</artifactId>
-            <version>2.1.8</version>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>accumulo-api</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>accumulo-api</artifactId>
+            <artifactId>authorization-api</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -58,8 +57,24 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>io.astefanutti.metrics.cdi</groupId>
-            <artifactId>metrics-cdi</artifactId>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-annotation</artifactId>
+            <version>${version.dropwizard-metrics}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+            <version>${version.dropwizard-metrics}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>${version.jakarta.annotation-api}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>${version.javax.inject}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.deltaspike.core</groupId>
@@ -67,32 +82,21 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client-api</artifactId>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.woodstox</groupId>
-            <artifactId>woodstox-core</artifactId>
-            <scope>provided</scope>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.ws.rs</groupId>
+            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+            <version>${version.jboss}</version>
         </dependency>
         <dependency>
             <groupId>javax.enterprise</groupId>
             <artifactId>cdi-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-configuration2</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.spec.javax.annotation</groupId>
-            <artifactId>jboss-annotations-api_1.3_spec</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

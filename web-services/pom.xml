@@ -501,12 +501,6 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-common-test</artifactId>
-        </dependency>
-    </dependencies>
     <build>
         <pluginManagement>
             <plugins>

@@ -11,14 +11,56 @@
     <name>${project.artifactId}</name>
     <dependencies>
         <dependency>
-            <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-data-dictionary-core</artifactId>
-            <version>${project.version}</version>
+            <groupId>dnsjava</groupId>
+            <artifactId>dnsjava</artifactId>
+            <version>${version.dnsjava}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-edge-dictionary-core</artifactId>
+            <artifactId>datawave-query-core</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>jaxrs-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.spec.javax.annotation</groupId>
+                    <artifactId>jboss-annotations-api_1.2_spec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.spec.javax.annotation</groupId>
+                    <artifactId>jboss-annotations-api_1.3_spec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.spec.javax.ws.rs</groupId>
+                    <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>${version.jakarta.annotation-api}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>${version.javax.inject}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>${version.javax.ws.rs-api}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.ejb</groupId>
+            <artifactId>jboss-ejb-api_3.2_spec</artifactId>
+            <version>${version.jboss}</version>
         </dependency>
     </dependencies>
     <build>

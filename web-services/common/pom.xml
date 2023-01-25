@@ -11,13 +11,12 @@
     <name>${project.artifactId}</name>
     <dependencies>
         <dependency>
-            <groupId>aopalliance</groupId>
-            <artifactId>aopalliance</artifactId>
-            <version>1.0</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.clearspring.analytics</groupId>
-            <artifactId>stream</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -28,20 +27,48 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.spotify</groupId>
             <artifactId>dns</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dnsjava</groupId>
+            <artifactId>dnsjava</artifactId>
+            <version>${version.dnsjava}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-core</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.contrib</groupId>
             <artifactId>datawave-in-memory-accumulo</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>accumulo-api</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>accumulo-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -53,6 +80,10 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>metrics-reporter</artifactId>
         </dependency>
         <dependency>
@@ -61,32 +92,64 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common-util</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.astefanutti.metrics.cdi</groupId>
-            <artifactId>metrics-cdi</artifactId>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-annotation</artifactId>
+            <version>${version.dropwizard-metrics}</version>
         </dependency>
         <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+            <version>${version.dropwizard-metrics}</version>
         </dependency>
         <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>${version.jakarta.annotation-api}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>${version.jakarta.xml.bind-api}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>${version.javax.inject}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>${version.javax.ws.rs-api}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
         </dependency>
-        <!--<dependency>
-            <groupId>org.apache.accumulo</groupId>
-            <artifactId>accumulo-tracer</artifactId>
-        </dependency>-->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>${version.commons-collections4}</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
@@ -122,16 +185,22 @@
             <artifactId>zookeeper</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper-jute</artifactId>
+            <version>${version.zookeeper}</version>
+        </dependency>
+        <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-easymock</artifactId>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_4.0_spec</artifactId>
+            <version>${version.jboss-servlet-api-4.0}</version>
         </dependency>
         <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -139,11 +208,15 @@
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
-            <artifactId>spring-context-support</artifactId>
+            <artifactId>spring-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -156,33 +229,13 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.woodstox</groupId>
-            <artifactId>woodstox-core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>javax.enterprise</groupId>
             <artifactId>cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-configuration2</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-1.2-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -216,11 +269,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.spec.javax.transaction</groupId>
-            <artifactId>jboss-transaction-api_1.2_spec</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.weld</groupId>
             <artifactId>weld-core-impl</artifactId>
             <scope>provided</scope>
@@ -231,18 +279,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.accumulo</groupId>
-            <artifactId>accumulo-tserver</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.deltaspike.core</groupId>
-            <artifactId>deltaspike-core-impl</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-common-test</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -251,13 +290,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-reflect</artifactId>
+            <version>${version.powermock}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -295,7 +330,7 @@
                         <configuration>
                             <outputDirectory>lib</outputDirectory>
                             <!-- just grab the non-provided runtime dependencies -->
-                            <includeArtifactIds>stream,accumulo-trace,accumulo-tserver,zookeeper,commons-pool2,spring-core,spring-asm,spring-aop,spring-beans,spring-context,spring-context-support,spring-expression,commons-lang,accumulo-core,libthrift,guava,jul-to-slf4j-stub,hadoop-auth,hadoop-common,hadoop-hdfs,hadoop-mapreduce-client-core,hadoop-yarn-api,hadoop-yarn-common,hadoop-mapreduce-client-common,hadoop-mapreduce-client-shuffle,hadoop-mapreduce-client-jobclient,hadoop-yarn-client,httpcore,httpclient,avro,commons-compress,xz,commons-vfs2,accumulo-start,commons-configuration,json-simple,aopalliance,curator-client,curator-framework,curator-recipes</includeArtifactIds>
+                            <includeArtifactIds>stream,accumulo-trace,accumulo-tserver,zookeeper,commons-pool2,spring-core,spring-asm,spring-aop,spring-beans,spring-context,spring-context-support,spring-expression,commons-lang,accumulo-core,libthrift,guava,jul-to-slf4j-stub,hadoop-auth,hadoop-common,hadoop-hdfs,hadoop-mapreduce-client-core,hadoop-yarn-api,hadoop-yarn-common,hadoop-mapreduce-client-common,hadoop-mapreduce-client-shuffle,hadoop-mapreduce-client-jobclient,hadoop-yarn-client,httpcore,httpclient,avro,commons-compress,xz,commons-vfs2,accumulo-start,curator-client,curator-framework,curator-recipes</includeArtifactIds>
                             <excludeTransitive>true</excludeTransitive>
                         </configuration>
                     </execution>

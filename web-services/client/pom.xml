@@ -27,21 +27,8 @@
             <artifactId>protobuf-java</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-        </dependency>
-        <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-net</groupId>
-            <artifactId>commons-net</artifactId>
-            <version>3.1</version>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-core</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -54,6 +41,10 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>dictionary-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>metadata-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -79,10 +70,6 @@
         </dependency>
         <dependency>
             <groupId>io.protostuff</groupId>
-            <artifactId>protostuff-collectionschema</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.protostuff</groupId>
             <artifactId>protostuff-core</artifactId>
         </dependency>
         <dependency>
@@ -102,8 +89,14 @@
             <artifactId>protostuff-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>java3d</groupId>
-            <artifactId>vecmath</artifactId>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>${version.jakarta.xml.bind-api}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>${version.javax.ws.rs-api}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
@@ -114,44 +107,14 @@
             <artifactId>commons-collections4</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client-api</artifactId>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client-runtime</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymock</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-easymock</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
+            <groupId>org.jboss.spec.javax.xml.bind</groupId>
+            <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
+            <version>${version.jboss}</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-jaxb-annotations</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <version>2.3.3</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -172,8 +135,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -235,8 +198,8 @@
                         <configuration>
                             <outputDirectory>lib</outputDirectory>
                             <includeScope>runtime</includeScope>
+                            <includeScope>compile</includeScope>
                             <excludeScope>provided</excludeScope>
-                            <excludeScope>test</excludeScope>
                         </configuration>
                     </execution>
                 </executions>
