@@ -105,6 +105,7 @@ import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.async.event.ReduceFields;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
@@ -409,7 +410,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         IteratorSetting cfg = null;
         
         if (preloadOptions) {
-            cfg = getQueryIterator(metadataHelper, config, settings, "", false);
+            cfg = getQueryIterator(metadataHelper, config, settings, "", false, true);
         }
         
         try {
@@ -466,7 +467,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         if (!config.isGeneratePlanOnly()) {
             while (null == cfg) {
-                cfg = getQueryIterator(metadataHelper, config, settings, "", false);
+                cfg = getQueryIterator(metadataHelper, config, settings, "", false, preloadOptions);
             }
             configureIterator(config, cfg, newQueryString, isFullTable);
         }
@@ -2001,7 +2002,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Query settings,
-                    final String queryString, final Boolean isFullTable) throws DatawaveQueryException {
+                    final String queryString, final Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
         
         return builderThread.submit(() -> {
             // VersioningIterator is typically set at 20 on the table
@@ -2057,54 +2058,63 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         configureAdditionalOptions(config, cfg);
                         
                         try {
-                            addOption(cfg, QueryOptions.INDEX_ONLY_FIELDS,
-                                            QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexOnlyFields(config.getDatatypeFilter())), true);
-                            addOption(cfg, QueryOptions.COMPOSITE_FIELDS,
-                                            QueryOptions.buildFieldStringFromSet(metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()).keySet()),
-                                            true);
-                            addOption(cfg, QueryOptions.INDEXED_FIELDS,
-                                            QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexedFields(config.getDatatypeFilter())), true);
-                        } catch (TableNotFoundException e) {
-                            QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
-                            throw new DatawaveQueryException(qe);
+                            Set<String> compositeFields = metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()).keySet();
+                            Set<String> indexedFields = metadataHelper.getIndexedFields(config.getDatatypeFilter());
+                            Set<String> indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
+                            
+                            // only reduce the query fields if planning has occurred
+                        if (!isPreload && config.getReduceQueryFields()) {
+                            Set<String> queryFields = ReduceFields.getQueryFields(config.getQueryTree());
+                            indexedFields = ReduceFields.intersectFields(queryFields, indexedFields);
+                            indexOnlyFields = ReduceFields.intersectFields(queryFields, indexOnlyFields);
+                            compositeFields = ReduceFields.intersectFields(queryFields, compositeFields);
                         }
                         
-                        try {
-                            CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
-                            if (compositeMetadata != null && !compositeMetadata.isEmpty())
-                                addOption(cfg, QueryOptions.COMPOSITE_METADATA,
-                                                java.util.Base64.getEncoder().encodeToString(CompositeMetadata.toBytes(compositeMetadata)), false);
-                        } catch (TableNotFoundException e) {
-                            QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITE_METADATA_CONFIG_ERROR, e);
-                            throw new DatawaveQueryException(qe);
-                        }
+                        addOption(cfg, QueryOptions.COMPOSITE_FIELDS, QueryOptions.buildFieldStringFromSet(compositeFields), true);
+                        addOption(cfg, QueryOptions.INDEXED_FIELDS, QueryOptions.buildFieldStringFromSet(indexedFields), true);
+                        addOption(cfg, QueryOptions.INDEX_ONLY_FIELDS, QueryOptions.buildFieldStringFromSet(indexOnlyFields), true);
                         
-                        String datatypeFilter = config.getDatatypeFilterAsString();
-                        
-                        addOption(cfg, QueryOptions.DATATYPE_FILTER, datatypeFilter, false);
-                        
-                        try {
-                            addOption(cfg, QueryOptions.CONTENT_EXPANSION_FIELDS,
-                                            Joiner.on(',').join(metadataHelper.getContentFields(config.getDatatypeFilter())), false);
-                        } catch (TableNotFoundException e) {
-                            QueryException qe = new QueryException(DatawaveErrorCode.CONTENT_FIELDS_RETRIEVAL_ERROR, e);
-                            throw new DatawaveQueryException(qe);
-                        }
-                        
-                        if (config.isDebugMultithreadedSources()) {
-                            addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, Boolean.toString(config.isDebugMultithreadedSources()), false);
-                        }
-                        
-                        if (config.isLimitFieldsPreQueryEvaluation()) {
-                            addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, Boolean.toString(config.isLimitFieldsPreQueryEvaluation()), false);
-                        }
-                        
-                        if (config.getLimitFieldsField() != null) {
-                            addOption(cfg, QueryOptions.LIMIT_FIELDS_FIELD, config.getLimitFieldsField(), false);
-                        }
-                        
-                        return cfg;
-                    });
+                    } catch (TableNotFoundException e) {
+                        QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
+                        throw new DatawaveQueryException(qe);
+                    }
+                    
+                    try {
+                        CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
+                        if (compositeMetadata != null && !compositeMetadata.isEmpty())
+                            addOption(cfg, QueryOptions.COMPOSITE_METADATA,
+                                            java.util.Base64.getEncoder().encodeToString(CompositeMetadata.toBytes(compositeMetadata)), false);
+                    } catch (TableNotFoundException e) {
+                        QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITE_METADATA_CONFIG_ERROR, e);
+                        throw new DatawaveQueryException(qe);
+                    }
+                    
+                    String datatypeFilter = config.getDatatypeFilterAsString();
+                    
+                    addOption(cfg, QueryOptions.DATATYPE_FILTER, datatypeFilter, false);
+                    
+                    try {
+                        addOption(cfg, QueryOptions.CONTENT_EXPANSION_FIELDS, Joiner.on(',').join(metadataHelper.getContentFields(config.getDatatypeFilter())),
+                                        false);
+                    } catch (TableNotFoundException e) {
+                        QueryException qe = new QueryException(DatawaveErrorCode.CONTENT_FIELDS_RETRIEVAL_ERROR, e);
+                        throw new DatawaveQueryException(qe);
+                    }
+                    
+                    if (config.isDebugMultithreadedSources()) {
+                        addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, Boolean.toString(config.isDebugMultithreadedSources()), false);
+                    }
+                    
+                    if (config.isLimitFieldsPreQueryEvaluation()) {
+                        addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, Boolean.toString(config.isLimitFieldsPreQueryEvaluation()), false);
+                    }
+                    
+                    if (config.getLimitFieldsField() != null) {
+                        addOption(cfg, QueryOptions.LIMIT_FIELDS_FIELD, config.getLimitFieldsField(), false);
+                    }
+                    
+                    return cfg;
+                });
     }
     
     /**
@@ -2127,10 +2137,29 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return shuffledIvaratorCacheDirs;
     }
     
+    /**
+     * Get the loaded {@link IteratorSetting}
+     *
+     * @param metadataHelper
+     *            the {@link MetadataHelper}
+     * @param config
+     *            the {@link ShardQueryConfiguration}
+     * @param settings
+     *            the {@link Query}
+     * @param queryString
+     *            the raw query string
+     * @param isFullTable
+     *            a flag indicating if this is a full table scan
+     * @param isPreload
+     *            a flag indicating if options are loaded prior to query planning
+     * @return a loaded {@link IteratorSetting}
+     * @throws DatawaveQueryException
+     *             if something goes wrong
+     */
     protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
-                    Boolean isFullTable) throws DatawaveQueryException {
+                    Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
         if (null == settingFuture)
-            settingFuture = loadQueryIterator(metadataHelper, config, settings, queryString, isFullTable);
+            settingFuture = loadQueryIterator(metadataHelper, config, settings, queryString, isFullTable, isPreload);
         if (settingFuture.isDone())
             try {
                 return settingFuture.get();

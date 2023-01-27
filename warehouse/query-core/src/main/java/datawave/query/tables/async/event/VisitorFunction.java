@@ -1,8 +1,10 @@
 package datawave.query.tables.async.event;
 
 import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Sets;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -20,6 +22,7 @@ import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
+import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.SessionOptions;
@@ -34,6 +37,7 @@ import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Range;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
@@ -46,6 +50,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -300,6 +305,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     
                     pruneEmptyOptions(newIteratorSetting);
                     
+                    if (config.getReduceQueryFields()) {
+                        reduceQueryFields(script, newIteratorSetting);
+                    }
+                    
                     try {
                         queryCache.put(query, newQuery);
                     } catch (NullPointerException npe) {
@@ -398,6 +407,25 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             settings.removeOption(QueryOptions.MAX_IVARATOR_RESULTS);
             settings.removeOption(QueryOptions.MAX_IVARATOR_SOURCES);
         }
+    }
+    
+    /**
+     * Reduce the serialized query fields via intersection with fields in the reduced script
+     *
+     * @param script
+     *            the query, potentially reduced via RangeStream pruning
+     * @param settings
+     *            the iterator settings
+     */
+    protected void reduceQueryFields(ASTJexlScript script, IteratorSetting settings) {
+        Set<String> queryFields = ReduceFields.getQueryFields(script);
+        
+        ReduceFields.reduceFieldsForOption(QueryOptions.CONTENT_EXPANSION_FIELDS, queryFields, settings);
+        ReduceFields.reduceFieldsForOption(QueryOptions.INDEXED_FIELDS, queryFields, settings);
+        ReduceFields.reduceFieldsForOption(QueryOptions.INDEX_ONLY_FIELDS, queryFields, settings);
+        ReduceFields.reduceFieldsForOption(QueryOptions.TERM_FREQUENCY_FIELDS, queryFields, settings);
+        
+        // might also look at COMPOSITE_FIELDS, EXCERPT_FIELDS, and GROUP_FIELDS
     }
     
     // push down large fielded lists. Assumes that the hdfs query cache uri and
