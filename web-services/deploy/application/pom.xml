@@ -150,6 +150,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>${version.commons-text}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
         </dependency>
         <dependency>
@@ -571,6 +576,14 @@
                                             <artifactId>hadoop-common</artifactId>
                                         </artifactItem>
                                         <artifactItem>
+                                            <groupId>org.apache.hadoop.thirdparty</groupId>
+                                            <artifactId>hadoop-shaded-guava</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.apache.hadoop.thirdparty</groupId>
+                                            <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
                                             <groupId>org.apache.htrace</groupId>
                                             <artifactId>htrace-core4</artifactId>
                                             <version>4.0.1-incubating</version>
@@ -590,8 +603,16 @@
                                             <artifactId>protobuf-java</artifactId>
                                         </artifactItem>
                                         <artifactItem>
+                                            <groupId>commons-beanutils</groupId>
+                                            <artifactId>commons-beanutils</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
                                             <groupId>org.apache.commons</groupId>
                                             <artifactId>commons-configuration2</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.apache.commons</groupId>
+                                            <artifactId>commons-text</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>javax.servlet</groupId>
