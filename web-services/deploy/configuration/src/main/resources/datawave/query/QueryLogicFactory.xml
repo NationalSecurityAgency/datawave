@@ -11,8 +11,6 @@
     http://www.springframework.org/schema/util
     http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
-    <bean id="ResponseObjectFactory" class="${response.object.factory.class}"/>
-
     <!--  part of what enforces any Required properties to be set on loading of the context -->
     <bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor" />
 
@@ -150,7 +148,7 @@
 
     <bean id="baseQueryLogic" class="datawave.core.query.logic.BaseQueryLogic" abstract="true" >
         <property name="markingFunctions" ref="markingFunctions" />
-        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
+        <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
 
     <!-- Here is an example of configuring a remote query service and a remote event query -->
@@ -159,7 +157,7 @@
         <property name="queryServiceHost" value="query" />
         <property name="queryServicePort" value="8443" />
         <property name="queryServiceURI" value="/query/v1/" />
-        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
+        <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
 
     <bean id="RemoteEventQuery" parent="baseQueryLogic" class="datawave.query.tables.RemoteEventQueryLogic">

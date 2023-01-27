@@ -46,7 +46,6 @@ public class UserOperationsBean {
     private CredentialsCacheBean credentialsCache;
     
     @Inject
-    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
     
     /**

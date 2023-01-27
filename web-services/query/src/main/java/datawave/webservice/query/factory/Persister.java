@@ -102,7 +102,6 @@ public class Persister {
     protected EJBContext ctx;
     
     @Inject
-    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
     
     public Query create(String userDN, List<String> dnList, SecurityMarking marking, String queryLogicName, QueryParameters qp,

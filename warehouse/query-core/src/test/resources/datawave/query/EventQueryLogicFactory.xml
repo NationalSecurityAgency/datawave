@@ -13,7 +13,7 @@
         isn't defined in Accumulo for whatever reason...
     -->
 
-    <bean id="ResponseObjectFactory" class="datawave.core.query.result.event.DefaultResponseObjectFactory"/>
+    <bean id="responseObjectFactory" class="datawave.core.query.result.event.DefaultResponseObjectFactory"/>
 
     <!-- A list of lucene to jexl query functions -->
     <util:list id="allowedQueryFunctions" value-type="datawave.query.language.functions.jexl.JexlQueryFunction">
@@ -48,7 +48,7 @@
 
     <bean id="baseQueryLogic" class="datawave.core.query.logic.BaseQueryLogic" abstract="true" >
         <property name="markingFunctions" ref="markingFunctions" />
-        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
+        <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
     
     <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ShardQueryLogic" abstract="true">

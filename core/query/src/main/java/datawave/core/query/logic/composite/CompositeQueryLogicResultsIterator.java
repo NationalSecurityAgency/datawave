@@ -3,7 +3,6 @@ package datawave.core.query.logic.composite;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Throwables;
-import org.apache.log4j.Logger;
 
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;

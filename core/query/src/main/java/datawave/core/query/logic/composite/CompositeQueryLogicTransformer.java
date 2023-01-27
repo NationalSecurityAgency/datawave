@@ -1,6 +1,5 @@
 package datawave.core.query.logic.composite;
 
-import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.AbstractQueryLogicTransformer;
 import datawave.core.query.logic.QueryLogicTransformer;

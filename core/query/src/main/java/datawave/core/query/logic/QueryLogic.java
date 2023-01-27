@@ -401,12 +401,12 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     void setPageProcessingStartTime(long pageProcessingStartTime);
     
-    public ProxiedUserDetails getCurrentUser();
+    ProxiedUserDetails getCurrentUser();
     
-    public void setCurrentUser(ProxiedUserDetails currentUser);
+    void setCurrentUser(ProxiedUserDetails currentUser);
     
-    public ProxiedUserDetails getServerUser();
+    ProxiedUserDetails getServerUser();
     
-    public void setServerUser(ProxiedUserDetails serverUser);
+    void setServerUser(ProxiedUserDetails serverUser);
     
 }

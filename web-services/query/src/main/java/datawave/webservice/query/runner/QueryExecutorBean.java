@@ -236,7 +236,6 @@ public class QueryExecutorBean implements QueryExecutor {
     private SecurityMarking marking;
     
     @Inject
-    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
     
     private LookupUUIDUtil lookupUUIDUtil;

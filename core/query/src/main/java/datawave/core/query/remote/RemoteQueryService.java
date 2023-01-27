@@ -21,7 +21,7 @@ public interface RemoteQueryService {
      * @param callerObject
      * @return the generic response
      */
-    public GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject);
+    GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject);
     
     /**
      * Call next on a remote query service
@@ -30,7 +30,7 @@ public interface RemoteQueryService {
      * @param callerObject
      * @return the base query response
      */
-    public BaseQueryResponse next(String id, Object callerObject);
+    BaseQueryResponse next(String id, Object callerObject);
     
     /**
      * Call close on a remote query service
@@ -39,7 +39,7 @@ public interface RemoteQueryService {
      * @param callerObject
      * @return the void response
      */
-    public VoidResponse close(String id, Object callerObject);
+    VoidResponse close(String id, Object callerObject);
     
     /**
      * Plan a query using a remote query service
@@ -49,7 +49,7 @@ public interface RemoteQueryService {
      * @param callerObject
      * @return the generic response
      */
-    public GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject);
+    GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject);
     
     /**
      * Get the plan from a remote query service
@@ -58,7 +58,7 @@ public interface RemoteQueryService {
      * @param callerObject
      * @return a generic response
      */
-    public GenericResponse<String> planQuery(String id, Object callerObject);
+    GenericResponse<String> planQuery(String id, Object callerObject);
     
     /**
      * Get the URI for the query metrics
@@ -66,5 +66,5 @@ public interface RemoteQueryService {
      * @param id
      * @return the query metrics uri
      */
-    public URI getQueryMetricsURI(String id);
+    URI getQueryMetricsURI(String id);
 }

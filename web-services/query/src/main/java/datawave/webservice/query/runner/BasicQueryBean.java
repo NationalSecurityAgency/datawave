@@ -104,7 +104,6 @@ public class BasicQueryBean {
     private SessionContext sessionContext;
     
     @Inject
-    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
     
     @PostConstruct

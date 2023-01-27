@@ -22,7 +22,6 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import com.google.common.collect.Iterators;
 
 /**
  * <p>
