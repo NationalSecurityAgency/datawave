@@ -38,6 +38,7 @@ public class LfLineReader implements LineReader {
      * @param conf
      *            configuration
      * @throws IOException
+     *             if there is a problem pulling the configuration
      */
     public LfLineReader(InputStream in, Configuration conf) throws IOException {
         this(in, conf.getInt(Properties.IO_FILE_BUFFER_SIZE, DEFAULT_BUFFER_SIZE));
@@ -60,6 +61,7 @@ public class LfLineReader implements LineReader {
      * Close the underlying stream.
      * 
      * @throws IOException
+     *             if there is an issue closing the stream
      */
     public void close() throws IOException {
         in.close();

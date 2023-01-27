@@ -163,7 +163,7 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     /**
      * Option to save raw data in the document column family.
      * 
-     * @return
+     * @return flag of save raw data option
      */
     @Override
     public boolean getSaveRawDataOption() {
