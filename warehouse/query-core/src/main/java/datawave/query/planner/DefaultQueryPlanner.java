@@ -467,7 +467,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         if (!config.isGeneratePlanOnly()) {
             while (null == cfg) {
-                cfg = getQueryIterator(metadataHelper, config, settings, "", false, preloadOptions);
+                cfg = getQueryIterator(metadataHelper, config, settings, "", false, false);
             }
             configureIterator(config, cfg, newQueryString, isFullTable);
         }
@@ -2151,7 +2151,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * @param isFullTable
      *            a flag indicating if this is a full table scan
      * @param isPreload
-     *            a flag indicating if options are loaded prior to query planning
+     *            a flag indicating the iterator is being loaded prior to planning
      * @return a loaded {@link IteratorSetting}
      * @throws DatawaveQueryException
      *             if something goes wrong
