@@ -92,6 +92,7 @@ public class TableConfigurationUtil {
      * @param tableNames
      *            - a comma separated string of table names
      * @param conf
+     *            a configuration
      */
     public static void addOutputTables(String tableNames, Configuration conf) {
         String outputTables = conf.get(JOB_OUTPUT_TABLE_NAMES);
@@ -208,9 +209,14 @@ public class TableConfigurationUtil {
      * Configure the accumulo tables (create and set aggregators etc)
      *
      * @param conf
+     *            the configuration
      * @throws AccumuloSecurityException
+     *             if there is an issue with authentication
      * @throws AccumuloException
+     *             if there is a general accumulo issue
      * @throws TableNotFoundException
+     *             if the table could not be found
+     * @return boolean of if the tables were configured
      */
     public boolean configureTables(Configuration conf) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         // Check to see if the tables exist
@@ -231,13 +237,18 @@ public class TableConfigurationUtil {
      *            accumulo table operations helper for checking/creating tables
      * @param conf
      *            the Hadoop {@link Configuration} for retrieving table configuration information
+     * @param namespaceOperations
+     *            the namespaces if needed for the table
      * @param log
      *            a logger for diagnostic messages
      * @param enableBloomFilters
      *            an indication of whether bloom filters should be enabled in the configuration
      * @throws AccumuloSecurityException
+     *             if there is an issue with authentication
      * @throws AccumuloException
+     *             if there is a general accumulo issue
      * @throws TableNotFoundException
+     *             if the table could not be found
      */
     protected void createAndConfigureTablesIfNecessary(Set<String> tableNames, TableOperations tops, NamespaceOperations namespaceOperations,
                     Configuration conf, Logger log, boolean enableBloomFilters) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
@@ -287,8 +298,11 @@ public class TableConfigurationUtil {
      * @param log
      *            a {@link Logger} for diagnostic messages
      * @throws AccumuloSecurityException
+     *             if there is an issue with authentication
      * @throws AccumuloException
+     *             if there is a general accumulo issue
      * @throws TableNotFoundException
+     *             if the table could not be found
      */
     private void configureTablesIfNecessary(Set<String> tableNames, TableOperations tops, Configuration conf, Logger log) throws AccumuloSecurityException,
                     AccumuloException, TableNotFoundException {
@@ -403,6 +417,7 @@ public class TableConfigurationUtil {
      * @param conf
      *            the Hadoop configuration
      * @throws IOException
+     *             if there is an issue with read or write
      *
      */
     void setupTableConfigurationsCache(Configuration conf) throws IOException {
