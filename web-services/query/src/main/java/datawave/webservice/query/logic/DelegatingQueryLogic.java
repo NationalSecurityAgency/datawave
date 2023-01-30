@@ -342,7 +342,7 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     }
     
     @Override
-    public RemoteUserOperations getUserOperations() {
-        return delegate.getUserOperations();
+    public RemoteUserOperations getRemoteUserOperations() {
+        return delegate.getRemoteUserOperations();
     }
 }

@@ -264,7 +264,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     }
     
     @Override
-    public RemoteUserOperations getUserOperations() {
+    public RemoteUserOperations getRemoteUserOperations() {
         return remoteUserOperatons;
     }
 }

@@ -387,5 +387,5 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *
      * @return A remote user operations interface implementation. Null if NA.
      */
-    RemoteUserOperations getUserOperations();
+    RemoteUserOperations getRemoteUserOperations();
 }

@@ -190,8 +190,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         
         // determine the valid authorizations for this call to be the user's auths for this logic
         DatawavePrincipal principal = (DatawavePrincipal) logic.getPrincipal();
-        if (logic.getUserOperations() != null) {
-            principal = logic.getUserOperations().getRemoteUser(principal);
+        if (logic.getRemoteUserOperations() != null) {
+            principal = logic.getRemoteUserOperations().getRemoteUser(principal);
         }
         
         // get the valid auths from the primary user
@@ -391,14 +391,14 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         this.queryLogics = queryLogics;
     }
     
-    public RemoteUserOperations getUserOperations() {
+    public RemoteUserOperations getRemoteUserOperations() {
         // if any of the underlying logics have a non-null user operations, then
         // we need to return an instance that combines auths across the underlying
         // query logics
         boolean includeLocal = false;
         List<RemoteUserOperations> remoteOperations = new ArrayList<>();
         for (QueryLogic<?> logic : this.queryLogics.values()) {
-            RemoteUserOperations ops = logic.getUserOperations();
+            RemoteUserOperations ops = logic.getRemoteUserOperations();
             if (ops == null) {
                 includeLocal = true;
             } else {

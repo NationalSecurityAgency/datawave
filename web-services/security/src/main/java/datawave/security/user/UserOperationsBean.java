@@ -144,7 +144,7 @@ public class UserOperationsBean {
                         }
                     } catch (Exception e) {
                         log.error("Failed to lookup users from remote user service", e);
-                        throw new AuthorizationException("Failed to lookup remote user authorizations", e);
+                        // TODO: This needs to be reported in the response as being a partial response
                     }
                 }
                 

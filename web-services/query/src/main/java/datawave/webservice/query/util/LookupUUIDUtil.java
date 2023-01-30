@@ -18,14 +18,12 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
 
 import datawave.query.data.UUIDType;
-import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
-import datawave.webservice.common.exception.PreConditionFailedException;
 import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
@@ -333,10 +331,11 @@ public class LookupUUIDUtil {
                 QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
                 if (queryParameters.containsKey(QueryParameters.QUERY_AUTHORIZATIONS)) {
                     userAuths = AuthorizationsUtil.downgradeUserAuths(principal, queryParameters.getFirst(QueryParameters.QUERY_AUTHORIZATIONS),
-                                    logic.getUserOperations());
+                                    logic.getRemoteUserOperations());
                 } else {
-                    if (logic.getUserOperations() != null) {
-                        userAuths = AuthorizationsUtil.buildUserAuthorizationString(logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal));
+                    if (logic.getRemoteUserOperations() != null) {
+                        userAuths = AuthorizationsUtil.buildUserAuthorizationString(logic.getRemoteUserOperations()
+                                        .getRemoteUser((DatawavePrincipal) principal));
                     } else {
                         userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal);
                     }

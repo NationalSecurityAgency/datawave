@@ -257,7 +257,7 @@ public class CompositeQueryLogicTest {
         }
         
         @Override
-        public RemoteUserOperations getUserOperations() {
+        public RemoteUserOperations getRemoteUserOperations() {
             return userOperations;
         }
         

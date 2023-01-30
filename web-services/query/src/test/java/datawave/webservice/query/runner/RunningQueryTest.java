@@ -28,7 +28,6 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -114,7 +113,7 @@ public class RunningQueryTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
-        expect(logic.getUserOperations()).andReturn(null);
+        expect(logic.getRemoteUserOperations()).andReturn(null);
         replay(logic);
         
         RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
@@ -136,7 +135,7 @@ public class RunningQueryTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
-        expect(logic.getUserOperations()).andReturn(null);
+        expect(logic.getRemoteUserOperations()).andReturn(null);
         replay(logic);
         
         RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
@@ -157,7 +156,7 @@ public class RunningQueryTest {
         Authorizations expected = new Authorizations(auths);
         
         expect(logic.getCollectQueryMetrics()).andReturn(false);
-        expect(logic.getUserOperations()).andReturn(null);
+        expect(logic.getRemoteUserOperations()).andReturn(null);
         replay(logic);
         
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);

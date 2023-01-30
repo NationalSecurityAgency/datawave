@@ -72,6 +72,23 @@ public class AuthorizationsUtil {
                         user1.getRoleToAuthMapping(), user1.getCreationTime(), user1.getExpirationTime());
     }
     
+    /**
+     * Retrieves a set of "downgraded" authorizations. This retrieves all authorizations from {@code principal} and intersects the user auths (the
+     * authorizations retrieved from {@code principal} for {@link DatawavePrincipal#getUserDN()}) with {@code requestedAuths}. All other entity auths retrieved
+     * from {@code principal}, if any, are included in the result set as is. If {@code requestedAuths} contains any authorizations that are not in the user
+     * auths list, then an {@link IllegalArgumentException} is thrown.
+     *
+     * @param requestedAuths
+     *            The auths to use for the user's auths. If this list contains any that are not owned by the user, an {@link IllegalArgumentException} is
+     *            thrown.
+     * @param principal
+     *            The principal from which to retrieve entity authorizations.
+     * @param userService
+     *            The remote user service if any which will be used to determine the remote authorizations. If this is null, then the auths in the supplied
+     *            principal will be used. Otherwise this service will be used to retrieve the remote principal from which the auths will be determined.
+     * @return A set of {@link Authorizations}, one per entity represented in {@code principal}. The user's auths are replaced by {@code requestedAuths} so long
+     *         as the user actually had all of the auths. If {@code requestedAuths} is {@code null}, then the user's auths are returned as-is.
+     */
     public static Set<Authorizations> getDowngradedAuthorizations(String requestedAuths, Principal principal, RemoteUserService userService)
                     throws AuthorizationException {
         if (principal instanceof DatawavePrincipal) {
@@ -96,6 +113,9 @@ public class AuthorizationsUtil {
      *            thrown.
      * @param principal
      *            The principal from which to retrieve entity authorizations.
+     * @param userService
+     *            The remote user service if any which will be used to determine the remote authorizations. If this is null, then the auths in the supplied
+     *            principal will be used. Otherwise this service will be used to retrieve the remote principal from which the auths will be determined.
      * @return A set of {@link Authorizations}, one per entity represented in {@code principal}. The user's auths are replaced by {@code requestedAuths} so long
      *         as the user actually had all of the auths. If {@code requestedAuths} is {@code null}, then the user's auths are returned as-is.
      */
@@ -119,6 +139,9 @@ public class AuthorizationsUtil {
      *            the principal representing the user to verify that {@code requested} are all valid authorizations
      * @param requested
      *            the requested downgrade authorizations
+     * @param userService
+     *            The remote user service if any which will be used to determine the remote authorizations. If this is null, then the auths in the supplied
+     *            principal will be used. Otherwise this service will be used to retrieve the remote principal from which the auths will be determined.
      * @return requested, unless the user represented by {@code principal} does not have one or more of the auths in {@code requested}
      */
     public static String downgradeUserAuths(Principal principal, String requested, RemoteUserService userService) throws AuthorizationException {

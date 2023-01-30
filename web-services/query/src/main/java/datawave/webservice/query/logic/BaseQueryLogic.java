@@ -398,7 +398,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
     
     @Override
-    public RemoteUserOperations getUserOperations() {
+    public RemoteUserOperations getRemoteUserOperations() {
         // null implies that the local user operations/principal is to be used for auths.
         return null;
     }
