@@ -133,7 +133,8 @@ public class EdgeCombiner extends Combiner {
     
     /**
      * Determines the oldest load date and updates the builder with it
-     *
+     * @param key
+     * a key
      * @param builder
      *            will be updated by this method with the oldest load date
      * @param protoEdgeValue

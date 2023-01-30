@@ -16,8 +16,11 @@ public class ThreadUtil {
      * Shuts down the executor and gives tasks that are still in progress the given amount of time before continuing.
      *
      * @param executor
+     *            a executor
      * @param timeToWait
+     *            the time to wait
      * @param unit
+     *            the time unit
      * @return true if all tasks completed, false, if we interrupted and continued.
      */
     public static boolean shutdownAndWait(ThreadPoolExecutor executor, long timeToWait, TimeUnit unit) {
@@ -35,11 +38,17 @@ public class ThreadUtil {
      * Waits for all active threads in the thread pool to complete.
      *
      * @param log
+     *            a logger
      * @param executor
+     *            the thread executor
      * @param type
+     *            the type
      * @param poolSize
+     *            the pool size
      * @param workUnits
+     *            the work time units
      * @param start
+     *            the start time
      * @return time taken to complete all tasks
      */
     public static long waitForThreads(Logger log, ThreadPoolExecutor executor, String type, int poolSize, long workUnits, long start) {
