@@ -1,43 +1,21 @@
 package datawave.security.authorization.remote;
 
-import com.codahale.metrics.Counter;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.google.common.collect.Sets;
-import datawave.security.auth.DatawaveAuthenticationMechanism;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.user.AuthorizationsListBase;
-import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
-import datawave.webservice.common.remote.RemoteUserOperations;
+import datawave.security.authorization.RemoteUserOperations;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.GenericResponse;
-import datawave.webservice.result.VoidResponse;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * A conditional remote user operations will only invoke the delegate remote service base on a specified function of the local principal

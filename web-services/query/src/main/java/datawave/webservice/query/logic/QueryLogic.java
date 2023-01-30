@@ -5,7 +5,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.remote.RemoteUserOperations;
+import datawave.security.authorization.RemoteUserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;

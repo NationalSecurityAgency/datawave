@@ -23,7 +23,7 @@ import datawave.security.util.DnUtils.NpeUtils;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.common.remote.RemoteUserOperations;
+import datawave.security.authorization.RemoteUserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.ResultsPage;
@@ -52,17 +52,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class CompositeQueryLogicTest {
     

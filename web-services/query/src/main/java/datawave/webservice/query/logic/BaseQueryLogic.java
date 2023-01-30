@@ -3,7 +3,7 @@ package datawave.webservice.query.logic;
 import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
 import datawave.webservice.common.audit.Auditor.AuditType;
-import datawave.webservice.common.remote.RemoteUserOperations;
+import datawave.security.authorization.RemoteUserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;

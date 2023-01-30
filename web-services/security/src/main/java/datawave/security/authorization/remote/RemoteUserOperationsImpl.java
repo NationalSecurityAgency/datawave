@@ -8,7 +8,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
-import datawave.webservice.common.remote.RemoteUserOperations;
+import datawave.security.authorization.RemoteUserOperations;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;

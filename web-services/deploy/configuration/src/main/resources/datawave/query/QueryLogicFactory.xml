@@ -151,7 +151,7 @@
         <property name="remoteQueryLogic" value="EventQuery" />
     </bean>
 
-    <util:list id="RemoteUserOperations" value-type="datawave.webservice.common.remote.RemoteUserOperations"/>
+    <util:list id="RemoteUserOperations" value-type="datawave.security.authorization.RemoteUserOperations"/>
 
     <!-- Here is an example of configuring a remote user operations service if needed for a remote event query -->
     <bean id="MyRemoteUserOps" class="datawave.security.authorization.remote.RemoteUserOperationsImpl">

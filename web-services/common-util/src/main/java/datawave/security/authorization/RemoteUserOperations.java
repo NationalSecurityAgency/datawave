@@ -1,4 +1,4 @@
-package datawave.webservice.common.remote;
+package datawave.security.authorization;
 
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
@@ -18,13 +18,12 @@ import java.util.stream.Collectors;
 /**
  * A remote query service is one that can pass calls off to another external user operations endpoint
  */
-public interface RemoteUserOperations extends AuthorizationsUtil.RemoteUserService {
+public interface RemoteUserOperations {
     
     AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException;
     
     GenericResponse<String> flushCachedCredentials(Object callerObject);
     
-    @Override
     default DatawavePrincipal getRemoteUser(DatawavePrincipal principal) throws AuthorizationException {
         // get the effective authorizations for this user
         AuthorizationsListBase auths = listEffectiveAuthorizations(principal);

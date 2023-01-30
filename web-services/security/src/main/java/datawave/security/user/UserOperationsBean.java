@@ -10,7 +10,7 @@ import datawave.security.cache.CredentialsCacheBean;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.common.remote.RemoteUserOperations;
+import datawave.security.authorization.RemoteUserOperations;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.GenericResponse;
 import org.apache.deltaspike.core.api.exclude.Exclude;
