@@ -36,20 +36,20 @@ public class ResponseFieldChecker implements QueryLogicTestHarness.DocumentCheck
     public void assertValid(final Document doc) {
         for (final String field : this.fields) {
             final Attribute val = doc.get(field);
-            Assert.assertNotNull("missing return field(" + field + ")", val);
+            Assert.assertNotNull("missing return field(" + field + ") from " + doc, val);
             if (val instanceof Attributes) {
                 Attributes multiAttr = (Attributes) val;
                 for (Attribute attr : multiAttr.getAttributes()) {
-                    Assert.assertNotNull("missing metadata for field(" + field + ")", attr.getMetadata());
+                    Assert.assertNotNull("missing metadata for field(" + field + ") from " + doc, attr.getMetadata());
                 }
             } else {
-                Assert.assertNotNull("missing metadata for field(" + field + ")", val.getMetadata());
+                Assert.assertNotNull("missing metadata for field(" + field + ") from " + doc, val.getMetadata());
             }
         }
         
         for (final String field : this.missing) {
             final Attribute val = doc.get(field);
-            Assert.assertNull("blacklisted return field(" + field + ")", val);
+            Assert.assertNull("blacklisted return field(" + field + ") from " + doc, val);
         }
     }
 }
