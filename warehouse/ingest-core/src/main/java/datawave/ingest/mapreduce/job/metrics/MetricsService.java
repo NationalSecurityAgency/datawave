@@ -93,9 +93,13 @@ public class MetricsService<OK,OV> implements AutoCloseable {
      * keysAndValues are not an even number.
      *
      * @param metric
+     *            the metric
      * @param labels
+     *            a map of labels
      * @param fields
+     *            mapping of normalized event fields
      * @param value
+     *            the event value
      * @throws IllegalArgumentException
      *             If keysAndValues are not even (missing part of a pair).
      */
