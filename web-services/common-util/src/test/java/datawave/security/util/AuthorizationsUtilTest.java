@@ -15,8 +15,11 @@ import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.RemoteUserOperations;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
+import datawave.user.AuthorizationsListBase;
+import datawave.webservice.result.GenericResponse;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,10 +33,12 @@ public class AuthorizationsUtilTest {
     private static final String USER_DN = "userDN";
     private static final String ISSUER_DN = "issuerDN";
     private String methodAuths;
+    private String remoteAuths;
     private HashSet<Set<String>> userAuths;
     private DatawavePrincipal proxiedUserPrincipal;
     private DatawavePrincipal proxiedServerPrincipal1;
     private DatawavePrincipal proxiedServerPrincipal2;
+    private DatawavePrincipal remoteUserPrincipal;
     
     @Before
     public void initialize() {
@@ -56,6 +61,12 @@ public class AuthorizationsUtilTest {
         proxiedUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user, p1, p2));
         proxiedServerPrincipal1 = new DatawavePrincipal(Lists.newArrayList(p3, p1));
         proxiedServerPrincipal2 = new DatawavePrincipal(Lists.newArrayList(p2, p3, p1));
+        
+        DatawaveUser user_2 = new DatawaveUser(userDN, UserType.USER, Sets.newHashSet("A", "D", "E", "H"), null, null, System.currentTimeMillis());
+        DatawaveUser p1_2 = new DatawaveUser(p1dn, UserType.SERVER, Sets.newHashSet("A", "B", "E"), null, null, System.currentTimeMillis());
+        DatawaveUser p2_2 = new DatawaveUser(p2dn, UserType.SERVER, Sets.newHashSet("A", "F", "E"), null, null, System.currentTimeMillis());
+        remoteUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user_2, p1_2, p2_2));
+        remoteAuths = "A,E";
     }
     
     @Test
@@ -88,6 +99,52 @@ public class AuthorizationsUtilTest {
         // p1, p2, p3 - call will succeed if p1 is primaryUser, throw exception if p2 is primaryUser
         AuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal2, null);
         fail("Exception not thrown!");
+    }
+    
+    @Test
+    public void testDowngradeRemoteAuthorizations() throws AuthorizationException {
+        RemoteUserOperations remoteOps = new RemoteUserOperations() {
+            
+            @Override
+            public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
+                return null;
+            }
+            
+            @Override
+            public GenericResponse<String> flushCachedCredentials(Object callerObject) {
+                return null;
+            }
+            
+            @Override
+            public DatawavePrincipal getRemoteUser(DatawavePrincipal principal) throws AuthorizationException {
+                return remoteUserPrincipal;
+            }
+        };
+        HashSet<Authorizations> expected = Sets.newHashSet(new Authorizations("A", "E"), new Authorizations("A", "B", "E"), new Authorizations("A", "F", "E"));
+        assertEquals(expected, AuthorizationsUtil.getDowngradedAuthorizations(remoteAuths, proxiedUserPrincipal, remoteOps));
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testDowngradeRemoteAuthorizationsFail() throws AuthorizationException {
+        RemoteUserOperations remoteOps = new RemoteUserOperations() {
+            
+            @Override
+            public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
+                return null;
+            }
+            
+            @Override
+            public GenericResponse<String> flushCachedCredentials(Object callerObject) {
+                return null;
+            }
+            
+            @Override
+            public DatawavePrincipal getRemoteUser(DatawavePrincipal principal) throws AuthorizationException {
+                return remoteUserPrincipal;
+            }
+        };
+        HashSet<Authorizations> expected = Sets.newHashSet(new Authorizations("A"), new Authorizations("A", "B", "E"), new Authorizations("A", "F", "E"));
+        assertEquals(expected, AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, proxiedUserPrincipal, remoteOps));
     }
     
     @Test
