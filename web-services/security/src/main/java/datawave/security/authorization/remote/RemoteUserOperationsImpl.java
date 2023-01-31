@@ -73,8 +73,8 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements Remot
             uriBuilder.addParameter("includeRemoteServices", "false");
         }, httpGet -> {
             httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-            httpGet.setHeader(PROXIED_ENTITIES_HEADER, getEntities(callerObject));
-            httpGet.setHeader(PROXIED_ISSUERS_HEADER, getIssuers(callerObject));
+            httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(callerObject));
+            httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(callerObject));
         }, entity -> {
             return readResponse(entity, authResponseReader);
         }, () -> suffix);
@@ -88,8 +88,8 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements Remot
             uriBuilder.addParameter("includeRemoteServices", "false");
         }, httpGet -> {
             httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-            httpGet.setHeader(PROXIED_ENTITIES_HEADER, getEntities(callerObject));
-            httpGet.setHeader(PROXIED_ISSUERS_HEADER, getIssuers(callerObject));
+            httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(callerObject));
+            httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(callerObject));
         }, entity -> {
             return readResponse(entity, genericResponseReader);
         }, () -> suffix);
@@ -124,7 +124,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements Remot
         return builder.toString();
     }
     
-    public static String getEntities(Object callerObject) {
+    public static String getProxiedEntities(Object callerObject) {
         if (callerObject instanceof DatawavePrincipal) {
             DatawavePrincipal callerPrincipal = (DatawavePrincipal) callerObject;
             return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().subjectDN()).append('>'))
@@ -134,7 +134,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements Remot
         }
     }
     
-    public static String getIssuers(Object callerObject) {
+    public static String getProxiedIssuers(Object callerObject) {
         if (callerObject instanceof DatawavePrincipal) {
             DatawavePrincipal callerPrincipal = (DatawavePrincipal) callerObject;
             return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().issuerDN()).append('>'))

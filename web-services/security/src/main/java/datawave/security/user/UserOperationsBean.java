@@ -2,15 +2,14 @@ package datawave.security.user;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
-import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.RemoteUserOperations;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.cache.CredentialsCacheBean;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.security.authorization.RemoteUserOperations;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.GenericResponse;
 import org.apache.commons.collections4.CollectionUtils;
@@ -108,14 +107,15 @@ public class UserOperationsBean {
      * 
      * will return the results in JSON format.
      *
+     * @param includeRemoteServices
+     *            An optional query parameter to include any remote service operations in the response. Defaults to true.
      * @return the user and proxied entities' authorizations
      */
     @GET
     @Path("/listEffectiveAuthorizations")
     @Produces({"application/xml", "text/xml", "text/plain", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "text/html"})
-    public AuthorizationsListBase listEffectiveAuthorizations(@DefaultValue("true") @QueryParam("includeRemoteServices") boolean includeRemoteServices)
-                    throws AuthorizationException {
+    public AuthorizationsListBase listEffectiveAuthorizations(@DefaultValue("true") @QueryParam("includeRemoteServices") boolean includeRemoteServices) {
         final AuthorizationsListBase list = responseObjectFactory.getAuthorizationsList();
         
         // Find out who/what called this method
@@ -177,6 +177,10 @@ public class UserOperationsBean {
      *
      * If the credentials are for a single user with no proxy involved, these are the only credentials flushed. Otherwise, if there is a proxy chain, this will
      * flush the DN for the user in the proxy (assumes there is never more than one user in the proxy chain).
+     *
+     * @param includeRemoteServices
+     *            An optional query parameter to include any remote service operations in the response. Defaults to true.
+     * @return A generic response denoting success or failure
      */
     @GET
     @Path("/flushCachedCredentials")
@@ -189,12 +193,14 @@ public class UserOperationsBean {
         log.info("Flushing credentials for " + callerPrincipal + " from the cache.");
         
         // if we have any remote services configured, then flush those credentials as well
-        if (includeRemoteServices && remoteServices != null && !remoteServices.isEmpty()) {
+        if (includeRemoteServices && CollectionUtils.isNotEmpty(remoteServices)) {
             for (RemoteUserOperations remote : remoteServices) {
                 try {
                     remote.flushCachedCredentials(callerPrincipal);
                 } catch (Exception e) {
                     log.error("Failed to flush user from remote user service", e);
+                    response.addMessage("Unable to user from remote user service");
+                    response.addException(e);
                 }
             }
         }
