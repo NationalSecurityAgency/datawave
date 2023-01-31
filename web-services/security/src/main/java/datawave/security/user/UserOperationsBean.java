@@ -13,6 +13,7 @@ import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.security.authorization.RemoteUserOperations;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.GenericResponse;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,7 +126,7 @@ public class UserOperationsBean {
             name = datawavePrincipal.getShortName();
             
             // if we have any remote services configured, merge those authorizations in here
-            if (includeRemoteServices && !CollectionUtils.isEmpty(remoteServices)) {
+            if (includeRemoteServices && CollectionUtils.isNotEmpty(remoteServices)) {
                 Map<SubjectIssuerDNPair,DatawaveUser> users = new HashMap<>(datawavePrincipal.getProxiedUsers().stream()
                                 .collect(Collectors.toMap(DatawaveUser::getDn, Function.identity())));
                 for (RemoteUserOperations remote : remoteServices) {
