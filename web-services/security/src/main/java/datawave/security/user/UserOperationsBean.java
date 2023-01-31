@@ -125,7 +125,7 @@ public class UserOperationsBean {
             name = datawavePrincipal.getShortName();
             
             // if we have any remote services configured, merge those authorizations in here
-            if (includeRemoteServices && remoteServices != null && !remoteServices.isEmpty()) {
+            if (includeRemoteServices && !CollectionUtils.isEmpty(remoteServices)) {
                 Map<SubjectIssuerDNPair,DatawaveUser> users = new HashMap<>(datawavePrincipal.getProxiedUsers().stream()
                                 .collect(Collectors.toMap(DatawaveUser::getDn, Function.identity())));
                 for (RemoteUserOperations remote : remoteServices) {
