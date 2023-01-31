@@ -1,5 +1,17 @@
 package datawave.security.util;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import datawave.accumulo.util.security.UserAuthFunctions;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.RemoteUserOperations;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang.StringUtils;
+
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,20 +22,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import com.google.common.base.Splitter;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.accumulo.util.security.UserAuthFunctions;
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.RemoteUserOperations;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.StringUtils;
 
 public class AuthorizationsUtil {
     
@@ -146,13 +144,9 @@ public class AuthorizationsUtil {
             throw new IllegalArgumentException("Requested authorizations must not be empty");
         }
         
-        if (userService != null) {
-            principal = userService.getRemoteUser((DatawavePrincipal) principal);
-        }
-        
         List<String> requestedList = AuthorizationsUtil.splitAuths(requested);
         // Find all authorizations the user has access to
-        String userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal);
+        String userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal, userService);
         List<String> userList = AuthorizationsUtil.splitAuths(userAuths);
         List<String> missingAuths = new ArrayList<>();
         List<String> finalAuthsList = new ArrayList<>();
@@ -206,7 +200,20 @@ public class AuthorizationsUtil {
         return new Authorizations(b).toString();
     }
     
-    public static String buildUserAuthorizationString(Principal principal) {
+    /**
+     * Build the authorization string for a prinbcipal.
+     *
+     * @param principal
+     *            the principal representing the user to verify that {@code requested} are all valid authorizations
+     * @param userService
+     *            The remote user service if any which will be used to determine the remote authorizations. If this is null, then the auths in the supplied
+     *            principal will be used. Otherwise this service will be used to retrieve the remote principal from which the auths will be determined.
+     * @return user authorizations string
+     */
+    public static String buildUserAuthorizationString(Principal principal, RemoteUserOperations userService) throws AuthorizationException {
+        if (userService != null) {
+            principal = userService.getRemoteUser((DatawavePrincipal) principal);
+        }
         String auths = "";
         if (principal != null && (principal instanceof DatawavePrincipal)) {
             DatawavePrincipal datawavePrincipal = (DatawavePrincipal) principal;

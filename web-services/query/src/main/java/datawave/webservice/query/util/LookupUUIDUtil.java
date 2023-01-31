@@ -18,7 +18,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
 
 import datawave.query.data.UUIDType;
-import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.audit.AuditParameters;
@@ -324,30 +323,13 @@ public class LookupUUIDUtil {
             queryParameters.putSingle(QueryParameters.QUERY_STRING, validatedCriteria.getRawQueryString());
             
             // Override the extraneous query details
-            
-            String userAuths;
             String logicName = queryParameters.getFirst(QueryParameters.QUERY_LOGIC_NAME);
-            try {
-                QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
-                if (queryParameters.containsKey(QueryParameters.QUERY_AUTHORIZATIONS)) {
-                    userAuths = AuthorizationsUtil.downgradeUserAuths(principal, queryParameters.getFirst(QueryParameters.QUERY_AUTHORIZATIONS),
-                                    logic.getRemoteUserOperations());
-                } else {
-                    if (logic.getRemoteUserOperations() != null) {
-                        userAuths = AuthorizationsUtil.buildUserAuthorizationString(logic.getRemoteUserOperations()
-                                        .getRemoteUser((DatawavePrincipal) principal));
-                    } else {
-                        userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal);
-                    }
-                }
-                if (queryParameters.containsKey(QueryParameters.QUERY_AUTHORIZATIONS)) {
-                    queryParameters.remove(QueryParameters.QUERY_AUTHORIZATIONS);
-                }
-                queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
-            } catch (Exception e) {
-                log.error("Failed to get user query authorizations", e);
-                throw new DatawaveWebApplicationException(e, new VoidResponse());
+            String queryAuths = queryParameters.getFirst(QueryParameters.QUERY_AUTHORIZATIONS);
+            String userAuths = getAuths(logicName, queryAuths, principal);
+            if (queryParameters.containsKey(QueryParameters.QUERY_AUTHORIZATIONS)) {
+                queryParameters.remove(QueryParameters.QUERY_AUTHORIZATIONS);
             }
+            queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
             
             final String queryName = sid + DASH + UUID.randomUUID();
             if (queryParameters.containsKey(QueryParameters.QUERY_NAME)) {
@@ -412,6 +394,22 @@ public class LookupUUIDUtil {
             }
         }
         return response;
+    }
+    
+    private String getAuths(String logicName, String queryAuths, Principal principal) {
+        String userAuths;
+        try {
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
+            if (queryAuths != null) {
+                userAuths = AuthorizationsUtil.downgradeUserAuths(principal, queryAuths, logic.getRemoteUserOperations());
+            } else {
+                userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal, logic.getRemoteUserOperations());
+            }
+        } catch (Exception e) {
+            log.error("Failed to get user query authorizations", e);
+            throw new DatawaveWebApplicationException(e, new VoidResponse());
+        }
+        return userAuths;
     }
     
     /**
@@ -543,7 +541,7 @@ public class LookupUUIDUtil {
         String sid = principal.getName();
         
         // Initialize the reusable query input
-        final String userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal);
+        final String userAuths = getAuths(CONTENT_QUERY, null, principal);
         final String queryName = sid + '-' + UUID.randomUUID();
         final Date endDate = new Date();
         final Date expireDate = new Date(endDate.getTime() + 1000 * 60 * 60);

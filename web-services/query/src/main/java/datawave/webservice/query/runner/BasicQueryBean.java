@@ -8,7 +8,9 @@ import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
+import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.RemoteUserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
@@ -45,6 +47,7 @@ import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 
+import javax.naming.AuthenticationException;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -230,6 +233,8 @@ public class BasicQueryBean {
         q.setQuery("test");
         q.setQueryAuthorizations("ALL");
         
+        RemoteUserOperations userService = null;
+        
         for (QueryLogic<?> l : logicList) {
             try {
                 
@@ -238,6 +243,7 @@ public class BasicQueryBean {
                     QueryLogicDescription d = new QueryLogicDescription(l.getLogicName());
                     d.setAuditType(l.getAuditType(null).toString());
                     d.setLogicDescription(l.getLogicDescription());
+                    userService = l.getRemoteUserOperations();
                     theQld = d;
                     
                     Set<String> optionalQueryParameters = l.getOptionalQueryParameters();
@@ -289,12 +295,15 @@ public class BasicQueryBean {
                 }
             } catch (Exception e) {
                 log.error("Error setting query logic description", e);
+                throw new RuntimeException(e);
             }
         }
         
-        Principal p = ctx.getCallerPrincipal();
-        String authSting = AuthorizationsUtil.buildUserAuthorizationString(p);
-        response.setAuthString(authSting);
+        try {
+            response.setAuthString(AuthorizationsUtil.buildUserAuthorizationString(ctx.getCallerPrincipal(), userService));
+        } catch (AuthorizationException e) {
+            throw new RuntimeException(e);
+        }
         response.setTheQueryLogicDescription(theQld);
         
         return response;

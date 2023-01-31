@@ -258,8 +258,8 @@ public class AuthorizationsUtilTest {
     }
     
     @Test
-    public void testBuildUserAuthorizationsString() {
+    public void testBuildUserAuthorizationsString() throws Exception {
         String expected = new Authorizations("A", "C", "D").toString();
-        assertEquals(expected, AuthorizationsUtil.buildUserAuthorizationString(proxiedUserPrincipal));
+        assertEquals(expected, AuthorizationsUtil.buildUserAuthorizationString(proxiedUserPrincipal, null));
     }
 }
