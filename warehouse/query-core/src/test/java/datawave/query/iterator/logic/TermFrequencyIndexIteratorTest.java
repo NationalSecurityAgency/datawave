@@ -1,22 +1,29 @@
 package datawave.query.iterator.logic;
 
+import com.google.common.collect.Maps;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.query.iterator.builder.IndexIteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.EventDataQueryExpressionFilter;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TLDEventDataFilter;
+import datawave.query.predicate.TimeFilter;
 import datawave.query.tld.TLDTermFrequencyAggregator;
 import datawave.query.util.TypeMetadata;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iterators.SortedMapIterator;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.hadoop.thirdparty.org.checkerframework.checker.units.qual.K;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,7 +36,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -357,6 +366,115 @@ public class TermFrequencyIndexIteratorTest {
         
         iterator.next();
         assertFalse(iterator.hasTop());
+    }
+    
+    @Test
+    public void testZeroItem() {
+        SortedMapIterator source = getIterator();
+        
+        Key start = new Key("row", "fi\0FIELD", "value\u0000datatype\u00001");
+        Key end = new Key("row", "fi\0FIELD", "value\uffff\u0000datatype\u00001\uffff");
+        
+        TermFrequencyIndexIterator tfIter = new TermFrequencyIndexIterator(start, end, source, TimeFilter.alwaysTrue());
+        IndexIteratorBridge iter = new IndexIteratorBridge(tfIter, JexlNodeFactory.buildEQNode("FIELD", "value"), "FIELD");
+        iter.seek(new Range(), Collections.emptyList(), false);
+        
+        int i = 0;
+        while (iter.hasNext()) {
+            Key key = iter.next();
+            assertEquals("received " + key.toStringNoTime(), "datatype\u00001", key.getColumnFamily().toString());
+            i++;
+        }
+        
+        assertEquals("should have one entry but got " + i, 1, i);
+    }
+    
+    @Test
+    public void testNotFound() {
+        SortedMapIterator source = getIterator();
+        
+        Key start = new Key("row", "fi\0FIELD", "values\u0000datatype\u00001");
+        Key end = new Key("row", "fi\0FIELD", "values\uffff\u0000datatype\u00001\uffff");
+        
+        TermFrequencyIndexIterator tfIter = new TermFrequencyIndexIterator(start, end, source, TimeFilter.alwaysTrue());
+        IndexIteratorBridge iter = new IndexIteratorBridge(tfIter, JexlNodeFactory.buildEQNode("FIELD", "value"), "FIELD");
+        iter.seek(new Range(), Collections.emptyList(), false);
+        
+        int i = 0;
+        while (iter.hasNext()) {
+            Key key = iter.next();
+            assertEquals("received " + key.toStringNoTime(), "datatype\u00001", key.getColumnFamily().toString());
+            i++;
+        }
+        
+        assertEquals("should have no entries but got " + i, 0, i);
+    }
+    
+    @Test(expected = RuntimeException.class)
+    public void testInvalidStartKey() {
+        SortedMapIterator source = getIterator();
+        
+        Key start = new Key("row", "fi\0FIELD", "value\u0000datatype");
+        Key end = new Key("row", "fi\0FIELD", "value\uffff\u0000datatype\u00001\uffff");
+        
+        TermFrequencyIndexIterator tfIter = new TermFrequencyIndexIterator(start, end, source, TimeFilter.alwaysTrue());
+        IndexIteratorBridge iter = new IndexIteratorBridge(tfIter, JexlNodeFactory.buildEQNode("FIELD", "value"), "FIELD");
+        iter.seek(new Range(), Collections.emptyList(), false);
+        
+        int i = 0;
+        while (iter.hasNext()) {
+            Key key = iter.next();
+            assertEquals("received " + key.toStringNoTime(), "datatype\u00001", key.getColumnFamily().toString());
+            i++;
+        }
+        
+        assertEquals("should have one entry but got " + i, 1, i);
+    }
+    
+    @Test(expected = RuntimeException.class)
+    public void testInvalidEndKey() {
+        SortedMapIterator source = getIterator();
+        
+        Key start = new Key("row", "fi\0FIELD", "value\u0000datatype\u00001");
+        Key end = new Key("row", "fi\0FIELD", "value\uffff\u0000datatype");
+        
+        TermFrequencyIndexIterator tfIter = new TermFrequencyIndexIterator(start, end, source, TimeFilter.alwaysTrue());
+        IndexIteratorBridge iter = new IndexIteratorBridge(tfIter, JexlNodeFactory.buildEQNode("FIELD", "value"), "FIELD");
+        iter.seek(new Range(), Collections.emptyList(), false);
+        
+        int i = 0;
+        while (iter.hasNext()) {
+            Key key = iter.next();
+            assertEquals("received " + key.toStringNoTime(), "datatype\u00001", key.getColumnFamily().toString());
+            i++;
+        }
+        
+        assertEquals("should have one entry but got " + i, 1, i);
+    }
+    
+    /**
+     * Builds an iterator loaded with sample events
+     *
+     * @return a SortedMapIterator
+     */
+    private SortedMapIterator getIterator() {
+        final Value value = new Value(new byte[0]);
+        final String row = "row";
+        final String cf = "fi\0FIELD";
+        final String tf = "tf";
+        final String cqPrefix = "value";
+        final String cqSuffix = "datatype\u0000";
+        
+        TreeMap<Key,Value> data = new TreeMap<>();
+        for (int i = 0; i < 10; ++i) { // 'i' takes the place of the event uid
+            for (int j = 0; j < 100; ++j) {
+                // add FI key, cq = valueJ \0 datatype \0 I
+                data.put(new Key(row, cf, cqPrefix + j + '\u0000' + cqSuffix + i), value);
+                // add TF key, cq = datatype \0 I \0 valueJ \0 FIELD
+                data.put(new Key(row, tf, cqSuffix + i + '\u0000' + cqPrefix + j + "\0FIELD"), value);
+            }
+        }
+        return new SortedMapIterator(data);
     }
     
     private Key getFiKey(String row, String dataType, String uid, String fieldName, String fieldValue) {
