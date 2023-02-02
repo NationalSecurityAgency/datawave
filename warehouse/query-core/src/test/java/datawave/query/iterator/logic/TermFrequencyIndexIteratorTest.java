@@ -17,7 +17,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,7 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 public class TermFrequencyIndexIteratorTest {
+    
     private SortedKeyValueIterator source;
     private TypeMetadata typeMetadata;
     private TermFrequencyAggregator aggregator;
@@ -76,7 +79,7 @@ public class TermFrequencyIndexIteratorTest {
         // jump to the first doc
         iterator.seek(null, null, true);
         
-        Assert.assertFalse(iterator.hasTop());
+        assertFalse(iterator.hasTop());
     }
     
     @Test
@@ -88,14 +91,14 @@ public class TermFrequencyIndexIteratorTest {
         // jump to the first doc
         iterator.seek(null, null, true);
         
-        Assert.assertTrue(iterator.hasTop());
+        assertTrue(iterator.hasTop());
         Document d = iterator.document();
-        Assert.assertTrue(d != null);
-        Assert.assertTrue(d.getDictionary().size() == 2);
-        Assert.assertTrue(d.getDictionary().get("FOO") != null);
-        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
-        Assert.assertTrue((d.getDictionary().get("FOO").getData()).equals("baz"));
+        assertTrue(d != null);
+        assertTrue(d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().get("FOO") != null);
+        assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertTrue((d.getDictionary().get("FOO").getData()).equals("baz"));
     }
     
     @Test
@@ -107,14 +110,14 @@ public class TermFrequencyIndexIteratorTest {
         // jump to the first doc
         iterator.seek(null, null, true);
         
-        Assert.assertTrue(iterator.hasTop());
+        assertTrue(iterator.hasTop());
         Document d = iterator.document();
-        Assert.assertTrue(d != null);
-        Assert.assertTrue(d.getDictionary().size() == 2);
-        Assert.assertTrue(d.getDictionary().get("FOO") != null);
-        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
-        Assert.assertTrue((d.getDictionary().get("FOO").getData()).equals("baz"));
+        assertTrue(d != null);
+        assertTrue(d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().get("FOO") != null);
+        assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertTrue((d.getDictionary().get("FOO").getData()).equals("baz"));
     }
     
     @Test
@@ -125,14 +128,14 @@ public class TermFrequencyIndexIteratorTest {
         // jump to the first doc
         iterator.seek(null, null, true);
         
-        Assert.assertTrue(iterator.hasTop());
+        assertTrue(iterator.hasTop());
         Document d = iterator.document();
-        Assert.assertTrue(d != null);
-        Assert.assertTrue(d.getDictionary().size() + "", d.getDictionary().size() == 2);
-        Assert.assertTrue(d.getDictionary().get("FOO") != null);
-        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
-        Assert.assertTrue((d.getDictionary().get("FOO").getData()).equals("arm"));
+        assertTrue(d != null);
+        assertTrue(d.getDictionary().size() + "", d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().get("FOO") != null);
+        assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertTrue((d.getDictionary().get("FOO").getData()).equals("arm"));
     }
     
     @Test
@@ -144,14 +147,14 @@ public class TermFrequencyIndexIteratorTest {
         // jump to the first doc
         iterator.seek(null, null, true);
         
-        Assert.assertTrue(iterator.hasTop());
+        assertTrue(iterator.hasTop());
         Document d = iterator.document();
-        Assert.assertTrue(d != null);
-        Assert.assertTrue(d.getDictionary().size() + "", d.getDictionary().size() == 2);
-        Assert.assertTrue(d.getDictionary().get("FOO") != null);
-        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
-        Assert.assertTrue((d.getDictionary().get("FOO").getData()).equals("arm"));
+        assertTrue(d != null);
+        assertTrue(d.getDictionary().size() + "", d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().get("FOO") != null);
+        assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertTrue((d.getDictionary().get("FOO").getData()).equals("arm"));
     }
     
     @Test
@@ -163,45 +166,45 @@ public class TermFrequencyIndexIteratorTest {
         // jump to the first doc
         iterator.seek(null, null, true);
         
-        Assert.assertTrue(iterator.hasTop());
+        assertTrue(iterator.hasTop());
         Document d = iterator.document();
-        Assert.assertTrue(d != null);
-        Assert.assertTrue(d.getDictionary().size() == 2);
-        Assert.assertTrue(d.getDictionary().get("FOO") != null);
-        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
-        Assert.assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 2);
+        assertTrue(d != null);
+        assertTrue(d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().get("FOO") != null);
+        assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 2);
         Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        Assert.assertTrue(i.next().getValue().equals("bar"));
-        Assert.assertTrue(i.next().getValue().equals("baz"));
+        assertTrue(i.next().getValue().equals("bar"));
+        assertTrue(i.next().getValue().equals("baz"));
         
         iterator.next();
         
-        Assert.assertTrue(iterator.hasTop());
+        assertTrue(iterator.hasTop());
         d = iterator.document();
-        Assert.assertTrue(d != null);
-        Assert.assertTrue(d.getDictionary().size() == 2);
-        Assert.assertTrue(d.getDictionary().get("FOO") != null);
-        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
-        Assert.assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 2);
+        assertTrue(d != null);
+        assertTrue(d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().get("FOO") != null);
+        assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 2);
         i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        Assert.assertTrue(i.next().getValue().equals("buf"));
-        Assert.assertTrue(i.next().getValue().equals("buz"));
+        assertTrue(i.next().getValue().equals("buf"));
+        assertTrue(i.next().getValue().equals("buz"));
         
         iterator.next();
         
-        Assert.assertTrue(iterator.hasTop());
+        assertTrue(iterator.hasTop());
         d = iterator.document();
-        Assert.assertTrue(d != null);
-        Assert.assertTrue(d.getDictionary().size() == 2);
-        Assert.assertTrue(d.getDictionary().get("FOO") != null);
-        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
-        Assert.assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 2);
+        assertTrue(d != null);
+        assertTrue(d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().get("FOO") != null);
+        assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 2);
         i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        Assert.assertTrue(i.next().getValue().equals("alf"));
-        Assert.assertTrue(i.next().getValue().equals("arm"));
+        assertTrue(i.next().getValue().equals("alf"));
+        assertTrue(i.next().getValue().equals("arm"));
     }
     
     @Test
@@ -214,24 +217,24 @@ public class TermFrequencyIndexIteratorTest {
         // jump to the first doc
         iterator.seek(null, null, true);
         
-        Assert.assertTrue(iterator.hasTop());
+        assertTrue(iterator.hasTop());
         Document d = iterator.document();
-        Assert.assertTrue(d != null);
-        Assert.assertTrue(d.getDictionary().size() == 2);
-        Assert.assertTrue(d.getDictionary().get("FOO") != null);
-        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
-        Assert.assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 6);
+        assertTrue(d != null);
+        assertTrue(d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().get("FOO") != null);
+        assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 6);
         Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        Assert.assertTrue(i.next().getValue().equals("bar"));
-        Assert.assertTrue(i.next().getValue().equals("baz"));
-        Assert.assertTrue(i.next().getValue().equals("buf"));
-        Assert.assertTrue(i.next().getValue().equals("buz"));
-        Assert.assertTrue(i.next().getValue().equals("alf"));
-        Assert.assertTrue(i.next().getValue().equals("arm"));
+        assertTrue(i.next().getValue().equals("bar"));
+        assertTrue(i.next().getValue().equals("baz"));
+        assertTrue(i.next().getValue().equals("buf"));
+        assertTrue(i.next().getValue().equals("buz"));
+        assertTrue(i.next().getValue().equals("alf"));
+        assertTrue(i.next().getValue().equals("arm"));
         
         iterator.next();
-        Assert.assertFalse(iterator.hasTop());
+        assertFalse(iterator.hasTop());
     }
     
     @Test
@@ -245,7 +248,7 @@ public class TermFrequencyIndexIteratorTest {
         
         // jump to the first doc
         iterator.seek(null, null, true);
-        Assert.assertFalse(iterator.hasTop());
+        assertFalse(iterator.hasTop());
     }
     
     @Test
@@ -259,43 +262,43 @@ public class TermFrequencyIndexIteratorTest {
         // jump to the first doc
         iterator.seek(null, null, true);
         
-        Assert.assertTrue(iterator.hasTop());
+        assertTrue(iterator.hasTop());
         Document d = iterator.document();
-        Assert.assertTrue(d != null);
-        Assert.assertTrue(d.getDictionary().size() == 2);
-        Assert.assertTrue(d.getDictionary().get("FOO") != null);
-        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertTrue(d != null);
+        assertTrue(d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().get("FOO") != null);
+        assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        assertTrue(d.getDictionary().get("FOO").getData() != null);
         Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        Assert.assertTrue(i.next().getValue().equals("bar"));
-        Assert.assertTrue(i.next().getValue().equals("baz"));
+        assertTrue(i.next().getValue().equals("bar"));
+        assertTrue(i.next().getValue().equals("baz"));
         
         iterator.next();
         
-        Assert.assertTrue(iterator.hasTop());
+        assertTrue(iterator.hasTop());
         d = iterator.document();
-        Assert.assertTrue(d != null);
-        Assert.assertTrue(d.getDictionary().size() == 2);
-        Assert.assertTrue(d.getDictionary().get("FOO") != null);
-        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertTrue(d != null);
+        assertTrue(d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().get("FOO") != null);
+        assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        assertTrue(d.getDictionary().get("FOO").getData() != null);
         i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        Assert.assertTrue(i.next().getValue().equals("buf"));
-        Assert.assertTrue(i.next().getValue().equals("buz"));
+        assertTrue(i.next().getValue().equals("buf"));
+        assertTrue(i.next().getValue().equals("buz"));
         
         iterator.next();
         
-        Assert.assertTrue(iterator.hasTop());
+        assertTrue(iterator.hasTop());
         d = iterator.document();
-        Assert.assertTrue(d != null);
-        Assert.assertTrue(d.getDictionary().size() == 2);
-        Assert.assertTrue(d.getDictionary().get("FOO") != null);
-        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData().equals("arm"));
+        assertTrue(d != null);
+        assertTrue(d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().get("FOO") != null);
+        assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertTrue(d.getDictionary().get("FOO").getData().equals("arm"));
         
         iterator.next();
-        Assert.assertFalse(iterator.hasTop());
+        assertFalse(iterator.hasTop());
     }
     
     @Test
@@ -309,21 +312,21 @@ public class TermFrequencyIndexIteratorTest {
         // jump to the first doc
         iterator.seek(null, null, true);
         
-        Assert.assertTrue(iterator.hasTop());
+        assertTrue(iterator.hasTop());
         Document d = iterator.document();
-        Assert.assertTrue(d != null);
-        Assert.assertTrue(d.getDictionary().size() == 2);
-        Assert.assertTrue(d.getDictionary().get("FOO") != null);
-        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertTrue(d != null);
+        assertTrue(d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().get("FOO") != null);
+        assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        assertTrue(d.getDictionary().get("FOO").getData() != null);
         Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        Assert.assertTrue(i.next().getValue().equals("bar"));
-        Assert.assertTrue(i.next().getValue().equals("baz"));
-        Assert.assertTrue(i.next().getValue().equals("buf"));
-        Assert.assertTrue(i.next().getValue().equals("arm"));
+        assertTrue(i.next().getValue().equals("bar"));
+        assertTrue(i.next().getValue().equals("baz"));
+        assertTrue(i.next().getValue().equals("buf"));
+        assertTrue(i.next().getValue().equals("arm"));
         
         iterator.next();
-        Assert.assertFalse(iterator.hasTop());
+        assertFalse(iterator.hasTop());
     }
     
     @Test
@@ -337,23 +340,23 @@ public class TermFrequencyIndexIteratorTest {
         // jump to the first doc
         iterator.seek(null, null, true);
         
-        Assert.assertTrue(iterator.hasTop());
+        assertTrue(iterator.hasTop());
         Document d = iterator.document();
-        Assert.assertTrue(d != null);
-        Assert.assertTrue(d.getDictionary().size() == 2);
-        Assert.assertTrue(d.getDictionary().get("FOO") != null);
-        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertTrue(d != null);
+        assertTrue(d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().get("FOO") != null);
+        assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        assertTrue(d.getDictionary().get("FOO").getData() != null);
         Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        Assert.assertTrue(i.next().getValue().equals("bar"));
-        Assert.assertTrue(i.next().getValue().equals("baz"));
-        Assert.assertTrue(i.next().getValue().equals("buf"));
-        Assert.assertTrue(i.next().getValue().equals("buz"));
-        Assert.assertTrue(i.next().getValue().equals("alf"));
-        Assert.assertTrue(i.next().getValue().equals("arm"));
+        assertTrue(i.next().getValue().equals("bar"));
+        assertTrue(i.next().getValue().equals("baz"));
+        assertTrue(i.next().getValue().equals("buf"));
+        assertTrue(i.next().getValue().equals("buz"));
+        assertTrue(i.next().getValue().equals("alf"));
+        assertTrue(i.next().getValue().equals("arm"));
         
         iterator.next();
-        Assert.assertFalse(iterator.hasTop());
+        assertFalse(iterator.hasTop());
     }
     
     private Key getFiKey(String row, String dataType, String uid, String fieldName, String fieldValue) {
