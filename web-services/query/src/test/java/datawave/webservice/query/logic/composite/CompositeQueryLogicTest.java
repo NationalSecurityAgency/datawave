@@ -23,7 +23,7 @@ import datawave.security.util.DnUtils.NpeUtils;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.security.authorization.RemoteUserOperations;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.ResultsPage;
@@ -235,19 +235,19 @@ public class CompositeQueryLogicTest {
         
         private Map<Key,Value> data = new ConcurrentHashMap<>();
         
-        private final RemoteUserOperations userOperations;
+        private final UserOperations userOperations;
         private Set<Authorizations> auths;
         
         public TestQueryLogic() {
             this(null);
         }
         
-        public TestQueryLogic(RemoteUserOperations userOperations) {
+        public TestQueryLogic(UserOperations userOperations) {
             this.userOperations = userOperations;
         }
         
         @Override
-        public RemoteUserOperations getRemoteUserOperations() {
+        public UserOperations getUserOperations() {
             return userOperations;
         }
         
@@ -329,7 +329,7 @@ public class CompositeQueryLogicTest {
         
     }
     
-    public static class TestUserOperations implements RemoteUserOperations {
+    public static class TestUserOperations implements UserOperations {
         
         @Override
         public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {

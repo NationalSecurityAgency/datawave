@@ -15,7 +15,7 @@ import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
-import datawave.security.authorization.RemoteUserOperations;
+import datawave.security.authorization.UserOperations;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.user.AuthorizationsListBase;
@@ -103,7 +103,7 @@ public class AuthorizationsUtilTest {
     
     @Test
     public void testDowngradeRemoteAuthorizations() throws AuthorizationException {
-        RemoteUserOperations remoteOps = new RemoteUserOperations() {
+        UserOperations remoteOps = new UserOperations() {
             
             @Override
             public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
@@ -126,7 +126,7 @@ public class AuthorizationsUtilTest {
     
     @Test(expected = IllegalArgumentException.class)
     public void testDowngradeRemoteAuthorizationsFail() throws AuthorizationException {
-        RemoteUserOperations remoteOps = new RemoteUserOperations() {
+        UserOperations remoteOps = new UserOperations() {
             
             @Override
             public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {

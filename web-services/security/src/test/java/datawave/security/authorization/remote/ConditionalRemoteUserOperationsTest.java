@@ -7,7 +7,7 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
-import datawave.security.authorization.RemoteUserOperations;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
@@ -34,7 +34,7 @@ import java.util.List;
 
 public class ConditionalRemoteUserOperationsTest {
     
-    private static class MockRemoteUserOperations implements RemoteUserOperations {
+    private static class MockRemoteUserOperations implements UserOperations {
         
         boolean invoked = false;
         

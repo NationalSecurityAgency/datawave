@@ -113,7 +113,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.logic = logic;
         this.connectionPriority = priority;
         this.settings = settings;
-        this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal, logic.getRemoteUserOperations());
+        this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal, logic.getUserOperations());
         this.timing = timing;
         this.executor = Executors.newSingleThreadExecutor();
         this.allowShortCircuitTimeouts = logic.isLongRunningQuery();

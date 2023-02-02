@@ -179,7 +179,7 @@ public class ExtendedRunningQueryTest {
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
-        expect(this.queryLogic.getRemoteUserOperations()).andReturn(null);
+        expect(this.queryLogic.getUserOperations()).andReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
@@ -270,7 +270,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
-        expect(this.queryLogic.getRemoteUserOperations()).andReturn(null);
+        expect(this.queryLogic.getUserOperations()).andReturn(null);
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         this.queryLogic.setPageProcessingStartTime(anyLong());
         
@@ -340,7 +340,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
-        expect(this.queryLogic.getRemoteUserOperations()).andReturn(null);
+        expect(this.queryLogic.getUserOperations()).andReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
@@ -395,7 +395,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
-        expect(this.queryLogic.getRemoteUserOperations()).andReturn(null);
+        expect(this.queryLogic.getUserOperations()).andReturn(null);
         this.queryLogic.setupQuery(this.genericConfiguration);
         this.queryMetrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(3);
@@ -484,7 +484,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
-        expect(this.queryLogic.getRemoteUserOperations()).andReturn(null);
+        expect(this.queryLogic.getUserOperations()).andReturn(null);
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         this.queryLogic.setPageProcessingStartTime(anyLong());
         

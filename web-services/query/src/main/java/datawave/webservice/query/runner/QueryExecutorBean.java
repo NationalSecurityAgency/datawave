@@ -900,7 +900,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 accumuloConnectionRequestBean.requestEnd(q.getId().toString());
             }
             
-            Set<Authorizations> calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), qd.p, qd.logic.getRemoteUserOperations());
+            Set<Authorizations> calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), qd.p, qd.logic.getUserOperations());
             String plan = qd.logic.getPlan(connection, q, calculatedAuths, expandFields, expandValues);
             response.setResult(plan);
             

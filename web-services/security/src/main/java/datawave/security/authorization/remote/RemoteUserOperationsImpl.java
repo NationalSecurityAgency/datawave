@@ -8,7 +8,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
-import datawave.security.authorization.RemoteUserOperations;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class RemoteUserOperationsImpl extends RemoteHttpService implements RemoteUserOperations {
+public class RemoteUserOperationsImpl extends RemoteHttpService implements UserOperations {
     private static final Logger log = LoggerFactory.getLogger(RemoteUserOperationsImpl.class);
     
     public static final String PROXIED_ENTITIES_HEADER = DatawaveAuthenticationMechanism.PROXIED_ENTITIES_HEADER;

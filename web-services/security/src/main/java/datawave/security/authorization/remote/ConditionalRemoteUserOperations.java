@@ -5,7 +5,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.user.AuthorizationsListBase;
-import datawave.security.authorization.RemoteUserOperations;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.GenericResponse;
 import org.slf4j.Logger;
@@ -20,10 +20,10 @@ import java.util.function.Function;
 /**
  * A conditional remote user operations will only invoke the delegate remote service base on a specified function of the local principal
  */
-public class ConditionalRemoteUserOperations implements RemoteUserOperations {
+public class ConditionalRemoteUserOperations implements UserOperations {
     private static final Logger log = LoggerFactory.getLogger(ConditionalRemoteUserOperations.class);
     
-    private RemoteUserOperations delegate;
+    private UserOperations delegate;
     private Function<DatawavePrincipal,Boolean> condition;
     private ResponseObjectFactory responseObjectFactory;
     
@@ -66,11 +66,11 @@ public class ConditionalRemoteUserOperations implements RemoteUserOperations {
         return new AuthorizationsListBase.SubjectIssuerDNPair(dn.subjectDN(), dn.issuerDN());
     }
     
-    public RemoteUserOperations getDelegate() {
+    public UserOperations getDelegate() {
         return delegate;
     }
     
-    public void setDelegate(RemoteUserOperations delegate) {
+    public void setDelegate(UserOperations delegate) {
         this.delegate = delegate;
     }
     

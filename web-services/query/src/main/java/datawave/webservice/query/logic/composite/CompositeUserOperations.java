@@ -6,7 +6,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.user.AuthorizationsListBase;
-import datawave.security.authorization.RemoteUserOperations;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -19,14 +19,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class CompositeUserOperations implements RemoteUserOperations {
+public class CompositeUserOperations implements UserOperations {
     final ResponseObjectFactory responseObjectFactory;
-    final List<RemoteUserOperations> remoteOperations;
+    final List<UserOperations> userOperations;
     final boolean includeLocal;
     
-    public CompositeUserOperations(List<RemoteUserOperations> remoteOperations, boolean includeLocal, ResponseObjectFactory responseObjectFactory) {
+    public CompositeUserOperations(List<UserOperations> remoteOperations, boolean includeLocal, ResponseObjectFactory responseObjectFactory) {
         this.responseObjectFactory = responseObjectFactory;
-        this.remoteOperations = remoteOperations;
+        this.userOperations = remoteOperations;
         this.includeLocal = includeLocal;
     }
     
@@ -39,7 +39,7 @@ public class CompositeUserOperations implements RemoteUserOperations {
             if (includeLocal) {
                 principal.getProxiedUsers().forEach(u -> authMap.put(dn(u.getDn()), new HashSet<>(u.getAuths())));
             }
-            for (RemoteUserOperations ops : remoteOperations) {
+            for (UserOperations ops : userOperations) {
                 AuthorizationsListBase remoteAuths = ops.listEffectiveAuthorizations(callerObject);
                 AuthorizationsListBase.SubjectIssuerDNPair userDn = new AuthorizationsListBase.SubjectIssuerDNPair(remoteAuths.getUserDn(),
                                 remoteAuths.getIssuerDn());
@@ -68,7 +68,7 @@ public class CompositeUserOperations implements RemoteUserOperations {
         GenericResponse<String> response = new GenericResponse<>();
         response.setResult("");
         String separator = "";
-        for (RemoteUserOperations ops : remoteOperations) {
+        for (UserOperations ops : userOperations) {
             GenericResponse<String> remoteResponse = ops.flushCachedCredentials(callerObject);
             if (remoteResponse.getHasResults()) {
                 response.setHasResults(true);

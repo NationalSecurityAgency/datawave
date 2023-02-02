@@ -4,7 +4,7 @@ import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.security.authorization.RemoteUserOperations;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
@@ -342,7 +342,7 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     }
     
     @Override
-    public RemoteUserOperations getRemoteUserOperations() {
-        return delegate.getRemoteUserOperations();
+    public UserOperations getUserOperations() {
+        return delegate.getUserOperations();
     }
 }

@@ -9,10 +9,8 @@ import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.RemoteUserOperations;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
@@ -25,7 +23,6 @@ import datawave.webservice.result.QueryWizardResultResponse;
 import datawave.webservice.result.QueryWizardStep1Response;
 import datawave.webservice.result.QueryWizardStep2Response;
 import datawave.webservice.result.QueryWizardStep3Response;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
@@ -47,7 +44,6 @@ import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 
-import javax.naming.AuthenticationException;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -57,8 +53,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import java.lang.reflect.Method;
-import java.security.Principal;
-import java.text.MessageFormat;
 import java.util.*;
 
 import datawave.security.util.AuthorizationsUtil;
@@ -233,7 +227,7 @@ public class BasicQueryBean {
         q.setQuery("test");
         q.setQueryAuthorizations("ALL");
         
-        RemoteUserOperations userService = null;
+        UserOperations userService = null;
         
         for (QueryLogic<?> l : logicList) {
             try {
@@ -243,7 +237,7 @@ public class BasicQueryBean {
                     QueryLogicDescription d = new QueryLogicDescription(l.getLogicName());
                     d.setAuditType(l.getAuditType(null).toString());
                     d.setLogicDescription(l.getLogicDescription());
-                    userService = l.getRemoteUserOperations();
+                    userService = l.getUserOperations();
                     theQld = d;
                     
                     Set<String> optionalQueryParameters = l.getOptionalQueryParameters();

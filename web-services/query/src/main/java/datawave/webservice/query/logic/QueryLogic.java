@@ -5,7 +5,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.security.authorization.RemoteUserOperations;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -385,7 +385,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * Normally this simply returns null as the query logic simply uses the user within the local system. However sometimes we may have a query that goes off
      * system and hence needs to use a different set of auths when downgrading.
      *
-     * @return A remote user operations interface implementation. Null if NA.
+     * @return A user operations interface implementation. Null if NA (i.e. the local principal is sufficient)
      */
-    RemoteUserOperations getRemoteUserOperations();
+    UserOperations getUserOperations();
 }

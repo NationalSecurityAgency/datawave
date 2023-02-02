@@ -267,7 +267,7 @@ public class IdTranslatorBean {
         String userAuths;
         try {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
-            userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal, logic.getRemoteUserOperations());
+            userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal, logic.getUserOperations());
         } catch (Exception e) {
             log.error("Failed to get user query authorizations", e);
             throw new DatawaveWebApplicationException(e, new VoidResponse());

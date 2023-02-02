@@ -8,7 +8,7 @@ import datawave.accumulo.util.security.UserAuthFunctions;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.RemoteUserOperations;
+import datawave.security.authorization.UserOperations;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
 
@@ -88,7 +88,7 @@ public class AuthorizationsUtil {
      * @return A set of {@link Authorizations}, one per entity represented in {@code principal}. The user's auths are replaced by {@code requestedAuths} so long
      *         as the user actually had all of the auths. If {@code requestedAuths} is {@code null}, then the user's auths are returned as-is.
      */
-    public static Set<Authorizations> getDowngradedAuthorizations(String requestedAuths, Principal principal, RemoteUserOperations userService)
+    public static Set<Authorizations> getDowngradedAuthorizations(String requestedAuths, Principal principal, UserOperations userService)
                     throws AuthorizationException {
         if (principal instanceof DatawavePrincipal) {
             return getDowngradedAuthorizations(requestedAuths, (DatawavePrincipal) principal, userService);
@@ -114,7 +114,7 @@ public class AuthorizationsUtil {
      * @return A set of {@link Authorizations}, one per entity represented in {@code principal}. The user's auths are replaced by {@code requestedAuths} so long
      *         as the user actually had all of the auths. If {@code requestedAuths} is {@code null}, then the user's auths are returned as-is.
      */
-    public static LinkedHashSet<Authorizations> getDowngradedAuthorizations(String requestedAuths, DatawavePrincipal principal, RemoteUserOperations userService)
+    public static LinkedHashSet<Authorizations> getDowngradedAuthorizations(String requestedAuths, DatawavePrincipal principal, UserOperations userService)
                     throws AuthorizationException {
         if (userService != null) {
             principal = userService.getRemoteUser((DatawavePrincipal) principal);
@@ -139,7 +139,7 @@ public class AuthorizationsUtil {
      *            principal will be used. Otherwise this service will be used to retrieve the remote principal from which the auths will be determined.
      * @return requested, unless the user represented by {@code principal} does not have one or more of the auths in {@code requested}
      */
-    public static String downgradeUserAuths(Principal principal, String requested, RemoteUserOperations userService) throws AuthorizationException {
+    public static String downgradeUserAuths(Principal principal, String requested, UserOperations userService) throws AuthorizationException {
         if (requested == null || requested.trim().isEmpty()) {
             throw new IllegalArgumentException("Requested authorizations must not be empty");
         }
@@ -210,7 +210,7 @@ public class AuthorizationsUtil {
      *            principal will be used. Otherwise this service will be used to retrieve the remote principal from which the auths will be determined.
      * @return user authorizations string
      */
-    public static String buildUserAuthorizationString(Principal principal, RemoteUserOperations userService) throws AuthorizationException {
+    public static String buildUserAuthorizationString(Principal principal, UserOperations userService) throws AuthorizationException {
         if (userService != null) {
             principal = userService.getRemoteUser((DatawavePrincipal) principal);
         }

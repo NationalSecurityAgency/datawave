@@ -1,10 +1,5 @@
 package datawave.security.authorization;
 
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.AuthorizationsUtil;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.result.GenericResponse;
 
@@ -16,9 +11,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * A remote query service is one that can pass calls off to another external user operations endpoint
+ * A query service is one that can pass calls off to another external user operations endpoint
  */
-public interface RemoteUserOperations {
+public interface UserOperations {
     
     AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException;
     

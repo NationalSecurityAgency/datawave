@@ -6,7 +6,7 @@ import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.security.authorization.RemoteUserOperations;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -190,8 +190,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         
         // determine the valid authorizations for this call to be the user's auths for this logic
         DatawavePrincipal principal = (DatawavePrincipal) logic.getPrincipal();
-        if (logic.getRemoteUserOperations() != null) {
-            principal = logic.getRemoteUserOperations().getRemoteUser(principal);
+        if (logic.getUserOperations() != null) {
+            principal = logic.getUserOperations().getRemoteUser(principal);
         }
         
         // get the valid auths from the primary user
@@ -391,22 +391,22 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         this.queryLogics = queryLogics;
     }
     
-    public RemoteUserOperations getRemoteUserOperations() {
+    public UserOperations getUserOperations() {
         // if any of the underlying logics have a non-null user operations, then
         // we need to return an instance that combines auths across the underlying
         // query logics
         boolean includeLocal = false;
-        List<RemoteUserOperations> remoteOperations = new ArrayList<>();
+        List<UserOperations> userOperations = new ArrayList<>();
         for (QueryLogic<?> logic : this.queryLogics.values()) {
-            RemoteUserOperations ops = logic.getRemoteUserOperations();
+            UserOperations ops = logic.getUserOperations();
             if (ops == null) {
                 includeLocal = true;
             } else {
-                remoteOperations.add(ops);
+                userOperations.add(ops);
             }
         }
-        if (!remoteOperations.isEmpty()) {
-            return new CompositeUserOperations(remoteOperations, includeLocal, responseObjectFactory);
+        if (!userOperations.isEmpty()) {
+            return new CompositeUserOperations(userOperations, includeLocal, responseObjectFactory);
         }
         return null;
     }

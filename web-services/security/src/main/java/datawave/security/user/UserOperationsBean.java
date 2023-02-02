@@ -4,7 +4,7 @@ import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.RemoteUserOperations;
+import datawave.security.authorization.UserOperations;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.cache.CredentialsCacheBean;
 import datawave.security.util.AuthorizationsUtil;
@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 @RolesAllowed({"InternalUser", "AuthorizedUser", "AuthorizedServer", "AuthorizedQueryServer", "SecurityUser"})
 @DeclareRoles({"InternalUser", "AuthorizedUser", "AuthorizedServer", "AuthorizedQueryServer", "SecurityUser"})
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
-public class UserOperationsBean {
+public class UserOperationsBean implements UserOperations {
     private Logger log = LoggerFactory.getLogger(getClass());
     
     @Resource
@@ -62,7 +62,7 @@ public class UserOperationsBean {
     
     @Inject
     @SpringBean(name = "RemoteUserOperations")
-    private List<RemoteUserOperations> remoteServices;
+    private List<UserOperations> remoteServices;
     
     /**
      * Lists the "effective" Accumulo user authorizations for the calling user. These are authorizations that are returned by the authorization service
@@ -116,11 +116,18 @@ public class UserOperationsBean {
     @Produces({"application/xml", "text/xml", "text/plain", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "text/html"})
     public AuthorizationsListBase listEffectiveAuthorizations(@DefaultValue("true") @QueryParam("includeRemoteServices") boolean includeRemoteServices) {
+        return listEffectiveAuthorizations(context.getCallerPrincipal(), includeRemoteServices);
+    }
+    
+    @Override
+    public AuthorizationsListBase listEffectiveAuthorizations(Object p) {
+        return listEffectiveAuthorizations(p, true);
+    }
+    
+    private AuthorizationsListBase listEffectiveAuthorizations(Object p, boolean includeRemoteServices) {
         final AuthorizationsListBase list = responseObjectFactory.getAuthorizationsList();
         
-        // Find out who/what called this method
-        Principal p = context.getCallerPrincipal();
-        String name = p.getName();
+        String name = p.toString();
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal datawavePrincipal = (DatawavePrincipal) p;
             name = datawavePrincipal.getShortName();
@@ -129,7 +136,7 @@ public class UserOperationsBean {
             if (includeRemoteServices && CollectionUtils.isNotEmpty(remoteServices)) {
                 Map<SubjectIssuerDNPair,DatawaveUser> users = new HashMap<>(datawavePrincipal.getProxiedUsers().stream()
                                 .collect(Collectors.toMap(DatawaveUser::getDn, Function.identity())));
-                for (RemoteUserOperations remote : remoteServices) {
+                for (UserOperations remote : remoteServices) {
                     try {
                         AuthorizationsListBase response = remote.listEffectiveAuthorizations(context.getCallerPrincipal());
                         
@@ -188,13 +195,21 @@ public class UserOperationsBean {
             "application/x-protostuff"})
     @PermitAll
     public GenericResponse<String> flushCachedCredentials(@DefaultValue("true") @QueryParam("includeRemoteServices") boolean includeRemoteServices) {
+        return flushCachedCredentials(context.getCallerPrincipal(), includeRemoteServices);
+    }
+    
+    @Override
+    public GenericResponse<String> flushCachedCredentials(Object callerPrincipal) {
+        return flushCachedCredentials(callerPrincipal, true);
+    }
+    
+    private GenericResponse<String> flushCachedCredentials(Object callerPrincipal, boolean includeRemoteServices) {
         GenericResponse<String> response = new GenericResponse<>();
-        Principal callerPrincipal = context.getCallerPrincipal();
         log.info("Flushing credentials for " + callerPrincipal + " from the cache.");
         
         // if we have any remote services configured, then flush those credentials as well
         if (includeRemoteServices && CollectionUtils.isNotEmpty(remoteServices)) {
-            for (RemoteUserOperations remote : remoteServices) {
+            for (UserOperations remote : remoteServices) {
                 try {
                     remote.flushCachedCredentials(callerPrincipal);
                 } catch (Exception e) {

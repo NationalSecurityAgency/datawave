@@ -113,7 +113,7 @@ public class RunningQueryTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
-        expect(logic.getRemoteUserOperations()).andReturn(null);
+        expect(logic.getUserOperations()).andReturn(null);
         replay(logic);
         
         RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
@@ -135,7 +135,7 @@ public class RunningQueryTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
-        expect(logic.getRemoteUserOperations()).andReturn(null);
+        expect(logic.getUserOperations()).andReturn(null);
         replay(logic);
         
         RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
@@ -156,7 +156,7 @@ public class RunningQueryTest {
         Authorizations expected = new Authorizations(auths);
         
         expect(logic.getCollectQueryMetrics()).andReturn(false);
-        expect(logic.getRemoteUserOperations()).andReturn(null);
+        expect(logic.getUserOperations()).andReturn(null);
         replay(logic);
         
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);
