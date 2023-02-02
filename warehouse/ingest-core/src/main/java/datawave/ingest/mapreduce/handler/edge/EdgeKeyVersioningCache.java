@@ -88,9 +88,13 @@ public class EdgeKeyVersioningCache {
      * @param fs
      *            the hadoop filesystem containing the splits file
      * @throws AccumuloSecurityException
+     *             for issues authenticating with accumulo
      * @throws AccumuloException
+     *             for general issues with accumulo
      * @throws IOException
+     *             for problems reading or writing to the cache
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     
     public void updateCache(FileSystem fs) throws AccumuloSecurityException, AccumuloException, IOException, TableNotFoundException {
@@ -194,6 +198,7 @@ public class EdgeKeyVersioningCache {
      *            an input stream containing the split points to read
      * @return a map of table name to split points
      * @throws IOException
+     *             for problems reading or writing to the cache
      */
     private Map<Integer,String> readCache(BufferedReader in) throws IOException {
         
@@ -213,9 +218,15 @@ public class EdgeKeyVersioningCache {
      * Key structure: edge_key version:num/yyyy-MM-ddThh:MM:ss:000Z []
      *
      * @param time
+     *            the time of the entry
+     * @param keyVersionNum
+     *            the key version number
      * @throws AccumuloSecurityException
+     *             for issues authenticating with accumulo
      * @throws AccumuloException
+     *             for general issues with accumulo
      * @throws TableNotFoundException
+     *             if the table was not found
      */
     public void createMetadataEntry(long time, int keyVersionNum) throws Exception {
         if (this.cbHelper == null) {

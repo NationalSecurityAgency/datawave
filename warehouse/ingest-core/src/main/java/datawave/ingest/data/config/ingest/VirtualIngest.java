@@ -209,6 +209,8 @@ public interface VirtualIngest {
          *            a hadoop {@link Configuration}
          * @param key
          *            the key
+         * @param defaultVal
+         *            a default value to return
          * @return The value, null if not available
          */
         protected String get(Type type, String instance, Configuration config, String key, String defaultVal) {
@@ -232,6 +234,8 @@ public interface VirtualIngest {
          *            a hadoop {@link Configuration}
          * @param key
          *            the key
+         * @param defaultVal
+         *            a default value to return
          * @return The value, null if not available
          */
         protected boolean getBoolean(Type type, String instance, Configuration config, String key, boolean defaultVal) {
@@ -255,6 +259,8 @@ public interface VirtualIngest {
          *            a hadoop {@link Configuration}
          * @param key
          *            the key
+         * @param defaultVal
+         *            a default set of values to return
          * @return The value, null if not available
          */
         protected String[] getStrings(Type type, String instance, Configuration config, String key, String[] defaultVal) {

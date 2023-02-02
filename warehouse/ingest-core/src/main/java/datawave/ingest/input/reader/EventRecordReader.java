@@ -13,31 +13,49 @@ import org.apache.hadoop.conf.Configuration;
 public interface EventRecordReader {
     /**
      * Perform specialized event initialization as needed with the given config
+     * 
+     * @param conf
+     *            configuration to initialize
+     * @throws IOException
+     *             if there is an issue retrieving config
      */
     void initializeEvent(Configuration conf) throws IOException;
     
     /**
      * Return the event fully initialized and populated via the current key and value from the RecordReader.
+     * 
+     * @return event container
      */
     RawRecordContainer getEvent();
     
     /**
      * Get the raw file name
+     * 
+     * @return raw file name
      */
     String getRawInputFileName();
     
     /**
      * Get the raw file timestamp
+     * 
+     * @return raw file timestamp
      */
     long getRawInputFileTimestamp();
     
     /**
      * Execute policy enforcement on the given event
+     * 
+     * @param event
+     *            event to examine
+     * @return the event container
      */
     RawRecordContainer enforcePolicy(RawRecordContainer event);
     
     /**
-     * Set the input date (???
+     * Set the input date
+     * 
+     * @param time
+     *            time to set
      */
     void setInputDate(long time);
     

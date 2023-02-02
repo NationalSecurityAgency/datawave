@@ -241,7 +241,7 @@ public class GeoUtils {
         List<long[]> decomposedRanges = new ArrayList<>();
         
         long increment = (endPosition - beginPosition) / 10L;
-        if (increment > 1) {
+        if (increment >= 1) {
             for (long position = beginPosition; position < endPosition; position += increment) {
                 decomposedRanges.add(new long[] {position, position + increment});
             }

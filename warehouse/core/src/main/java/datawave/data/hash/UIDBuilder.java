@@ -9,6 +9,7 @@ import org.apache.hadoop.conf.Configuration;
  * Creates UIDs based on various types of input
  *
  * @param <UID_TYPE>
+ *            the type of UID
  */
 public interface UIDBuilder<UID_TYPE extends UID> {
     
