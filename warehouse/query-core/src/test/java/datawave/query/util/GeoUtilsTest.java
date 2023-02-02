@@ -11,6 +11,19 @@ import java.util.List;
 public class GeoUtilsTest {
     
     @Test
+    public void optimizeSmallAreaTest() throws Exception {
+        String wktString = "POLYGON((-0.000010 -0.000010, 0.000010 -0.000010, 0.000010 0.000010, -0.000010 0.000010, -0.000010 -0.000010))";
+        Geometry geom = new WKTReader().read(wktString);
+        
+        long numUnoptimizedIndices = GeoUtils.generateOptimizedIndexRanges(geom, 0).stream()
+                        .map(r -> GeoUtils.indexToPosition(r[1]) - GeoUtils.indexToPosition(r[0])).reduce(0L, Long::sum);
+        long numOptimizedIndices = GeoUtils.generateOptimizedIndexRanges(geom, 32).stream()
+                        .map(r -> GeoUtils.indexToPosition(r[1]) - GeoUtils.indexToPosition(r[0])).reduce(0L, Long::sum);
+        
+        Assert.assertTrue(numOptimizedIndices < numUnoptimizedIndices);
+    }
+    
+    @Test
     public void optimizeSinglePointTest() throws Exception {
         String wktString = "POINT(12.34567890123 9.87654321098)";
         Geometry geom = new WKTReader().read(wktString);
