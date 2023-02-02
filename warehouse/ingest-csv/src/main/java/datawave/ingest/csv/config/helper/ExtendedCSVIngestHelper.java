@@ -97,7 +97,11 @@ public class ExtendedCSVIngestHelper extends CSVIngestHelper {
      * Apply the id metadata parser
      * 
      * @param idFieldValue
+     *            the id field value
+     * @param fields
+     *            the event fields
      * @throws Exception
+     *             if there is an issue
      */
     protected void getMetadataFromParsers(Multimap<String,String> fields, String idFieldValue) throws Exception {
         Multimap<String,String> metadata = HashMultimap.create();
@@ -111,6 +115,9 @@ public class ExtendedCSVIngestHelper extends CSVIngestHelper {
     
     /**
      * Override the normalize call to enable event field value normalization
+     * 
+     * @param nci
+     *            the normalized content interface
      */
     public Set<NormalizedContentInterface> normalize(NormalizedContentInterface nci) {
         
