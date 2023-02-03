@@ -32,7 +32,7 @@ maxClientCnxns=100"
 
 # You may override DW_ACCUMULO_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
 
-DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://raw.githubusercontent.com/brianloss/maven_repo/files/accumulo-1.9.3-hadoop3-bin.tar.gz}"
+DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-http://archive.apache.org/dist/accumulo/1.10.2/accumulo-1.10.2-bin.tar.gz}"
 DW_ACCUMULO_DIST="$( downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"
 DW_ACCUMULO_SYMLINK="accumulo"

@@ -90,7 +90,12 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
         }
     }
     
-    /** Gets the Event and this RecordReader ready for reading. */
+    /**
+     * Gets the Event and this RecordReader ready for reading.
+     * 
+     * @param conf
+     *            the configuration
+     * */
     @Override
     public void initializeEvent(Configuration conf) throws IOException {
         super.initializeEvent(conf);
@@ -102,7 +107,13 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
         _tokenizer = createTokenizer();
     }
     
-    /** Creates a CVSHelper for the RecordReader. */
+    /**
+     * Creates a CVSHelper for the RecordReader.
+     * 
+     * @param conf
+     *            a configuration
+     * @return a CSVHelper object
+     * */
     @Override
     protected CSVHelper createHelper(Configuration conf) {
         return new CSVHelper();
@@ -191,7 +202,11 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
         }
     }
     
-    /** Creates a new StrTokenizer based on the configuration. */
+    /**
+     * Creates a new StrTokenizer based on the configuration.
+     * 
+     * @return a string tokenizer
+     * */
     private StrTokenizer createTokenizer() {
         final StrTokenizer tokenizer;
         
