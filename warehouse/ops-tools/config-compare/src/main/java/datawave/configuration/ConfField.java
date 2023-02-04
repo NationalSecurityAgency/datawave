@@ -21,6 +21,7 @@ public class ConfField {
      * Get this field name. If this is a prefixed field, it will prepend the prefix.
      *
      * @param prefix
+     *            a prefix
      * @return field name
      */
     public String getField(String prefix) {

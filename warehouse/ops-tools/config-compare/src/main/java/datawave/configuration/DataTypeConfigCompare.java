@@ -22,7 +22,9 @@ public class DataTypeConfigCompare {
      * Runs the comparison.
      *
      * @param left
+     *            left-hand Configuration
      * @param right
+     *            right-hand Configuration
      * @return CompareResult which houses comparison details.
      */
     public CompareResult run(Configuration left, Configuration right) {

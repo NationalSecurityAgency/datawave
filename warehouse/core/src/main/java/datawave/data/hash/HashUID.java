@@ -202,7 +202,7 @@ public class HashUID extends UID {
     /**
      * Get the portion of the UID to be used for sharding (@see datawave.ingest.mapreduce.handler.shard.ShardIdFactory)
      * 
-     * @return
+     * @return UID for sharding
      */
     public String getShardedPortion() {
         return getBaseUid();
@@ -221,6 +221,7 @@ public class HashUID extends UID {
      * Hash the data
      * 
      * @param data
+     *            - the byte array to hash
      */
     private void hash(byte[] data) {
         if (optionalPrefix == null) {
@@ -244,6 +245,7 @@ public class HashUID extends UID {
      * Parses the string representation of the hash
      * 
      * @param s
+     *            - the string to parse
      * @return UID
      */
     @SuppressWarnings("unchecked")
@@ -255,6 +257,7 @@ public class HashUID extends UID {
      * Parses the string representation of the hash, but only include up to maxExtraParts of the portion past the base hash
      * 
      * @param s
+     *            the string version of the hash
      * @param maxExtraParts
      *            is the number of pieces of the extra portion to include. -1 means all, 0 means none.
      * @return UID
@@ -296,6 +299,7 @@ public class HashUID extends UID {
      * Parses the string representation of the hash, but only the base part
      * 
      * @param s
+     *            string representation of hash
      * @return UID
      */
     @SuppressWarnings("unchecked")

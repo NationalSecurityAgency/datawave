@@ -1,24 +1,19 @@
 package datawave.query.transformer;
 
+import com.google.common.collect.Multimap;
+import datawave.webservice.query.result.event.FieldBase;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import org.apache.log4j.Logger;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import javax.inject.Inject;
-
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.query.result.event.FieldBase;
-
-import org.apache.log4j.Logger;
-
-import com.google.common.collect.Multimap;
-
 public class EventQueryDataDecorator {
     private String fieldName = null;
     private Map<String,String> patternMap = new LinkedHashMap<>();
     private Logger log = Logger.getLogger(EventQueryDataDecorator.class);
-    @Inject
     private ResponseObjectFactory responseObjectFactory;
     
     private EventQueryDataDecorator() {}

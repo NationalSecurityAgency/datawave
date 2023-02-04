@@ -66,7 +66,7 @@ public interface VirtualIngest {
         public static final String VIRTUAL_FIELD_NAMES = ".data.combine.name";
         
         /**
-         * Parameter for specifying the fields that make up each virtual field. The value of this parameter is a period separated list of fields for each
+         * Parameter for specifying the fields that make up each virtual field. The value of this parameter is a period-delimited list of fields for each
          * virtual field. Multiple virtual fields can be specified by separating them with a comma. For example: "FIELD1.FIELD2,FIELD1.FIELD3" One can specify
          * constant strings to include in the mix by using quotes which will override including the default separator. "FIELD1.' and '.FIELD2" Constant strings
          * will always be included in the resulting value, however the default separator will only be included if not overridden by a constant AND there are
@@ -92,9 +92,9 @@ public interface VirtualIngest {
         public static final String VIRTUAL_FIELD_VALUE_SEPARATOR = ".data.combine.separator";
         
         /**
-         * Boolean parameter for specifying a whether missing parts of a virtual field are permitted. If only one value is specified, the it applies to all of
-         * the fields. Otherwise a value can be specified per virtual field (comma separated). This parameter supports multiple datatypes, so a valid value
-         * would be something like myDataType.data.combine.allow.missing.
+         * Boolean parameter for specifying a whether missing parts of a virtual field are permitted. If only one value is specified, then it applies to all the
+         * fields. Otherwise, a value can be specified per virtual field (comma separated). This parameter supports multiple datatypes, so a valid value would
+         * be something like myDataType.data.combine.allow.missing.
          */
         public static final String VIRTUAL_FIELD_ALLOW_MISSING = ".data.combine.allow.missing";
         
@@ -102,8 +102,8 @@ public interface VirtualIngest {
          * Parameter for specifying whether non-grouped fields can be combined with grouped fields. Grouped fields of different groups will never be combined
          * together, one may or may not want non-grouped fields (i.e. global in context) merged with grouped fields. The possible values are: SAME_GROUP_ONLY:
          * only fields of the same group will be merged together. Two non-grouped fields are considered GROUPED_WITH_NON_GROUPED: Grouped fields can be merged
-         * with non-grouped fields. Two grouped fields in different groups will never be merged. IGNORE_GROUPS: Ignore grouping altogether. An group or
-         * non-grouped can be merged. If only one value is specified, the it applies to all of the fields. Otherwise a value can be specified per virtual field
+         * with non-grouped fields. Two grouped fields in different groups will never be merged. IGNORE_GROUPS: Ignore grouping altogether. A group or
+         * non-grouped can be merged. If only one value is specified, then it applies to all the fields. Otherwise, a value can be specified per virtual field
          * (comma separated). The default is GROUPED_WITH_NON_GROUPED This parameter supports multiple datatypes, so a valid value would be something like
          * myDataType.data.combine.grouped.with.nongrouped.
          */
@@ -202,9 +202,15 @@ public interface VirtualIngest {
          * A convenience routine to get a configuration value
          *
          * @param type
+         *            a {@link Type}
          * @param instance
+         *            the instance
          * @param config
+         *            a hadoop {@link Configuration}
          * @param key
+         *            the key
+         * @param defaultVal
+         *            a default value to return
          * @return The value, null if not available
          */
         protected String get(Type type, String instance, Configuration config, String key, String defaultVal) {
@@ -221,16 +227,22 @@ public interface VirtualIngest {
          * A convenience routine to get a configuration value
          *
          * @param type
+         *            a {@link Type}
          * @param instance
+         *            the instance
          * @param config
+         *            a hadoop {@link Configuration}
          * @param key
+         *            the key
+         * @param defaultVal
+         *            a default value to return
          * @return The value, null if not available
          */
         protected boolean getBoolean(Type type, String instance, Configuration config, String key, boolean defaultVal) {
             for (String prefix : getConfPrefixes(type, instance)) {
                 String value = config.get(prefix + key, null);
                 if (value != null) {
-                    return Boolean.valueOf(value);
+                    return Boolean.parseBoolean(value);
                 }
             }
             return defaultVal;
@@ -240,9 +252,15 @@ public interface VirtualIngest {
          * A convenience routine to get a configuration value
          *
          * @param type
+         *            the {@link Type}
          * @param instance
+         *            the instance
          * @param config
+         *            a hadoop {@link Configuration}
          * @param key
+         *            the key
+         * @param defaultVal
+         *            a default set of values to return
          * @return The value, null if not available
          */
         protected String[] getStrings(Type type, String instance, Configuration config, String key, String[] defaultVal) {
@@ -278,8 +296,10 @@ public interface VirtualIngest {
          * &lt;datatype&gt;.&lt;instance&gt; &lt;datatype&gt; all.&lt;classname&gt; all
          *
          * @param type
+         *            a {@link Type}
          * @param instance
-         * @return
+         *            an instance
+         * @return an array of key prefixes in order of precedent
          */
         protected String[] getConfPrefixes(Type type, String instance) {
             List<String> prefixes = new ArrayList<>();
@@ -317,10 +337,12 @@ public interface VirtualIngest {
         }
         
         /**
-         * A helper routine to merge markings maps when mergings fields of a NormalizedContentInterface
+         * A helper routine to merge markings maps when merging fields of a NormalizedContentInterface
          *
          * @param markings1
+         *            a map of markings
          * @param markings2
+         *            a different map of markings
          * @return the merged markings
          */
         protected Map<String,String> mergeMarkings(Map<String,String> markings1, Map<String,String> markings2) {
@@ -332,7 +354,6 @@ public interface VirtualIngest {
                         markings1 = markingFunctions.combine(markings1, markings2);
                     } catch (MarkingFunctions.Exception e) {
                         throw new RuntimeException("Unable to combine markings.", e);
-                        
                     }
                 }
             }
@@ -341,9 +362,10 @@ public interface VirtualIngest {
         
         /**
          * Create the normalized form of a map of fields, and add the virtual fields as configured above.
-         * 
+         *
          * @param fields
-         * @return The multimap of normalized fields including virtual fields.
+         *            a multimap of fields
+         * @return the multimap of normalized fields including virtual fields.
          */
         public Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields) {
             Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
@@ -356,14 +378,15 @@ public interface VirtualIngest {
         /**
          * Add the virtual fields as configured above to the existing normalized event fields. This is generally the main entry point to the virtual field
          * generation.
-         * 
+         *
          * @param eventFields
+         *            a multimap of fields to their {@link NormalizedContentInterface} values
          * @return The multimap of normalized fields including virtual fields.
          */
         public Multimap<String,NormalizedContentInterface> normalizeMap(Multimap<String,NormalizedContentInterface> eventFields) {
             Multimap<String,NormalizedContentInterface> virtualFields = HashMultimap.create();
             
-            // lazily create the compilied field patterns
+            // lazily create the compiled field patterns
             if (this.compiledFieldPatterns == null)
                 compilePatterns();
             
@@ -391,10 +414,13 @@ public interface VirtualIngest {
         
         /**
          * Add the grouped map of fields to the specified map if not already created.
-         * 
+         *
          * @param eventFields
+         *            a multimap of fields to their {@link NormalizedContentInterface} values
          * @param field
+         *            the specific field from the eventFields multimap
          * @param groupedEventFields
+         *            a multimap of grouped event fields
          */
         private void updateGroupedEventFields(Multimap<String,NormalizedContentInterface> eventFields, String field,
                         Map<String,Multimap<VirtualFieldGrouping,NormalizedContentInterface>> groupedEventFields) {
@@ -405,8 +431,9 @@ public interface VirtualIngest {
         
         /**
          * Return the map of group to field for a list of fields.
-         * 
+         *
          * @param fields
+         *            a collection of {@link NormalizedContentInterface}
          * @return the map of grouping to fields.
          */
         private Multimap<VirtualFieldGrouping,NormalizedContentInterface> groupFields(Collection<NormalizedContentInterface> fields) {
@@ -418,7 +445,7 @@ public interface VirtualIngest {
         }
         
         /**
-         * Compile the virual field definition patterns.
+         * Compile the virtual field definition patterns.
          */
         private void compilePatterns() {
             Map<String,Pattern> patterns = new HashMap<>();
@@ -482,20 +509,35 @@ public interface VirtualIngest {
          * be equivalent to the number of fields in the virtual field definition plus 1 to add the virtual field to the map.
          *
          * @param virtualFields
+         *            a {@link List} of {@link NormalizedContentInterface}
          * @param eventFields
+         *            a multimap of event fields
          * @param groupings
+         *            a representation of groupings
          * @param virtualFieldName
+         *            the virtual field name
          * @param replacement
+         *            the replacement
          * @param grouping
+         *            the {@link VirtualFieldGrouping}
          * @param groupingPolicy
+         *            a {@link GroupingPolicy} for virtual fields
          * @param allowMissing
+         *            flag to allow missing values
          * @param fields
+         *            an array of field names
          * @param pos
+         *            a position
          * @param startSeparator
+         *            the start separator
          * @param endSeparator
+         *            the end separator
          * @param originalValue
+         *            the original value
          * @param normalizedValue
+         *            the normalized value
          * @param markings
+         *            a map of markings
          */
         public void addVirtualFields(List<NormalizedContentInterface> virtualFields, Multimap<String,NormalizedContentInterface> eventFields,
                         Map<String,Multimap<VirtualFieldGrouping,NormalizedContentInterface>> groupings, String virtualFieldName, String replacement,
@@ -621,14 +663,20 @@ public interface VirtualIngest {
         
         /**
          * This will get the list of values given for the given grouping policy. The cached grouping map will be updated if needed to satisfy this call.
-         * 
+         *
          * @param firstField
+         *            boolean to get the first field
          * @param field
+         *            the field to update
          * @param groupingPolicy
+         *            the virtual field {@link GroupingPolicy}
          * @param grouping
+         *            the {@link VirtualFieldGrouping}
          * @param eventFields
+         *            the multimap representation of an event
          * @param groupings
-         * @return
+         *            the groupings
+         * @return an {@link Iterable} of {@link NormalizedContentInterface}
          */
         private Iterable<NormalizedContentInterface> getEventFields(boolean firstField, String field, GroupingPolicy groupingPolicy,
                         VirtualFieldGrouping grouping, Multimap<String,NormalizedContentInterface> eventFields,
@@ -674,11 +722,9 @@ public interface VirtualIngest {
         }
         
         private VirtualFieldGrouping getGrouping(NormalizedContentInterface value) {
-            if (value instanceof GroupedNormalizedContentInterface) {
-                if (((GroupedNormalizedContentInterface) value).isGrouped()) {
-                    return new VirtualFieldGrouping(((GroupedNormalizedContentInterface) value).getGroup(),
-                                    ((GroupedNormalizedContentInterface) value).getSubGroup());
-                }
+            if (value instanceof GroupedNormalizedContentInterface && ((GroupedNormalizedContentInterface) value).isGrouped()) {
+                GroupedNormalizedContentInterface groupedNCI = (GroupedNormalizedContentInterface) value;
+                return new VirtualFieldGrouping(groupedNCI.getGroup(), groupedNCI.getSubGroup());
             }
             return null;
         }

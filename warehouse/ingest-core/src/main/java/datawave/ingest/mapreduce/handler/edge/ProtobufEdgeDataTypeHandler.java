@@ -468,12 +468,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                     throws IOException, InterruptedException {
         
         long edgesCreated = 0;
+        String typeName = event.getDataType().typeName();
         
-        if (event.fatalError()) {
+        if (shortCircuit(event, typeName)) {
             return edgesCreated;
-        } // early short circuit return
-        
-        String loadDateStr = null;
+        }
         
         normalizedFields = HashMultimap.create();
         depthFirstList = new HashMap<>();
@@ -482,15 +481,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         eventMetadataRegistry = new HashMap<>();
         
         // get edge definitions for this event type
-        Type dataType = event.getDataType();
-        String typeName = dataType.typeName();
-        List<EdgeDefinition> edgeDefs = null;
-        
-        if (!edges.containsKey(typeName)) {
-            return edgesCreated; // short circuit, no edges defined for this type
-        }
         edgeDefConfigs = edges.get(typeName);
-        edgeDefs = edgeDefConfigs.getEdges();
+        List<EdgeDefinition> edgeDefs = edgeDefConfigs.getEdges();
+        
+        // Get the load date of the event from the fields map
+        String loadDateStr = getLoadDateString(fields);
         
         /**
          * If enabled, set the filtered context from the NormalizedContentInterface and create the script cache
@@ -498,9 +493,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         if (evaluatePreconditions) {
             setupPreconditionEvaluation(fields);
         }
-        
-        // Get the load date of the event from the fields map
-        loadDateStr = getLoadDateString(fields);
         
         /*
          * normalize field names with groups
@@ -566,41 +558,45 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             String sourceGroup = getGroup(edgeDef.getSourceFieldName());
             String sinkGroup = getGroup(edgeDef.getSinkFieldName());
             
+            boolean sameGroup = sourceGroup.equals(sinkGroup) && (sourceGroup != NO_GROUP);
+            
             Multimap<String,NormalizedContentInterface> mSource = depthFirstList.get(edgeDef.getSourceFieldName());
             Multimap<String,NormalizedContentInterface> mSink = depthFirstList.get(edgeDef.getSinkFieldName());
             
-            // leave the old logic alone
-            if (!edgeDef.hasJexlPrecondition() || !edgeDef.isGroupAware()
-                            || !(matchingGroups.containsKey(sourceGroup) || matchingGroups.containsKey(sinkGroup))) {
+            boolean ignorePreconditionMatchedGroups = !edgeDef.hasJexlPrecondition() || !edgeDef.isGroupAware()
+                            || !(matchingGroups.containsKey(sourceGroup) || matchingGroups.containsKey(sinkGroup));
+            
+            // If within the same group, then pair each subgroup in common for both the sink and source
+            if (sameGroup) {
+                Set<String> commonKeys;
                 
-                // If within the same group, then within each subgroup that are in common for both the sink and source
-                if (sourceGroup.equals(sinkGroup) && (sourceGroup != NO_GROUP)) {
-                    
-                    Set<String> commonKeys = mSource.keySet();
+                if (ignorePreconditionMatchedGroups) {
+                    // use all subgroups
+                    commonKeys = mSource.keySet();
                     commonKeys.retainAll(mSink.keySet());
-                    
-                    edgesCreated += pairSubgroups(commonKeys, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
-                    
+                } else {
+                    // use only subgroups that matched the precondition
+                    commonKeys = matchingGroups.get(sourceGroup);
                 }
-                // Otherwise we want to multiplexSubgroups across all values for the sink and source regardless of subgroup
-                else {
-                    edgesCreated += multiplexSubgroups(mSource.keySet(), mSink.keySet(), edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
-                    
-                }
+                
+                edgesCreated += pairSubgroups(commonKeys, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
                 
             } else {
-                if (sourceGroup.equals(sinkGroup) && (sourceGroup != NO_GROUP)) {
-                    Set<String> commonKeys = matchingGroups.get(sourceGroup);
-                    
-                    edgesCreated += pairSubgroups(commonKeys, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
-                    
+                // otherwise multiplex across subgroups
+                Set<String> sourceSubGroups;
+                Set<String> sinkSubGroups;
+                
+                if (ignorePreconditionMatchedGroups) {
+                    // use all subgroups
+                    sourceSubGroups = mSource.keySet();
+                    sinkSubGroups = mSink.keySet();
                 } else {
-                    Set<String> sourceSubGroups = matchingGroups.get(sourceGroup) != null ? matchingGroups.get(sourceGroup) : mSource.keySet();
-                    Set<String> sinkSubGroups = matchingGroups.get(sinkGroup) != null ? matchingGroups.get(sinkGroup) : mSink.keySet();
-                    
-                    edgesCreated += multiplexSubgroups(sourceSubGroups, sinkSubGroups, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
-                    
+                    // use only subgroups that matched the precondition
+                    sourceSubGroups = matchingGroups.get(sourceGroup) != null ? matchingGroups.get(sourceGroup) : mSource.keySet();
+                    sinkSubGroups = matchingGroups.get(sinkGroup) != null ? matchingGroups.get(sinkGroup) : mSink.keySet();
                 }
+                
+                edgesCreated += multiplexSubgroups(sourceSubGroups, sinkSubGroups, edgeDef, event, sourceGroup, sinkGroup, context, contextWriter);
             }
             
         } // end edge defs
@@ -611,6 +607,16 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         postProcessEdges(event, context, contextWriter, edgesCreated, loadDateStr);
         
         return edgesCreated;
+    }
+    
+    private boolean shortCircuit(RawRecordContainer event, String typeName) {
+        if (event.fatalError()) {
+            return true;
+        }
+        if (!edges.containsKey(typeName)) {
+            return true;
+        }
+        return false;
     }
     
     private boolean eventLacksEdgeFields(EdgeDefinition edgeDef) {
@@ -703,6 +709,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                         
                         if (this.enableMetadata) {
                             registerEventMetadata(edgeValue, edgeDef);
+                            
                         }
                     }
                     
@@ -747,12 +754,14 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                             
                             if (this.enableMetadata) {
                                 registerEventMetadata(edgeValue, edgeDef);
+                                
                             }
                         }
                         
                     }
                 }
             }
+            
         }
         return edgesCreated;
     }
@@ -1257,6 +1266,10 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     /**
      * Given a {@link Configuration}, this method returns the required locality groups used by the edge table.
+     * 
+     * @param conf
+     *            the configuration
+     * @return locality groups used by edge table
      */
     public static Map<String,Set<Text>> getLocalityGroups(Configuration conf) {
         
@@ -1303,7 +1316,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
      * A helper routine to determine the visibility for a field.
      *
      * @param markings
+     *            a map of the markings
      * @param event
+     *            the event container
      * @return the visibility as Text object
      */
     protected Text getVisibility(Map<String,String> markings, RawRecordContainer event) {
@@ -1336,8 +1351,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     /**
      * Create a flattened visibility
-     *
+     * 
      * @param vis
+     *            a visibility
      * @return the flattened visibility
      */
     protected byte[] flatten(ColumnVisibility vis) {

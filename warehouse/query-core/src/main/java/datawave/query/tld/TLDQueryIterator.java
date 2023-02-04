@@ -1,9 +1,10 @@
 package datawave.query.tld;
 
+import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import datawave.query.attributes.Document;
-import datawave.query.data.parsers.DatawaveKey;
+import datawave.core.iterators.key.util.FiKeyUtil;
 import datawave.query.function.TLDEquality;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
@@ -11,10 +12,14 @@ import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.planner.SeekingQueryPlanner;
+import datawave.query.postprocessing.tf.TFFactory;
+import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TLDEventDataFilter;
+import datawave.query.util.Tuple2;
+import datawave.query.util.Tuple3;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -95,7 +100,7 @@ public class TLDQueryIterator extends QueryIterator {
     /**
      * Distinct from getEvaluation filter as the FI filter is used to prevent FI hits on nonEventFields that are not indexOnly fields
      * 
-     * @return
+     * @return an {@link EventDataQueryFilter}
      */
     protected EventDataQueryFilter getFIEvaluationFilter() {
         ChainableEventDataQueryFilter chainableEventDataQueryFilter = new ChainableEventDataQueryFilter();
@@ -123,13 +128,16 @@ public class TLDQueryIterator extends QueryIterator {
              * Keep any FI that is index only and part of the TLD or is not part of the TLD
              * 
              * @param k
-             * @return
+             *            a field index key
+             * @return true if the key should be kept for evaluation
              */
             @Override
             public boolean keep(Key k) {
                 boolean root = TLDEventDataFilter.isRootPointer(k);
-                DatawaveKey datawaveKey = new DatawaveKey(k);
-                return (root && getIndexOnlyFields().contains(datawaveKey.getFieldName())) || !root;
+                if (root) {
+                    return getIndexOnlyFields().contains(FiKeyUtil.getFieldString(k));
+                }
+                return true;
             }
             
             @Override
@@ -266,6 +274,12 @@ public class TLDQueryIterator extends QueryIterator {
                     throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
         return createIteratorBuildingVisitor(TLDIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs).setIteratorBuilder(
                         TLDIndexIteratorBuilder.class);
+    }
+    
+    @Override
+    protected Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
+        tfConfig.setTld(true);
+        return TFFactory.getFunction(tfConfig);
     }
     
 }
