@@ -228,7 +228,7 @@ public class ShardQueryConfigurationTest {
         IndexHole indexHole = new IndexHole(new String[] {"0", "1"}, new String[] {"2", "3"});
         List<IndexHole> indexHoles = Lists.newArrayList(indexHole);
         Set<String> projectFields = Sets.newHashSet("projectFieldA");
-        Set<String> blacklistedFields = Sets.newHashSet("blacklistedFieldA");
+        Set<String> disallowedFields = Sets.newHashSet("disallowedFieldA");
         Set<String> indexedFields = Sets.newHashSet("indexedFieldA");
         Set<String> normalizedFields = Sets.newHashSet("normalizedFieldA");
         Multimap<String,Type<?>> dataTypes = HashMultimap.create();
@@ -272,7 +272,7 @@ public class ShardQueryConfigurationTest {
         other.setDatatypeFilter(dataTypeFilter);
         other.setIndexHoles(indexHoles);
         other.setProjectFields(projectFields);
-        other.setDisallowedFields(blacklistedFields);
+        other.setDisallowedFields(disallowedFields);
         other.setIndexedFields(indexedFields);
         other.setNormalizedFields(normalizedFields);
         other.setDataTypes(dataTypes);
@@ -311,7 +311,7 @@ public class ShardQueryConfigurationTest {
         IndexHole otherIndexHole = new IndexHole(new String[] {"4", "5"}, new String[] {"6", "7"});
         indexHoles.add(otherIndexHole);
         projectFields.add("projectFieldB");
-        blacklistedFields.add("blacklistedFieldB");
+        disallowedFields.add("disallowedFieldB");
         indexedFields.add("indexedFieldB");
         normalizedFields.add("normalizedFieldB");
         dataTypes.put("K2", new NoOpType("V2"));
@@ -425,10 +425,10 @@ public class ShardQueryConfigurationTest {
     }
     
     @Test
-    public void testGetSetBlacklistedFields() {
-        String expected = "blacklistA,blacklistB";
-        Set<String> blacklistedFields = Sets.newHashSet("blacklistA", "blacklistB");
-        config.setDisallowedFields(blacklistedFields);
+    public void testGetSetDisallowedFields() {
+        String expected = "disallowedA,disallowedB";
+        Set<String> disallowedFields = Sets.newHashSet("disallowedA", "disallowedB");
+        config.setDisallowedFields(disallowedFields);
         Assert.assertEquals(expected, config.getDisallowedFieldsAsString());
     }
     
