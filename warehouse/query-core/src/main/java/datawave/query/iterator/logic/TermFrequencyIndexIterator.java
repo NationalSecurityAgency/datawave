@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import datawave.core.iterators.key.TFKey;
 import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.iterator.DocumentIterator;
@@ -77,6 +78,8 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     private final Text row = new Text();
     private final Text cf = new Text();
     private final Text cq = new Text();
+    
+    private final TFKey tfParser = new TFKey();
     
     /**
      * A convenience constructor that allows all keys to pass through unmodified from the source.
@@ -182,13 +185,17 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         if (log.isTraceEnabled()) {
             log.trace(source.hasTop() + " nexting on " + scanRange);
         }
+        
+        Key top;
         while (source.hasTop() && tk == null) {
-            Key top = source.getTopKey();
+            top = source.getTopKey();
             
             // copy row, cf, cq into reusable buffers
             top.getRow(row);
             top.getColumnFamily(cf);
             top.getColumnQualifier(cq);
+            
+            tfParser.parse(top);
             
             if (!cq.toString().endsWith(field)) {
                 if (log.isTraceEnabled()) {
@@ -198,33 +205,14 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
                 continue;
             }
             
-            DatawaveKey key = new DatawaveKey(top);
-            Key nextTop = top;
-            
-            for (int i = 0; i < 256 && source.hasTop() && key.getFieldName().compareTo(field) < 0; ++i) {
-                source.next();
-                
-                nextTop = source.getTopKey();
-                if (nextTop == null)
-                    break;
-                
-                key = new DatawaveKey(nextTop);
-                if (log.isTraceEnabled()) {
-                    log.trace("Have key " + key + " < " + field);
-                }
-            }
-            
-            if (nextTop == null)
-                continue;
-            
-            if (key.getFieldName().compareTo(field) < 0) {
+            if (tfParser.getField().compareTo(field) < 0) {
                 
                 if (log.isTraceEnabled()) {
-                    log.trace("Have key " + key + " is less than " + field);
+                    log.trace("Have key " + top.toStringNoTime() + " is less than " + field);
                 }
                 
-                StringBuilder builder = new StringBuilder(key.getDataType()).append(NULL).append(key.getUid()).append(NULL).append(key.getFieldValue())
-                                .append(NULL).append(field);
+                StringBuilder builder = new StringBuilder(tfParser.getDatatype()).append(NULL).append(tfParser.getUid()).append(NULL)
+                                .append(tfParser.getValue()).append(NULL).append(field);
                 Key nextKey = new Key(row, cf, new Text(builder.toString()));
                 Range newRange = new Range(nextKey, true, scanRange.getEndKey(), scanRange.isEndKeyInclusive());
                 source.seek(newRange, seekColumnFamilies, true);
@@ -232,16 +220,16 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
             }
             
             // only inspect the values specified in the range since a broad row or uid range will potentially go cross document
-            if (scanRange.isStartKeyInclusive() && key.getFieldValue().compareTo(startKeyParser.getFieldValue()) < 0) {
+            if (scanRange.isStartKeyInclusive() && tfParser.getValue().compareTo(startKeyParser.getFieldValue()) < 0) {
                 source.next();
                 continue;
-            } else if (!scanRange.isStartKeyInclusive() && key.getFieldValue().compareTo(startKeyParser.getFieldValue()) <= 0) {
+            } else if (!scanRange.isStartKeyInclusive() && tfParser.getValue().compareTo(startKeyParser.getFieldValue()) <= 0) {
                 source.next();
                 continue;
-            } else if (scanRange.isEndKeyInclusive() && key.getFieldValue().compareTo(stopKeyParser.getFieldValue()) > 0) {
+            } else if (scanRange.isEndKeyInclusive() && tfParser.getValue().compareTo(stopKeyParser.getFieldValue()) > 0) {
                 source.next();
                 continue;
-            } else if (!scanRange.isEndKeyInclusive() && key.getFieldValue().compareTo(stopKeyParser.getFieldValue()) >= 0) {
+            } else if (!scanRange.isEndKeyInclusive() && tfParser.getValue().compareTo(stopKeyParser.getFieldValue()) >= 0) {
                 source.next();
                 continue;
             }
