@@ -264,6 +264,21 @@ public class UniqueFields implements Serializable {
         }
     }
     
+    public String transformValue(String field, String value) {
+        Collection<UniqueGranularity> granularities = fieldMap.get(field);
+        // If there is no granularity, or only the ALL granularity was specified, return the original values.
+        if (granularities.isEmpty() || (granularities.size() == 1 && granularities.contains(UniqueGranularity.ALL))) {
+            return value;
+        } else {
+            StringBuilder combinedValue = new StringBuilder();
+            String separator = "";
+            for (UniqueGranularity granularity : granularities) {
+                combinedValue.append(separator).append(granularity.transform(value));
+            }
+            return combinedValue.toString();
+        }
+    }
+    
     /**
      * Returns this {@link UniqueFields} as a formatted string that can later be parsed back into a {@link UniqueFields} using {@link UniqueFields#from(String)}
      * . This is also what will be used when serializing a {@link UniqueFields} to JSON/XML. The string will have the format
