@@ -11,7 +11,6 @@ import datawave.query.iterator.DocumentIterator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.TimeFilter;
-import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.util.TypeMetadata;
 
@@ -30,6 +29,9 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 
+import static datawave.query.Constants.NULL;
+import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
+
 /**
  * Scans a bounds within a column qualifier. This iterator needs to: - 1) Be given a global Range (ie, [-inf,+inf]) - 2) Select an arbitrary column family (ie,
  * "fi\u0000FIELD") - 3) Given a prefix, scan all keys that have a column qualifer that has that prefix that occur in the column family for all rows in a tablet
@@ -37,8 +39,6 @@ import com.google.common.collect.Lists;
  */
 public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Value>, DocumentIterator {
     private static final Logger log = Logger.getLogger(TermFrequencyIndexIterator.class);
-    
-    public static final String INDEX_FILTERING_CLASSES = "indexfiltering.classes";
     
     protected SortedKeyValueIterator<Key,Value> source;
     
@@ -101,7 +101,7 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         this.timeFilter = timeFilter;
         
         // Build the cf: fi\x00FIELD_NAME
-        this.columnFamily = Constants.TERM_FREQUENCY_COLUMN_FAMILY;
+        this.columnFamily = TERM_FREQUENCY_COLUMN_FAMILY;
         
         this.seekColumnFamilies = Lists.newArrayList();
         this.seekColumnFamilies.add(new ArrayByteSequence(columnFamily.getBytes()));
@@ -136,12 +136,12 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     }
     
     public void buildScanRangeLazily() {
-        Key startKey = new Key(startKeyParser.getRow(), columnFamily, new Text(startKeyParser.getDataType() + Constants.NULL + startKeyParser.getUid()
-                        + Constants.NULL + startKeyParser.getFieldValue() + Constants.NULL_BYTE_STRING + startKeyParser.getFieldName()));
+        Key startKey = new Key(startKeyParser.getRow(), columnFamily, new Text(startKeyParser.getDataType() + NULL + startKeyParser.getUid() + NULL
+                        + startKeyParser.getFieldValue() + NULL + startKeyParser.getFieldName()));
         
         // must use the start key row so that the scan will be bounded by the specified cf/cq. All these scans are assumed to be across a single row
-        Key endKey = new Key(stopKeyParser.getRow(), columnFamily, new Text(stopKeyParser.getDataType() + Constants.NULL + stopKeyParser.getUid()
-                        + Constants.NULL + stopKeyParser.getFieldValue() + Constants.NULL_BYTE_STRING + stopKeyParser.getFieldName()));
+        Key endKey = new Key(stopKeyParser.getRow(), columnFamily, new Text(stopKeyParser.getDataType() + NULL + stopKeyParser.getUid() + NULL
+                        + stopKeyParser.getFieldValue() + NULL + stopKeyParser.getFieldName()));
         
         this.scanRange = new Range(startKey, startInclusive, endKey, endInclusive);
         
@@ -220,8 +220,8 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
                     log.trace("Have key " + key + " is less than " + field);
                 }
                 
-                StringBuilder builder = new StringBuilder(key.getDataType()).append(Constants.NULL).append(key.getUid()).append(Constants.NULL)
-                                .append(key.getFieldValue()).append(Constants.NULL).append(field);
+                StringBuilder builder = new StringBuilder(key.getDataType()).append(NULL).append(key.getUid()).append(NULL).append(key.getFieldValue())
+                                .append(NULL).append(field);
                 Key nextKey = new Key(row, cf, new Text(builder.toString()));
                 Range newRange = new Range(nextKey, true, scanRange.getEndKey(), scanRange.isEndKeyInclusive());
                 source.seek(newRange, seekColumnFamilies, true);
