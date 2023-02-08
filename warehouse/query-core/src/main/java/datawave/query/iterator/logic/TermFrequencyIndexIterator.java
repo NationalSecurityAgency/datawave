@@ -34,7 +34,8 @@ import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
 
 /**
  * Scans a bounds within a column qualifier. This iterator needs to: - 1) Be given a global Range (ie, [-inf,+inf]) - 2) Select an arbitrary column family (ie,
- * "fi\u0000FIELD") - 3) Given a prefix, scan all keys that have a column qualifer that has that prefix that occur in the column family for all rows in a tablet
+ * "fi\u0000FIELD") - 3) Given a prefix, scan all keys that have a column qualifier that has that prefix that occur in the column family for all rows in a
+ * tablet
  * 
  */
 public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Value>, DocumentIterator {
@@ -60,22 +61,28 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     
     protected PreNormalizedAttributeFactory attributeFactory;
     protected Document document;
-    protected boolean buildDocument = false;
+    protected boolean buildDocument;
     protected Predicate<Key> datatypeFilter;
     protected final FieldIndexAggregator aggregation;
     protected TimeFilter timeFilter;
     
-    private DatawaveKey startKeyParser;
-    private DatawaveKey stopKeyParser;
+    private final DatawaveKey startKeyParser;
+    private final DatawaveKey stopKeyParser;
     
     // support for lazy building of scan range
-    private boolean startInclusive;
-    private boolean endInclusive;
+    private final boolean startInclusive;
+    private final boolean endInclusive;
+    
+    // reusable buffers
+    private final Text row = new Text();
+    private final Text cf = new Text();
+    private final Text cq = new Text();
     
     /**
      * A convenience constructor that allows all keys to pass through unmodified from the source.
      * 
      * @param source
+     *            the source iterator
      */
     public TermFrequencyIndexIterator(Key fiStartKey, Key fiEndKey, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter) {
         this(fiStartKey, fiEndKey, source, timeFilter, null, false, Predicates.<Key> alwaysTrue(), new TermFrequencyAggregator(null, null));
@@ -110,8 +117,6 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         this.stopKeyParser = new DatawaveKey(fiEndKey);
         
         this.includeColumnFamilies = true;
-        
-        this.document = new Document();
         
         this.field = startKeyParser.getFieldName().toUpperCase();
         
@@ -164,13 +169,11 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     
     @Override
     public void next() throws IOException {
-        // We need to null this every time even though our fieldname and fieldvalue won't
+        // We need to null this every time even though our fieldName and fieldValue won't
         // change, we have the potential for the column visibility to change
         document = new Document();
         
         tk = null;
-        // reusable buffers
-        Text row = new Text(), cf = new Text(), cq = new Text();
         
         if (scanRange == null) {
             buildScanRangeLazily();
@@ -182,8 +185,8 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         while (source.hasTop() && tk == null) {
             Key top = source.getTopKey();
             
-            row = top.getRow(row);
-            
+            // copy row, cf, cq into reusable buffers
+            top.getRow(row);
             top.getColumnFamily(cf);
             top.getColumnQualifier(cq);
             
@@ -314,8 +317,8 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         }
         
         if (this.hasTop() && this.getTopKey().compareTo(pointer) >= 0) {
-            throw new IllegalStateException("Tried to called move when we were already at or beyond where we were told to move to: topkey=" + this.getTopKey()
-                            + ", movekey=" + pointer);
+            throw new IllegalStateException("Tried to called move when we were already at or beyond where we were told to move to: topKey=" + this.getTopKey()
+                            + ", moveKey=" + pointer);
         }
         
         next();
