@@ -123,6 +123,7 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
      * @param top
      *            current key that we see
      * @throws IOException
+     *             for issues with read/write
      */
     protected void advance(final Key top) throws IOException {
         /*

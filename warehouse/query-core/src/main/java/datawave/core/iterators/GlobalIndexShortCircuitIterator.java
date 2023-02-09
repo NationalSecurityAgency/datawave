@@ -175,6 +175,9 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
     /**
      * This method aggregates all information from the global index for a term for one day. It will return when the day boundary has passed so that the ranges
      * for that term for that day can be retrieved via the getTopKey and getTopValue methods.
+     * 
+     * @throws IOException
+     *             for issues with read/write
      */
     private void findTop() throws IOException {
         if (log.isDebugEnabled()) {

@@ -82,8 +82,11 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
      * filter.
      * 
      * @param rowId
+     *            the row id
      * @param fiName
+     *            field index name
      * @param fieldValue
+     *            the field value
      * @return the bounding ranges
      */
     @Override
@@ -129,7 +132,10 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
      * Does this key match our range and filter. NOTE: This must be thread safe NOTE: The caller takes care of the negation
      *
      * @param k
+     *            a key
      * @return true (if a field index row)
+     * @throws IOException
+     *             for issues with read/write
      */
     @Override
     protected boolean matches(Key k) throws IOException {

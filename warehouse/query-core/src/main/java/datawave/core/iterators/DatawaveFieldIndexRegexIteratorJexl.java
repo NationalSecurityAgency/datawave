@@ -119,7 +119,10 @@ public class DatawaveFieldIndexRegexIteratorJexl extends DatawaveFieldIndexCachi
      * NOTE: The caller takes care of the negation
      *
      * @param k
-     * @return
+     *            a key
+     * @return a boolean
+     * @throws IOException
+     *             for issues with read/write
      */
     @Override
     protected boolean matches(Key k) throws IOException {

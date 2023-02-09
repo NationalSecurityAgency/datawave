@@ -72,7 +72,8 @@ public class GlobalIndexTermMatchingFilter extends Filter {
      * Determine if we have events. For this to be true
      * 
      * @param v
-     * @return
+     *            a value
+     * @return if the value has events
      */
     private boolean hasEvents(final Value v) {
         try {

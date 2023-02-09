@@ -137,7 +137,12 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
      * Build a single bounding range for a field value
      * 
      * @param rowId
-     * @return
+     *            the row id
+     * @param fiName
+     *            the field index name
+     * @param fieldValue
+     *            the field value
+     * @return a range
      */
     protected Range buildBoundingRange(Text rowId, Text fiName, Text fieldValue) {
         // construct new range
@@ -160,8 +165,10 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
      * Does this key match our FST. Note we are not overriding the super.isMatchingKey() as we need that to work as is NOTE: This method must be thread safe
      * 
      * @param k
-     * @return
+     *            the key
+     * @return a boolean determining if there was a match
      * @throws IOException
+     *             for issues with read/write
      */
     @Override
     protected boolean matches(Key k) throws IOException {

@@ -27,7 +27,9 @@ public class RangeSplitter implements List<Range> {
      * Create a range splitter
      * 
      * @param range
+     *            a range
      * @param numRanges
+     *            the number of ranges
      */
     public RangeSplitter(Range range, int numRanges) {
         delegate = Collections.unmodifiableList(splitRange(range, numRanges));
@@ -37,7 +39,9 @@ public class RangeSplitter implements List<Range> {
      * Split a range into N ranges.
      * 
      * @param range
+     *            a range
      * @param numRanges
+     *            the number of ranges
      * @return A list of N ranges. 1 range is returned if no splitting is possible.
      */
     protected List<Range> splitRange(Range range, int numRanges) {
@@ -137,8 +141,11 @@ public class RangeSplitter implements List<Range> {
      * Calculate integers representing x and y that can be divided into numRanges.
      * 
      * @param x
+     *            the x sequence
      * @param y
+     *            the y sequence
      * @param numRanges
+     *            a numnber of ranges
      * @return An array of xInt, yInt, and div where div is the size of each range relative to xInt and yInt
      */
     protected BigInteger[] getIntegers(ByteSequence x, ByteSequence y, int numRanges) {
@@ -177,7 +184,9 @@ public class RangeSplitter implements List<Range> {
      * Are two byte sequences equivalent. They are equivalent iff the roots (ignoring trailing null bytes) are equal.
      * 
      * @param start
+     *            the start sequence
      * @param end
+     *            the end sequence
      * @return true if equivalent
      */
     public static boolean equivalentElements(ByteSequence start, ByteSequence end) {
@@ -198,6 +207,7 @@ public class RangeSplitter implements List<Range> {
      * Return a list of ByteSequence objects representing the row, cf, and cq in that order.
      * 
      * @param key
+     *            a key
      * @return the byte sequences
      */
     protected List<ByteSequence> getKeyElements(Key key) {
@@ -212,6 +222,7 @@ public class RangeSplitter implements List<Range> {
      * Return a list of ByteSequence objects representing the row, cf, and cq in that order. If the key is null, then return 3 empty byte sequences.
      * 
      * @param key
+     *            a key
      * @return the byte sequences
      */
     protected List<ByteSequence> getStartKeyElements(Key key) {
@@ -232,6 +243,9 @@ public class RangeSplitter implements List<Range> {
      * reasonable ranges ranges.
      * 
      * @param key
+     *            a key
+     * @param startElements
+     *            list of the start elements
      * @return the byte sequences
      */
     protected List<ByteSequence> getEndKeyElements(List<ByteSequence> startElements, Key key) {

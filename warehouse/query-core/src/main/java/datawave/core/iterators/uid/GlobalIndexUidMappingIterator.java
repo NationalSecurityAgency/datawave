@@ -31,6 +31,15 @@ public class GlobalIndexUidMappingIterator extends UidMappingIterator {
      * Map the uid in the supplied value. The formats expected are for the shard table only.
      * 
      * @param keyValue
+     *            the key value
+     * @param startKey
+     *            the start key flag
+     * @param endKey
+     *            the end key flag
+     * @param endKeyInclusive
+     *            the end key inclusive flag
+     * @param startKeyInclusive
+     *            the start key inclusive flag
      * @return the value with the uid mapped appropriately
      */
     @Override
