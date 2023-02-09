@@ -41,6 +41,8 @@ public interface FieldValidator {
      * 
      * @param fields
      *            a map of fields
+     * @throws ValidationException
+     *             for issues with field validation
      */
     void validate(Multimap<String,String> fields) throws ValidationException;
     
