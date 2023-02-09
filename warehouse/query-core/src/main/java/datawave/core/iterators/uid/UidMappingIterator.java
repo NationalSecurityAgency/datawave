@@ -126,9 +126,6 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
         findTop();
     }
     
-    /**
-     * 
-     */
     protected void findTop() throws IOException {
         if (this.source.hasTop()) {
             KeyValue keyValue = mapUid(new KeyValue(this.source.getTopKey(), this.source.getTopValue().get()), false, false, false, false);
@@ -161,6 +158,8 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
      *            true if the start key was inclusive
      * @param endKey
      *            true if this is the endKey in a range
+     * @param endKeyInclusive
+     *            true if the end key was inclusive
      * @return the keyValue with the uid mapped appropriately
      */
     protected KeyValue mapUid(KeyValue keyValue, boolean startKey, boolean startKeyInclusive, boolean endKey, boolean endKeyInclusive) {
@@ -178,6 +177,8 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
      *            true if the start key was inclusive
      * @param endKey
      *            true if this is the endKey in a range
+     * @param endKeyInclusive
+     *            true if the end key was inclusive
      * @return the key with the uid mapped appropriately
      */
     protected Key mapUid(Key key, boolean startKey, boolean startKeyInclusive, boolean endKey, boolean endKeyInclusive) {
@@ -188,6 +189,7 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
      * Map the seek parameters so that they include all uids that map to the original range
      * 
      * @param range
+     *            the range provided
      * @return the modified seek parameters
      */
     protected Range mapRange(Range range) {
@@ -202,8 +204,11 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
      * Map the column families so that includes all uids that map to the original column family filter
      * 
      * @param range
+     *            the range provided
      * @param columnFamilies
+     *            the column families
      * @param inclusive
+     *            inclusive flag
      * @return the new set of column families
      */
     protected Collection<ByteSequence> mapColumnFamilies(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) {
@@ -223,6 +228,7 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
      * Map the seek parameters so that they include all uids that map to the original range. Uses mapRange and mapColumnFamilies
      * 
      * @param range
+     *            the range
      * @param columnFamilies
      *            families
      * @param inclusive
