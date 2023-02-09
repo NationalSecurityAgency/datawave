@@ -121,7 +121,7 @@ public class JexlASTHelper {
     
     /**
      * Parses a query tree from a query string and also flattens the query (flattening ORs and ANDs).
-     *
+     * <p>
      * Note: Flattening does not remove reference nodes or reference expressions from the query tree. To do so requires explicit call to
      * {@link TreeFlatteningRebuildingVisitor#flattenAll(JexlNode)}.
      *
@@ -249,7 +249,7 @@ public class JexlASTHelper {
     
     /**
      * Fetch the literal off of the grandchild. Returns null if there is no literal
-     * 
+     *
      * @param node
      *            a jexl node
      * @return a jexl node
@@ -291,7 +291,7 @@ public class JexlASTHelper {
     
     /**
      * Helper method to determine if the child is a literal
-     * 
+     *
      * @param child
      *            a jexl node
      * @return if the node is a literal
@@ -307,7 +307,7 @@ public class JexlASTHelper {
     
     /**
      * Fetch the literal off of the grandchild. Throws an exception if there is no literal
-     * 
+     *
      * @param node
      *            a jexl node
      * @return the literal value
@@ -351,7 +351,7 @@ public class JexlASTHelper {
     /**
      * Fetch the identifier off of the grandchild, removing a leading {@link #IDENTIFIER_PREFIX} if present. Throws an exception if there is no identifier This
      * identifier will be deconstructed
-     * 
+     *
      * @param node
      *            a jexl node
      * @return the deconstructed identifier
@@ -404,7 +404,7 @@ public class JexlASTHelper {
     
     /**
      * Finds all the functions and returns a map indexed by function context name to the function.
-     * 
+     *
      * @param query
      *            the jexl node
      * @return a map of functions
@@ -497,7 +497,7 @@ public class JexlASTHelper {
     
     /**
      * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode
-     * 
+     *
      * @param node
      *            a JexlNode
      * @return an unwrapped JexlNode
@@ -511,7 +511,7 @@ public class JexlASTHelper {
     
     /**
      * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode. If the final node is a MarkerNode, wrap it
-     * 
+     *
      * @param node
      *            a JexlNode
      * @return an unwrapped JexlNode
@@ -529,7 +529,7 @@ public class JexlASTHelper {
     
     /**
      * This is the opposite of dereference in that this will climb back up reference and reference expression nodes that only contain one child.
-     * 
+     *
      * @param node
      *            a JexlNode
      * @return the parent reference/referenceexpression or this node
@@ -600,7 +600,7 @@ public class JexlASTHelper {
     
     /**
      * Remove the {@link #IDENTIFIER_PREFIX} from the beginning of a fieldName if it exists
-     * 
+     *
      * @param fieldName
      *            a field name
      * @return the adjusted name
@@ -610,8 +610,9 @@ public class JexlASTHelper {
     }
     
     /**
-     * Remove the {@link #IDENTIFIER_PREFIX} from the beginning of a fieldName if it exists
-     * 
+     * Remove the {@link #IDENTIFIER_PREFIX} from the beginning of a fieldName if it exists Remove the {@link #GROUPING_CHARACTER_SEPARATOR} from the end of a
+     * fieldName if it exists
+     *
      * @param fieldName
      *            a field name
      * @param includeGroupingContext
@@ -621,20 +622,20 @@ public class JexlASTHelper {
     public static String deconstructIdentifier(String fieldName, boolean includeGroupingContext) {
         if (fieldName != null && fieldName.length() > 1) {
             if (!includeGroupingContext) {
-                fieldName = removeGroupingContext(fieldName);
-            }
-            
-            if (fieldName.charAt(0) == IDENTIFIER_PREFIX) {
-                return fieldName.substring(1);
+                int groupingOffset = fieldName.indexOf(GROUPING_CHARACTER_SEPARATOR);
+                if (-1 != groupingOffset) {
+                    int identifierOffset = (fieldName.charAt(0) == IDENTIFIER_PREFIX) ? 1 : 0;
+                    return new String(fieldName.getBytes(), identifierOffset, groupingOffset);
+                }
             }
         }
         
-        return fieldName;
+        return (fieldName.charAt(0) == IDENTIFIER_PREFIX) ? fieldName.substring(1) : fieldName;
     }
     
     /**
      * Rebuild the identifier with the {@link #IDENTIFIER_PREFIX} if the identifier starts with an invalid character per the Jexl IDENTIFIER definition
-     * 
+     *
      * @param fieldName
      *            a field name
      * @return the adjusted identifier name
@@ -645,7 +646,7 @@ public class JexlASTHelper {
     
     /**
      * Rebuild the identifier with the {@link #IDENTIFIER_PREFIX} if the identifier starts with an invalid character per the Jexl IDENTIFIER definition
-     * 
+     *
      * @param fieldName
      *            a field name
      * @param includeGroupingContext
@@ -1254,7 +1255,7 @@ public class JexlASTHelper {
     
     /**
      * Performs an order-dependent AST equality check
-     * 
+     *
      * @param one
      *            first jexl node
      * @param two
@@ -1327,11 +1328,11 @@ public class JexlASTHelper {
     /**
      * When at an operand, this method will find the first Identifier and replace its {image} value with the supplied {String}. This is intended to be used when
      * the query model is being supplied and we want to replace the field name in some expression.
-     * 
+     * <p>
      * This method returns a new operand node with an updated {Identifier}.
-     * 
+     * <p>
      * If neither of the operand's children are an {Identifier}, then an {IllegalArgumentException} is thrown.
-     * 
+     *
      * @param <T>
      *            type of the node
      * @param operand
@@ -1407,7 +1408,7 @@ public class JexlASTHelper {
     /**
      * Jexl's Literal interface sucks and doesn't actually line up with things we would call "literals" (constants) notably, "true", "false", and "null"
      * keywords
-     * 
+     *
      * @param node
      *            a jexl node
      * @return if the node is a literal
@@ -1425,7 +1426,7 @@ public class JexlASTHelper {
     
     /**
      * Check if the provided JexlNode is an ASTEQNode and is of the form `identifier eq literal`
-     * 
+     *
      * @param node
      *            a jexl node
      * @return if the node is a literal equality
@@ -1444,7 +1445,7 @@ public class JexlASTHelper {
     
     /**
      * Determine if the given ASTEQNode is indexed based off of the Multimap of String fieldname to TextNormalizer.
-     * 
+     *
      * @param node
      *            a jexl node
      * @param config
@@ -1473,7 +1474,7 @@ public class JexlASTHelper {
     
     /**
      * Return the selectivity of the node's identifier, or IndexStatsClient.DEFAULT_VALUE if there's an error getting the selectivity
-     * 
+     *
      * @param node
      *            the node
      * @param config
@@ -1495,7 +1496,7 @@ public class JexlASTHelper {
     
     /**
      * Return the selectivity of the node's identifier, or IndexStatsClient.DEFAULT_VALUE if there's an error getting the selectivity
-     * 
+     *
      * @param fieldNames
      *            a set of field names
      * @param config
@@ -1549,7 +1550,7 @@ public class JexlASTHelper {
     /**
      * Checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage, and returns a
      * {@link LineageValidation} with any identified violations.
-     * 
+     *
      * @param rootNode
      *            the tree to validate
      * @param failHard
@@ -1605,7 +1606,7 @@ public class JexlASTHelper {
         
         /**
          * Returns whether a valid lineage was confirmed.
-         * 
+         *
          * @return true if no violations were found, or false otherwise
          */
         public boolean isValid() {
@@ -1614,7 +1615,7 @@ public class JexlASTHelper {
         
         /**
          * Add a message describing an encountered violation.
-         * 
+         *
          * @param message
          *            the description message
          */
@@ -1624,7 +1625,7 @@ public class JexlASTHelper {
         
         /**
          * Return a string containing each violation message on a new line.
-         * 
+         *
          * @return the formatted string, or null if there are no violations.
          */
         public String getFormattedViolations() {
@@ -1654,7 +1655,7 @@ public class JexlASTHelper {
     
     /**
      * Checks to see if the tree contains any AND/OR nodes with less than 2 children.
-     * 
+     *
      * @param node
      *            the tree to validate
      * @param failHard
