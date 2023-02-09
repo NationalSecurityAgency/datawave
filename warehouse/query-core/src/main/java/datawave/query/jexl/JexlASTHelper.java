@@ -481,8 +481,13 @@ public class JexlASTHelper {
 
     /**
      * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode
+     * <p>
+     * <<<<<<< HEAD
      *
      * @param node a JexlNode
+     *             =======
+     * @param node a JexlNode
+     *             >>>>>>> cb9d314da (Combining methods)
      * @return an unwrapped JexlNode
      */
     public static JexlNode dereference(JexlNode node) {
@@ -494,8 +499,13 @@ public class JexlASTHelper {
 
     /**
      * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode. If the final node is a MarkerNode, wrap it
+     * <p>
+     * <<<<<<< HEAD
      *
      * @param node a JexlNode
+     *             =======
+     * @param node a JexlNode
+     *             >>>>>>> cb9d314da (Combining methods)
      * @return an unwrapped JexlNode
      */
     public static JexlNode dereferenceSafely(JexlNode node) {
@@ -602,10 +612,8 @@ public class JexlASTHelper {
             if (!includeGroupingContext) {
                 int groupingOffset = fieldName.indexOf(GROUPING_CHARACTER_SEPARATOR);
                 if (-1 != groupingOffset) {
-                    if (fieldName.charAt(0) == IDENTIFIER_PREFIX) {
-                        return new String(fieldName.getBytes(), 1, groupingOffset - 1);
-                    }
-                    return new String(fieldName.getBytes(), 0, groupingOffset);
+                    int identifierOffset = (fieldName.charAt(0) == IDENTIFIER_PREFIX) ? 1 : 0;
+                    return new String(fieldName.getBytes(), identifierOffset, groupingOffset);
                 }
             }
         }
@@ -1509,9 +1517,15 @@ public class JexlASTHelper {
     /**
      * Checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage, and returns a
      * {@link LineageValidation} with any identified violations.
+     * <p>
+     * <<<<<<< HEAD
      *
      * @param rootNode the tree to validate
      * @param failHard if true, throws an exception when a violation is encountered for the first time
+     *                 =======
+     * @param rootNode the tree to validate
+     * @param failHard if true, throws an exception when a violation is encountered for the first time
+     *                 >>>>>>> cb9d314da (Combining methods)
      * @return the {@link LineageValidation}
      */
     public static LineageValidation validateLineageVerbosely(JexlNode rootNode, boolean failHard) {
@@ -1572,8 +1586,13 @@ public class JexlASTHelper {
 
         /**
          * Add a message describing an encountered violation.
+         * <p>
+         * <<<<<<< HEAD
          *
          * @param message the description message
+         *                =======
+         * @param message the description message
+         *                >>>>>>> cb9d314da (Combining methods)
          */
         public void addViolation(String message) {
             violations.add(message);
@@ -1610,9 +1629,15 @@ public class JexlASTHelper {
 
     /**
      * Checks to see if the tree contains any AND/OR nodes with less than 2 children.
+     * <p>
+     * <<<<<<< HEAD
      *
      * @param node     the tree to validate
      * @param failHard if true, throw a {@link RuntimeException} if a violation was found
+     *                 =======
+     * @param node     the tree to validate
+     * @param failHard if true, throw a {@link RuntimeException} if a violation was found
+     *                 >>>>>>> cb9d314da (Combining methods)
      * @return true if valid, or false otherwise
      */
     public static boolean validateJunctionChildren(JexlNode node, boolean failHard) {
