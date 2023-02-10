@@ -322,6 +322,10 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     
     @Override
     public Document document() {
+        if (document == null) {
+            // in case this method is called prior to a seek/next
+            document = new Document();
+        }
         return document;
     }
     
