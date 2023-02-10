@@ -64,7 +64,12 @@ public class ShardIdPartitioner extends Partitioner<BulkIngestKey,Value> impleme
      * sequential for all shard ids
      *
      * @param shardId
+     *            the shard id
+     * @param baseTime
+     *            the base timestamp
      * @throws ParseException
+     *             for issues parsing the time
+     * @return the shard id number
      */
     private long generateNumberForShardId(String shardId, long baseTime) throws ParseException {
         if (shardId.charAt(SHARD_ID_SPLIT) != '_') {

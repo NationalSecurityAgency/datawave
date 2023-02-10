@@ -215,7 +215,7 @@ public class FlagMakerConfig {
     /**
      * Gets the list of <code>FlagConfig</code>s
      *
-     * @return
+     * @return a list of flagconfigs
      */
     @XmlTransient
     public List<FlagDataTypeConfig> getFlagConfigs() {
@@ -226,6 +226,7 @@ public class FlagMakerConfig {
      * Allows the programmatic addition of <code>FlagConfig</code>s to this object.
      *
      * @param fc
+     *            the flag config
      */
     public void addFlagConfig(FlagDataTypeConfig fc) {
         if (fc != null) {
