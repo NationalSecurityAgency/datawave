@@ -86,7 +86,7 @@
         <version.microservice.authorization-api>1.15-SNAPSHOT</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>1.3-SNAPSHOT</version.microservice.base-rest-responses>
         <version.microservice.common-utils>1.2-SNAPSHOT</version.microservice.common-utils>
-        <version.microservice.dictionary-api>1.3-SNAPSHOT</version.microservice.dictionary-api>
+        <version.microservice.dictionary-api>1.4-SNAPSHOT</version.microservice.dictionary-api>
         <version.microservice.mapreduce-query-api>1.0-SNAPSHOT</version.microservice.mapreduce-query-api>
         <version.microservice.metadata-utils>1.12-SNAPSHOT</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>1.4-SNAPSHOT</version.microservice.metrics-reporter>
