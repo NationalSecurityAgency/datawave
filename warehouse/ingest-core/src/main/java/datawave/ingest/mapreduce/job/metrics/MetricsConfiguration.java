@@ -40,6 +40,7 @@ public class MetricsConfiguration {
      * The buffer used for aggregating metrics counts before flushing to the context writer.
      *
      * @param conf
+     *            the configuration
      * @return agg buffer size
      */
     public static int getAggBufferSize(Configuration conf) {
@@ -50,6 +51,7 @@ public class MetricsConfiguration {
      * Instantiates the configured receivers.
      *
      * @param conf
+     *            the configuration
      * @return receivers
      */
     public static Collection<MetricsReceiver> getReceivers(Configuration conf) {
@@ -76,6 +78,7 @@ public class MetricsConfiguration {
      * Gets the currently configured fields to produce metrics on.
      *
      * @param conf
+     *            a configuration
      * @return fields
      */
     public static Set<String> getFieldNames(Configuration conf) {
@@ -94,6 +97,7 @@ public class MetricsConfiguration {
      * Disables the metrics feature.
      *
      * @param conf
+     *            a configuration
      */
     public static void disable(Configuration conf) {
         conf.setBoolean(METRICS_ENABLED_CONFIG, false);
@@ -103,6 +107,7 @@ public class MetricsConfiguration {
      * Gets the configured metrics labels to allow for collection.
      *
      * @param conf
+     *            a configuration
      * @return labels
      */
     public static Multimap<String,String> getLabels(Configuration conf) {
@@ -124,6 +129,7 @@ public class MetricsConfiguration {
      * Gets the configured number of shards.
      *
      * @param conf
+     *            a configuration
      * @return number of shards to use
      */
     public static int getNumShards(Configuration conf) {
@@ -134,6 +140,7 @@ public class MetricsConfiguration {
      * Gets the configured ingest metrics table name.
      *
      * @param conf
+     *            a configuration
      * @return table name
      */
     public static String getTable(Configuration conf) {
@@ -144,6 +151,7 @@ public class MetricsConfiguration {
      * Gets the configured ingest metrics table priority.
      *
      * @param conf
+     *            a configuration
      * @return table priority (defaults to 100)
      */
     public static int getTablePriority(Configuration conf) {
@@ -159,6 +167,7 @@ public class MetricsConfiguration {
      * Checks if the ingest metrics feature is enabled.
      *
      * @param conf
+     *            a configuration
      * @return true if explicitly enabled in the config, false, otherwise.
      */
     public static boolean isEnabled(Configuration conf) {
