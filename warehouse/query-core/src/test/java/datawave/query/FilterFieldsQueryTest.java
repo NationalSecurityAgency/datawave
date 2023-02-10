@@ -1,10 +1,5 @@
 package datawave.query;
 
-import datawave.helpers.PrintUtility;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.function.Aggregation;
-import datawave.query.function.DocumentProjection;
-import datawave.query.iterator.QueryIterator;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -18,7 +13,6 @@ import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryJexl;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.ResponseFieldChecker;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -40,7 +34,7 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 
 /**
  * Performs query test where specific returned fields are specified setting the {@link QueryParameters#RETURN_FIELDS} and
- * {@link QueryParameters#BLACKLISTED_FIELDS} parameter.
+ * {@link QueryParameters#DISALLOWED_FIELDS} parameter.
  */
 public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     
@@ -410,7 +404,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             queryChecker.add(new ResponseFieldChecker(fields, otherFields));
         } else {
             // NOTE CityField.EVENT_ID CANNOT be included in blacklisted fields
-            options.put(QueryParameters.BLACKLISTED_FIELDS, queryFields);
+            options.put(QueryParameters.DISALLOWED_FIELDS, queryFields);
             queryChecker.add(new ResponseFieldChecker(otherFields, fields));
         }
         if (hitList) {
