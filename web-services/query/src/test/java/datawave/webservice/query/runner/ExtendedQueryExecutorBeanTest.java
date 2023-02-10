@@ -11,6 +11,8 @@ import datawave.query.data.UUIDType;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.authorization.UserOperations;
+import datawave.security.user.UserOperationsBean;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
@@ -234,6 +236,9 @@ public class ExtendedQueryExecutorBeanTest {
     
     @Mock
     UriInfo uriInfo;
+    
+    @Mock
+    UserOperationsBean userOperations;
     
     QueryExpirationConfiguration queryExpirationConf;
     
@@ -774,9 +779,10 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
         expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).andReturn(true);
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(true);
-        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
-        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations));
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser).anyTimes();
+        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations)).anyTimes();
         expect(this.principal.getProxiedUsers()).andReturn(Collections.singletonList(dwUser));
+        expect(this.userOperations.getRemoteUser(this.principal)).andReturn(this.principal);
         expect(this.query.getOwner()).andReturn(userSid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
@@ -846,6 +852,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(subject, UserOperationsBean.class, userOperations);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
         setInternalState(subject, ClosedQueryCache.class, closedCache);
@@ -947,9 +954,10 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
         expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).andReturn(true);
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(true);
-        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
-        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations));
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser).anyTimes();
+        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations)).anyTimes();
         expect(this.principal.getProxiedUsers()).andReturn(Collections.singletonList(dwUser));
+        expect(this.userOperations.getRemoteUser(this.principal)).andReturn(this.principal);
         expect(this.query.getOwner()).andReturn(userSid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
@@ -997,6 +1005,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(subject, UserOperationsBean.class, userOperations);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
         setInternalState(subject, ClosedQueryCache.class, closedCache);
@@ -1098,9 +1107,10 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(true);
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.NONE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
-        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations));
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser).anyTimes();
+        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations)).anyTimes();
         expect(this.principal.getProxiedUsers()).andReturn(Collections.singletonList(dwUser));
+        expect(this.userOperations.getRemoteUser(this.principal)).andReturn(this.principal);
         expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.NONE);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
@@ -1185,6 +1195,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(subject, UserOperationsBean.class, userOperations);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
         setInternalState(subject, ClosedQueryCache.class, closedCache);
@@ -1392,9 +1403,10 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(true);
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.NONE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
-        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations));
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser).anyTimes();
+        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations)).anyTimes();
         expect(this.principal.getProxiedUsers()).andReturn(Collections.singletonList(dwUser));
+        expect(this.userOperations.getRemoteUser(this.principal)).andReturn(this.principal);
         expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.NONE);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
@@ -1495,6 +1507,7 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, EJBContext.class, context);
             setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
             setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
+            setInternalState(subject, UserOperationsBean.class, userOperations);
             setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
             setInternalState(subject, QueryCache.class, cache);
             setInternalState(subject, ClosedQueryCache.class, closedCache);
@@ -2447,10 +2460,11 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.context.getCallerPrincipal()).andReturn(this.principal);
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(sid);
-        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
-        expect(this.dwUser.getAuths()).andReturn(Collections.singletonList("AUTH_1"));
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser).anyTimes();
+        expect(this.dwUser.getAuths()).andReturn(Collections.singletonList("AUTH_1")).anyTimes();
         expect(this.principal.getProxiedUsers()).andReturn(Collections.singletonList(dwUser));
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList("AUTH_1")));
+        expect(this.userOperations.getRemoteUser(this.principal)).andReturn(this.principal);
         expect(this.persister.findByName(queryName)).andReturn(Arrays.asList((Query) this.query));
         expect(this.query.getOwner()).andReturn(sid).anyTimes();
         expect(this.query.getUserDN()).andReturn(sid).anyTimes();
@@ -2488,6 +2502,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(subject, UserOperationsBean.class, userOperations);
         QueryImplListResponse result1 = subject.list(queryName);
         PowerMock.verifyAll();
         
@@ -2954,9 +2969,10 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(sid);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(authorization)));
-        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
-        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(authorization));
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser).anyTimes();
+        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(authorization)).anyTimes();
         expect(this.principal.getProxiedUsers()).andReturn(Collections.singletonList(dwUser));
+        expect(this.userOperations.getRemoteUser(this.principal)).andReturn(this.principal);
         expect(this.cache.get(queryName)).andReturn(null);
         expect(this.persister.findById(queryName)).andReturn(Arrays.asList((Query) this.query));
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
@@ -3028,6 +3044,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(subject, UserOperationsBean.class, userOperations);
         setInternalState(subject, QueryCache.class, cache);
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
@@ -3553,9 +3570,10 @@ public class ExtendedQueryExecutorBeanTest {
         this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
-        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
-        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations));
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser).anyTimes();
+        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations)).anyTimes();
         expect(this.principal.getProxiedUsers()).andReturn(Collections.singletonList(dwUser));
+        expect(this.userOperations.getRemoteUser(this.principal)).andReturn(this.principal);
         expect(this.queryLogic1.getUserOperations()).andReturn(null);
         expect(this.query.getOwner()).andReturn(userSid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
@@ -3588,6 +3606,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(subject, UserOperationsBean.class, userOperations);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
         setInternalState(subject, ClosedQueryCache.class, closedCache);
@@ -3693,9 +3712,10 @@ public class ExtendedQueryExecutorBeanTest {
         // expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
         // expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
         // expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).andReturn(true);
-        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
-        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations));
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser).anyTimes();
+        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations)).anyTimes();
         expect(this.principal.getProxiedUsers()).andReturn(Collections.singletonList(dwUser));
+        expect(this.userOperations.getRemoteUser(this.principal)).andReturn(this.principal);
         expect(this.query.getOwner()).andReturn(userSid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
@@ -3731,6 +3751,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(subject, UserOperationsBean.class, userOperations);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
         setInternalState(subject, ClosedQueryCache.class, closedCache);

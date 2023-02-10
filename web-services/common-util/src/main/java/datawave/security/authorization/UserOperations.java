@@ -33,7 +33,7 @@ public interface UserOperations {
         mappedUsers.add(new DatawaveUser(pair, user.getUserType(), auths.getAllAuths(), user.getRoles(), user.getRoleToAuthMapping(), System
                         .currentTimeMillis()));
         
-        // for each proxied user, create a new user with the auths returned by listEffectiveAuthroizations
+        // for each proxied user, create a new user with the auths returned by listEffectiveAuthorizations
         Map<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> authMap = auths.getAuths();
         for (Map.Entry<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> entry : authMap.entrySet()) {
             pair = SubjectIssuerDNPair.of(entry.getKey().subjectDN, entry.getKey().issuerDN);

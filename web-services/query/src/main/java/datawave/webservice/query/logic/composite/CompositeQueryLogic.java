@@ -185,17 +185,22 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         this.allMustInitialize = other.allMustInitialize;
     }
     
-    public static Set<Authorizations> updateRuntimeAuthorizationsAndQueryAuths(QueryLogic<?> logic, Query settings) throws AuthorizationException {
+    public Set<Authorizations> updateRuntimeAuthorizationsAndQueryAuths(QueryLogic<?> logic, Query settings) throws AuthorizationException {
         Set<String> requestedAuths = new HashSet<>(AuthorizationsUtil.splitAuths(settings.getQueryAuthorizations()));
         
         // determine the valid authorizations for this call to be the user's auths for this logic
         DatawavePrincipal principal = (DatawavePrincipal) logic.getPrincipal();
+        DatawavePrincipal queryPrincipal = principal;
+        UserOperations userOperations = getUserOperations();
+        if (userOperations != null) {
+            principal = userOperations.getRemoteUser(principal);
+        }
         if (logic.getUserOperations() != null) {
-            principal = logic.getUserOperations().getRemoteUser(principal);
+            queryPrincipal = logic.getUserOperations().getRemoteUser(queryPrincipal);
         }
         
-        // get the valid auths from the primary user
-        Collection<String> validAuths = principal.getPrimaryUser().getAuths();
+        // get the valid auths from the query user
+        Collection<String> validAuths = queryPrincipal.getPrimaryUser().getAuths();
         Set<String> validRequestedAuths = new HashSet<>(requestedAuths);
         validRequestedAuths.retainAll(validAuths);
         String validQueryAuthorizations = Joiner.on(',').join(validRequestedAuths);
@@ -204,7 +209,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         settings.setQueryAuthorizations(validQueryAuthorizations);
         
         // recalculate the runtime query authorizations (no need to pass in userService as we have already recalculated the principal)
-        return AuthorizationsUtil.getDowngradedAuthorizations(validQueryAuthorizations, principal, null);
+        return AuthorizationsUtil.getDowngradedAuthorizations(validQueryAuthorizations, principal, queryPrincipal);
     }
     
     @Override

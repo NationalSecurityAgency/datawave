@@ -2,6 +2,7 @@ package datawave.webservice.query.runner;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -143,7 +144,7 @@ public class RunningQueryTest {
         assertEquals(connector, query.getConnection());
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AuthorizationException.class)
     public void testConstructorShouldNotMergeAuths() throws Exception {
         // setup
         Connector connector = null;

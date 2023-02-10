@@ -8,12 +8,10 @@ import datawave.accumulo.util.security.UserAuthFunctions;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.UserOperations;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
 
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -80,92 +78,99 @@ public class AuthorizationsUtil {
      * @param requestedAuths
      *            The auths to use for the user's auths. If this list contains any that are not owned by the user, an {@link IllegalArgumentException} is
      *            thrown.
-     * @param principal
-     *            The principal from which to retrieve entity authorizations.
-     * @param userService
-     *            The remote user service if any which will be used to determine the remote authorizations. If this is null, then the auths in the supplied
-     *            principal will be used. Otherwise this service will be used to retrieve the remote principal from which the auths will be determined.
+     * @param overallPrincipal
+     *            The principal from which to retrieve entity authorizations overall. The authorizations will be validated against this principal's auths.
+     * @param queryPrincipal
+     *            The principal from which to retrieve entity authorizations applicable to the query. The authorizations will be filtered by this prinipal's
+     *            auths. The auths of this principal must be a subset of the first principal argument.
      * @return A set of {@link Authorizations}, one per entity represented in {@code principal}. The user's auths are replaced by {@code requestedAuths} so long
      *         as the user actually had all of the auths. If {@code requestedAuths} is {@code null}, then the user's auths are returned as-is.
      */
-    public static Set<Authorizations> getDowngradedAuthorizations(String requestedAuths, Principal principal, UserOperations userService)
+    public static Set<Authorizations> getDowngradedAuthorizations(String requestedAuths, Principal overallPrincipal, Principal queryPrincipal)
                     throws AuthorizationException {
-        if (principal instanceof DatawavePrincipal) {
-            return getDowngradedAuthorizations(requestedAuths, (DatawavePrincipal) principal, userService);
-        } else {
-            return Collections.singleton(new Authorizations());
-        }
+        return getDowngradedAuthorizations(requestedAuths, (DatawavePrincipal) overallPrincipal, (DatawavePrincipal) queryPrincipal);
     }
     
     /**
-     * Retrieves a set of "downgraded" authorizations. This retrieves all authorizations from {@code principal} and intersects the user auths (the
-     * authorizations retrieved from {@code principal} for {@link DatawavePrincipal#getUserDN()}) with {@code requestedAuths}. All other entity auths retrieved
-     * from {@code principal}, if any, are included in the result set as is. If {@code requestedAuths} contains any authorizations that are not in the user
-     * auths list, then an {@link IllegalArgumentException} is thrown.
+     * Retrieves a set of "downgraded" authorizations. This will first validate that the requested auths are a subset of the {@code overallPrincipal} users's
+     * authorizations. If not a subset then an {@link AuthorizationException} will be thrown. If a subset, then the requested auths will be subsequently reduced
+     * by those in the {@code queryPrincipal} user's auths. The remaining proxy servers in the {@code queryPrincipal} will be returned as is for the additional
+     * Authorizations in the list.
      *
      * @param requestedAuths
-     *            The auths to use for the user's auths. If this list contains any that are not owned by the user, an {@link IllegalArgumentException} is
-     *            thrown.
-     * @param principal
-     *            The principal from which to retrieve entity authorizations.
-     * @param userService
-     *            The remote user service if any which will be used to determine the remote authorizations. If this is null, then the auths in the supplied
-     *            principal will be used. Otherwise this service will be used to retrieve the remote principal from which the auths will be determined.
-     * @return A set of {@link Authorizations}, one per entity represented in {@code principal}. The user's auths are replaced by {@code requestedAuths} so long
-     *         as the user actually had all of the auths. If {@code requestedAuths} is {@code null}, then the user's auths are returned as-is.
+     *            The auths to use for the user's query. If this list contains any that are not owned by the {@code overallPrincipal} user, an
+     *            {@link AuthorizationException} is thrown.
+     * @param overallPrincipal
+     *            The authorizations will be validated against this principal's user's auths.
+     * @param queryPrincipal
+     *            The principal from which to retrieve entity authorizations applicable to the query. The authorizations will be filtered by this prinipal's
+     *            auths. This user's auths must be a subset of those in the {@code overallPrincipal} user's auths. If not then an
+     *            {@link IllegalArgumentException} will be thrown.
+     * @return A set of {@link Authorizations}, one per entity represented in {@code queryPrincipal}. The user's auths are replaced by {@code requestedAuths}
+     *         intersected with the {@code queryPrincipal} user's auths so long as the {@code overallPrincipal} user actually had all of the auths. If
+     *         {@code requestedAuths} is {@code null}, then the @{code queryPrincipal} user's auths are returned as-is.
+     * @throws AuthorizationException
+     *             if the requested auths is not a subset of the {@overallPrincipal} users's auths
+     * @throws IllegalArgumentException
+     *             if the {@code queryPrincipal} user's auths are not a subset of the {@code overallPrincipal} user's auths
      */
-    public static LinkedHashSet<Authorizations> getDowngradedAuthorizations(String requestedAuths, DatawavePrincipal principal, UserOperations userService)
+    public static Set<Authorizations> getDowngradedAuthorizations(String requestedAuths, DatawavePrincipal overallPrincipal, DatawavePrincipal queryPrincipal)
                     throws AuthorizationException {
-        if (userService != null) {
-            principal = userService.getRemoteUser((DatawavePrincipal) principal);
+        if (overallPrincipal == null || queryPrincipal == null) {
+            return Collections.singleton(new Authorizations());
         }
-        final DatawaveUser primaryUser = principal.getPrimaryUser();
-        UserAuthFunctions uaf = UserAuthFunctions.getInstance();
-        return uaf.mergeAuthorizations(uaf.getRequestedAuthorizations(requestedAuths, primaryUser), principal.getProxiedUsers(), u -> u != primaryUser);
+        
+        final UserAuthFunctions uaf = UserAuthFunctions.getInstance();
+        final DatawaveUser primaryUser = overallPrincipal.getPrimaryUser();
+        final DatawaveUser queryUser = queryPrincipal.getPrimaryUser();
+        
+        // validate that the query user is actually a subset of the primary user
+        if (!primaryUser.getAuths().containsAll(queryUser.getAuths())) {
+            throw new IllegalArgumentException("The user's query auths are not a subset of the user's overall auths.");
+        }
+        
+        // validate that the requestedAuths do not include anything outside of the principal's auths
+        uaf.validateRequestedAuthorizations(requestedAuths, primaryUser);
+        
+        // now return auths that are a reduced by what the query can handle.
+        return uaf.mergeAuthorizations(uaf.getRequestedAuthorizations(requestedAuths, queryUser, false), queryPrincipal.getProxiedUsers(), u -> u != queryUser);
     }
     
     /**
-     * Similar functionality to the above getDowngradedAuths, but returns in a Stringas opposed to a Set, and only returns the user's auths and not those for
+     * Similar functionality to the above getDowngradedAuths, but returns in a String as opposed to a Set, and only returns the user's auths and not those for
      * any chained entity. This makes it easier to swap out queryParameters to use for createQueryAndNext(). Uses buildAuthorizationString to find the
      * authorizations the user has and compares those to the authorizations requested. Verifies that the user has access to the authorizations, and will return
      * the downgraded authorities if they are valid. If the request authorities they don't have, or request not authorizations, an exception is thrown.
      *
-     * @param principal
-     *            the principal representing the user to verify that {@code requested} are all valid authorizations
-     * @param requested
+     * @param requestedAuths
      *            the requested downgrade authorizations
-     * @param userService
-     *            The remote user service if any which will be used to determine the remote authorizations. If this is null, then the auths in the supplied
-     *            principal will be used. Otherwise this service will be used to retrieve the remote principal from which the auths will be determined.
-     * @return requested, unless the user represented by {@code principal} does not have one or more of the auths in {@code requested}
+     * @param overallPrincipal
+     *            The principal from which to retrieve entity authorizations overall. The authorizations will be validated against this principal's auths.
+     * @param queryPrincipal
+     *            The principal from which to retrieve entity authorizations applicable to the query. The authorizations will be filtered by this prinipal's
+     *            auths. The auths of this principal must be a subset of the first principal argument.
+     * @return requested, unless the user represented by {@code overallPrincipal} does not have one or more of the auths in {@code requested}
      */
-    public static String downgradeUserAuths(Principal principal, String requested, UserOperations userService) throws AuthorizationException {
-        if (requested == null || requested.trim().isEmpty()) {
+    public static String downgradeUserAuths(String requestedAuths, DatawavePrincipal overallPrincipal, DatawavePrincipal queryPrincipal)
+                    throws AuthorizationException {
+        if (StringUtils.isEmpty(requestedAuths)) {
             throw new IllegalArgumentException("Requested authorizations must not be empty");
         }
         
-        List<String> requestedList = AuthorizationsUtil.splitAuths(requested);
-        // Find all authorizations the user has access to
-        String userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal, userService);
-        List<String> userList = AuthorizationsUtil.splitAuths(userAuths);
-        List<String> missingAuths = new ArrayList<>();
-        List<String> finalAuthsList = new ArrayList<>();
+        final UserAuthFunctions uaf = UserAuthFunctions.getInstance();
+        final DatawaveUser primaryUser = overallPrincipal.getPrimaryUser();
+        final DatawaveUser queryUser = queryPrincipal.getPrimaryUser();
         
-        for (String temp : requestedList) {
-            // user requested auth they don't have
-            if (!userList.contains(temp)) {
-                missingAuths.add(temp);
-            } else { // user requested auth they do have
-                finalAuthsList.add(temp);
-            }
+        // validate that the query user is actually a subset of the primary user
+        if (!primaryUser.getAuths().containsAll(queryUser.getAuths())) {
+            throw new IllegalArgumentException("Something has gone wrong.  The we cannot determine the proper set of user's auths");
         }
-        // All auths requested are auths the user has, return downgraded string for auths
-        if (missingAuths.isEmpty()) {
-            return AuthorizationsUtil.buildAuthorizationString(Collections.singletonList(finalAuthsList));
-        } else {// missing auths.size() > 0; user requested auths they don't have
-            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths + ", Requested: " + requested
-                            + ", User: " + userAuths);
-        }
+        
+        // validate that the requestedAuths do not include anything outside of the principal's auths
+        uaf.validateRequestedAuthorizations(requestedAuths, primaryUser);
+        
+        // now return auths that are a reduced by what the query can handle.
+        return uaf.getRequestedAuthorizations(requestedAuths, queryUser, false).toString();
     }
     
     public static List<String> splitAuths(String requestedAuths) {
@@ -204,16 +209,10 @@ public class AuthorizationsUtil {
      * Build the authorization string for a prinbcipal.
      *
      * @param principal
-     *            the principal representing the user to verify that {@code requested} are all valid authorizations
-     * @param userService
-     *            The remote user service if any which will be used to determine the remote authorizations. If this is null, then the auths in the supplied
-     *            principal will be used. Otherwise this service will be used to retrieve the remote principal from which the auths will be determined.
+     *            the principal representing the user from which to generate authorizations
      * @return user authorizations string
      */
-    public static String buildUserAuthorizationString(Principal principal, UserOperations userService) throws AuthorizationException {
-        if (userService != null) {
-            principal = userService.getRemoteUser((DatawavePrincipal) principal);
-        }
+    public static String buildUserAuthorizationString(Principal principal) throws AuthorizationException {
         String auths = "";
         if (principal != null && (principal instanceof DatawavePrincipal)) {
             DatawavePrincipal datawavePrincipal = (DatawavePrincipal) principal;

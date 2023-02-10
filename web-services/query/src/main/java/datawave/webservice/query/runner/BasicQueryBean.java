@@ -9,6 +9,7 @@ import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
@@ -53,6 +54,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import java.lang.reflect.Method;
+import java.security.Principal;
 import java.util.*;
 
 import datawave.security.util.AuthorizationsUtil;
@@ -294,7 +296,9 @@ public class BasicQueryBean {
         }
         
         try {
-            response.setAuthString(AuthorizationsUtil.buildUserAuthorizationString(ctx.getCallerPrincipal(), userService));
+            DatawavePrincipal queryPrincipal = (userService == null) ? (DatawavePrincipal) ctx.getCallerPrincipal() : userService
+                            .getRemoteUser((DatawavePrincipal) ctx.getCallerPrincipal());
+            response.setAuthString(AuthorizationsUtil.buildUserAuthorizationString(queryPrincipal));
         } catch (AuthorizationException e) {
             throw new RuntimeException(e);
         }

@@ -18,6 +18,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
 
 import datawave.query.data.UUIDType;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.UserOperations;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.audit.AuditParameters;
@@ -97,6 +99,8 @@ public class LookupUUIDUtil {
     
     private final QueryExecutor queryExecutor;
     
+    private final UserOperations userOperations;
+    
     private Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<>());
     
     MultivaluedMap<String,String> defaultOptionalParams;
@@ -112,7 +116,7 @@ public class LookupUUIDUtil {
      *            The EJB's content
      */
     public LookupUUIDUtil(final LookupUUIDConfiguration configuration, final QueryExecutor queryExecutor, final EJBContext context,
-                    final ResponseObjectFactory responseObjectFactory, final QueryLogicFactory queryLogicFactory) {
+                    final ResponseObjectFactory responseObjectFactory, final QueryLogicFactory queryLogicFactory, final UserOperations userOperations) {
         // Validate and assign the lookup UUID configuration
         if (null == configuration) {
             throw new IllegalArgumentException("Non-null configuration required to lookup UUIDs");
@@ -124,6 +128,8 @@ public class LookupUUIDUtil {
             throw new IllegalArgumentException("Non-null query executor required to lookup UUIDs");
         }
         this.queryExecutor = queryExecutor;
+        
+        this.userOperations = userOperations;
         
         // Assign the EJB context
         this.ctx = context;
@@ -400,10 +406,16 @@ public class LookupUUIDUtil {
         String userAuths;
         try {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
+            // the query principal is our local principal unless the query logic has a different user operations
+            DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal : logic.getUserOperations().getRemoteUser(
+                            (DatawavePrincipal) principal);
+            // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
+            DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal : userOperations
+                            .getRemoteUser((DatawavePrincipal) principal);
             if (queryAuths != null) {
-                userAuths = AuthorizationsUtil.downgradeUserAuths(principal, queryAuths, logic.getUserOperations());
+                userAuths = AuthorizationsUtil.downgradeUserAuths(queryAuths, overallPrincipal, queryPrincipal);
             } else {
-                userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal, logic.getUserOperations());
+                userAuths = AuthorizationsUtil.buildUserAuthorizationString(queryPrincipal);
             }
         } catch (Exception e) {
             log.error("Failed to get user query authorizations", e);

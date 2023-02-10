@@ -12,12 +12,15 @@ import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.GenericResponse;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class CompositeUserOperations implements UserOperations {
     final ResponseObjectFactory responseObjectFactory;
@@ -88,6 +91,47 @@ public class CompositeUserOperations implements UserOperations {
             response.setOperationTimeMS(response.getOperationTimeMS() + remoteResponse.getOperationTimeMS());
         }
         return response;
+    }
+    
+    @Override
+    public DatawavePrincipal getRemoteUser(DatawavePrincipal principal) throws AuthorizationException {
+        Map<SubjectIssuerDNPair,Set<String>> authMap = new HashMap<>();
+        if (includeLocal) {
+            principal.getProxiedUsers().forEach(u -> authMap.put(u.getDn(), new HashSet<>(u.getAuths())));
+        }
+        for (UserOperations ops : userOperations) {
+            AuthorizationsListBase remoteAuths = ops.listEffectiveAuthorizations(principal);
+            SubjectIssuerDNPair userDn = SubjectIssuerDNPair.of(remoteAuths.getUserDn(), remoteAuths.getIssuerDn());
+            authMap.put(userDn, Sets.union(authMap.containsKey(userDn) ? authMap.get(userDn) : Collections.emptySet(), remoteAuths.getAllAuths()));
+            Map<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> remoteAuthMap = remoteAuths.getAuths();
+            for (Map.Entry<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> entry : remoteAuthMap.entrySet()) {
+                SubjectIssuerDNPair dn = SubjectIssuerDNPair.of(entry.getKey().subjectDN, entry.getKey().issuerDN);
+                authMap.put(dn, Sets.union(authMap.containsKey(dn) ? authMap.get(dn) : Collections.emptySet(), entry.getValue()));
+            }
+        }
+        
+        // create a new set of proxied users
+        List<DatawaveUser> mappedUsers = new ArrayList<>();
+        Map<SubjectIssuerDNPair,DatawaveUser> users = principal.getProxiedUsers().stream().collect(Collectors.toMap(DatawaveUser::getDn, Function.identity()));
+        
+        // create a mapped user for the primary user with the auths returned by listEffectiveAuthorizations
+        DatawaveUser primaryUser = principal.getPrimaryUser();
+        SubjectIssuerDNPair pair = primaryUser.getDn();
+        DatawaveUser user = users.get(pair);
+        mappedUsers.add(new DatawaveUser(pair, user.getUserType(), authMap.get(pair), user.getRoles(), user.getRoleToAuthMapping(), System.currentTimeMillis()));
+        
+        // for each proxied user, create a new user with the auths returned by listEffectiveAuthorizations
+        for (Map.Entry<SubjectIssuerDNPair,Set<String>> entry : authMap.entrySet()) {
+            pair = entry.getKey();
+            if (!pair.equals(primaryUser.getDn())) {
+                user = users.get(pair);
+                mappedUsers.add(new DatawaveUser(pair, user.getUserType(), entry.getValue(), user.getRoles(), user.getRoleToAuthMapping(), System
+                                .currentTimeMillis()));
+            }
+        }
+        
+        // return a principal with the mapped users
+        return new DatawavePrincipal(mappedUsers);
     }
     
     public static Exception getException(QueryExceptionType qet) {
