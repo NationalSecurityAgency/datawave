@@ -1049,30 +1049,38 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     /**
-     * Build a list of potential hdfs directories based on each ivarator cache dir configs.
+     * Build a list of potential directories based on each ivarator cache dir configs.  This will take the
+     * ivarator base directories and create a subdirectory consisting of
+     * <ul>
+     * <li>the queryid</li>
+     * <li>scan id</li>
+     * <li>ivaratorCacheSubDirPrefix (base on start key)</li>
+     * <li>"term" + the term index</li>
+     * </ul>
      * 
-     * @return A path
+     * @return A list of ivarator cache directors specific to this ivarator instance
      * @throws IOException
      *             for issues with read/write
      */
     private List<IvaratorCacheDir> getIvaratorCacheDirs() throws IOException {
         List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
         
-        // first lets increment the count for a unique subdirectory
-        String subdirectory = ivaratorCacheSubDirPrefix + "term" + Integer.toString(++ivaratorCount);
+        StringBuilder subDirectoryBuilder = new StringBuilder();
+        subDirectoryBuilder.append(queryId);
+        if (scanId == null) {
+            log.warn("Running query iterator for " + queryId + " without a scan id.  This could cause ivarator directory conflicts.");
+        } else {
+            subDirectoryBuilder.append('_').append(scanId);
+        }
+        // and lets increment the count for a unique subdirectory
+        subDirectoryBuilder.append('_').append(ivaratorCacheSubDirPrefix).append("term").append(++ivaratorCount);
+        String subDirectory = subDirectoryBuilder.toString();
         
         if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
             for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
-                
-                // first, make sure the cache configuration is valid
+                // make sure the cache configuration is valid
                 if (config.isValid()) {
-                    Path path = new Path(config.getBasePathURI(), queryId);
-                    if (scanId == null) {
-                        log.warn("Running query iterator for " + queryId + " without a scan id.  This could cause ivarator directory conflicts.");
-                    } else {
-                        path = new Path(path, scanId);
-                    }
-                    path = new Path(path, subdirectory);
+                    Path path = new Path(config.getBasePathURI(), subDirectory);
                     URI uri = path.toUri();
                     pathAndFs.add(new IvaratorCacheDir(config, hdfsFileSystem.getFileSystem(uri), uri.toString()));
                 }

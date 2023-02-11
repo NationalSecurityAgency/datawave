@@ -554,7 +554,17 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      *             error creating cache
      */
     protected List<String> ivaratorConfig() throws IOException {
-        return ivaratorConfig(1, false)[0];
+        return ivaratorConfig(1, false, true)[0];
+    }
+    
+    /**
+     * Configures the Ivarator cache to use a single HDFS directory without cleanup.
+     *
+     * @throws IOException
+     *             error creating cache
+     */
+    protected List<String> ivaratorConfigWithoutCleanup() throws IOException {
+        return ivaratorConfig(1, false, false)[0];
     }
     
     /**
@@ -564,7 +574,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      *             error creating cache
      */
     protected List<String>[] ivaratorFstConfig() throws IOException {
-        return ivaratorConfig(1, true);
+        return ivaratorConfig(1, true, true);
     }
     
     /**
@@ -573,11 +583,13 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * @param hdfsLocations
      *            number of HDFS locations to configure
      * @param fst
-     *            when true screate a FST ivarator cache
+     *            when true create a FST ivarator cache
+     * @param withCleanup
+     *            when true ivarators will cleanup the directory after completion. if false then post analysis of the results can be tested
      * @throws IOException
      *             error creating HDFS cache directory
      */
-    protected List<String>[] ivaratorConfig(final int hdfsLocations, final boolean fst) throws IOException {
+    protected List<String>[] ivaratorConfig(final int hdfsLocations, final boolean fst, final boolean withCleanup) throws IOException {
         final URL hdfsConfig = this.getClass().getResource("/testhadoop.config");
         Assert.assertNotNull(hdfsConfig);
         this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
@@ -594,7 +606,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         }
         String uriList = String.join(",", dirs);
         log.info("hdfs dirs(" + uriList + ")");
-        this.logic.setIvaratorCacheDirConfigs(dirs.stream().map(IvaratorCacheDirConfig::new).collect(Collectors.toList()));
+        this.logic.setIvaratorCacheDirConfigs(dirs.stream().map(d -> new IvaratorCacheDirConfig(d, withCleanup)).collect(Collectors.toList()));
         if (fst) {
             uriList = String.join(",", fstDirs);
             log.info("fst dirs(" + uriList + ")");
