@@ -267,8 +267,8 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
-
-        ivaratorConfig(3, false);
+        
+        ivaratorConfig(3, false, true);
         runTest(query, query);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
     }

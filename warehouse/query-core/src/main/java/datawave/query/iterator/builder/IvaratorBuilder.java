@@ -1,5 +1,6 @@
 package datawave.query.iterator.builder;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -44,11 +45,23 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     protected void validateIvaratorControlDir(IvaratorCacheDir ivaratorCacheDir) {
         String ivaratorCacheDirURI = ivaratorCacheDir.getPathURI();
         FileSystem hdfsFileSystem = ivaratorCacheDir.getFs();
-
-        final URI hdfsCacheURI;
+        
         try {
-            hdfsCacheURI = new URI(ivaratorCacheDirURI);
-            hdfsFileSystem.mkdirs(new Path(hdfsCacheURI));
+            final Path hdfsCachePath = new Path(new URI(ivaratorCacheDirURI));
+            // get the parent directory
+            final Path parentCachePath = hdfsCachePath.getParent();
+            final URI parentURI = parentCachePath.toUri();
+            if (!hdfsFileSystem.exists(parentCachePath)) {
+                // being able to make the parent directory is proof enough
+                hdfsFileSystem.mkdirs(parentCachePath);
+            } else if (hdfsFileSystem.getFileStatus(parentCachePath).isFile()) {
+                throw new IOException(parentCachePath.toString() + " exists but is a file.  Expecting directory");
+            } else if (parentURI.getScheme().equals("file")) {
+                File parent = new File(parentURI.getPath());
+                if (!parent.canWrite() || !parent.canRead()) {
+                    throw new IllegalStateException("Invalid permissions to directory " + parentCachePath);
+                }
+            }
         } catch (MalformedURLException e) {
             throw new IllegalStateException("Unable to load hadoop configuration", e);
         } catch (IOException e) {

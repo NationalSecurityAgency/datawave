@@ -34,6 +34,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Multimap;
 
 import datawave.core.iterators.querylock.QueryLock;
@@ -283,6 +284,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     private final FileSystem controlFs;
     // The control directory to use for this ivarator
     private final Path controlDir;
+    // do we need to cleanup (i.e. delete controlDir) after ourselves
+    private final boolean requiresCleanup;
     // A query lock to verify if the query is still running
     private final QueryLock queryLock;
     // are we allowing reuse of the hdfs directories
@@ -376,6 +379,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.ivaratorCacheDirs = null;
         this.controlFs = null;
         this.controlDir = null;
+        this.requiresCleanup = true;
         this.queryLock = null;
         this.allowDirReuse = false;
         this.scanThreshold = 10000;
@@ -422,6 +426,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         if (ivaratorCacheDirs.size() > 0) {
             this.controlFs = ivaratorCacheDirs.get(0).getFs();
             this.controlDir = new Path(ivaratorCacheDirs.get(0).getPathURI());
+            this.requiresCleanup = ivaratorCacheDirs.get(0).getConfig().isRequiresCleanup();
         } else {
             throw new IllegalStateException("No ivarator cache dirs specified!");
         }
@@ -468,6 +473,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.ivaratorCacheDirs = other.ivaratorCacheDirs == null ? null : new ArrayList<>(other.ivaratorCacheDirs);
         this.controlFs = other.controlFs;
         this.controlDir = other.controlDir;
+        this.requiresCleanup = other.requiresCleanup;
         this.queryLock = other.queryLock;
         this.allowDirReuse = other.allowDirReuse;
         this.scanThreshold = other.scanThreshold;
@@ -509,6 +515,10 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
     @Override
     protected void finalize() throws Throwable {
+        // NOTE: We cannot actually delete the directory here because it could be the case
+        // that this instance is being finalized but the scan may be rebuilt which would
+        // need to use this directory. We could end up deleting the direcory while it is
+        // being used! So just clear out this set and continue on.
         clearRowBasedHdfsBackedSet();
         super.finalize();
     }
@@ -703,9 +713,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * to maintain the position in the FI for reseeking purposes
      *
      * @param key
-     *            a key
+     *            The field index key
      * @param keyType
-     *            the key type
+     *            The type of key to produce. Note that will be forced to a complete key if !sortedUIDs
      * @return Key(shardId, datatype\0UID)
      */
     public Key buildEventKey(Key key, PartialKey keyType) {
@@ -749,91 +759,105 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     protected void findTop() throws IOException {
 
         this.topKey = null;
-
-        // we are done if cancelled
-        if (this.setControl.isCancelledQuery()) {
-            return;
-        }
-
-        while (this.topKey == null) {
-
-            // if we have key values, then exhaust them first
-            if (this.keys != null) {
-                // only pass through keys that fall within the range
-                // this is required to handle cases where we start at a specific UID
-                while (this.keys.hasNext()) {
-                    Key key = this.keys.next();
-                    if (sortedUIDs && log.isTraceEnabled()) {
-                        log.trace("Is " + key + " contained in " + this.lastRangeSeeked);
-                    }
-                    // no need to check containership if not returning sorted uids
-                    if (!sortedUIDs || this.lastRangeSeeked.contains(key)) {
-                        this.topKey = key;
-                        if (log.isDebugEnabled()) {
-                            log.debug("setting as topKey " + topKey);
+        
+        try {
+            // we are done if cancelled
+            if (this.setControl.isCancelledQuery()) {
+                return;
+            }
+            
+            while (this.topKey == null) {
+                
+                // if we have key values, then exhaust them first
+                if (this.keys != null) {
+                    // only pass through keys that fall within the range
+                    // this is required to handle cases where we start at a specific UID
+                    while (this.keys.hasNext()) {
+                        Key key = this.keys.next();
+                        if (sortedUIDs && log.isTraceEnabled()) {
+                            log.trace("Is " + key + " contained in " + this.lastRangeSeeked);
                         }
+                        // no need to check containership if not returning sorted uids
+                        if (!sortedUIDs || this.lastRangeSeeked.contains(key)) {
+                            this.topKey = key;
+                            if (log.isDebugEnabled()) {
+                                log.debug("setting as topKey " + topKey);
+                            }
+                            break;
+                        }
+                        // so the range does not contain the key. determine if we need to seek
+                        else if (key.compareTo(this.lastRangeSeeked.getStartKey()) < 0) {
+                            this.keys = new CachingIterator<>(threadSafeSet.tailSet(this.lastRangeSeeked.getStartKey()).iterator());
+                        }
+                    }
+                }
+                
+                if (this.topKey == null) {
+                    // start the timing
+                    startTiming();
+                    
+                    // if the current key values has no more, then clear out this row's set
+                    clearRowBasedHdfsBackedSet();
+                    
+                    // if we do not have a current fi row to scan, then we are done.
+                    if (this.fiRow == null) {
                         break;
                     }
-                    // so the range does not contain the key. determine if we need to seek
-                    else if (key.compareTo(this.lastRangeSeeked.getStartKey()) < 0) {
-                        this.keys = new CachingIterator<>(threadSafeSet.tailSet(this.lastRangeSeeked.getStartKey()).iterator());
+                    
+                    // now get the keys. Get them all and sorted if needed, otherwise just get the next one.
+                    if (sortedUIDs) {
+                        fillSortedSets();
+                    } else {
+                        getNextUnsortedKey();
+                    }
+                    
+                    if (this.setControl.isCancelledQuery()) {
+                        this.topKey = null;
+                    }
+                    
+                    if (isTimedOut()) {
+                        log.error("Ivarator query timed out");
+                        throw new IvaratorException("Ivarator query timed out");
+                    }
+                    
+                    if (this.setControl.isCancelledQuery()) {
+                        log.debug("Ivarator query was cancelled");
+                        throw new IterationInterruptedException("Ivarator query was cancelled");
+                    }
+                    
+                    // if we have any persisted data or we have scanned a significant number of keys, then persist it completely
+                    if (this.set != null && (this.set.hasPersistedData() || (scanThreshold <= scannedKeys.get()))) {
+                        forcePersistence();
+                    }
+                    
+                    if (this.keys == null) {
+                        this.keys = new CachingIterator<>(this.threadSafeSet.iterator());
                     }
                 }
-            }
 
+                if (this.setControl.isCancelledQuery()) {
+                    if (isTimedOut()) {
+                        log.error("Ivarator query timed out");
+                        throw new IvaratorException("Ivarator query timed out");
+                    } else {
+                        log.debug("Ivarator query was cancelled");
+                        throw new IterationInterruptedException("Ivarator query was cancelled");
+                    }
+                }
+                
+            }
+        } catch (Exception e) {
+            log.error("Failed to complete ivarator", e);
+            // if an exception is thrown, then cleanup
+            this.topKey = null;
+            Throwables.propagateIfPossible(e, IOException.class);
+        } finally {
+            // if we have returned the last key, then this iterator is done.
             if (this.topKey == null) {
-                // start the timing
-                startTiming();
-
-                // if the current key values has no more, then clear out this row's set
-                clearRowBasedHdfsBackedSet();
-
-                // if we do not have a current fi row to scan, then we are done.
-                if (this.fiRow == null) {
-                    break;
-                }
-
-                // now get the keys. Get them all and sorted if needed, otherwise just get the next one.
-                if (sortedUIDs) {
-                    fillSortedSets();
-                } else {
-                    getNextUnsortedKey();
-                }
-
-                if (this.setControl.isCancelledQuery()) {
-                    this.topKey = null;
-                }
-
-                if (isTimedOut()) {
-                    log.error("Ivarator query timed out");
-                    throw new IvaratorException("Ivarator query timed out");
-                }
-
-                if (this.setControl.isCancelledQuery()) {
-                    log.debug("Ivarator query was cancelled");
-                    throw new IterationInterruptedException("Ivarator query was cancelled");
-                }
-
-                // if we have any persisted data or we have scanned a significant number of keys, then persist it completely
-                if (this.set != null && (this.set.hasPersistedData() || (scanThreshold <= scannedKeys.get()))) {
-                    forcePersistence();
-                }
-
-                if (this.keys == null) {
-                    this.keys = new CachingIterator<>(this.threadSafeSet.iterator());
-                }
+                // now we can safely remove the directory and contents because
+                // we have used up all of the keys.
+                cleanup();
             }
-
-            if (this.setControl.isCancelledQuery()) {
-                if (isTimedOut()) {
-                    log.error("Ivarator query timed out");
-                    throw new IvaratorException("Ivarator query timed out");
-                } else {
-                    log.debug("Ivarator query was cancelled");
-                    throw new IterationInterruptedException("Ivarator query was cancelled");
-                }
-            }
-
         }
     }
 
@@ -1050,9 +1074,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * Add the key to the underlying cached set if it passes the filters and the matches call.
      *
      * @param topFiKey
-     *            the top index key
+     *            The next key to add to the set
      * @param value
-     *            the value
+     *            The value of the key to add to the set
      * @return true if it matched
      * @throws IOException
      *             for issues with read/write
@@ -1090,9 +1114,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * This method will asynchronously fill the set with matches from within the specified bounding FI range.
      *
      * @param boundingFiRange
-     *            the bounding index range
+     *            The range to fill from
      * @param totalResults
-     *            total results
+     *            The results count
      * @return the Future
      */
     protected Future<?> fillSet(final Range boundingFiRange, final TotalResults totalResults) {
@@ -1232,9 +1256,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * Get the unique directory for a specific row
      *
      * @param uniqueDir
-     *            the unique directory
+     *            The unique directory
      * @param row
-     *            a row
+     *            The row
      * @return the unique dir
      */
     protected Path getRowDir(Path uniqueDir, String row) {
@@ -1243,25 +1267,55 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
     /**
      * Clear out the current row based hdfs backed set
-     *
-     * @throws IOException
-     *             for issues with read/write
      */
-    protected void clearRowBasedHdfsBackedSet() throws IOException {
+    protected void clearRowBasedHdfsBackedSet() {
         this.keys = null;
         this.currentRow = null;
         this.set = null;
     }
 
     /**
+     * clear out the hdfs backed set and delete the control directory
+     *
+     */
+    protected void cleanup() {
+        // ensure all threads know we are done
+        this.setControl.setCancelled();
+        clearRowBasedHdfsBackedSet();
+        if (this.requiresCleanup) {
+            // for each of the ivarator cache dirs
+            for (IvaratorCacheDir ivaratorCacheDir : ivaratorCacheDirs) {
+                // get the row specific dir
+                Path cacheDir = new Path(ivaratorCacheDir.getPathURI());
+
+                FileSystem fs = ivaratorCacheDir.getFs();
+                if (log.isDebugEnabled()) {
+                    log.debug("Cleaning up " + cacheDir);
+                }
+                try {
+                    if (fs.exists(cacheDir)) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Deleting " + cacheDir);
+                        }
+                        fs.delete(cacheDir, true);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Deleted " + cacheDir);
+                        }
+                    }
+                } catch (IOException e) {
+                    log.error("Failed to cleanup ivarator cache dir " + cacheDir, e);
+                }
+            }
+        }
+    }
+    
+    /**
      * This will setup the set for the specified range. This will attempt to reuse precomputed and persisted sets if we are allowed to.
      *
      * @param row
-     *            a row
-     * @throws IOException
-     *             for issues with read/write
+     *            The row for which to setup a backed set
      */
-    protected void setupRowBasedHdfsBackedSet(String row) throws IOException {
+    protected void setupRowBasedHdfsBackedSet(String row) {
         // we are done if cancelled
         if (this.setControl.isCancelledQuery()) {
             return;
@@ -1280,16 +1334,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     fs.delete(rowDir, true);
                 }
             }
-
-            // ensure the control directory is created
-            Path controlRowDir = getRowDir(this.controlDir, row);
-            if (!this.controlFs.exists(controlRowDir)) {
-                this.controlFs.mkdirs(controlRowDir);
-                this.createdRowDir = true;
-            } else {
-                this.createdRowDir = false;
-            }
-
+            
             this.set = new HdfsBackedSortedSet<>(null, hdfsBackedSetBufferSize, ivaratorCacheDirs, row, maxOpenFiles, numRetries, persistOptions,
                             new FileKeySortedSet.Factory());
             this.threadSafeSet = Collections.synchronizedSortedSet(this.set);
@@ -1316,12 +1361,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * superclasses). If multiple are returned, then they must be sorted. These ranges are expected to be exclusively in the field index!
      *
      * @param rowId
-     *            a row id
-     * @param fieldValue
-     *            the field value
+     *            The row id
      * @param fiName
-     *            the field index name
-     * @return a list of ranges
+     *            The field index name fi\x00field
+     * @param fieldValue
+     *            The field value
+     * @return the list of ranges
      */
     @SuppressWarnings("hiding")
     protected abstract List<Range> buildBoundingFiRanges(Text rowId, Text fiName, Text fieldValue);
@@ -1420,8 +1465,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * Does this key match. Note we are not overriding the super.isMatchingKey() as we need that to work as is NOTE: This method must be thread safe
      *
      * @param k
-     *            the key
-     * @return a boolean based on if the key matches
+     *            The key to match
+     * @return true of matches
      * @throws IOException
      *             for issues with read/write
      */
@@ -1466,7 +1511,13 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
         public void takeOwnership(String row, Object owner) throws IOException {
             Path file = getOwnershipFile(row);
+            if (log.isDebugEnabled()) {
+                log.debug("Creating ownership file for " + controlDir);
+            }
             writeFile(file, getOwnerId(owner).getBytes());
+            if (log.isTraceEnabled()) {
+                log.trace("Created ownership file for " + controlDir);
+            }
         }
 
         public boolean hasOwnership(String row, Object owner) throws IOException {
@@ -1544,8 +1595,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             boolean append = false;
             String reason = null;
             Exception exc = null;
-
-            while (!done && count <= numRetries) {
+            
+            while (!done && count <= numRetries && !isCancelledQuery()) {
                 count++;
                 try {
                     FSDataOutputStream stream = null;
@@ -1602,7 +1653,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     }
                 }
             }
-            if (exc != null) {
+            if (exc != null && !isCancelledQuery()) {
                 throw new IOException(reason, exc);
             }
         }

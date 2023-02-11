@@ -1493,8 +1493,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected String getHdfsCacheSubDirPrefix() {
         // if we have a document specific range, or a list of specific doc ids (bundled document specific range per-se), then
         // we could have multiple iterators running against this shard for this query at the same time.
-        // In this case we need to differentiate between the ivarator directories being created. However this is
-        // a situation we do not want to be in, so we will also display a large warning to be seen by the accumulo monitor.
+        // In this case we need to differentiate between the ivarator directories being created.
         String hdfsPrefix = null;
         if (isDocumentSpecificRange(this.range)) {
             hdfsPrefix = range.getStartKey().getColumnFamily().toString().replace('\0', '_');
