@@ -35,7 +35,9 @@ public class Counts<K> {
      * Add to the counter
      *
      * @param key
+     *            the key
      * @param value
+     *            the value
      */
     public void add(K key, long value) {
         updateLock.lock();
@@ -65,6 +67,7 @@ public class Counts<K> {
      * Flush the currently stored counts with the given operation.
      *
      * @param flushOp
+     *            the flushOp
      */
     public void flush(FlushOp<K> flushOp) {
         flushLock.lock();
@@ -94,6 +97,9 @@ public class Counts<K> {
     
     /**
      * Interface to flush this data structure.
+     * 
+     * @param <K>
+     *            the type of the flush operation
      */
     public interface FlushOp<K> {
         void flush(ConcurrentMap<K,AtomicLong> counts);
