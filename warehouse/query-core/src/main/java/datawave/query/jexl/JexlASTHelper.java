@@ -624,8 +624,10 @@ public class JexlASTHelper {
             if (!includeGroupingContext) {
                 int groupingOffset = fieldName.indexOf(GROUPING_CHARACTER_SEPARATOR);
                 if (-1 != groupingOffset) {
-                    int identifierOffset = (fieldName.charAt(0) == IDENTIFIER_PREFIX) ? 1 : 0;
-                    return new String(fieldName.getBytes(), identifierOffset, groupingOffset);
+                    if (fieldName.charAt(0) == IDENTIFIER_PREFIX) {
+                        return new String(fieldName.getBytes(), 1, groupingOffset - 1);
+                    }
+                    return new String(fieldName.getBytes(), 0, groupingOffset);
                 }
             }
         }
