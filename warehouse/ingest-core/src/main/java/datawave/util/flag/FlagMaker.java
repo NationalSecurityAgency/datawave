@@ -234,6 +234,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     /**
      * 
      * @throws IOException
+     *             for issues with read/write
      */
     protected void processFlags() throws IOException {
         FileSystem fs = getHadoopFS();
@@ -361,6 +362,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      * Determine the number of unprocessed flag files in the flag directory
      * 
      * @param fc
+     *            the flag config
      * @return the flag found for this ingest pool
      */
     private int countFlagFileBacklog(final FlagDataTypeConfig fc) {
@@ -409,6 +411,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      * @param fc flag configuration
      * @param inFiles input files to write to flag file
      * @throws IOException
+     * error condition finding files in hadoop
      */
     //@formatter:on
     void writeFlagFile(final FlagDataTypeConfig fc, Collection<InputFile> inFiles) throws IOException {
@@ -652,7 +655,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      * Get the length of the flag file that would be created using this set of files.
      * 
      * @param fc
+     *            the flag config
      * @param inFiles
+     *            list of input files
      * @return The size in characters of the flag file
      */
     private long getFlagFileSize(FlagDataTypeConfig fc, Collection<InputFile> inFiles) {

@@ -61,10 +61,14 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
     }
     
     /**
-     * hashCode of the tserver name
-     *
-     * Read in the sequence file (that was created at job startup) that contains a list of shard IDs and the corresponding tablet server to which that shard is
-     * assigned. The hash is a simple hashCode of the location string.
+     * hashCode of the tserver name Read in the sequence file (that was created at job startup) that contains a list of shard IDs and the corresponding tablet
+     * server to which that shard is assigned. The hash is a simple hashCode of the location string.
+     * 
+     * @param tableName
+     *            the table name
+     * @throws IOException
+     *             for issues with read or write
+     * @return a mapping of the shard hashes
      */
     private Map<Text,Integer> getShardHashes(String tableName) throws IOException {
         if (this.shardHashes == null) {
