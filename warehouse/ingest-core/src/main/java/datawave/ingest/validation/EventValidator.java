@@ -13,7 +13,9 @@ public interface EventValidator {
      * Setup this event validator for the type specified
      * 
      * @param type
+     *            the type of event
      * @param conf
+     *            a configuration
      */
     void setup(Type type, Configuration conf);
     
@@ -21,6 +23,7 @@ public interface EventValidator {
      * Is this a fieldname that is to be validated. This method can be used to gather the fields for the final validation
      * 
      * @param fieldname
+     *            the field name to check
      * @return true if required for validation, false otherwise
      */
     boolean validated(String fieldname);
@@ -29,7 +32,9 @@ public interface EventValidator {
      * Validate the event against a set of metadata
      * 
      * @param event
+     *            the event
      * @param parameters
+     *            a set of parameters
      */
     void validate(RawRecordContainer event, Map<String,Collection<Object>> parameters);
     

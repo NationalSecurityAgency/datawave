@@ -58,9 +58,13 @@ public class NonShardedSplitsFile {
          * @param tableNames
          *            names of the table to retrieve splits for
          * @throws IOException
+         *             if there is an issue with read or write
          * @throws TableExistsException
+         *             if the table already exists
          * @throws TableNotFoundException
+         *             if the table could not be found
          * @throws URISyntaxException
+         *             if there is an issue with the URI syntax
          */
         public Writer(Configuration conf, int reduceTasks, Path workDirPath, FileSystem outputFs, String[] tableNames) throws TableNotFoundException,
                         IOException, TableExistsException, URISyntaxException {

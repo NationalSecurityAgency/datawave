@@ -50,6 +50,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
      * Initialize this context writer.
      *
      * @param conf
+     *            the configuration
      */
     @Override
     public void setup(Configuration conf, boolean outputTableCounters) throws IOException, InterruptedException {
@@ -143,9 +144,13 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
      * The method that actually flushes the entries to the context.
      *
      * @param entries
+     *            entries to flush
      * @param context
+     *            the context
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected abstract void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException;
     
@@ -153,8 +158,11 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
      * Clean up the context writer. Default implementation executes the flush method.
      *
      * @param context
+     *            a context
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     @Override
     public void cleanup(TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException {
