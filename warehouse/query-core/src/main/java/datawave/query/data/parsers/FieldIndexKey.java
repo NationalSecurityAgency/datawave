@@ -35,7 +35,10 @@ public class FieldIndexKey {
      */
     public void parse(Key k) {
         this.key = k;
-        
+        clearState();
+    }
+    
+    public void clearState() {
         this.field = null;
         this.value = null;
         this.datatype = null;
@@ -51,14 +54,7 @@ public class FieldIndexKey {
      * Backwards traversal of the column qualifier to find the two null indices
      */
     private void traverseColumnQualifier() {
-        
-        if (firstNull != -1 && secondNull != -1) {
-            return;
-        }
-        
-        if (cqBytes == null) {
-            cqBytes = key.getColumnQualifierData();
-        }
+        cqBytes = key.getColumnQualifierData();
         
         for (int i = cqBytes.length() - 1; i >= 0; i--) {
             if (cqBytes.byteAt(i) == 0x00) {
@@ -75,31 +71,45 @@ public class FieldIndexKey {
     public String getField() {
         if (field == null) {
             ByteSequence backing = key.getColumnFamilyData();
-            field = backing.subSequence(3, backing.length()).toString();
+            if (backing.length() > 3) {
+                field = backing.subSequence(3, backing.length()).toString();
+            }
         }
         return field;
     }
     
     public String getValue() {
         if (value == null) {
-            traverseColumnQualifier();
-            value = cqBytes.subSequence(0, firstNull).toString();
+            if (cqBytes == null) {
+                traverseColumnQualifier();
+            }
+            if (firstNull != -1 && secondNull != -1) {
+                value = cqBytes.subSequence(0, firstNull).toString();
+            }
         }
         return value;
     }
     
     public String getDatatype() {
         if (datatype == null) {
-            traverseColumnQualifier();
-            datatype = cqBytes.subSequence(firstNull + 1, secondNull).toString();
+            if (cqBytes == null) {
+                traverseColumnQualifier();
+            }
+            if (firstNull != -1 && secondNull != -1) {
+                datatype = cqBytes.subSequence(firstNull + 1, secondNull).toString();
+            }
         }
         return datatype;
     }
     
     public String getUid() {
         if (uid == null) {
-            traverseColumnQualifier();
-            uid = cqBytes.subSequence(secondNull + 1, cqBytes.length()).toString();
+            if (cqBytes == null) {
+                traverseColumnQualifier();
+            }
+            if (firstNull != -1 && secondNull != -1) {
+                uid = cqBytes.subSequence(secondNull + 1, cqBytes.length()).toString();
+            }
         }
         return uid;
     }
