@@ -12,8 +12,7 @@ import datawave.util.flag.config.FlagDataTypeConfig;
 
 /**
  * This will create a bucket per group, independent of the datatype. Within a bucket the files will be sorted by file date in lifo or fifo order as configured.
- * 
- * @author
+ *
  */
 public class DateFlagDistributor extends AbstractSliceDistributor<Long> {
     
