@@ -175,7 +175,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * Insert a count into the filename. The filename is expected to end with our extension.
      * 
      * @param filename
+     *            file name
      * @param count
+     *            the count
      * @return filename with the count inserted as follows: {@code path/name + extension -> path/name + _count + extension}
      */
     protected Path insertFileCount(Path filename, int count) {
@@ -189,6 +191,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * Remove a count from a filename. The filename is expected to end with _count.extension.
      * 
      * @param filename
+     *            file name
      * @return filename with the count removed as follows: {@code path/name + _count + extension -> path/name + extension}
      */
     protected Path removeFileCount(Path filename) {
@@ -208,7 +211,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      *            The table name
      * @param filename
      *            The path of the file being written to
+     * @param tableConf
+     *            the table accumulo configuration
      * @throws IOException
+     *             if there is an issue with read or write
+     * @throws AccumuloException
+     *             if there is an issue accumulo
      */
     protected void createAndRegisterWriter(String key, String table, Path filename, AccumuloConfiguration tableConf) throws IOException, AccumuloException {
         // first get the writer count (how many writers have we made for this key)
@@ -244,8 +252,11 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * Close the current writer for the specified key, and create the next writer. The index encoded in the filename will be appropriately updated.
      * 
      * @param key
+     *            a key
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws AccumuloException
+     *             if there is an issue with accumulo
      */
     protected void closeAndUpdateWriter(String key) throws IOException, AccumuloException {
         SizeTrackingWriter writer = writers.get(key);
@@ -316,9 +327,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * Get a writer that was previously registered. This will mark the writer as being used.
      * 
      * @param key
+     *            a key
      * @return the writer
-     * @throws AccumuloException
      * @throws IOException
+     *             if there is an issue with read or write
+     * @throws AccumuloException
+     *             if there is an issue with accumulo
      */
     protected SizeTrackingWriter getRegisteredWriter(String key) throws IOException, AccumuloException {
         SizeTrackingWriter writer = writers.get(key);
@@ -633,6 +647,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     /**
      * Read in the sequence file (that was created at job startup) for the given table that contains a list of shard IDs and the corresponding tablet server to
      * which that shard is assigned.
+     * 
+     * @param tableName
+     *            the table name
+     * @return a mapping of the shard ids and tablet server
+     * @throws IOException
+     *             if there is an issue with read or write
      */
     protected Map<Text,String> getShardLocations(String tableName) throws IOException {
         // Create the Map of sharded table name to [shardId -> server]

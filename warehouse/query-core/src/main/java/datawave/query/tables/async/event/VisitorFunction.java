@@ -300,6 +300,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     
                     pruneEmptyOptions(newIteratorSetting);
                     
+                    if (config.getReduceQueryFields()) {
+                        reduceQueryFields(script, newIteratorSetting);
+                    }
+                    
                     try {
                         queryCache.put(query, newQuery);
                     } catch (NullPointerException npe) {
@@ -398,6 +402,25 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             settings.removeOption(QueryOptions.MAX_IVARATOR_RESULTS);
             settings.removeOption(QueryOptions.MAX_IVARATOR_SOURCES);
         }
+    }
+    
+    /**
+     * Reduce the serialized query fields via intersection with fields in the reduced script
+     *
+     * @param script
+     *            the query, potentially reduced via RangeStream pruning
+     * @param settings
+     *            the iterator settings
+     */
+    protected void reduceQueryFields(ASTJexlScript script, IteratorSetting settings) {
+        Set<String> queryFields = ReduceFields.getQueryFields(script);
+        
+        ReduceFields.reduceFieldsForOption(QueryOptions.CONTENT_EXPANSION_FIELDS, queryFields, settings);
+        ReduceFields.reduceFieldsForOption(QueryOptions.INDEXED_FIELDS, queryFields, settings);
+        ReduceFields.reduceFieldsForOption(QueryOptions.INDEX_ONLY_FIELDS, queryFields, settings);
+        ReduceFields.reduceFieldsForOption(QueryOptions.TERM_FREQUENCY_FIELDS, queryFields, settings);
+        
+        // might also look at COMPOSITE_FIELDS, EXCERPT_FIELDS, and GROUP_FIELDS
     }
     
     // push down large fielded lists. Assumes that the hdfs query cache uri and
