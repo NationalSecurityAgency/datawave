@@ -165,7 +165,8 @@ public class IngestMetricsMapper extends Mapper<Text,Counters,Text,Mutation> {
      * If there is no '/' character, then null is returned.
      *
      * @param path
-     * @return
+     *            the file path
+     * @return a file name
      */
     public static String extractFileName(String path) {
         // first see if we have a full path
@@ -185,6 +186,10 @@ public class IngestMetricsMapper extends Mapper<Text,Counters,Text,Mutation> {
     /**
      * We can have multiple transformer processes per datatype, each returning a file with the prefix {datatype}.{transformerNumber}. This method returns just
      * the {datatype} portion.
+     * 
+     * @param type
+     *            the datatype
+     * @return the datatype string
      */
     public static String stripRawFileTransformerNumber(String type) {
         final int wheresTheDot = type.indexOf('.');

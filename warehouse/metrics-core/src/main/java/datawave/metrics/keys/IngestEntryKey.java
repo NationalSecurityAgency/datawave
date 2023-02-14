@@ -25,11 +25,17 @@ public class IngestEntryKey implements XKey {
     
     /**
      * @param timestamp
+     *            a timestamp
      * @param type
+     *            the type
      * @param count
+     *            the count
      * @param duration
+     *            the duration
      * @param jobId
+     *            a job id
      * @param outputDirectory
+     *            the output directory
      */
     public IngestEntryKey(long timestamp, String type, long count, long duration, String jobId, String outputDirectory) {
         this.timestamp = timestamp;
