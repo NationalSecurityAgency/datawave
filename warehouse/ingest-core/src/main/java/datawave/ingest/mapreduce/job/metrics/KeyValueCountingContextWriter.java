@@ -46,8 +46,11 @@ public class KeyValueCountingContextWriter<OK,OV> implements ContextWriter<OK,OV
      * Writes out all previously collected table counts and associates them with this event/fields.
      *
      * @param event
+     *            the event container
      * @param fields
+     *            the event fields
      * @param handler
+     *            the event handler
      */
     public void writeMetrics(RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, DataTypeHandler<?> handler) {
         String dataType = event.getDataType().typeName();

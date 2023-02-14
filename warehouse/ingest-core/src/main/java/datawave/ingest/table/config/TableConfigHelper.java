@@ -16,8 +16,14 @@ public interface TableConfigHelper {
     /**
      * Performs property validation and setup
      * 
+     * @param tableName
+     *            the table name
+     * @param log
+     *            the log
      * @param config
+     *            a configuration
      * @throws IllegalArgumentException
+     *             if there is an issue with an argument
      */
     void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException;
     
@@ -26,10 +32,13 @@ public interface TableConfigHelper {
      * 
      * @param tops
      *            Accumulo TableOperations object to use to setup the configuration
-     * 
+     *
      * @throws AccumuloException
+     *             for issues with accumulo
      * @throws AccumuloSecurityException
+     *             for issues authenticating with accumulo
      * @throws TableNotFoundException
+     *             if the table is not found
      * 
      */
     void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException;

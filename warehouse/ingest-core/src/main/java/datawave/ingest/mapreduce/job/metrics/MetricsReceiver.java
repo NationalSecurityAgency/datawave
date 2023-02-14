@@ -16,6 +16,7 @@ public interface MetricsReceiver<OK,OV> {
      * Sets up any configuration.
      *
      * @param conf
+     *            the configuration
      * @param ingestDate
      *            String formatted date
      */
@@ -25,8 +26,13 @@ public interface MetricsReceiver<OK,OV> {
      * Ensures that the appropriate config exists on the table.
      *
      * @param tableName
+     *            the table name
      * @param tops
+     *            the table ops
      * @param conf
+     *            the configuration
+     * @throws Exception
+     *             if there are issues
      */
     void configureTable(String tableName, TableOperations tops, Configuration conf) throws Exception;
     
@@ -35,17 +41,22 @@ public interface MetricsReceiver<OK,OV> {
      * instantiation.
      *
      * @param store
+     *            the metrics store
      * @param metric
+     *            a metric
      * @param labels
+     *            a map of labels
      * @param fields
+     *            map of normalized fields
      * @param value
+     *            the value
      */
     void process(MetricsStore<OK,OV> store, Metric metric, Map<String,String> labels, Multimap<String,NormalizedContentInterface> fields, long value);
     
     /**
      * Gets the metric that this receiver can handle.
      *
-     * @return
+     * @return the metric for this receiver
      */
     Metric getMetric();
 }
