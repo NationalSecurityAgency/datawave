@@ -82,7 +82,7 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
         this.identityManager = identityManager;
         trustedHeaderAuthentication = Boolean.valueOf(System.getProperty("dw.trusted.header.authentication", "false"));
         jwtHeaderAuthentication = Boolean.valueOf(System.getProperty("dw.jwt.header.authentication", "false"));
-        String dns = System.getProperty("dw.dns.to.ignore", null);
+        String dns = System.getProperty("dw.trusted.proxied.entities", null);
         if (!StringUtils.isEmpty(dns)) {
             dnsToPrune = new HashSet<>(Arrays.asList(ProxiedEntityUtils.splitProxiedDNs(dns, false)));
         } else {
