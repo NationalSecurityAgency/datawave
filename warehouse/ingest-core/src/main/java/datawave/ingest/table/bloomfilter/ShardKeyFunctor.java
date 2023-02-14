@@ -58,6 +58,7 @@ public class ShardKeyFunctor implements KeyFunctor {
      * Determine whether this range should be considered by the bloom filter.
      * 
      * @param range
+     *            the range to check
      * @return true if it is to be considered, false otherwise
      */
     static boolean isRangeInBloomFilter(Range range) {
@@ -94,7 +95,8 @@ public class ShardKeyFunctor implements KeyFunctor {
      * A key is to be considered by the bloom filter if it is for a field index column and both the field name and field value are supplied.
      * 
      * @param cbKey
-     * @return
+     *            the the key to check
+     * @return whether the key is in the filter
      */
     static boolean isKeyInBloomFilter(org.apache.accumulo.core.data.Key cbKey) {
         byte[] cf = cbKey.getColumnFamilyData().getBackingArray();
@@ -108,7 +110,9 @@ public class ShardKeyFunctor implements KeyFunctor {
      * Get the index of a byte in a byte sequence. The byte sequence length is returned if the byte is not found.
      * 
      * @param bytes
+     *            the byte sequence
      * @param val
+     *            the value
      * @return the index of a byte, or the byte sequence length if not found
      */
     static int getIndexOf(ByteSequence bytes, byte val) {

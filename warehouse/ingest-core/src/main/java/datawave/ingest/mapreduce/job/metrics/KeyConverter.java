@@ -15,9 +15,13 @@ public class KeyConverter {
      * Converts the pieces of a key to a delimited string.
      * 
      * @param row
+     *            the event row
      * @param qual
+     *            the column qualifer
      * @param fam
+     *            the column family
      * @param viz
+     *            the column visibility
      * @return string representation
      */
     public static String toString(String row, String qual, String fam, String viz) {
@@ -28,6 +32,7 @@ public class KeyConverter {
      * Converts from the delimited string into an Accumulo key
      * 
      * @param str
+     *            the string input
      * @return Accumulo key
      */
     public static Key fromString(String str) {

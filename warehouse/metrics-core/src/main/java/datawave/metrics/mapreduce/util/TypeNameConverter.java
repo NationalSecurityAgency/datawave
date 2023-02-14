@@ -16,7 +16,8 @@ public class TypeNameConverter {
      * If no match found, normalizes type to upper case
      * 
      * @param type
-     * @return
+     *            a type
+     * @return the type string
      */
     public String convertRawFileTransformerToIngest(String type) {
         if (null != rawFileTransformerToIngest) {
