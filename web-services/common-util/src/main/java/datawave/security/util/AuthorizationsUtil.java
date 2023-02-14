@@ -237,16 +237,31 @@ public class AuthorizationsUtil {
         return Collections.singleton(new HashSet<>(Arrays.asList(authorizations.toString().split(","))));
     }
     
+    /**
+     * Merge principals. This can be used to create a composite view of a principal when including remote systems
+     * 
+     * @param principals
+     * @return The merge principal
+     */
     public static DatawavePrincipal mergePrincipals(DatawavePrincipal... principals) {
         DatawavePrincipal datawavePrincipal = null;
         for (DatawavePrincipal principal : principals) {
             if (datawavePrincipal == null) {
                 datawavePrincipal = principal;
             } else {
-                LinkedHashMap<SubjectIssuerDNPair,DatawaveUser> users = new LinkedHashMap<>(datawavePrincipal.getProxiedUsers().stream()
-                                .collect(Collectors.toMap(DatawaveUser::getDn, Function.identity())));
+                // verify we are merging like with like
+                if (!datawavePrincipal.getPrimaryUser().getDn().equals(principal.getPrimaryUser().getDn())) {
+                    throw new IllegalArgumentException("Cannot merge principals with different primary users: " + datawavePrincipal.getPrimaryUser().getDn()
+                                    + " vs " + principal.getPrimaryUser().getDn());
+                }
+                
+                // create a map of our users in the correct order
+                LinkedHashMap<SubjectIssuerDNPair,DatawaveUser> users = datawavePrincipal.getProxiedUsers().stream()
+                        .collect(Collectors.toMap(DatawaveUser::getDn, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
+                // keep track of extras
                 LinkedHashMap<SubjectIssuerDNPair,DatawaveUser> extraProxies = new LinkedHashMap<>();
                 
+                // for each user, merge or add to extras
                 for (DatawaveUser user : principal.getProxiedUsers()) {
                     if (users.containsKey(user.getDn())) {
                         users.put(user.getDn(), mergeUsers(users.get(user.getDn()), user));
@@ -255,6 +270,7 @@ public class AuthorizationsUtil {
                     }
                 }
                 
+                // and create a merged principal
                 List<DatawaveUser> mergedUsers = new ArrayList<>(users.values());
                 mergedUsers.addAll(extraProxies.values());
                 datawavePrincipal = new DatawavePrincipal(mergedUsers);
@@ -269,11 +285,17 @@ public class AuthorizationsUtil {
             if (datawaveUser == null) {
                 datawaveUser = user;
             } else {
+                // verify we are merging like with like.
                 if (!user.getDn().equals(datawaveUser.getDn())) {
                     throw new IllegalArgumentException("Cannot merge different users: " + user.getDn() + " and " + datawaveUser.getDn());
                 }
+                if (!user.getUserType().equals(datawaveUser.getUserType())) {
+                    throw new IllegalArgumentException("Cannot merge users of different types");
+                }
+                // merge role maps
                 Multimap<String,String> mergedRoleToAuth = HashMultimap.create(datawaveUser.getRoleToAuthMapping());
                 mergedRoleToAuth.putAll(user.getRoleToAuthMapping());
+                // create merged user
                 datawaveUser = new DatawaveUser(user.getDn(), user.getUserType(), Sets.union(new HashSet<>(user.getAuths()),
                                 new HashSet<>(datawaveUser.getAuths())), Sets.union(new HashSet<>(user.getRoles()), new HashSet<>(datawaveUser.getRoles())),
                                 mergedRoleToAuth, System.currentTimeMillis());

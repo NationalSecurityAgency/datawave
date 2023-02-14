@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,7 +47,7 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
     
     protected LinkedHashMap<SubjectIssuerDNPair,Set<String>> auths = new LinkedHashMap<SubjectIssuerDNPair,Set<String>>();
     
-    protected Map<String,Collection<String>> authMapping;
+    protected Map<String,Collection<String>> authMapping = new HashMap<>();
     
     public abstract String getMainContent();
     

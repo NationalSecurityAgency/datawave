@@ -1,6 +1,8 @@
 package datawave.security.util;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
@@ -16,9 +18,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -227,5 +231,70 @@ public class AuthorizationsUtilTest {
     public void testBuildUserAuthorizationsString() throws Exception {
         String expected = new Authorizations("A", "C", "D").toString();
         assertEquals(expected, AuthorizationsUtil.buildUserAuthorizationString(proxiedUserPrincipal));
+    }
+
+    @Test
+    public void testMergeUsers() {
+        SubjectIssuerDNPair userDn1 = SubjectIssuerDNPair.of("entity1UserDN", "entity1IssuerDN");
+        SubjectIssuerDNPair userDn2 = SubjectIssuerDNPair.of("entity1UserDN", "entity1IssuerDN");
+
+        DatawaveUser user1 = new DatawaveUser(userDn1, UserType.USER, Sets.newHashSet("A", "C", "D"), null, null, System.currentTimeMillis());
+        DatawaveUser user2 = new DatawaveUser(userDn2, UserType.USER, Sets.newHashSet("A", "B", "E"), null, null, System.currentTimeMillis());
+
+        DatawaveUser user3 = AuthorizationsUtil.mergeUsers(user1, user2);
+
+        DatawaveUser expected = new DatawaveUser(userDn1, user1.getUserType(), Sets.newHashSet("A", "B", "C", "D", "E"), null, null, -1);
+        assertUserEquals(expected, user3);
+
+        Multimap<String, String> rolesToAuths1 = HashMultimap.create();
+        rolesToAuths1.put("role1", "A");
+        rolesToAuths1.put("role1", "B");
+        rolesToAuths1.put("role2", "C");
+        Multimap<String, String> rolesToAuths2 = HashMultimap.create();
+        rolesToAuths2.put("role3", "A");
+        Multimap<String, String> rolesToAuths3 = HashMultimap.create(rolesToAuths1);
+        rolesToAuths3.putAll(rolesToAuths2);
+
+        user1 = new DatawaveUser(userDn1, UserType.USER, Sets.newHashSet("A", "C", "D"), rolesToAuths1.keySet(), rolesToAuths1, System.currentTimeMillis());
+        user2 = new DatawaveUser(userDn2, UserType.USER, Sets.newHashSet("A", "B", "E"), rolesToAuths2.keySet(), rolesToAuths2, System.currentTimeMillis());
+
+        user3 = AuthorizationsUtil.mergeUsers(user1, user2);
+
+        expected = new DatawaveUser(userDn1, UserType.USER, Sets.newHashSet("A", "B", "C", "D", "E"),
+                rolesToAuths3.keySet(), rolesToAuths3, -1);
+        assertUserEquals(expected, user3);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCannotMergeUser() {
+        AuthorizationsUtil.mergeUsers(proxiedServerPrincipal1.getPrimaryUser(), proxiedServerPrincipal2.getPrimaryUser());
+    }
+
+    @Test
+    public void testMergePrincipals() {
+        DatawavePrincipal merged = AuthorizationsUtil.mergePrincipals(proxiedUserPrincipal, remoteUserPrincipal);
+        assertPrincipalEquals(overallUserPrincipal, merged);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCannotMergePrincipal() {
+        AuthorizationsUtil.mergePrincipals(proxiedServerPrincipal1, proxiedServerPrincipal2);
+    }
+
+    private void assertUserEquals(DatawaveUser user1, DatawaveUser user2) {
+        assertEquals(user1.getDn(), user2.getDn());
+        assertEquals(user1.getUserType(), user2.getUserType());
+        assertEquals(new HashSet<>(user1.getAuths()), new HashSet<>(user2.getAuths()));
+        assertEquals(new HashSet<>(user1.getRoles()), new HashSet<>(user2.getRoles()));
+        assertEquals(user1.getRoleToAuthMapping(), user2.getRoleToAuthMapping());
+    }
+
+    private void assertPrincipalEquals(DatawavePrincipal user1, DatawavePrincipal user2) {
+        List<DatawaveUser> users1 = new ArrayList<>(user1.getProxiedUsers());
+        List<DatawaveUser> users2 = new ArrayList<>(user2.getProxiedUsers());
+        assertEquals(users1.size(), users2.size());
+        for (int i = 0; i < users1.size(); i++) {
+            assertUserEquals(users1.get(i), users2.get(i));
+        }
     }
 }
