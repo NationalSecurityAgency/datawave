@@ -1,14 +1,10 @@
 package datawave.security.user;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.UserOperations;
-import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.cache.CredentialsCacheBean;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.user.AuthorizationsListBase;
@@ -35,15 +31,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Path("/Security/User")
 @LocalBean

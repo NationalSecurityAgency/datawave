@@ -257,7 +257,7 @@ public class AuthorizationsUtil {
                 
                 // create a map of our users in the correct order
                 LinkedHashMap<SubjectIssuerDNPair,DatawaveUser> users = datawavePrincipal.getProxiedUsers().stream()
-                        .collect(Collectors.toMap(DatawaveUser::getDn, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
+                                .collect(Collectors.toMap(DatawaveUser::getDn, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
                 // keep track of extras
                 LinkedHashMap<SubjectIssuerDNPair,DatawaveUser> extraProxies = new LinkedHashMap<>();
                 
