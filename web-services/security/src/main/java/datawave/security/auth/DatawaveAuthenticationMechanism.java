@@ -1,20 +1,5 @@
 package datawave.security.auth;
 
-import static datawave.webservice.metrics.Constants.REQUEST_LOGIN_TIME_HEADER;
-import static datawave.webservice.metrics.Constants.REQUEST_START_TIME_HEADER;
-
-import java.io.IOException;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import javax.net.ssl.SSLPeerUnverifiedException;
-
 import datawave.security.util.ProxiedEntityUtils;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMechanismFactory;
@@ -33,6 +18,19 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.SslClientAuthMode;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import java.io.IOException;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static datawave.webservice.metrics.Constants.REQUEST_LOGIN_TIME_HEADER;
+import static datawave.webservice.metrics.Constants.REQUEST_START_TIME_HEADER;
 
 /**
  * The custom DATAWAVE servlet authentication mechanism. This auth mechanism acts just like CLIENT-CERT if there is an SSL session found, and otherwise uses
