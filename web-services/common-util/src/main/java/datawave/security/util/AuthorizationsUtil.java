@@ -1,25 +1,32 @@
 package datawave.security.util;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.accumulo.util.security.UserAuthFunctions;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
 
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class AuthorizationsUtil {
     
@@ -229,4 +236,50 @@ public class AuthorizationsUtil {
     public static Collection<? extends Collection<String>> prepareAuthsForMerge(Authorizations authorizations) {
         return Collections.singleton(new HashSet<>(Arrays.asList(authorizations.toString().split(","))));
     }
+    
+    public static DatawavePrincipal mergePrincipals(DatawavePrincipal... principals) {
+        DatawavePrincipal datawavePrincipal = null;
+        for (DatawavePrincipal principal : principals) {
+            if (datawavePrincipal == null) {
+                datawavePrincipal = principal;
+            } else {
+                LinkedHashMap<SubjectIssuerDNPair,DatawaveUser> users = new LinkedHashMap<>(datawavePrincipal.getProxiedUsers().stream()
+                                .collect(Collectors.toMap(DatawaveUser::getDn, Function.identity())));
+                LinkedHashMap<SubjectIssuerDNPair,DatawaveUser> extraProxies = new LinkedHashMap<>();
+                
+                for (DatawaveUser user : principal.getProxiedUsers()) {
+                    if (users.containsKey(user.getDn())) {
+                        users.put(user.getDn(), mergeUsers(users.get(user.getDn()), user));
+                    } else {
+                        extraProxies.put(user.getDn(), user);
+                    }
+                }
+                
+                List<DatawaveUser> mergedUsers = new ArrayList<>(users.values());
+                mergedUsers.addAll(extraProxies.values());
+                datawavePrincipal = new DatawavePrincipal(mergedUsers);
+            }
+        }
+        return datawavePrincipal;
+    }
+    
+    public static DatawaveUser mergeUsers(DatawaveUser... users) {
+        DatawaveUser datawaveUser = null;
+        for (DatawaveUser user : users) {
+            if (datawaveUser == null) {
+                datawaveUser = user;
+            } else {
+                if (!user.getDn().equals(datawaveUser.getDn())) {
+                    throw new IllegalArgumentException("Cannot merge different users: " + user.getDn() + " and " + datawaveUser.getDn());
+                }
+                Multimap<String,String> mergedRoleToAuth = HashMultimap.create(datawaveUser.getRoleToAuthMapping());
+                mergedRoleToAuth.putAll(user.getRoleToAuthMapping());
+                datawaveUser = new DatawaveUser(user.getDn(), user.getUserType(), Sets.union(new HashSet<>(user.getAuths()),
+                                new HashSet<>(datawaveUser.getAuths())), Sets.union(new HashSet<>(user.getRoles()), new HashSet<>(datawaveUser.getRoles())),
+                                mergedRoleToAuth, System.currentTimeMillis());
+            }
+        }
+        return datawaveUser;
+    }
+    
 }

@@ -42,6 +42,7 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
     
     protected String userDn;
     protected String issuerDn;
+    protected List<String> messages = new ArrayList<>();
     
     protected LinkedHashMap<SubjectIssuerDNPair,Set<String>> auths = new LinkedHashMap<SubjectIssuerDNPair,Set<String>>();
     
@@ -64,12 +65,15 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
         auths.put(new SubjectIssuerDNPair(dn, issuerDN), new TreeSet<String>(dnAuths));
     }
     
-    public String getUserDn() {
-        return userDn;
+    public void setMessages(List<String> messages) {
+        this.messages.clear();
+        if (messages != null) {
+            this.messages.addAll(messages);
+        }
     }
     
-    public String getIssuerDn() {
-        return issuerDn;
+    public void addMessage(String message) {
+        this.messages.add(message);
     }
     
     public void setUserAuths(String userDn, String issuerDn, Collection<String> userAuths) {
@@ -78,12 +82,42 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
         this.userAuths.addAll(userAuths);
     }
     
+    public TreeSet<String> getUserAuths() {
+        return new TreeSet<String>(userAuths);
+    }
+    
     public TreeSet<String> getAllAuths() {
         return new TreeSet<String>(userAuths);
     }
     
     public void setAuthMapping(Map<String,Collection<String>> authMapping) {
         this.authMapping = new TreeMap<String,Collection<String>>(authMapping);
+    }
+    
+    public String getUserDn() {
+        // if the userDn is empty but we have auths, then use the first auth entry as the user
+        // this handles the case where the userDn and subjectDn are not being serialized separately.
+        if (userDn == null && !auths.isEmpty()) {
+            return auths.keySet().iterator().next().subjectDN;
+        }
+        return userDn;
+    }
+    
+    public String getIssuerDn() {
+        // if the issuerDn is empty but we have auths, then use the first auth entry as the user
+        // this handles the case where the userDn and subjectDn are not being serialized separately.
+        if (issuerDn == null && !auths.isEmpty()) {
+            return auths.keySet().iterator().next().issuerDN;
+        }
+        return issuerDn;
+    }
+    
+    public List<String> getMessages() {
+        return messages;
+    }
+    
+    public Map<String,Collection<String>> getAuthMapping() {
+        return authMapping;
     }
     
     public String getTitle() {
@@ -219,6 +253,17 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
                     }
                 }
             }
+            if (message.userDn != null) {
+                output.writeString(3, message.userDn, false);
+            }
+            if (message.issuerDn != null) {
+                output.writeString(4, message.issuerDn, false);
+            }
+            if (!message.messages.isEmpty()) {
+                for (String msg : message.messages) {
+                    output.writeString(5, msg, true);
+                }
+            }
         }
         
         @Override
@@ -244,6 +289,15 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
                             message.authMapping.put(auths[0], new HashSet<String>());
                         message.authMapping.get(auths[0]).add(auths[1]);
                         break;
+                    case 3:
+                        message.userDn = input.readString();
+                        break;
+                    case 4:
+                        message.issuerDn = input.readString();
+                        break;
+                    case 5:
+                        message.messages.add(input.readString());
+                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;
@@ -258,6 +312,12 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
                     return "auths";
                 case 2:
                     return "authMapping";
+                case 3:
+                    return "userDn";
+                case 4:
+                    return "issuerDn";
+                case 5:
+                    return "messages";
                 default:
                     return null;
             }
@@ -273,6 +333,9 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
         {
             fieldMap.put("auths", 1);
             fieldMap.put("authMapping", 2);
+            fieldMap.put("userDn", 3);
+            fieldMap.put("issuerDn", 4);
+            fieldMap.put("messages", 5);
         }
     }
 }

@@ -132,11 +132,25 @@
         <property name="responseObjectFactory" ref="ResponseObjectFactory" />
     </bean>
 
+    <!-- Here is an example of configuring a remote user operations service if needed for a remote event query -->
+    <bean id="MyRemoteUserOps" class="datawave.security.authorization.remote.RemoteUserOperationsImpl">
+        <property name="queryServiceScheme" value="https" />
+        <property name="queryServiceHost" value="localhost" />
+        <property name="queryServicePort" value="8443" />
+        <property name="queryServiceURI" value="/DataWave/Security/User/" />
+        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
+    </bean>
+
+    <!-- Configure the remote operation here for use by the local UserOperationsBean -->
+    <util:list id="RemoteUserOperations" value-type="datawave.security.authorization.RemoteUserOperations">
+        <!--ref bean="MyRemoteUserOps"/-->
+    </util:list>
+
     <!-- Here is an example of configuring a remote query service and a remote event query -->
     <bean id="RemoteQueryService" class="datawave.webservice.query.remote.RemoteQueryServiceImpl">
         <property name="queryServiceScheme" value="https" />
         <property name="queryServiceHost" value="localhost" />
-        <property name="queryServicePort" value="9443" />
+        <property name="queryServicePort" value="8443" />
         <property name="queryServiceURI" value="/DataWave/Query/" />
         <property name="responseObjectFactory" ref="ResponseObjectFactory" />
     </bean>
@@ -149,17 +163,7 @@
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
         <property name="remoteQueryService" ref="RemoteQueryService" />
         <property name="remoteQueryLogic" value="EventQuery" />
-    </bean>
-
-    <util:list id="RemoteUserOperations" value-type="datawave.security.authorization.RemoteUserOperations"/>
-
-    <!-- Here is an example of configuring a remote user operations service if needed for a remote event query -->
-    <bean id="MyRemoteUserOps" class="datawave.security.authorization.remote.RemoteUserOperationsImpl">
-        <property name="queryServiceScheme" value="https" />
-        <property name="queryServiceHost" value="localhost" />
-        <property name="queryServicePort" value="9443" />
-        <property name="queryServiceURI" value="/Security/User/" />
-        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
+        <property name="userOperations" ref="MyRemoteUserOps" />
     </bean>
 
     <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.tables.ShardQueryLogic" abstract="true">

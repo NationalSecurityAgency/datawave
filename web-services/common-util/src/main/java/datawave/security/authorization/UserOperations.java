@@ -1,9 +1,12 @@
 package datawave.security.authorization;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.result.GenericResponse;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,25 +28,32 @@ public interface UserOperations {
         
         // create a new set of proxied users
         List<DatawaveUser> mappedUsers = new ArrayList<>();
-        Map<SubjectIssuerDNPair,DatawaveUser> users = principal.getProxiedUsers().stream().collect(Collectors.toMap(DatawaveUser::getDn, Function.identity()));
+        Map<SubjectIssuerDNPair,DatawaveUser> localUsers = principal.getProxiedUsers().stream()
+                        .collect(Collectors.toMap(DatawaveUser::getDn, Function.identity()));
         
         // create a mapped user for the primary user with the auths returned by listEffectiveAuthorizations
-        SubjectIssuerDNPair pair = SubjectIssuerDNPair.of(auths.getUserDn(), auths.getIssuerDn());
-        DatawaveUser user = users.get(pair);
-        mappedUsers.add(new DatawaveUser(pair, user.getUserType(), auths.getAllAuths(), user.getRoles(), user.getRoleToAuthMapping(), System
-                        .currentTimeMillis()));
+        SubjectIssuerDNPair primaryDn = SubjectIssuerDNPair.of(auths.getUserDn(), auths.getIssuerDn());
+        DatawaveUser localUser = localUsers.get(primaryDn);
+        mappedUsers.add(new DatawaveUser(primaryDn, localUser.getUserType(), auths.getAllAuths(), auths.getAuthMapping().keySet(), toMultimap(auths
+                        .getAuthMapping()), System.currentTimeMillis()));
         
         // for each proxied user, create a new user with the auths returned by listEffectiveAuthorizations
         Map<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> authMap = auths.getAuths();
         for (Map.Entry<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> entry : authMap.entrySet()) {
-            pair = SubjectIssuerDNPair.of(entry.getKey().subjectDN, entry.getKey().issuerDN);
-            user = users.get(pair);
-            mappedUsers.add(new DatawaveUser(pair, user.getUserType(), entry.getValue(), user.getRoles(), user.getRoleToAuthMapping(), System
-                            .currentTimeMillis()));
+            SubjectIssuerDNPair pair = SubjectIssuerDNPair.of(entry.getKey().subjectDN, entry.getKey().issuerDN);
+            if (!pair.equals(primaryDn)) {
+                mappedUsers.add(new DatawaveUser(pair, DatawaveUser.UserType.SERVER, entry.getValue(), null, null, System.currentTimeMillis()));
+            }
         }
         
         // return a principal with the mapped users
         return new DatawavePrincipal(mappedUsers);
+    }
+    
+    static Multimap<String,String> toMultimap(Map<String,Collection<String>> map) {
+        Multimap<String,String> multimap = HashMultimap.create();
+        map.entrySet().stream().forEach(e -> multimap.putAll(e.getKey(), e.getValue()));
+        return multimap;
     }
     
 }

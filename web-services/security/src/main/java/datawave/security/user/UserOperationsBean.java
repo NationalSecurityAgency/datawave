@@ -1,5 +1,8 @@
 package datawave.security.user;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.security.authorization.DatawavePrincipal;
@@ -32,8 +35,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -134,31 +139,15 @@ public class UserOperationsBean implements UserOperations {
             
             // if we have any remote services configured, merge those authorizations in here
             if (includeRemoteServices && CollectionUtils.isNotEmpty(remoteServices)) {
-                Map<SubjectIssuerDNPair,DatawaveUser> users = new HashMap<>(datawavePrincipal.getProxiedUsers().stream()
-                                .collect(Collectors.toMap(DatawaveUser::getDn, Function.identity())));
                 for (UserOperations remote : remoteServices) {
                     try {
-                        AuthorizationsListBase response = remote.listEffectiveAuthorizations(context.getCallerPrincipal());
-                        
-                        // merge the auths returned by this response into the auths for the primary user
-                        SubjectIssuerDNPair dn = SubjectIssuerDNPair.of(response.getUserDn(), response.getIssuerDn());
-                        users.put(dn, AuthorizationsUtil.mergeAuths(users.get(dn), response.getAllAuths()));
-                        
-                        // and do the same for each of the proxies
-                        Map<datawave.user.AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> auths = response.getAuths();
-                        for (Map.Entry<datawave.user.AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> entry : auths.entrySet()) {
-                            dn = SubjectIssuerDNPair.of(entry.getKey().subjectDN, entry.getKey().issuerDN);
-                            users.put(dn, AuthorizationsUtil.mergeAuths(users.get(dn), entry.getValue()));
-                        }
+                        DatawavePrincipal remotePrincipal = remote.getRemoteUser(datawavePrincipal);
+                        datawavePrincipal = AuthorizationsUtil.mergePrincipals(datawavePrincipal, remotePrincipal);
                     } catch (Exception e) {
                         log.error("Failed to lookup users from remote user service", e);
-                        // TODO: This needs to be reported in the response as being a partial response
+                        list.addMessage("Failed to lookup user from remote service: " + e.getMessage());
                     }
                 }
-                
-                // generate a list of users in the same order as the original principal
-                List<DatawaveUser> proxiedUsers = datawavePrincipal.getProxiedUsers().stream().map(u -> users.get(u.getDn())).collect(Collectors.toList());
-                datawavePrincipal = new DatawavePrincipal(proxiedUsers, datawavePrincipal.getCreationTime());
             }
             
             // Add the user DN's auths into the authorization list
