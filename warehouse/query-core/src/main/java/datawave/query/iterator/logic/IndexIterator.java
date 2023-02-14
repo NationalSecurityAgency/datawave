@@ -95,8 +95,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     
     public static final String INDEX_FILTERING_CLASSES = "indexfiltering.classes";
     
-    protected SortedKeyValueIterator<Key,Value> source;
-    protected LimitedSortedKeyValueIterator limitedSource;
+    protected final SortedKeyValueIterator<Key,Value> source;
+    protected final LimitedSortedKeyValueIterator limitedSource;
     protected final Text valueMinPrefix;
     protected final Text columnFamily;
     protected final Collection<ByteSequence> seekColumnFamilies;
