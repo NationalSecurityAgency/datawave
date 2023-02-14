@@ -108,7 +108,7 @@ public class DnUtils {
         }
         return sb.toString();
     }
-
+    
     public static String buildNormalizedProxyDN(List<SubjectIssuerDNPair> dns) {
         StringBuilder sb = new StringBuilder();
         dns.stream().forEach(dn -> {

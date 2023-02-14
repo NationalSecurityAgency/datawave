@@ -82,7 +82,7 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
         entities.add(SubjectIssuerDNPair.of(subjectDN, issuerDN));
         userName = DnUtils.buildNormalizedProxyDN(subjectDN, issuerDN, proxiedSubjects, proxiedIssuers);
     }
-
+    
     public void pruneEntities(Set<String> entitiesToPrune) {
         Set<String> normalizedEntities = entitiesToPrune.stream().map(e -> e.toLowerCase()).collect(Collectors.toSet());
         entities = entities.stream().filter(e -> normalizedEntities.contains(e.subjectDN().toLowerCase())).collect(Collectors.toList());
