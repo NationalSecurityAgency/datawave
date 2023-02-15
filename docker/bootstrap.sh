@@ -4,6 +4,12 @@ echo
 DW_HOSTNAME=$(hostname)
 DW_HOSTNAME=${DW_HOSTNAME%%.*}
 DW_HOST_FQDN=$(hostname -f)
+
+# If the hostname matches the fqdn, leave the fqdn unset
+if [[ "${DW_HOST_FQDN}" == "${DW_HOSTNAME}" ]]; then
+   DW_HOST_FQDN="unused"
+fi
+
 DW_HOST_IP=$(hostname -i)
 
 if [ "$1" == "hybrid" ] ; then
