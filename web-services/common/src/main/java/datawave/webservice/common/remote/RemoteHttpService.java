@@ -2,13 +2,22 @@ package datawave.webservice.common.remote;
 
 import com.codahale.metrics.Counter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
 import com.spotify.dns.LookupResult;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.JWTTokenHandler.TtlMode;
 import datawave.security.util.DnUtils;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.json.ObjectMapperDecorator;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.result.VoidResponse;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -48,6 +57,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
@@ -63,6 +74,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * A base class for services that need to use HTTPClient to make remote calls to a microservice.
@@ -84,6 +96,12 @@ public abstract class RemoteHttpService {
     
     @Inject
     protected ObjectMapperDecorator objectMapperDecorator;
+    
+    protected ResponseObjectFactory responseObjectFactory;
+    
+    protected ObjectReader voidResponseReader;
+    
+    private RemoteHttpServiceConfiguration config = new RemoteHttpServiceConfiguration();
     
     public void setJsseSecurityDomain(JSSESecurityDomain jsseSecurityDomain) {
         this.jsseSecurityDomain = jsseSecurityDomain;
@@ -119,6 +137,7 @@ public abstract class RemoteHttpService {
     @PostConstruct
     protected void init() {
         objectMapper = objectMapperDecorator.decorate(new ObjectMapper());
+        voidResponseReader = objectMapper.readerFor(VoidResponse.class);
         
         if (useSrvDns()) {
             if (srvDnsServers() != null && !srvDnsServers().isEmpty()) {
@@ -272,29 +291,269 @@ public abstract class RemoteHttpService {
         return execute(putRequest, resultConverter, errorSupplier);
     }
     
-    protected abstract String serviceHost();
+    public <T> T readResponse(HttpEntity entity, ObjectReader reader) throws IOException {
+        if (entity == null) {
+            return null;
+        } else {
+            String content = getContent(entity.getContent());
+            try {
+                return reader.readValue(content);
+            } catch (IOException ioe) {
+                log.error("Failed to read entity content.  Trying as a VoidResponse.", ioe);
+                log.error(content);
+                VoidResponse response = voidResponseReader.readValue(content);
+                // If we got a void response here, then there was an underlying error. Throw this error up with the
+                // void response messages. If it was not a void response, then an IOException will
+                // have been thrown... again.
+                if (!ListUtils.emptyIfNull(response.getExceptions()).isEmpty()) {
+                    throw new DatawaveWebApplicationException(getException(response.getExceptions().get(0)), response);
+                } else {
+                    throw new DatawaveWebApplicationException(new RuntimeException(response.getMessages().toString()), response);
+                }
+            }
+        }
+    }
     
-    protected abstract int servicePort();
+    public static Exception getException(QueryExceptionType qet) {
+        if (qet.getCode() != null) {
+            if (qet.getCause() != null) {
+                return new QueryException(qet.getMessage(), new RuntimeException(qet.getCause()), qet.getCode());
+            } else {
+                return new QueryException(qet.getMessage(), qet.getCode());
+            }
+        } else {
+            return new RuntimeException(qet.getMessage());
+        }
+    }
     
-    protected abstract String serviceURI();
+    public <T> T readResponse(HttpEntity entity, ObjectReader reader1, ObjectReader reader2) throws IOException {
+        if (entity == null) {
+            return null;
+        } else {
+            String content = getContent(entity.getContent());
+            try {
+                return reader1.readValue(content);
+            } catch (IOException ioe1) {
+                try {
+                    return reader2.readValue(content);
+                } catch (IOException ioe) {
+                    log.error("Failed to read entity content.  Trying as a VoidResponse.", ioe);
+                    log.error(content);
+                    VoidResponse response = voidResponseReader.readValue(content);
+                    throw new RuntimeException(response.getMessages().toString());
+                }
+            }
+        }
+    }
     
-    protected abstract boolean useSrvDns();
+    public String getContent(InputStream content) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        InputStreamReader reader = new InputStreamReader(content, "UTF8");
+        char[] buffer = new char[1024];
+        int chars = reader.read(buffer);
+        while (chars >= 0) {
+            builder.append(buffer, 0, chars);
+            chars = reader.read(buffer);
+        }
+        return builder.toString();
+    }
     
-    protected abstract List<String> srvDnsServers();
+    public VoidResponse readVoidResponse(HttpEntity entity) throws IOException {
+        if (entity == null) {
+            return null;
+        } else {
+            VoidResponse response = voidResponseReader.readValue(entity.getContent());
+            if (response.getHasResults()) {
+                return response;
+            } else {
+                throw new RuntimeException(response.getMessages().toString());
+            }
+        }
+    }
     
-    protected abstract int srvDnsPort();
+    public <T> T executePostMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer,
+                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
+        init();
+        try {
+            return executePostMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
+        } catch (IOException e) {
+            failureCounter().inc();
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
     
-    protected abstract String serviceScheme();
+    public <T> T executePutMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPut> requestCustomizer,
+                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
+        try {
+            return executePutMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
+        } catch (IOException e) {
+            failureCounter().inc();
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
     
-    protected abstract int maxConnections();
+    public <T> T executeGetMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
+                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
+        init();
+        try {
+            return executeGetMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
+        } catch (IOException e) {
+            failureCounter().inc();
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
     
-    protected abstract int retryCount();
+    protected <T> T executeGetMethodWithAuthorizationException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
+                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws AuthorizationException {
+        try {
+            return executeGetMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
+        } catch (URISyntaxException e) {
+            throw new AuthorizationException("Invalid URI: " + e.getMessage(), e);
+        } catch (IOException e) {
+            failureCounter().inc();
+            throw new AuthorizationException(e.getMessage(), e);
+        }
+    }
     
-    protected abstract int unavailableRetryCount();
+    /**
+     * Useful for setting proxied entities header
+     * 
+     * @param callerPrincipal
+     * @return
+     */
+    public static String getProxiedEntities(DatawavePrincipal callerPrincipal) {
+        return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().subjectDN()).append('>'))
+                        .collect(Collectors.joining());
+    }
     
-    protected abstract int unavailableRetryDelay();
+    /**
+     * Useful for setting proxied issuers header
+     * 
+     * @param callerPrincipal
+     * @return
+     */
+    public static String getProxiedIssuers(DatawavePrincipal callerPrincipal) {
+        return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().issuerDN()).append('>'))
+                        .collect(Collectors.joining());
+    }
     
-    protected abstract Counter retryCounter();
+    protected String serviceHost() {
+        return config.getServiceHost();
+    }
+    
+    protected int servicePort() {
+        return config.getServicePort();
+    }
+    
+    protected String serviceURI() {
+        return config.getServiceURI();
+    }
+    
+    protected boolean useSrvDns() {
+        return config.isUseSrvDNS();
+    }
+    
+    protected List<String> srvDnsServers() {
+        return config.getSrvDnsServers();
+    }
+    
+    protected int srvDnsPort() {
+        return config.getSrvDnsPort();
+    }
+    
+    protected String serviceScheme() {
+        return config.getServiceScheme();
+    }
+    
+    protected int maxConnections() {
+        return config.getMaxConnections();
+    }
+    
+    protected int retryCount() {
+        return config.getRetryCount();
+    }
+    
+    protected int unavailableRetryCount() {
+        return config.getUnavailableRetryCount();
+    }
+    
+    protected int unavailableRetryDelay() {
+        return config.getUnavailableRetryDelay();
+    }
+    
+    protected Counter retryCounter() {
+        return config.getRetryCounter();
+    }
+    
+    protected Counter failureCounter() {
+        return config.getFailureCounter();
+    }
+    
+    public void setUseSrvDNS(boolean useSrvDNS) {
+        config.setUseSrvDNS(useSrvDNS);
+    }
+    
+    public void setSrvDnsServers(List<String> srvDnsServers) {
+        config.setSrvDnsServers(srvDnsServers);
+    }
+    
+    public void setSrvDnsPort(int srvDnsPort) {
+        config.setSrvDnsPort(srvDnsPort);
+    }
+    
+    public void setQueryServiceScheme(String queryServiceScheme) {
+        config.setServiceScheme(queryServiceScheme);
+    }
+    
+    public void setQueryServiceHost(String queryServiceHost) {
+        config.setServiceHost(queryServiceHost);
+    }
+    
+    public void setQueryServicePort(int queryServicePort) {
+        config.setServicePort(queryServicePort);
+    }
+    
+    public void setQueryServiceURI(String queryServiceURI) {
+        config.setServiceURI(queryServiceURI);
+    }
+    
+    public void setMaxConnections(int maxConnections) {
+        config.setMaxConnections(maxConnections);
+    }
+    
+    public void setRetryCount(int retryCount) {
+        config.setRetryCount(retryCount);
+    }
+    
+    public void setUnavailableRetryCount(int unavailableRetryCount) {
+        config.setUnavailableRetryCount(unavailableRetryCount);
+    }
+    
+    public void setUnavailableRetryDelay(int unavailableRetryDelay) {
+        config.setUnavailableRetryDelay(unavailableRetryDelay);
+    }
+    
+    public ResponseObjectFactory getResponseObjectFactory() {
+        return responseObjectFactory;
+    }
+    
+    public void setResponseObjectFactory(ResponseObjectFactory responseObjectFactory) {
+        this.responseObjectFactory = responseObjectFactory;
+    }
+    
+    public RemoteHttpServiceConfiguration getConfig() {
+        return config;
+    }
+    
+    public void setConfig(RemoteHttpServiceConfiguration config) {
+        this.config = config;
+    }
     
     private static class DatawaveRetryHandler extends DefaultHttpRequestRetryHandler {
         private final int unavailableRetryCount;
@@ -353,4 +612,5 @@ public abstract class RemoteHttpService {
     protected interface IOFunction<T> {
         T apply(HttpEntity entity) throws IOException;
     }
+    
 }

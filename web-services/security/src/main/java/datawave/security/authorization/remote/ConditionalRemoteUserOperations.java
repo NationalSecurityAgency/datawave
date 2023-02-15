@@ -18,7 +18,13 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * A conditional remote user operations will only invoke the delegate remote service base on a specified function of the local principal
+ * A conditional remote user operations will only invoke the delegate remote service base on a specified function
+ * of the specified principal.  For example we may only need to invoke the remote user operations if we know
+ * the remote system will have additional auths that this user will need for the query logic being invoked.
+ *
+ * An example may be a composite query that call a local and a remote query logic.  Perhaps we can already tell
+ * that the user will not be able to get any additional authorities from the remote system and hence the
+ * remote call will not be required.
  */
 public class ConditionalRemoteUserOperations implements UserOperations {
     private static final Logger log = LoggerFactory.getLogger(ConditionalRemoteUserOperations.class);

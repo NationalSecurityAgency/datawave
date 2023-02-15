@@ -100,7 +100,7 @@ public class RemoteEdgeDictionary extends RemoteHttpService {
     public EdgeDictionaryBase<?,? extends MetadataBase<?>> getEdgeDictionary(String metadataTableName, String auths) {
         final String bearerHeader = "Bearer " + jwtTokenHandler.createTokenFromUsers(callerPrincipal.getName(), callerPrincipal.getProxiedUsers());
         // @formatter:off
-        return executeGetMethodWithRuntimeException(
+        return executeGetMethodWithRuntimeException("",
                 uriBuilder -> {
                     uriBuilder.addParameter("metadataTableName", metadataTableName);
                     uriBuilder.addParameter("auths", auths);
@@ -109,18 +109,6 @@ public class RemoteEdgeDictionary extends RemoteHttpService {
                 entity -> edgeDictReader.readValue(entity.getContent()),
                 () -> "getEdgeDictionary [" + metadataTableName + ", " + auths + "]");
         // @formatter:on
-    }
-    
-    protected <T> T executeGetMethodWithRuntimeException(Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        try {
-            return executeGetMethod(uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
-        } catch (IOException e) {
-            failureCounter.inc();
-            throw new RuntimeException(e.getMessage(), e);
-        }
     }
     
     @Override
@@ -181,5 +169,10 @@ public class RemoteEdgeDictionary extends RemoteHttpService {
     @Override
     protected Counter retryCounter() {
         return retryCounter;
+    }
+    
+    @Override
+    protected Counter failureCounter() {
+        return failureCounter;
     }
 }

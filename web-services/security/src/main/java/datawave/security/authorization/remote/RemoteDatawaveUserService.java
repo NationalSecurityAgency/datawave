@@ -208,30 +208,6 @@ public class RemoteDatawaveUserService extends RemoteHttpService implements Cach
         // @formatter:on
     }
     
-    protected <T> T executeGetMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        try {
-            return executeGetMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
-        } catch (IOException e) {
-            failureCounter.inc();
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-    
-    protected <T> T executeGetMethodWithAuthorizationException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws AuthorizationException {
-        try {
-            return executeGetMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
-        } catch (URISyntaxException e) {
-            throw new AuthorizationException("Invalid URI: " + e.getMessage(), e);
-        } catch (IOException e) {
-            failureCounter.inc();
-            throw new AuthorizationException(e.getMessage(), e);
-        }
-    }
-    
     @PostConstruct
     protected void init() {
         super.init();
@@ -298,5 +274,10 @@ public class RemoteDatawaveUserService extends RemoteHttpService implements Cach
     @Override
     protected Counter retryCounter() {
         return retryCounter;
+    }
+    
+    @Override
+    protected Counter failureCounter() {
+        return failureCounter;
     }
 }
