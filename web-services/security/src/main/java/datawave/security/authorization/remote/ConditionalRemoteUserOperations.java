@@ -2,8 +2,6 @@ package datawave.security.authorization.remote;
 
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.user.AuthorizationsListBase;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -11,20 +9,16 @@ import datawave.webservice.result.GenericResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.Collections;
 import java.util.function.Function;
 
 /**
- * A conditional remote user operations will only invoke the delegate remote service base on a specified function
- * of the specified principal.  For example we may only need to invoke the remote user operations if we know
- * the remote system will have additional auths that this user will need for the query logic being invoked.
+ * A conditional remote user operations will only invoke the delegate remote service base on a specified function of the specified principal. For example we may
+ * only need to invoke the remote user operations if we know the remote system will have additional auths that this user will need for the query logic being
+ * invoked.
  *
- * An example may be a composite query that call a local and a remote query logic.  Perhaps we can already tell
- * that the user will not be able to get any additional authorities from the remote system and hence the
- * remote call will not be required.
+ * An example may be a composite query that call a local and a remote query logic. Perhaps we can already tell that the user will not be able to get any
+ * additional authorities from the remote system and hence the remote call will not be required.
  */
 public class ConditionalRemoteUserOperations implements UserOperations {
     private static final Logger log = LoggerFactory.getLogger(ConditionalRemoteUserOperations.class);
@@ -37,39 +31,32 @@ public class ConditionalRemoteUserOperations implements UserOperations {
     
     @Override
     public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
-        if (condition.apply((DatawavePrincipal) callerObject)) {
+        if (!(callerObject instanceof DatawavePrincipal)) {
+            throw new AuthorizationException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
+        }
+        final DatawavePrincipal principal = (DatawavePrincipal) callerObject;
+        
+        if (condition.apply(principal)) {
             return delegate.listEffectiveAuthorizations(callerObject);
         } else {
-            return getAuthorizationsList(callerObject);
+            AuthorizationsListBase response = responseObjectFactory.getAuthorizationsList();
+            response.setUserAuths(principal.getUserDN().subjectDN(), principal.getUserDN().issuerDN(), Collections.EMPTY_LIST);
+            return response;
         }
     }
     
     @Override
     public GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException {
-        if (condition.apply((DatawavePrincipal) callerObject)) {
+        if (!(callerObject instanceof DatawavePrincipal)) {
+            throw new AuthorizationException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
+        }
+        final DatawavePrincipal principal = (DatawavePrincipal) callerObject;
+        
+        if (condition.apply(principal)) {
             return delegate.flushCachedCredentials(callerObject);
         } else {
             return EMPTY_RESPONSE;
         }
-    }
-    
-    private AuthorizationsListBase getAuthorizationsList(Object callerObject) {
-        AuthorizationsListBase auths = responseObjectFactory.getAuthorizationsList();
-        if (callerObject instanceof DatawavePrincipal) {
-            DatawavePrincipal principal = (DatawavePrincipal) callerObject;
-            Map<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> authMap = new HashMap<>();
-            principal.getProxiedUsers().forEach(u -> authMap.put(dn(u.getDn()), new HashSet<>(u.getAuths())));
-            DatawaveUser primaryUser = principal.getPrimaryUser();
-            AuthorizationsListBase.SubjectIssuerDNPair primaryDn = dn(primaryUser.getDn());
-            auths.setUserAuths(primaryDn.subjectDN, primaryDn.issuerDN, authMap.get(dn(primaryUser.getDn())));
-            authMap.entrySet().stream().filter(e -> !e.getKey().equals(primaryDn))
-                            .forEach(e -> auths.addAuths(e.getKey().subjectDN, e.getKey().issuerDN, e.getValue()));
-        }
-        return auths;
-    }
-    
-    public static AuthorizationsListBase.SubjectIssuerDNPair dn(SubjectIssuerDNPair dn) {
-        return new AuthorizationsListBase.SubjectIssuerDNPair(dn.subjectDN(), dn.issuerDN());
     }
     
     public UserOperations getDelegate() {
