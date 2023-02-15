@@ -67,33 +67,40 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
     
     @Override
     public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
+        if (!(callerObject instanceof DatawavePrincipal)) {
+            throw new AuthorizationException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
+        }
+        final DatawavePrincipal principal = (DatawavePrincipal) callerObject;
         final String suffix = LIST_EFFECTIVE_AUTHS;
         // includeRemoteServices=false to avoid any loops
         return executeGetMethodWithRuntimeException(suffix, uriBuilder -> {
             uriBuilder.addParameter("includeRemoteServices", "false");
         }, httpGet -> {
             httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-            httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(callerObject));
-            httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(callerObject));
+            httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
+            httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
         }, entity -> {
             return readResponse(entity, authResponseReader);
         }, () -> suffix);
     }
     
     @Override
-    public GenericResponse<String> flushCachedCredentials(Object callerObject) {
+    public GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException {
+        if (!(callerObject instanceof DatawavePrincipal)) {
+            throw new AuthorizationException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
+        }
+        final DatawavePrincipal principal = (DatawavePrincipal) callerObject;
         final String suffix = FLUSH_CREDS;
         // includeRemoteServices=false to avoid any loops
         return executeGetMethodWithRuntimeException(suffix, uriBuilder -> {
             uriBuilder.addParameter("includeRemoteServices", "false");
         }, httpGet -> {
             httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-            httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(callerObject));
-            httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(callerObject));
+            httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
+            httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
         }, entity -> {
             return readResponse(entity, genericResponseReader);
         }, () -> suffix);
-        
     }
     
     public <T> T readResponse(HttpEntity entity, ObjectReader reader) throws IOException {
@@ -124,24 +131,14 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
         return builder.toString();
     }
     
-    public static String getProxiedEntities(Object callerObject) {
-        if (callerObject instanceof DatawavePrincipal) {
-            DatawavePrincipal callerPrincipal = (DatawavePrincipal) callerObject;
-            return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().subjectDN()).append('>'))
-                            .collect(Collectors.joining());
-        } else {
-            throw new RuntimeException("Cannot use " + callerObject.getClass().getName() + " as a caller object");
-        }
+    public static String getProxiedEntities(DatawavePrincipal callerPrincipal) {
+        return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().subjectDN()).append('>'))
+                        .collect(Collectors.joining());
     }
     
-    public static String getProxiedIssuers(Object callerObject) {
-        if (callerObject instanceof DatawavePrincipal) {
-            DatawavePrincipal callerPrincipal = (DatawavePrincipal) callerObject;
-            return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().issuerDN()).append('>'))
-                            .collect(Collectors.joining());
-        } else {
-            throw new RuntimeException("Cannot use " + callerObject.getClass().getName() + " as a caller object");
-        }
+    public static String getProxiedIssuers(DatawavePrincipal callerPrincipal) {
+        return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().issuerDN()).append('>'))
+                        .collect(Collectors.joining());
     }
     
     private <T> T executeGetMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,

@@ -68,7 +68,7 @@ public class CompositeUserOperations implements UserOperations {
     }
     
     @Override
-    public GenericResponse<String> flushCachedCredentials(Object callerObject) {
+    public GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException {
         GenericResponse<String> response = new GenericResponse<>();
         response.setResult("");
         String separator = "";

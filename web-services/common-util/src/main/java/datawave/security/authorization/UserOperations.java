@@ -20,7 +20,7 @@ public interface UserOperations {
     
     AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException;
     
-    GenericResponse<String> flushCachedCredentials(Object callerObject);
+    GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException;
     
     default DatawavePrincipal getRemoteUser(DatawavePrincipal principal) throws AuthorizationException {
         // get the effective authorizations for this user

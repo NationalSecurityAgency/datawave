@@ -39,7 +39,7 @@ public class ConditionalRemoteUserOperations implements UserOperations {
     }
     
     @Override
-    public GenericResponse<String> flushCachedCredentials(Object callerObject) {
+    public GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException {
         if (condition.apply((DatawavePrincipal) callerObject)) {
             return delegate.flushCachedCredentials(callerObject);
         } else {
