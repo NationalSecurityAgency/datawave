@@ -1,10 +1,11 @@
-package datawave.security.authorization.remote;
+package datawave.webservice.common.remote;
 
 import org.jboss.security.JSSESecurityDomain;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509KeyManager;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.net.Socket;
 import java.security.Key;
@@ -15,7 +16,7 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Properties;
 
-class TestJSSESecurityDomain implements JSSESecurityDomain {
+public class TestJSSESecurityDomain implements JSSESecurityDomain {
     private final PrivateKey privKey;
     private final X509Certificate[] chain;
     private final String alias;
@@ -34,7 +35,9 @@ class TestJSSESecurityDomain implements JSSESecurityDomain {
             KeyStore keyStore = KeyStore.getInstance("JKS");
             keyStore.load(null, null);
             keyStore.setKeyEntry(alias, privKey, keyPass, chain);
-            keyStore.store(new FileOutputStream(".keystore"), keyPass);
+            File file = File.createTempFile("keystore", ".jks");
+            file.deleteOnExit();
+            keyStore.store(new FileOutputStream(file), keyPass);
             return keyStore;
         } catch (Exception e) {
             throw new SecurityException(e);
