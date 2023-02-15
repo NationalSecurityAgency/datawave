@@ -25,8 +25,10 @@ public class WritableUtil {
      * Natively parses a text object into a long in base 10.
      * 
      * @param t
-     * @return
+     *            the text object
+     * @return a parsed long
      * @throws NumberFormatException
+     *             if there is a problem parsing
      */
     public static long parseLong(Text t) {
         return parseLong(t, 10);
@@ -36,9 +38,12 @@ public class WritableUtil {
      * Natively parses a text object into a long with the specified radix.
      * 
      * @param text
+     *            the text object
      * @param radix
-     * @return
+     *            the radix
+     * @return a parsed long
      * @throws NumberFormatException
+     *             if there is a problem parsing
      */
     public static long parseLong(Text text, int radix) throws NumberFormatException {
         if (text == null) {
@@ -109,7 +114,8 @@ public class WritableUtil {
      * A convenience method for serializing a long into a byte array.
      * 
      * @param l
-     * @return
+     *            the specified long
+     * @return a byte array
      */
     public static byte[] getLongBytes(long l) {
         try {
@@ -129,6 +135,12 @@ public class WritableUtil {
      * Modified from Hadoop's text to search for text within text. I'm surprised they don't support this natively, as it's safer with regards to types and
      * slightly faster since there's no conversion from UTF-16 to UTF-8.
      * 
+     * @param in
+     *            the input text
+     * @param start
+     *            the start index
+     * @param what
+     *            the what text
      * @return byte position of the first occurence of the search string in the UTF-8 buffer or -1 if not found
      */
     public static int find(Text what, Text in, int start) {
@@ -168,9 +180,12 @@ public class WritableUtil {
      * Finds the nth occurance of b in a given Text object.
      * 
      * @param t
+     *            the text
      * @param nth
+     *            the index
      * @param b
-     * @return
+     *            the byte
+     * @return location of the byte
      */
     public static int findNth(Text t, int nth, byte b) {
         byte[] bytes = t.getBytes();

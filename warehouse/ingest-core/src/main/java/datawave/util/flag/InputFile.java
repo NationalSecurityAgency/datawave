@@ -171,7 +171,7 @@ public class InputFile implements Comparable<InputFile> {
      * 
      * @param loc
      *            tracked directory
-     * @return
+     * @return path for the file
      */
     Path getTrackedDir(TrackedDir loc) {
         Path file = null;
@@ -197,7 +197,7 @@ public class InputFile implements Comparable<InputFile> {
      * 
      * @param loc
      *            tracked directory
-     * @return
+     * @return path for the file in the specific tracked directory.
      */
     int getTrackedDirLength(TrackedDir loc) {
         Path file = getTrackedDir(loc);
@@ -318,7 +318,14 @@ public class InputFile implements Comparable<InputFile> {
      * if it matches the date pattern, use that, otherwise use a pattern of now
      *
      * @param inFile
-     * @return
+     *            the input file
+     * @param baseDir
+     *            base directory
+     * @param folder
+     *            a folder
+     * @param subdir
+     *            the subdirectory
+     * @return destination file
      */
     static Path getDestPath(Path inFile, String subdir, String baseDir, String folder) {
         Matcher m = PATTERN.matcher(inFile.getParent().toString());

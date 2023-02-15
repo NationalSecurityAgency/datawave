@@ -58,6 +58,7 @@ import com.google.common.collect.Multimap;
  * Content indexing column based handler. will provide content tokenization, which will include storing offsets, and the TERM_COUNT for that event.
  * 
  * @param <KEYIN>
+ *            the parameter type of the handler
  */
 public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractColumnBasedHandler<KEYIN> implements TermFrequencyIngestHelperInterface {
     
@@ -207,14 +208,21 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
      * uses).
      *
      * @param event
+     *            the event container
      * @param eventFields
+     *            the event fields
      * @param values
+     *            the event values
      * @param fieldVisibility
+     *            the field visibility
      * @param shardId
-     * @param fieldVisibility
+     *            the shard id
      * @param nFV
+     *            the normalized field interface
      * @throws IOException
+     *             for issues related to reading the events
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected void createEventColumn(RawRecordContainer event, Multimap<String,NormalizedContentInterface> eventFields, Multimap<BulkIngestKey,Value> values,
                     byte[] shardId, byte[] fieldVisibility, NormalizedContentInterface nFV) throws IOException, InterruptedException {
@@ -323,6 +331,20 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
     /**
      * Tokenize the specified field using the analyzer provided.
      * 
+     * @param a
+     *            the analyzer
+     * @param nci
+     *            the normalized field interface
+     * @param indexField
+     *            the index field
+     * @param reverseIndexField
+     *            the reverse index field
+     * @param reporter
+     *            the reporter
+     * @throws IOException
+     *             for issues reading input
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected void tokenizeField(final Analyzer a, final NormalizedContentInterface nci, boolean indexField, boolean reverseIndexField, StatusReporter reporter)
                     throws IOException, InterruptedException {
@@ -543,13 +565,21 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
      * Creates a Term Frequency index key in the "tf" column family.
      * 
      * @param event
+     *            the event container
      * @param values
+     *            the event values
      * @param shardId
+     *            the shard id
      * @param nfv
+     *            the normaalized field value
      * @param offsets
+     *            the input offsets
      * @param visibility
+     *            the column visibility
      * @throws IOException
+     *             for issues reading input
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected void createTermFrequencyIndex(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, byte[] shardId, NormalizedFieldAndValue nfv,
                     List<Integer> offsets, byte[] visibility) throws IOException, InterruptedException {
@@ -576,7 +606,8 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
      * overridable acceptance test for whether or not messages can/should be tokenized
      * 
      * @param message
-     * @return
+     *            the message string
+     * @return boolean based on whether it is tokenizable
      */
     protected boolean isTokenizable(String message) {
         return true;

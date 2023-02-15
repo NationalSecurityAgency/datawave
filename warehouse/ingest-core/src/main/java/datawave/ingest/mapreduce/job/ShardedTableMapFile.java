@@ -148,6 +148,8 @@ public class ShardedTableMapFile {
      *            mapping of shard to tablet
      * @param datePrefix
      *            to check
+     * @param maxShardsPerTserver
+     *            the max shards per server
      * @return if the shards are distributed in a balanced fashion
      */
     private static boolean shardsAreBalanced(Map<Text,String> locations, String datePrefix, int maxShardsPerTserver) {
@@ -291,7 +293,9 @@ public class ShardedTableMapFile {
      *            if validation of shards mappings should be performed
      * @return the path to the sharded table map file
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws URISyntaxException
+     *             for issues with URI syntax
      */
     public static Path createShardedMapFile(Logger log, Configuration conf, Path workDir, AccumuloHelper accumuloHelper, String shardedTableName,
                     boolean validateShardLocations) throws IOException, URISyntaxException {

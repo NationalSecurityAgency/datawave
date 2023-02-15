@@ -68,6 +68,9 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * Setup the reducer. Delegates to setup(Configuration)
+     * 
+     * @param context
+     *            the context
      */
     @Override
     protected final void setup(Context context) throws IOException, InterruptedException {
@@ -79,6 +82,11 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      * Allow setup method that can be executed manually
      * 
      * @param conf
+     *            the configuration
+     * @throws IOException
+     *             if there is an issue with read or write
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
     public void setup(Configuration conf) throws IOException, InterruptedException {
         
@@ -115,6 +123,9 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      * Reads information from the supplied job configuration ({@code conf}) and finds any configured aggregators. If any are found, the classes are instantiated
      * here and added to a list of lookups per table. If multiple aggregators are configured for a table, and they overlap in terms of which keys they accept,
      * then they will be applied in priority order.
+     * 
+     * @param conf
+     *            the configuration
      */
     private void configureReductionInterface(Configuration conf) {
         // Build a map of table => sorted sets of aggregator options (in increasing priority order for
@@ -215,6 +226,13 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * Cleanup method which delegates to finish
+     * 
+     * @param context
+     *            the context
+     * @throws IOException
+     *             if there is an issue with read or write
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
     @Override
     protected final void cleanup(Context context) throws IOException, InterruptedException {
@@ -226,8 +244,11 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      * A cleanup method that can be executed manually. Default implementation does nothing.
      *
      * @param context
+     *            the context
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     public void finish(TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException {
         // NOOP
@@ -235,6 +256,13 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * This method is called once for each key. This method delegates to the doReduce method.
+     * 
+     * @param key
+     *            the key
+     * @param values
+     *            a set of values
+     * @param context
+     *            the context
      */
     @Override
     protected final void reduce(IK key, Iterable<IV> values, Context context) throws IOException, InterruptedException {
@@ -244,6 +272,17 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     /**
      * This method is called once for each key. Most applications will define their reduce class by overriding this method. The default implementation is an
      * identity function.
+     * 
+     * @param key
+     *            the key
+     * @param values
+     *            list of values
+     * @param context
+     *            the context
+     * @throws IOException
+     *             if there is an issue with read or write
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
     @SuppressWarnings("unchecked")
     public void doReduce(IK key, Iterable<IV> values, TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException {
@@ -256,9 +295,13 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      * Can be used to execute this process manually
      *
      * @param entries
+     *            the map of entries
      * @param ctx
+     *            the context
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     public void reduce(Multimap<IK,IV> entries, TaskInputOutputContext<?,?,OK,OV> ctx) throws IOException, InterruptedException {
         for (IK key : entries.keySet()) {
@@ -271,10 +314,15 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      * Write the output to the context
      *
      * @param key
+     *            the event key
      * @param value
+     *            the value
      * @param ctx
+     *            the context
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected void writeToContext(OK key, OV value, TaskInputOutputContext<?,?,OK,OV> ctx) throws IOException, InterruptedException {
         ctx.write(key, value);
@@ -284,6 +332,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      * Determines whether aggregation should be performed, regardless whether any aggregators are configured.
      *
      * @param table
+     *            the table
      * @return true if aggregation should be performed, false otherwise
      */
     protected boolean useAggregators(Text table) {

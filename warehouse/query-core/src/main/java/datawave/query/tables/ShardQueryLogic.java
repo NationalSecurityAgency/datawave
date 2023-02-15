@@ -2101,6 +2101,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         this.getConfig().setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
     }
     
+    public boolean getReduceQueryFields() {
+        return this.getConfig().getReduceQueryFields();
+    }
+    
+    public void setReduceQueryFields(boolean reduceQueryFields) {
+        this.getConfig().setReduceQueryFields(reduceQueryFields);
+    }
+    
     public long getMaxIndexScanTimeMillis() {
         return getConfig().getMaxIndexScanTimeMillis();
     }

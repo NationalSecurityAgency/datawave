@@ -20,7 +20,9 @@ public class SimpleGroupFieldNameParser {
     private final boolean shouldIncludeDelimInGroupName;
     
     /**
+     * 
      * @param shouldIncludeDelimInGroupName
+     *            flag to set
      */
     public SimpleGroupFieldNameParser(boolean shouldIncludeDelimInGroupName) {
         this.shouldIncludeDelimInGroupName = shouldIncludeDelimInGroupName;
@@ -57,6 +59,10 @@ public class SimpleGroupFieldNameParser {
     
     /**
      * See {@link #extractFieldNameComponents(datawave.ingest.data.config.NormalizedContentInterface)}
+     * 
+     * @param fields
+     *            list of fields to extract from
+     * @return map of field name components
      */
     public Multimap<String,NormalizedContentInterface> extractFieldNameComponents(Multimap<String,NormalizedContentInterface> fields) {
         Multimap<String,NormalizedContentInterface> results = HashMultimap.create();

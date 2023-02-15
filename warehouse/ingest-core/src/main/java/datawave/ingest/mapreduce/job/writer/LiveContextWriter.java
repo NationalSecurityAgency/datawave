@@ -39,7 +39,9 @@ public class LiveContextWriter extends AbstractContextWriter<Text,Mutation> {
      * Turn a key, value into a mutation
      * 
      * @param key
+     *            a key
      * @param value
+     *            a value
      * @return the mutation
      */
     protected Mutation getMutation(Key key, Value value) {

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>3.38.0-SNAPSHOT</version>
+    <version>3.40.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -47,6 +47,7 @@
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
+        <version.commons-text>1.8</version.commons-text>
         <version.curator>5.2.0</version.curator>
         <version.curator.test>5.2.0</version.curator.test>
         <version.deltaspike>1.9.0</version.deltaspike>
@@ -58,8 +59,7 @@
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <version.hadoop>3.3.3</version.hadoop>
-        <version.hadoop-guava>1.1.1</version.hadoop-guava>
-        <version.hadoop-protobuf>1.1.1</version.hadoop-protobuf>
+        <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
@@ -88,7 +88,7 @@
         <version.microservice.common-utils>1.2-SNAPSHOT</version.microservice.common-utils>
         <version.microservice.dictionary-api>1.4-SNAPSHOT</version.microservice.dictionary-api>
         <version.microservice.mapreduce-query-api>1.0-SNAPSHOT</version.microservice.mapreduce-query-api>
-        <version.microservice.metadata-utils>1.12-SNAPSHOT</version.microservice.metadata-utils>
+        <version.microservice.metadata-utils>1.12</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>1.4-SNAPSHOT</version.microservice.metrics-reporter>
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
         <version.microservice.query-metric-api>1.6.5-SNAPSHOT</version.microservice.query-metric-api>
@@ -578,6 +578,10 @@
                 <version>${version.commons-jexl}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-client</artifactId>
                 <version>${version.curator}</version>
@@ -742,6 +746,16 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop.thirdparty</groupId>
+                <artifactId>hadoop-shaded-guava</artifactId>
+                <version>${version.hadoop-shaded}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop.thirdparty</groupId>
+                <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
+                <version>${version.hadoop-shaded}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.htrace</groupId>
@@ -1015,13 +1029,13 @@
             <dependency>
                 <groupId>org.apache.hadoop.thirdparty</groupId>
                 <artifactId>hadoop-shaded-guava</artifactId>
-                <version>${version.hadoop-guava}</version>
+                <version>${version.hadoop-shaded}</version>
                 <scope>runtime</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop.thirdparty</groupId>
                 <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
-                <version>${version.hadoop-protobuf}</version>
+                <version>${version.hadoop-shaded}</version>
                 <scope>runtime</scope>
             </dependency>
             <dependency>
@@ -1170,13 +1184,6 @@
             </snapshots>
             <id>jboss</id>
             <url>https://repository.jboss.org/nexus/content/groups/public-jboss/</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>cloudera</id>
-            <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
         </repository>
         <repository>
             <snapshots>

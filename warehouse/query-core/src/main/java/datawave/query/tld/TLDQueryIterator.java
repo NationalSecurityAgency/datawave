@@ -4,7 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import datawave.query.attributes.Document;
-import datawave.query.data.parsers.DatawaveKey;
+import datawave.core.iterators.key.util.FiKeyUtil;
 import datawave.query.function.TLDEquality;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
@@ -100,7 +100,7 @@ public class TLDQueryIterator extends QueryIterator {
     /**
      * Distinct from getEvaluation filter as the FI filter is used to prevent FI hits on nonEventFields that are not indexOnly fields
      * 
-     * @return
+     * @return an {@link EventDataQueryFilter}
      */
     protected EventDataQueryFilter getFIEvaluationFilter() {
         ChainableEventDataQueryFilter chainableEventDataQueryFilter = new ChainableEventDataQueryFilter();
@@ -128,13 +128,16 @@ public class TLDQueryIterator extends QueryIterator {
              * Keep any FI that is index only and part of the TLD or is not part of the TLD
              * 
              * @param k
-             * @return
+             *            a field index key
+             * @return true if the key should be kept for evaluation
              */
             @Override
             public boolean keep(Key k) {
                 boolean root = TLDEventDataFilter.isRootPointer(k);
-                DatawaveKey datawaveKey = new DatawaveKey(k);
-                return (root && getIndexOnlyFields().contains(datawaveKey.getFieldName())) || !root;
+                if (root) {
+                    return getIndexOnlyFields().contains(FiKeyUtil.getFieldString(k));
+                }
+                return true;
             }
             
             @Override

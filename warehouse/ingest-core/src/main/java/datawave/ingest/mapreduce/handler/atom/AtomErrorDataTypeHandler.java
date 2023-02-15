@@ -34,8 +34,11 @@ import com.google.common.collect.Multimap;
  * This class differs from the parent in that when it sees a field name of ERROR it creates a category name using the field name and value.
  *
  * @param <KEYIN>
+ *            data type for the input key
  * @param <KEYOUT>
+ *            data type for the output key
  * @param <VALUEOUT>
+ *            data type for the value
  */
 public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
     

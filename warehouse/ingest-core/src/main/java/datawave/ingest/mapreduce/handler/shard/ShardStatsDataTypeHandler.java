@@ -26,6 +26,7 @@ import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHA
  * {@link #getTableLoaderPriorities(Configuration)} methods.
  * 
  * @param <KEYIN>
+ *            the type of the input key
  */
 public class ShardStatsDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
     

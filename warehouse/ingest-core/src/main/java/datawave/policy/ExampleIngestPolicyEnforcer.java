@@ -33,6 +33,7 @@ public class ExampleIngestPolicyEnforcer extends IngestPolicyEnforcer {
      * '*.data.category.security.field.names'
      * 
      * @param event
+     *            the event container
      */
     private void validateSecurityMarkings(RawRecordContainer event) {
         if (null == event.getSecurityMarkings() || event.getSecurityMarkings().isEmpty()) {
@@ -46,6 +47,7 @@ public class ExampleIngestPolicyEnforcer extends IngestPolicyEnforcer {
      * '*.data.category.date'
      * 
      * @param event
+     *            an event container
      */
     private void validateEventDate(RawRecordContainer event) {
         if (event.getDate() == Long.MIN_VALUE) {
@@ -60,6 +62,7 @@ public class ExampleIngestPolicyEnforcer extends IngestPolicyEnforcer {
      * for the data type in question
      * 
      * @param event
+     *            the event container
      */
     private void validateUUIDs(RawRecordContainer event) {
         if (null == event.getAltIds() || event.getAltIds().isEmpty()) {

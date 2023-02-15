@@ -71,6 +71,7 @@ import java.util.Set;
  * 
  * 
  * @param <KEYIN>
+ *            type of the data type handler
  */
 public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, RawRecordMetadata {
     
@@ -218,8 +219,11 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
      * Get the date index ingest keys and merge them into the provided key multimap
      * 
      * @param event
+     *            the event
      * @param eventFields
+     *            the fields of the event
      * @param index
+     *            the ingest index the ingest index
      */
     private void getBulkIngestKeys(RawRecordContainer event, Multimap<String,NormalizedContentInterface> eventFields, Multimap<BulkIngestKey,Value> index) {
         if (dataTypeToTypeToFields.containsKey(event.getDataType().typeName()) && null != eventFields && !eventFields.isEmpty()) {
@@ -261,11 +265,17 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
      * Construct a date index entry
      * 
      * @param shardId
+     *            the shard id
      * @param dataType
+     *            the data type
      * @param type
+     *            the type
      * @param dateField
+     *            the date field
      * @param dateValue
+     *            the date value
      * @param visibility
+     *            the visibility
      * @return The key and value
      */
     public KeyValue getDateIndexEntry(String shardId, String dataType, String type, String dateField, String dateValue, ColumnVisibility visibility) {
@@ -312,6 +322,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
      * Calculates the shard id of the event
      * 
      * @param event
+     *            the event container
      * @return Shard id
      */
     public String getShardId(RawRecordContainer event) {
@@ -322,6 +333,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
      * Calculates the shard partition for a date index entry given a list of strings
      * 
      * @param values
+     *            the list of values
      * @return the date index shard partition
      */
     public int getDateIndexShardPartition(String... values) {
@@ -336,6 +348,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
      * Calculate a date index value for a date (yyyyMMdd) and the shard (e.g. 10)
      * 
      * @param shard
+     *            the shard
      * @return the value
      */
     private Value createDateIndexValue(int shard) {
@@ -347,6 +360,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
      * Create a flattened visibility, using the cache if possible
      * 
      * @param vis
+     *            the visibility
      * @return the flattened visibility
      */
     protected byte[] flatten(ColumnVisibility vis) {
@@ -369,6 +383,8 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
     /**
      * helper object
      * 
+     * @param type
+     *            the type
      * @return helper object used in the subclass
      */
     @Override

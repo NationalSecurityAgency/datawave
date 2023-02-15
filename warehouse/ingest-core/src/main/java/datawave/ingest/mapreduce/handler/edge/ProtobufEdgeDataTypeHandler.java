@@ -1218,6 +1218,10 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     /**
      * Given a {@link Configuration}, this method returns the required locality groups used by the edge table.
+     * 
+     * @param conf
+     *            the configuration
+     * @return locality groups used by edge table
      */
     public static Map<String,Set<Text>> getLocalityGroups(Configuration conf) {
         
@@ -1264,7 +1268,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
      * A helper routine to determine the visibility for a field.
      *
      * @param markings
+     *            a map of the markings
      * @param event
+     *            the event container
      * @return the visibility as Text object
      */
     protected Text getVisibility(Map<String,String> markings, RawRecordContainer event) {
@@ -1297,8 +1303,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     /**
      * Create a flattened visibility
-     *
+     * 
      * @param vis
+     *            a visibility
      * @return the flattened visibility
      */
     protected byte[] flatten(ColumnVisibility vis) {
