@@ -22,11 +22,10 @@ import datawave.webservice.modification.ModificationRequestBase.MODE;
 import datawave.webservice.modification.configuration.ModificationServiceConfiguration;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
-import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.DefaultEventQueryResponse;
+import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -903,7 +902,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         
         String logicName = "LuceneUUIDEventQuery";
         
-        DefaultEvent e = null;
+        EventBase e = null;
         QueryExecutorBean queryService = this.getQueryService();
         
         String id = null;
@@ -923,8 +922,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
             
             id = createResponse.getResult();
             BaseQueryResponse response = queryService.next(id);
-            if (response instanceof DefaultEventQueryResponse) {
-                DefaultEventQueryResponse eResponse = (DefaultEventQueryResponse) response;
+            if (response instanceof EventQueryResponseBase) {
+                EventQueryResponseBase eResponse = (EventQueryResponseBase) response;
                 if (eResponse.getEvents().size() > 1) {
                     throw new IllegalStateException("More than one event matched " + uuid + " (" + eResponse.getEvents().size() + " matched)");
                 }
@@ -932,7 +931,9 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     throw new IllegalStateException("No event matched " + uuid);
                 }
                 
-                e = (DefaultEvent) eResponse.getEvents().get(0);
+                e = eResponse.getEvents().get(0);
+            } else {
+                log.error("Received a " + response.getClass().getSimpleName() + " but expected a subclass of EventQueryResponseBase");
             }
         } catch (Exception ex) {
             log.error(ex);

@@ -13,7 +13,6 @@ import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.EventQueryResponseBase;
@@ -209,7 +208,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
                     if (response != null) {
                         if (response.getReturnedEvents() == 0) {
                             if (response.isPartialResults()) {
-                                DefaultEvent e = new DefaultEvent();
+                                EventBase e = responseObjectFactory.getEvent();
                                 e.setIntermediateResult(true);
                                 data.add(e);
                             } else {

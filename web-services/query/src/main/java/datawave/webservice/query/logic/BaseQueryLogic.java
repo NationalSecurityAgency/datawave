@@ -15,7 +15,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.springframework.beans.factory.annotation.Required;
 
-import javax.inject.Inject;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Iterator;
@@ -42,7 +41,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected Principal principal;
     protected RoleManager roleManager;
     protected MarkingFunctions markingFunctions;
-    @Inject
     protected ResponseObjectFactory responseObjectFactory;
     protected SelectorExtractor selectorExtractor;
     protected ResponseEnricherBuilder responseEnricherBuilder = null;

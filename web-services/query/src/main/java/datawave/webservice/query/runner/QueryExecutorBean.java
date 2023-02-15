@@ -229,6 +229,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private SecurityMarking marking;
     
     @Inject
+    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
     
     private LookupUUIDUtil lookupUUIDUtil;
@@ -312,7 +313,7 @@ public class QueryExecutorBean implements QueryExecutor {
         List<QueryLogicDescription> logicConfigurationList = new ArrayList<>();
         
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
-        Query q = new QueryImpl();
+        Query q = responseObjectFactory.getQueryImpl();
         Date now = new Date();
         q.setExpirationDate(now);
         q.setQuery("test");
@@ -3162,7 +3163,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
-        Query q = new QueryImpl();
+        Query q = responseObjectFactory.getQueryImpl();
         Date now = new Date();
         q.setBeginDate(now);
         q.setEndDate(now);

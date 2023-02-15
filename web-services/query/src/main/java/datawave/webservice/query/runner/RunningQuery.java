@@ -19,7 +19,7 @@ import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.logic.WritesResultCardinalities;
 import datawave.webservice.query.metric.QueryMetricsBean;
-import datawave.webservice.query.result.event.DefaultEvent;
+import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -457,8 +457,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     // now that we got the next object, acknowledge via the counters
                     hasNext.decrementAndGet();
                     gotNext.decrementAndGet();
-
-                    if (o instanceof DefaultEvent && ((DefaultEvent) o).isIntermediateResult()) {
+                    
+                    if (o instanceof EventBase && ((EventBase) o).isIntermediateResult()) {
                         log.info("Received an intermediate result");
                         // in this case we have timed out up stream somewhere, so lets return what we have
                         hitIntermediateResult = true;
