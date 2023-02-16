@@ -28,18 +28,12 @@ import datawave.webservice.results.datadictionary.DataDictionaryBase;
 import datawave.webservice.results.datadictionary.DescriptionBase;
 import datawave.webservice.results.datadictionary.FieldsBase;
 import org.apache.commons.io.IOUtils;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
+import javax.security.auth.x500.X500Principal;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -51,11 +45,8 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
@@ -68,7 +59,7 @@ public class RemoteUserOperationsImplHttpTest {
     private static final String alias = "tomcat";
     private static final char[] keyPass = "changeit".toCharArray();
     
-    private X500Name x500Name;
+    private X500Principal x500Principal;
     
     private static final int PORT = 0;
     
@@ -85,15 +76,13 @@ public class RemoteUserOperationsImplHttpTest {
         KeyPair keypair = generater.generateKeyPair();
         PrivateKey privKey = keypair.getPrivate();
         final X509Certificate[] chain = new X509Certificate[1];
-        x500Name = new X500Name(commonName);
-        SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(keypair.getPublic().getEncoded());
-        final Date start = new Date();
-        final Date until = Date.from(LocalDate.now().plus(365, ChronoUnit.DAYS).atStartOfDay().toInstant(ZoneOffset.UTC));
-        X509v3CertificateBuilder builder = new X509v3CertificateBuilder(x500Name, new BigInteger(10, new SecureRandom()), start, until, x500Name, subPubKeyInfo);
-        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSA").setProvider(new BouncyCastleProvider()).build(keypair.getPrivate());
-        final X509CertificateHolder holder = builder.build(signer);
-        
-        chain[0] = new JcaX509CertificateConverter().setProvider(new BouncyCastleProvider()).getCertificate(holder);
+        x500Principal = new X500Principal(commonName);
+        final ZonedDateTime start = ZonedDateTime.now().minusWeeks(1);
+        final ZonedDateTime until = start.plusYears(1);
+        X509CertificateBuilder builder = new X509CertificateBuilder().setIssuerDn(x500Principal).setSerialNumber(new BigInteger(10, new SecureRandom()))
+                        .setNotValidBefore(start).setNotValidAfter(until).setSubjectDn(x500Principal).setPublicKey(keypair.getPublic())
+                        .setSigningKey(keypair.getPrivate()).setSignatureAlgorithmName("SHA256withRSA");
+        chain[0] = builder.build();
         
         server = HttpServer.create(new InetSocketAddress(PORT), 0);
         server.setExecutor(null);

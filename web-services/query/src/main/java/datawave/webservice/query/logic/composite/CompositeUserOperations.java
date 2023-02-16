@@ -24,10 +24,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * This is a user operations implementation that can handle merging the authorizations for
- * the composite query logics.  This is initialized with any other user operations being
- * used as well as whether a local query logic is included in which case the local principal
- * is included in the mix.
+ * This is a user operations implementation that can handle merging the authorizations for the composite query logics. This is initialized with any other user
+ * operations being used as well as whether a local query logic is included in which case the local principal is included in the mix.
  */
 public class CompositeUserOperations implements UserOperations {
     final ResponseObjectFactory responseObjectFactory;

@@ -82,7 +82,7 @@
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
+            <artifactId>bcprov-jdk16</artifactId>
         </dependency>
         <dependency>
             <groupId>org.easymock</groupId>
@@ -215,11 +215,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
             <scope>test</scope>
@@ -280,7 +275,7 @@
                         <configuration>
                             <outputDirectory>lib</outputDirectory>
                             <!-- just grab the non-provided runtime dependencies -->
-                            <includeArtifactIds>commons-cli,httpclient,httpcore,commons-digester3,bcprov-jdk15on</includeArtifactIds>
+                            <includeArtifactIds>commons-cli,httpclient,httpcore,commons-digester3,bcprov-jdk16</includeArtifactIds>
                             <excludeTransitive>false</excludeTransitive>
                         </configuration>
                     </execution>
