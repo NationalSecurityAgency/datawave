@@ -88,7 +88,7 @@
         <version.microservice.common-utils>1.2-SNAPSHOT</version.microservice.common-utils>
         <version.microservice.dictionary-api>1.4-SNAPSHOT</version.microservice.dictionary-api>
         <version.microservice.mapreduce-query-api>1.0-SNAPSHOT</version.microservice.mapreduce-query-api>
-        <version.microservice.metadata-utils>1.12</version.microservice.metadata-utils>
+        <version.microservice.metadata-utils>1.14-SNAPSHOT</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>1.4-SNAPSHOT</version.microservice.metrics-reporter>
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
         <version.microservice.query-metric-api>1.6.5-SNAPSHOT</version.microservice.query-metric-api>
