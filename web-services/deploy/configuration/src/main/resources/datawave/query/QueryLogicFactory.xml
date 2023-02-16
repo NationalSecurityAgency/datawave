@@ -142,7 +142,7 @@
     </bean>
 
     <!-- Configure the remote operation here for use by the local UserOperationsBean -->
-    <util:list id="RemoteUserOperations" value-type="datawave.security.authorization.RemoteUserOperations">
+    <util:list id="RemoteUserOperationsList" value-type="datawave.security.authorization.RemoteUserOperations">
         <!--ref bean="MyRemoteUserOps"/-->
     </util:list>
 

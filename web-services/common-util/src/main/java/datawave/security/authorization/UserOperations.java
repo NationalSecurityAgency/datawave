@@ -14,7 +14,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * A query service is one that can pass calls off to another external user operations endpoint
+ * A user operations service is one that can pass calls off to another external user operations endpoint
  */
 public interface UserOperations {
     

@@ -55,8 +55,8 @@ public class UserOperationsBean implements UserOperations {
     private ResponseObjectFactory responseObjectFactory;
     
     @Inject
-    @SpringBean(name = "RemoteUserOperations")
-    private List<UserOperations> remoteServices;
+    @SpringBean(name = "RemoteUserOperationsList")
+    private List<UserOperations> remoteUserOperationsList;
     
     /**
      * Lists the "effective" Accumulo user authorizations for the calling user. These are authorizations that are returned by the authorization service
@@ -127,8 +127,8 @@ public class UserOperationsBean implements UserOperations {
             name = datawavePrincipal.getShortName();
             
             // if we have any remote services configured, merge those authorizations in here
-            if (includeRemoteServices && CollectionUtils.isNotEmpty(remoteServices)) {
-                for (UserOperations remote : remoteServices) {
+            if (includeRemoteServices && CollectionUtils.isNotEmpty(remoteUserOperationsList)) {
+                for (UserOperations remote : remoteUserOperationsList) {
                     try {
                         DatawavePrincipal remotePrincipal = remote.getRemoteUser(datawavePrincipal);
                         datawavePrincipal = AuthorizationsUtil.mergePrincipals(datawavePrincipal, remotePrincipal);
@@ -186,8 +186,8 @@ public class UserOperationsBean implements UserOperations {
         log.info("Flushing credentials for " + callerPrincipal + " from the cache.");
         
         // if we have any remote services configured, then flush those credentials as well
-        if (includeRemoteServices && CollectionUtils.isNotEmpty(remoteServices)) {
-            for (UserOperations remote : remoteServices) {
+        if (includeRemoteServices && CollectionUtils.isNotEmpty(remoteUserOperationsList)) {
+            for (UserOperations remote : remoteUserOperationsList) {
                 try {
                     remote.flushCachedCredentials(callerPrincipal);
                 } catch (Exception e) {
