@@ -608,7 +608,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(script);
         for (ASTIdentifier identifier : identifiers) {
             field = JexlASTHelper.deconstructIdentifier(identifier);
-            if (!queryFields.contains(field)) {
+            if (!queryFields.contains(field) && !containsLowers(field)) {
                 queryFields.add(field);
             }
         }
@@ -616,6 +616,23 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         // sort the queryFields
         Collections.sort(queryFields);
         queryFields = Collections.unmodifiableList(queryFields);
+    }
+    
+    /**
+     * Fields are always uppercase
+     * 
+     * @param field
+     *            the field
+     * @return true if all characters are uppercase
+     */
+    private boolean containsLowers(String field) {
+        for (char c : field.toCharArray()) {
+            // ascii 97 is 'a' and 122 is 'z'
+            if (c >= 97 && c < 122) {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**

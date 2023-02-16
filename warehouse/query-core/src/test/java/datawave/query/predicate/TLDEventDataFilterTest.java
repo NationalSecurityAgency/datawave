@@ -594,4 +594,18 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertFalse(result3);
         assertTrue(result4);
     }
+    
+    @Test
+    public void testBadIdentifier() throws ParseException {
+        String query = "content:phrase(FOO, termOffsetMap, 'bar', 'baz') && FOO == 'bar' && FOO == 'baz'";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+        
+        // silly mock stuff
+        expect(mockAttributeFactory.getTypeMetadata("FOO", "datatype")).andReturn(Collections.emptyList()).anyTimes();
+        replayAll();
+        
+        filter = new TLDEventDataFilter(script, mockAttributeFactory, null, null, -1, -1);
+        
+        assertEquals(Collections.singletonList("FOO"), filter.queryFields);
+    }
 }
