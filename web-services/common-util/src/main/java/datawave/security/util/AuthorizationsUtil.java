@@ -117,7 +117,7 @@ public class AuthorizationsUtil {
      *         intersected with the {@code queryPrincipal} user's auths so long as the {@code overallPrincipal} user actually had all of the auths. If
      *         {@code requestedAuths} is {@code null}, then the @{code queryPrincipal} user's auths are returned as-is.
      * @throws AuthorizationException
-     *             if the requested auths is not a subset of the {@overallPrincipal} users's auths
+     *             if the requested auths is not a subset of the {@code overallPrincipal} users's auths
      * @throws IllegalArgumentException
      *             if the {@code queryPrincipal} user's auths are not a subset of the {@code overallPrincipal} user's auths
      */
