@@ -259,8 +259,8 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     }
     
     @Override
-    public void setUserOperations(UserOperations userService) {
-        this.userOperations = userService;
+    public void setUserOperations(UserOperations userOperations) {
+        this.userOperations = userOperations;
     }
     
     @Override
