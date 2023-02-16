@@ -10,5 +10,5 @@ import datawave.webservice.query.logic.QueryLogic;
 public interface RemoteQueryLogic<T> extends QueryLogic<T> {
     public void setRemoteQueryService(RemoteQueryService service);
     
-    public void setUserOperations(UserOperations userService);
+    public void setUserOperations(UserOperations userOperations);
 }
