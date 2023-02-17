@@ -15,7 +15,9 @@ public interface QueryMetricHandler<T extends BaseQueryMetric> {
     Map<String,String> getEventFields(BaseQueryMetric queryMetric);
     
     BaseQueryMetricListResponse<T> query(String user, String queryId, DatawavePrincipal datawavePrincipal);
-    
+
+    BaseQueryMetricListResponse<T> subplan(String user, String queryId, DatawavePrincipal datawavePrincipal);
+
     QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal);
     
     QueryMetricsSummaryResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal);

@@ -559,6 +559,43 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         
         return response;
     }
+    // This method below needs to be changed to only show subplans
+    public QueryMetricsDetailListResponse subplan(String user, String queryId, DatawavePrincipal datawavePrincipal) {
+        QueryMetricsDetailListResponse response = new QueryMetricsDetailListResponse();
+
+        try {
+            enableLogs(false);
+
+            Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
+            Date end = new Date();
+            Date begin = DateUtils.setYears(end, 2000);
+
+            QueryImpl query = new QueryImpl();
+            query.setBeginDate(begin);
+            query.setEndDate(end);
+            query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
+            // QueryMetricQueryLogic now enforces that you must be a QueryMetricsAdministrator to query metrics that do not belong to you
+            query.setQuery("QUERY_ID == '" + queryId + "'");
+            query.setQueryName(QUERY_METRICS_LOGIC_NAME);
+            query.setColumnVisibility(visibilityString);
+            query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
+            query.setExpirationDate(DateUtils.addDays(new Date(), 1));
+            query.setPagesize(1000);
+            query.setUserDN(datawavePrincipal.getShortName());
+            query.setOwner(datawavePrincipal.getShortName());
+            query.setId(UUID.randomUUID());
+            query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
+            List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
+
+            response.setResult(queryMetrics);
+
+            response.setGeoQuery(queryMetrics.stream().anyMatch(SimpleQueryGeometryHandler::isGeoQuery));
+        } finally {
+            enableLogs(true);
+        }
+
+        return response;
+    }
     
     public QueryMetric toMetric(datawave.webservice.query.result.event.EventBase event) {
         SimpleDateFormat sdf_date_time1 = new SimpleDateFormat("yyyyMMdd HHmmss");
@@ -572,6 +609,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             List<FieldBase> field = event.getFields();
             m.setMarkings(event.getMarkings());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
+            Map<String, String> subplans = new HashMap<>(); // Remove, only for temp holding
             
             boolean createDateSet = false;
             for (FieldBase f : field) {
@@ -596,6 +634,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         m.setQuery(fieldValue);
                     } else if (fieldName.equals("PLAN")) {
                         m.setPlan(fieldValue);
+                    } else if (fieldName.equals("SUBPLAN")) {
+                        subplans.put(fieldValue, fieldValue); // Remove, only for temp holding
                     } else if (fieldName.equals("QUERY_LOGIC")) {
                         m.setQueryLogic(fieldValue);
                     } else if (fieldName.equals("QUERY_ID")) {
@@ -697,7 +737,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     } else if (fieldName.equals("FI_RANGES")) {
                         m.setFiRanges(Long.parseLong(fieldValue));
                     } else if (fieldName.equals("VERSION")) {
-                        m.setVersion(fieldValue);
+                        m.addVersion(BaseQueryMetric.DATAWAVE, fieldValue);
+                    } else if (fieldName.startsWith("VERSION.")) {
+                        m.addVersion(fieldName.substring(8), fieldValue);
                     } else if (fieldName.equals("YIELD_COUNT")) {
                         m.setYieldCount(Long.parseLong(fieldValue));
                     } else if (fieldName.equals("LOGIN_TIME")) {
@@ -716,6 +758,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     
                 }
             }
+            m.setSubPlans(subplans);
             m.setPageTimes(new ArrayList<>(pageMetrics.values()));
             return m;
         } catch (Exception e) {
