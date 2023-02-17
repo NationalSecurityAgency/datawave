@@ -73,6 +73,10 @@ public class JobSetupUtil {
      *
      * @param job
      *            The {@link Job} whose priority is to be increased
+     * @param log
+     *            the logger
+     * @throws IOException
+     *             if there is a read/write issue
      */
     public static void changeJobPriority(Job job, Logger log) throws IOException {
         // Spin until we get some map progress, so that we can be sure the job is
@@ -115,6 +119,11 @@ public class JobSetupUtil {
     
     /**
      * Prints out the configuration in sorted order.
+     * 
+     * @param conf
+     *            a configuration
+     * @param log
+     *            the logger
      */
     public static void printConfig(Configuration conf, Logger log) {
         if (log.isTraceEnabled()) {
@@ -132,6 +141,12 @@ public class JobSetupUtil {
      * Computes a range to scan over entries whose row is a timestamp in milliseconds since the epoch. This uses the supplied start and end date parameters that
      * can be supplied at job start time, and if none are supplied, it uses the current day. The end of the range is always set exclusively to the start of the
      * day following the end of the supplied day (or the beginning of tomorrow if no end was supplied).
+     * 
+     * @param conf
+     *            the configuration
+     * @param log
+     *            the logger
+     * @return a range
      */
     public static Range computeTimeRange(Configuration conf, Logger log) {
         String start = conf.get(MetricsConfig.START);
@@ -183,6 +198,12 @@ public class JobSetupUtil {
      * This uses the supplied start and end date parameters that can be supplied at job start time, and if none are supplied, it uses the current day. The end
      * of the range is always set exclusively to the start of the day following the end of the supplied day (or the beginning of tomorrow if no end was
      * supplied).
+     * 
+     * @param conf
+     *            a configuration
+     * @param log
+     *            the logger
+     * @return a set of ranges
      */
     public static Collection<Range> computeShardedDayRange(Configuration conf, Logger log) {
         String start = conf.get(MetricsConfig.START);
@@ -229,6 +250,12 @@ public class JobSetupUtil {
     
     /**
      * Formats a range from timestamp in milliseconds to /YYYY/MM/DD
+     * 
+     * @param dayRange
+     *            a range of dates
+     * @param log
+     *            the logger
+     * @return a range from the set timestamp
      */
     public static Range formatReverseSlashedTimeRange(Range dayRange, Logger log) {
         
@@ -254,8 +281,10 @@ public class JobSetupUtil {
     
     /**
      * @param dayRange
+     *            a date range
      * @param log
-     * @return
+     *            the logger
+     * @return a formatted range
      */
     public static Range formatEpochHourTimeRange(Range dayRange, Logger log) {
         
