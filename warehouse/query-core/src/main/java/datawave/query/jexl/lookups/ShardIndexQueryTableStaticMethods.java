@@ -74,11 +74,13 @@ public class ShardIndexQueryTableStaticMethods {
      * @param dataTypes
      * @param helperRef
      * @param execService
+     * @param fieldCache
      * @return
      * @throws TableNotFoundException
      */
     public static IndexLookup normalizeQueryTerm(JexlNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
-                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService, ExpandedFieldCache fieldCache) throws TableNotFoundException {
+        // todo - pass fieldCache to the subsequent normalizeXXX methods so that we can use it to avoid unncessary lookups
         if (node instanceof ASTEQNode) {
             return normalizeQueryTerm((ASTEQNode) node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else if (node instanceof ASTNENode) {

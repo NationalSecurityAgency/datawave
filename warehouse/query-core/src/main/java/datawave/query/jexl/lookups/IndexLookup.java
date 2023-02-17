@@ -3,6 +3,7 @@ package datawave.query.jexl.lookups;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**

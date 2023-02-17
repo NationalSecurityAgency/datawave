@@ -10,15 +10,12 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -38,6 +35,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
     protected CountDownLatch lookupStartedLatch;
     
     private final Collection<ScannerSession> sessions = Lists.newArrayList();
+    private ExpandedFieldCache fieldCache = new ExpandedFieldCache(); // Todo - check if we already performed lookups for certain fields
     
     /**
      *
@@ -70,36 +68,42 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
             indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
             
             Iterator<Entry<Key,Value>> iter = Iterators.emptyIterator();
-            
+            Map<String,Collection<String>> alreadyExpandedTerms = new HashMap<>();
             ScannerSession bs;
             
             try {
                 if (!fields.isEmpty()) {
                     for (String term : terms) {
-                        
-                        Set<Range> ranges = Collections.singleton(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
-                        if (config.getLimitAnyFieldLookups()) {
-                            log.trace("Creating configureTermMatchOnly");
-                            bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
-                                            Collections.singleton(term), Collections.emptySet(), false, true);
+                        // Check if this term has already been looked up against the index, and if so, pull the expansions from the cache rather than looking
+                        // them up again.
+                        if (fieldCache.containsExpansionsFor(term)) { // todo - confirm with Ivan that we should be checking against the expanded terms
+                            alreadyExpandedTerms.put(term, fieldCache.getExpansions(term));
                         } else {
-                            log.trace("Creating configureLimitedDiscovery");
-                            bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
-                                            Collections.singleton(term), Collections.emptySet(), false, true);
+                            Set<Range> ranges = Collections.singleton(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
+                            if (config.getLimitAnyFieldLookups()) {
+                                log.trace("Creating configureTermMatchOnly");
+                                bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
+                                                Collections.singleton(term), Collections.emptySet(), false, true);
+                            } else {
+                                log.trace("Creating configureLimitedDiscovery");
+                                bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
+                                                Collections.singleton(term), Collections.emptySet(), false, true);
+                            }
+                            
+                            // Fetch the limited field names for the given rows
+                            for (String field : fields) {
+                                bs.getOptions().fetchColumnFamily(new Text(field));
+                            }
+                            
+                            sessions.add(bs);
+                            
+                            iter = Iterators.concat(iter, bs);
+                            
                         }
-                        
-                        // Fetch the limited field names for the given rows
-                        for (String field : fields) {
-                            bs.getOptions().fetchColumnFamily(new Text(field));
-                        }
-                        
-                        sessions.add(bs);
-                        
-                        iter = Iterators.concat(iter, bs);
                     }
                 }
+                timedScanFuture = execService.submit(createTimedCallable(iter, alreadyExpandedTerms));
                 
-                timedScanFuture = execService.submit(createTimedCallable(iter));
             } catch (TableNotFoundException e) {
                 log.error(e);
             } catch (Exception e) {
@@ -125,7 +129,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
         return indexLookupMap;
     }
     
-    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter) {
+    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, Map<String,Collection<String>> alreadyExpandedTerms) {
         lookupStartedLatch = new CountDownLatch(1);
         
         return () -> {
@@ -174,6 +178,12 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
                 for (ScannerSession session : sessions) {
                     scannerFactory.close(session);
                 }
+            }
+            
+            // Add the expansions that we have previously found
+            for (String term : alreadyExpandedTerms.keySet()) {
+                Collection<String> expandedTerms = alreadyExpandedTerms.get(term);
+                indexLookupMap.putAll(term, expandedTerms);
             }
             
             return true;
