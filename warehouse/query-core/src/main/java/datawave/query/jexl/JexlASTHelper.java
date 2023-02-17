@@ -610,12 +610,11 @@ public class JexlASTHelper {
     public static String deconstructIdentifier(String fieldName, boolean includeGroupingContext) {
         if (fieldName != null && fieldName.length() > 1) {
             if (!includeGroupingContext) {
+                int startIndex = fieldName.charAt(0) == IDENTIFIER_PREFIX ? 1 : 0;
                 int groupingOffset = fieldName.indexOf(GROUPING_CHARACTER_SEPARATOR);
+                int stopIndex = fieldName.charAt(0) == IDENTIFIER_PREFIX ? groupingOffset - 1 : groupingOffset;
                 if (-1 != groupingOffset) {
-                    if (fieldName.charAt(0) == IDENTIFIER_PREFIX) {
-                        return new String(fieldName.getBytes(), 1, groupingOffset - 1);
-                    }
-                    return new String(fieldName.getBytes(), 0, groupingOffset);
+                    return new String(fieldName.getBytes(), startIndex, stopIndex);
                 }
             }
         }
