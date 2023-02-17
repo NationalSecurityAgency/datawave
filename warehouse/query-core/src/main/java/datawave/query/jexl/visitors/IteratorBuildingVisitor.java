@@ -1335,8 +1335,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             
             parser.parse(k);
             
+            final String field = parser.getField();
+            final String value = parser.getValue();
+            
             context.clear();
-            context.set(parser.getField(), new ValueTuple(parser.getField(), parser.getValue(), parser.getValue(), null));
+            context.set(field, new ValueTuple(field, value, value, null));
             
             boolean matched = false;
             
