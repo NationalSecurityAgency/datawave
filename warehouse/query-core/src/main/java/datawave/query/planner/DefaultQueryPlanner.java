@@ -1191,6 +1191,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * @param timers
      *            timers for metrics
      * @return jexl query tree
+     * @throws DatawaveQueryException
+     *             for issues with datawave queries
      */
     protected ASTJexlScript timedFixNotNullIntent(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
         try {

@@ -32,6 +32,14 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
     
     /**
      * Does the hole overlap the specified value
+     * 
+     * @param start
+     *            the start date
+     * @param end
+     *            the end date
+     * @param value
+     *            the start value
+     * @return the boolean result from the comparison
      */
     public boolean overlaps(String start, String end, String value) {
         if (startValue.compareTo(value) <= 0 && endValue.compareTo(value) >= 0) {
@@ -44,6 +52,16 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
     
     /**
      * Does the hole overlap the specified range.
+     * 
+     * @param start
+     *            the start date
+     * @param end
+     *            the end date
+     * @param lower
+     *            the lower bound
+     * @param upper
+     *            the upper bound
+     * @return the boolean result from the comparison
      */
     public boolean overlaps(String start, String end, String lower, String upper) {
         if (startValue.compareTo(upper) <= 0 && endValue.compareTo(lower) >= 0) {
@@ -56,6 +74,10 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
     
     /**
      * Is this hole exist before the specified value.
+     * 
+     * @param value
+     *            the end value
+     * @return the boolean result from the comparison
      */
     public boolean before(String value) {
         return endValue.compareTo(value) < 0;
@@ -63,6 +85,10 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
     
     /**
      * Is this hole exist after the specified value.
+     * 
+     * @param value
+     *            the start value
+     * @return the boolean result from the comparison
      */
     public boolean after(String value) {
         return startValue.compareTo(value) > 0;
@@ -100,6 +126,7 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
      * Compare two holes. Must be sorted on value ranges first. PushdownMissingIndexRangeNodesVisitor depends on it.
      * 
      * @param hole
+     *            the index hole
      * @return the comparison
      */
     public int compareTo(IndexHole hole) {
