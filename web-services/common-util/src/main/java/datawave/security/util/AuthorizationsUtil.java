@@ -219,7 +219,7 @@ public class AuthorizationsUtil {
      *            the principal representing the user from which to generate authorizations
      * @return user authorizations string
      */
-    public static String buildUserAuthorizationString(Principal principal) throws AuthorizationException {
+    public static String buildUserAuthorizationString(Principal principal) {
         String auths = "";
         if (principal != null && (principal instanceof DatawavePrincipal)) {
             DatawavePrincipal datawavePrincipal = (DatawavePrincipal) principal;
