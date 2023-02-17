@@ -35,8 +35,11 @@ public class BatchResource extends RunningResource {
      * Initializes the scanner resource
      * 
      * @param auths
+     *            the auths
      * @param tableName
+     *            the table name
      * @throws TableNotFoundException
+     *             if the table was not found
      * 
      */
     @Override

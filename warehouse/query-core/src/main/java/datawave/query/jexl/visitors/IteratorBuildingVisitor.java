@@ -430,10 +430,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
     }
     
-    /**
-     *
-     * @param data
-     */
     private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, JexlNode rootNode, JexlNode sourceNode, LiteralRange<?> range, Object data) {
         if (limitLookup) {
             ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(identifier, sourceNode, attrFilter);
@@ -796,8 +792,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     /**
      * @param kvIter
+     *            the key value iterator
      * @param node
+     *            the node
      * @throws IOException
+     *             for issues with read/write
      */
     protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key,Value> kvIter, ASTEQNode node) throws IOException {
         if (null != rangeLimiter && limitLookup) {
@@ -811,7 +810,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     /**
      * @param node
-     * @return
+     *            a node
+     * @return a collection of entries
      */
     protected Collection<Entry<Key,Value>> getNodeEntry(ASTEQNode node) {
         Key key = getKey(node);
@@ -821,8 +821,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     /**
      * @param identifier
+     *            the identifier
      * @param range
-     * @return
+     *            a range
+     * @return a collection of entries
      */
     protected Collection<Entry<Key,Value>> getExceededEntry(String identifier, LiteralRange<?> range) {
         
@@ -893,8 +895,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * expression during final evaluation
      * 
      * @param identifier
+     *            an identifier
      * @param range
-     * @return
+     *            the range
+     * @return a key iterator
      */
     protected NestedIterator<Key> createExceededCheck(String identifier, LiteralRange<?> range, JexlNode rootNode) {
         IndexIteratorBuilder builder = null;
@@ -1043,6 +1047,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * Build a list of potential hdfs directories based on each ivarator cache dir configs.
      * 
      * @return A path
+     * @throws IOException
+     *             for issues with read/write
      */
     private List<IvaratorCacheDir> getIvaratorCacheDirs() throws IOException {
         List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
@@ -1082,6 +1088,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param sourceNode
      *            the source node derived from the root
      * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarateRegex(JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
         IndexRegexIteratorBuilder builder = new IndexRegexIteratorBuilder();
@@ -1107,6 +1116,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param sourceNode
      *            the source node derived from the root
      * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarateList(JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
         IvaratorBuilder builder = null;
@@ -1180,8 +1192,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * Build the iterator stack using the regex ivarator (field index caching regex iterator)
      * 
      * @param source
+     *            the jexl node
      * @param data
-     * @return
+     *            the node data
+     * @return a range
      */
     public LiteralRange<?> buildLiteralRange(JexlNode source, Object data) {
         // index checking has already been done, otherwise we would not have an
@@ -1209,6 +1223,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param sourceNode
      *            the source node derived from the root
      * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarateRange(JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
         IndexRangeIteratorBuilder builder = new IndexRangeIteratorBuilder();
@@ -1239,7 +1256,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      *            the node that was processed to generated this builder
      * @param sourceNode
      *            the source node derived from the root
+     * @param functionNodes
+     *            list of function nodes
      * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarateFilter(JexlNode rootNode, JexlNode sourceNode, Object data, List<ASTFunctionNode> functionNodes) throws IOException {
         IndexFilterIteratorBuilder builder = new IndexFilterIteratorBuilder();
@@ -1372,6 +1394,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param sourceNode
      *            the source node derived from the root
      * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarate(IvaratorBuilder builder, JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
         builder.setQueryId(queryId);
@@ -1434,7 +1459,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     /**
      * @param documentRange
-     * @return
+     *            the document range
+     * @return an iterator visitor
      */
     public IteratorBuildingVisitor limit(Range documentRange) {
         return setRange(documentRange).setLimitLookup(true);
@@ -1444,7 +1470,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * Limits the number of source counts.
      * 
      * @param sourceCount
-     * @return
+     *            the source count
+     * @return an iterator visitor
      */
     public IteratorBuildingVisitor limit(long sourceCount) {
         source.setInitialSize(sourceCount);
@@ -1453,6 +1480,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     /**
      * @param limitLookup
+     *            the limit lookup to set
+     * @return the iterator visitor
      */
     public IteratorBuildingVisitor setLimitLookup(boolean limitLookup) {
         if (rangeLimiter != null) {
