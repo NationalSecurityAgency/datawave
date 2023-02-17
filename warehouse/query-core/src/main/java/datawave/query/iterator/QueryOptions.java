@@ -739,7 +739,7 @@ public class QueryOptions implements OptionDescriber {
     /**
      * Get the fields that contain data that may not be in the event
      *
-     * @return
+     * @return a set of event fields
      */
     public Set<String> getNonEventFields() {
         Set<String> nonEventFields = new HashSet<>();
@@ -1660,7 +1660,8 @@ public class QueryOptions implements OptionDescriber {
      * Restore the mapping of field name to dataTypes from a String-ified representation
      *
      * @param data
-     * @return
+     *            the data
+     * @return a mapping of field name to data types
      */
     public static Map<String,Set<String>> buildFieldDataTypeMap(String data) {
         
@@ -1721,7 +1722,8 @@ public class QueryOptions implements OptionDescriber {
      * Build a String-ified version of the Map to serialize to this SKVI.
      *
      * @param map
-     * @return
+     *            a map to normalize
+     * @return the string representation of the map
      */
     public static String buildFieldNormalizerString(Map<String,Set<String>> map) {
         StringBuilder sb = new StringBuilder();
@@ -1751,7 +1753,8 @@ public class QueryOptions implements OptionDescriber {
      * Build a String-ified version of the Map to serialize to this SKVI.
      *
      * @param map
-     * @return
+     *            a map to normalize
+     * @return the string representation of the map
      */
     public static String buildFieldNormalizerString(Multimap<String,Type<?>> map) {
         StringBuilder sb = new StringBuilder();

@@ -238,6 +238,7 @@ public class AncestorQueryIterator extends QueryIterator {
      * Create a comparator used to order values within lists in the JexlContext.
      * 
      * @param from
+     *            the tuple to create the comparator
      * @return a ValueComparator
      */
     @Override

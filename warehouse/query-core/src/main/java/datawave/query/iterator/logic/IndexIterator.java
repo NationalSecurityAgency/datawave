@@ -375,6 +375,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      * @param pointer
      *            the minimum point to advance source to
      * @throws IOException
+     *             for issues with read/write
      * @throws IllegalStateException
      *             if getTopKey() is greater than or equal to pointer
      */
@@ -425,7 +426,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      * Permute a "Document" Range to the equivalent "Field Index" Range for a Field:Term
      * 
      * @param r
-     * @return
+     *            a range
+     * @return a field index range
      */
     protected Range buildIndexRange(Range r) {
         Key startKey = permuteRangeKey(r.getStartKey(), r.isStartKeyInclusive());
@@ -438,7 +440,10 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      * Permute a "Document" Key to an equivalent "Field Index" key for a Field:Term
      * 
      * @param rangeKey
-     * @return
+     *            a range key
+     * @param inclusive
+     *            flag to determine to add a null bye
+     * @return a field index key
      */
     protected Key permuteRangeKey(Key rangeKey, boolean inclusive) {
         Key key = null;

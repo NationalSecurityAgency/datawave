@@ -898,6 +898,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      *            an identifier
      * @param range
      *            the range
+     * @param rootNode
+     *            the root node
      * @return a key iterator
      */
     protected NestedIterator<Key> createExceededCheck(String identifier, LiteralRange<?> range, JexlNode rootNode) {
@@ -1389,6 +1391,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * Set up a builder for an ivarator
      * 
      * @param builder
+     *            the ivarator builder
      * @param rootNode
      *            the node that was processed to generated this builder
      * @param sourceNode

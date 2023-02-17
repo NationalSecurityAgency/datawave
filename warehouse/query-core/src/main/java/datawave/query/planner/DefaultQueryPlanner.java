@@ -619,8 +619,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * NOT THREAD SAFE - relies on QueryStopwatch which is not thread safe
      *
      * @param lastOperation
+     *            the last operation string
      * @param queryTree
+     *            the query tree
      * @param config
+     *            the configuration
      */
     public static void validateQuerySize(String lastOperation, final JexlNode queryTree, ShardQueryConfiguration config) {
         validateQuerySize(lastOperation, queryTree, config.getMaxDepthThreshold(), config.getInitialMaxTermThreshold(), config.getTimers());
@@ -634,10 +637,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * NOT THREAD SAFE when called with timed=true
      *
      * @param lastOperation
+     *            the last operation string
      * @param queryTree
+     *            the query tree
      * @param maxDepthThreshold
+     *            the max depth threshold
      * @param maxTermThreshold
+     *            max term threshold
      * @param timers
+     *            timers for metrics
      */
     public static void validateQuerySize(String lastOperation, final JexlNode queryTree, int maxDepthThreshold, int maxTermThreshold, QueryStopwatch timers) {
         TraceStopwatch stopwatch = null;
@@ -1141,6 +1149,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * Loads expansion fields filtered by datatype. If an error occurs that error is rethrown as a {@link DatawaveFatalQueryException}
+     * 
+     * @param config
+     *            a configuration
+     * @return list of expansion fields
      */
     protected Set<String> loadExpansionFields(ShardQueryConfiguration config) {
         try {
@@ -1158,6 +1170,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * Handle case when input field value pairs are swapped
+     * 
+     * @param script
+     *            the jexl script
+     * @param timers
+     *            timers for metrics
+     * @return a script with swapped nodes
+     * @throws DatawaveQueryException
+     *             for issues with queries
      */
     protected ASTJexlScript timedInvertSwappedNodes(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, "Invert Swapped Nodes", () -> (InvertNodeVisitor.invertSwappedNodes(script)));
@@ -1165,6 +1185,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * Handle special case where a regex node can be replaced with a 'not equals null' node
+     * 
+     * @param script
+     *            the jexl script
+     * @param timers
+     *            timers for metrics
+     * @return jexl query tree
      */
     protected ASTJexlScript timedFixNotNullIntent(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
         try {
@@ -1637,16 +1663,27 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Load the metadata information.
      *
      * @param fieldToDatatypeMap
+     *            the field mapping
      * @param indexedFields
+     *            set of indexed fields
      * @param reverseIndexedFields
+     *            reverse indexed fields
      * @param normalizedFields
+     *            the normalized fields
      * @param reload
+     *            the reload flag
      * @throws AccumuloException
+     *             for issues with accumulo
      * @throws AccumuloSecurityException
+     *             for accumulo authentication issues
      * @throws TableNotFoundException
+     *             if the table is not found
      * @throws ExecutionException
+     *             for execuition errors
      * @throws InstantiationException
+     *             for issues with instantiation
      * @throws IllegalAccessException
+     *             for issues with access
      */
     private void loadDataTypeMetadata(Multimap<String,Type<?>> fieldToDatatypeMap, Set<String> indexedFields, Set<String> reverseIndexedFields,
                     Set<String> normalizedFields, boolean reload) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
@@ -1793,7 +1830,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     /**
      * this is method-injected in QueryLogicFactory.xml to provide a new prototype bean This method's implementation should never be called in production
      *
-     * @return
+     * @return the query model provider factory
      */
     public QueryModelProvider.Factory getQueryModelProviderFactory() {
         return queryModelProviderFactory;
@@ -1863,11 +1900,22 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Adding date filters if the query parameters specify that the dates are to be other than the default
      *
      * @param queryTree
+     *            the query tree
      * @param scannerFactory
+     *            the scanner factory
      * @param metadataHelper
+     *            the metadata helper
      * @param config
+     *            a config
+     * @param dateIndexHelper
+     *            the date index helper
+     * @param settings
+     *            the query settings
      * @return the updated query tree
      * @throws TableNotFoundException
+     *             if the table is not found
+     * @throws DatawaveQueryException
+     *             for issues with running the query
      */
     public ASTJexlScript addDateFilters(final ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper,
                     DateIndexHelper dateIndexHelper, ShardQueryConfiguration config, Query settings) throws TableNotFoundException, DatawaveQueryException {
@@ -1937,6 +1985,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * If configured, cap the start of the date range. If configured, throw an exception if the start AND end dates are outside the valid date range.
      *
      * @param config
+     *            the config
+     * @throws DatawaveQueryException
+     *             if there is a query error
      */
     protected void capDateRange(ShardQueryConfiguration config) throws DatawaveQueryException {
         if (config.getBeginDateCap() > 0) {
@@ -1962,10 +2013,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Create a date filter function node:
      *
      * @param dateType
+     *            the date type
      * @param field
+     *            the field
      * @param begin
+     *            begin date range
      * @param end
-     * @return
+     *            the end date range
+     * @return the jexl node
      */
     protected JexlNode createDateFilter(String dateType, String field, Date begin, Date end) {
         String filterNameSpace = EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
@@ -1995,7 +2050,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Extend to further configure QueryIterator
      *
      * @param config
+     *            the config
      * @param cfg
+     *            the iterator configuration
      */
     protected void configureAdditionalOptions(ShardQueryConfiguration config, IteratorSetting cfg) {
         // no-op
@@ -2136,6 +2193,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * Get the list of ivarator cache dirs, randomizing the order (while respecting priority) so that the tservers spread out the disk usage.
+     * 
+     * @param config
+     *            the shard config
+     * @return a list of ivarator cache dirs
      */
     private List<IvaratorCacheDirConfig> getShuffledIvaratoCacheDirConfigs(ShardQueryConfiguration config) {
         List<IvaratorCacheDirConfig> shuffledIvaratorCacheDirs = new ArrayList<>();
@@ -2235,8 +2296,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * index), unevaluatedExpressions, begin/end datetimes, indexed fields and their normalizers, non-event key column families, and the query string
      *
      * @param config
+     *            the config
      * @param cfg
+     *            the iterator configuration
      * @throws DatawaveQueryException
+     *             for issues with running the query
      */
     protected void setCommonIteratorOptions(ShardQueryConfiguration config, IteratorSetting cfg) throws DatawaveQueryException {
         // Applying filtering options, including classnames, whether applied to
@@ -2367,7 +2431,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Performs a lookup in the global index / reverse index and returns a {@link CloseableIterable} of QueryPlans
      *
      * @param config
+     *            the shard query configuration
      * @param queryTree
+     *            the query tree
      * @return range calculator
      */
     protected CloseableIterable<QueryPlan> getFullScanRange(ShardQueryConfiguration config, JexlNode queryTree) {
@@ -2398,11 +2464,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * a "full-table-scan" query.
      *
      * @param scannerFactory
+     *            the scanner factory
      * @param metadataHelper
+     *            the metadata helper
      * @param config
+     *            the shard configuration
      * @param queryTree
-     * @return
+     *            the query tree
+     * @return the query range tuples
      * @throws DatawaveQueryException
+     *             for issues with the query
      */
     public Tuple2<CloseableIterable<QueryPlan>,Boolean> getQueryRanges(ScannerFactory scannerFactory, MetadataHelper metadataHelper,
                     ShardQueryConfiguration config, JexlNode queryTree) throws DatawaveQueryException {
@@ -2513,9 +2584,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Initializes the range stream, whether it is configured to be a different class than the Default Range stream or not.
      *
      * @param config
+     *            the shard configuration
      * @param scannerFactory
+     *            the scanner factory
      * @param metadataHelper
-     * @return
+     *            the metadata helper
+     * @return the range stream
      */
     private RangeStream initializeRangeStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
         Class<? extends RangeStream> rstream;
@@ -2554,6 +2628,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * place to allow this to be automated in a future release.
      *
      * @param disableBoundedLookup
+     *            setting for disabling bounded lookup
      */
     public final void setDisableBoundedLookup(boolean disableBoundedLookup) {
         this.disableBoundedLookup = disableBoundedLookup;
@@ -2851,7 +2926,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Given a date, truncate it to year, month, date and increment the day by one to determine the following day.
      *
      * @param endDate
-     * @return
+     *            the end date
+     * @return the date incremented by one
      */
     public static Date getEndDateForIndexLookup(Date endDate) {
         Date newDate = DateUtils.truncate(endDate, Calendar.DATE);
