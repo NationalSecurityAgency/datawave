@@ -24,7 +24,7 @@ public class DocumentKeysFunctionTest {
     
     @Test
     public void testTldAndEvenChildren() throws Exception {
-        // top level document + all event children
+        // top level document + all even children
         String query = "content:phrase(FOO, termOffsetMap, 'bar', 'baz') && FOO == 'bar' && FOO == 'baz'";
         Set<Key> expected = Sets.newHashSet(docKey, docKey2, docKey4);
         test(query, expected);
@@ -44,6 +44,24 @@ public class DocumentKeysFunctionTest {
         // top level document. even and odd children do not intersect
         String query = "content:phrase(FOO, termOffsetMap, 'baz', 'biz') && FOO == 'baz' && FOO == 'biz'";
         test(query, Collections.singleton(docKey));
+    }
+    
+    @Test
+    public void testTldWithNegatedPhrase() throws Exception {
+        // bar+baz is all even children
+        // biz+biz is all odd children
+        // combined search space should be tld + all children
+        String query = "(content:phrase(FOO, termOffsetMap, 'bar', 'baz') && FOO == 'bar' && FOO == 'baz') &&"
+                        + "(content:phrase(FOO, termOffsetMap, 'biz', 'biz') && FOO == 'biz' && FOO == 'biz') ";
+        Set<Key> expected = Sets.newHashSet(docKey, docKey1, docKey2, docKey3, docKey4, docKey5);
+        test(query, expected);
+    }
+    
+    @Test
+    public void testOnlyNegatedPhrase() throws Exception {
+        String query = "content:phrase(FOO, termOffsetMap, 'baz', 'baz') && FOO == 'baz'";
+        Set<Key> expected = Sets.newHashSet(docKey, docKey2, docKey4);
+        test(query, expected);
     }
     
     private void test(String query, Set<Key> expectedDocKeys) throws Exception {

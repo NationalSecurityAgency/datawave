@@ -10,6 +10,7 @@ import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
@@ -38,6 +39,8 @@ public class DocumentKeysFunction {
     
     private static final Logger log = Logger.getLogger(DocumentKeysFunction.class);
     
+    // cannot intersect on negated values
+    private final Set<String> negatedValues = new HashSet<>();
     private final Multimap<String,ContentFunction> contentFunctions = LinkedListMultimap.create();
     
     /**
@@ -56,8 +59,26 @@ public class DocumentKeysFunction {
             for (Function f : coll) {
                 ContentFunction contentFunction = transformFunction(f);
                 contentFunctions.put(contentFunction.getField(), contentFunction);
+                
+                // need to record any values that are part of a negative function
+                if (isFunctionNegated(f)) {
+                    negatedValues.addAll(contentFunction.getValues());
+                }
             }
         }
+    }
+    
+    private boolean isFunctionNegated(Function f) {
+        JexlNode node = f.args().get(0);
+        if (node != null) {
+            while (node.jjtGetParent() != null) {
+                node = node.jjtGetParent();
+                if (node instanceof ASTNotNode) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
     
     private ContentFunction transformFunction(Function function) {
@@ -181,7 +202,8 @@ public class DocumentKeysFunction {
     protected Set<Key> getDocKeys(Document d, Set<Key> docKeys) {
         Multimap<String,Key> valueToKeys = buildValueToKeys(d);
         
-        // this is the union of each content function's intersection
+        // each content function's intersected search space is added
+        // along with the entire search space for any negated function
         Set<Key> filterKeys = buildFilterKeys(valueToKeys);
         
         int origSize = docKeys.size();
@@ -203,10 +225,10 @@ public class DocumentKeysFunction {
      */
     private Multimap<String,Key> buildValueToKeys(Document d) {
         Multimap<String,Key> valueToKeys = HashMultimap.create();
-        for (String key : contentFunctions.keySet()) {
-            Attribute<?> attr = d.get(key);
+        for (String field : contentFunctions.keySet()) {
+            Attribute<?> attr = d.get(field);
             if (attr != null) {
-                Collection<String> values = getValuesForKey(key, contentFunctions);
+                Collection<String> values = getValuesForField(field, contentFunctions);
                 putValueKey(attr, valueToKeys, values);
             }
         }
@@ -222,7 +244,7 @@ public class DocumentKeysFunction {
      *            the multimap of field to content functions
      * @return a union of all values
      */
-    private Set<String> getValuesForKey(String key, Multimap<String,ContentFunction> functions) {
+    private Set<String> getValuesForField(String key, Multimap<String,ContentFunction> functions) {
         Set<String> values = new HashSet<>();
         for (ContentFunction f : functions.get(key)) {
             values.addAll(f.getValues());
@@ -270,22 +292,30 @@ public class DocumentKeysFunction {
     private Set<Key> buildFilterKeys(Multimap<String,Key> valueToKeys) {
         Set<Key> filterKeys = new HashSet<>();
         for (ContentFunction function : contentFunctions.values()) {
-            Set<Key> keys = null;
+            Set<Key> searchSpace = null;
             for (String value : function.getValues()) {
-                if (keys == null) {
-                    keys = new HashSet<>(valueToKeys.get(value));
+                if (searchSpace == null) {
+                    searchSpace = new HashSet<>(valueToKeys.get(value));
                 } else {
-                    keys.retainAll(valueToKeys.get(value));
+                    searchSpace.retainAll(valueToKeys.get(value));
                 }
                 
-                if (keys.isEmpty())
+                if (searchSpace.isEmpty()) {
+                    // if the keys ever intersect to zero, we're done
                     break;
+                }
             }
             
-            if (keys != null) {
-                filterKeys.addAll(keys);
+            if (searchSpace != null) {
+                filterKeys.addAll(searchSpace);
             }
         }
+        
+        // add in all keys for all negated values
+        for (String value : negatedValues) {
+            filterKeys.addAll(valueToKeys.get(value));
+        }
+        
         return filterKeys;
     }
 }
