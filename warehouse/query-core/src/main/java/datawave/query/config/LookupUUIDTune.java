@@ -43,6 +43,7 @@ public class LookupUUIDTune implements Profile {
     protected String limitFieldsField = null;
     protected boolean reduceQuery = false;
     private boolean enforceUniqueTermsWithinExpressions = false;
+    private boolean reduceQueryFields = false;
     protected List<NodeTransformRule> transforms = null;
     protected Map<String,QueryParser> querySyntaxParsers = null;
     
@@ -55,6 +56,7 @@ public class LookupUUIDTune implements Profile {
             rsq.setCacheModel(enableCaching);
             rsq.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
             rsq.setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
+            rsq.setReduceQueryFields(reduceQueryFields);
             
             if (querySyntaxParsers != null) {
                 rsq.setQuerySyntaxParsers(querySyntaxParsers);
@@ -298,6 +300,14 @@ public class LookupUUIDTune implements Profile {
     
     public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
         this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
+    }
+    
+    public boolean getReduceQueryFields() {
+        return this.reduceQueryFields;
+    }
+    
+    public void setReduceQueryFields(boolean reduceQueryFields) {
+        this.reduceQueryFields = reduceQueryFields;
     }
     
     public List<NodeTransformRule> getTransforms() {

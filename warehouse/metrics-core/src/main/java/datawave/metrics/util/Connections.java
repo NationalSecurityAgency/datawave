@@ -23,8 +23,12 @@ public class Connections {
     /**
      * Utility method that will initialize all tables if they are not currently present.
      * 
+     * @param conf
+     *            a configuration
      * @throws AccumuloSecurityException
+     *             if there is a problem with accumulo authentication
      * @throws AccumuloException
+     *             if there is a general issue with accumulo
      * 
      */
     public static void initTables(Configuration conf) throws AccumuloException, AccumuloSecurityException {

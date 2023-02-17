@@ -18,7 +18,9 @@ public interface FieldValidator {
      * Setup this event validator for the type specified
      * 
      * @param type
+     *            the field type
      * @param conf
+     *            a configuration
      */
     void init(Type type, Configuration conf);
     
@@ -26,7 +28,11 @@ public interface FieldValidator {
      * Validate the event against a set of metadata
      * 
      * @param event
+     *            the event
      * @param fields
+     *            a map of fields
+     * @throws ValidationException
+     *             for issues with field validation
      */
     void validate(RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields) throws ValidationException;
     
@@ -34,6 +40,9 @@ public interface FieldValidator {
      * Validate the event against a set of metadata
      * 
      * @param fields
+     *            a map of fields
+     * @throws ValidationException
+     *             for issues with field validation
      */
     void validate(Multimap<String,String> fields) throws ValidationException;
     

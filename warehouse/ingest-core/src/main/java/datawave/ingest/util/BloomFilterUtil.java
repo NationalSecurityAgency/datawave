@@ -186,6 +186,8 @@ public class BloomFilterUtil {
     
     /**
      * Create a new factory instance with a default configuration.
+     * 
+     * @return a bloomfilterutil instance
      */
     public static BloomFilterUtil newInstance() {
         return new BloomFilterUtil(null, 0f, 0f, DiskSpaceStarvationStrategy.DEFAULT_PATH_FOR_DISK_SPACE_VALIDATION, -1);
@@ -203,6 +205,8 @@ public class BloomFilterUtil {
      * @param timeoutMillis
      *            maximum allowed time in milliseconds for NGrams to be created. Unlimited time will allowed if specified with a value equal to or less than
      *            zero (0)
+     * @param minDiskSpacePath
+     *            the min disk space path
      * @return a new factory instance
      */
     public static BloomFilterUtil newInstance(final AbstractContentIngestHelper helper, float minMemoryThreshold, float minDiskSpaceThreshold,
