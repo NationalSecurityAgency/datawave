@@ -784,6 +784,8 @@ public class QueryOptions implements OptionDescriber {
         allFields.addAll(getContentExpansionFields());
         allFields.addAll(getIndexedFields());
         allFields.addAll(getTermFrequencyFields());
+        // also grab non-indexed fields
+        allFields.addAll(getNonIndexedDataTypeMap().keySet());
         return allFields;
     }
     
