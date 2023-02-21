@@ -599,15 +599,17 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
     
     @Test
     public void testBadIdentifier() throws ParseException {
-        String query = "content:phrase(FOO, termOffsetMap, 'bar', 'baz') && FOO == 'bar' && FOO == 'baz'";
+        String query = "content:phrase(FOO, termOffsetMap, 'bar', 'baz') && FOO == 'bar' && FOO == 'baz' && Foo2 == 'bad'";
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
         
         // silly mock stuff
         expect(mockAttributeFactory.getTypeMetadata("FOO", "datatype")).andReturn(Collections.emptyList()).anyTimes();
         replayAll();
         
-        filter = new TLDEventDataFilter(script, Collections.singleton("FOO"), mockAttributeFactory, null, null, -1, -1);
+        filter = new TLDEventDataFilter(script, Sets.newHashSet("FOO", "FOO2"), mockAttributeFactory, null, null, -1, -1);
         
+        // asserts that 'termOffsetMap' is not considered a query field
+        // asserts that malformed field 'Foo2' is not considered a query field
         assertEquals(Collections.singletonList("FOO"), filter.queryFields);
     }
 }
