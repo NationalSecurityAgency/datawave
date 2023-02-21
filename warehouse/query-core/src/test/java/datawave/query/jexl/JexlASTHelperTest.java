@@ -2,7 +2,6 @@ package datawave.query.jexl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
@@ -725,4 +724,54 @@ public class JexlASTHelperTest {
             e.printStackTrace();
         }
     }
+    
+    @Test
+    public void testDeconstructIdentifierNoParsing() {
+        String identifier = JexlASTHelper.deconstructIdentifier("NAME");
+        String expected = "NAME";
+        assertEquals(expected, identifier);
+    }
+    
+    @Test
+    public void testDeconstructIdentifierOnlyPrefix() {
+        String identifier = JexlASTHelper.deconstructIdentifier("$NAME");
+        String expected = "NAME";
+        assertEquals(expected, identifier);
+    }
+    
+    @Test
+    public void testDeconstructIdentifierNoGrouping() {
+        String identifier = JexlASTHelper.deconstructIdentifier("NAME.1.2");
+        String expected = "NAME";
+        assertEquals(expected, identifier);
+    }
+    
+    @Test
+    public void testDeconstructIdentifierGroupingOnly() {
+        String identifier = JexlASTHelper.deconstructIdentifier("NAME.1.2", true);
+        String expected = "NAME.1.2";
+        assertEquals(expected, identifier);
+    }
+    
+    @Test
+    public void testDeconstructIdentifierGroupingNoPrefix() {
+        String identifier = JexlASTHelper.deconstructIdentifier("$NAME.1.2", true);
+        String expected = "NAME.1.2";
+        assertEquals(expected, identifier);
+    }
+    
+    @Test
+    public void testDeconstructIdentifierPrefixNoGrouping() {
+        String identifier = JexlASTHelper.deconstructIdentifier("$NAME.1.2", false);
+        String expected = "NAME";
+        assertEquals(expected, identifier);
+    }
+    
+    @Test
+    public void testDeconstructIdentifierEmptyField() {
+        String identifier = JexlASTHelper.deconstructIdentifier("");
+        String expected = "";
+        assertEquals(expected, identifier);
+    }
+    
 }
