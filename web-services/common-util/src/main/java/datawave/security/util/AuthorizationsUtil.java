@@ -71,9 +71,9 @@ public class AuthorizationsUtil {
         return mergedAuths;
     }
     
-    public static DatawaveUser mergeAuths(DatawaveUser user1, Set<String> auths) {
-        return new DatawaveUser(user1.getDn(), user1.getUserType(), user1.getEmail(), Sets.union(new HashSet<>(user1.getAuths()), auths), user1.getRoles(),
-                        user1.getRoleToAuthMapping(), user1.getCreationTime(), user1.getExpirationTime());
+    public static DatawaveUser mergeAuths(DatawaveUser user, Set<String> auths) {
+        return new DatawaveUser(user.getDn(), user.getUserType(), user.getEmail(), Sets.union(new HashSet<>(user.getAuths()), auths), user.getRoles(),
+                        user.getRoleToAuthMapping(), user.getCreationTime(), user.getExpirationTime());
     }
     
     /**

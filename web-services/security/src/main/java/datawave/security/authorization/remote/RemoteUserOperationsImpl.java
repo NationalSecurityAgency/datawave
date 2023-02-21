@@ -21,10 +21,11 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
     public static final String PROXIED_ENTITIES_HEADER = DatawaveAuthenticationMechanism.PROXIED_ENTITIES_HEADER;
     public static final String PROXIED_ISSUERS_HEADER = DatawaveAuthenticationMechanism.PROXIED_ISSUERS_HEADER;
     
-    // set includeRemoteServices off to avoid any subsequent hops
     private static final String LIST_EFFECTIVE_AUTHS = "listEffectiveAuthorizations";
     
     private static final String FLUSH_CREDS = "flushCachedCredentials";
+    
+    private static final String INCLUDE_REMOTE_SERVICES = "includeRemoteServices";
     
     private ObjectReader genericResponseReader;
     
@@ -52,7 +53,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
         final String suffix = LIST_EFFECTIVE_AUTHS;
         // includeRemoteServices=false to avoid any loops
         return executeGetMethodWithRuntimeException(suffix, uriBuilder -> {
-            uriBuilder.addParameter("includeRemoteServices", "false");
+            uriBuilder.addParameter(INCLUDE_REMOTE_SERVICES, "false");
         }, httpGet -> {
             httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
             httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
@@ -71,7 +72,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
         final String suffix = FLUSH_CREDS;
         // includeRemoteServices=false to avoid any loops
         return executeGetMethodWithRuntimeException(suffix, uriBuilder -> {
-            uriBuilder.addParameter("includeRemoteServices", "false");
+            uriBuilder.addParameter(INCLUDE_REMOTE_SERVICES, "false");
         }, httpGet -> {
             httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
             httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
