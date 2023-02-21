@@ -608,12 +608,13 @@ public class JexlASTHelper {
                 int groupingOffset = fieldName.indexOf(GROUPING_CHARACTER_SEPARATOR);
                 int stopIndex = fieldName.charAt(0) == IDENTIFIER_PREFIX ? groupingOffset - 1 : groupingOffset;
                 if (-1 != groupingOffset) {
-                    return new String(fieldName.getBytes(), startIndex, stopIndex);
+                    fieldName = new String(fieldName.getBytes(), startIndex, stopIndex);
                 }
             }
+            fieldName = (fieldName.charAt(0) == IDENTIFIER_PREFIX) ? fieldName.substring(1) : fieldName;
         }
         
-        return (fieldName.charAt(0) == IDENTIFIER_PREFIX) ? fieldName.substring(1) : fieldName;
+        return fieldName;
     }
     
     /**
