@@ -73,6 +73,8 @@ public class FieldIndexKey {
             ByteSequence backing = key.getColumnFamilyData();
             if (backing.length() > 3) {
                 field = backing.subSequence(3, backing.length()).toString();
+            } else {
+                throw new IllegalArgumentException("Could not extract FIELD from fi key: " + key.toStringNoTime());
             }
         }
         return field;
@@ -85,6 +87,8 @@ public class FieldIndexKey {
             }
             if (firstNull != -1 && secondNull != -1) {
                 value = cqBytes.subSequence(0, firstNull).toString();
+            } else {
+                throw new IllegalArgumentException("Could not extract VALUE from fi key: " + key.toStringNoTime());
             }
         }
         return value;
@@ -97,6 +101,8 @@ public class FieldIndexKey {
             }
             if (firstNull != -1 && secondNull != -1) {
                 datatype = cqBytes.subSequence(firstNull + 1, secondNull).toString();
+            } else {
+                throw new IllegalArgumentException("Could not extract DATATYPE from fi key: " + key.toStringNoTime());
             }
         }
         return datatype;
@@ -109,6 +115,8 @@ public class FieldIndexKey {
             }
             if (firstNull != -1 && secondNull != -1) {
                 uid = cqBytes.subSequence(secondNull + 1, cqBytes.length()).toString();
+            } else {
+                throw new IllegalArgumentException("Could not extract UID from fi key: " + key.toStringNoTime());
             }
         }
         return uid;

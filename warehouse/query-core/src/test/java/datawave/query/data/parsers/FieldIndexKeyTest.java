@@ -74,7 +74,7 @@ public class FieldIndexKeyTest {
         assertEquals("value", parser.getValue());
     }
     
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testParseNoCf() {
         parser.parse(fiKeyNoCf);
         
@@ -88,7 +88,7 @@ public class FieldIndexKeyTest {
         assertNull(parser.getField());
     }
     
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testParseNoCq() {
         parser.parse(fiKeyNoCq);
         
@@ -101,7 +101,7 @@ public class FieldIndexKeyTest {
         assertNull(parser.getValue());
     }
     
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testParseCqOneNull() {
         parser.parse(fiKeyCqOneNull);
         
@@ -114,7 +114,7 @@ public class FieldIndexKeyTest {
         assertNull(parser.getValue());
     }
     
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testParseCqZeroNulls() {
         parser.parse(fiKeyCqZeroNulls);
         
