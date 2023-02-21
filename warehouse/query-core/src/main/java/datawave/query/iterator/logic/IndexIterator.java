@@ -424,7 +424,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      * Permute a "Document" Key to an equivalent "Field Index" key for a Field:Term
      * 
      * @param rangeKey
-                  a key formatted like a document key
+     *            a key formatted like a document key
      * @param inclusive
      *            flag to determine to add a null bye
      * @return a key formatted for a field index range
