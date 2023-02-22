@@ -33,6 +33,8 @@ public interface JexlArgumentDescriptor {
      *            the date index helper
      * @param datatypeFilter
      *            the datatype filter
+     * @param settings
+     *            the config settings
      * @return The query which will be used against the global index
      */
     JexlNode getIndexQuery(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter);

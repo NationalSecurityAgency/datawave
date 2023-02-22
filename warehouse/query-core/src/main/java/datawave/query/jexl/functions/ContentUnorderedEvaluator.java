@@ -167,6 +167,8 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
          *            the event id (see @TermFrequencyList.getEventId(Key))
          * @param termOffsets
          *            the offsets for the specified terms, these lists will not be modified in any way.
+         * @param termOffsetMap
+         *            the term offset map
          * @throws IllegalArgumentException
          *             if the number of terms does not match the number of offset lists.
          */
