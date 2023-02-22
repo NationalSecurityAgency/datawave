@@ -133,7 +133,7 @@ public class AuthorizationsUtil {
         
         // validate that the query user is actually a subset of the primary user
         if (!primaryUser.getAuths().containsAll(queryUser.getAuths())) {
-            throw new IllegalArgumentException("The user's query auths are not a subset of the user's overall auths.");
+            throw new IllegalArgumentException("System Error.  Unexpected authorization mismatch.  Please try again.");
         }
         
         // validate that the requestedAuths do not include anything outside of the principal's auths
@@ -170,7 +170,7 @@ public class AuthorizationsUtil {
         
         // validate that the query user is actually a subset of the primary user
         if (!primaryUser.getAuths().containsAll(queryUser.getAuths())) {
-            throw new IllegalArgumentException("Something has gone wrong.  The we cannot determine the proper set of user's auths");
+            throw new IllegalArgumentException("System Error.  Unexpected authorization mismatch.  Please try again.");
         }
         
         // validate that the requestedAuths do not include anything outside of the principal's auths
