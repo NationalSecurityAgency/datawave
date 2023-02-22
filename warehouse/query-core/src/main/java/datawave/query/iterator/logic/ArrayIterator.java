@@ -14,6 +14,7 @@ import datawave.query.attributes.Document;
  * 
  * 
  * @param <T>
+ *            the type of the array iterator
  */
 public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T> {
     private static final Document doc = new Document();

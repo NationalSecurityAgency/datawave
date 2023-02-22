@@ -90,6 +90,8 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
      * @param name
      *            the name of the field to fetch on demand
      * @return the list of Document objects that were fetched from all delayed iterators associated with the on-demand field
+     * @throws IOException
+     *             if there is an issue with read/write
      */
     private List<Document> fetchOnDemand(String name) throws IOException {
         List<Document> documentList = new ArrayList<>();

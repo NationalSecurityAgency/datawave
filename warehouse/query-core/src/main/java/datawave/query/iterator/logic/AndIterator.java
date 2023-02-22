@@ -166,7 +166,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     /**
      * return the previously found next and set its document. If there are more head references, advance until the lowest and highest match that is not
      * filtered, advancing all iterators tied to lowest and set next/document for the next call
-     * 
+     *
      * @return the previously found next
      */
     public T next() {
@@ -359,7 +359,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
      * immediately returns false to indicate that a sub-tree has been exhausted.
      *
      * @param key
-     * @return
+     *            a key
+     * @return a sorted map
      */
     protected TreeMultimap<T,NestedIterator<T>> advanceIterators(T key) {
         T highest = null;
@@ -405,8 +406,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
      * <code>to</code> parameter.
      *
      * @param key
+     *            a key
      * @param to
-     * @return
+     *            the destination
+     * @return a sorted map
      */
     protected TreeMultimap<T,NestedIterator<T>> moveIterators(T key, T to) {
         transforms.remove(key);
@@ -462,8 +465,18 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
      * Creates a sorted mapping of values to iterators.
      *
      * @param subtree
+     *            a subtree
+     * @param <T>
+     *            type for the tree
+     * @param anded
+     *            boolean flag for anded
+     * @param transformer
+     *            the transformer
+     * @param transforms
+     *            mapping of transforms
      * @param sources
-     * @return
+     *            nested iterator of sources
+     * @return a sorted map
      */
     private static <T extends Comparable<T>> TreeMultimap<T,NestedIterator<T>> initSubtree(TreeMultimap<T,NestedIterator<T>> subtree,
                     Iterable<NestedIterator<T>> sources, Transformer<T> transformer, Map<T,T> transforms, boolean anded) {

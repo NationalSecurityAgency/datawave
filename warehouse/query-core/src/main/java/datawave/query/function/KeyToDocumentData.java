@@ -110,6 +110,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      *            the reference event for generating hierarchical fields
      * @return the modified list of document attributes
      * @throws IOException
+     *             for issues with read/write
      */
     public List<Entry<Key,Value>> appendHierarchyFields(final List<Entry<Key,Value>> documentAttributes, final Range range, final Key key) throws IOException {
         return appendHierarchyFields(documentAttributes, key, source, range, countFunction, includeParent);
@@ -158,7 +159,9 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      *            the names of generated generated attributes
      * @param keyRange
      *            the Range used to initialize source with seek()
-     * @return
+     * @return list of entries
+     * @throws IOException
+     *             for issues with read/write
      */
     public List<Entry<Key,Value>> collectDocumentAttributes(final Key documentStartKey, final Set<Key> docKeys, final Range keyRange) throws IOException {
         return collectAttributesForDocumentKey(documentStartKey, source, equality, filter, docKeys, keyRange);
@@ -172,7 +175,17 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      *            A Key of the form "bucket type\x00uid: "
      * @param keyRange
      *            the Range used to initialize source with seek()
+     * @param source
+     *            a source
+     * @param equality
+     *            an equality
+     * @param docKeys
+     *            set of keys
+     * @param filter
+     *            a query filter
      * @return the attributes
+     * @throws IOException
+     *             for issues with read/write
      */
     private static List<Entry<Key,Value>> collectAttributesForDocumentKey(Key documentStartKey, SortedKeyValueIterator<Key,Value> source, Equality equality,
                     EventDataQueryFilter filter, Set<Key> docKeys, Range keyRange) throws IOException {
@@ -343,7 +356,8 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      * Define the start key given the from condition.
      *
      * @param from
-     * @return
+     *            the entrymap
+     * @return a key
      */
     protected Key getStartKey(Map.Entry<Key,Document> from) {
         return new Key(from.getKey().getRow(), from.getKey().getColumnFamily());
@@ -353,7 +367,8 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      * Define the end key given the from condition.
      *
      * @param from
-     * @return
+     *            the entrymap
+     * @return a key
      */
     protected Key getStopKey(Map.Entry<Key,Document> from) {
         return filter == null ? from.getKey().followingKey(PartialKey.ROW_COLFAM) : filter.getStopKey(from.getKey());
@@ -363,7 +378,8 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      * Get the key range that covers the complete document specified by the input key range
      *
      * @param from
-     * @return
+     *            the entrymap
+     * @return a key range
      */
     protected Range getKeyRange(Map.Entry<Key,Document> from) {
         if (filter != null) {

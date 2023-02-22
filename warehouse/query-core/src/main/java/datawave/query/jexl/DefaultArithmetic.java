@@ -92,7 +92,8 @@ public class DefaultArithmetic extends DatawaveArithmetic {
      * This method deals with the ValueTuple objects and turns them into all of the value parts
      * 
      * @param o
-     * @return
+     *            an object
+     * @return all values object
      */
     private Object allValues(Object o) {
         Set<Object> allValues = new HashSet<>();
@@ -115,6 +116,11 @@ public class DefaultArithmetic extends DatawaveArithmetic {
      * This method differs from the parent class in that we are going to try and do a better job of coercing the types. As a last resort we will do a string
      * comparison and try not to throw a NumberFormatException. The JexlArithmetic class performs coercion to a particular type if either the left or the right
      * match a known type. We will look at the type of the right operator and try to make the left of the same type.
+     * 
+     * @param left
+     *            the left object
+     * @param right
+     *            the right object
      */
     @SuppressWarnings({"unchecked"})
     @Override
@@ -340,7 +346,9 @@ public class DefaultArithmetic extends DatawaveArithmetic {
      * Convert the left hand object if required to the same numberic class as the right hand side.
      * 
      * @param left
+     *            the left object
      * @param right
+     *            the right object
      * @return the fixed left hand object
      */
     protected Object fixLeft(Object left, Object right) {

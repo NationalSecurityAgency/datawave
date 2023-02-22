@@ -15,6 +15,12 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 public interface FieldIndexAggregator {
     /**
      * Applies the aggregation function to the keys returned by the iterator.
+     * 
+     * @param itr
+     *            the iterator
+     * @return the keys from iterator
+     * @throws IOException
+     *             for issues with read/write
      */
     Key apply(SortedKeyValueIterator<Key,Value> itr) throws IOException;
     
@@ -22,11 +28,16 @@ public interface FieldIndexAggregator {
      * Applies the aggregation function to the keys returned by the iterator, may seek the underlying source
      * 
      * @param itr
+     *            the iterator
      * @param current
+     *            current range
      * @param columnFamilies
+     *            the column families
      * @param includeColumnFamilies
-     * @return
+     *            flag for including families
+     * @return the keys from iterator
      * @throws IOException
+     *             for issues with read/write
      */
     Key apply(SortedKeyValueIterator<Key,Value> itr, Range current, Collection<ByteSequence> columnFamilies, boolean includeColumnFamilies) throws IOException;
     
@@ -35,9 +46,14 @@ public interface FieldIndexAggregator {
      * at each key's visibility level. This is intended to be used in the case of having index only fields.
      * 
      * @param itr
+     *            the iterator
      * @param doc
+     *            the document
      * @param attrs
-     * @return
+     *            attribute factory
+     * @return the keys from iterator
+     * @throws IOException
+     *             for issues with read/write
      */
     Key apply(SortedKeyValueIterator<Key,Value> itr, Document doc, AttributeFactory attrs) throws IOException;
 }

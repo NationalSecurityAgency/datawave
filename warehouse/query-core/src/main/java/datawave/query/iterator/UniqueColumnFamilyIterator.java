@@ -50,6 +50,17 @@ public class UniqueColumnFamilyIterator extends org.apache.accumulo.core.iterato
      * A bit of a hack, similar to the ColumnFamilySkippingIterator. This will call next a 32 times before finally seeking for the next {@code <row, colf>}.
      * 
      * The source iterator may or may not have a top after this method returns, and there is no guarantee of another viable top key/value being set.
+     * 
+     * @param key
+     *            a key
+     * @param iterator
+     *            an iterator
+     * @param cfs
+     *            column families
+     * @param scanRange
+     *            the scan range
+     * @param inclusive
+     *            whether the range is considered inclusive
      */
     public static void moveTo(Key key, SortedKeyValueIterator<Key,Value> iterator, Range scanRange, Collection<ByteSequence> cfs, boolean inclusive)
                     throws IOException {
