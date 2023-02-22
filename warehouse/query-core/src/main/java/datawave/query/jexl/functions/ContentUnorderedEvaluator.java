@@ -52,11 +52,11 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
      * Evaluate a list of offsets in an unordered kind of way.
      * 
      * @param offsets
-     * a list of offsets
+     *            a list of offsets
      * @param field
-     * the field string
+     *            the field string
      * @param eventId
-     * the eventid string
+     *            the eventid string
      * @return true if we found an unordered list within the specified distance for the specified set of offsets.
      */
     @Override
