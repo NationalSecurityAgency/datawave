@@ -594,8 +594,8 @@ public class JexlASTHelper {
     }
     
     /**
-     * Remove the {@link #IDENTIFIER_PREFIX} from the beginning of a fieldName if it exists Remove the {@link #GROUPING_CHARACTER_SEPARATOR} from the end of a
-     * fieldName if it exists
+     * Remove the {@link #IDENTIFIER_PREFIX} from the beginning of a fieldName if it exists and remove the {@link #GROUPING_CHARACTER_SEPARATOR} from the end of
+     * a fieldName if it exists
      *
      * @param fieldName
      * @param includeGroupingContext
@@ -603,15 +603,20 @@ public class JexlASTHelper {
      */
     public static String deconstructIdentifier(String fieldName, boolean includeGroupingContext) {
         if (fieldName != null && fieldName.length() > 1) {
+            boolean idPrefix = fieldName.charAt(0) == IDENTIFIER_PREFIX;
+            int startIndex = idPrefix ? 1 : 0;
+            int stopIndex = idPrefix ? fieldName.length() - 1 : fieldName.length();
+            
             if (!includeGroupingContext) {
-                int startIndex = fieldName.charAt(0) == IDENTIFIER_PREFIX ? 1 : 0;
                 int groupingOffset = fieldName.indexOf(GROUPING_CHARACTER_SEPARATOR);
-                int stopIndex = fieldName.charAt(0) == IDENTIFIER_PREFIX ? groupingOffset - 1 : groupingOffset;
-                if (-1 != groupingOffset) {
-                    fieldName = new String(fieldName.getBytes(), startIndex, stopIndex);
+                if (groupingOffset != -1) {
+                    stopIndex = idPrefix ? groupingOffset - 1 : groupingOffset;
                 }
             }
-            fieldName = (fieldName.charAt(0) == IDENTIFIER_PREFIX) ? fieldName.substring(1) : fieldName;
+            
+            if (startIndex != 0 || stopIndex != -1) {
+                fieldName = new String(fieldName.getBytes(), startIndex, stopIndex);
+            }
         }
         
         return fieldName;
