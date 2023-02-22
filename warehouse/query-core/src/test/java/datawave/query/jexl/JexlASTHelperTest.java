@@ -720,52 +720,61 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void testDeconstructIdentifierNoParsing() {
-        String identifier = JexlASTHelper.deconstructIdentifier("NAME");
-        String expected = "NAME";
-        assertEquals(expected, identifier);
+    public void testIdentifierDeconstructionWithGroupings() {
+        // no prefix or grouping
+        testDeconstructionGroupingTrue("FIELD", "FIELD");
+        
+        // has a simple grouping, does not have a prefix
+        testDeconstructionGroupingTrue("FIELD.1", "FIELD.1");
+        
+        // has a complex grouping, does not have a prefix
+        testDeconstructionGroupingTrue("FIELD.1.2", "FIELD.1.2");
+        
+        // has a prefix, does not have a grouping
+        testDeconstructionGroupingTrue("FIELD", "$FIELD");
+        
+        // has a prefix, has a simple grouping
+        testDeconstructionGroupingTrue("FIELD.1", "$FIELD.1");
+        
+        // has a prefix, has a complex grouping
+        testDeconstructionGroupingTrue("FIELD.1.2", "$FIELD.1.2");
+        
+        // empty string should return untouched
+        testDeconstructionGroupingTrue("", "");
     }
     
     @Test
-    public void testDeconstructIdentifierOnlyPrefix() {
-        String identifier = JexlASTHelper.deconstructIdentifier("$NAME");
-        String expected = "NAME";
-        assertEquals(expected, identifier);
+    public void testIdentifierDeconstructionWithoutGroupings() {
+        // no prefix or grouping
+        testDeconstructionGroupingFalse("FIELD", "FIELD");
+        
+        // has a simple grouping, does not have a prefix
+        testDeconstructionGroupingFalse("FIELD", "FIELD.1");
+        
+        // has a complex grouping, does not have a prefix
+        testDeconstructionGroupingFalse("FIELD", "FIELD.1.2");
+        
+        // has a prefix, does not have a grouping
+        testDeconstructionGroupingFalse("FIELD", "$FIELD");
+        
+        // has a prefix, has a simple grouping
+        testDeconstructionGroupingFalse("FIELD", "$FIELD.1");
+        
+        // has a prefix, has a complex grouping
+        testDeconstructionGroupingFalse("FIELD", "$FIELD.1.2");
+        
+        // empty string should remain untouched
+        testDeconstructionGroupingFalse("", "");
     }
     
-    @Test
-    public void testDeconstructIdentifierNoGrouping() {
-        String identifier = JexlASTHelper.deconstructIdentifier("NAME.1.2");
-        String expected = "NAME";
-        assertEquals(expected, identifier);
+    private void testDeconstructionGroupingTrue(String expected, String input) {
+        String actual = JexlASTHelper.deconstructIdentifier(input, true);
+        assertEquals(expected, actual);
     }
     
-    @Test
-    public void testDeconstructIdentifierGroupingOnly() {
-        String identifier = JexlASTHelper.deconstructIdentifier("NAME.1.2", true);
-        String expected = "NAME.1.2";
-        assertEquals(expected, identifier);
-    }
-    
-    @Test
-    public void testDeconstructIdentifierGroupingNoPrefix() {
-        String identifier = JexlASTHelper.deconstructIdentifier("$NAME.1.2", true);
-        String expected = "NAME.1.2";
-        assertEquals(expected, identifier);
-    }
-    
-    @Test
-    public void testDeconstructIdentifierPrefixNoGrouping() {
-        String identifier = JexlASTHelper.deconstructIdentifier("$NAME.1.2", false);
-        String expected = "NAME";
-        assertEquals(expected, identifier);
-    }
-    
-    @Test
-    public void testDeconstructIdentifierEmptyField() {
-        String identifier = JexlASTHelper.deconstructIdentifier("");
-        String expected = "";
-        assertEquals(expected, identifier);
+    private void testDeconstructionGroupingFalse(String expected, String input) {
+        String actual = JexlASTHelper.deconstructIdentifier(input, false);
+        assertEquals(expected, actual);
     }
     
 }
