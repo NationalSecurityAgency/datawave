@@ -50,7 +50,7 @@ public class RemoteQueryMetricService extends RemoteHttpService {
     private static final String UPDATE_METRIC_SUFFIX = "updateMetric";
     private static final String UPDATE_METRICS_SUFFIX = "updateMetrics";
     private static final String ID_METRIC_SUFFIX = "id/%s";
-    private static final String MAP_METRIC_SUFFIX = "id/map/%s";
+    private static final String MAP_METRIC_SUFFIX = "id/%s/map";
     private static final String SUMMARY_ALL_SUFFIX = "summary/all";
     private static final String SUMMARY_USER_SUFFIX = "summary/user";
     private static final String AUTH_HEADER_NAME = "Authorization";

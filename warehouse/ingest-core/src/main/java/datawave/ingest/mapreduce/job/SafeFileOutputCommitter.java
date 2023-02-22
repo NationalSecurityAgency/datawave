@@ -71,6 +71,9 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
     /**
      * Cleanup the job. Note that this is deprecated in the super class but is still being used for this work. When the method has been removed from the super
      * class then this class will need to be reworked.
+     * 
+     * @param context
+     *            The job context
      */
     @Override
     public void cleanupJob(JobContext context) throws IOException {
@@ -99,6 +102,7 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
      * @param pendingFileList
      *            List of pending files that need to be verified
      * @throws IOException
+     *             for issues with read or write
      * @throws FileExistsException
      *             a pending file exists and there is no successful file with the same name
      */
@@ -148,7 +152,9 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
      * status. This is a cheaper iterator which only requests the FileStatus for each file as all we need to know is which paths are files vs directories.
      * 
      * @param fs
+     *            the file system
      * @param path
+     *            the file path
      * @return A remote iterator of paths for file only
      */
     protected RemoteIterator<Path> listFiles(final FileSystem fs, final Path path) {
@@ -158,6 +164,14 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
     /**
      * See SafeFileOutputCommitter.listFiles(FileSystem, Path). When ignoreEmptyFiles is true, listFiles's returned iterator will not return files that are
      * empty.
+     * 
+     * @param fs
+     *            the file system
+     * @param path
+     *            the file path
+     * @param ignoreEmptyFiles
+     *            flag to ignore empty files
+     * @return A remote iterator of paths
      */
     protected RemoteIterator<Path> listFiles(final FileSystem fs, final Path path, boolean ignoreEmptyFiles) {
         return new RemoteIterator<Path>() {

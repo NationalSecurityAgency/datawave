@@ -50,6 +50,7 @@ import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.logic.RoleManager;
 import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.GetUUIDCriteria;
 import datawave.webservice.query.util.LookupUUIDUtil;
@@ -2925,6 +2926,7 @@ public class ExtendedQueryExecutorBeanTest {
         RoleManager roleManager2 = new DatawaveRoleManager(Arrays.asList("ROLE_1", "ROLE_2"));
         expect(this.queryLogic2.getRoleManager()).andReturn(roleManager2).times(2);
         expect(this.queryLogic2.getResponseClass(EasyMock.anyObject(Query.class))).andReturn(this.baseResponse.getClass().getCanonicalName());
+        expect(this.responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
         Map<String,String> parsers = new HashMap<>();
         parsers.put("PARSER1", null);
         expect(this.queryLogic2.getQuerySyntaxParsers()).andReturn((Map) parsers);
@@ -2935,6 +2937,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         QueryLogicResponse result1 = subject.listQueryLogic();
         subject.close();
         PowerMock.verifyAll();
@@ -3658,6 +3661,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(subject.createQuery(queryLogicName, params, httpHeaders)).andReturn(createResponse);
         expect(this.cache.get(eq(queryId.toString()))).andReturn(this.runningQuery);
         expect(this.runningQuery.getMetric()).andReturn(this.queryMetric);
+        expect(this.responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
         this.queryMetric.setCreateCallTime(EasyMock.geq(0L));
         // return streaming response
         

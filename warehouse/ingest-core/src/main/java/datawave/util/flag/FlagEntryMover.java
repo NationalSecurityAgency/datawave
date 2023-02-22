@@ -59,6 +59,9 @@ public class FlagEntryMover extends SimpleMover {
      *            source file for ingestion
      * @param dest
      *            conflict file
+     * @return true/false if the checksum matches
+     * @throws IOException
+     *             for issues with read/write
      */
     private boolean resolveConflict(final Path src, final Path dest) throws IOException {
         // check to see if checksum matches
@@ -96,6 +99,7 @@ public class FlagEntryMover extends SimpleMover {
      *            checksum file
      * @return hex string representation of checksum
      * @throws IOException
+     *             for issues with read/write
      */
     private String calculateChecksum(final Path file) throws IOException {
         try (final InputStream is = this.fs.open(file)) {

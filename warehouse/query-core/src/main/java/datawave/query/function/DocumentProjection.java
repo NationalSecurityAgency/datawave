@@ -88,6 +88,9 @@ public class DocumentProjection implements DocumentPermutation {
     }
     
     private Document trim(Document d) {
+        if (log.isTraceEnabled()) {
+            log.trace("Applying projection " + projection + " to " + d);
+        }
         Map<String,Attribute<? extends Comparable<?>>> dict = d.getDictionary();
         Document newDoc = new Document();
         
@@ -142,6 +145,10 @@ public class DocumentProjection implements DocumentPermutation {
                     }
                 }
             }
+        }
+        
+        if (log.isTraceEnabled()) {
+            log.trace("Document after projection: " + newDoc);
         }
         
         return newDoc;

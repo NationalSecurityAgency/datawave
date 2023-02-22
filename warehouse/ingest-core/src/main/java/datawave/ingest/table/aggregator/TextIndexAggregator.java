@@ -46,8 +46,8 @@ public class TextIndexAggregator extends PropogatingCombiner {
     
     /**
      * Determines whether or not to propagate the key depending on the result of the value
-     *
-     * @return
+     * 
+     * @return a boolean on whether to propogate or not
      */
     public boolean propogateKey() {
         return true;

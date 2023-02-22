@@ -230,7 +230,7 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
     
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new ContentQueryTransformer(settings, this.markingFunctions);
+        return new ContentQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
     }
     
     @Override

@@ -1,5 +1,10 @@
 package datawave.webservice.query.cachedresults;
 
+import datawave.marking.MarkingFunctions;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import org.apache.log4j.Logger;
+
+import javax.sql.rowset.CachedRowSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -8,19 +13,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.sql.rowset.CachedRowSet;
-
-import datawave.marking.MarkingFunctions;
-
-import org.apache.log4j.Logger;
-
 public class CacheableQueryRowReader {
     
     private static Logger log = Logger.getLogger(CacheableQueryRowReader.class);
     
-    public static CacheableQueryRow createRow(CachedRowSet cachedRowSet, Set<String> fixedFieldsInEvent) {
+    public static CacheableQueryRow createRow(CachedRowSet cachedRowSet, Set<String> fixedFieldsInEvent, ResponseObjectFactory responseObjectFactory) {
         
-        CacheableQueryRowImpl cqfc = new CacheableQueryRowImpl();
+        CacheableQueryRow cqfc = responseObjectFactory.getCacheableQueryRow();
         
         ResultSetMetaData metadata;
         try {
@@ -30,7 +29,7 @@ public class CacheableQueryRowReader {
             Map<String,Integer> columnToIndexMap = new HashMap<>();
             Map<String,Set<String>> columnValues = new HashMap<>();
             Set<String> variableColumnNames = new TreeSet<>();
-            Set<String> fixedColumnNames = CacheableQueryRowImpl.getFixedColumnSet();
+            Set<String> fixedColumnNames = CacheableQueryRow.getFixedColumnSet();
             // lets do a quick size estimate
             long characters = 0;
             for (int x = 1; x <= numColumns; x++) {

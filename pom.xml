@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>3.36.0-SNAPSHOT</version>
+    <version>3.40.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -46,6 +46,7 @@
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
+        <version.commons-text>1.8</version.commons-text>
         <version.curator>2.13.0</version.curator>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.easymock>4.0.2</version.easymock>
@@ -55,8 +56,8 @@
         <version.google-guava>15.0</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
-        <!-- Can download cdh binary from https://www.cloudera.com/documentation/enterprise/release-notes/topics/cdh_vd_cdh_package_tarball_59.html#tarball_59x -->
-        <version.hadoop>3.0.0-cdh6.2.0</version.hadoop>
+        <version.hadoop>3.3.3</version.hadoop>
+        <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
@@ -84,7 +85,7 @@
         <version.microservice.base-rest-responses>1.2</version.microservice.base-rest-responses>
         <version.microservice.common-utils>1.0</version.microservice.common-utils>
         <version.microservice.dictionary-api>1.0</version.microservice.dictionary-api>
-        <version.microservice.metadata-utils>1.10</version.microservice.metadata-utils>
+        <version.microservice.metadata-utils>1.12</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>1.2</version.microservice.metrics-reporter>
         <version.microservice.query-metric-api>1.5.7</version.microservice.query-metric-api>
         <version.microservice.type-utils>1.11</version.microservice.type-utils>
@@ -557,6 +558,10 @@
                 <version>${version.commons-jexl}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-client</artifactId>
                 <version>${version.curator}</version>
@@ -695,6 +700,16 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop.thirdparty</groupId>
+                <artifactId>hadoop-shaded-guava</artifactId>
+                <version>${version.hadoop-shaded}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop.thirdparty</groupId>
+                <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
+                <version>${version.hadoop-shaded}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.htrace</groupId>
@@ -1095,13 +1110,6 @@
             </snapshots>
             <id>jboss</id>
             <url>https://repository.jboss.org/nexus/content/groups/public-jboss/</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>cloudera</id>
-            <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
         </repository>
         <repository>
             <snapshots>

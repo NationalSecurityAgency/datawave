@@ -25,6 +25,8 @@ public abstract class PropogatingCombiner extends Combiner {
     
     /**
      * Shpuld return a thread safe value.
+     * 
+     * @return a value
      */
     public Value aggregate() {
         return EMPTY_VALUE;
@@ -32,6 +34,9 @@ public abstract class PropogatingCombiner extends Combiner {
     
     /**
      * Collects a value into the current state;
+     * 
+     * @param value
+     *            a value
      */
     public void collect(Value value) {
         
@@ -41,6 +46,7 @@ public abstract class PropogatingCombiner extends Combiner {
      * Sets the propogating factor in the aggregator.
      * 
      * @param propogate
+     *            the boolean to set
      */
     public void setPropogate(boolean propogate) {
         this.propogate = propogate;
@@ -49,7 +55,7 @@ public abstract class PropogatingCombiner extends Combiner {
     /**
      * Determines whether or not to propogate the key depending on the result of the value
      * 
-     * @return
+     * @return a boolean on whether to propogate
      */
     public boolean propogateKey() {
         return this.propogate;

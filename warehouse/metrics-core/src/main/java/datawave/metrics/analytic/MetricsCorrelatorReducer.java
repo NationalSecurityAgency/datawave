@@ -106,6 +106,10 @@ public class MetricsCorrelatorReducer extends Reducer<Text,LongArrayWritable,Tex
     /**
      * Utility method for finding the median in a sorted set.
      * 
+     * @param s
+     *            the set to search
+     * @param <T>
+     *            type of the set
      * @return the median value in the set or null if set is empty
      */
     public static <T> T findMedian(SortedSet<T> s) {
@@ -132,7 +136,8 @@ public class MetricsCorrelatorReducer extends Reducer<Text,LongArrayWritable,Tex
      * Utility method for getting the average of longs. Hopes to avoid overflow of adding longs together by doing the window method.
      * 
      * @param data
-     * @return
+     *            collection of the longs to average
+     * @return the average of all long values
      */
     public long getAverage(Collection<LongWritable> data) {
         int size = data.size();

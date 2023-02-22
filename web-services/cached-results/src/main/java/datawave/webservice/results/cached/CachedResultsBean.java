@@ -203,6 +203,7 @@ public class CachedResultsBean {
     protected static final String BASE_COLUMNS = StringUtils.join(CacheableQueryRow.getFixedColumnSet(), ",");
     
     @Inject
+    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
     
     // reference "datawave/query/CachedResults.xml"

@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.handler.edge.evaluation;
 
 import com.google.common.collect.Multimap;
+import datawave.attribute.EventFieldValueTuple;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper;
@@ -34,6 +35,7 @@ public class EdgePreconditionJexlContext extends MultimapContext {
      * This constructor creates a context based on a single list of edge definitions
      * 
      * @param edges
+     *            the edge definitions
      */
     public EdgePreconditionJexlContext(List<EdgeDefinition> edges) {
         super();
@@ -44,6 +46,7 @@ public class EdgePreconditionJexlContext extends MultimapContext {
      * This constructor creates a context from a Map of edge definitions by datatype
      * 
      * @param edgesByDataType
+     *            a map of edge definitions
      */
     public EdgePreconditionJexlContext(Map<String,EdgeDefinitionConfigurationHelper> edgesByDataType) {
         super();
@@ -108,17 +111,20 @@ public class EdgePreconditionJexlContext extends MultimapContext {
      */
     public void setFilteredContextForNormalizedContentInterface(Multimap<String,NormalizedContentInterface> nciEvent) {
         clearContext();
+        
         for (String filterFieldKey : filterFieldKeys) {
             Collection<NormalizedContentInterface> nciCollection = nciEvent.get(filterFieldKey);
             
             if (null != nciCollection) {
                 for (NormalizedContentInterface nci : nciCollection) {
+                    EventFieldValueTuple tuple = new EventFieldValueTuple();
                     
                     if (log.isTraceEnabled()) {
                         log.trace("Adding: " + filterFieldKey + "." + nci.getEventFieldValue() + " to context.");
                     }
-                    
-                    this.set(normalizeTerm(filterFieldKey), nci.getEventFieldValue());
+                    tuple.setFieldName(nci.getEventFieldName() == null ? nci.getIndexedFieldName() : nci.getEventFieldName());
+                    tuple.setValue(nci.getEventFieldValue());
+                    this.set(normalizeTerm(filterFieldKey), tuple);
                 }
             }
         }
