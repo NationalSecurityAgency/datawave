@@ -977,6 +977,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         // Set the ReturnType for Documents coming out of the iterator stack
         config.setReturnType(DocumentSerialization.getReturnType(settings));
         
+        // this needs to be configured first in order for FieldMappingTransform to work properly for profiles
+        if (null != selectedProfile) {
+            selectedProfile.configure(this);
+            selectedProfile.configure(config);
+            selectedProfile.configure(planner);
+        }
+        
         QueryLogicTransformer transformer = getTransformer(settings);
         if (transformer instanceof WritesQueryMetrics) {
             String logTimingDetailsStr = settings.findParameter(QueryOptions.LOG_TIMING_DETAILS).getParameterValue().trim();
@@ -1000,12 +1007,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         
         stopwatch.stop();
-        
-        if (null != selectedProfile) {
-            selectedProfile.configure(this);
-            selectedProfile.configure(config);
-            selectedProfile.configure(planner);
-        }
     }
     
     void configureDocumentAggregation(Query settings) {
