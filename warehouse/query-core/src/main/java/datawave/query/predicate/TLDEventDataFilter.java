@@ -477,8 +477,13 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         
         for (int i = lastHit + 1; i < sortedWhitelist.size(); i++) {
             String nextField = sortedWhitelist.get(i);
-            // is the nextField after the current field?
-            if (fieldName.compareTo(nextField) < 0) {
+            
+            if (fieldName.compareTo(nextField) == 0) {
+                // do not generate a seek range if the iterator is still within
+                // a query field
+                return null;
+            } else if (fieldName.compareTo(nextField) < 0) {
+                // is the nextField after the current field?
                 // seek to this field
                 Key startKey = new Key(current.getRow(), current.getColumnFamily(), new Text(nextField + Constants.NULL_BYTE_STRING));
                 range = new Range(startKey, true, endKey, endKeyInclusive);
