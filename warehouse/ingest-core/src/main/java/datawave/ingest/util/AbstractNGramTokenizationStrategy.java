@@ -54,7 +54,7 @@ public abstract class AbstractNGramTokenizationStrategy {
     /**
      * Gets the BloomFilter, if any, specified at construction time
      * 
-     * @return
+     * @return the bloom filter
      */
     public BloomFilter<String> getFilter() {
         return this.filter;
@@ -66,6 +66,8 @@ public abstract class AbstractNGramTokenizationStrategy {
      * @param tokenizer
      *            The tokenizer responsible for generating the next available n-gram
      * @return the next n-gram in the stream, or null if no n-gram was generated
+     * @throws TokenizationException
+     *             for issues with tokenization
      */
     protected String increment(final NGramTokenizer tokenizer) throws TokenizationException {
         final AbstractNGramTokenizationStrategy source = this.getSourceStrategy();
@@ -132,6 +134,7 @@ public abstract class AbstractNGramTokenizationStrategy {
      * @return The number of tokenized n-grams, or a negative integer indicating that tokenization did not occur
      * 
      * @throws TokenizationException
+     *             for issues with tokenization
      */
     public int tokenize(final NormalizedContentInterface content, int maxNGramLength) throws TokenizationException {
         final AbstractNGramTokenizationStrategy source = this.getSourceStrategy();
@@ -153,6 +156,8 @@ public abstract class AbstractNGramTokenizationStrategy {
      * @param content
      *            A normalized field name and value
      * @return true, if the n-gram was applied to the strategy's BloomFilter
+     * @throws TokenizationException
+     *             for issues with tokenization
      */
     protected boolean updateFilter(final String ngram, final NormalizedContentInterface content) throws TokenizationException {
         final AbstractNGramTokenizationStrategy source = this.getSourceStrategy();
@@ -196,6 +201,9 @@ public abstract class AbstractNGramTokenizationStrategy {
         
         /**
          * Sets the number of n-grams tokenized prior to the exception being thrown
+         * 
+         * @param ngramCount
+         *            number of n-grams to set
          */
         protected void setNGramCount(int ngramCount) {
             this.ngramCount = ngramCount;

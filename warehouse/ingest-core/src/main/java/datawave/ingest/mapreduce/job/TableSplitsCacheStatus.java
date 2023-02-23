@@ -16,7 +16,10 @@ public class TableSplitsCacheStatus {
     /**
      * 
      * @param conf
-     * @return
+     *            the configuration
+     * @return if the cache is valid
+     * @throws IOException
+     *             for issues with read or write
      */
     public static boolean isCacheValid(Configuration conf) throws IOException {
         Path splitsPath = TableSplitsCache.getSplitsPath(conf);

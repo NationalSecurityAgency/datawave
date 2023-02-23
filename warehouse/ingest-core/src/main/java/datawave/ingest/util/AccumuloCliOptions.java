@@ -31,7 +31,7 @@ public class AccumuloCliOptions {
      * 
      * @param cl
      *            CommandLine containing accumulo Options
-     * @return
+     * @return if commandline has the options
      */
     public boolean hasRequiredOptions(CommandLine cl) {
         return cl.hasOption("u") && cl.hasOption("p") && cl.hasOption("i") && cl.hasOption("zk");
