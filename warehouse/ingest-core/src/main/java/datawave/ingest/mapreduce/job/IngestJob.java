@@ -1,11 +1,13 @@
 package datawave.ingest.mapreduce.job;
 
 import datawave.ingest.config.TableConfigCache;
+import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
 import datawave.ingest.mapreduce.EventMapper;
+import datawave.ingest.mapreduce.handler.JobSetupHandler;
 import datawave.ingest.mapreduce.handler.shard.NumShards;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
@@ -324,6 +326,9 @@ public class IngestJob implements Tool {
         // Job copies the configuration, so any changes made after this point don't get captured in the job.
         // Use the job's configuration from this point.
         conf = job.getConfiguration();
+        
+        setupHandlers(conf);
+        
         if (!useMapOnly || !outputMutations) {
             // Calculate the sampled splits, splits file, and set up the partitioner, but not if only doing only a map phase and outputting mutations
             // if not outputting mutations and only doing a map phase, we still need to go through this logic as the MultiRFileOutputFormatter
@@ -529,6 +534,22 @@ public class IngestJob implements Tool {
         }
         
         return 0;
+    }
+    
+    private void setupHandlers(Configuration conf) {
+        for (Type t : TypeRegistry.getTypes()) {
+            for (String handler : t.getDefaultDataTypeHandlers()) {
+                try {
+                    Object o = Class.forName(handler).newInstance();
+                    if (o instanceof JobSetupHandler) {
+                        JobSetupHandler setupHandler = (JobSetupHandler) o;
+                        setupHandler.setup(conf);
+                    }
+                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                    log.warn("Could not setup handler: " + handler, e);
+                }
+            }
+        }
     }
     
     protected Configuration interpolateEnvironment(Configuration conf) {
