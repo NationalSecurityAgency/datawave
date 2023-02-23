@@ -289,6 +289,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.isLongRunningQuery()).andReturn(false);
         EasyMock.expect(logic.getResultLimit(q.getDnList())).andReturn(-1L);
         EasyMock.expect(logic.getMaxResults()).andReturn(-1L);
+        EasyMock.expect(logic.getUserOperations()).andReturn(null);
         PowerMock.replayAll();
         
         bean.defineQuery(queryLogicName, p);
@@ -694,6 +695,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.isLongRunningQuery()).andReturn(false);
         EasyMock.expect(logic.getResultLimit(eq(q.getDnList()))).andReturn(-1L).anyTimes();
         EasyMock.expect(logic.getMaxResults()).andReturn(-1L).anyTimes();
+        EasyMock.expect(logic.getUserOperations()).andReturn(null);
         
         EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString(), principal)).andReturn(false).anyTimes();
         connectionFactory.returnConnection(EasyMock.isA(Connector.class));

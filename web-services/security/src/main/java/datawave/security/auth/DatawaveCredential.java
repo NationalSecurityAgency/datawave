@@ -1,14 +1,16 @@
 package datawave.security.auth;
 
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils;
+import io.undertow.security.idm.Credential;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import datawave.security.authorization.SubjectIssuerDNPair;
-import io.undertow.security.idm.Credential;
-import datawave.security.util.DnUtils;
-import org.apache.commons.lang3.builder.CompareToBuilder;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A {@link Credential} for use with Datawave authentication. The main reason for using this credential is to ensure that the JAAS cache inside of Wildfly works
@@ -78,6 +80,12 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
         }
         entities.add(SubjectIssuerDNPair.of(subjectDN, issuerDN));
         userName = DnUtils.buildNormalizedProxyDN(subjectDN, issuerDN, proxiedSubjects, proxiedIssuers);
+    }
+    
+    public void pruneEntities(Set<String> entitiesToPrune) {
+        Set<String> normalizedEntities = entitiesToPrune.stream().map(e -> e.toLowerCase()).collect(Collectors.toSet());
+        entities = entities.stream().filter(e -> !normalizedEntities.contains(e.subjectDN().toLowerCase())).collect(Collectors.toList());
+        userName = DnUtils.buildNormalizedProxyDN(entities);
     }
     
     public String getUserName() {
