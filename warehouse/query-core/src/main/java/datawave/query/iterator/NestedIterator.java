@@ -57,6 +57,9 @@ public interface NestedIterator<T> extends Iterator<T> {
     
     /**
      * Provides configuration information to the Iterator before initializing and seeking. Default does nothing.
+     * 
+     * @param env
+     *            env
      */
     default void setEnvironment(IteratorEnvironment env) {}
     

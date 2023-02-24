@@ -379,6 +379,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
      *
      * @return True if and only if we have a top key that is a field index key in the parent range.
      * @throws IOException
+     *             for issues with read/write
      */
     protected boolean advanceToFieldIndex() throws IOException {
         log.trace("advanceToFieldIndex");
@@ -418,6 +419,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
      *
      * @return true if and only if the source has top AND it is in the parent range.
      * @throws IOException
+     *             for issues with read/write
      */
     protected boolean advanceToNextRow() throws IOException {
         log.trace("advanceToNextRow");

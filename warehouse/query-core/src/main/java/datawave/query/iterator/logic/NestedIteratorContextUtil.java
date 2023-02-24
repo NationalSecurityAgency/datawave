@@ -165,6 +165,7 @@ public class NestedIteratorContextUtil {
      *            type of the iterator
      * @param union
      *            if set to true apply the context as a union with the contextRequiredIterators, otherwise apply as an intersection
+     * @return the modified context
      */
     private static <T> T applyContext(T context, List<NestedIterator<T>> contextRequiredIterators, TreeMultimap<T,NestedIterator<T>> headMap,
                     TreeMultimap<T,NestedIterator<T>> nullHeadMap, Util.Transformer<T> transformer, boolean union) {

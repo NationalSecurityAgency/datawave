@@ -396,6 +396,8 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      *
      * @param node
      *            the node to consider
+     * @param visited
+     *            mapping of visited nodes
      * @return true - if a regex has to be expanded, false - if a regex doesn't have to be expanded
      */
     private boolean descendIntoSubtree(JexlNode node, Map<JexlNode,Boolean> visited) {
@@ -426,7 +428,8 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     
     /**
      * If we have a literal equality on an indexed field, then this can be used to defeat a wild card expansion.
-     *
+     * 
+     * @param node
      * @return `true` if we should expand a regular expression node given this subtree, `false` if we should not expand a regular expression node given this
      *         subtree
      */
@@ -437,7 +440,14 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     /**
      * The cases for OR and AND in `descendIntoSubtree` were almost equal, save for the initial value for expand and the operator used to join the results of
      * each child. I made this little macro doohickey to allow the differences between the two processes to be abstracted away.
-     *
+     * 
+     * @param node
+     *            a jexl node
+     * @param join
+     *            the join
+     * @param visited
+     *            visited mappings
+     * @return boolean
      */
     private boolean computeExpansionForSubtree(JexlNode node, Join join, Map<JexlNode,Boolean> visited) {
         boolean expand = Join.AND.equals(join);
@@ -583,6 +593,10 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      * @param node
      *            the node to consider
      * @return whether the node is expandable
+     * @throws TableNotFoundException
+     *             if table is not found
+     * @throws datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException
+     *             for parse exceptions
      */
     public boolean isExpandable(ASTERNode node) throws TableNotFoundException, JavaRegexAnalyzer.JavaRegexParseException {
         // if full table scan enabled, then we can expand anything
@@ -613,6 +627,8 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      * @param node
      *            the node to consider
      * @return whether the node must be expanded
+     * @throws TableNotFoundException
+     *             if table is not found
      */
     public boolean mustExpand(ASTERNode node) throws TableNotFoundException {
         String fieldName = JexlASTHelper.getIdentifier(node);

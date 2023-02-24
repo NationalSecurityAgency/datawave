@@ -113,9 +113,6 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
         return currentNest.document();
     }
     
-    /**
-     * Return the nested query.
-     */
     public NestedQuery<T> getNestedQuery() {
         return currentQuery;
     }

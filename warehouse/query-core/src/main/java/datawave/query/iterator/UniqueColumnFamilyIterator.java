@@ -61,6 +61,8 @@ public class UniqueColumnFamilyIterator extends org.apache.accumulo.core.iterato
      *            the scan range
      * @param inclusive
      *            whether the range is considered inclusive
+     * @throws IOException
+     *             for issues with read/write
      */
     public static void moveTo(Key key, SortedKeyValueIterator<Key,Value> iterator, Range scanRange, Collection<ByteSequence> cfs, boolean inclusive)
                     throws IOException {

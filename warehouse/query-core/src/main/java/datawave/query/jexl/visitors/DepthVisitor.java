@@ -45,6 +45,7 @@ public class DepthVisitor extends BaseVisitor {
      *            the max depth
      * @param root
      *            the root node
+     * @return the query depth
      */
     public static int getDepth(JexlNode root, int maxDepth) {
         DepthVisitor vis = new DepthVisitor(maxDepth);

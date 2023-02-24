@@ -233,6 +233,8 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
      *             for execution exceptions
      * @throws InterruptedException
      *             for interrupted exceptions
+     * @throws TimeoutException
+     *             for timeout exceptions
      */
     private Entry<Key,Document> poll(long waitMs) throws InterruptedException, ExecutionException, TimeoutException {
         // get the next evaluated result
