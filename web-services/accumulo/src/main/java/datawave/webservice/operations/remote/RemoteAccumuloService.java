@@ -90,42 +90,6 @@ public abstract class RemoteAccumuloService extends RemoteHttpService {
         super.init();
     }
     
-    protected <T> T executeGetMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        try {
-            return executeGetMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
-        } catch (IOException e) {
-            failureCounter.inc();
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-    
-    protected <T> T executePostMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        try {
-            return executePostMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
-        } catch (IOException e) {
-            failureCounter.inc();
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-    
-    protected <T> T executePutMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPut> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        try {
-            return executePutMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
-        } catch (IOException e) {
-            failureCounter.inc();
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-    
     protected String getBearer() {
         return "Bearer " + jwtTokenHandler.createTokenFromUsers(callerPrincipal.getName(), callerPrincipal.getProxiedUsers());
     }
@@ -227,5 +191,10 @@ public abstract class RemoteAccumuloService extends RemoteHttpService {
     @Override
     protected String serviceURI() {
         return serviceURI;
+    }
+    
+    @Override
+    protected Counter failureCounter() {
+        return failureCounter;
     }
 }
