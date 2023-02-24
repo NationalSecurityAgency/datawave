@@ -1,6 +1,7 @@
 package datawave.webservice.query.logic.composite;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -11,13 +12,18 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.google.common.collect.HashMultimap;
 import datawave.marking.MarkingFunctions;
+import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
+import datawave.user.AuthorizationsListBase;
+import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.ResultsPage;
@@ -33,28 +39,39 @@ import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.result.BaseQueryResponse;
 
+import datawave.webservice.result.GenericResponse;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.core.security.VisibilityEvaluator;
+import org.apache.accumulo.core.security.VisibilityParseException;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashMap;
+
 public class CompositeQueryLogicTest {
     
-    private final Authorizations auths = new Authorizations("AUTHS");
+    private final Authorizations auths = new Authorizations("auth1", "auth2");
     
-    private Key key1 = new Key("one");
-    private Key key2 = new Key("two");
-    private Key key3 = new Key("three");
-    private Key key4 = new Key("four");
-    private Key key5 = new Key("five");
-    private Key key6 = new Key("six");
-    private Key key7 = new Key("seven");
-    private Key key8 = new Key("eight");
-    private static final Key keyFailure = new Key("failure");
+    private final DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "CN=ca, OU=acme"), UserType.USER,
+                    Arrays.asList("auth1", "auth2"), Collections.singleton("TESTROLE"), HashMultimap.create(), 0L);
+    private final DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
+    
+    private Key key1 = new Key("one", "", "", "auth1");
+    private Key key2 = new Key("two", "", "", "auth1");
+    private Key key3 = new Key("three", "", "", "auth2");
+    private Key key4 = new Key("four", "", "", "auth2");
+    private Key key5 = new Key("five", "", "", "auth2");
+    private Key key6 = new Key("six", "", "", "auth2");
+    private Key key7 = new Key("seven", "", "", "auth2");
+    private Key key8 = new Key("eight", "", "", "auth1");
+    private static final Key keyFailure = new Key("failure", "", "", "auth1");
+    private static final Key keySpecial = new Key("special", "", "", "special");
     
     private Value value1 = new Value(key1.getRowData().getBackingArray());
     private Value value2 = new Value(key2.getRowData().getBackingArray());
@@ -64,6 +81,8 @@ public class CompositeQueryLogicTest {
     private Value value6 = new Value(key6.getRowData().getBackingArray());
     private Value value7 = new Value(key7.getRowData().getBackingArray());
     private Value value8 = new Value(key8.getRowData().getBackingArray());
+    private Value valueFailure = new Value(keyFailure.getRowData().getBackingArray());
+    private Value valueSpecial = new Value(keySpecial.getRowData().getBackingArray());
     
     public static class TestQueryConfiguration extends GenericQueryConfiguration {
         
@@ -216,9 +235,28 @@ public class CompositeQueryLogicTest {
         
         private Map<Key,Value> data = new ConcurrentHashMap<>();
         
+        private final UserOperations userOperations;
+        private Set<Authorizations> auths;
+        
+        public TestQueryLogic() {
+            this(null);
+        }
+        
+        public TestQueryLogic(UserOperations userOperations) {
+            this.userOperations = userOperations;
+        }
+        
+        @Override
+        public UserOperations getUserOperations() {
+            return userOperations;
+        }
+        
         @Override
         public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
-            return new TestQueryConfiguration();
+            this.auths = runtimeQueryAuthorizations;
+            TestQueryConfiguration config = new TestQueryConfiguration();
+            config.setAuthorizations(runtimeQueryAuthorizations);
+            return config;
         }
         
         @Override
@@ -237,7 +275,17 @@ public class CompositeQueryLogicTest {
         
         @Override
         public Iterator<Entry<Key,Value>> iterator() {
-            return data.entrySet().iterator();
+            return data.entrySet().stream().filter(e -> checkAuths(e.getKey().getColumnVisibilityParsed())).iterator();
+        }
+        
+        private boolean checkAuths(ColumnVisibility vis) {
+            return auths.stream().allMatch(a -> {
+                try {
+                    return new VisibilityEvaluator(a).evaluate(vis);
+                } catch (VisibilityParseException e) {
+                    throw new RuntimeException(e);
+                }
+            });
         }
         
         @Override
@@ -276,10 +324,32 @@ public class CompositeQueryLogicTest {
         
         @Override
         public Set<String> getExampleQueries() {
-            // TODO Auto-generated method stub
             return null;
         }
         
+    }
+    
+    public static class TestUserOperations implements UserOperations {
+        
+        @Override
+        public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
+            DatawavePrincipal p = (DatawavePrincipal) callerObject;
+            DefaultAuthorizationsList authList = new DefaultAuthorizationsList();
+            DatawaveUser primaryUser = p.getPrimaryUser();
+            Set<String> auths = Collections.singleton("special");
+            authList.setUserAuths(primaryUser.getDn().subjectDN(), p.getPrimaryUser().getDn().issuerDN(), auths);
+            for (DatawaveUser u : p.getProxiedUsers()) {
+                if (u != primaryUser) {
+                    authList.addAuths(u.getDn().subjectDN(), u.getDn().issuerDN(), auths);
+                }
+            }
+            return authList;
+        }
+        
+        @Override
+        public GenericResponse<String> flushCachedCredentials(Object callerObject) {
+            return new GenericResponse<>();
+        }
     }
     
     public static class TestQueryLogic2 extends TestQueryLogic {
@@ -372,9 +442,9 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testClone() throws Exception {
-        List<QueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic());
-        logics.add(new TestQueryLogic());
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic());
+        logics.put("TestQueryLogic2", new TestQueryLogic());
         
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
@@ -387,6 +457,7 @@ public class CompositeQueryLogicTest {
         c.setQueryLogics(logics);
         c = (CompositeQueryLogic) c.clone();
         
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         c.getTransformer(settings);
         
@@ -396,9 +467,9 @@ public class CompositeQueryLogicTest {
     @Test
     public void testInitializeOKWithSameQueryLogicAndTableNames() throws Exception {
         
-        List<QueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic());
-        logics.add(new TestQueryLogic());
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic());
+        logics.put("TestQueryLogic2", new TestQueryLogic());
         
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
@@ -410,6 +481,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         c.getTransformer(settings);
         
@@ -419,14 +491,14 @@ public class CompositeQueryLogicTest {
     @Test
     public void testInitializeWithSameQueryLogicAndDifferentTableNames() throws Exception {
         
-        List<QueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic() {
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic() {
             @Override
             public String getTableName() {
                 return "table1";
             }
         });
-        logics.add(new TestQueryLogic() {
+        logics.put("TestQueryLogic2", new TestQueryLogic() {
             @Override
             public String getTableName() {
                 return "table2";
@@ -443,6 +515,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         
         c.getTransformer(settings);
@@ -453,9 +526,9 @@ public class CompositeQueryLogicTest {
     @Test
     public void testInitialize() throws Exception {
         
-        List<QueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic());
-        logics.add(new TestQueryLogic2());
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic());
+        logics.put("TestQueryLogic2", new TestQueryLogic2());
         
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
@@ -467,6 +540,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         
         c.getTransformer(settings);
@@ -477,9 +551,9 @@ public class CompositeQueryLogicTest {
     @Test
     public void testInitializeOKWithFailure() throws Exception {
         
-        List<QueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic());
-        logics.add(new TestQueryLogic2() {
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic());
+        logics.put("TestQueryLogic2", new TestQueryLogic2() {
             @Override
             public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
                 throw new Exception("initialize failed");
@@ -496,6 +570,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         
         Assert.assertEquals(1, c.getQueryLogics().size());
@@ -504,9 +579,9 @@ public class CompositeQueryLogicTest {
     @Test(expected = CompositeLogicException.class)
     public void testInitializeNotOKWithFailure() throws Exception {
         
-        List<QueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic());
-        logics.add(new TestQueryLogic2() {
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic());
+        logics.put("TestQueryLogic2", new TestQueryLogic2() {
             @Override
             public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
                 throw new Exception("initialize failed");
@@ -524,21 +599,22 @@ public class CompositeQueryLogicTest {
         c.setAllMustInitialize(true);
         c.setQueryLogics(logics);
         
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
     }
     
     @Test(expected = CompositeLogicException.class)
     public void testInitializeAllFail() throws Exception {
         
-        List<QueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic() {
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic() {
             @Override
             public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
                 throw new Exception("initialize failed");
             }
         });
         
-        logics.add(new TestQueryLogic2() {
+        logics.put("TestQueryLogic2", new TestQueryLogic2() {
             @Override
             public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
                 throw new Exception("initialize failed");
@@ -555,21 +631,22 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
     }
     
     @Test(expected = CompositeLogicException.class)
     public void testInitializeAllFail2() throws Exception {
         
-        List<QueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic() {
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic() {
             @Override
             public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
                 throw new Exception("initialize failed");
             }
         });
         
-        logics.add(new TestQueryLogic2() {
+        logics.put("TestQueryLogic2", new TestQueryLogic2() {
             @Override
             public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
                 throw new Exception("initialize failed");
@@ -587,6 +664,7 @@ public class CompositeQueryLogicTest {
         c.setAllMustInitialize(true);
         c.setQueryLogics(logics);
         
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         
         c.getTransformer(settings);
@@ -595,9 +673,9 @@ public class CompositeQueryLogicTest {
     @Test(expected = RuntimeException.class)
     public void testInitializeWithDifferentResponseTypes() throws Exception {
         
-        List<QueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic());
-        logics.add(new DifferentTestQueryLogic());
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic());
+        logics.put("TestQueryLogic2", new DifferentTestQueryLogic());
         
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
@@ -609,6 +687,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         
         c.getTransformer(settings);
@@ -617,9 +696,9 @@ public class CompositeQueryLogicTest {
     @Test
     public void testCloseWithNoSetup() throws Exception {
         
-        List<QueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic());
-        logics.add(new TestQueryLogic2());
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic());
+        logics.put("TestQueryLogic2", new TestQueryLogic2());
         
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
@@ -631,6 +710,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         
         c.getTransformer(settings);
@@ -640,11 +720,11 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogic() throws Exception {
-        List<QueryLogic<?>> logics = new ArrayList<>();
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         logic1.getData().put(key1, value1);
         logic1.getData().put(key2, value2);
@@ -670,6 +750,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator((Query) settings);
@@ -703,11 +784,11 @@ public class CompositeQueryLogicTest {
     
     @Test(expected = CompositeLogicException.class)
     public void testQueryLogicWithNextFailure() throws Exception {
-        List<QueryLogic<?>> logics = new ArrayList<>();
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         logic1.getData().put(key1, value1);
         logic1.getData().put(key2, value2);
@@ -733,6 +814,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator((Query) settings);
@@ -753,11 +835,11 @@ public class CompositeQueryLogicTest {
     @Test
     // testQueryLogic with max.results.override is set
     public void testQueryLogicWithMaxResultsOverride() throws Exception {
-        List<QueryLogic<?>> logics = new ArrayList<>();
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         logic1.getData().put(key1, value1);
         logic1.getData().put(key2, value2);
@@ -783,6 +865,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator((Query) settings);
@@ -816,11 +899,11 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoDataLogic1() throws Exception {
-        List<QueryLogic<?>> logics = new ArrayList<>();
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         logic2.getData().put(key1, value1);
         logic2.getData().put(key2, value2);
@@ -846,6 +929,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator((Query) settings);
@@ -879,11 +963,11 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoDataLogic2() throws Exception {
-        List<QueryLogic<?>> logics = new ArrayList<>();
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         logic1.getData().put(key1, value1);
         logic1.getData().put(key2, value2);
@@ -909,6 +993,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator((Query) settings);
@@ -942,11 +1027,11 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoData() throws Exception {
-        List<QueryLogic<?>> logics = new ArrayList<>();
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
@@ -960,6 +1045,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
+        c.setPrincipal(principal);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator((Query) settings);
@@ -982,15 +1068,15 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCanRunQueryLogic() throws Exception {
-        List<QueryLogic<?>> logics = new ArrayList<>();
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
         logic1.setRoleManager(new DatawaveRoleManager(roles));
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logic2.setRoleManager(new EasyRoleManager());
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
@@ -1005,7 +1091,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCanRunQueryLogic2() throws Exception {
-        List<QueryLogic<?>> logics = new ArrayList<>();
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
@@ -1014,8 +1100,8 @@ public class CompositeQueryLogicTest {
         HashSet<String> roles2 = new HashSet<>();
         roles2.add("NONTESTROLE");
         logic2.setRoleManager(new DatawaveRoleManager(roles2));
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
@@ -1029,8 +1115,8 @@ public class CompositeQueryLogicTest {
     }
     
     @Test
-    public void testCannotRunQueryLogic2() {
-        List<QueryLogic<?>> logics = new ArrayList<>();
+    public void testCannotRunQueryLogic2() throws Exception {
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("NONTESTROLE");
@@ -1039,8 +1125,8 @@ public class CompositeQueryLogicTest {
         HashSet<String> roles2 = new HashSet<>();
         roles2.add("NONTESTROLE");
         logic2.setRoleManager(new DatawaveRoleManager(roles2));
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
@@ -1052,6 +1138,74 @@ public class CompositeQueryLogicTest {
         Assert.assertFalse(c.canRunQuery(p));
         Assert.assertEquals(0, c.getQueryLogics().size());
         
+    }
+    
+    @Test
+    public void testAuthorizationsUpdate() throws Exception {
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        TestQueryLogic logic1 = new TestQueryLogic(new TestUserOperations());
+        TestQueryLogic2 logic2 = new TestQueryLogic2();
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
+        
+        // logic 1 user opts only has the special auth returned by the TestUserOperations()
+        logic1.getData().put(keySpecial, valueSpecial);
+        // hence these 2 keys will not be returned
+        logic1.getData().put(key1, value1);
+        logic1.getData().put(key2, value2);
+        
+        // logic 1 should return all of these
+        logic2.getData().put(key3, value3);
+        logic2.getData().put(key4, value4);
+        logic2.getData().put(key5, value5);
+        logic2.getData().put(key6, value6);
+        logic2.getData().put(key7, value7);
+        logic2.getData().put(key8, value8);
+        
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+        
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        // max.results.override is set to -1 when it is not passed in as it is an optional paramter
+        logic1.setMaxResults(-1);
+        logic2.setMaxResults(-1);
+        /**
+         * RunningQuery.setupConnection()
+         */
+        c.setQueryLogics(logics);
+        c.setPrincipal(principal);
+        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        c.setupQuery(null);
+        TransformIterator iter = c.getTransformIterator((Query) settings);
+        
+        /**
+         * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
+         */
+        List<Object> results = new ArrayList<>();
+        while (iter.hasNext()) {
+            Object o = iter.next();
+            if (null == o)
+                break;
+            Assert.assertTrue(o instanceof TestQueryResponse);
+            results.add((TestQueryResponse) o);
+        }
+        Assert.assertEquals(7, results.size());
+        ResultsPage page = new ResultsPage(results, Status.COMPLETE);
+        
+        /**
+         * QueryExecutorBean.next() - transform list of objects into JAXB response
+         */
+        TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
+        Assert.assertEquals(7, response.getResponses().size());
+        for (TestQueryResponse r : response.getResponses()) {
+            Assert.assertNotNull(r);
+        }
+        
+        c.close();
     }
     
 }

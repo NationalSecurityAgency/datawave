@@ -75,7 +75,7 @@ public class ClientLoginExampleBean {
             
             // Call secured EJBs
             try {
-                AuthorizationsListBase auths = userOps.listEffectiveAuthorizations();
+                AuthorizationsListBase auths = userOps.listEffectiveAuthorizations(false);
                 System.err.println("***** Auths for user " + dn + " are: " + auths);
             } finally {
                 // Logout, which will restore previous credentials, if any.
