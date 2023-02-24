@@ -9,6 +9,7 @@ import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.data.type.NoOpType;
 import datawave.query.attributes.AttributeFactory;
+import datawave.query.data.parsers.FieldIndexKey;
 import datawave.query.iterator.EventFieldIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -70,7 +71,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.JexlArithmetic;
-import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.Script;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
@@ -99,7 +99,6 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
@@ -1326,7 +1325,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     public static class FunctionFilter implements Filter {
-        private Script script;
+        
+        private final Script script;
+        private final DatawaveJexlContext context = new DatawaveJexlContext();
+        private final FieldIndexKey parser = new FieldIndexKey();
         
         public FunctionFilter(List<ASTFunctionNode> nodes) {
             ASTJexlScript script = new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT);
@@ -1351,19 +1353,14 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         
         @Override
         public boolean keep(Key k) {
-            // fieldname is after fi\0
-            String fieldName = k.getColumnFamily().toString().substring(3);
             
-            // fieldvalue is first portion of cq
-            String fieldValue = k.getColumnQualifier().toString();
-            // pull off datatype and uid
-            int index = fieldValue.lastIndexOf('\0');
-            index = fieldValue.lastIndexOf('\0', index - 1);
-            fieldValue = fieldValue.substring(0, index);
+            parser.parse(k);
             
-            // create a jexl context with this valud
-            JexlContext context = new DatawaveJexlContext();
-            context.set(fieldName, new ValueTuple(fieldName, fieldValue, fieldValue, null));
+            final String field = parser.getField();
+            final String value = parser.getValue();
+            
+            context.clear();
+            context.set(field, new ValueTuple(field, value, value, null));
             
             boolean matched = false;
             

@@ -5,6 +5,8 @@ import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.UserOperations;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
@@ -105,6 +107,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     public RunningQuery(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
                     String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, QueryMetricFactory metricFactory)
                     throws Exception {
+        this(queryMetrics, connection, priority, logic, settings, methodAuths, principal, timing, null, null, metricFactory);
+    }
+    
+    public RunningQuery(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
+                    String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, UserOperations userOperations,
+                    QueryMetricFactory metricFactory) throws Exception {
         super(metricFactory);
         if (logic != null && logic.getCollectQueryMetrics()) {
             this.queryMetrics = queryMetrics;
@@ -113,7 +121,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.logic = logic;
         this.connectionPriority = priority;
         this.settings = settings;
-        this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal);
+        // the query principal is our local principal unless the query logic has a different user operations
+        DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal : logic.getUserOperations().getRemoteUser(
+                        (DatawavePrincipal) principal);
+        // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
+        DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal : userOperations
+                        .getRemoteUser((DatawavePrincipal) principal);
+        this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
         this.timing = timing;
         this.executor = Executors.newSingleThreadExecutor();
         this.allowShortCircuitTimeouts = logic.isLongRunningQuery();

@@ -2,6 +2,7 @@ package datawave.webservice.mr.configuration;
 
 import datawave.mr.bulk.BulkInputFormat;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.UserOperations;
 import datawave.security.iterator.ConfigurableVisibilityFilter;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -112,6 +113,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
     private JSSESecurityDomain jsseSecurityDomain = null;
     private AccumuloConnectionFactory connectionFactory;
     private QueryLogicFactory queryFactory;
+    private UserOperations userOperations;
     private Persister persister;
     private QueryCache runningQueryCache = null;
     private String user;
@@ -334,7 +336,14 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             connector = connectionFactory.getConnection(logic.getConnectionPriority(), trackingMap);
             
             // Merge user auths with the auths that they use in the Query
-            Set<Authorizations> runtimeQueryAuthorizations = AuthorizationsUtil.getDowngradedAuthorizations(q.getQueryAuthorizations(), principal);
+            // the query principal is our local principal unless the query logic has a different user operations
+            DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal : logic.getUserOperations().getRemoteUser(
+                            (DatawavePrincipal) principal);
+            // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
+            DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal : userOperations
+                            .getRemoteUser((DatawavePrincipal) principal);
+            Set<Authorizations> runtimeQueryAuthorizations = AuthorizationsUtil.getDowngradedAuthorizations(q.getQueryAuthorizations(), overallPrincipal,
+                            queryPrincipal);
             
             // Initialize the logic so that the configuration contains all of the iterator options
             GenericQueryConfiguration queryConfig = logic.initialize(connector, q, runtimeQueryAuthorizations);
@@ -367,6 +376,10 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
     @Override
     public void setSecurityDomain(JSSESecurityDomain jsseSecurityDomain) {
         this.jsseSecurityDomain = jsseSecurityDomain;
+    }
+    
+    public void setUserOperations(UserOperations userOperations) {
+        this.userOperations = userOperations;
     }
     
     protected void exportSystemProperties(String jobId, Job job, FileSystem fs, Path classpath) {
