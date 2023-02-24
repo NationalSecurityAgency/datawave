@@ -12,7 +12,7 @@ import org.apache.accumulo.core.data.Key;
  * <li>{@link TermFrequencyKey}</li>
  * </ul>
  * <p>
- * Design Considerations & Constraints
+ * Design Considerations &amp; Constraints
  * <ul>
  * <li>Thread safety is not guaranteed</li>
  * <li>Invalid keys will throw an IllegalArgumentException</li>
