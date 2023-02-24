@@ -532,6 +532,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
      * 
      * @return true if we have a new key to return, false if the count is empty. This also resets current counters etc.
      * @throws IOException
+     *             for issues with read/write
      */
     private boolean wrapUpCurrent() throws IOException {
         if (log.isTraceEnabled()) {
@@ -615,6 +616,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
      * Basic method to find our topKey which matches our given FieldName,FieldValue.
      * 
      * @throws IOException
+     *             for issues with read/write
      */
     protected void findTop() throws IOException {
         resetCurrentMarkers();

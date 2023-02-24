@@ -21,7 +21,8 @@ public class FieldToFieldComparisonVisitor extends RebuildingVisitor {
      * force evaluation for field to field comparison
      *
      * @param root
-     * @return
+     *            the root node
+     * @return a script
      */
     public static ASTJexlScript forceEvaluationOnly(JexlNode root) {
         FieldToFieldComparisonVisitor vis = new FieldToFieldComparisonVisitor();
@@ -32,7 +33,8 @@ public class FieldToFieldComparisonVisitor extends RebuildingVisitor {
      * detect identifier on both sides of nodes and wrap it with evaluation-only reference
      *
      * @param node
-     * @return
+     *            a node
+     * @return a jexl node
      */
     private JexlNode evaluationOnlyForFieldToFieldComparison(JexlNode node) {
         int identifierNodes = 0;

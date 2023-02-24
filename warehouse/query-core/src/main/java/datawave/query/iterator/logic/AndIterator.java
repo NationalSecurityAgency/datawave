@@ -532,6 +532,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
      * This context will be used even if isContextRequired is false as an anchor point for highest/lowest during next calls
      * 
      * @param context
+     *            a context
      */
     @Override
     public void setContext(T context) {

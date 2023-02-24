@@ -81,7 +81,7 @@ public class ShardIndexQueryTableStaticMethods {
      *            the metadata helper
      * @param execService
      *            the executor service
-     * @returnan IndexLookup task
+     * @return an IndexLookup task
      * @throws TableNotFoundException
      *             if the table was not found
      */

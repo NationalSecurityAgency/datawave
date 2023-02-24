@@ -21,8 +21,15 @@ public class NestedIteratorContextUtil {
      * The headMap and nullHeadMap will have all entries removed correlating with with NestedIterators which should be moved based on context
      *
      * @param context
+     *            the context to be used to move the contextRequiredIterators
      * @param contextRequiredIterators
+     *            the iterators to intersect against that require context
      * @param headMap
+     *            the contextRequiredIterators head map
+     * @param nullHeadMap
+     *            the null head map
+     * @param <T>
+     *            type of the iterator
      * @return a non-null Set of initialized NestedIterators which should be moved
      */
     private static <T> Set<NestedIterator<T>> getIteratorsToMove(T context, List<NestedIterator<T>> contextRequiredIterators,
@@ -63,10 +70,15 @@ public class NestedIteratorContextUtil {
      * response indicates that the iterator had no key's left when moving to context
      * 
      * @param context
+     *            the context to be used
      * @param sourcesToMove
+     *            the sources to move
      * @param headMap
+     *            the sourcesToMove head map
      * @param transformer
+     *            transformer to apply to all results
      * @param <T>
+     *            type of the set
      * @return non-null Set of null response iterators
      */
     private static <T> Set<NestedIterator<T>> processMoves(T context, Set<NestedIterator<T>> sourcesToMove, TreeMultimap<T,NestedIterator<T>> headMap,
@@ -102,8 +114,9 @@ public class NestedIteratorContextUtil {
      *            need to always be moved
      * @param transformer
      *            transformer to apply to all results from the contextRequiredIterators
-     *
-     * @return
+     * @param <T>
+     *            type of the iterator
+     * @return the highest T of the intersection
      */
     public static <T> T intersect(T context, List<NestedIterator<T>> contextRequiredIterators, TreeMultimap<T,NestedIterator<T>> headMap,
                     TreeMultimap<T,NestedIterator<T>> nullHeadMap, Util.Transformer<T> transformer) {
@@ -124,8 +137,9 @@ public class NestedIteratorContextUtil {
      *            always be moved
      * @param transformer
      *            transformer to apply to all results from the contextRequiredIterators
-     * 
-     * @return
+     * @param <T>
+     *            type of the iterator
+     * @return lowest T of the intersection
      */
     public static <T> T union(T context, List<NestedIterator<T>> contextRequiredIterators, TreeMultimap<T,NestedIterator<T>> headMap,
                     TreeMultimap<T,NestedIterator<T>> nullHeadMap, Util.Transformer<T> transformer) {
@@ -147,6 +161,8 @@ public class NestedIteratorContextUtil {
      *            moved
      * @param transformer
      *            transformer to apply to all results from the contextRequiredIterators
+     * @param <T>
+     *            type of the iterator
      * @param union
      *            if set to true apply the context as a union with the contextRequiredIterators, otherwise apply as an intersection
      */
