@@ -80,7 +80,7 @@
         <version.lucene>7.5.0</version.lucene>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.microservice.accumulo-api>2.1.0</version.microservice.accumulo-api>
-        <version.microservice.accumulo-utils>2.1.0</version.microservice.accumulo-utils>
+        <version.microservice.accumulo-utils>2.1.1</version.microservice.accumulo-utils>
         <version.microservice.audit-api>2.1.0</version.microservice.audit-api>
         <version.microservice.authorization-api>2.1.0</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>2.1.0</version.microservice.base-rest-responses>

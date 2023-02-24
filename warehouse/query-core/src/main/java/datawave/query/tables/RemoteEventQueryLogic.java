@@ -4,6 +4,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.config.RemoteQueryConfiguration;
 import datawave.query.tables.remote.RemoteQueryLogic;
 import datawave.query.transformer.EventQueryTransformerSupport;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.common.remote.RemoteQueryService;
@@ -40,6 +41,8 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     private RemoteQueryConfiguration config;
     
     private RemoteQueryService remoteQueryService;
+    
+    private UserOperations userOperations;
     
     private QueryLogicTransformer transformerInstance = null;
     
@@ -255,4 +258,13 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
         
     }
     
+    @Override
+    public void setUserOperations(UserOperations userOperations) {
+        this.userOperations = userOperations;
+    }
+    
+    @Override
+    public UserOperations getUserOperations() {
+        return userOperations;
+    }
 }

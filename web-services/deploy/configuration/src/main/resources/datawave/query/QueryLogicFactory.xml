@@ -132,11 +132,25 @@
         <property name="responseObjectFactory" ref="ResponseObjectFactory" />
     </bean>
 
+    <!-- Here is an example of configuring a remote user operations service if needed for a remote event query -->
+    <bean id="MyRemoteUserOps" class="datawave.security.authorization.remote.RemoteUserOperationsImpl">
+        <property name="queryServiceScheme" value="https" />
+        <property name="queryServiceHost" value="localhost" />
+        <property name="queryServicePort" value="8443" />
+        <property name="queryServiceURI" value="/DataWave/Security/User/" />
+        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
+    </bean>
+
+    <!-- Configure the remote operation here for use by the local UserOperationsBean -->
+    <util:list id="RemoteUserOperationsList" value-type="datawave.security.authorization.RemoteUserOperations">
+        <!--ref bean="MyRemoteUserOps"/-->
+    </util:list>
+
     <!-- Here is an example of configuring a remote query service and a remote event query -->
     <bean id="RemoteQueryService" class="datawave.webservice.query.remote.RemoteQueryServiceImpl">
         <property name="queryServiceScheme" value="https" />
         <property name="queryServiceHost" value="localhost" />
-        <property name="queryServicePort" value="9443" />
+        <property name="queryServicePort" value="8443" />
         <property name="queryServiceURI" value="/DataWave/Query/" />
         <property name="responseObjectFactory" ref="ResponseObjectFactory" />
     </bean>
@@ -149,6 +163,7 @@
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
         <property name="remoteQueryService" ref="RemoteQueryService" />
         <property name="remoteQueryLogic" value="EventQuery" />
+        <property name="userOperations" ref="MyRemoteUserOps" />
     </bean>
 
     <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.tables.ShardQueryLogic" abstract="true">
@@ -406,33 +421,37 @@
       <property name="logicDescription" value="Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml" />
       <property name="auditType" value="NONE" />
       <property name="queryLogics">
-        <list value-type="datawave.webservice.query.logic.BaseQueryLogic">
-          <bean scope="prototype" parent="BaseEventQuery">
-            <property name="auditType" value="NONE" />
-            <property name="logicDescription" value="Lucene query for event/document UUIDs" />
-            <property name="mandatoryQuerySyntax">
-                <util:set>
-                    <value>LUCENE-UUID</value>
-                </util:set>
-            </property>
-            <property name="connPoolName" value="UUID" />
-          </bean>
-          <bean scope="prototype" parent="BaseEventQuery">
-            <property name="tableName" value="${error.shard.table.name}" />
-            <property name="dateIndexTableName" value="" />
-            <property name="metadataTableName" value="${error.metadata.table.name}" />
-            <property name="indexTableName" value="${error.index.table.name}" />
-            <property name="reverseIndexTableName" value="${error.rindex.table.name}" />
-            <property name="auditType" value="NONE" />
-            <property name="logicDescription" value="Lucene query for event/document UUIDs for events that encountered errors at ingest time" />
-            <property name="mandatoryQuerySyntax">
-                <util:set>
-                    <value>LUCENE-UUID</value>
-                </util:set>
-            </property>
-            <property name="connPoolName" value="UUID" />
-          </bean>
-        </list>
+        <map key-type="java.lang.String" value-type="datawave.core.query.logic.BaseQueryLogic">
+            <entry key="EventQuery">
+              <bean scope="prototype" parent="BaseEventQuery">
+                <property name="auditType" value="NONE" />
+                <property name="logicDescription" value="Lucene query for event/document UUIDs" />
+                <property name="mandatoryQuerySyntax">
+                    <util:set>
+                        <value>LUCENE-UUID</value>
+                    </util:set>
+                </property>
+                <property name="connPoolName" value="UUID" />
+              </bean>
+            </entry>
+            <entry key="ErrorEventQuery">
+              <bean scope="prototype" parent="BaseEventQuery">
+                <property name="tableName" value="${error.shard.table.name}" />
+                <property name="dateIndexTableName" value="" />
+                <property name="metadataTableName" value="${error.metadata.table.name}" />
+                <property name="indexTableName" value="${error.index.table.name}" />
+                <property name="reverseIndexTableName" value="${error.rindex.table.name}" />
+                <property name="auditType" value="NONE" />
+                <property name="logicDescription" value="Lucene query for event/document UUIDs for events that encountered errors at ingest time" />
+                <property name="mandatoryQuerySyntax">
+                    <util:set>
+                        <value>LUCENE-UUID</value>
+                    </util:set>
+                </property>
+                <property name="connPoolName" value="UUID" />
+              </bean>
+            </entry>
+        </map>
       </property>
       <property name="selectorExtractor"><null/></property>
     </bean>

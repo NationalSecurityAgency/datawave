@@ -20,10 +20,15 @@ import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.query.data.UUIDType;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.user.UserOperationsBean;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
@@ -62,10 +67,6 @@ import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
-import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
@@ -241,6 +242,9 @@ public class QueryExecutorBean implements QueryExecutor {
     private QueryPredictor predictor;
     
     @Inject
+    private UserOperationsBean userOperationsBean;
+
+    @Inject
     private QueryMetricFactory metricFactory;
     
     @Inject
@@ -283,7 +287,8 @@ public class QueryExecutorBean implements QueryExecutor {
         };
         queryTraceCache.addListener(traceCacheListener);
         
-        this.lookupUUIDUtil = new LookupUUIDUtil(this.lookupUUIDConfiguration, this, this.ctx, this.responseObjectFactory);
+        this.lookupUUIDUtil = new LookupUUIDUtil(this.lookupUUIDConfiguration, this, this.ctx, this.responseObjectFactory, this.queryLogicFactory,
+                        this.userOperationsBean);
     }
     
     @PreDestroy
@@ -573,7 +578,7 @@ public class QueryExecutorBean implements QueryExecutor {
             AccumuloConnectionFactory.Priority priority = qd.logic.getConnectionPriority();
             
             rq = new RunningQuery(metrics, null, priority, qd.logic, q, qp.getAuths(), qd.p, new RunningQueryTimingImpl(queryExpirationConf,
-                            qp.getPageTimeout()), this.predictor, this.metricFactory);
+                            qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
             rq.setActiveCall(true);
             rq.getMetric().setProxyServers(qd.proxyServers);
             queryCache.put(q.getId().toString(), rq);
@@ -686,7 +691,7 @@ public class QueryExecutorBean implements QueryExecutor {
             // hold on to a reference of the query logic so we cancel it if need be.
             qlCache.add(q.getId().toString(), qd.userid, qd.logic, client);
             rq = new RunningQuery(metrics, null, priority, qd.logic, q, qp.getAuths(), qd.p, new RunningQueryTimingImpl(queryExpirationConf,
-                            qp.getPageTimeout()), this.predictor, this.metricFactory);
+                            qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
             rq.setActiveCall(true);
             rq.getMetric().setProxyServers(qd.proxyServers);
             rq.setClient(client);
@@ -845,7 +850,12 @@ public class QueryExecutorBean implements QueryExecutor {
                 accumuloConnectionRequestBean.requestEnd(q.getId().toString());
             }
             
-            Set<Authorizations> calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), qd.p);
+            // the query principal is our local principal unless the query logic has a different user operations
+            DatawavePrincipal queryPrincipal = (qd.logic.getUserOperations() == null) ? (DatawavePrincipal) qd.p : qd.logic.getUserOperations().getRemoteUser(
+                            (DatawavePrincipal) qd.p);
+            // the overall principal (the one with combined auths across remote user operations) is our own user operations bean
+            DatawavePrincipal overallPrincipal = userOperationsBean.getRemoteUser((DatawavePrincipal) qd.p);
+            Set<Authorizations> calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), overallPrincipal, queryPrincipal);
             String plan = qd.logic.getPlan(client, q, calculatedAuths, expandFields, expandValues);
             response.setResult(plan);
             
@@ -1013,7 +1023,7 @@ public class QueryExecutorBean implements QueryExecutor {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), p);
             AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
             RunningQuery query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(
-                            queryExpirationConf, qp.getPageTimeout()), this.predictor, this.metricFactory);
+                            queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
             results.add(query);
             // Put in the cache by id if its not already in the cache.
             if (!queryCache.containsKey(q.getId().toString()))
@@ -1050,7 +1060,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), principal);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), principal, new RunningQueryTimingImpl(
-                                queryExpirationConf, qp.getPageTimeout()), this.predictor, this.metricFactory);
+                                queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 queryCache.put(q.getId().toString(), query);
             }
@@ -1135,7 +1145,7 @@ public class QueryExecutorBean implements QueryExecutor {
             ctx.getUserTransaction().begin();
             
             query = getQueryById(id);
-            
+
             // Lock this so that this query cannot be used concurrently.
             // The lock should be released at the end of the method call.
             if (!queryCache.lock(id))
@@ -1321,7 +1331,7 @@ public class QueryExecutorBean implements QueryExecutor {
         response.setPageNumber(pageNum);
         response.setLogicName(query.getLogic().getLogicName());
         response.setQueryId(queryId);
-        
+
         query.getMetric().setProxyServers(proxyServers);
         
         testForUncaughtException(query.getSettings(), resultsPage);
@@ -1862,7 +1872,7 @@ public class QueryExecutorBean implements QueryExecutor {
             userid = dp.getShortName();
             proxyServers = dp.getProxyServers();
         }
-        
+
         RunningQuery query = null;
         Query contentLookupSettings = null;
         try {

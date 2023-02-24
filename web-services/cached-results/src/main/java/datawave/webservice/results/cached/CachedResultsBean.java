@@ -79,6 +79,7 @@ import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.user.UserOperationsBean;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
@@ -253,6 +254,9 @@ public class CachedResultsBean {
     
     @Inject
     private QueryCache runningQueryCache;
+    
+    @Inject
+    private UserOperationsBean userOperationsBean;
     
     @Inject
     private AuditBean auditor;
@@ -534,7 +538,7 @@ public class CachedResultsBean {
                 
                 try {
                     query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(
-                                    queryExpirationConf, q.getPageTimeout()), predictor, metricFactory);
+                                    queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
                     query.setActiveCall(true);
                     // queryMetric was duplicated from the original earlier
                     query.setMetric(queryMetric);
@@ -2200,7 +2204,7 @@ public class CachedResultsBean {
                 QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), p);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(queryExpirationConf,
-                                q.getPageTimeout()), predictor, metricFactory);
+                                q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
                 query.setActiveCall(true);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 runningQueryCache.put(q.getId().toString(), query);
