@@ -478,6 +478,48 @@ public abstract class GroupingTest {
     }
     
     @Test
+    public void testGroupingEntriesWithNoContextOneValue() throws Exception {
+        // Testing multivalued entries with no grouping context
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        Map<String,Integer> expectedMap = ImmutableMap.of("WISEGUY", 2, "REGGUY", 1);
+        
+        extraParameters.put("group.fields", "TYPE");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    @Test
+    public void testGroupingEntriesWithNoContextOneAndMultipleValue() throws Exception {
+        // Testing multivalued entries with no grouping context
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        Map<String,Integer> expectedMap = ImmutableMap.of("WISEGUY-1", 2, "REGGUY-1", 1);
+        
+        extraParameters.put("group.fields", "TYPE,RECORD");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    @Test
     public void testGroupingWithFieldWithSparseGroupingEntries() throws Exception {
         // Testing multivalued atoms where not all atoms have every field populated.
         // This results in entries where the grouping context is sparse;
