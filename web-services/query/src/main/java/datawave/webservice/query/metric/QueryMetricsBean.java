@@ -141,6 +141,38 @@ public class QueryMetricsBean {
         }
     }
     
+    /**
+     * Returns metrics for the current users queries that are identified by the id
+     *
+     * @param id
+     *
+     * @return datawave.webservice.result.QueryMetricListResponse
+     *
+     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
+     * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
+     * @HTTP 200 success
+     * @HTTP 500 internal server error
+     */
+    @GET
+    @POST
+    @Path("/id/{id}/subplans")
+    @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
+    public BaseQueryMetricListResponse subplan(@PathParam("id") @Required("id") String id) {
+        if (queryMetricsWriterConfiguration.getUseRemoteService()) {
+            return remoteQueryMetricService.id(id);
+        } else {
+            // Find out who/what called this method
+            DatawavePrincipal dp = null;
+            Principal p = ctx.getCallerPrincipal();
+            String user = p.getName();
+            if (p instanceof DatawavePrincipal) {
+                dp = (DatawavePrincipal) p;
+                user = dp.getShortName();
+            }
+            return queryHandler.subplan(user, id, dp); // needs to be changed to proper parameters based on the subplan method in the query handler
+        }
+    }
+    
     @GET
     @POST
     @Path("/id/{id}/map")

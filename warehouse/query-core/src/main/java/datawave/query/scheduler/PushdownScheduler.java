@@ -34,6 +34,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.mr.bulk.RfileResource;
 import datawave.query.tables.BatchScannerSession;
 import datawave.query.tables.ScannerFactory;
@@ -58,6 +59,10 @@ public class PushdownScheduler extends Scheduler {
      */
     protected final ShardQueryConfiguration config;
     /**
+     * Query Metric reference.
+     */
+    protected final BaseQueryMetric metric;
+    /**
      * Scanner factory reference.
      */
     protected final ScannerFactory scannerFactory;
@@ -81,14 +86,15 @@ public class PushdownScheduler extends Scheduler {
     
     protected MetadataHelper metadataHelper;
     
-    public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory) {
-        this(config, scannerFactory, metaFactory.createMetadataHelper(config.getConnector(), config.getMetadataTableName(), config.getAuthorizations()));
+    public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory, BaseQueryMetric metric) {
+        this(config, scannerFactory, metaFactory.createMetadataHelper(config.getConnector(), config.getMetadataTableName(), config.getAuthorizations()), metric);
     }
     
-    protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
+    protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, BaseQueryMetric metric) {
         this.config = config;
         this.metadataHelper = helper;
         this.scannerFactory = scannerFactory;
+        this.metric = metric;
         customizedFunctionList = Lists.newArrayList();
         Preconditions.checkNotNull(config.getConnector());
     }
@@ -154,7 +160,7 @@ public class PushdownScheduler extends Scheduler {
                 session.setSpeculativeScanning(true);
             }
             
-            session.addVisitor(new VisitorFunction(config, metadataHelper));
+            session.addVisitor(new VisitorFunction(config, metadataHelper, metric));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

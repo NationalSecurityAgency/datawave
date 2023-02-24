@@ -135,6 +135,15 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             if (updatedQueryMetric.getPlan() != null) {
                 fields.put("PLAN", updatedQueryMetric.getPlan());
             }
+            Map<String,String> subPlans = updatedQueryMetric.getSubPlans();
+            if (subPlans != null && !subPlans.isEmpty()) {
+                for (Map.Entry<String,String> entry : subPlans.entrySet()) {
+                    fields.put("SUBPLAN." + entry.getKey(), entry.getValue());
+                }
+            }
+            // if (updatedQueryMetric.getSubPlans() != null) {
+            // fields.put("SUBPLANS", "HOLDING VALUE"); // updatedQueryMetric.getSubPlans()
+            // }
             if (updatedQueryMetric.getQueryId() != null) {
                 fields.put("QUERY_ID", updatedQueryMetric.getQueryId());
             }

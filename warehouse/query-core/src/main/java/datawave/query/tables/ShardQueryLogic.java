@@ -1059,7 +1059,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (config.getSequentialScheduler()) {
             return new SequentialScheduler(config, scannerFactory);
         } else {
-            return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
+            return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory, this.getQueryMetric());
         }
     }
     

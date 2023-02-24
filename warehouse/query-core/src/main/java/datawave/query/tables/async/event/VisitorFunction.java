@@ -4,6 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -33,6 +34,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -69,6 +71,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected static FileSystemCache fileSystemCache = null;
     
     private ShardQueryConfiguration config;
+    private BaseQueryMetric metric;
     protected MetadataHelper metadataHelper;
     protected Set<String> indexedFields;
     protected Set<String> indexOnlyFields;
@@ -79,8 +82,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
     
-    public VisitorFunction(ShardQueryConfiguration config, MetadataHelper metadataHelper) throws MalformedURLException {
+    public VisitorFunction(ShardQueryConfiguration config, MetadataHelper metadataHelper, BaseQueryMetric metric) throws MalformedURLException {
         this.config = config;
+        this.metric = metric;
         
         if (VisitorFunction.fileSystemCache == null && this.config.getHdfsSiteConfigURLs() != null) {
             VisitorFunction.fileSystemCache = new FileSystemCache(this.config.getHdfsSiteConfigURLs());
@@ -137,6 +141,18 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             throw new DatawaveFatalQueryException(e);
         }
         return minDate;
+    }
+    
+    public String getRangeKey(Range range) {
+        Key key = range.getStartKey();
+        StringBuilder builder = new StringBuilder();
+        builder.append(key.getRow());
+        String cf = key.getColumnFamily().toString();
+        if (cf.length() > 0) {
+            String[] parts = StringUtils.split(cf, '\0');
+            builder.append('/').append(parts[0]).append('/').append(parts[1]);
+        }
+        return builder.toString();
     }
     
     @Override
@@ -328,7 +344,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.maxChildNodesToPrint),
                                         "VistorFunction::apply method");
                     }
-                    
+                    for (Range range : newSettings.getRanges()) {
+                        String rangeKey = getRangeKey(range);
+                        metric.addSubPlan(rangeKey, newQuery);
+                    }
                 } catch (ParseException e) {
                     throw new DatawaveFatalQueryException(e);
                 }

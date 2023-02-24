@@ -83,6 +83,11 @@ public class BaseQueryMetricHandlerTest {
         }
         
         @Override
+        public BaseQueryMetricListResponse<QueryMetric> subplan(String user, String queryId, DatawavePrincipal datawavePrincipal) {
+            return null;
+        }
+        
+        @Override
         public QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
             return null;
         }
