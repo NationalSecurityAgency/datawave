@@ -4,7 +4,9 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import datawave.query.attributes.Document;
+import datawave.query.function.ScanRangeProvider;
 import datawave.query.function.TLDEquality;
+import datawave.query.function.TLDScanRangeProvider;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.SourcedOptions;
@@ -212,6 +214,19 @@ public class TLDQueryIterator extends QueryIterator {
     protected Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
         tfConfig.setTld(true);
         return TFFactory.getFunction(tfConfig);
+    }
+    
+    /**
+     * Get a {@link TLDScanRangeProvider}
+     *
+     * @return a {@link TLDScanRangeProvider}
+     */
+    @Override
+    public ScanRangeProvider getScanRangeProvider() {
+        if (scanRangeProvider == null) {
+            scanRangeProvider = new TLDScanRangeProvider();
+        }
+        return scanRangeProvider;
     }
     
 }
