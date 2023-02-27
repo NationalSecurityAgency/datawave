@@ -104,7 +104,7 @@
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
         <version.surefire.plugin>3.0.0-M6</version.surefire.plugin>
-        <version.thrift>0.16.0</version.thrift>
+        <version.thrift>0.17.0</version.thrift>
         <version.weld>3.1.1.Final</version.weld>
         <version.weld-se>3.1.1.Final</version.weld-se>
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
