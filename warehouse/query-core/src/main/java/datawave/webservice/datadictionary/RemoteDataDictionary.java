@@ -101,7 +101,7 @@ public class RemoteDataDictionary extends RemoteHttpService {
                     String auths) {
         final String bearerHeader = "Bearer " + jwtTokenHandler.createTokenFromUsers(callerPrincipal.getName(), callerPrincipal.getProxiedUsers());
         // @formatter:off
-        return executeGetMethodWithRuntimeException(
+        return executeGetMethodWithRuntimeException("",
                 uriBuilder -> {
                     uriBuilder.addParameter("modelName", modelName);
                     uriBuilder.addParameter("modelTableName", modelTableName);
@@ -112,18 +112,6 @@ public class RemoteDataDictionary extends RemoteHttpService {
                 entity -> dataDictReader.readValue(entity.getContent()),
                 () -> "getDataDictionary [" + modelName + ", " + modelTableName + ", " + metadataTableName + ", " + auths + "]");
         // @formatter:on
-    }
-    
-    protected <T> T executeGetMethodWithRuntimeException(Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        try {
-            return executeGetMethod(uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
-        } catch (IOException e) {
-            failureCounter.inc();
-            throw new RuntimeException(e.getMessage(), e);
-        }
     }
     
     @Override
@@ -185,4 +173,10 @@ public class RemoteDataDictionary extends RemoteHttpService {
     protected Counter retryCounter() {
         return retryCounter;
     }
+    
+    @Override
+    protected Counter failureCounter() {
+        return failureCounter;
+    }
+    
 }

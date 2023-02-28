@@ -7,6 +7,8 @@ import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
 import io.protostuff.UninitializedMessageException;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -392,6 +394,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         this.optionalQueryParameters = optionalQueryParameters;
     }
     
+    @Override
     public QueryImpl duplicate(String newQueryName) {
         QueryImpl query = new QueryImpl();
         query.setQueryLogicName(this.getQueryLogicName());
@@ -410,9 +413,15 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         query.setColumnVisibility(this.getColumnVisibility());
         query.setBeginDate(this.getBeginDate());
         query.setEndDate(this.getEndDate());
-        if (null != this.parameters && !this.parameters.isEmpty())
+        if (CollectionUtils.isNotEmpty(this.parameters))
             query.setParameters(new HashSet<Parameter>(this.parameters));
         query.setDnList(this.dnList);
+        if (MapUtils.isNotEmpty(this.optionalQueryParameters)) {
+            Map<String,List<String>> optionalDuplicate = new HashMap<>();
+            this.optionalQueryParameters.entrySet().stream().forEach(e -> optionalDuplicate.put(e.getKey(), new ArrayList(e.getValue())));
+            query.setOptionalQueryParameters(optionalDuplicate);
+        }
+        query.setUncaughtExceptionHandler(this.getUncaughtExceptionHandler());
         return query;
     }
     

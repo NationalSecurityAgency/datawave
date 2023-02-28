@@ -8,9 +8,10 @@ import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
+import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
@@ -23,7 +24,6 @@ import datawave.webservice.result.QueryWizardResultResponse;
 import datawave.webservice.result.QueryWizardStep1Response;
 import datawave.webservice.result.QueryWizardStep2Response;
 import datawave.webservice.result.QueryWizardStep3Response;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
@@ -55,7 +55,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import java.lang.reflect.Method;
 import java.security.Principal;
-import java.text.MessageFormat;
 import java.util.*;
 
 import datawave.security.util.AuthorizationsUtil;
@@ -230,6 +229,8 @@ public class BasicQueryBean {
         q.setQuery("test");
         q.setQueryAuthorizations("ALL");
         
+        UserOperations userService = null;
+        
         for (QueryLogic<?> l : logicList) {
             try {
                 
@@ -238,6 +239,7 @@ public class BasicQueryBean {
                     QueryLogicDescription d = new QueryLogicDescription(l.getLogicName());
                     d.setAuditType(l.getAuditType(null).toString());
                     d.setLogicDescription(l.getLogicDescription());
+                    userService = l.getUserOperations();
                     theQld = d;
                     
                     Set<String> optionalQueryParameters = l.getOptionalQueryParameters();
@@ -289,12 +291,17 @@ public class BasicQueryBean {
                 }
             } catch (Exception e) {
                 log.error("Error setting query logic description", e);
+                throw new RuntimeException(e);
             }
         }
         
-        Principal p = ctx.getCallerPrincipal();
-        String authSting = AuthorizationsUtil.buildUserAuthorizationString(p);
-        response.setAuthString(authSting);
+        try {
+            DatawavePrincipal queryPrincipal = (userService == null) ? (DatawavePrincipal) ctx.getCallerPrincipal() : userService
+                            .getRemoteUser((DatawavePrincipal) ctx.getCallerPrincipal());
+            response.setAuthString(AuthorizationsUtil.buildUserAuthorizationString(queryPrincipal));
+        } catch (AuthorizationException e) {
+            throw new RuntimeException(e);
+        }
         response.setTheQueryLogicDescription(theQld);
         
         return response;

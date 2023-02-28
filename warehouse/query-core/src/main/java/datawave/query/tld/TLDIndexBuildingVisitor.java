@@ -17,6 +17,7 @@ import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TLDEventDataFilter;
+import datawave.query.predicate.TLDTermFrequencyEventDataQueryFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -195,80 +196,19 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     
     /**
      * Use fieldsToAggregate instead of indexOnlyFields because this enables TLDs to return non-event tokens as part of the user document
-     * 
+     *
+     * @param identifier
+     *            the field to be aggregated
      * @param filter
+     *            a {@link ChainableEventDataQueryFilter}
      * @param maxNextCount
-     * @return
+     *            the maximum number of next calls before a seek is issued
+     * @return a {@link TermFrequencyAggregator} loaded with the provided filter
      */
     @Override
     protected TermFrequencyAggregator buildTermFrequencyAggregator(String identifier, ChainableEventDataQueryFilter filter, int maxNextCount) {
-        EventDataQueryFilter rootFilter = new EventDataQueryFilter() {
-            @Override
-            public void startNewDocument(Key documentKey) {
-                // no-op
-            }
-            
-            @Override
-            public boolean apply(@Nullable Entry<Key,String> var1) {
-                // accept all
-                return true;
-            }
-            
-            @Override
-            public boolean peek(@Nullable Entry<Key,String> var1) {
-                // accept all
-                return true;
-            }
-            
-            /**
-             * Only keep the tf key if it isn't the root pointer or if it is index only and contributes to document evaluation
-             * 
-             * @param k
-             * @return
-             */
-            @Override
-            public boolean keep(Key k) {
-                DatawaveKey key = new DatawaveKey(k);
-                return (!TLDEventDataFilter.isRootPointer(k) || indexOnlyFields.contains(key.getFieldName()))
-                                && attrFilter.peek(new AbstractMap.SimpleEntry(k, null));
-            }
-            
-            @Override
-            public Key getStartKey(Key from) {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public Key getStopKey(Key from) {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public Range getKeyRange(Entry<Key,Document> from) {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public EventDataQueryFilter clone() {
-                return this;
-            }
-            
-            @Override
-            public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public int getMaxNextCount() {
-                return -1;
-            }
-            
-            @Override
-            public Key transform(Key toTransform) {
-                throw new UnsupportedOperationException();
-            }
-        };
-        filter.addFilter(rootFilter);
+        
+        filter.addFilter(new TLDTermFrequencyEventDataQueryFilter(indexOnlyFields, attrFilter));
         
         Set<String> toAggregate = fieldsToAggregate.contains(identifier) ? Collections.singleton(identifier) : Collections.emptySet();
         
