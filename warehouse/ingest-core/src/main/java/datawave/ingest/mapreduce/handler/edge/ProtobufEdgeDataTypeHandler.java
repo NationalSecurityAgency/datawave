@@ -95,7 +95,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     public static final String EDGE_TABLE_DENYLIST_FIELDS = ".protobufedge.table.denylist.fields";
     
     public static final String EDGE_TABLE_METADATA_ENABLE = "protobufedge.table.metadata.enable";
-    public static final String EDGE_TABLE_BLACKIST_ENABLE = "protobufedge.table.denylist.enable";
+    public static final String EDGE_TABLE_DENYLIST_ENABLE = "protobufedge.table.denylist.enable";
     
     public static final String EDGE_SPRING_CONFIG = "protobufedge.spring.config";
     
@@ -175,7 +175,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         this.useStatsLogBloomFilter = conf.getBoolean(EDGE_STATS_LOG_USE_BLOOM, false);
         this.metadataTableName = ConfigurationHelper.isNull(conf, METADATA_TABLE_NAME, String.class);
         
-        this.enableDenylist = ConfigurationHelper.isNull(conf, EDGE_TABLE_BLACKIST_ENABLE, Boolean.class);
+        this.enableDenylist = ConfigurationHelper.isNull(conf, EDGE_TABLE_DENYLIST_ENABLE, Boolean.class);
         this.enableMetadata = ConfigurationHelper.isNull(conf, EDGE_TABLE_METADATA_ENABLE, Boolean.class);
         
         setUpFailurePolicy = FailurePolicy.valueOf(conf.get(EDGE_SETUP_FAILURE_POLICY));
