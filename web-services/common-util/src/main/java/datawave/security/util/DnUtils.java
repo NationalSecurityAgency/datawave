@@ -1,5 +1,7 @@
 package datawave.security.util;
 
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.user.AuthorizationsListBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,6 +106,19 @@ public class DnUtils {
             else
                 sb.append('<').append(escapedDN).append('>');
         }
+        return sb.toString();
+    }
+    
+    public static String buildNormalizedProxyDN(List<SubjectIssuerDNPair> dns) {
+        StringBuilder sb = new StringBuilder();
+        dns.stream().forEach(dn -> {
+            if (sb.length() == 0) {
+                sb.append(normalizeDN(dn.subjectDN()));
+            } else {
+                sb.append('<').append(normalizeDN(dn.subjectDN())).append('>');
+            }
+            sb.append('<').append(normalizeDN(dn.issuerDN())).append('>');
+        });
         return sb.toString();
     }
     
