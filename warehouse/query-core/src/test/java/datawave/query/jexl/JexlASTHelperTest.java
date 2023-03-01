@@ -708,6 +708,12 @@ public class JexlASTHelperTest {
         // original full query
         query = "(AGE > '+bE1' || ETA > '+bE1') && (AGE < '+cE1' || ETA < '+cE1') && ((_Eval_ = true) && ((AGE || ETA).getValuesForGroups(grouping:getGroupsForMatchesInGroup((NOME || NAME), 'MEADOW', (GENERE || GENDER), 'FEMALE')) == MAGIC))";
         testIdentifierParse(query, Sets.newHashSet("AGE", "ETA", "GENDER", "GENERE", "MAGIC", "NAME", "NOME"));
+        
+        query = "content:phrase(termOffsetMap, 'bar', 'baz')";
+        testIdentifierParse(query, Collections.singleton("termOffsetMap"));
+        
+        query = "content:phrase(FOO, termOffsetMap, 'bar', 'baz')";
+        testIdentifierParse(query, Sets.newHashSet("FOO", "termOffsetMap"));
     }
     
     private void testIdentifierParse(String query, Set<String> expectedIdentifiers) {
