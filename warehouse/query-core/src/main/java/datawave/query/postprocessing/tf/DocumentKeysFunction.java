@@ -7,32 +7,18 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJexlArgumentDescriptor;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
-
-import static datawave.query.jexl.functions.ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME;
-import static datawave.query.jexl.functions.ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
-import static datawave.query.jexl.functions.ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
-import static datawave.query.jexl.functions.ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME;
-import static datawave.query.jexl.functions.ContentFunctions.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME;
 
 /**
  * A function that intersects document keys prior to fetching term offsets.
@@ -103,115 +89,6 @@ public class DocumentKeysFunction {
             }
         }
         return false;
-    }
-    
-    private ContentFunction transformFunction(Function function) {
-        
-        boolean specialCase = false;
-        int index = findValueStartIndex(function);
-        
-        // Parse the values first. Might have to lookup fields by value.
-        TreeSet<String> values = getValuesFromArgs(function.args(), index);
-        
-        TreeSet<String> fields;
-        if (specialCase) {
-            // field(s) were not present in the function, and cannot lookup fields by value.
-            throw new IllegalStateException("cannot lookup fields by value");
-        } else {
-            // function's first arg is the field, or fields in the form (FIELD_A || FIELD_B)
-            fields = parseField(function.args().get(0));
-        }
-        
-        return new ContentFunction(fields.first(), values);
-    }
-    
-    // functions may take different forms..
-    // within = {field, number, termOffsetMap, terms...}
-    // within = {number, termOffsetMap, terms...}
-    // adjacent = {field, termOffsetMap, terms...}
-    // adjacent = {termOffsetMap, terms...}
-    // phrase = {field, termOffsetMap, terms...}
-    // phrase = {termOffsetMap, terms...}
-    // scoredPhrase = {-1.5, termOffsetMap,'boy','car'}
-    private int findValueStartIndex(Function function) {
-        int index;
-        switch (function.name()) {
-            case CONTENT_WITHIN_FUNCTION_NAME:
-                index = 3;
-                break;
-            case CONTENT_ADJACENT_FUNCTION_NAME:
-            case CONTENT_PHRASE_FUNCTION_NAME:
-            case CONTENT_SCORED_PHRASE_FUNCTION_NAME:
-                index = 2;
-                break;
-            default:
-                throw new IllegalStateException("unexpected function name: " + function.name());
-        }
-        
-        // if the first node is a number of a 'termOffsetMap'
-        if (isFirstNodeSpecial(function.args().get(0))) {
-            index++;
-        }
-        return index;
-    }
-    
-    // A node is special if it is not the fields being searched. That is, the first node is a number or a variable 'termOffsetMap'
-    private boolean isFirstNodeSpecial(JexlNode node) {
-        node = JexlASTHelper.dereference(node);
-        if (node instanceof ASTNumberLiteral || node instanceof ASTUnaryMinusNode) {
-            return true;
-        } else if (node instanceof ASTIdentifier || node instanceof ASTOrNode) {
-            List<ASTIdentifier> ids = JexlASTHelper.getIdentifiers(node);
-            return ids.size() == 1 && ids.get(0).image.equals(TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
-        }
-        return false;
-    }
-    
-    /**
-     * Extract fields from a JexlNode. Node may be an OR node like (FIELD_A || FIELD_B).
-     *
-     * @param node
-     *            a jexl node
-     * @return a sorted set of fields
-     */
-    private TreeSet<String> parseField(JexlNode node) {
-        TreeSet<String> fields = new TreeSet<>();
-        List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
-        for (ASTIdentifier identifier : identifiers) {
-            fields.add(JexlASTHelper.deconstructIdentifier(identifier));
-        }
-        return fields;
-    }
-    
-    /**
-     * Parse the values out of a content functions arguments
-     *
-     * @param args
-     *            content function arguments as a list of Jexl nodes
-     * @param start
-     *            the start index for the values
-     * @return a list of normalized string values
-     */
-    private TreeSet<String> getValuesFromArgs(List<JexlNode> args, int start) {
-        TreeSet<String> values = new TreeSet<>();
-        for (int i = start; i < args.size(); i++) {
-            List<String> parsed = parseArg(args.get(i));
-            values.addAll(parsed);
-        }
-        return values;
-    }
-    
-    private List<String> parseArg(JexlNode node) {
-        List<String> parsed = new LinkedList<>();
-        List<Object> values = JexlASTHelper.getLiteralValues(node);
-        for (Object value : values) {
-            if (value instanceof String) {
-                parsed.add((String) value);
-            } else {
-                throw new IllegalStateException("Expected literal value to be String cast-able");
-            }
-        }
-        return parsed;
     }
     
     /**
@@ -295,13 +172,11 @@ public class DocumentKeysFunction {
                     if (values.contains(pre.getValue())) {
                         valueToKeys.put(pre.getValue(), pre.getMetadata());
                     }
-                } else {
-                    if (values.contains(att.getData())) {
-                        valueToKeys.put((String) att.getData(), att.getMetadata());
-                    }
+                } else if (values.contains(String.valueOf(att.getData()))) {
+                    valueToKeys.put((String) att.getData(), att.getMetadata());
                 }
             }
-        } else if (values.contains(attr.getData())) {
+        } else if (values.contains(String.valueOf(attr.getData()))) {
             valueToKeys.put((String) attr.getData(), attr.getMetadata());
         }
     }
