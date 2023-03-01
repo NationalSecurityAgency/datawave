@@ -764,6 +764,31 @@ public class QueryOptions implements OptionDescriber {
         return nonEventFields;
     }
     
+    /**
+     * Get the union of all fields set via the following QueryOptions
+     * <ul>
+     * <li>{@link #INDEXED_FIELDS}</li>
+     * <li>{@link #INDEX_ONLY_FIELDS}</li>
+     * <li>{@link #TERM_FREQUENCY_FIELDS}</li>
+     * <li>{@link #COMPOSITE_FIELDS}</li>
+     * <li>{@link #CONTENT_EXPANSION_FIELDS}</li>
+     * </ul>
+     *
+     * @return the union of all configured fields
+     */
+    public Set<String> getAllFields() {
+        Set<String> allFields = new HashSet<>();
+        // includes index only fields plus composite fields
+        allFields.addAll(getAllIndexOnlyFields());
+        // should be a subset of tf fields
+        allFields.addAll(getContentExpansionFields());
+        allFields.addAll(getIndexedFields());
+        allFields.addAll(getTermFrequencyFields());
+        // also grab non-indexed fields
+        allFields.addAll(getNonIndexedDataTypeMap().keySet());
+        return allFields;
+    }
+    
     public boolean isContainsIndexOnlyTerms() {
         return containsIndexOnlyTerms;
     }
