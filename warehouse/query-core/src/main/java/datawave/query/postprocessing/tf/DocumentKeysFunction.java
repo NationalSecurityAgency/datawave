@@ -8,7 +8,10 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.ContentFunctionsDescriptor;
+import datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJexlArgumentDescriptor;
 import org.apache.accumulo.core.data.Key;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
@@ -18,6 +21,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,11 +57,31 @@ public class DocumentKeysFunction {
     
     protected void populateContentFunctions(JexlNode node) {
         
+        ContentFunctionsDescriptor descriptor = new ContentFunctionsDescriptor();
+        ContentJexlArgumentDescriptor argsDescriptor;
+        Set<String>[] fieldsAndTerms;
+        JexlNode parent;
+        
         Multimap<String,Function> functions = TermOffsetPopulator.getContentFunctions(node);
         for (String key : functions.keySet()) {
             Collection<Function> coll = functions.get(key);
             for (Function f : coll) {
-                ContentFunction contentFunction = transformFunction(f);
+                parent = f.args().get(0).jjtGetParent();
+                
+                if (!(parent instanceof ASTFunctionNode)) {
+                    throw new IllegalArgumentException("parent was not a function node");
+                }
+                
+                argsDescriptor = descriptor.getArgumentDescriptor((ASTFunctionNode) parent);
+                
+                // content, tf, and indexed fields are not actually needed to extract fields from the function node
+                fieldsAndTerms = argsDescriptor.fieldsAndTerms(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), null);
+                
+                if (fieldsAndTerms[0].size() != 1) {
+                    throw new IllegalStateException("content function had more than one field");
+                }
+                
+                ContentFunction contentFunction = new ContentFunction(fieldsAndTerms[0].iterator().next(), fieldsAndTerms[1]);
                 contentFunctions.put(contentFunction.getField(), contentFunction);
                 
                 // need to record any values that are part of a negative function
