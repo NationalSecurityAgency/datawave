@@ -228,14 +228,9 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
              */
             @Override
             public boolean keep(Key k) {
-                if (TLDEventDataFilter.isRootPointer(k)) {
-                    DatawaveKey key = new DatawaveKey(k);
-                    if (!indexOnlyFields.contains(key.getFieldName())) {
-                        return false;
-                    }
-                }
-                
-                return attrFilter.peek(new AbstractMap.SimpleEntry(k, null));
+                DatawaveKey key = new DatawaveKey(k);
+                return (!TLDEventDataFilter.isRootPointer(k) || indexOnlyFields.contains(key.getFieldName()))
+                                && attrFilter.peek(new AbstractMap.SimpleEntry(k, null));
             }
             
             @Override
