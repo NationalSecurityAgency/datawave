@@ -309,7 +309,7 @@ public class QueryOptions implements OptionDescriber {
     protected List<String> documentPermutationClasses = new ArrayList<>();
     protected List<DocumentPermutation> documentPermutations = null;
     
-    protected long startTime = 0L;
+    protected long startTime = 0l;
     protected long endTime = System.currentTimeMillis();
     protected TimeFilter timeFilter = null;
     
