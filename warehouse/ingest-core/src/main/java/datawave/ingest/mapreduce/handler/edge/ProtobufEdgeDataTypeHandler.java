@@ -457,8 +457,10 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     protected BloomFilter<Key> activityLogBloom = null;
     protected BloomFilter<Key> durationLogBloom = null;
-    Multimap<String,NormalizedContentInterface> normalizedFields;
-    Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList;
+    protected Multimap<String,NormalizedContentInterface> normalizedFields;
+    protected Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList;
+    protected long activityDate;
+    protected EdgeKey.DATE_TYPE date_type;
     Map<Key,Set<Metadata>> eventMetadataRegistry;
     EdgeDefinitionConfigurationHelper edgeDefConfigs = null;
     
@@ -498,6 +500,19 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          * normalize field names with groups
          */
         normalizeAndGroupFields(fields);
+        
+        activityDate = getActivityDate();
+        
+        // get the activity date from the event fields map
+        boolean validActivityDate = validateActivityDate(activityDate, event.getDate());
+        boolean activityEqualsEvent = false;
+        
+        // If the activity date is valid check to see if it is on the same day as the event date
+        if (validActivityDate) {
+            activityEqualsEvent = compareActivityAndEvent(activityDate, event.getDate());
+        }
+        
+        date_type = getEdgeKeyDateType(validActivityDate, activityEqualsEvent, event.getDate());
         
         if (useStatsLogBloomFilter) {
             activityLogBloom = BloomFilter.create(new KeyFunnel(), 5000000);
@@ -651,7 +666,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 log.error("Parse exception when getting the activity date: " + actDate + " for edge creation " + e1.getMessage());
             }
         }
-        return 0L;
+        return -1L;
     }
     
     private String getEdgeAttr3(EdgeDefinitionConfigurationHelper edgeDefConfigs) {
@@ -685,18 +700,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         Multimap<String,NormalizedContentInterface> mSource = depthFirstList.get(edgeDef.getSourceFieldName());
         Multimap<String,NormalizedContentInterface> mSink = depthFirstList.get(edgeDef.getSinkFieldName());
         
-        // get the activity date from the event fields map
-        long activityDate = getActivityDate();
-        boolean validActivityDate = validateActivityDate(activityDate, event.getDate());
-        boolean activityEqualsEvent = false;
-        
-        // If the activity date is valid check to see if it is on the same day as the event date
-        if (validActivityDate) {
-            activityEqualsEvent = compareActivityAndEvent(activityDate, event.getDate());
-        }
-        
-        EdgeKey.DATE_TYPE date_type = getEdgeKeyDateType(validActivityDate, activityEqualsEvent, event.getDate());
-        
         for (String subGroup : commonKeys) {
             for (NormalizedContentInterface ifaceSource : mSource.get(subGroup)) {
                 for (NormalizedContentInterface ifaceSink : mSink.get(subGroup)) {
@@ -728,18 +731,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         
         Multimap<String,NormalizedContentInterface> mSource = depthFirstList.get(edgeDef.getSourceFieldName());
         Multimap<String,NormalizedContentInterface> mSink = depthFirstList.get(edgeDef.getSinkFieldName());
-        
-        // get the activity date from the event fields map
-        long activityDate = getActivityDate();
-        boolean validActivityDate = validateActivityDate(activityDate, event.getDate());
-        boolean activityEqualsEvent = false;
-        
-        // If the activity date is valid check to see if it is on the same day as the event date
-        if (validActivityDate) {
-            activityEqualsEvent = compareActivityAndEvent(activityDate, event.getDate());
-        }
-        
-        EdgeKey.DATE_TYPE date_type = getEdgeKeyDateType(validActivityDate, activityEqualsEvent, event.getDate());
         
         for (String sourceSubGroup : sourceSubGroups) {
             for (NormalizedContentInterface ifaceSource : mSource.get(sourceSubGroup)) {
@@ -826,8 +817,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         
         edgeDataBundle.setEdgeAttribute2(getEdgeAttr2(edgeDefConfigs));
         edgeDataBundle.setEdgeAttribute3(getEdgeAttr3(edgeDefConfigs));
-        
-        long activityDate = getActivityDate();
         
         edgeDataBundle.setLoadDate(getLoadDateString(normalizedFields));
         edgeDataBundle.setActivityDate(activityDate);
