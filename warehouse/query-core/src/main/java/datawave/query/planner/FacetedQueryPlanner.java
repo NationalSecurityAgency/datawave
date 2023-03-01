@@ -56,14 +56,14 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
     
     @Override
     public IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
-                    Boolean isFullTable) throws DatawaveQueryException {
+                    Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
         
         if (isFullTable) {
             QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_DISALLOWED);
             throw new FullTableScansDisallowedException(qe);
         }
         
-        IteratorSetting cfg = super.getQueryIterator(metadataHelper, config, settings, queryString, isFullTable);
+        IteratorSetting cfg = super.getQueryIterator(metadataHelper, config, settings, queryString, isFullTable, isPreload);
         if (!usePrecomputedFacets)
             cfg.setIteratorClass(DynamicFacetIterator.class.getName());
         else {

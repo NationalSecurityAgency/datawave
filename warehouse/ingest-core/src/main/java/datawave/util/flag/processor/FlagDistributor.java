@@ -18,6 +18,7 @@ public interface FlagDistributor {
      * FlagDataTypeConfig. This call to this method should reset any saved state within this distributor.
      * 
      * @param fdtc
+     *            a flag data type config
      */
     void setup(FlagDataTypeConfig fdtc);
     
@@ -25,8 +26,10 @@ public interface FlagDistributor {
      * When pending files are discovered, they should be queued
      * 
      * @param inputFile
-     * @return
+     *            an input file
+     * @return true/false based on if files are added
      * @throws UnusableFileException
+     *             if the file is unusable
      */
     boolean addInputFile(InputFile inputFile) throws UnusableFileException;
     

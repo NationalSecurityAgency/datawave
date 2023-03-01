@@ -334,11 +334,13 @@ public class ValidateFilterFunctionVisitor extends BaseVisitor {
         return data;
     }
     
+    @Override
     @SuppressWarnings("deprecation")
     public Object visit(ASTIntegerLiteral node, Object data) {
         return data;
     }
     
+    @Override
     @SuppressWarnings({"deprecation"})
     public Object visit(ASTFloatLiteral node, Object data) {
         return data;

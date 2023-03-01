@@ -591,10 +591,13 @@ public class TestLuceneToJexlQueryParser {
         assertEquals("f:unique('field1[ALL','DAY]','field2')", parser.parse("#unique(field1[ALL,DAY],field2)").getOriginalQuery());
         assertEquals("f:unique('field1[ALL','DAY]','field2[MINUTE]','field3[HOUR]')", parser.parse("#unique(field1[ALL,DAY],field2[MINUTE],field3[HOUR])")
                         .getOriginalQuery());
+        assertEquals("f:unique('field1[MONTH]','field2[MONTH]','field3[MONTH]')", parser.parse("#unique(field1[MONTH],field2[MONTH],field3[MONTH])")
+                        .getOriginalQuery());
         
         assertEquals("f:unique_by_day('field1','field2','field3')", parser.parse("#unique_by_day(field1,field2,field3)").getOriginalQuery());
         assertEquals("f:unique_by_hour('field1','field2','field3')", parser.parse("#unique_by_hour(field1,field2,field3)").getOriginalQuery());
         assertEquals("f:unique_by_minute('field1','field2','field3')", parser.parse("#unique_by_minute(field1,field2,field3)").getOriginalQuery());
+        assertEquals("f:unique_by_month('field1','field2','field3')", parser.parse("#unique_by_month(field1,field2,field3)").getOriginalQuery());
         
         Throwable exception = assertThrows(ParseException.class, () -> parser.parse("#unique_by_day('field[HOUR]')")).getCause();
         assertTrue(exception.getMessage().contains(

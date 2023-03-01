@@ -75,7 +75,9 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
      * be binary, then it will decode one byte per character.
      * 
      * @param bytes
+     *            the bytes to convert
      * @param expectBinary
+     *            flag indicating whether to expect binary
      * @return the value
      */
     public static String decode(byte[] bytes, boolean expectBinary) {

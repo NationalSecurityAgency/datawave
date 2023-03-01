@@ -6,6 +6,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
                             http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
+    <bean id="ResponseObjectFactory" class="datawave.webservice.query.result.event.DefaultResponseObjectFactory"/>
 
     <!-- A list of lucene to jexl query functions -->
     <util:list id="allowedQueryFunctions" value-type="datawave.query.language.functions.jexl.JexlQueryFunction">
@@ -103,15 +104,47 @@
         <property name="modelTableName" value="DatawaveMetadata" />
         <property name="modelName" value="DATAWAVE_EDGE" />
         <property name="listSelectorExtractor" ref="SplitSelectorExtractorParamDefaultNull" />
+        <property name="querySyntaxParsers">
+            <map key-type="java.lang.String" value-type="datawave.query.language.parser.QueryParser">
+                <entry key="JEXL">
+                    <null/>
+                </entry>
+                <entry key="LIST">
+                    <null/>
+                </entry>
+                <entry key="LIMITED_JEXL">
+                    <null/>
+                </entry>
+                <entry key="LUCENE" value-ref="LuceneToJexlQueryParser" />
+            </map>
+        </property>
     </bean>
 
     <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
         <property name="logicDescription" value="Event query" />
+        <property name="configuredProfiles" >
+            <map>
+                <entry key="copyFieldEventQuery" value-ref="CopyFieldEventQuery" />
+            </map>
+        </property>
+    </bean>
+
+    <bean id="CopyFieldEventQuery" scope="prototype"  class="datawave.query.config.LookupUUIDTune">
+        <property name="primaryToSecondaryFieldMap">
+            <map>
+                <entry key="MAGIC_COPY">
+                    <list>
+                        <value>MAGIC</value>
+                    </list>
+                </entry>
+            </map>
+        </property>
     </bean>
     
     <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
         <property name="roleManager" ref="easyRoleManager" />
-        <property name="markingFunctions" ref="markingFunctions" />
+	<property name="markingFunctions" ref="markingFunctions" />
+	<property name="responseObjectFactory" ref="ResponseObjectFactory" />
     </bean>
     
     <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ShardQueryLogic" abstract="true">
@@ -291,4 +324,7 @@
     
     <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
     
+    <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">
+   </util:list>
+
 </beans>

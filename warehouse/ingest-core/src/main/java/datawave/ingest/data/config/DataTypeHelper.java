@@ -11,7 +11,9 @@ public interface DataTypeHelper {
      * Performs property validation and setup
      * 
      * @param config
+     *            a hadoop {@link Configuration} object
      * @throws IllegalArgumentException
+     *             if an illegal argument is detected
      */
     void setup(Configuration config) throws IllegalArgumentException;
     

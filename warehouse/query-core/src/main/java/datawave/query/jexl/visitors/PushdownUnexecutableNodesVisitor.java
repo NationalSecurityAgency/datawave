@@ -366,11 +366,13 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTIntegerLiteral node, Object data) {
         return node;
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTFloatLiteral node, Object data) {
         return node;
     }

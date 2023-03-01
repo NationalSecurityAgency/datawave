@@ -19,9 +19,12 @@ public class ConfigurationFileHelper {
     /**
      * 
      * @param configDirectory
+     *            the config directory
      * @param configSuffix
+     *            the config suffix
      * @param loadDefaults
-     * @return
+     *            boolean flag for load defaults
+     * @return a configuration
      */
     public static Configuration getConfigurationFromFiles(String configDirectory, String configSuffix, boolean loadDefaults) {
         Configuration conf = new Configuration(loadDefaults);
@@ -32,8 +35,11 @@ public class ConfigurationFileHelper {
     /**
      * 
      * @param conf
+     *            a configuration
      * @param configDirectory
+     *            the config directory
      * @param configSuffix
+     *            the config suffix
      */
     public static void setConfigurationFromFiles(Configuration conf, String configDirectory, String configSuffix) {
         File directory = new File(configDirectory);

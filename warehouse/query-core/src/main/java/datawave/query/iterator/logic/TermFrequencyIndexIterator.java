@@ -5,13 +5,13 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import datawave.core.iterators.key.TFKey;
 import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.iterator.DocumentIterator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.TimeFilter;
-import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.util.TypeMetadata;
 
@@ -30,15 +30,17 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 
+import static datawave.query.Constants.NULL;
+import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
+
 /**
  * Scans a bounds within a column qualifier. This iterator needs to: - 1) Be given a global Range (ie, [-inf,+inf]) - 2) Select an arbitrary column family (ie,
- * "fi\u0000FIELD") - 3) Given a prefix, scan all keys that have a column qualifer that has that prefix that occur in the column family for all rows in a tablet
+ * "fi\u0000FIELD") - 3) Given a prefix, scan all keys that have a column qualifier that has that prefix that occur in the column family for all rows in a
+ * tablet
  * 
  */
 public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Value>, DocumentIterator {
     private static final Logger log = Logger.getLogger(TermFrequencyIndexIterator.class);
-    
-    public static final String INDEX_FILTERING_CLASSES = "indexfiltering.classes";
     
     protected SortedKeyValueIterator<Key,Value> source;
     
@@ -60,22 +62,30 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     
     protected PreNormalizedAttributeFactory attributeFactory;
     protected Document document;
-    protected boolean buildDocument = false;
+    protected boolean buildDocument;
     protected Predicate<Key> datatypeFilter;
     protected final FieldIndexAggregator aggregation;
     protected TimeFilter timeFilter;
     
-    private DatawaveKey startKeyParser;
-    private DatawaveKey stopKeyParser;
+    private final DatawaveKey startKeyParser;
+    private final DatawaveKey stopKeyParser;
     
     // support for lazy building of scan range
-    private boolean startInclusive;
-    private boolean endInclusive;
+    private final boolean startInclusive;
+    private final boolean endInclusive;
+    
+    // reusable buffers
+    private final Text row = new Text();
+    private final Text cf = new Text();
+    private final Text cq = new Text();
+    
+    private final TFKey tfParser = new TFKey();
     
     /**
      * A convenience constructor that allows all keys to pass through unmodified from the source.
      * 
      * @param source
+     *            the source iterator
      */
     public TermFrequencyIndexIterator(Key fiStartKey, Key fiEndKey, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter) {
         this(fiStartKey, fiEndKey, source, timeFilter, null, false, Predicates.<Key> alwaysTrue(), new TermFrequencyAggregator(null, null));
@@ -101,7 +111,7 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         this.timeFilter = timeFilter;
         
         // Build the cf: fi\x00FIELD_NAME
-        this.columnFamily = Constants.TERM_FREQUENCY_COLUMN_FAMILY;
+        this.columnFamily = TERM_FREQUENCY_COLUMN_FAMILY;
         
         this.seekColumnFamilies = Lists.newArrayList();
         this.seekColumnFamilies.add(new ArrayByteSequence(columnFamily.getBytes()));
@@ -110,8 +120,6 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         this.stopKeyParser = new DatawaveKey(fiEndKey);
         
         this.includeColumnFamilies = true;
-        
-        this.document = new Document();
         
         this.field = startKeyParser.getFieldName().toUpperCase();
         
@@ -136,12 +144,12 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     }
     
     public void buildScanRangeLazily() {
-        Key startKey = new Key(startKeyParser.getRow(), columnFamily, new Text(startKeyParser.getDataType() + Constants.NULL + startKeyParser.getUid()
-                        + Constants.NULL + startKeyParser.getFieldValue() + Constants.NULL_BYTE_STRING + startKeyParser.getFieldName()));
+        Key startKey = new Key(startKeyParser.getRow(), columnFamily, new Text(startKeyParser.getDataType() + NULL + startKeyParser.getUid() + NULL
+                        + startKeyParser.getFieldValue() + NULL + startKeyParser.getFieldName()));
         
         // must use the start key row so that the scan will be bounded by the specified cf/cq. All these scans are assumed to be across a single row
-        Key endKey = new Key(stopKeyParser.getRow(), columnFamily, new Text(stopKeyParser.getDataType() + Constants.NULL + stopKeyParser.getUid()
-                        + Constants.NULL + stopKeyParser.getFieldValue() + Constants.NULL_BYTE_STRING + stopKeyParser.getFieldName()));
+        Key endKey = new Key(stopKeyParser.getRow(), columnFamily, new Text(stopKeyParser.getDataType() + NULL + stopKeyParser.getUid() + NULL
+                        + stopKeyParser.getFieldValue() + NULL + stopKeyParser.getFieldName()));
         
         this.scanRange = new Range(startKey, startInclusive, endKey, endInclusive);
         
@@ -164,13 +172,11 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     
     @Override
     public void next() throws IOException {
-        // We need to null this every time even though our fieldname and fieldvalue won't
+        // We need to null this every time even though our fieldName and fieldValue won't
         // change, we have the potential for the column visibility to change
         document = new Document();
         
         tk = null;
-        // reusable buffers
-        Text row = new Text(), cf = new Text(), cq = new Text();
         
         if (scanRange == null) {
             buildScanRangeLazily();
@@ -179,13 +185,17 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         if (log.isTraceEnabled()) {
             log.trace(source.hasTop() + " nexting on " + scanRange);
         }
+        
+        Key top;
         while (source.hasTop() && tk == null) {
-            Key top = source.getTopKey();
+            top = source.getTopKey();
             
-            row = top.getRow(row);
-            
+            // copy row, cf, cq into reusable buffers
+            top.getRow(row);
             top.getColumnFamily(cf);
             top.getColumnQualifier(cq);
+            
+            tfParser.parse(top);
             
             if (!cq.toString().endsWith(field)) {
                 if (log.isTraceEnabled()) {
@@ -195,33 +205,14 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
                 continue;
             }
             
-            DatawaveKey key = new DatawaveKey(top);
-            Key nextTop = top;
-            
-            for (int i = 0; i < 256 && source.hasTop() && key.getFieldName().compareTo(field) < 0; ++i) {
-                source.next();
-                
-                nextTop = source.getTopKey();
-                if (nextTop == null)
-                    break;
-                
-                key = new DatawaveKey(nextTop);
-                if (log.isTraceEnabled()) {
-                    log.trace("Have key " + key + " < " + field);
-                }
-            }
-            
-            if (nextTop == null)
-                continue;
-            
-            if (key.getFieldName().compareTo(field) < 0) {
+            if (tfParser.getField().compareTo(field) < 0) {
                 
                 if (log.isTraceEnabled()) {
-                    log.trace("Have key " + key + " is less than " + field);
+                    log.trace("Have key " + top.toStringNoTime() + " is less than " + field);
                 }
                 
-                StringBuilder builder = new StringBuilder(key.getDataType()).append(Constants.NULL).append(key.getUid()).append(Constants.NULL)
-                                .append(key.getFieldValue()).append(Constants.NULL).append(field);
+                StringBuilder builder = new StringBuilder(tfParser.getDatatype()).append(NULL).append(tfParser.getUid()).append(NULL)
+                                .append(tfParser.getValue()).append(NULL).append(field);
                 Key nextKey = new Key(row, cf, new Text(builder.toString()));
                 Range newRange = new Range(nextKey, true, scanRange.getEndKey(), scanRange.isEndKeyInclusive());
                 source.seek(newRange, seekColumnFamilies, true);
@@ -229,16 +220,16 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
             }
             
             // only inspect the values specified in the range since a broad row or uid range will potentially go cross document
-            if (scanRange.isStartKeyInclusive() && key.getFieldValue().compareTo(startKeyParser.getFieldValue()) < 0) {
+            if (scanRange.isStartKeyInclusive() && tfParser.getValue().compareTo(startKeyParser.getFieldValue()) < 0) {
                 source.next();
                 continue;
-            } else if (!scanRange.isStartKeyInclusive() && key.getFieldValue().compareTo(startKeyParser.getFieldValue()) <= 0) {
+            } else if (!scanRange.isStartKeyInclusive() && tfParser.getValue().compareTo(startKeyParser.getFieldValue()) <= 0) {
                 source.next();
                 continue;
-            } else if (scanRange.isEndKeyInclusive() && key.getFieldValue().compareTo(stopKeyParser.getFieldValue()) > 0) {
+            } else if (scanRange.isEndKeyInclusive() && tfParser.getValue().compareTo(stopKeyParser.getFieldValue()) > 0) {
                 source.next();
                 continue;
-            } else if (!scanRange.isEndKeyInclusive() && key.getFieldValue().compareTo(stopKeyParser.getFieldValue()) >= 0) {
+            } else if (!scanRange.isEndKeyInclusive() && tfParser.getValue().compareTo(stopKeyParser.getFieldValue()) >= 0) {
                 source.next();
                 continue;
             }
@@ -314,8 +305,8 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         }
         
         if (this.hasTop() && this.getTopKey().compareTo(pointer) >= 0) {
-            throw new IllegalStateException("Tried to called move when we were already at or beyond where we were told to move to: topkey=" + this.getTopKey()
-                            + ", movekey=" + pointer);
+            throw new IllegalStateException("Tried to called move when we were already at or beyond where we were told to move to: topKey=" + this.getTopKey()
+                            + ", moveKey=" + pointer);
         }
         
         next();
@@ -331,6 +322,10 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     
     @Override
     public Document document() {
+        if (document == null) {
+            // in case this method is called prior to a seek/next
+            document = new Document();
+        }
         return document;
     }
     

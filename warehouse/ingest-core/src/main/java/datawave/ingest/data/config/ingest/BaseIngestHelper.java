@@ -70,7 +70,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public static final String REVERSE_INDEX_FIELDS = ".data.category.index.reverse";
     
     /**
-     * Configuration parameter to specify which fields should NOT be revser indexed, implying that all other event fields should be reverse indexed. This
+     * Configuration parameter to specify which fields should NOT be reverse indexed, implying that all other event fields should be reverse indexed. This
      * parameter supports multiple datatypes, so a valid value would be something like {@code <type>.data.category.index.reverse.blacklist}.
      */
     public static final String BLACKLIST_REVERSE_INDEX_FIELDS = ".data.category.index.reverse.blacklist";
@@ -244,7 +244,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // Load the proper list of fields to (not) index
         if (fieldConfigHelper != null) {
             log.info("Using field config helper for " + this.getType().typeName());
-        } else if (null == configProperty || configProperty.isEmpty()) {
+        } else if (configProperty == null) {
             log.warn("No index fields or blacklist fields specified, not generating index fields for " + this.getType().typeName());
         } else {
             this.indexedFields = Sets.newHashSet();
@@ -288,7 +288,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
         
         // Load the proper list of fields to (not) reverse index
-        if (null == configProperty || configProperty.isEmpty()) {
+        if (configProperty == null) {
             log.warn("No reverse index fields or blacklist reverse index fields specified, not generating reverse index fields for "
                             + this.getType().typeName());
         } else {
@@ -352,7 +352,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                     continue;
                 }
                 
-                FailurePolicy policy = null;
+                FailurePolicy policy;
                 try {
                     policy = FailurePolicy.valueOf(property.getValue());
                 } catch (Exception e) {
@@ -429,7 +429,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     /**
      * lazy instantiation
      * 
-     * @return
+     * @return a {@link CompositeIngest}
      */
     public CompositeIngest getCompositeIngest() {
         return this.compositeIngest;
@@ -438,7 +438,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     /**
      * lazy instantiation
      * 
-     * @return
+     * @return a {@link VirtualIngest}
      */
     public VirtualIngest getVirtualIngest() {
         if (this.virtualIngest == null) {
@@ -472,10 +472,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
     
     /**
-     * Get a field name from a property name given the pattern. Returns null if not an actually match
+     * Get a field name from a property name given the pattern, or null if no field name is found
      * 
      * @param property
+     *            a property that contains a field name
      * @param propertyPattern
+     *            a pattern used to extract a field name from a property
      * @return the field name extracted from the property name
      */
     protected String getFieldName(String property, String propertyPattern) {
@@ -527,7 +529,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     @Override
     public void setEmbeddedHelper(DataTypeHelperImpl embeddedHelper) {
         this.embeddedHelper = embeddedHelper;
-        // When the embedded helper is set, check to see if it an instance
+        // When the embedded helper is set, check to see if it is an instance
         // of MaskedFieldHelper. If so, then normalize the values
         if (embeddedHelper instanceof MaskedFieldHelper) {
             mfHelper = (MaskedFieldHelper) embeddedHelper;
@@ -619,8 +621,10 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
      * This is a helper routine that will return a normalized field value using the configured normalizer
      * 
      * @param fieldValue
+     *            the field value
      * @return the normalized field values
      */
+    @Override
     protected Set<String> normalizeFieldValue(String fieldName, String fieldValue) throws NormalizationException {
         Collection<datawave.data.type.Type<?>> dataTypes = getDataTypes(fieldName);
         HashSet<String> values = new HashSet<>(dataTypes.size());
@@ -634,7 +638,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
      * This is a helper routine that will create a normalized field out of a name and value pair
      * 
      * @param field
+     *            the field
      * @param value
+     *            the value
      * @return The normalized field and value
      */
     protected Set<NormalizedContentInterface> normalize(String field, String value) {
@@ -698,9 +704,10 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
     
     /**
-     * This is a helper routine that will create a normalize a field out of a base normalized field.
+     * This is a helper routine that will create and normalize a field out of a base normalized field.
      * 
      * @param normalizedContent
+     *            a {@link NormalizedContentInterface}
      * @return the normalized field
      */
     protected Set<NormalizedContentInterface> normalize(NormalizedContentInterface normalizedContent) {
@@ -890,18 +897,20 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
     
     /**
-     * Apply the normalization and add the results to the map. Failure policy handling: LEAVE: The unnormalized form is put in the map with a cleared out error,
-     * and a failedNormalizationField is added to the map with the field name as the value DROP: Only a failedNormalizationField is added to the map with the
-     * field name as the value FAIL: The unnormalized form is put in the map with the error set allowing the caller to fail out the event with appropriate error
-     * handling
+     * Apply the normalization and add the results to the map. Failure policy handling: LEAVE: The non-normalized form is put in the map with a cleared out
+     * error, and a failedNormalizationField is added to the map with the field name as the value DROP: Only a failedNormalizationField is added to the map with
+     * the field name as the value FAIL: The non-normalized form is put in the map with the error set allowing the caller to fail out the event with appropriate
+     * error handling
      * 
      * @param results
+     *            a MultiMap of {@link NormalizedContentInterface}
      * @param nArg
+     *            current data to be normalized
      */
     protected void applyNormalizationAndAddToResults(Multimap<String,NormalizedContentInterface> results, NormalizedContentInterface nArg) {
         // If an alias exists, then we want to use the alias as the key in the
         // map.
-        // We don't want use the normalized form of the alias.
+        // We don't want to use the normalized form of the alias.
         Set<NormalizedContentInterface> ns = normalizeAndAlias(nArg);
         for (NormalizedContentInterface n : ns) {
             if (n != null) {
@@ -936,7 +945,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
      * Normalize and alias a field
      * 
      * @param nArg
-     * @return the normalized field, or the unnormalized field with an appropriate error set
+     *            a field value pair encapsulated within a {@link NormalizedContentInterface}
+     * @return the normalized field, or the non-normalized field with an appropriate error set
      */
     protected Set<NormalizedContentInterface> normalizeAndAlias(NormalizedContentInterface nArg) {
         Set<NormalizedContentInterface> ns;
@@ -1123,7 +1133,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     
     /**
      * This method allows updating the typeFieldMap from a derived helper.
-     **/
+     *
+     * @param fieldName
+     *            the field name
+     * @param typeClasses
+     *            a comma-delimited string of {@link Type} classes
+     */
     public void updateDatawaveTypes(String fieldName, String typeClasses) {
         
         // updates multimap typeFieldMap

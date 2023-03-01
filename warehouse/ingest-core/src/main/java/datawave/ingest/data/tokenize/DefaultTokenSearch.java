@@ -943,7 +943,9 @@ public class DefaultTokenSearch implements TokenSearch {
      * <p>
      * If no stopwords are found in the cache for the specified filename, this method will invoke {@link #getStopWords(String)} to load the list.
      * 
+     * @return a reference to a stopword set
      * @throws IOException
+     *             if there is an issue getting the stop words file
      */
     public static synchronized CharArraySet getStopWords() throws IOException {
         String stopResource = System.getProperty("STOP_WORD_LIST", "stopwords.txt");
@@ -956,7 +958,10 @@ public class DefaultTokenSearch implements TokenSearch {
      * If no stopwords are found in the cache for the specified filename, this method will invoke {@link Factory#loadStopWords(String)} to load the list.
      * 
      * @param filename
+     *            name of the file
      * @throws IOException
+     *             if there is an issue getting the stop words file
+     * @return reference to stopword set
      */
     public static synchronized CharArraySet getStopWords(String filename) throws IOException {
         CharArraySet stopwords = stopwordCache.get(filename);

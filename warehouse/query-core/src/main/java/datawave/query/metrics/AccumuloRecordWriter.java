@@ -1,6 +1,7 @@
 package datawave.query.metrics;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.Map;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 
+import datawave.webservice.util.EnvProvider;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -298,7 +300,10 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
      * string, and is not intended to be secure.
      */
     protected static byte[] getPassword(Configuration conf) {
-        return Base64.decodeBase64(conf.get(PASSWORD, "").getBytes());
+        byte[] bytes = Base64.decodeBase64(conf.get(PASSWORD, "").getBytes());
+        String pw = new String(bytes);
+        pw = EnvProvider.resolve(pw);
+        return pw.getBytes(StandardCharsets.UTF_8);
     }
     
     protected static boolean canCreateTables(Configuration conf) {

@@ -317,6 +317,8 @@ public class Files {
      *
      * @param src
      *            The file to be moved.
+     * @param dest
+     *            The new destination of the file.
      * @return an error message if there are any problems.
      * @throws IllegalArgumentException
      *             if any of the parameters are null.

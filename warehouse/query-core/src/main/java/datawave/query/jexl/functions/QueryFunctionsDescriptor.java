@@ -14,6 +14,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
+import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -190,9 +191,14 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 }
                 break;
             case QueryFunctions.UNIQUE_FUNCTION:
-            case QueryFunctions.UNIQUE_BY_DAY_FUNCTION:
-            case QueryFunctions.UNIQUE_BY_HOUR_FUNCTION:
-            case QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION:
+            case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION:
+            case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_SECOND_FUNCTION:
+            case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION:
+            case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION:
+            case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_HOUR_FUNCTION:
+            case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_DAY_FUNCTION:
+            case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MONTH_FUNCTION:
+            case QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_YEAR_FUNCTION:
             case QueryFunctions.GROUPBY_FUNCTION:
             case QueryFunctions.EXCERPT_FIELDS_FUNCTION:
             case QueryFunctions.MATCH_REGEX:

@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * This utility class contains a variety of methods perform operations on GeoWave ranges.
+ * This utility class contains a variety of methods which can be used to perform operations on GeoWave ranges.
  *
  * These methods assume that a full incremental tiered index strategy is being used, with a maximum of 31 bits per dimension, and using the Hilbert
  * Space-Filling Curve. No guarantees are made as to the effectiveness or accuracy of these methods given any other configuration.
@@ -716,7 +716,7 @@ public class GeoWaveUtils {
     }
     
     /**
-     * This performs a sort of quad-tree decomposition on the given range. This algorithm searched for subranges within the original range which can be
+     * This performs a sort of quad-tree decomposition on the given range. This algorithm searches for subranges within the original range which can be
      * represented in a simplified fashion at a lower granularity tier. The resulting list of byte arrays will consist of an equivalent set of ids, spread out
      * across multiple tiers, which is topologically equivalent to the footprint of the original range.
      *
@@ -729,7 +729,7 @@ public class GeoWaveUtils {
     }
     
     /**
-     * This performs a sort of quad-tree decomposition on the given range. This algorithm searched for subranges within the original range which can be
+     * This performs a sort of quad-tree decomposition on the given range. This algorithm searches for subranges within the original range which can be
      * represented in a simplified fashion at a lower granularity tier. The resulting list of byte arrays will consist of an equivalent set of ids, spread out
      * across multiple tiers, which is topologically equivalent to the footprint of the original range.
      *
@@ -743,7 +743,7 @@ public class GeoWaveUtils {
     }
     
     /**
-     * This performs a sort of quad-tree decomposition on the given range. This algorithm searched for subranges within the original range which can be
+     * This performs a sort of quad-tree decomposition on the given range. This algorithm searches for subranges within the original range which can be
      * represented in a simplified fashion at a lower granularity tier. The resulting list of byte arrays will consist of an equivalent set of ids, spread out
      * across multiple tiers, which is topologically equivalent to the footprint of the original range.
      *
@@ -758,7 +758,7 @@ public class GeoWaveUtils {
     }
     
     /**
-     * This performs a sort of quad-tree decomposition on the given range. This algorithm searched for subranges within the original range which can be
+     * This performs a sort of quad-tree decomposition on the given range. This algorithm searches for subranges within the original range which can be
      * represented in a simplified fashion at a lower granularity tier. The resulting list of byte arrays will consist of an equivalent set of ids, spread out
      * across multiple tiers, which is topologically equivalent to the footprint of the original range.
      * 

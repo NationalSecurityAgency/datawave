@@ -4,6 +4,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.config.RemoteQueryConfiguration;
 import datawave.query.tables.remote.RemoteQueryLogic;
 import datawave.query.transformer.EventQueryTransformerSupport;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.common.remote.RemoteQueryService;
@@ -13,7 +14,6 @@ import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.EventQueryResponseBase;
@@ -41,6 +41,8 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     private RemoteQueryConfiguration config;
     
     private RemoteQueryService remoteQueryService;
+    
+    private UserOperations userOperations;
     
     private QueryLogicTransformer transformerInstance = null;
     
@@ -77,6 +79,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     
     public void setRemoteId(String id) {
         getConfig().setRemoteId(id);
+        getConfig().setQueryString("( metrics = '" + remoteQueryService.getQueryMetricsURI(id).toString() + "' )");
     }
     
     public String getRemoteQueryLogic() {
@@ -208,7 +211,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
                     if (response != null) {
                         if (response.getReturnedEvents() == 0) {
                             if (response.isPartialResults()) {
-                                DefaultEvent e = new DefaultEvent();
+                                EventBase e = responseObjectFactory.getEvent();
                                 e.setIntermediateResult(true);
                                 data.add(e);
                             } else {
@@ -255,4 +258,13 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
         
     }
     
+    @Override
+    public void setUserOperations(UserOperations userOperations) {
+        this.userOperations = userOperations;
+    }
+    
+    @Override
+    public UserOperations getUserOperations() {
+        return userOperations;
+    }
 }

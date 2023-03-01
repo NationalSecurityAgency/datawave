@@ -126,7 +126,7 @@ public interface TokenSearch {
          * <br>
          * Throws a RuntimeException if the default implementation cannot be instantiated for any reason
          * 
-         * @return
+         * @return tokensearch default instance
          */
         public static TokenSearch newInstance() {
             try {
@@ -143,7 +143,9 @@ public interface TokenSearch {
          * <br>
          * If tokenSearchClass is null/empty, then a RuntimeException will be thrown.
          * 
-         * @return
+         * @param tokenSearchClass
+         *            name of tokensearch class
+         * @return a tokensearch instance
          */
         public static TokenSearch newInstance(String tokenSearchClass) {
             if (null == tokenSearchClass || tokenSearchClass.isEmpty()) {
@@ -158,6 +160,11 @@ public interface TokenSearch {
          * <br>
          * If tokenSearchClass is null/empty, then a RuntimeException will be thrown.
          * 
+         * @param tokenSearchClass
+         *            name of the tokensearch class
+         * @param args
+         *            arguments for creating the class
+         * @return a tokensearch instance
          */
         public static TokenSearch newInstance(String tokenSearchClass, Object... args) {
             if (null == tokenSearchClass || tokenSearchClass.isEmpty()) {

@@ -10,7 +10,6 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.Flushable;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.logic.WritesResultCardinalities;
-import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -108,7 +107,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         }
         
         if (documentEntry.getValue().isIntermediateResult()) {
-            DefaultEvent output = new DefaultEvent();
+            EventBase output = responseObjectFactory.getEvent();
             output.setIntermediateResult(true);
             return output;
         }

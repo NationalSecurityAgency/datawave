@@ -748,8 +748,11 @@ public class Document extends AttributeBag<Document> implements Serializable {
             }
             if (anySet != null) {
                 anySet.addAll(visitObject);
-                context.set(Constants.ANY_FIELD, anySet);
             }
+        }
+        // now if we have anything in the anySet, add it to the context
+        if (anySet != null && !anySet.isEmpty()) {
+            context.set(Constants.ANY_FIELD, anySet);
         }
         
         // this probably will not be used by anybody as the side-effect of loading the JEXL context is the real result

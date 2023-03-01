@@ -14,7 +14,9 @@ public class ReusableMetricsLabels {
      * Add a new label
      *
      * @param name
+     *            a name
      * @param value
+     *            a value
      */
     public void put(String name, String value) {
         get().put(name, value);

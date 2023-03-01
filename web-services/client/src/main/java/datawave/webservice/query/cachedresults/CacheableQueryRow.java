@@ -1,13 +1,14 @@
 package datawave.webservice.query.cachedresults;
 
+import datawave.webservice.query.result.event.HasMarkings;
+import datawave.webservice.query.util.TypedValue;
+
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import datawave.webservice.query.result.event.HasMarkings;
-import datawave.webservice.query.util.TypedValue;
 
 public abstract class CacheableQueryRow implements HasMarkings {
     
@@ -86,4 +87,17 @@ public abstract class CacheableQueryRow implements HasMarkings {
         return sb.toString();
     }
     
+    public abstract void setSizeInStoredCharacters(long characters);
+    
+    public abstract void setVariableColumnNames(Collection<String> variableColumnNames);
+    
+    public abstract void setColumnValues(Map<String,Set<String>> columnValues);
+    
+    public abstract void setUser(String user_);
+    
+    public abstract void setColumnMarkingsMap(Map<String,Map<String,String>> columnMarkingsMap);
+    
+    public abstract void setColumnColumnVisibilityMap(Map<String,String> columnVisibilityMap);
+    
+    public abstract void setColumnTimestampMap(Map<String,Long> parseColumnTimestamps);
 }

@@ -11,7 +11,9 @@ import java.io.IOException;
  * and to enable the shardStats to be recognized as a type.
  * 
  * @param <K>
+ *            type of the key for the recordreader
  * @param <V>
+ *            type of the value for the recordreader
  */
 public class ShardStatsRecordReader<K,V> extends RecordReader<K,V> {
     @Override

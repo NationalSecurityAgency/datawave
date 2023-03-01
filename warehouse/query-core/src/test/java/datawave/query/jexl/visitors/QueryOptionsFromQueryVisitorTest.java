@@ -109,6 +109,66 @@ public class QueryOptionsFromQueryVisitorTest {
     }
     
     @Test
+    public void testUniqueByMonth() throws ParseException {
+        // Verify an empty function results in an empty unique parameter.
+        assertResult("f:unique_by_month()", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "");
+        
+        // Verify fields are added with the HOUR granularity.
+        assertResult("f:unique_by_month('field1','field2','field3')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[MONTH],field2[MONTH],field3[MONTH]");
+        
+        // Verify fields from multiple functions are merged.
+        assertResult("f:unique('field1','field2[DAY]') AND f:unique_by_month('field1','field2','field3') AND f:unique_by_month('field4')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[ALL,MONTH],field2[DAY,MONTH],field3[MONTH],field4[MONTH]");
+    }
+    
+    @Test
+    public void testUniqueBySecond() throws ParseException {
+        // Verify an empty function results in an empty unique parameter.
+        assertResult("f:unique_by_second()", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "");
+        
+        // Verify fields are added with the HOUR granularity.
+        assertResult("f:unique_by_second('field1','field2','field3')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[SECOND],field2[SECOND],field3[SECOND]");
+        
+        // Verify fields from multiple functions are merged.
+        assertResult("f:unique('field1','field2[DAY]') AND f:unique_by_second('field1','field2','field3') AND f:unique_by_second('field4')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[ALL,SECOND],field2[DAY,SECOND],field3[SECOND],field4[SECOND]");
+    }
+    
+    @Test
+    public void testUniqueByMillisecond() throws ParseException {
+        // Verify an empty function results in an empty unique parameter.
+        assertResult("f:unique_by_millisecond()", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "");
+        
+        // Verify fields are added with the HOUR granularity.
+        assertResult("f:unique_by_millisecond('field1','field2','field3')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[MILLISECOND],field2[MILLISECOND],field3[MILLISECOND]");
+        
+        // Verify fields from multiple functions are merged.
+        assertResult("f:unique('field1','field2[DAY]') AND f:unique_by_millisecond('field1','field2','field3') AND f:unique_by_millisecond('field4')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[ALL,MILLISECOND],field2[DAY,MILLISECOND],field3[MILLISECOND],field4[MILLISECOND]");
+    }
+    
+    @Test
+    public void testUniqueByYear() throws ParseException {
+        // Verify an empty function results in an empty unique parameter.
+        assertResult("f:unique_by_year()", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "");
+        
+        // Verify fields are added with the MINUTE granularity.
+        assertResult("f:unique_by_year('field1','field2','field3')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[YEAR],field2[YEAR],field3[YEAR]");
+        
+        // Verify fields from multiple functions are merged.
+        assertResult("f:unique('field1','field2[DAY]') AND f:unique_by_year('field1','field2','field3') AND f:unique_by_year('field4')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[ALL,YEAR],field2[DAY,YEAR],field3[YEAR],field4[YEAR]");
+    }
+    
+    @Test
     public void testUniqueByMinute() throws ParseException {
         // Verify an empty function results in an empty unique parameter.
         assertResult("f:unique_by_minute()", "");
@@ -121,6 +181,21 @@ public class QueryOptionsFromQueryVisitorTest {
         // Verify fields from multiple functions are merged.
         assertResult("f:unique('field1','field2[DAY]') AND f:unique_by_minute('field1','field2','field3') AND f:unique_by_minute('field4')", "");
         assertOption(QueryParameters.UNIQUE_FIELDS, "field1[ALL,MINUTE],field2[DAY,MINUTE],field3[MINUTE],field4[MINUTE]");
+    }
+    
+    @Test
+    public void testUniqueByTenth() throws ParseException {
+        // Verify an empty function results in an empty unique parameter.
+        assertResult("f:unique_by_tenth_of_hour()", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "");
+        
+        // Verify fields are added with the MINUTE granularity.
+        assertResult("f:unique_by_tenth_of_hour('field1','field2','field3')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[TENTH_OF_HOUR],field2[TENTH_OF_HOUR],field3[TENTH_OF_HOUR]");
+        
+        // Verify fields from multiple functions are merged.
+        assertResult("f:unique('field1','field2[DAY]') AND f:unique_by_tenth_of_hour('field1','field2','field3') AND f:unique_by_tenth_of_hour('field4')", "");
+        assertOption(QueryParameters.UNIQUE_FIELDS, "field1[ALL,TENTH_OF_HOUR],field2[DAY,TENTH_OF_HOUR],field3[TENTH_OF_HOUR],field4[TENTH_OF_HOUR]");
     }
     
     @Test

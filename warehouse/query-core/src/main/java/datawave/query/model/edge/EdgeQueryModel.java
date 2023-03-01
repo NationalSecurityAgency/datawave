@@ -36,9 +36,6 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
      */
     public EdgeQueryModel(QueryModel other) throws InvalidModelException {
         super(other);
-        if (null != this.unevalFields && !this.unevalFields.isEmpty()) {
-            this.unevalFields.clear();
-        }
         validateModel(this);
     }
     
@@ -46,17 +43,14 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
     @SuppressWarnings("unused")
     private EdgeQueryModel() {}
     
-    @Override
     public void setUnevaluatedFields(Set<String> uneval) {
         // No-Op/Ignore
     }
     
-    @Override
     public void addUnevaluatedField(String uneval) {
         // No-Op/Ignore
     }
     
-    @Override
     public boolean isUnevaluatedField(String field) {
         return false; // Always false
     }
