@@ -2,18 +2,13 @@ package datawave.query.iterator.logic;
 
 import com.google.common.collect.Lists;
 import datawave.query.iterator.NestedIterator;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 public class AndIteratorTest {
     
@@ -23,433 +18,281 @@ public class AndIteratorTest {
     @Test
     public void testSingleInclude() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b", "c"));
+        includes.add(getItr(Lists.newArrayList("a", "b"), false));
         
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertHits(iter, "a", "b", "c");
+        AndIterator iterator = new AndIterator(includes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("a", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("b", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
     }
     
-    // A && B, both hit on 'a,b,c'
     @Test
-    public void testIncludes_allHits() {
+    public void testMultiInclude() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b", "c"));
-        includes.add(getIter("a", "b", "c"));
+        includes.add(getItr(Lists.newArrayList("a", "b", "e", "g"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d", "e", "f"), false));
         
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertHits(iter, "a", "b", "c");
+        AndIterator iterator = new AndIterator(includes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("a", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("b", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("e", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
     }
     
-    // A && B miss on 'a,b,c,d' and hit on 'e,f'
     @Test
-    public void testIncludes_hitsAtEnd() {
+    public void testMultiIncludeContextRequired() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "c", "e", "f"));
-        includes.add(getIter("b", "d", "e", "f"));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c"), false));
+        includes.add(getItr(Lists.newArrayList("b", "c", "d"), true));
         
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertHits(iter, "e", "f");
+        AndIterator iterator = new AndIterator(includes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("b", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("c", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
     }
     
-    // A && B, both hit on 'a,b' and miss 'c,d,e,f'
-    @Test
-    public void testIncludes_hitsUpFront() {
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b", "c", "e"));
-        includes.add(getIter("a", "b", "d", "f"));
-        
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertHits(iter, "a", "b");
-    }
-    
-    // A && !B
-    @Test
-    public void testIncludeExclude_noneExcluded() {
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b", "c"));
-        
-        Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("x", "y", "z"));
-        
-        AndIterator<String> iter = new AndIterator<>(includes, excludes);
-        assertHits(iter, "a", "b", "c");
-    }
-    
-    // A && !B, hits on 'a,d,f', no hits on 'b,c,e'
-    @Test
-    public void testIncludeExclude_someExcluded() {
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b", "c", "d", "e", "f"));
-        
-        Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("b", "c", "e"));
-        
-        AndIterator<String> iter = new AndIterator<>(includes, excludes);
-        assertHits(iter, "a", "d", "f");
-    }
-    
-    // A && !B, all hits excluded
-    @Test
-    public void testIncludeExclude_allExcluded() {
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b", "c"));
-        
-        Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("a", "b", "c"));
-        
-        AndIterator<String> iter = new AndIterator<>(includes, excludes);
-        assertNoHits(iter);
-    }
-    
-    // A && (B && C)
-    @Test
-    public void testIncludeWithNestedIncludes_allHits() {
-        Set<NestedIterator<String>> leftIncludes = new HashSet<>();
-        leftIncludes.add(getIter("a", "b", "c", "d"));
-        leftIncludes.add(getIter("a", "b", "c", "d"));
-        AndIterator<String> leftAnd = new AndIterator<>(leftIncludes);
-        
-        Set<NestedIterator<String>> rightIncludes = new HashSet<>();
-        rightIncludes.add(getIter("a", "b", "c", "d"));
-        rightIncludes.add(getIter("a", "b", "c", "d"));
-        AndIterator<String> rightAnd = new AndIterator<>(rightIncludes);
-        
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(leftAnd);
-        includes.add(rightAnd);
-        
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertHits(iter, "a", "b", "c", "d");
-    }
-    
-    // A && (!B && !C) => A && !(B || C)
-    @Test
-    public void testSimpleIncludeWithNestedExclude_fullExclusion() {
-        Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("a"));
-        excludes.add(getIter("a"));
-        AndIterator<String> rightAnd = new AndIterator<>(Collections.emptySet(), excludes);
-        
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a"));
-        includes.add(rightAnd);
-        
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertNoHits(iter);
-    }
-    
-    // A && (!B && !C) => A && !(B || C)
-    @Test
-    public void testSimpleIncludeWithNestedExclude_partialExclusion() {
-        Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("a"));
-        excludes.add(getIter("b"));
-        AndIterator<String> rightAnd = new AndIterator<>(Collections.emptySet(), excludes);
-        
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a"));
-        includes.add(rightAnd);
-        
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertNoHits(iter);
-    }
-    
-    // A && (!B && !C) => A && !(B || C)
-    @Test
-    public void testSimpleIncludeWithNestedExclude_noExclusion() {
-        Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("b"));
-        excludes.add(getIter("b"));
-        AndIterator<String> rightAnd = new AndIterator<>(Collections.emptySet(), excludes);
-        
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a"));
-        includes.add(rightAnd);
-        
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertHits(iter, "a");
-    }
-    
-    // A && (!B && !C) => A && !(B || C)
-    @Test
-    public void testIncludeWithNestedExcludes_fullExclusion() {
-        Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("a", "b", "c", "d"));
-        excludes.add(getIter("a", "b", "c", "d"));
-        AndIterator<String> rightAnd = new AndIterator<>(Collections.emptySet(), excludes);
-        
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b", "c", "d"));
-        includes.add(rightAnd);
-        
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertNoHits(iter);
-    }
-    
-    // A && (!B && !C) => A && !(B || C)
-    @Test
-    public void testIncludeWithNestedExcludes_partialExclusion() {
-        Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("c", "d"));
-        excludes.add(getIter("b", "d"));
-        AndIterator<String> rightAnd = new AndIterator<>(Collections.emptySet(), excludes);
-        
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b", "c", "d"));
-        includes.add(rightAnd);
-        
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertHits(iter, "a");
-    }
-    
-    // A && (!B && !C) => A && !(B || C)
-    @Test
-    public void testIncludeWithNestedExcludes_noExclusion() {
-        Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("t", "u", "v"));
-        excludes.add(getIter("x", "y", "z"));
-        AndIterator<String> rightAnd = new AndIterator<>(Collections.emptySet(), excludes);
-        
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b", "c", "d"));
-        includes.add(rightAnd);
-        
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertHits(iter, "a", "b", "c", "d");
-    }
-    
-    // (A && B) && (C && D), hits on 'b,c'
-    @Test
-    public void testDoubleNestedIncludes_overlappingHits() {
-        Set<NestedIterator<String>> leftIncludes = new HashSet<>();
-        leftIncludes.add(getIter("a", "b", "c"));
-        leftIncludes.add(getIter("b", "c", "d"));
-        AndIterator<String> leftAnd = new AndIterator<>(leftIncludes);
-        
-        Set<NestedIterator<String>> rightIncludes = new HashSet<>();
-        rightIncludes.add(getIter("a", "b", "c"));
-        rightIncludes.add(getIter("b", "c", "d"));
-        AndIterator<String> rightAnd = new AndIterator<>(rightIncludes);
-        
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(leftAnd);
-        includes.add(rightAnd);
-        
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertHits(iter, "b", "c");
-    }
-    
-    // (A && B) && (C && D) when each iterator contributes to a miss
-    @Test
-    public void testDoubleNestedIncludes_noHits() {
-        Set<NestedIterator<String>> leftIncludes = new HashSet<>();
-        leftIncludes.add(getIter("a", "b", "c"));
-        leftIncludes.add(getIter("b", "c", "d"));
-        AndIterator<String> leftAnd = new AndIterator<>(leftIncludes);
-        
-        Set<NestedIterator<String>> rightIncludes = new HashSet<>();
-        rightIncludes.add(getIter("c", "d", "e"));
-        rightIncludes.add(getIter("d", "e", "f"));
-        AndIterator<String> rightAnd = new AndIterator<>(rightIncludes);
-        
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(leftAnd);
-        includes.add(rightAnd);
-        
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertNoHits(iter);
-    }
-    
-    // A && B, hits on 'a,b,e' with trailing non-hit elements.
-    @Test
-    public void testIncludes_moreOverlappingHits() {
-        Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b", "e", "g"));
-        includes.add(getIter("a", "b", "c", "d", "e", "f"));
-        
-        AndIterator<String> iter = new AndIterator<>(includes);
-        assertHits(iter, "a", "b", "e");
-    }
-    
-    // (A && B) && !C
-    // 'a' is excluded, 'b' is common hit. Others are either excluded or do not intersect.
     @Test
     public void testExcludeFirstMatch() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b"));
-        includes.add(getIter("a", "b", "c", "d", "e", "f"));
+        includes.add(getItr(Lists.newArrayList("a", "b"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d", "e", "f"), false));
         
         Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("a", "c", "e", "f"));
+        excludes.add(getItr(Lists.newArrayList("a", "c", "e", "f"), false));
         
-        AndIterator<String> iterator = new AndIterator<>(includes, excludes);
-        assertHits(iterator, "b");
+        AndIterator iterator = new AndIterator(includes, excludes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("b", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
     }
     
     @Test
     public void testExcludeSecondMatch() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b"));
-        includes.add(getIter("a", "b", "c", "d", "e", "f"));
+        includes.add(getItr(Lists.newArrayList("a", "b"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d", "e", "f"), false));
         
         Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("b", "c", "e", "f"));
+        excludes.add(getItr(Lists.newArrayList("b", "c", "e", "f"), false));
         
-        AndIterator<String> iterator = new AndIterator<>(includes, excludes);
-        assertHits(iterator, "a");
+        AndIterator iterator = new AndIterator(includes, excludes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("a", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
     }
     
     @Test
     public void testExcludeLastMatch() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b", "f"));
-        includes.add(getIter("a", "b", "c", "d", "e", "f"));
+        includes.add(getItr(Lists.newArrayList("a", "b", "f"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d", "e", "f"), false));
         
         Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("c", "e", "f"));
+        excludes.add(getItr(Lists.newArrayList("c", "e", "f"), false));
         
-        AndIterator<String> iterator = new AndIterator<>(includes, excludes);
-        assertHits(iterator, "a", "b");
+        AndIterator iterator = new AndIterator(includes, excludes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("a", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("b", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
     }
     
     @Test
     public void testExcludeNoMatch() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b", "f"));
-        includes.add(getIter("a", "b", "c", "d", "e", "f"));
+        includes.add(getItr(Lists.newArrayList("a", "b", "f"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d", "e", "f"), false));
         
         Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("g"));
+        excludes.add(getItr(Lists.newArrayList("g"), false));
         
-        AndIterator<String> iterator = new AndIterator<>(includes, excludes);
-        assertHits(iterator, "a", "b", "f");
+        AndIterator iterator = new AndIterator(includes, excludes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("a", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("b", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("f", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
     }
     
     @Test
     public void testExcludeEmpty() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b", "f"));
-        includes.add(getIter("a", "b", "c", "d", "e", "f"));
+        includes.add(getItr(Lists.newArrayList("a", "b", "f"), false));
+        includes.add(getItr(Lists.newArrayList("a", "b", "c", "d", "e", "f"), false));
         
         Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter());
+        excludes.add(getItr(Lists.newArrayList(), false));
         
-        AndIterator<String> iterator = new AndIterator<>(includes, excludes);
-        assertHits(iterator, "a", "b", "f");
+        AndIterator iterator = new AndIterator(includes, excludes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("a", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("b", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("f", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
     }
     
     @Test
     public void testDeferred() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b"));
-        includes.add(getIter("b"));
+        includes.add(getItr(Lists.newArrayList("a", "b"), false));
+        includes.add(getItr(Lists.newArrayList("b"), true));
         
-        AndIterator<String> iterator = new AndIterator<>(includes);
-        assertHits(iterator, "b");
+        AndIterator iterator = new AndIterator(includes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("b", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
     }
     
     @Test
     public void testNegatedDeferred() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b"));
+        includes.add(getItr(Lists.newArrayList("a", "b"), false));
         
         Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("b"));
+        excludes.add(getItr(Lists.newArrayList("b"), true));
         
-        AndIterator<String> iterator = new AndIterator<>(includes, excludes);
-        assertHits(iterator, "a");
+        AndIterator iterator = new AndIterator(includes, excludes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("a", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
     }
     
     @Test
     public void testDeferredChild() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("a", "b"));
-        includes.add(getIter("b", "c"));
+        includes.add(getItr(Lists.newArrayList("a", "b"), true));
+        includes.add(getItr(Lists.newArrayList("b", "c"), true));
         
-        AndIterator<String> unsourcedIterator = new AndIterator<>(includes);
+        AndIterator unsourcedIterator = new AndIterator(includes);
         
         includes = new HashSet<>();
         includes.add(unsourcedIterator);
-        includes.add(getIter("c"));
+        includes.add(getItr(Lists.newArrayList("c"), false));
         
-        AndIterator<String> iterator = new AndIterator<>(includes);
-        assertNoHits(iterator);
+        AndIterator iterator = new AndIterator(includes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        Assert.assertTrue(unsourcedIterator.isContextRequired());
+        Assert.assertFalse(iterator.hasNext());
     }
     
-    // A && (!B && !C) ==> A && !(B || C)
     @Test
     public void testDeferredNegatedChild() {
         Set<NestedIterator<String>> includes = new HashSet<>();
         Set<NestedIterator<String>> excludes = new HashSet<>();
-        excludes.add(getIter("a", "b"));
-        excludes.add(getIter("b", "c"));
+        excludes.add(getItr(Lists.newArrayList("a", "b"), true));
+        excludes.add(getItr(Lists.newArrayList("b", "c"), true));
         
-        AndIterator<String> unsourcedIterator = new AndIterator<>(includes, excludes);
+        AndIterator unsourcedIterator = new AndIterator(includes, excludes);
         
         includes = new HashSet<>();
         includes.add(unsourcedIterator);
-        includes.add(getIter("c"));
+        includes.add(getItr(Lists.newArrayList("c"), false));
         
-        AndIterator<String> iterator = new AndIterator<>(includes);
-        assertNoHits(iterator);
+        AndIterator iterator = new AndIterator(includes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        Assert.assertTrue(unsourcedIterator.isContextRequired());
+        Assert.assertFalse(iterator.hasNext());
     }
     
     @Test
     public void testContextWhenNotRequiredMoveAll() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("c", "d", "e"));
-        includes.add(getIter("c", "d", "e"));
+        includes.add(getItr(Lists.newArrayList("c", "d", "e"), false));
+        includes.add(getItr(Lists.newArrayList("c", "d", "e"), false));
         
-        AndIterator<String> iterator = new AndIterator<>(includes);
-        assertHits(iterator, "c", "d", "e");
+        AndIterator iterator = new AndIterator(includes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        iterator.setContext("e");
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("c", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("e", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
     }
     
     @Test
     public void testContextWhenNotRequiredShortCircuit() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("c", "s", "z"));
-        includes.add(getIter("c", "z"));
+        includes.add(getItr(Lists.newArrayList("c", "s", "z"), false));
+        includes.add(getItr(Lists.newArrayList("c", "z"), false));
         
-        AndIterator<String> iterator = new AndIterator<>(includes);
-        assertHits(iterator, "c", "z");
+        AndIterator iterator = new AndIterator(includes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        iterator.setContext("d");
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("c", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
     }
     
     @Test
     public void testContextWhenNotRequiredSkipLowestMoveLowest() {
         Set<NestedIterator<String>> includes = new HashSet<>();
-        includes.add(getIter("c", "s", "z"));
-        includes.add(getIter("c", "z"));
+        includes.add(getItr(Lists.newArrayList("c", "s", "z"), false));
+        includes.add(getItr(Lists.newArrayList("c", "z"), false));
         
-        AndIterator<String> iterator = new AndIterator<>(includes);
-        assertHits(iterator, "c", "z");
+        AndIterator iterator = new AndIterator(includes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        iterator.setContext("z");
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("c", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("z", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
     }
     
-    private void assertHits(NestedIterator<String> iter, String... hits) {
-        List<String> listHits = Lists.newArrayList(hits);
-        assertHits(iter, listHits);
-    }
-    
-    private void assertHits(NestedIterator<String> iter, List<String> hits) {
-        iter.initialize();
-        for (String hit : hits) {
-            assertTrue(iter.hasNext());
-            assertEquals(hit, iter.next());
-        }
-        assertFalse(iter.hasNext());
-    }
-    
-    private void assertNoHits(NestedIterator<String> iter) {
-        iter.initialize();
-        assertFalse(iter.hasNext());
-        assertNull(iter.next());
-    }
-    
-    private NegationFilterTest.Itr<String> getIter(String... elements) {
-        List<String> list = Lists.newArrayList(elements);
-        return getIter(list, false);
-    }
-    
-    private NegationFilterTest.Itr<String> getIter(List<String> source, boolean contextRequired) {
+    private NegationFilterTest.Itr<String> getItr(List<String> source, boolean contextRequired) {
         return new NegationFilterTest.Itr<>(source, contextRequired);
     }
 }
