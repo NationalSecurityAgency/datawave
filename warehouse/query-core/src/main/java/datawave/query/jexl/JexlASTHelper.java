@@ -611,17 +611,17 @@ public class JexlASTHelper {
         if (fieldName != null && fieldName.length() > 1) {
             boolean idPrefix = fieldName.charAt(0) == IDENTIFIER_PREFIX;
             int startIndex = idPrefix ? 1 : 0;
-            int stopIndex = idPrefix ? fieldName.length() - 1 : fieldName.length();
+            int stopLength = idPrefix ? fieldName.length() - 1 : fieldName.length();
             
             if (!includeGroupingContext) {
                 int groupingOffset = fieldName.indexOf(GROUPING_CHARACTER_SEPARATOR);
                 if (groupingOffset != -1) {
-                    stopIndex = idPrefix ? groupingOffset - 1 : groupingOffset;
+                    stopLength = idPrefix ? groupingOffset - 1 : groupingOffset;
                 }
             }
             
-            if (startIndex != 0 || stopIndex != -1) {
-                fieldName = new String(fieldName.getBytes(), startIndex, stopIndex);
+            if (startIndex != 0 || stopLength != -1) {
+                fieldName = new String(fieldName.getBytes(), startIndex, stopLength);
             }
         }
 
