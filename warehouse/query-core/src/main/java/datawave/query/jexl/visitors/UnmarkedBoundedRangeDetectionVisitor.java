@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class UnmarkedBoundedRangeDetectionVisitor extends BaseVisitor {
     
-    @SuppressWarnings("unchecked")
     public static boolean findUnmarkedBoundedRanges(JexlNode script) {
         UnmarkedBoundedRangeDetectionVisitor visitor = new UnmarkedBoundedRangeDetectionVisitor();
         
@@ -24,11 +23,9 @@ public class UnmarkedBoundedRangeDetectionVisitor extends BaseVisitor {
     public Object visit(ASTReference node, Object data) {
         // determine if we have a marked range that is not actually a range
         if (QueryPropertyMarker.findInstance(node).isType(BoundedRange.class)) {
-            if (!JexlASTHelper.findRange().isRange(node)) {
-                if (null != data) {
-                    AtomicBoolean hasBounded = (AtomicBoolean) data;
-                    hasBounded.set(true);
-                }
+            if (null != data && !JexlASTHelper.findRange().isRange(node)) {
+                AtomicBoolean hasBounded = (AtomicBoolean) data;
+                hasBounded.set(true);
             }
             
             return false;

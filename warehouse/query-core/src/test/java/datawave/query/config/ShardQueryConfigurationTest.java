@@ -63,6 +63,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Long.MAX_VALUE, config.getMaxIndexScanTimeMillis());
         Assert.assertFalse(config.getCollapseUids());
         Assert.assertFalse(config.getParseTldUids());
+        Assert.assertFalse(config.getReduceQueryFields());
         Assert.assertFalse(config.getSequentialScheduler());
         Assert.assertFalse(config.getCollectTimingDetails());
         Assert.assertFalse(config.getLogTimingDetails());
@@ -295,6 +296,7 @@ public class ShardQueryConfigurationTest {
         other.setDisallowedRegexPatterns(disallowedRegexPatterns);
         other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
         other.setAccumuloPassword("ChangeIt");
+        other.setReduceQueryFields(true);
         
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
@@ -376,10 +378,10 @@ public class ShardQueryConfigurationTest {
         QueryModel expectedQueryModel = new QueryModel();
         Assert.assertEquals(expectedQueryModel.getForwardQueryMapping(), config.getQueryModel().getForwardQueryMapping());
         Assert.assertEquals(expectedQueryModel.getReverseQueryMapping(), config.getQueryModel().getReverseQueryMapping());
-        Assert.assertEquals(expectedQueryModel.getUnevaluatedFields(), config.getQueryModel().getUnevaluatedFields());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
         Assert.assertEquals("ChangeIt", config.getAccumuloPassword());
+        Assert.assertTrue(config.getReduceQueryFields());
         
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
@@ -477,10 +479,11 @@ public class ShardQueryConfigurationTest {
      * This test will fail if a new variable is added improperly to the ShardQueryConfiguration
      *
      * @throws IOException
+     *             if something went wrong
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 188;
+        int expectedObjectCount = 191;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

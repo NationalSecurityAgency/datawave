@@ -1,6 +1,5 @@
 package datawave.query.tables.content;
 
-import com.google.common.collect.Lists;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.query.QueryParameters;
 import datawave.query.config.ContentQueryConfiguration;
@@ -78,7 +77,7 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
         } else {
             int nClosed = 0;
             factory.lockdown();
-            for (final ScannerBase bs : Lists.newArrayList(factory.currentScanners())) {
+            for (final ScannerBase bs : factory.currentScanners()) {
                 factory.close(bs);
                 ++nClosed;
             }

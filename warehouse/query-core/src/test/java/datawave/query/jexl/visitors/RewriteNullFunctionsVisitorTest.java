@@ -13,6 +13,8 @@ import static org.junit.Assert.fail;
 
 public class RewriteNullFunctionsVisitorTest {
     
+    private final ASTValidator validator = new ASTValidator();
+    
     // test single fielded isNull functions
     
     @Test
@@ -177,7 +179,7 @@ public class RewriteNullFunctionsVisitorTest {
         JexlNodeAssert.assertThat(actual).isEqualTo(expected).hasValidLineage();
         
         try {
-            ASTValidator.isValid(actual);
+            validator.isValid(actual);
         } catch (InvalidQueryTreeException e) {
             fail("IsNotNullIntentVisitor produced an invalid query tree: " + e.getMessage());
         }

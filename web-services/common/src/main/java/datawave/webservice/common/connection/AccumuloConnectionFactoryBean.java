@@ -15,6 +15,7 @@ import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.util.Pair;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
@@ -240,7 +241,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
             
             final Collection<String> proxyServers = getCurrentProxyServers();
             if (proxyServers != null)
-                trackingMap.put("proxyServers", proxyServers.toString());
+                trackingMap.put("proxyServers", StringUtils.join(proxyServers, " -> "));
         }
         AccumuloClientPool pool = pools.get(poolName).get(priority);
         AccumuloClient c = pool.borrowObject(trackingMap);

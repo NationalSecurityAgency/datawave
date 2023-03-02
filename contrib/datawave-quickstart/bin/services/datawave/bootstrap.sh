@@ -365,7 +365,7 @@ function datawaveUninstall() {
    datawaveIngestUninstall
    datawaveWebUninstall
 
-   [[ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_LONG}" || "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_SHORT}" ]] && rm -f "${DW_DATAWAVE_SERVICE_DIR}"/*.tar.gz
+   [[ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_LONG}" || "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_SHORT}" ]] && rm -f "${DW_DATAWAVE_SERVICE_DIR}"/datawave*.tar.gz
 }
 
 function datawaveInstall() {

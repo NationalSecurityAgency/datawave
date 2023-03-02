@@ -569,6 +569,7 @@
                                     <directoryIncluded>false</directoryIncluded>
                                     <dependency>
                                         <includes>
+                                            <include>com.github.ben-manes.caffeine:caffeine</include>
                                             <include>org.apache.commons:commons-collections4</include>
                                             <include>org.apache.commons:commons-jexl</include>
                                             <include>${project.groupId}:datawave-core</include>
@@ -625,6 +626,7 @@
                                     <directoryIncluded>false</directoryIncluded>
                                     <dependency>
                                         <includes>
+                                            <include>com.github.ben-manes.caffeine:caffeine</include>
                                             <include>org.apache.commons:commons-lang3</include>
                                             <include>${project.groupId}:datawave-core</include>
                                             <include>${project.groupId}:datawave-query-core</include>

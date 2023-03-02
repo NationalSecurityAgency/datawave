@@ -314,6 +314,11 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
     
     /**
      * Expects to receive args in the order of [config opts] [dates] ... where [dates] are the last two
+     * 
+     * @param args
+     *            the string arguments
+     * @throws Exception
+     *             if there is an issue
      */
     public static void main(String[] args) throws Exception {
         try {

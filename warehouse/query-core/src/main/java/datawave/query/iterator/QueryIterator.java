@@ -65,6 +65,7 @@ import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
+import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
@@ -1033,12 +1034,17 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext;
             if (this.isTermFrequenciesRequired()) {
                 
-                // The TFFunction can only prune non index-only fields
-                Set<String> tfIndexOnlyFields = Sets.intersection(getTermFrequencyFields(), getIndexOnlyFields());
+                TermFrequencyConfig tfConfig = new TermFrequencyConfig();
+                tfConfig.setScript(getScript(documentSource));
+                tfConfig.setIterEnv(myEnvironment);
+                tfConfig.setSource(sourceDeepCopy.deepCopy(myEnvironment));
+                tfConfig.setContentExpansionFields(getContentExpansionFields());
+                tfConfig.setTfFields(getTermFrequencyFields());
+                tfConfig.setTypeMetadata(getTypeMetadata());
+                tfConfig.setEquality(super.equality);
+                tfConfig.setEvaluationFilter(getEvaluationFilter());
                 
-                Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction;
-                tfFunction = TFFactory.getFunction(getScript(documentSource), getContentExpansionFields(), getTermFrequencyFields(), this.getTypeMetadata(),
-                                super.equality, getEvaluationFilter(), sourceDeepCopy.deepCopy(myEnvironment), tfIndexOnlyFields);
+                Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction = buildTfFunction(tfConfig);
                 
                 itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             } else {
@@ -1074,6 +1080,18 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             log.trace("Evaluation is disabled, not instantiating Jexl evaluation logic");
         }
         return documents;
+    }
+    
+    /**
+     * This method exists so that extending classes can implement specific versions of the TFFunction. Specifically, so the
+     * {@link datawave.query.tld.TLDQueryIterator} can set the {@link TermFrequencyConfig#setTld(boolean)} option to true
+     *
+     * @param tfConfig
+     *            a TermFrequencyConfig
+     * @return a TFFunction
+     */
+    protected Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
+        return TFFactory.getFunction(tfConfig);
     }
     
     private Range getDocumentRange(NestedQueryIterator<Key> documentSource) {

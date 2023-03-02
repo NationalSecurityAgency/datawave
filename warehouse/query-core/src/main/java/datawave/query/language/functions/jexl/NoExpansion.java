@@ -36,6 +36,6 @@ public class NoExpansion extends JexlQueryFunction {
     @Override
     public String toString() {
         List<String> params = getParameterList();
-        return "filter:noExpansion(" + String.join("", params) + ")";
+        return "f:noExpansion(" + String.join("", params) + ")";
     }
 }

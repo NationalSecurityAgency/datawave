@@ -117,21 +117,21 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     private static String createCrqTable = "CREATE TABLE IF NOT EXISTS cachedResultsQuery (" + "queryId VARCHAR(100) NOT NULL," + "alias VARCHAR(100),"
                     + "lastUpdate TIMESTAMP," + "pagesize LONG," + "user VARCHAR(50) NOT NULL," + "view VARCHAR(200)," + "tableName VARCHAR(200),"
                     + "status VARCHAR(20) NOT NULL," + "statusMessage VARCHAR(1000) NOT NULL," + "fields LONGTEXT," + "conditions LONGTEXT,"
-                    + "grouping LONGTEXT," + "orderBy LONGTEXT," + "variableFields LONGTEXT," + "originalQuery LONGTEXT," + "originalQueryBegin TIMESTAMP,"
+                    + "`grouping` LONGTEXT," + "orderBy LONGTEXT," + "variableFields LONGTEXT," + "originalQuery LONGTEXT," + "originalQueryBegin TIMESTAMP,"
                     + "originalQueryEnd TIMESTAMP," + "originalQueryAuths LONGTEXT," + "originalQueryLogicName VARCHAR(100),"
                     + "originalQueryName VARCHAR(200)," + "originalQueryUserDn VARCHAR(200)," + "originalQueryId VARCHAR(200)," + "originalQueryPageSize LONG,"
                     + "fixedFieldsInEvent VARCHAR(2000)," + "optionalQueryParameters BLOB," + "UNIQUE (queryId))";
     
     private static String insertCrqTable = "INSERT INTO cachedResultsQuery ("
                     + "queryId, alias, lastUpdate, pagesize, user, view, tableName, status, statusMessage, fields, "
-                    + "conditions, grouping, orderBy, variableFields, originalQuery, " + "originalQueryBegin, originalQueryEnd, originalQueryAuths, "
+                    + "conditions, `grouping`, orderBy, variableFields, originalQuery, " + "originalQueryBegin, originalQueryEnd, originalQueryAuths, "
                     + "originalQueryLogicName, originalQueryName, "
                     + "originalQueryUserDn, originalQueryId, originalQueryPageSize, fixedFieldsInEvent, optionalQueryParameters) "
                     + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     private static String updateCrqTable = "UPDATE cachedResultsQuery SET "
                     + "queryId=?, alias=?, lastUpdate=?, pagesize=?, user=?, view=?, tableName=?, status=?, statusMessage=?, fields=?, conditions=?, "
-                    + "grouping=?, orderBy=?, variableFields=?, originalQuery=?, originalQueryBegin=?, originalQueryEnd=?, "
+                    + "`grouping`=?, orderBy=?, variableFields=?, originalQuery=?, originalQueryBegin=?, originalQueryEnd=?, "
                     + "originalQueryAuths=?, originalQueryLogicName=?, originalQueryName=?, "
                     + "originalQueryUserDn=?, originalQueryId=?, originalQueryPageSize=?, fixedFieldsInEvent=?, optionalQueryParameters=? WHERE queryId=?";
     

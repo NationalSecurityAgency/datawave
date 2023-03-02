@@ -102,13 +102,13 @@ public class RemoteDatawaveUserService extends RemoteHttpService implements Cach
     @Override
     @Timed(name = "dw.remoteDatawaveUserService.lookup", absolute = true)
     public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
-        final String enttiesHeader = "<" + dns.stream().map(SubjectIssuerDNPair::subjectDN).collect(Collectors.joining("><")) + ">";
+        final String entitiesHeader = "<" + dns.stream().map(SubjectIssuerDNPair::subjectDN).collect(Collectors.joining("><")) + ">";
         final String issuersHeader = "<" + dns.stream().map(SubjectIssuerDNPair::issuerDN).collect(Collectors.joining("><")) + ">";
         // @formatter:off
         String jwtString = executeGetMethodWithAuthorizationException("authorize",
                 uriBuilder -> {},
                 httpGet -> {
-                    httpGet.setHeader("X-ProxiedEntitiesChain", enttiesHeader);
+                    httpGet.setHeader("X-ProxiedEntitiesChain", entitiesHeader);
                     httpGet.setHeader("X-ProxiedIssuersChain", issuersHeader);
                     httpGet.setHeader(HttpHeaders.ACCEPT, ContentType.TEXT_PLAIN.getMimeType());
                 },

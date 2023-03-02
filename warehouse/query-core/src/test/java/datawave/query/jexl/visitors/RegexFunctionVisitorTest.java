@@ -19,6 +19,8 @@ import java.util.Set;
 
 public class RegexFunctionVisitorTest {
     
+    private final ASTValidator validator = new ASTValidator();
+    
     @Rule
     public final ExpectedException exception = ExpectedException.none();
     
@@ -143,7 +145,7 @@ public class RegexFunctionVisitorTest {
         
         // assert that the result script is valid
         try {
-            ASTValidator.isValid(actual);
+            validator.isValid(actual);
         } catch (InvalidQueryTreeException e) {
             Assert.fail("Invalid query tree detected for script: " + JexlStringBuildingVisitor.buildQueryWithoutParse(actual));
         }

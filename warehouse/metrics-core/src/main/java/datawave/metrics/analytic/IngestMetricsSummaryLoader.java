@@ -301,6 +301,9 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
     
     /**
      * Expects to receive args in the order of [config opts] [dates] ... where [dates] are the last two
+     * 
+     * @param args
+     *            string arguments
      */
     public static void main(String[] args) {
         try {

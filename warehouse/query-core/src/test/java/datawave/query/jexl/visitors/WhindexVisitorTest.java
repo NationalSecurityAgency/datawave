@@ -26,12 +26,9 @@ public class WhindexVisitorTest {
     
     private static final Map<String,Map<String,String>> allMappings = new HashMap<>();
     
-    private static final MockMetadataHelper metadataHelper = new MockMetadataHelper() {
-        @Override
-        public Date getEarliestOccurrenceOfField(String fieldName) {
-            return new Date(new Date(0).getTime() + TimeUnit.DAYS.toMillis(1));
-        }
-    };
+    private static final Map<String,Date> creationDateMap = new HashMap<>();
+    
+    private static final MockMetadataHelper metadataHelper = new MockMetadataHelper();
     
     @BeforeClass
     public static void beforeClass() {
@@ -74,6 +71,10 @@ public class WhindexVisitorTest {
         
         allMappings.putAll(multipleFieldMapping);
         allMappings.putAll(manyToOneFieldMapping);
+        
+        creationDateMap.put("HOT_FUDGE_SUNDAE", new Date(0));
+        creationDateMap.put("BANANA_SPLIT", new Date(0));
+        creationDateMap.put("NUT_SUNDAE", new Date(0));
     }
     
     @Test
@@ -83,6 +84,10 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        
+        Map<String,Date> creationDateMap = new HashMap<>();
+        creationDateMap.put("HOT_FUDGE_SUNDAE", new Date(new Date(0).getTime() + TimeUnit.DAYS.toMillis(1)));
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(0), metadataHelper);
@@ -98,6 +103,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -113,6 +119,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -127,6 +134,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -141,6 +149,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -155,6 +164,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -171,6 +181,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -187,6 +198,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -202,6 +214,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -218,6 +231,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -234,6 +248,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -249,6 +264,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -264,6 +280,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -280,6 +297,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -296,6 +314,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -310,6 +329,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -324,6 +344,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -340,6 +361,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -356,6 +378,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -372,6 +395,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -388,6 +412,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -404,6 +429,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -420,6 +446,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -436,6 +463,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -452,6 +480,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -468,6 +497,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -484,6 +514,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -500,6 +531,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -516,6 +548,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -532,6 +565,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -548,6 +582,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(multipleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -564,6 +599,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(manyToOneFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -580,6 +616,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(manyToOneFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -596,6 +633,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(manyToOneFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -612,6 +650,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(manyToOneFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -628,6 +667,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(manyToOneFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -644,6 +684,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(manyToOneFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -660,6 +701,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -676,6 +718,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -692,6 +735,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(singleFieldMapping);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
@@ -709,6 +753,7 @@ public class WhindexVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setWhindexMappingFields(mappingFields);
         config.setWhindexFieldMappings(allMappings);
+        config.setWhindexCreationDates(creationDateMap);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);

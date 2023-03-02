@@ -1,6 +1,5 @@
 package datawave.query.util;
 
-import com.google.common.cache.Cache;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.security.util.ScannerHelper;
 import datawave.util.StringUtils;
@@ -21,6 +20,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
+import com.github.benmanes.caffeine.cache.Cache;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

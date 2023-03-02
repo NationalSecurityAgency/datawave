@@ -84,6 +84,7 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
      * GregorianCalendar operations.
      * 
      * @param time
+     *            date object to extract from
      * @return the time % MILLISECONDS_PER_DAY, or -1 if time is null.
      */
     protected static int extractTimeOfDay(Date time) {
@@ -116,7 +117,7 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
     /**
      * Get the portion of the UID to be used for sharding (@see datawave.ingest.mapreduce.handler.shard.ShardIdFactory)
      * 
-     * @return
+     * @return piece of UID for sharding
      */
     public abstract String getShardedPortion();
     
@@ -131,6 +132,7 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
      * Combines multiple "extras" into a single extra
      * 
      * @param extras
+     *            list of extras
      * @return merged extra
      */
     protected static String mergeExtras(final String... extras) {
@@ -179,6 +181,8 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
     /**
      * Creates a new UID builder based on default criteria and a date/time value, if defined
      * 
+     * @param time
+     *            the time value for the builder
      * @return a default UID builder
      */
     public static UIDBuilder<UID> builder(final Date time) {
@@ -189,6 +193,7 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
      * Creates a new UID builder based on configured criteria and a date/time value, if defined
      * 
      * @param config
+     *            current configuration settings
      * @param time
      *            a Date-based timestamp
      * @return a new UID builder
@@ -245,9 +250,13 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
     /**
      * Parses the string representation of the hash
      * 
+     * @param <UID_TYPE>
+     *            expected class of the UID.
      * @param s
-     * @return UID
+     *            string version of hash
+     * @return UID of parsed hash
      */
+    @SuppressWarnings("unchecked")
     public static <UID_TYPE extends UID> UID_TYPE parse(final String s) {
         return parse(s, -1);
     }
@@ -255,10 +264,13 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
     /**
      * Parses the string representation of the hash, but only include up to maxExtraParts of the portion past the base hash
      * 
+     * @param <UID_TYPE>
+     *            expected class of the UID.
      * @param s
+     *            string version of hash
      * @param maxExtraParts
      *            is the number of pieces of the extra portion to include. -1 means all, 0 means none.
-     * @return UID
+     * @return UID of parsed hash
      */
     @SuppressWarnings("unchecked")
     public static <UID_TYPE extends UID> UID_TYPE parse(final String s, int maxExtraParts) {
@@ -285,8 +297,11 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
     /**
      * Parses the string representation of the hash, but only the base part
      * 
+     * @param <UID_TYPE>
+     *            expected class of the UID.
      * @param s
-     * @return UID
+     *            string version of hash
+     * @return UID of parsed hash
      */
     public static <UID_TYPE extends UID> UID_TYPE parseBase(String s) {
         return parse(s, 0);

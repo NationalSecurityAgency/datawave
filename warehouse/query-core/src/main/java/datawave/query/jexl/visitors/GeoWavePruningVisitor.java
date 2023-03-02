@@ -4,11 +4,13 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.type.AbstractGeometryType;
+import datawave.data.type.GeoType;
 import datawave.data.type.Type;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.util.GeoUtils;
 import datawave.query.util.GeoWaveUtils;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -82,7 +84,19 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
     
     private boolean isPrunable(GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor geoWaveDesc) {
         Set<String> fields = geoWaveDesc.fields(metadataHelper, null);
-        return fields.stream().anyMatch(field -> getDatatypesForField(field).stream().anyMatch(type -> type instanceof AbstractGeometryType));
+        // @formatter:off
+        return fields.stream().anyMatch(
+                        field -> getDatatypesForField(field).stream().anyMatch(
+                                type -> (type instanceof AbstractGeometryType || type instanceof GeoType)));
+        // @formatter:on
+    }
+    
+    private boolean isGeoWaveType(String field) {
+        return getDatatypesForField(field).stream().anyMatch(type -> type instanceof AbstractGeometryType);
+    }
+    
+    private boolean isGeoType(String field) {
+        return getDatatypesForField(field).stream().anyMatch(type -> type instanceof GeoType);
     }
     
     private Set<Type<?>> getDatatypesForField(String field) {
@@ -133,7 +147,11 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
                 if (value != null) {
                     Geometry nodeGeometry = null;
                     try {
-                        nodeGeometry = GeoWaveUtils.positionToGeometry(value);
+                        if (isGeoWaveType(field)) {
+                            nodeGeometry = GeoWaveUtils.positionToGeometry(value);
+                        } else if (isGeoType(field)) {
+                            nodeGeometry = GeoUtils.indexToGeometry(value);
+                        }
                     } catch (Exception e) {
                         log.warn("Unable to extract geometry from geo term: " + value, e);
                     }

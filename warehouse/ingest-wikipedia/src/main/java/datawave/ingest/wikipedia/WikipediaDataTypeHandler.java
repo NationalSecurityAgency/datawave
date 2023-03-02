@@ -51,9 +51,6 @@ import org.xml.sax.SAXException;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-/**
- * 
- */
 public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VALUEOUT> {
     private static final Logger log = Logger.getLogger(WikipediaDataTypeHandler.class);
     
@@ -153,11 +150,16 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
      * Tokenize the event, and write all of the shard, shardIndex, and shardReverseIndex keys out to the context
      * 
      * @param event
+     *            the event
      * @param context
+     *            the context
      * @param contextWriter
-     * @return
+     *            the context writer
+     * @return a count of events
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if a thread is interrupted
      */
     @Override
     protected long tokenizeEvent(RawRecordContainer event, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
@@ -312,13 +314,21 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
      * uses).
      * 
      * @param event
+     *            the event
      * @param contextWriter
+     *            the context writer
      * @param context
+     *            the context
      * @param nFV
+     *            the normalized field value interface
      * @param shardId
+     *            the shard id
      * @param visibility
+     *            the visibility
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     @Override
     protected void createShardEventColumn(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
@@ -349,15 +359,23 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
     
     /**
      * Creates and writes the BulkIngestKey for the event's field and global indexes to the ContextWriter
-     * 
+     *
      * @param event
+     *            the event
      * @param contextWriter
+     *            the context writer
      * @param context
+     *            the context
      * @param nFV
+     *            the normalized field value interface
      * @param shardId
+     *            the shard id
      * @param fieldVisibility
+     *            the field visibility
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     @Override
     protected void createShardIndexColumns(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
@@ -391,19 +409,30 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
     }
     
     /**
-     * Process a term and zone by writting all applicable keys to the context.
+     * Process a term and zone by writing all applicable keys to the context.
      * 
      * @param event
+     *            the event
      * @param position
+     *            the position
      * @param term
+     *            the term string
      * @param alreadyIndexedTerms
+     *            the already indexed terms
      * @param context
+     *            the context
      * @param contextWriter
+     *            the context writer
      * @param fieldName
+     *            the field name
      * @param fieldNameToken
+     *            the field name token
      * @param reporter
+     *            the reporter
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected void processTerm(RawRecordContainer event, int position, String term, BloomFilter alreadyIndexedTerms,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter,

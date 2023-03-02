@@ -35,7 +35,7 @@ public class StringUID extends HashUID {
     /**
      * Get the portion of the UID to be used for sharding (@see datawave.ingest.mapreduce.handler.shard.ShardIdFactory)
      * 
-     * @return
+     * @return a portion of the UID for sharding
      */
     @Override
     public String getShardedPortion() {

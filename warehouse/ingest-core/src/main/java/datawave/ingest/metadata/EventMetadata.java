@@ -115,6 +115,8 @@ public class EventMetadata implements RawRecordMetadata {
      *            used as part of column family within LOAD_DATES_TABLE_NAME
      * @param shardReverseIndexTableName
      *            used as part of column family within LOAD_DATES_TABLE_NAME
+     * @param loadDatesTableName
+     *            the table name for the load dates
      * @param frequency
      *            whether to add to the metadata table's counts for field name by event date
      */

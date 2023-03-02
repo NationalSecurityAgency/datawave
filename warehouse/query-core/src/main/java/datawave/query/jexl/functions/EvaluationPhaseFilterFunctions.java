@@ -4,8 +4,8 @@ import com.google.common.base.CharMatcher;
 import com.google.common.collect.Sets;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
-import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.JexlPatternCache;
 import datawave.util.OperationEvaluator;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.log4j.Logger;
@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -25,6 +26,7 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
@@ -309,19 +311,31 @@ public class EvaluationPhaseFilterFunctions {
      * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
      */
     public static FunctionalSet<ValueTuple> getAllMatches(Iterable<?> values, String regex) {
+        return getAllMatchesStream(values, regex).collect(Collectors.toCollection(FunctionalSet::new));
+    }
+    
+    /**
+     * Return a stream for getAllMatches (@see getAllMatches)
+     * 
+     * @param values
+     *            the values to evaluate
+     * @param regex
+     *            the regex
+     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
+     */
+    static Stream<ValueTuple> getAllMatchesStream(Iterable<?> values, String regex) {
         if (values != null) {
             final Pattern pattern = JexlPatternCache.getPattern(regex);
             final boolean caseInsensitive = regex.matches(CASE_INSENSITIVE);
             // @formatter:off
-            FunctionalSet<ValueTuple> matches = StreamSupport.stream(values.spliterator(), false)
+            Stream<ValueTuple> matches = StreamSupport.stream(values.spliterator(), false)
                             .filter(Objects::nonNull)
                             .filter((value) -> isMatchForPattern(pattern, caseInsensitive, value))
-                            .map(EvaluationPhaseFilterFunctions::getHitTerm)
-                            .collect(Collectors.toCollection(FunctionalSet::new));
+                            .map(EvaluationPhaseFilterFunctions::getHitTerm);
             // @formatter:on
-            return FunctionalSet.unmodifiableSet(matches);
+            return matches;
         }
-        return FunctionalSet.emptySet();
+        return Collections.EMPTY_LIST.stream();
     }
     
     /**
@@ -340,46 +354,6 @@ public class EvaluationPhaseFilterFunctions {
             matcher.reset(ValueTuple.getNormalizedStringValue(value));
         }
         return matcher.matches();
-    }
-    
-    /**
-     * Returns a set that contains the hit term if the non-normalized value of the field value matches the given string.
-     *
-     * @param fieldValue
-     *            the field value to evaluate
-     * @param valueToMatch
-     *            the string to match
-     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
-     */
-    public static FunctionalSet<ValueTuple> includeText(Object fieldValue, String valueToMatch) {
-        if (fieldValue != null && ValueTuple.getStringValue(fieldValue).equals(valueToMatch)) {
-            return FunctionalSet.singleton(getHitTerm(fieldValue));
-        }
-        return FunctionalSet.emptySet();
-    }
-    
-    /**
-     * Returns a set that contains the hit term for the first field value where the non-normalized value matches the given string.
-     *
-     * @param values
-     *            the values to evaluate
-     * @param valueToMatch
-     *            the string to match
-     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
-     */
-    public static FunctionalSet<ValueTuple> includeText(Iterable<?> values, String valueToMatch) {
-        if (values != null) {
-            // @formatter:off
-            return StreamSupport.stream(values.spliterator(), false)
-                            .filter(Objects::nonNull)
-                            .filter((value) -> ValueTuple.getStringValue(value).equals(valueToMatch))
-                            .findFirst()
-                            .map(EvaluationPhaseFilterFunctions::getHitTerm)
-                            .map(FunctionalSet::singleton)
-                            .orElseGet(FunctionalSet::emptySet);
-            // @formatter:on
-        }
-        return FunctionalSet.emptySet();
     }
     
     /**

@@ -46,8 +46,11 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      *            a {@link Logger} for diagnostic messages
      * 
      * @throws AccumuloException
+     *             for issues with accumulo
      * @throws AccumuloSecurityException
+     *             for issues authenticating with accumulo
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     public static void setPropertyIfNecessary(String tableName, String propertyName, String propertyValue, TableOperations tops, Logger log)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
@@ -76,10 +79,13 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      *            accumulo table operations helper for configuring tables
      * @param log
      *            a {@link Logger} for diagnostic messages
-     * 
+     *
      * @throws AccumuloException
+     *             for issues with accumulo
      * @throws AccumuloSecurityException
+     *             for issues authenticating with accumulo
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     protected void setAggregatorConfigurationIfNecessary(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops, Logger log)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
@@ -98,6 +104,8 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
     
     /**
      * Copied from Accumulo 1.9 IteratorUtil
+     * 
+     * @return a map of the table properties
      */
     public static Map<String,String> generateInitialTableProperties() {
         TreeMap<String,String> props = new TreeMap<>();
@@ -125,6 +133,7 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * @return {@code true} if {@code aggregators} are configured on {@code tableName} and {@code false} if not
      * 
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops) throws TableNotFoundException {
         boolean aggregatorsConfigured = false;
@@ -164,12 +173,19 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * then the new locality groups are merged with the current set and the locality groups are reset for the table.
      * 
      * @param tableName
+     *            the table name
      * @param newLocalityGroups
+     *            map of the locality groups
      * @param tops
+     *            the table operations
      * @param log
+     *            a logger
      * @throws AccumuloException
-     * @throws TableNotFoundException
+     *             for issues with accumulo
      * @throws AccumuloSecurityException
+     *             for issues authenticating with accumulo
+     * @throws TableNotFoundException
+     *             if the table is not found
      */
     protected void setLocalityGroupConfigurationIfNecessary(String tableName, Map<String,Set<Text>> newLocalityGroups, TableOperations tops, Logger log)
                     throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
@@ -196,12 +212,18 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * Is the specified configuration already included in the current table configuration for locality groups.
      * 
      * @param tableName
+     *            the table name
      * @param newLocalityGroups
+     *            map of the locality group
      * @param tops
+     *            the table operations
      * @return true if the new configuration is already included in the current configuration
      * @throws AccumuloException
-     * @throws TableNotFoundException
+     *             for issues with accumulo
      * @throws AccumuloSecurityException
+     *             for issues authenticating with accumulo
+     * @throws TableNotFoundException
+     *             if the table is not found
      */
     protected boolean areLocalityGroupsConfigured(String tableName, Map<String,Set<Text>> newLocalityGroups, TableOperations tops) throws AccumuloException,
                     TableNotFoundException, AccumuloSecurityException {

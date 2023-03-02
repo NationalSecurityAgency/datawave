@@ -72,7 +72,7 @@ public class ShardedTableMapFileTest {
                         + ",shard_ingest_unit_test_table_1,shard_ingest_unit_test_table_2,shard_ingest_unit_test_table_3");
         
         String[] tableNames = new String[] {TABLE_NAME};
-        conf.set(ShardedTableMapFile.TABLE_NAMES, StringUtils.join(",", tableNames));
+        conf.set(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES, StringUtils.join(",", tableNames));
         
         Map<Text,String> splits = new HashMap<>();
         splits.put(new Text("zEndRow"), "location2_1234");
@@ -108,7 +108,7 @@ public class ShardedTableMapFileTest {
             
             conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, TABLE_NAME
                             + ",shard_ingest_unit_test_table_1,shard_ingest_unit_test_table_2,shard_ingest_unit_test_table_3");
-            conf.set(ShardedTableMapFile.TABLE_NAMES, TABLE_NAME);
+            conf.set(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES, TABLE_NAME);
             setWorkingDirectory(conf);
             ShardedTableMapFile.setupFile(conf);
         } finally {
@@ -188,7 +188,7 @@ public class ShardedTableMapFileTest {
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "shard_ingest_unit_test_table_1,shard_ingest_unit_test_table_2,shard_ingest_unit_test_table_3");
         
         String[] tableNames = new String[] {TABLE_NAME};
-        conf.set(ShardedTableMapFile.TABLE_NAMES, StringUtils.join(",", tableNames));
+        conf.set(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES, StringUtils.join(",", tableNames));
         ShardedTableMapFile.setupFile(conf);
         ShardedTableMapFile.getShardIdToLocations(conf, TABLE_NAME);
     }

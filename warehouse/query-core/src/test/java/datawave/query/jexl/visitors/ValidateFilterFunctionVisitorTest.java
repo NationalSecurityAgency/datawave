@@ -39,14 +39,14 @@ public class ValidateFilterFunctionVisitorTest {
     @Test
     public void testIncludeText() {
         // includeText function is allowed to have index-only fields
-        test("filter:includeText(FOO, 'bar')", false);
-        test("filter:includeText(INDEX_ONLY, 'bar')", false);
+        test("f:includeText(FOO, 'bar')", false);
+        test("f:includeText(INDEX_ONLY, 'bar')", false);
         
-        test("FOO == 'bar' && filter:includeText(FOO, 'bar')", false);
-        test("FOO == 'bar' && filter:includeText(INDEX_ONLY, 'bar')", false);
+        test("FOO == 'bar' && f:includeText(FOO, 'bar')", false);
+        test("FOO == 'bar' && f:includeText(INDEX_ONLY, 'bar')", false);
         
-        test("FOO == 'bar' || filter:includeText(FOO, 'bar')", false);
-        test("FOO == 'bar' || filter:includeText(INDEX_ONLY, 'bar')", false);
+        test("FOO == 'bar' || f:includeText(FOO, 'bar')", false);
+        test("FOO == 'bar' || f:includeText(INDEX_ONLY, 'bar')", false);
     }
     
     @Test

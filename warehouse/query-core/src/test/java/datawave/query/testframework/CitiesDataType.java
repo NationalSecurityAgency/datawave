@@ -1,6 +1,7 @@
 package datawave.query.testframework;
 
 import datawave.data.normalizer.Normalizer;
+import datawave.data.type.GeoType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
@@ -238,6 +239,8 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         
         // the CODE field type needs to be set for the index hole tests
         this.hConf.set(this.dataType + "." + CityField.CODE.name() + BaseIngestHelper.FIELD_TYPE, LcNoDiacriticsType.class.getName());
+        
+        this.hConf.set(this.dataType + "." + CityField.GEO.name() + BaseIngestHelper.FIELD_TYPE, GeoType.class.getName());
         
         log.debug(this.toString());
     }

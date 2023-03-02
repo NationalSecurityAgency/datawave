@@ -703,9 +703,9 @@ public class WiseGuysIngest {
             
             bw.addMutation(mutation);
             
-            addFiTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
-            addFiTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
-            addFiTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID);
+            addFiTfTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
+            addFiTfTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
+            addFiTfTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID);
         } finally {
             if (null != bw) {
                 bw.close();
@@ -990,7 +990,7 @@ public class WiseGuysIngest {
         }
     }
     
-    private static void addFiTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid) throws MutationsRejectedException {
+    private static void addFiTfTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid) throws MutationsRejectedException {
         Mutation fi = new Mutation(shard);
         fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
                         emptyValue);
@@ -999,6 +999,7 @@ public class WiseGuysIngest {
         for (String token : tokens) {
             fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
                             emptyValue);
+            fi.put("tf", datatype + "\u0000" + uid + "\u0000" + lcNoDiacriticsType.normalize(token) + "\u0000" + field, columnVisibility, timeStamp, emptyValue);
         }
         bw.addMutation(fi);
     }

@@ -94,6 +94,13 @@ public class AbstractColumnBasedHandler<KEYIN> extends ShardedDataTypeHandler<KE
     /**
      * This routine will validate indexed fields in that it will check for fields that are not being indexed, but should have been per some other datasources
      * configuration.
+     * 
+     * @param checkIndex
+     *            flag to check forward index
+     * @param checkReverseIndex
+     *            flag to check reverse index
+     * @param reporter
+     *            the status reporter
      */
     protected void validateIndexedFields(boolean checkIndex, boolean checkReverseIndex, StatusReporter reporter) {
         if ((checkIndex || checkReverseIndex) && (reporter != null)) {

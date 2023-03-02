@@ -102,4 +102,12 @@ public class QueryGeometryResponse extends BaseResponse implements HtmlProvider 
     public void setResult(List<QueryGeometry> result) {
         this.result = result;
     }
+    
+    public String getBasemaps() {
+        return basemaps;
+    }
+    
+    public void setBasemaps(String basemaps) {
+        this.basemaps = basemaps;
+    }
 }

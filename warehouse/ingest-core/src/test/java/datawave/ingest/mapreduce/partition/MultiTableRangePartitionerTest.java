@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import datawave.util.TableName;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -28,7 +29,7 @@ public class MultiTableRangePartitionerTest {
     public void before() throws IOException {
         mockJob = new Job();
         configuration = mockJob.getConfiguration();
-        configuration.set("job.table.names", TableName.SHARD);
+        configuration.set(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES, TableName.SHARD);
     }
     
     @Test

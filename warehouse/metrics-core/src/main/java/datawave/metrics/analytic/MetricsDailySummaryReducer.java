@@ -57,6 +57,12 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
     
     /**
      * Computes a simple summation metric value. The key is written out as is and the values, assumed to be string longs, are aggregated and written out.
+     * 
+     * @param key
+     *            a key
+     * @param values
+     *            list of values
+     * @return an output mutation
      */
     private Mutation sumMutation(Key key, Iterable<Value> values) {
         LongValueSum sum = new LongValueSum();
@@ -73,6 +79,12 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
      * Computes a "stats" metric value. Each incoming value in {@code values} is assumed to be a unique value. We calculate min, max, median, and average values
      * and include those in the output mutation. Note that median will only be calculated if there are not more than {@code MAX_MEDIAN_COUNT} values. This
      * restriction prevents us from using too much memory in the task tracker.
+     * 
+     * @param key
+     *            a key
+     * @param values
+     *            a list of values
+     * @return an output mutation
      */
     private Mutation statsMutation(Key key, Iterable<Value> values) {
         long numLongs = 0;
@@ -115,6 +127,12 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
      * {@link WeightedPair} object. If the median can be calculated, then the 95% percentile weighted value is also emitted as a statistic. The weights are
      * summed, and the value at the 95th percentile of the weights is returned. (e.g., for event latencies, each pair's value is the latency and the weight is
      * the number of events at that latency, so we return the latency (value) from the list that represents 95% of the events (weights).
+     * 
+     * @param key
+     *            a key
+     * @param values
+     *            a list of values
+     * @return the output mutation
      */
     private Mutation statsPercentileMutation(Key key, Iterable<Value> values) {
         long numPairs = 0;

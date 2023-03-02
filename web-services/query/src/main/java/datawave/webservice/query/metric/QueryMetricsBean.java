@@ -17,6 +17,7 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.map.QueryGeometryHandler;
 import datawave.webservice.query.map.QueryGeometryResponse;
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
@@ -73,6 +74,9 @@ public class QueryMetricsBean {
     private QueryMetricHandler<? extends BaseQueryMetric> queryHandler;
     @Inject
     private QueryGeometryHandler queryGeometryHandler;
+    @Inject
+    @ConfigProperty(name = "dw.basemaps", defaultValue = "{}")
+    private String basemaps;
     @Inject
     @SpringBean(name = "QueryMetricsWriterConfiguration", refreshable = true)
     private QueryMetricsWriterConfiguration queryMetricsWriterConfiguration;
@@ -143,7 +147,9 @@ public class QueryMetricsBean {
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public QueryGeometryResponse map(@PathParam("id") @Required("id") String id) {
         if (queryMetricsWriterConfiguration.getUseRemoteService()) {
-            return remoteQueryMetricService.map(id);
+            QueryGeometryResponse response = remoteQueryMetricService.map(id);
+            response.setBasemaps(this.basemaps);
+            return response;
         } else {
             // Find out who/what called this method
             DatawavePrincipal dp = null;

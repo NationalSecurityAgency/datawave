@@ -116,6 +116,7 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
  * the indexed term in the shard. This is an optimization that will allow low cardinality terms to be found more quickly.
  * 
  * @param <KEYIN>
+ *            the data type of the data type handler
  */
 public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
     
@@ -374,6 +375,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Calculates the shard id of the event
      * 
      * @param event
+     *            the event
      * @return Shard id
      */
     public byte[] getShardId(RawRecordContainer event) {
@@ -410,8 +412,12 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     
     /**
      * @param event
+     *            the event container
      * @param fields
+     *            the event fields
      * @param reporter
+     *            the status reporter
+     * @return the column mappings
      */
     protected Multimap<BulkIngestKey,Value> createColumns(RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, StatusReporter reporter) {
         IngestHelperInterface helper = this.getHelper(event.getDataType());
@@ -511,15 +517,26 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     
     /**
      * @param helper
+     *            the ingest helper
      * @param event
+     *            the event container
      * @param fields
+     *            the event fields
      * @param value
+     *            the entry value
      * @param visibility
+     *            the visibility
      * @param maskedVisibility
+     *            the masked visibility
      * @param maskedFieldHelper
+     *            the masked field helper
      * @param shardId
+     *            the shard id
      * @param indexValue
+     *            the index value
      * @param reporter
+     *            the status reporter
+     * @return the forward indices
      */
     protected Multimap<BulkIngestKey,Value> createForwardIndices(IngestHelperInterface helper, RawRecordContainer event,
                     Multimap<String,NormalizedContentInterface> fields, NormalizedContentInterface value, byte[] visibility, byte[] maskedVisibility,
@@ -579,8 +596,12 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     
     /**
      * @param event
+     *            the event container
      * @param fields
+     *            the event fields
      * @param reporter
+     *            the status reporter
+     * @return the bloom filter
      */
     protected Value createBloomFilter(RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, StatusReporter reporter) {
         Value filterValue = DataTypeHandler.NULL_VALUE;
@@ -647,15 +668,26 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Creates a global index BulkIngestKey and Value and does apply masking logic
      * 
      * @param event
+     *            the event
      * @param column
+     *            the column
      * @param fieldValue
+     *            the field value
      * @param visibility
+     *            the event visibility
      * @param maskedVisibility
+     *            the masked visibility
      * @param maskedFieldHelper
+     *            the masked field helper
      * @param shardId
+     *            the shard id
      * @param tableName
+     *            the table name
      * @param indexValue
+     *            the index value
      * @param direction
+     *            the direction
+     * @return the term index
      */
     protected Multimap<BulkIngestKey,Value> createTermIndexColumn(RawRecordContainer event, String column, String fieldValue, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Text tableName, Value indexValue, Direction direction) {
@@ -735,7 +767,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * A helper routine to determine the visibility for a field.
      * 
      * @param event
+     *            the event
      * @param value
+     *            the entry value
      * @return the visibility
      */
     protected byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
@@ -754,6 +788,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Create a flattened visibility, using the cache if possible
      * 
      * @param vis
+     *            the visibility
      * @return the flattened visibility
      */
     protected byte[] flatten(ColumnVisibility vis) {
@@ -764,11 +799,17 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Create Key from input parameters
      * 
      * @param row
+     *            the row
      * @param colf
+     *            the column family
      * @param colq
+     *            the column qualifier
      * @param vis
+     *            the column visibility
      * @param ts
+     *            the timestamp
      * @param delete
+     *            the delete flag of the key
      * @return Accumulo Key object
      */
     protected Key createKey(byte[] row, Text colf, Text colq, byte[] vis, long ts, boolean delete) {
@@ -785,11 +826,17 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * reduce the number of keys output from a job.
      * 
      * @param row
+     *            the row
      * @param colf
+     *            the column family
      * @param colq
+     *            the column qualifier
      * @param vis
+     *            the column visibility
      * @param ts
+     *            the timestamp
      * @param delete
+     *            the delete flag of the key
      * @return Accumulo Key object
      */
     protected Key createIndexKey(byte[] row, Text colf, Text colq, byte[] vis, long ts, boolean delete) {
@@ -805,10 +852,16 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Creates a shard column key and does *NOT* apply masking logic
      * 
      * @param event
+     *            the event
      * @param colf
+     *            the column family
      * @param nFV
+     *            the normalized interface of the value
      * @param visibility
+     *            the visibility
      * @param shardId
+     *            the shard id
+     * @return the shard event column
      */
     protected Multimap<BulkIngestKey,Value> createShardEventColumn(RawRecordContainer event, Text colf, NormalizedContentInterface nFV, byte[] visibility,
                     byte[] shardId) {
@@ -819,12 +872,20 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Creates a shard column key and does apply masking logic
      * 
      * @param event
+     *            the event container
      * @param colf
+     *            the column family
      * @param nFV
+     *            the normalized pair of the field and value
      * @param visibility
+     *            the event visibility
      * @param maskedVisibility
+     *            the masked visibility
      * @param maskedFieldHelper
+     *            the masked field helper
      * @param shardId
+     *            the shard id
+     * @return the shard event column
      */
     protected Multimap<BulkIngestKey,Value> createShardEventColumn(RawRecordContainer event, Text colf, NormalizedContentInterface nFV, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId) {
@@ -918,13 +979,22 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Creates a shard field index column Key and applies masking logic
      * 
      * @param event
+     *            the event
      * @param fieldName
+     *            the field name
      * @param fieldValue
+     *            the field value
      * @param visibility
+     *            the visibility
      * @param maskedVisibility
+     *            the masked visibility
      * @param maskedFieldHelper
+     *            the masked field helper
      * @param shardId
+     *            the shard id
      * @param value
+     *            the value
+     * @return the shard field index column
      */
     protected Multimap<BulkIngestKey,Value> createShardFieldIndexColumn(RawRecordContainer event, String fieldName, String fieldValue, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Value value) {
@@ -991,12 +1061,23 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Creates a shard field index column Key and applies masking logic
      * 
      * @param event
+     *            the event
      * @param values
+     *            map of values
      * @param fieldName
+     *            the field name
      * @param fieldValue
+     *            the field value
+     * @param visibility
+     *            the visibility
      * @param maskedVisibility
+     *            the masked visibility
      * @param maskedFieldHelper
+     *            the masked field helper
      * @param shardId
+     *            the shard id
+     * @param value
+     *            the value
      */
     protected void createShardFieldIndexColumn(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, String fieldName, String fieldValue,
                     byte[] visibility, byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Value value) {
@@ -1054,7 +1135,11 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     }
     
     /**
-     * 
+     * @param uid
+     *            the uid
+     * @param isDeleted
+     *            flag for the delete count
+     * @return a value
      */
     private Value createUidArray(String uid, boolean isDeleted) {
         
@@ -1077,13 +1162,23 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Creates a global index BulkIngestKey and Value and does apply masking logic
      * 
      * @param event
+     *            the event
      * @param values
+     *            the map of values
      * @param fieldName
+     *            the field name
      * @param fieldValue
+     *            the field value
+     * @param visibility
+     *            the visibility
      * @param maskedVisibility
+     *            the masked visibility
      * @param maskedFieldHelper
+     *            the masked field helper
      * @param shardId
+     *            the shard id
      * @param tableName
+     *            the table name
      */
     protected void createIndexColumn(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, String fieldName, String fieldValue, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Text tableName) {
@@ -1174,12 +1269,19 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Creates a global index BulkIngestKey and Value and does *NOT* apply masking logic
      * 
      * @param event
+     *            the event
      * @param values
+     *            the map of values
      * @param fieldName
+     *            the field name
      * @param fieldValue
+     *            the field value
      * @param visibility
+     *            the visibility
      * @param directionColFam
+     *            the column family direction
      * @param tableName
+     *            the table name
      */
     protected void createDictionaryColumn(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, String fieldName, String fieldValue,
                     byte[] visibility, Text directionColFam, Text tableName) {
@@ -1209,13 +1311,23 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Creates a dictionary index BulkIngestKey and Value and does apply masking logic
      * 
      * @param event
+     *            the event
      * @param values
+     *            the map of values
      * @param fieldName
+     *            the field name
      * @param fieldValue
+     *            the field value
+     * @param visibility
+     *            the visibility
      * @param maskedVisibility
+     *            the masked visibility
      * @param maskedFieldHelper
+     *            the masked field helper
      * @param directionColFam
+     *            the column family direction
      * @param tableName
+     *            the table name
      */
     protected void createDictionaryColumn(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, String fieldName, String fieldValue,
                     byte[] visibility, byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, Text directionColFam, Text tableName) {
@@ -1373,6 +1485,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      *            flag indicating that global index terms should be created
      * @param createGlobalReverseIndexTerms
      *            flag indicating that global reverse index terms should be created
+     * @param reporter
+     *            tbe status reporter
      * @return map of indexed (normalized) field names (key) to non-normalized field values (value) or null
      */
     protected abstract Multimap<String,NormalizedContentInterface> getShardNamesAndValues(RawRecordContainer event,

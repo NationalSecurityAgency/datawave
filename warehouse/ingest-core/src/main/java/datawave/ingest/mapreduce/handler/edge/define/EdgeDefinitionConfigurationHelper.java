@@ -125,6 +125,8 @@ public class EdgeDefinitionConfigurationHelper {
             edgePair.setJexlPrecondition(edgeDefinition.getJexlPrecondition());
         }
         
+        edgePair.setIsGroupAware(edgeDefinition.isGroupAware());
+        
         return edgePair;
     }
     

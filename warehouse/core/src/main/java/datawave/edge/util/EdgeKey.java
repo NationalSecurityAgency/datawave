@@ -741,7 +741,9 @@ public class EdgeKey {
          * This constructor is preferred because it allows the client to reuse Text objects to avoid constructing and destructing Text objects
          * 
          * @param colFam
+         *            the column family text
          * @param colQual
+         *            the column qualifier text
          */
         public EdgeColumnParts(Text colFam, Text colQual) {
             getParts(colFam);
@@ -752,6 +754,7 @@ public class EdgeKey {
          * This constructor should be avoided because it creates two new Text objects each time it is called
          * 
          * @param key
+         *            the edge key
          */
         
         public EdgeColumnParts(Key key) {
@@ -977,7 +980,9 @@ public class EdgeKey {
     
     /**
      * Creates the metadata table key entry for a given edge table Key
-     *
+     * 
+     * @param key
+     *            edge table key to lookup
      * @return a key object for use in the Datawave Metadata table
      */
     public static Key getMetadataKey(Key key) {
@@ -1196,6 +1201,7 @@ public class EdgeKey {
      * Determine as fast as possible the date type of an edge key without having to decode into and EdgeKey
      * 
      * @param key
+     *            edge key
      * @return the date type of this accumulo edge key
      */
     public static DATE_TYPE getDateType(Key key) {

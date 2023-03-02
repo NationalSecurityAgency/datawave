@@ -854,4 +854,19 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         this.parameters.remove(paramLookup.get(key));
         this.paramLookup.remove(key);
     }
+    
+    @Override
+    public void populateTrackingMap(Map<String,String> trackingMap) {
+        if (trackingMap != null) {
+            if (this.owner != null) {
+                trackingMap.put("query.user", this.owner);
+            }
+            if (this.id != null) {
+                trackingMap.put("query.id", this.id);
+            }
+            if (this.query != null) {
+                trackingMap.put("query.query", this.query);
+            }
+        }
+    }
 }

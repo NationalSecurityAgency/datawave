@@ -60,8 +60,6 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         }
     }
     
-    /**
-     */
     private int getAssignedPartition(String tableName, Text shardId) throws IOException {
         Map<Text,Integer> assignments = lazilyCreateAssignments(tableName);
         
@@ -100,6 +98,12 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     
     /**
      * For a given tablename, provides the mapping from {@code shard id -> partition}
+     * 
+     * @param tableName
+     *            the name of the table
+     * @return a list of the shard mappings
+     * @throws IOException
+     *             if there is an issue with read or write
      */
     private Map<Text,Integer> lazilyCreateAssignments(String tableName) throws IOException {
         if (this.shardPartitionsByTable == null) {
@@ -113,6 +117,12 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     
     /**
      * Loads the splits file for the table name and uses it to assign partitions.
+     * 
+     * @param tableName
+     *            name of the table
+     * @return a map of the partitions
+     * @throws IOException
+     *             if there is an issue with read or write
      */
     private HashMap<Text,Integer> getPartitionsByShardId(String tableName) throws IOException {
         if (log.isDebugEnabled())
@@ -141,6 +151,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
      * shard3->tserver3 tserver3->1 shard3->1 shard2->tserver2 *no change* shard2->0 shard1->tserver7 tserver7->2 shard1->2}
      *
      * @param shardIdToLocations
+     *            the map of shard ids and their location
      * @return shardId to
      */
     private HashMap<Text,Integer> assignPartitionsForEachShard(TreeMap<Text,String> shardIdToLocations) {

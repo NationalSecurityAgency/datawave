@@ -1,6 +1,7 @@
 package datawave.ingest.config;
 
 import datawave.ingest.OptionsParser;
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -12,10 +13,10 @@ public class TableConfigCacheGenerator {
     public static void main(String[] args) {
         
         Configuration conf = OptionsParser.parseArguments(args, config);
-        TableConfigCache cache = new TableConfigCache(conf);
         
         try {
-            cache.update();
+            TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
+            tcu.updateCacheFile();
         } catch (Exception e) {
             log.error("Unable to generate accumulo config cache " + e.getMessage());
         }

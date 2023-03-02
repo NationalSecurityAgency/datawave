@@ -778,4 +778,30 @@ public abstract class CompositeFunctionsTest {
         }
     }
     
+    @Test
+    public void testDelayedExceededValueThresholdRegexTFField() throws Exception {
+        Map<String,String> extraParameters = new HashMap();
+        
+        tldEventQueryLogic.setMaxDepthThreshold(9);
+        tldEventQueryLogic.setMaxValueExpansionThreshold(1);
+        
+        if (log.isDebugEnabled()) {
+            log.debug("testDelayedExceededValueThresholdRegexTFField");
+        }
+        
+        // @formatter:off
+        String[] queryStrings =  {
+                "UUID == 'CORLEONE' && ((_Delayed_ = true) && ((((_Value_ = true) && (QUOTE =~ 'h.*?')))))"
+        };
+
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {
+                Arrays.asList("CORLEONE")
+        };
+        // @formatter:on
+        
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters, tldEventQueryLogic);
+        }
+    }
 }

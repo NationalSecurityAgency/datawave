@@ -32,6 +32,14 @@ public class StatsDHelper {
     
     /**
      * A helper method to get the appropriate counter dependent on whether we have a statsd client
+     * 
+     * @param context
+     *            the context
+     * @param group
+     *            the group
+     * @param counter
+     *            string representation of the counter
+     * @return a counter
      */
     public Counter getCounter(TaskAttemptContext context, String group, String counter) {
         return getContext(context).getCounter(group, counter);
@@ -39,6 +47,12 @@ public class StatsDHelper {
     
     /**
      * A helper method to get the appropriate counter dependent on whether we have a statsd client
+     * 
+     * @param context
+     *            the context
+     * @param counterName
+     *            the counter name
+     * @return a counter
      */
     public Counter getCounter(TaskAttemptContext context, Enum<?> counterName) {
         return getContext(context).getCounter(counterName);

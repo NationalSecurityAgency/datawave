@@ -473,8 +473,13 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         
         for (int i = lastHit + 1; i < sortedWhitelist.size(); i++) {
             String nextField = sortedWhitelist.get(i);
-            // is the nextField after the current field?
-            if (fieldName.compareTo(nextField) < 0) {
+            
+            if (fieldName.compareTo(nextField) == 0) {
+                // do not generate a seek range if the iterator is still within
+                // a query field
+                return null;
+            } else if (fieldName.compareTo(nextField) < 0) {
+                // is the nextField after the current field?
                 // seek to this field
                 Key startKey = new Key(current.getRow(), current.getColumnFamily(), new Text(nextField + Constants.NULL_BYTE_STRING));
                 range = new Range(startKey, true, endKey, endKeyInclusive);
@@ -482,7 +487,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
                 break;
             } else if (i + 1 == sortedWhitelist.size()) {
                 // roll to the next uid and reset the lastSeekIndex
-                range = getRolloverRange(current, endKey, endKeyInclusive, sortedWhitelist);
+                range = getRolloverRange(current, endKey, endKeyInclusive);
                 lastListSeekIndex = -1;
                 break;
             }
@@ -491,31 +496,37 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         // none of the fields in the whitelist come after the current field
         if (range == null) {
             // roll to the next uid
-            range = getRolloverRange(current, endKey, endKeyInclusive, sortedWhitelist);
+            range = getRolloverRange(current, endKey, endKeyInclusive);
             lastListSeekIndex = -1;
         }
         
         return range;
     }
     
-    private Range getRolloverRange(Key current, Key end, boolean endInclusive, List<String> sortedWhitelist) {
-        Range range;
+    /**
+     * Get a rollover range that skips to the next child uid
+     *
+     * @param current
+     *            the current key
+     * @param end
+     *            the end key
+     * @param endInclusive
+     *            is end key inclusive flag
+     * @return a rollover range, or an empty range if the rollover range would extend beyond the end key
+     */
+    private Range getRolloverRange(Key current, Key end, boolean endInclusive) {
         
         // ensure this new key won't be beyond the end
         // new CF = current dataType\0uid\0 to ensure the next hit will be in another uid
-        // new CQ = first whitelist field\0 to ensure the next hit will be the first whitelisted field or later
-        Key startKey = new Key(current.getRow(), new Text(current.getColumnFamily() + Constants.NULL_BYTE_STRING), new Text(sortedWhitelist.get(0)
-                        + Constants.NULL_BYTE_STRING));
+        Key startKey = current.followingKey(PartialKey.ROW_COLFAM);
         
         if (startKey.compareTo(end) < 0) {
             // last one, roll over to the first
-            range = new Range(startKey, true, end, endInclusive);
-        } else {
-            // create a range that should have nothing in it
-            range = getEmptyRange(end, endInclusive);
+            return new Range(startKey, true, end, endInclusive);
         }
         
-        return range;
+        // create a range that should have nothing in it
+        return getEmptyRange(end, endInclusive);
     }
     
     /**
@@ -798,19 +809,19 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * If the current key is rejected due to a field limit and a field limit field is specified generate a value with the field in it
      * 
-     * @param toLimit
-     *            the
-     * @return
+     * @param key
+     *            the key to limit
+     * @return a key with the limit field specified, or null if no limit was configured
      */
     @Override
-    public Key transform(Key toLimit) {
-        ParseInfo info = getParseInfo(toLimit);
-        if (this.limitFieldsField != null && isFieldLimit(info.getField())) {
-            String limitedField = getParseInfo(toLimit).getField();
-            return new Key(toLimit.getRow(), toLimit.getColumnFamily(), new Text(limitFieldsField + Constants.NULL + limitedField));
-        } else {
-            return null;
+    public Key transform(Key key) {
+        if (this.limitFieldsField != null) {
+            ParseInfo info = getParseInfo(key);
+            if (isFieldLimit(info.getField())) {
+                return new Key(key.getRow(), key.getColumnFamily(), new Text(limitFieldsField + Constants.NULL + info.getField()));
+            }
         }
+        return null;
     }
     
     @Override

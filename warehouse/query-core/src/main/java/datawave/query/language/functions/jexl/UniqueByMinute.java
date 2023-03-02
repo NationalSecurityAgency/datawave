@@ -1,6 +1,7 @@
 package datawave.query.language.functions.jexl;
 
 import datawave.query.jexl.functions.QueryFunctions;
+import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.language.functions.QueryFunction;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -14,7 +15,7 @@ import java.util.ArrayList;
 public class UniqueByMinute extends UniqueByFunction {
     
     public UniqueByMinute() {
-        super(QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION, new ArrayList<>());
+        super(QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, new ArrayList<>());
     }
     
     @Override

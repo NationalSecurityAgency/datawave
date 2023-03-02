@@ -51,6 +51,7 @@ public class TokenSearchSynonymFilter extends TokenFilter {
      * it. Otherwise, we'll mess up the adjacency of synonym terms.
      * 
      * @param synonymPositionsEnabled
+     *            flag to determine synonym positions function
      */
     public void setSynonymPositionsEnabled(boolean synonymPositionsEnabled) {
         this.synonymPositionsEnabled = synonymPositionsEnabled;
@@ -127,12 +128,23 @@ public class TokenSearchSynonymFilter extends TokenFilter {
         return position;
     }
     
-    /** Capture information about the tuple to the output buffer */
+    /**
+     * Capture information about the tuple to the output buffer
+     * 
+     * @param position
+     *            position in the buffer
+     * */
     protected void captureTuple(int position) {
         output.add(new OutputTuple(termAtt.toString(), position, offsetAtt.startOffset(), offsetAtt.endOffset() - offsetAtt.startOffset(), captureState()));
     }
     
-    /** Restore captured state to the Lucene attributes */
+    /**
+     * Restore captured state to the Lucene attributes
+     * 
+     * @param tuple
+     *            tuple to restore
+     * @return position of the tuple
+     * */
     protected int restoreTuple(OutputTuple tuple) {
         restoreState(tuple.state);
         return tuple.position;

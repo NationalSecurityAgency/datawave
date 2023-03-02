@@ -15,11 +15,8 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
 
-import org.apache.accumulo.core.client.Accumulo;
-import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.conf.Property;
@@ -35,7 +32,6 @@ import org.apache.accumulo.core.file.rfile.RFile;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.accumulo.core.spi.file.rfile.compression.NoCompression;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -100,7 +96,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected String extension;
     protected Configuration conf;
     protected Map<String,ConfigurationCopy> tableConfigs;
-    protected Map<String,String> tableIds = null;
+    protected Set<String> tableIds = null;
     protected long maxRFileSize = 0;
     protected int maxRFileEntries = 0;
     protected boolean generateMapFileRowKeys = false;
@@ -184,7 +180,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * Insert a count into the filename. The filename is expected to end with our extension.
      * 
      * @param filename
+     *            file name
      * @param count
+     *            the count
      * @return filename with the count inserted as follows: {@code path/name + extension -> path/name + _count + extension}
      */
     protected Path insertFileCount(Path filename, int count) {
@@ -198,6 +196,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * Remove a count from a filename. The filename is expected to end with _count.extension.
      * 
      * @param filename
+     *            file name
      * @return filename with the count removed as follows: {@code path/name + _count + extension -> path/name + extension}
      */
     protected Path removeFileCount(Path filename) {
@@ -217,7 +216,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      *            The table name
      * @param filename
      *            The path of the file being written to
+     * @param tableConf
+     *            the table accumulo configuration
      * @throws IOException
+     *             if there is an issue with read or write
+     * @throws AccumuloException
+     *             if there is an issue accumulo
      */
     protected void createAndRegisterWriter(String key, String table, Path filename, AccumuloConfiguration tableConf) throws IOException, AccumuloException {
         // first get the writer count (how many writers have we made for this key)
@@ -255,8 +259,11 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * Close the current writer for the specified key, and create the next writer. The index encoded in the filename will be appropriately updated.
      * 
      * @param key
+     *            a key
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws AccumuloException
+     *             if there is an issue with accumulo
      */
     protected void closeAndUpdateWriter(String key) throws IOException, AccumuloException {
         SizeTrackingWriter writer = writers.get(key);
@@ -327,9 +334,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * Get a writer that was previously registered. This will mark the writer as being used.
      * 
      * @param key
+     *            a key
      * @return the writer
-     * @throws AccumuloException
      * @throws IOException
+     *             if there is an issue with read or write
+     * @throws AccumuloException
+     *             if there is an issue with accumulo
      */
     protected SizeTrackingWriter getRegisteredWriter(String key) throws IOException, AccumuloException {
         SizeTrackingWriter writer = writers.get(key);
@@ -364,7 +374,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     
     // Get the table list
     protected Set<String> getTableList() {
-        Set<String> tableList = new HashSet<>(TableConfigurationUtil.getTables(conf));
+        Set<String> tableList = TableConfigurationUtil.getJobOutputTableNames(conf);
         
         String configNames = conf.get(CONFIGURED_TABLE_NAMES, "");
         if (log.isInfoEnabled())
@@ -382,19 +392,27 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     }
     
     protected void setTableIdsAndConfigs() throws IOException {
+
         tableConfigs = new HashMap<>();
         Iterable<String> localityGroupTables = Splitter.on(",").split(conf.get(CONFIGURE_LOCALITY_GROUPS, ""));
-        try (AccumuloClient client = Accumulo.newClient().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
-                        .as(conf.get(USERNAME), new PasswordToken(Base64.decodeBase64(conf.get(PASSWORD)))).build()) {
-            tableIds = client.tableOperations().tableIdMap();
-            Set<String> compressionTableBlackList = getCompressionTableBlackList(conf);
-            String compressionType = getCompressionType(conf);
-            for (String tableName : tableIds.keySet()) {
-                ConfigurationCopy tableConfig = new ConfigurationCopy(client.tableOperations().getProperties(tableName));
+
+        TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
+
+        tableIds = tcu.getJobOutputTableNames(conf);
+        Set<String> compressionTableBlackList = getCompressionTableBlackList(conf);
+        String compressionType = getCompressionType(conf);
+        for (String tableName : tableIds) {
+            Map<String,String> properties = tcu.getTableProperties(tableName);
+            if (null == properties || properties.isEmpty()) {
+                log.error("No properties found for table " + tableName);
+            } else {
+                ConfigurationCopy tableConfig = new ConfigurationCopy(properties);
                 tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableBlackList.contains(tableName) ? new NoCompression().getName()
                                 : compressionType));
+
+                // the locality groups feature is broken and will be removed in a future MR
                 if (Iterables.contains(localityGroupTables, tableName)) {
-                    Map<String,Set<Text>> localityGroups = client.tableOperations().getLocalityGroups(tableName);
+                    Map<String,Set<Text>> localityGroups = tcu.getLocalityGroups(tableName);
                     // pull the locality groups for this table.
                     Map<Text,String> cftlg = Maps.newHashMap();
                     Map<String,Set<ByteSequence>> lgtcf = Maps.newHashMap();
@@ -409,10 +427,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     localityGroupToColumnFamilies.put(tableName, lgtcf);
                 }
                 tableConfigs.put(tableName, tableConfig);
-                
             }
-        } catch (AccumuloException | TableNotFoundException e) {
-            throw new IOException("Unable to get configuration.  Please call MultiRFileOutput.setAccumuloConfiguration with the proper credentials", e);
         }
     }
     
@@ -489,7 +504,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     shardedTablesConfigured.add(table);
                 }
                 
-                if (tableIds.get(table) == null) {
+                if (!tableIds.contains(table)) {
                     throw new IOException("Unable to determine id for table " + table);
                 }
                 Path tableDir = new Path(workDir, table);
@@ -639,6 +654,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     /**
      * Read in the sequence file (that was created at job startup) for the given table that contains a list of shard IDs and the corresponding tablet server to
      * which that shard is assigned.
+     *
+     * @param tableName
+     *            the table name
+     * @return a mapping of the shard ids and tablet server
+     * @throws IOException
+     *             if there is an issue with read or write
      */
     protected Map<Text,String> getShardLocations(String tableName) throws IOException {
         // Create the Map of sharded table name to [shardId -> server]

@@ -44,6 +44,10 @@
         <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByHour"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByMinute"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByMonth"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByYear"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueBySecond"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByTenthOfHour"/>
         <bean class="datawave.query.language.functions.jexl.NoExpansion"/>
         <bean class="datawave.query.language.functions.jexl.Compare"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
@@ -57,6 +61,7 @@
             <property name="parser" ref="LuceneToJexlQueryParser"/>
         </bean>
         <bean class="datawave.query.language.functions.jexl.ExcerptFields"/>
+        <bean class="datawave.query.language.functions.jexl.Matches"/>
     </util:list>
 
     <!-- Fields we should not tokenize in a tokenized query. In non-tokenized 
@@ -90,6 +95,7 @@
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="compressOptionMappings" value="true" />
         <property name="queryModelProviderFactory" ref="queryModelProviderFactory" />
+        <property name="visitorManager" ref="TimedVisitorManager"/>
         <!-- the first integer arg is to define the number of ranges per batch -->
         <constructor-arg>
             <value>2611</value>
@@ -115,6 +121,21 @@
     </bean>
 
     <bean id="metadataHelperQueryModelProvider" scope="prototype" class="datawave.query.planner.MetadataHelperQueryModelProvider" />
+
+    <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
+        <property name="debugEnabled" value="false"/>
+        <property name="validateAst" value="false"/>
+        <property name="validator" ref="AstValidator"/>
+    </bean>
+
+    <bean id="AstValidator" scope="prototype" class="datawave.query.jexl.visitors.validate.ASTValidator">
+        <property name="validateLineage" value="true"/>
+        <property name="validateFlatten" value="true"/>
+        <property name="validateJunctions" value="true"/>
+        <property name="validateReferenceExpressions" value="true"/>
+        <property name="validateQueryPropertyMarkers" value="true"/>
+    </bean>
+
 
     <bean id="BooleanChunkingQueryPlanner" scope="prototype" class="datawave.query.planner.BooleanChunkingQueryPlanner" />
 

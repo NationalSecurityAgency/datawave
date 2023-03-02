@@ -104,6 +104,8 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
     /**
      * Gets the raw location provider. By default this just delegates to the parent class' {@link #getLocationProvider()} which scans the metadata table.
      * However, test cases might override in order to replace the parent metadata location provider whilst still allowing the caching mechanism in use here.
+     * 
+     * @return iterable location provider
      */
     protected Map<TabletId, TabletServerId> getRawLocationProvider() {
         return super.getLocationProvider();

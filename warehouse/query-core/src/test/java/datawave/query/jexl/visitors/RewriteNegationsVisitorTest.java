@@ -17,6 +17,8 @@ import static org.junit.Assert.fail;
  */
 public class RewriteNegationsVisitorTest {
     
+    private final ASTValidator validator = new ASTValidator();
+    
     // Test AST such that (A)
     @Test
     public void testSingleEQ() throws ParseException {
@@ -133,7 +135,7 @@ public class RewriteNegationsVisitorTest {
         assertTrue(TreeEqualityVisitor.checkEquality(expectedScript, negatedScript).isEqual());
         
         try {
-            assertTrue(ASTValidator.isValid(negatedScript, RewriteNegationsVisitorTest.class.getSimpleName(), false));
+            assertTrue(validator.isValid(negatedScript, RewriteNegationsVisitorTest.class.getSimpleName(), false));
         } catch (InvalidQueryTreeException e) {
             fail("Unexpected failure while validating query tree: " + e.getMessage());
         }

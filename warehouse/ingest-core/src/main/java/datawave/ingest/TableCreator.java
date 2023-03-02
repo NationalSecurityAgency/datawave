@@ -12,9 +12,9 @@ public class TableCreator {
     
     public static void main(String[] args) {
         Configuration conf = OptionsParser.parseArguments(args, config);
-        TableConfigurationUtil tableConfigUtil = new TableConfigurationUtil(conf);
-        
         try {
+            TableConfigurationUtil tableConfigUtil = new TableConfigurationUtil(conf);
+            tableConfigUtil.registerTableNamesFromConfigFiles(conf);
             tableConfigUtil.configureTables(conf);
         } catch (Exception e) {
             log.error("Unable to create tables", e);

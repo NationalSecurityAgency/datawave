@@ -37,7 +37,13 @@ public abstract class MetadataIdParser {
      * This is the method that is called to parse metadata from an event
      * 
      * @param event
+     *            the event
      * @param key
+     *            the key
+     * @param metadata
+     *            a map of metadata
+     * @throws Exception
+     *             if there is an issue
      */
     public abstract void addMetadata(RawRecordContainer event, Multimap<String,String> metadata, String key) throws Exception;
     
@@ -86,8 +92,10 @@ public abstract class MetadataIdParser {
      * Parse "..." {, "..."} into an array of string arguments (as Object[])
      * 
      * @param args
+     *            the arguments
      * @return Object[] An array of string objects
      * @throws IllegalArgumentException
+     *             if there is an issue with the arguments
      */
     public static Object[] parseArgs(String args) throws IllegalArgumentException {
         List<String> argList = new ArrayList<>();

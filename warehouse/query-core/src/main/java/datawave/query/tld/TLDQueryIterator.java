@@ -1,9 +1,9 @@
 package datawave.query.tld;
 
+import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import datawave.query.attributes.Document;
-import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.function.TLDEquality;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
@@ -11,10 +11,15 @@ import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.planner.SeekingQueryPlanner;
+import datawave.query.postprocessing.tf.TFFactory;
+import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TLDEventDataFilter;
+import datawave.query.predicate.TLDFieldIndexQueryFilter;
+import datawave.query.util.Tuple2;
+import datawave.query.util.Tuple3;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -25,7 +30,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
@@ -95,81 +99,15 @@ public class TLDQueryIterator extends QueryIterator {
     /**
      * Distinct from getEvaluation filter as the FI filter is used to prevent FI hits on nonEventFields that are not indexOnly fields
      * 
-     * @return
+     * @return an {@link EventDataQueryFilter}
      */
     protected EventDataQueryFilter getFIEvaluationFilter() {
-        ChainableEventDataQueryFilter chainableEventDataQueryFilter = new ChainableEventDataQueryFilter();
+        ChainableEventDataQueryFilter filterChain = new ChainableEventDataQueryFilter();
         // primary filter on the current filter
-        chainableEventDataQueryFilter.addFilter(getEvaluationFilter());
-        
+        filterChain.addFilter(getEvaluationFilter());
         // prevent anything that is not an index only field from being kept at the tld level, otherwise allow all
-        EventDataQueryFilter tldFiFilter = new EventDataQueryFilter() {
-            @Override
-            public void startNewDocument(Key documentKey) {
-                // no-op
-            }
-            
-            @Override
-            public boolean apply(@Nullable Map.Entry<Key,String> var1) {
-                return true;
-            }
-            
-            @Override
-            public boolean peek(@Nullable Map.Entry<Key,String> var1) {
-                return true;
-            }
-            
-            /**
-             * Keep any FI that is index only and part of the TLD or is not part of the TLD
-             * 
-             * @param k
-             * @return
-             */
-            @Override
-            public boolean keep(Key k) {
-                boolean root = TLDEventDataFilter.isRootPointer(k);
-                DatawaveKey datawaveKey = new DatawaveKey(k);
-                return (root && getIndexOnlyFields().contains(datawaveKey.getFieldName())) || !root;
-            }
-            
-            @Override
-            public Key getStartKey(Key from) {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public Key getStopKey(Key from) {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public Range getKeyRange(Map.Entry<Key,Document> from) {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public EventDataQueryFilter clone() {
-                return this;
-            }
-            
-            @Override
-            public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public int getMaxNextCount() {
-                return -1;
-            }
-            
-            @Override
-            public Key transform(Key toTransform) {
-                return null;
-            }
-        };
-        chainableEventDataQueryFilter.addFilter(tldFiFilter);
-        
-        return chainableEventDataQueryFilter;
+        filterChain.addFilter(new TLDFieldIndexQueryFilter(getIndexOnlyFields()));
+        return filterChain;
     }
     
     @Override
@@ -266,6 +204,12 @@ public class TLDQueryIterator extends QueryIterator {
                     throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
         return createIteratorBuildingVisitor(TLDIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs).setIteratorBuilder(
                         TLDIndexIteratorBuilder.class);
+    }
+    
+    @Override
+    protected Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
+        tfConfig.setTld(true);
+        return TFFactory.getFunction(tfConfig);
     }
     
 }

@@ -47,18 +47,18 @@
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
+        <version.commons-text>1.8</version.commons-text>
         <version.curator>5.2.0</version.curator>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.easymock>4.0.2</version.easymock>
-        <version.geoserver>2.14.2</version.geoserver>
-        <version.geotools>20.1</version.geotools>
+        <version.geoserver>2.21.1</version.geoserver>
+        <version.geotools>27.1</version.geotools>
         <version.geowave>1.1.0</version.geowave>
         <version.google-guava>31.1-jre</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <version.hadoop>3.3.3</version.hadoop>
-        <version.hadoop-guava>1.1.1</version.hadoop-guava>
-        <version.hadoop-protobuf>1.1.1</version.hadoop-protobuf>
+        <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>2.1.0</version.in-memory-accumulo>
@@ -71,6 +71,7 @@
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.11.2</version.jjwt>
+        <version.jts>1.19.0</version.jts>
         <version.junit>4.13.2</version.junit>
         <version.junit.jupiter>5.5.2</version.junit.jupiter>
         <version.junit.vintage>5.5.2</version.junit.vintage>
@@ -86,10 +87,10 @@
         <version.microservice.base-rest-responses>2.1.0</version.microservice.base-rest-responses>
         <version.microservice.common-utils>1.1</version.microservice.common-utils>
         <version.microservice.dictionary-api>2.1.0</version.microservice.dictionary-api>
-        <version.microservice.metadata-utils>2.1.0</version.microservice.metadata-utils>
+        <version.microservice.metadata-utils>2.1.1</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>1.3</version.microservice.metrics-reporter>
-        <version.microservice.query-metric-api>1.5.4</version.microservice.query-metric-api>
-        <version.microservice.type-utils>1.8</version.microservice.type-utils>
+        <version.microservice.query-metric-api>1.5.7</version.microservice.query-metric-api>
+        <version.microservice.type-utils>1.11</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>8.0.16</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
@@ -550,17 +551,6 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!--<dependency>
-                <groupId>org.apache.accumulo</groupId>
-                <artifactId>accumulo-tracer</artifactId>
-                <version>${version.accumulo}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.guava</groupId>
-                        <artifactId>guava</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>-->
             <dependency>
                 <groupId>org.apache.accumulo</groupId>
                 <artifactId>accumulo-tserver</artifactId>
@@ -597,6 +587,10 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-jexl</artifactId>
                 <version>${version.commons-jexl}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
@@ -753,6 +747,16 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.apache.hadoop.thirdparty</groupId>
+                <artifactId>hadoop-shaded-guava</artifactId>
+                <version>${version.hadoop-shaded}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop.thirdparty</groupId>
+                <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
+                <version>${version.hadoop-shaded}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>${version.httpcomponents-httpclient}</version>
@@ -832,16 +836,6 @@
                 <groupId>org.geotools</groupId>
                 <artifactId>gt-data</artifactId>
                 <version>${version.geotools}</version>
-                <!-- <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>-->
             </dependency>
             <dependency>
                 <groupId>org.geotools</groupId>
@@ -944,6 +938,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.locationtech.jts</groupId>
+                <artifactId>jts-core</artifactId>
+                <version>${version.jts}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jul-to-slf4j</artifactId>
                 <version>${version.slf4j}</version>
@@ -1004,18 +1003,6 @@
                 <groupId>org.apache.deltaspike.core</groupId>
                 <artifactId>deltaspike-core-impl</artifactId>
                 <version>${version.deltaspike}</version>
-                <scope>runtime</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop.thirdparty</groupId>
-                <artifactId>hadoop-shaded-guava</artifactId>
-                <version>${version.hadoop-guava}</version>
-                <scope>runtime</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop.thirdparty</groupId>
-                <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
-                <version>${version.hadoop-protobuf}</version>
                 <scope>runtime</scope>
             </dependency>
             <dependency>
@@ -1178,13 +1165,6 @@
             </snapshots>
             <id>jboss</id>
             <url>https://repository.jboss.org/nexus/content/groups/public-jboss/</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>cloudera</id>
-            <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
         </repository>
         <repository>
             <snapshots>

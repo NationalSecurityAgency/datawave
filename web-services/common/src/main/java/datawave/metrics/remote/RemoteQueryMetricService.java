@@ -4,6 +4,7 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.annotation.Metric;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectReader;
 import datawave.configuration.RefreshableScope;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
@@ -49,7 +50,7 @@ public class RemoteQueryMetricService extends RemoteHttpService {
     private static final String UPDATE_METRIC_SUFFIX = "updateMetric";
     private static final String UPDATE_METRICS_SUFFIX = "updateMetrics";
     private static final String ID_METRIC_SUFFIX = "id/%s";
-    private static final String MAP_METRIC_SUFFIX = "id/map/%s";
+    private static final String MAP_METRIC_SUFFIX = "id/%s/map";
     private static final String SUMMARY_ALL_SUFFIX = "summary/all";
     private static final String SUMMARY_USER_SUFFIX = "summary/user";
     private static final String AUTH_HEADER_NAME = "Authorization";
@@ -118,6 +119,7 @@ public class RemoteQueryMetricService extends RemoteHttpService {
     @PostConstruct
     public void init() {
         super.init();
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         baseQueryMetricListResponseReader = objectMapper.readerFor(BaseQueryMetricListResponse.class);
         queryGeometryResponseReader = objectMapper.readerFor(QueryGeometryResponse.class);
         queryMetricsSummaryResponseReader = objectMapper.readerFor(QueryMetricsSummaryResponse.class);

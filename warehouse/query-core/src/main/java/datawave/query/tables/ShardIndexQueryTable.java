@@ -125,7 +125,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         } else {
             int nClosed = 0;
             scannerFactory.lockdown();
-            for (ScannerBase bs : Lists.newArrayList(scannerFactory.currentScanners())) {
+            for (ScannerBase bs : scannerFactory.currentScanners()) {
                 scannerFactory.close(bs);
                 ++nClosed;
             }

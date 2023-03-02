@@ -24,9 +24,13 @@ public abstract class AbstractNormalizer implements TextNormalizer {
      * A factory method to create and configure a normalizer given a class name
      *
      * @param type
+     *            the type
      * @param instance
+     *            name of the instance
      * @param config
+     *            configuration to use
      * @param normalizerClass
+     *            the normalizerClass to set up
      * @return An configured instance of the normalizerClass
      */
     public static TextNormalizer createNormalizer(Type type, String instance, Configuration config, String normalizerClass) {
@@ -56,7 +60,9 @@ public abstract class AbstractNormalizer implements TextNormalizer {
      * Convert a field value to its normalized form.
      * 
      * @param fieldName
+     *            the field name
      * @param fieldValue
+     *            the field value
      * @return the normalized field value, or the original field value otherwise.
      * @throws NormalizationException
      *             if the value cannot be normalized
@@ -67,7 +73,9 @@ public abstract class AbstractNormalizer implements TextNormalizer {
      * Convert a field value regex to work against its normalized form.
      * 
      * @param fieldName
+     *            the field name
      * @param fieldRegex
+     *            regex to check for a match
      * @return the normalized field value, or the original field value otherwise.
      * @throws NormalizationException
      *             if the value cannot be normalized
@@ -78,9 +86,15 @@ public abstract class AbstractNormalizer implements TextNormalizer {
      * A convenience routine to get a configuration value
      *
      * @param type
+     *            the type
      * @param instance
+     *            name of the instance
      * @param config
+     *            the configuration
      * @param key
+     *            the key to pull from
+     * @param defaultVal
+     *            default value to return
      * @return The value, null if not available
      */
     protected String get(Type type, String instance, Configuration config, String key, String defaultVal) {
@@ -97,9 +111,15 @@ public abstract class AbstractNormalizer implements TextNormalizer {
      * A convenience routine to get a configuration value
      *
      * @param type
+     *            the type
      * @param instance
+     *            name of the instance
      * @param config
+     *            the configuration to use
      * @param key
+     *            the key to pull from
+     * @param defaultVal
+     *            default boolean to return
      * @return The value, null if not available
      */
     protected boolean getBoolean(Type type, String instance, Configuration config, String key, boolean defaultVal) {
@@ -116,9 +136,15 @@ public abstract class AbstractNormalizer implements TextNormalizer {
      * A convenience routine to get a configuration value
      *
      * @param type
+     *            the name of the type
      * @param instance
+     *            the name of the instance
      * @param config
+     *            the configuration to use
      * @param key
+     *            the key to draw from
+     * @param defaultVal
+     *            default value to return
      * @return The value, null if not available
      */
     protected String[] getStrings(Type type, String instance, Configuration config, String key, String[] defaultVal) {
@@ -136,8 +162,10 @@ public abstract class AbstractNormalizer implements TextNormalizer {
      * &lt;datatype&gt;.&lt;instance&gt; &lt;datatype&gt; all.&lt;classname&gt; all
      *
      * @param type
+     *            the name of the type
      * @param instance
-     * @return
+     *            the name of the instance
+     * @return a list of the configuration prefixes
      */
     protected String[] getConfPrefixes(Type type, String instance) {
         List<String> prefixes = new ArrayList<>();

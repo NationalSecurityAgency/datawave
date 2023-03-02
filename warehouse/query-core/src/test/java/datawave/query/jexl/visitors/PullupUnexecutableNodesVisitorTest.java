@@ -26,6 +26,8 @@ public class PullupUnexecutableNodesVisitorTest {
     private ShardQueryConfiguration config;
     private MockMetadataHelper helper;
     
+    private final ASTValidator validator = new ASTValidator();
+    
     @Before
     public void setup() {
         indexedFields = Sets.newHashSet("FOO");
@@ -153,7 +155,7 @@ public class PullupUnexecutableNodesVisitorTest {
             ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
             
             assertTrue("Expected " + expected + " but got " + visitedString, TreeEqualityVisitor.isEqual(expectedScript, visitedScript));
-            assertTrue(ASTValidator.isValid(visitedScript));
+            assertTrue(validator.isValid(visitedScript));
             assertEquals(expected, visitedString);
         } catch (ParseException e) {
             fail("Failed to parse query: " + query);

@@ -95,8 +95,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     
     public static final String INDEX_FILTERING_CLASSES = "indexfiltering.classes";
     
-    protected SortedKeyValueIterator<Key,Value> source;
-    protected LimitedSortedKeyValueIterator limitedSource;
+    protected final SortedKeyValueIterator<Key,Value> source;
+    protected final LimitedSortedKeyValueIterator limitedSource;
     protected final Text valueMinPrefix;
     protected final Text columnFamily;
     protected final Collection<ByteSequence> seekColumnFamilies;
@@ -128,7 +128,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     private IndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
                     boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
         
-        valueMinPrefix = Util.minPrefix(value);
+        this.valueMinPrefix = Util.minPrefix(value);
         
         this.datatypeFilter = datatypeFilter;
         if (datatypeFilter instanceof SeekingFilter) {
@@ -137,8 +137,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         
         this.source = source;
         // wrap the source with a limit
-        limitedSource = new LimitedSortedKeyValueIterator(source);
-        this.timeFilter = timeFilter;
+        this.limitedSource = new LimitedSortedKeyValueIterator(source);
         if (timeFilter instanceof SeekingFilter) {
             timeSeekingFilter = (SeekingFilter) timeFilter;
         }
@@ -158,8 +157,6 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         this.seekColumnFamilies = Lists.newArrayList((ByteSequence) new ArrayByteSequence(columnFamilyBytes));
         this.includeColumnFamilies = true;
         
-        document = new Document();
-        
         this.field = field.toString();
         this.value = value.toString();
         
@@ -178,7 +175,6 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         }
         
         this.aggregation = aggregator;
-        
         this.timeFilter = timeFilter;
     }
     
@@ -375,6 +371,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      * @param pointer
      *            the minimum point to advance source to
      * @throws IOException
+     *             if something goes wrong accessing accumulo
      * @throws IllegalStateException
      *             if getTopKey() is greater than or equal to pointer
      */
@@ -390,25 +387,13 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         newColumnQualifier.append(id.getBytes(), 0, id.getLength());
         
         Key nextKey = new Key(pointer.getRow(), columnFamily, newColumnQualifier);
-        Key newTop = null;
-        for (int i = 0; i < 256 && source.hasTop() && (newTop = source.getTopKey()).compareTo(nextKey) < 0; ++i)
-            source.next();
+        Range r = new Range(nextKey, true, scanRange.getEndKey(), scanRange.isEndKeyInclusive());
         
-        /*
-         * We need to verify a few things after next()'ing a bunch and then seeking:
-         * 
-         * 1) We actually had data before even trying to move 2) The last returned key by the source is less than the one we want to be at 3) The source still
-         * has data - we could get away without checking this, but why try and seek if we already know we have no more data?
-         */
-        if (newTop != null && newTop.compareTo(nextKey) < 0 && source.hasTop()) {
-            Range r = new Range(nextKey, true, scanRange.getEndKey(), scanRange.isEndKeyInclusive());
-            if (log.isTraceEnabled())
-                log.trace(this + " move'ing to: " + r);
-            source.seek(r, seekColumnFamilies, includeColumnFamilies);
-        } else {
-            if (log.isTraceEnabled())
-                log.trace(this + " stepping its way to " + newTop);
+        if (log.isTraceEnabled()) {
+            log.trace(this + " moving to: " + r);
         }
+        
+        source.seek(r, seekColumnFamilies, includeColumnFamilies);
         
         if (log.isTraceEnabled()) {
             log.trace(this + " finished move. Now at " + (source.hasTop() ? source.getTopKey() : "null") + ", calling next()");
@@ -425,7 +410,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      * Permute a "Document" Range to the equivalent "Field Index" Range for a Field:Term
      * 
      * @param r
-     * @return
+     *            a range formatted like a document key
+     * @return the field index range
      */
     protected Range buildIndexRange(Range r) {
         Key startKey = permuteRangeKey(r.getStartKey(), r.isStartKeyInclusive());
@@ -438,7 +424,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      * Permute a "Document" Key to an equivalent "Field Index" key for a Field:Term
      * 
      * @param rangeKey
-     * @return
+     *            a key formatted like a document key
+     * @return a key formatted for a field index range
      */
     protected Key permuteRangeKey(Key rangeKey, boolean inclusive) {
         Key key = null;
@@ -473,7 +460,6 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         sb.append(this.columnFamily.toString().replace("\0", "\\x00"));
         sb.append(", ");
         sb.append(this.valueMinPrefix.toString().replace("\0", "\\x00"));
-        
         return sb.toString();
     }
 }

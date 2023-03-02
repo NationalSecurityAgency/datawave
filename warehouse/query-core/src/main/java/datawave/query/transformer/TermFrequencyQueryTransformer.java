@@ -72,7 +72,7 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         
         Metadata m = new Metadata();
         m.setRow(tfkv.getShardId());
-        m.setDataType(tfkv.getShardId());
+        m.setDataType(tfkv.getDatatype());
         m.setInternalId(tfkv.getUid());
         e.setMetadata(m);
         

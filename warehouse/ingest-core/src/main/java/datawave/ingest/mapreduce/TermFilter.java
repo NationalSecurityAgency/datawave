@@ -9,6 +9,7 @@ import com.google.common.hash.PrimitiveSink;
  * Bloom filter implementation that puts an arbitrary string into the sink.
  * 
  * @param <T>
+ *            the type of term filter
  */
 public class TermFilter<T> implements Funnel<T> {
     
