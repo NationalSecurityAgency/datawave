@@ -6,7 +6,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 
 /**
- * For use with the {@link datawave.query.tables.AncestorQueryLogic}
+ * For use with the {@link datawave.query.tables.ParentQueryLogic}
  */
 public class ParentScanRangeProvider extends DocumentScanRangeProvider {
     

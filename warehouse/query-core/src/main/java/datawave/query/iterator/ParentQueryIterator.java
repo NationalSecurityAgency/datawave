@@ -8,7 +8,6 @@ import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.Aggregation;
 import datawave.query.function.KeyToDocumentData;
 import datawave.query.function.ScanRangeProvider;
-import datawave.query.function.TLDScanRangeProvider;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ParentEventDataFilter;
 import datawave.query.predicate.ParentScanRangeProvider;
