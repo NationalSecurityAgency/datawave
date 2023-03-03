@@ -453,10 +453,10 @@ public class TestLuceneToJexlQueryParser {
                         "#exclude(OR, f1, see.*jane.*run, f2, test\\,escaping)");
         testFunction("(not(filter:includeRegex(f1, 'see.*jane.*run')) || not(filter:includeRegex(f2, 'test,escaping')))",
                         "#exclude(AND, f1, see.*jane.*run, f2, test\\,escaping)");
-        testFunction("filter:includeText(_ANYFIELD_, 'r1')", "#text(r1)");
-        testFunction("(filter:includeText(f1, 'r1') && filter:includeText(f2, 'r2'))", "#text(f1, r1, f2, r2)");
-        testFunction("(filter:includeText(f1, 'r1') && filter:includeText(f2, 'r2'))", "#text(AND, f1, r1, f2, r2)");
-        testFunction("(filter:includeText(f1, 'r1') || filter:includeText(f2, 'r2'))", "#text(OR, f1, r1, f2, r2)");
+        testFunction("f:includeText(_ANYFIELD_, 'r1')", "#text(r1)");
+        testFunction("(f:includeText(f1, 'r1') && f:includeText(f2, 'r2'))", "#text(f1, r1, f2, r2)");
+        testFunction("(f:includeText(f1, 'r1') && f:includeText(f2, 'r2'))", "#text(AND, f1, r1, f2, r2)");
+        testFunction("(f:includeText(f1, 'r1') || f:includeText(f2, 'r2'))", "#text(OR, f1, r1, f2, r2)");
         
         testFunction("filter:afterLoadDate(LOAD_DATE, '20140101')", "#loaded(after, 20140101)");
         testFunction("filter:afterLoadDate(LOAD_DATE, '20140101', 'yyyyMMdd')", "#loaded(after, 20140101, yyyyMMdd)");
@@ -591,10 +591,13 @@ public class TestLuceneToJexlQueryParser {
         assertEquals("f:unique('field1[ALL','DAY]','field2')", parser.parse("#unique(field1[ALL,DAY],field2)").getOriginalQuery());
         assertEquals("f:unique('field1[ALL','DAY]','field2[MINUTE]','field3[HOUR]')", parser.parse("#unique(field1[ALL,DAY],field2[MINUTE],field3[HOUR])")
                         .getOriginalQuery());
+        assertEquals("f:unique('field1[MONTH]','field2[MONTH]','field3[MONTH]')", parser.parse("#unique(field1[MONTH],field2[MONTH],field3[MONTH])")
+                        .getOriginalQuery());
         
         assertEquals("f:unique_by_day('field1','field2','field3')", parser.parse("#unique_by_day(field1,field2,field3)").getOriginalQuery());
         assertEquals("f:unique_by_hour('field1','field2','field3')", parser.parse("#unique_by_hour(field1,field2,field3)").getOriginalQuery());
         assertEquals("f:unique_by_minute('field1','field2','field3')", parser.parse("#unique_by_minute(field1,field2,field3)").getOriginalQuery());
+        assertEquals("f:unique_by_month('field1','field2','field3')", parser.parse("#unique_by_month(field1,field2,field3)").getOriginalQuery());
         
         Throwable exception = assertThrows(ParseException.class, () -> parser.parse("#unique_by_day('field[HOUR]')")).getCause();
         assertTrue(exception.getMessage().contains(

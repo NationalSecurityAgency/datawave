@@ -18,6 +18,7 @@ import org.apache.accumulo.core.security.VisibilityParseException;
  * SecureEventSequenceFileRecordReader.authorizations property is set in the configuration with a valid set of authorizations (comma separated string)
  * 
  * @param <K>
+ *            - type of the file record reader
  */
 public class SecureEventSequenceFileRecordReader<K> extends EventSequenceFileRecordReader<K> {
     

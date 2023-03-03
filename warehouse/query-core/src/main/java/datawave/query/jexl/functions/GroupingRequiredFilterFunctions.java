@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * NOTE: The JexlFunctionArgumentDescriptorFactory is implemented by GroupingRequiredFilterFunctionsDescriptor. This is kept as a separate class to reduce
@@ -46,12 +47,8 @@ public class GroupingRequiredFilterFunctions {
         // this is either '0', or it is the integer value of the last argument
         // when the argumentCount is odd
         Set<String> groups = new HashSet<>();
-        int positionFromRight = 0;
-        if (args.length % 2 != 0) { // it's odd
-            Object lastArgument = args[args.length - 1];
-            positionFromRight = Integer.parseInt(lastArgument.toString());
-        }
-        Collection<ValueTuple> leftSideMatches;
+        final int positionFromRight = (args.length % 2 != 0) ? Integer.parseInt(args[args.length - 1].toString()) : 0;
+        Stream<ValueTuple> leftSideMatches;
         Collection<ValueTuple> allMatches = new HashSet<>();
         Object fieldValue1 = args[0];
         String regex = args[1].toString();
@@ -66,11 +63,12 @@ public class GroupingRequiredFilterFunctions {
         
         if (fieldValue1 instanceof Iterable) {
             // cast as Iterable in order to call the right getAllMatches method
-            leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatches((Iterable) fieldValue1, regex);
+            leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatchesStream((Iterable) fieldValue1, regex);
         } else {
-            leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatches(fieldValue1, regex);
+            leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatches(fieldValue1, regex).stream();
         }
-        for (ValueTuple currentMatch : leftSideMatches) {
+        
+        leftSideMatches.forEach(currentMatch -> {
             String matchFieldName = ValueTuple.getFieldName(currentMatch);
             // my fieldValue2 will be a collection that looks like [ AGE.FOO.7.1:1, GENDER.BAZ.7.2:2, NAME.FO.7.3:1 ]
             // I am only interested in a match on the one that ends with the 'context' (.2) that I found above
@@ -107,14 +105,14 @@ public class GroupingRequiredFilterFunctions {
                     }
                 }
             }
-        }
-        // if there was a match found at all levels, then the matches.size will be equal to the
-        // number of field/regex pairs
-        if (args.length == 2) { // maybe they passed in only 2 args, in that case, get the groups for whatever was in the first (only) arg pair
-            allMatches.addAll(leftSideMatches);
-        } else if (allMatches.size() < args.length / 2) { // truncated in case args.length was odd
-            allMatches.clear();
-            groups.clear();
+        });
+        
+        if (args.length != 2) { // if they passed in only 2 args, then get the groups for whatever was in the first (only) arg pair
+            // if there was a match found at all levels, then the matches.size will be equal to the
+            // number of field/regex pairs
+            if (allMatches.size() < args.length / 2) { // truncated in case args.length was odd
+                groups.clear();
+            }
         }
         if (log.isTraceEnabled()) {
             log.trace("getGroupsForMatchesInGroup(" + Arrays.toString(args) + ") returning " + groups);
@@ -136,8 +134,9 @@ public class GroupingRequiredFilterFunctions {
                     ValueTuple currentMatch) {
         if (fieldValue != null) {
             String fieldName = ValueTuple.getFieldName(fieldValue);
+            String subgroup = getSubgroup(fieldName);
             boolean contextHasMatch = false;
-            if (fieldName.endsWith(context)) {
+            if (subgroup != null && subgroup.equals(context)) {
                 // includeRegex will return either an emptyCollection, or a SingletonCollection containing
                 // the first match that was found
                 Collection<ValueTuple> rightSideMatches = EvaluationPhaseFilterFunctions.includeRegex(fieldValue, regex);
@@ -151,6 +150,16 @@ public class GroupingRequiredFilterFunctions {
         } else {
             return false;
         }
+    }
+    
+    // move all these kinds of methods into a central utility once we refactor this
+    private static String getSubgroup(String fieldName) {
+        int index = fieldName.lastIndexOf('.');
+        if (index > 0) {
+            return fieldName.substring(index + 1);
+        }
+        return null;
+        
     }
     
     /**
@@ -169,12 +178,8 @@ public class GroupingRequiredFilterFunctions {
     public static Collection<?> matchesInGroup(Object... args) {
         // this is either '0', or it is the integer value of the last argument
         // when the argumentCount is odd
-        int positionFromRight = 0;
-        if (args.length % 2 != 0) { // it's odd
-            Object lastArgument = args[args.length - 1];
-            positionFromRight = Integer.parseInt(lastArgument.toString());
-        }
-        Collection<ValueTuple> leftSideMatches;
+        final int positionFromRight = (args.length % 2 != 0) ? Integer.parseInt(args[args.length - 1].toString()) : 0;
+        Stream<ValueTuple> leftSideMatches;
         Collection<ValueTuple> allMatches = new HashSet<>();
         Object fieldValue1 = args[0];
         String regex = args[1].toString();
@@ -189,11 +194,12 @@ public class GroupingRequiredFilterFunctions {
         
         if (fieldValue1 instanceof Iterable) {
             // cast as Iterable in order to call the right getAllMatches method
-            leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatches((Iterable) fieldValue1, regex);
+            leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatchesStream((Iterable) fieldValue1, regex);
         } else {
-            leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatches(fieldValue1, regex);
+            leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatches(fieldValue1, regex).stream();
         }
-        for (ValueTuple currentMatch : leftSideMatches) {
+        
+        leftSideMatches.forEach(currentMatch -> {
             String matchFieldName = ValueTuple.getFieldName(currentMatch);
             // my fieldValue2 will be a collection that looks like [ AGE.FOO.7.1:1, GENDER.BAZ.7.2:2, NAME.FO.7.3:1 ]
             // I am only interested in a match on the one that ends with the 'tail' (.2) that I found above
@@ -219,7 +225,8 @@ public class GroupingRequiredFilterFunctions {
                     manageMatchesInGroupRemainingArgs(args[i], args[i + 1].toString(), context, allMatches, currentMatch);
                 }
             }
-        }
+        });
+        
         // if there was a match found at all levels, then the matches.size will be equal to the
         // number of field/regex pairs
         if (allMatches.size() < args.length / 2) { // truncated in case args.length was odd
@@ -241,7 +248,8 @@ public class GroupingRequiredFilterFunctions {
     private static void manageMatchesInGroupRemainingArgs(Object fieldValue, String regex, String context, Collection<ValueTuple> allMatches,
                     ValueTuple currentMatch) {
         String fieldName = ValueTuple.getFieldName(fieldValue);
-        if (fieldName.endsWith(context)) {
+        String subgroup = getSubgroup(fieldName);
+        if (subgroup != null && subgroup.equals(context)) {
             // includeRegex will return either an emptyCollection, or a SingletonCollection containing
             // the first match that was found
             Collection<ValueTuple> rightSideMatches = EvaluationPhaseFilterFunctions.includeRegex(fieldValue, regex);
@@ -270,25 +278,21 @@ public class GroupingRequiredFilterFunctions {
         }
         // positionFrom is either '0', or it is the integer value of the last argument
         // when the argumentCount is odd
-        int positionFromLeft = 0;
-        if (args.length % 2 != 0) { // it's odd
-            Object lastArgument = args[args.length - 1];
-            positionFromLeft = Integer.parseInt(lastArgument.toString());
-        }
-        Collection<ValueTuple> firstMatches;
+        final int positionFromLeft = (args.length % 2 != 0) ? Integer.parseInt(args[args.length - 1].toString()) : 0;
+        Stream<ValueTuple> firstMatches;
         Collection<ValueTuple> allMatches = new HashSet<>();
         Object fieldValue1 = args[0];
         String regex = args[1].toString();
         if (fieldValue1 instanceof Iterable) {
             // cast as Iterable in order to call the right getAllMatches method
-            firstMatches = EvaluationPhaseFilterFunctions.getAllMatches((Iterable) fieldValue1, regex);
+            firstMatches = EvaluationPhaseFilterFunctions.getAllMatchesStream((Iterable) fieldValue1, regex);
         } else {
-            firstMatches = EvaluationPhaseFilterFunctions.getAllMatches(fieldValue1, regex);
+            firstMatches = EvaluationPhaseFilterFunctions.getAllMatches(fieldValue1, regex).stream();
         }
         if (log.isTraceEnabled()) {
             log.trace("firstMatches = " + firstMatches);
         }
-        for (ValueTuple currentMatch : firstMatches) {
+        firstMatches.forEach(currentMatch -> {
             String matchFieldName = ValueTuple.getFieldName(currentMatch);
             // my firstMatches will be a collection that looks like [NAME.grandparent_0.parent_0.child_0:SANTINO]
             String theFirstMatch = EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(matchFieldName, positionFromLeft);
@@ -337,7 +341,7 @@ public class GroupingRequiredFilterFunctions {
                     // @formatter:on
                 }
             }
-        }
+        });
         
         // if there was a match found at all levels, then the matches.size will be equal to the
         // number of field/regex pairs

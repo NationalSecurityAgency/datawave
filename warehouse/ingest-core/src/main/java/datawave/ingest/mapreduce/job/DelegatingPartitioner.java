@@ -56,9 +56,13 @@ public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> impl
      * Is fault tolerant: if a given table is misconfigured, it will not honor its override DelegatingPartitioner and log a warning
      * 
      * @param job
+     *            the job
      * @param conf
+     *            the configuration
      * @param tableNames
+     *            the table names
      * @param partitionerCache
+     *            the partitioner cache
      */
     private static void validateAndRegisterPartitioners(Job job, Configuration conf, String[] tableNames, PartitionerCache partitionerCache) {
         String commaSeparatedTableNames = StringUtils.join(",", partitionerCache.validatePartitioners(tableNames, job));

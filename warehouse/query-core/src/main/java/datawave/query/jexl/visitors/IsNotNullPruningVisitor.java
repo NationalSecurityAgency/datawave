@@ -65,6 +65,7 @@ import java.util.List;
 import java.util.Set;
 
 import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
+import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.GET_ALL_MATCHES;
 import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.INCLUDE_REGEX;
 
 /**
@@ -288,7 +289,7 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
         FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
         node.jjtAccept(visitor, null);
         
-        if (visitor.namespace().equals(EVAL_PHASE_FUNCTION_NAMESPACE) && visitor.name().equals(INCLUDE_REGEX)) {
+        if (visitor.namespace().equals(EVAL_PHASE_FUNCTION_NAMESPACE) && (visitor.name().equals(INCLUDE_REGEX) || visitor.name().equals(GET_ALL_MATCHES))) {
             Set<String> args = JexlASTHelper.getIdentifierNames(visitor.args().get(0));
             if (args.size() == 1) {
                 return args.iterator().next();
@@ -539,11 +540,13 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTIntegerLiteral node, Object data) {
         return data;
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTFloatLiteral node, Object data) {
         return data;
     }

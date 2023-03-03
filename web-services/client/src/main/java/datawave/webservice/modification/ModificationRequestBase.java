@@ -46,6 +46,7 @@ public class ModificationRequestBase implements Serializable {
      * Cannot use a setMode(String mode) method as that causes deserialization issues with jackson library.
      * 
      * @param mode
+     *            - name of the mode to assign
      */
     public void setModeFromString(String mode) {
         this.mode = MODE.valueOf(mode);

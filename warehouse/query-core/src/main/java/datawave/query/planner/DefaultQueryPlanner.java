@@ -30,7 +30,6 @@ import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.function.JexlEvaluation;
-import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
@@ -64,6 +63,7 @@ import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
+import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
@@ -105,6 +105,7 @@ import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.async.event.ReduceFields;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
@@ -300,13 +301,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected boolean showReducedQueryPrune = true;
     
-    /**
-     * Set flag to enable query tree validation during planning
-     */
-    protected boolean validateAST = false;
-    
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
-    protected TimedVisitorManager visitorManager;
+    private TimedVisitorManager visitorManager = new TimedVisitorManager();
     
     public DefaultQueryPlanner() {
         this(Long.MAX_VALUE);
@@ -319,7 +315,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     public DefaultQueryPlanner(long maxRangesPerQueryPiece, boolean limitScanners) {
         this.maxRangesPerQueryPiece = maxRangesPerQueryPiece;
         setLimitScanners(limitScanners);
-        this.visitorManager = new TimedVisitorManager(log.isDebugEnabled(), validateAST);
     }
     
     protected DefaultQueryPlanner(DefaultQueryPlanner other) {
@@ -342,7 +337,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setSourceLimit(other.sourceLimit);
         setDocsToCombineForEvaluation(other.getDocsToCombineForEvaluation());
         setPushdownThreshold(other.getPushdownThreshold());
-        this.visitorManager = other.visitorManager;
+        setVisitorManager(other.getVisitorManager());
     }
     
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
@@ -415,7 +410,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         IteratorSetting cfg = null;
         
         if (preloadOptions) {
-            cfg = getQueryIterator(metadataHelper, config, settings, "", false);
+            cfg = getQueryIterator(metadataHelper, config, settings, "", false, true);
         }
         
         try {
@@ -476,7 +471,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         if (!config.isGeneratePlanOnly()) {
             while (null == cfg) {
-                cfg = getQueryIterator(metadataHelper, config, settings, "", false);
+                cfg = getQueryIterator(metadataHelper, config, settings, "", false, false);
             }
             configureIterator(config, cfg, newQueryString, isFullTable);
         }
@@ -1169,7 +1164,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Handle case when input field value pairs are swapped
      */
     protected ASTJexlScript timedInvertSwappedNodes(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Invert Swapped Nodes", () -> (JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(script)));
+        return visitorManager.timedVisit(timers, "Invert Swapped Nodes", () -> (InvertNodeVisitor.invertSwappedNodes(script)));
     }
     
     /**
@@ -1220,7 +1215,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     private ASTJexlScript extractNoExpansionFields(ASTJexlScript script, ShardQueryConfiguration config) {
         NoExpansionFunctionVisitor.VisitResult result = NoExpansionFunctionVisitor.findNoExpansionFields(script);
-        config.setNoExpansionFields(result.noExpansionFields);
+        
+        // merge parsed expansion fields into any existing no expansion fields
+        config.setNoExpansionFields(Sets.union(config.getNoExpansionFields(), result.noExpansionFields));
+        
         return result.script;
     }
     
@@ -1285,6 +1283,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     protected ASTJexlScript timedApplyWhindexFieldMappings(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
                     MetadataHelper metadataHelper, Query settings) throws DatawaveQueryException {
+        try {
+            config.setWhindexCreationDates(metadataHelper.getWhindexCreationDateMap(config.getDatatypeFilter()));
+        } catch (TableNotFoundException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
+            throw new DatawaveFatalQueryException(qe);
+        }
         return visitorManager.timedVisit(timers, "Apply Whindex Field Mappings",
                         () -> (WhindexVisitor.apply(script, config, settings.getBeginDate(), metadataHelper)));
     }
@@ -2002,7 +2006,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Query settings,
-                    final String queryString, final Boolean isFullTable) throws DatawaveQueryException {
+                    final String queryString, final Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
         
         return builderThread.submit(() -> {
             // VersioningIterator is typically set at 20 on the table
@@ -2057,24 +2061,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         configureTypeMappings(config, cfg, metadataHelper, compressMappings);
                         configureAdditionalOptions(config, cfg);
                         
-                        try {
-                            addOption(cfg, QueryOptions.INDEX_ONLY_FIELDS,
-                                            QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexOnlyFields(config.getDatatypeFilter())), true);
-                            addOption(cfg, QueryOptions.COMPOSITE_FIELDS,
-                                            QueryOptions.buildFieldStringFromSet(metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()).keySet()),
-                                            true);
-                            addOption(cfg, QueryOptions.INDEXED_FIELDS,
-                                            QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexedFields(config.getDatatypeFilter())), true);
-                        } catch (TableNotFoundException e) {
-                            QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
-                            throw new DatawaveQueryException(qe);
-                        }
+                        loadFields(cfg, config, isPreload);
                         
                         try {
                             CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
-                            if (compositeMetadata != null && !compositeMetadata.isEmpty())
+                            if (compositeMetadata != null && !compositeMetadata.isEmpty()) {
                                 addOption(cfg, QueryOptions.COMPOSITE_METADATA,
                                                 java.util.Base64.getEncoder().encodeToString(CompositeMetadata.toBytes(compositeMetadata)), false);
+                            }
                         } catch (TableNotFoundException e) {
                             QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITE_METADATA_CONFIG_ERROR, e);
                             throw new DatawaveQueryException(qe);
@@ -2115,6 +2109,42 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     /**
+     * Load indexed, index only, and composite fields into the query iterator
+     *
+     * @param cfg
+     *            iterator setting
+     * @param config
+     *            shard query config
+     * @param isPreload
+     *            boolean indicating if this method is called prior to query planning
+     * @throws DatawaveQueryException
+     *             if the metadata helper cannot get the fields
+     */
+    private void loadFields(IteratorSetting cfg, ShardQueryConfiguration config, boolean isPreload) throws DatawaveQueryException {
+        try {
+            Set<String> compositeFields = metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()).keySet();
+            Set<String> indexedFields = metadataHelper.getIndexedFields(config.getDatatypeFilter());
+            Set<String> indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
+            
+            // only reduce the query fields if planning has occurred
+            if (!isPreload && config.getReduceQueryFields()) {
+                Set<String> queryFields = ReduceFields.getQueryFields(config.getQueryTree());
+                indexedFields = ReduceFields.intersectFields(queryFields, indexedFields);
+                indexOnlyFields = ReduceFields.intersectFields(queryFields, indexOnlyFields);
+                compositeFields = ReduceFields.intersectFields(queryFields, compositeFields);
+            }
+            
+            addOption(cfg, QueryOptions.COMPOSITE_FIELDS, QueryOptions.buildFieldStringFromSet(compositeFields), true);
+            addOption(cfg, QueryOptions.INDEXED_FIELDS, QueryOptions.buildFieldStringFromSet(indexedFields), true);
+            addOption(cfg, QueryOptions.INDEX_ONLY_FIELDS, QueryOptions.buildFieldStringFromSet(indexOnlyFields), true);
+            
+        } catch (TableNotFoundException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
+            throw new DatawaveQueryException(qe);
+        }
+    }
+    
+    /**
      * Get the list of ivarator cache dirs, randomizing the order (while respecting priority) so that the tservers spread out the disk usage.
      */
     private List<IvaratorCacheDirConfig> getShuffledIvaratoCacheDirConfigs(ShardQueryConfiguration config) {
@@ -2134,10 +2164,29 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return shuffledIvaratorCacheDirs;
     }
     
+    /**
+     * Get the loaded {@link IteratorSetting}
+     *
+     * @param metadataHelper
+     *            the {@link MetadataHelper}
+     * @param config
+     *            the {@link ShardQueryConfiguration}
+     * @param settings
+     *            the {@link Query}
+     * @param queryString
+     *            the raw query string
+     * @param isFullTable
+     *            a flag indicating if this is a full table scan
+     * @param isPreload
+     *            a flag indicating the iterator is being loaded prior to planning
+     * @return a loaded {@link IteratorSetting}
+     * @throws DatawaveQueryException
+     *             if something goes wrong
+     */
     protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
-                    Boolean isFullTable) throws DatawaveQueryException {
+                    Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
         if (null == settingFuture)
-            settingFuture = loadQueryIterator(metadataHelper, config, settings, queryString, isFullTable);
+            settingFuture = loadQueryIterator(metadataHelper, config, settings, queryString, isFullTable, isPreload);
         if (settingFuture.isDone())
             try {
                 return settingFuture.get();
@@ -2422,28 +2471,33 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.trace("query stream is " + stream.context());
             }
             
-            // if a term threshold is exceeded and we cannot handle that, then
-            // throw unsupported
-            boolean thresholdExceeded = StreamContext.EXCEEDED_TERM_THRESHOLD.equals(stream.context());
-            if (thresholdExceeded && !config.canHandleExceededTermThreshold()) {
-                throw new UnsupportedOperationException(EXCEED_TERM_EXPANSION_ERROR);
+            switch (stream.context()) {
+                case EXCEEDED_TERM_THRESHOLD:
+                    // throw an unsupported exception if the planner cannot handle term threshold exceeded
+                    if (!config.canHandleExceededTermThreshold()) {
+                        throw new UnsupportedOperationException(EXCEED_TERM_EXPANSION_ERROR);
+                    }
+                    break;
+                case UNINDEXED:
+                    if (log.isDebugEnabled()) {
+                        log.debug("Full table scan required because of unindexed fields");
+                    }
+                    needsFullTable = true;
+                    break;
+                case DELAYED_FIELD:
+                    if (log.isDebugEnabled()) {
+                        log.debug("Full table scan required because query consists of only delayed expressions");
+                    }
+                    needsFullTable = true;
+                    break;
+                default:
+                    // the context is good and does not prevent a query from executing
             }
             
-            if (StreamContext.UNINDEXED.equals(stream.context())) {
+            // check for the case where we cannot handle an ivarator but the query requires an ivarator
+            if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
+                log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
                 needsFullTable = true;
-                fullTableScanReason = "Needs full table scan because of unindexed fields";
-                log.debug(fullTableScanReason);
-            } else if (StreamContext.DELAYED_FIELD.equals(stream.context())) {
-                fullTableScanReason = "Needs full table scan because query consists of only delayed expressions";
-                needsFullTable = true;
-                log.debug(fullTableScanReason);
-            }
-            // if a value threshold is exceeded and we cannot handle that, then
-            // force a full table scan
-            else if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
-                fullTableScanReason = "Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false";
-                needsFullTable = true;
-                log.debug(fullTableScanReason);
             }
             
             stopwatch.stop();
@@ -2787,12 +2841,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return showReducedQueryPrune;
     }
     
-    public boolean getValidateAST() {
-        return this.validateAST;
+    public TimedVisitorManager getVisitorManager() {
+        return visitorManager;
     }
     
-    public void setValidateAST(boolean validateAST) {
-        this.validateAST = validateAST;
+    public void setVisitorManager(TimedVisitorManager visitorManager) {
+        this.visitorManager = visitorManager;
     }
     
     public static int getMaxChildNodesToPrint() {

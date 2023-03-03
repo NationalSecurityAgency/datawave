@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Sets;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
@@ -62,28 +61,23 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
-import java.util.Collections;
 import java.util.Set;
 
 import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.INCLUDE_TEXT;
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.NO_EXPANSION;
+import static datawave.query.jexl.functions.QueryFunctions.NO_EXPANSION;
 
 /**
  * Verifies that no filter function is run against an index-only field
  * <p>
- * The exceptions to this rule are the #NO_EXPANSION and #TEXT functions, neither of which are actually filter functions
+ * The exception to this rule is the #NO_EXPANSION function, which is actually a filter function
  * <p>
  * #NO_EXPANSION controls query model expansion and is allowed to limit index only fields
- * <p>
- * #TEXT is allowed to run against index-only fields because an index query is added
  */
 public class ValidateFilterFunctionVisitor extends BaseVisitor {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(ValidateFilterFunctionVisitor.class);
     
     private final Set<String> indexOnlyFields;
-    private static final Set<String> excludedFunctions = Collections.unmodifiableSet(Sets.newHashSet(NO_EXPANSION, INCLUDE_TEXT));
     
     public ValidateFilterFunctionVisitor(Set<String> indexOnlyFields) {
         this.indexOnlyFields = indexOnlyFields;
@@ -117,7 +111,7 @@ public class ValidateFilterFunctionVisitor extends BaseVisitor {
         node.jjtAccept(visitor, null);
         
         Set<String> identifiers;
-        if (visitor.namespace().equals(EVAL_PHASE_FUNCTION_NAMESPACE) && !excludedFunctions.contains(visitor.name())) {
+        if (visitor.namespace().equals(EVAL_PHASE_FUNCTION_NAMESPACE) && !visitor.name().equals(NO_EXPANSION)) {
             for (JexlNode arg : visitor.args()) {
                 identifiers = JexlASTHelper.getIdentifierNames(arg);
                 for (String identifier : identifiers) {
@@ -340,11 +334,13 @@ public class ValidateFilterFunctionVisitor extends BaseVisitor {
         return data;
     }
     
+    @Override
     @SuppressWarnings("deprecation")
     public Object visit(ASTIntegerLiteral node, Object data) {
         return data;
     }
     
+    @Override
     @SuppressWarnings({"deprecation"})
     public Object visit(ASTFloatLiteral node, Object data) {
         return data;

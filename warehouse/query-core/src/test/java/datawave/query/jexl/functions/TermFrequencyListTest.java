@@ -2,6 +2,7 @@ package datawave.query.jexl.functions;
 
 import com.google.common.collect.Maps;
 import datawave.ingest.protobuf.TermWeightPosition;
+import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -12,6 +13,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class TermFrequencyListTest {
@@ -38,4 +40,21 @@ public class TermFrequencyListTest {
         assertTrue(next.zones().contains(zone));
     }
     
+    @Test
+    public void testGetEventId() {
+        // base case
+        Key tfKey = new Key("shard", "tf", "datatype\0uid123\0value\0FIELD");
+        String expected = "shard\0datatype\0uid123";
+        test(expected, tfKey);
+        
+        // child doc case
+        tfKey = new Key("shard", "tf", "datatype\0uid123.1\0value\0FIELD");
+        expected = "shard\0datatype\0uid123.1";
+        test(expected, tfKey);
+    }
+    
+    private void test(String expected, Key key) {
+        String eventId = TermFrequencyList.getEventId(key);
+        assertEquals(expected, eventId);
+    }
 }

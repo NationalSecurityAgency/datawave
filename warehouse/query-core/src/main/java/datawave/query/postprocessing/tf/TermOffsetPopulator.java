@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
 
 import datawave.core.iterators.TermFrequencyIterator;
 import datawave.data.type.NoOpType;
@@ -26,6 +27,7 @@ import datawave.query.jexl.visitors.LiteralNodeSubsetVisitor;
 
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
@@ -42,6 +44,8 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
 
 public class TermOffsetPopulator {
     private static final Logger log = Logger.getLogger(TermOffsetPopulator.class);
@@ -114,8 +118,8 @@ public class TermOffsetPopulator {
         }
         Collections.sort(dataTypeUids);
         
-        Key startKey = new Key(row, Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(dataTypeUids.get(0)));
-        Key endKey = new Key(row, Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(dataTypeUids.get(dataTypeUids.size() - 1) + '\1'));
+        Key startKey = new Key(row, TERM_FREQUENCY_COLUMN_FAMILY, new Text(dataTypeUids.get(0)));
+        Key endKey = new Key(row, TERM_FREQUENCY_COLUMN_FAMILY, new Text(dataTypeUids.get(dataTypeUids.size() - 1) + '\1'));
         return new Range(startKey, true, endKey, true);
     }
     
@@ -227,6 +231,21 @@ public class TermOffsetPopulator {
         map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(termOffsetMap));
         document.setOffsetMap(new TermOffsetMap(termOffsetMap));
         return map;
+    }
+    
+    /**
+     * Build a range from the search space.
+     *
+     * @param row
+     *            the shard
+     * @param searchSpace
+     *            a sorted set of TF column qualifiers
+     * @return a range encompassing the full search space
+     */
+    public static Range getRangeFromSearchSpace(Text row, SortedSet<Text> searchSpace) {
+        Key start = new Key(row, TERM_FREQUENCY_COLUMN_FAMILY, searchSpace.first());
+        Key end = new Key(row, TERM_FREQUENCY_COLUMN_FAMILY, searchSpace.last());
+        return new Range(start, true, end.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false);
     }
     
     public static boolean isContentFunctionTerm(String functionName) {

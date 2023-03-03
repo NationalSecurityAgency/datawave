@@ -175,11 +175,16 @@ public class TableCachingContextWriter extends AbstractContextWriter<BulkIngestK
      * Reduce the list of values for a key.
      * 
      * @param key
+     *            a key
      * @param values
+     *            a set of values
      * @param context
+     *            the context
      * @return the reduced collection of values
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     private Collection<Value> reduceValues(BulkIngestKey key, Collection<Value> values, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
                     throws IOException, InterruptedException {

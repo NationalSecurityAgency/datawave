@@ -28,6 +28,8 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     
     /**
      * Create the helper for this class to use. Can be overriden to supply an alternate helper class
+     * 
+     * @return a csvhelper
      */
     protected CSVHelper createHelper() {
         return new CSVHelper();
@@ -35,6 +37,8 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     
     /**
      * Allow classes extending this class to modify the StrTokenizer being used.
+     * 
+     * @return the tokenizer to be used
      * 
      * @param tokenizer
      *            The StrTokenizer that will be used on each Event
@@ -48,7 +52,7 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
      * 
      * @param data
      *            The raw data from the Event
-     * @return
+     * @return the raw data in String form
      */
     protected String preProcessRawData(byte[] data) {
         return new String(data);
@@ -56,6 +60,10 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     
     /**
      * This method uses the header and the csv string in raw bytes of the Event to create key value pairs.
+     * 
+     * @param event
+     *            the event
+     * @return map of event fields
      */
     @Override
     public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {
@@ -117,7 +125,10 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     /**
      * Used to process extra fields. The PROCESS_EXTRA_FIELDS configuration parameter must be set to enable this processing.
      * 
+     * @param fields
+     *            extra fields to process
      * @param fieldValue
+     *            the field value
      */
     protected void processExtraField(Multimap<String,String> fields, String fieldValue) {
         int equalsIndex = fieldValue.indexOf('=');
@@ -139,8 +150,12 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     /**
      * Process a field. This will split multi-valued fields as necessary and call processField on each part.
      * 
+     * @param fields
+     *            list of fields
      * @param fieldName
+     *            name of the field
      * @param fieldValue
+     *            value of the field
      */
     protected void processPreSplitField(Multimap<String,String> fields, String fieldName, String fieldValue) {
         if (fieldValue != null) {
@@ -209,8 +224,12 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     /**
      * Process a name, value pair and add to the event fields
      * 
+     * @param fields
+     *            list of fields
      * @param fieldName
+     *            name of the field
      * @param fieldValue
+     *            value of the field
      */
     protected void processField(Multimap<String,String> fields, String fieldName, String fieldValue) {
         int sizeLimit = helper.getFieldSizeThreshold();
@@ -227,6 +246,8 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
      * whitelist.
      * 
      * @param fieldName
+     *            the field name
+     * @return whether field should be kept or not
      */
     protected boolean keepField(String fieldName) {
         final Set<String> blacklist = helper.getFieldBlacklist();

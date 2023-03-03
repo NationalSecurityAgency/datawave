@@ -91,7 +91,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private int maxIndexBatchSize = 1000;
     private boolean allTermsIndexOnly;
-    private String accumuloPassword = "";
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
     // Allows this query to parse the root uids from TLD uids found in the global shard index. This effectively ignores hits in child documents.
     private boolean parseTldUids = false;
@@ -99,6 +98,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int collapseUidsThreshold = -1;
     // Should this query dedupe terms within ANDs and ORs
     private boolean enforceUniqueTermsWithinExpressions = false;
+    // should this query reduce the set of fields prior to serialization
+    private boolean reduceQueryFields = false;
     private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
@@ -152,6 +153,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Used to determine the maximum number of query ranges to generate when performing a geowave query against a PointType field.
      */
     private int pointMaxExpansion = 32;
+    /**
+     * Used to determine the maximum number of query ranges to generate when performing a geo query against a GeoType field.
+     */
+    private int geoMaxExpansion = 32;
     /**
      * Used during geowave range optimization to determine the minimum number of sub-ranges we should split a range into.
      */
@@ -223,6 +228,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Multimap<String,String> compositeToFieldMap = ArrayListMultimap.create();
     private Map<String,Date> compositeTransitionDates = new HashMap<>();
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
+    private Map<String,Date> whindexCreationDates = new HashMap<>();
+    
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
     private Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
     
@@ -432,11 +439,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxScannerBatchSize(other.getMaxScannerBatchSize());
         this.setMaxIndexBatchSize(other.getMaxIndexBatchSize());
         this.setAllTermsIndexOnly(other.isAllTermsIndexOnly());
-        this.setAccumuloPassword(other.getAccumuloPassword());
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
+        this.setReduceQueryFields(other.getReduceQueryFields());
         this.setParseTldUids(other.getParseTldUids());
         this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
@@ -457,6 +464,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRangeBufferPollMillis(other.getRangeBufferPollMillis());
         this.setGeometryMaxExpansion(other.getGeometryMaxExpansion());
         this.setPointMaxExpansion(other.getPointMaxExpansion());
+        this.setGeoMaxExpansion(other.getGeoMaxExpansion());
         this.setGeoWaveRangeSplitThreshold(other.getGeoWaveRangeSplitThreshold());
         this.setGeoWaveMaxRangeOverlap(other.getGeoWaveMaxRangeOverlap());
         this.setOptimizeGeoWaveRanges(other.isOptimizeGeoWaveRanges());
@@ -502,6 +510,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCompositeToFieldMap(null == other.getCompositeToFieldMap() ? null : ArrayListMultimap.create(other.getCompositeToFieldMap()));
         this.setCompositeTransitionDates(null == other.getCompositeTransitionDates() ? null : Maps.newHashMap(other.getCompositeTransitionDates()));
         this.setCompositeFieldSeparators(null == other.getCompositeFieldSeparators() ? null : Maps.newHashMap(other.getCompositeFieldSeparators()));
+        this.setWhindexCreationDates(null == other.getWhindexCreationDates() ? null : Maps.newHashMap(other.getWhindexCreationDates()));
         this.setSortedUIDs(other.isSortedUIDs());
         this.setQueryTermFrequencyFields(null == other.getQueryTermFrequencyFields() ? null : Sets.newHashSet(other.getQueryTermFrequencyFields()));
         this.setTermFrequenciesRequired(other.isTermFrequenciesRequired());
@@ -672,23 +681,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         ShardQueryConfiguration config = create(shardQueryLogic);
         config.setQuery(query);
         return config;
-    }
-    
-    /**
-     * @return - the accumulo password
-     */
-    public String getAccumuloPassword() {
-        return this.accumuloPassword;
-    }
-    
-    /**
-     * Sets configured password for accumulo access
-     *
-     * @param password
-     */
-    public void setAccumuloPassword(String password) {
-        this.accumuloPassword = password;
-        
     }
     
     /**
@@ -950,6 +942,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setPointMaxExpansion(int pointMaxExpansion) {
         this.pointMaxExpansion = pointMaxExpansion;
+    }
+    
+    public int getGeoMaxExpansion() {
+        return geoMaxExpansion;
+    }
+    
+    public void setGeoMaxExpansion(int geoMaxExpansion) {
+        this.geoMaxExpansion = geoMaxExpansion;
     }
     
     public int getGeoWaveRangeSplitThreshold() {
@@ -1522,6 +1522,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.compositeFieldSeparators = compositeFieldSeparators;
     }
     
+    public Map<String,Date> getWhindexCreationDates() {
+        return whindexCreationDates;
+    }
+    
+    public void setWhindexCreationDates(Map<String,Date> whindexCreationDates) {
+        this.whindexCreationDates = whindexCreationDates;
+    }
+    
     public Multimap<String,Type<?>> getNormalizedFieldsDatatypes() {
         return normalizedFieldsDatatypes;
     }
@@ -1973,6 +1981,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
         this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
+    }
+    
+    public boolean getReduceQueryFields() {
+        return reduceQueryFields;
+    }
+    
+    public void setReduceQueryFields(boolean reduceQueryFields) {
+        this.reduceQueryFields = reduceQueryFields;
     }
     
     public boolean getSequentialScheduler() {

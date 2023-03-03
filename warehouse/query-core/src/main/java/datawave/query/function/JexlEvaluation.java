@@ -135,10 +135,12 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                 for (ValueTuple hitTuple : hitListArithmetic.getHitTuples()) {
                     
                     ColumnVisibility cv = null;
+                    Key metadata = null;
                     String term = hitTuple.getFieldName() + ':' + hitTuple.getValue();
                     
                     if (hitTuple.getSource() != null) {
                         cv = hitTuple.getSource().getColumnVisibility();
+                        metadata = hitTuple.getSource().getMetadata();
                     }
                     
                     // fall back to extracting column visibility from document
@@ -147,11 +149,15 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                         cv = HitListArithmetic.getColumnVisibilityForHit(document, term);
                         // if no visibility computed, then there were no hits that match fields still in the document......
                     }
+                    // fall back to the metadata from document
+                    if (metadata == null) {
+                        metadata = document.getMetadata();
+                    }
                     
                     if (cv != null) {
                         // unused
                         long timestamp = document.getTimestamp(); // will force an update to make the metadata valid
-                        Content content = new Content(term, document.getMetadata(), document.isToKeep());
+                        Content content = new Content(term, metadata, document.isToKeep());
                         content.setColumnVisibility(cv);
                         attributes.add(content);
                     }

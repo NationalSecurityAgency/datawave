@@ -29,7 +29,8 @@ public class LimitedKeyPartitioner extends Partitioner<BulkIngestKey,Value> impl
      * positive number.
      *
      * @param bKey
-     * @return
+     *            the bulk ingest key
+     * @return the hashcode of the key
      */
     protected int getKeyHashcode(BulkIngestKey bKey) {
         return bKey.hashCode();

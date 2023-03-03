@@ -246,7 +246,9 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
      * A helper routine to determine the visibility for a field.
      *
      * @param event
+     *            the event record
      * @param value
+     *            the value
      * @return the visibility
      */
     
@@ -267,6 +269,7 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
      * Create a flattened visibility, using the cache if possible
      *
      * @param vis
+     *            the column visibility
      * @return the flattened visibility
      */
     protected String flatten(ColumnVisibility vis) {

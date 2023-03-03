@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.NonShardedSplitsFile;
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Value;
@@ -130,7 +131,7 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
     
     private URI createTheSplitsFile(Configuration conf) throws IOException, URISyntaxException, TableNotFoundException, TableExistsException {
         int reduceTasks = conf.getInt("splits.num.reduce", 1);
-        String[] tableNames = conf.get("job.table.names").split(",");
+        String[] tableNames = conf.get(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES).split(",");
         Path workDirPath = new Path(conf.get("ingest.work.dir.qualified"));
         FileSystem outputFs = FileSystem.get(new URI(conf.get("output.fs.uri")), conf);
         NonShardedSplitsFile.Writer writer = new NonShardedSplitsFile.Writer(conf, reduceTasks, workDirPath, outputFs, tableNames, isTrimmed());

@@ -276,6 +276,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
          * We don't want to call every single wikipedia event "wikipedia" but to use the language and type of the dump to better classify the event
          *
          * @param event
+         *            the event container
          */
         protected void updateEventTypeInformation(RawRecordContainer event) {
             String rawFileName = event.getRawFileName();

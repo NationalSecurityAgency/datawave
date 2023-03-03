@@ -1,10 +1,15 @@
 package datawave.mapreduce.shardStats;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
+import datawave.ingest.config.TableConfigCache;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -16,6 +21,8 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -76,9 +83,24 @@ public class StatsHyperLogReducerTest {
         
         // set the output table name
         Configuration conf = driver.getConfiguration();
+        
         conf.set(StatsJob.OUTPUT_TABLE_NAME, StatsInit.TEST_TABLE);
         conf.set(StatsHyperLogReducer.STATS_REDUCER_LOG_LEVEL, Level.DEBUG.toString());
         conf.set(StatsHyperLogReducer.STATS_REDUCER_VALUE_INTERVAL, "5");
+        conf.set("accumulo.username", "user");
+        conf.set("accumulo.password", "user");
+        conf.set("accumulo.instance.name", "user");
+        conf.set("accumulo.zookeepers", "user");
+        conf.set(ShardedDataTypeHandler.SHARD_TNAME, "shard");
+        conf.set("ingest.data.types", "test");
+        conf.set("test.handler.classes", "datawave.ingest.mapreduce.handler.shard.ShardStatsDataTypeHandler");
+        URL url = StatsHyperLogReducerTest.class.getResource("/conf/accConfCache.txt");
+        conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, url.getPath());
+        conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, true);
+        conf.set(FileSystem.FS_DEFAULT_NAME_KEY, URI.create("file:///").toString());
+        
+        TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
+        tcu.serializeTableConfgurationIntoConf(conf);
         
         log.debug("=====  REDUCER INPUT  =====");
         // generate input

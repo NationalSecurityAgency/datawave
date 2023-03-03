@@ -16,7 +16,7 @@ public class NoExpansionFunctionVisitorTest {
     
     @Test
     public void testSimpleParseFunctionInConjunction() {
-        String query = "FOO == 'bar' && filter:noExpansion(FOO)";
+        String query = "FOO == 'bar' && f:noExpansion(FOO)";
         String expected = "FOO == 'bar'";
         Set<String> expectedFields = Sets.newHashSet("FOO");
         test(query, expected, expectedFields);
@@ -24,7 +24,7 @@ public class NoExpansionFunctionVisitorTest {
     
     @Test
     public void testSimpleParseFunctionInDisjunction() {
-        String query = "FOO == 'bar' || filter:noExpansion(FOO)";
+        String query = "FOO == 'bar' || f:noExpansion(FOO)";
         String expected = "FOO == 'bar'";
         Set<String> expectedFields = Sets.newHashSet("FOO");
         test(query, expected, expectedFields);
@@ -32,7 +32,7 @@ public class NoExpansionFunctionVisitorTest {
     
     @Test
     public void testParseMultipleFields() {
-        String query = "FOO == 'bar' && filter:noExpansion(FOO,FOO2,FOO3)";
+        String query = "FOO == 'bar' && f:noExpansion(FOO,FOO2,FOO3)";
         String expected = "FOO == 'bar'";
         Set<String> expectedFields = Sets.newHashSet("FOO", "FOO2", "FOO3");
         test(query, expected, expectedFields);

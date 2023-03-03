@@ -53,6 +53,8 @@ public class HashTableFunction<KEYIN,KEYOUT,VALUEOUT> implements Function<Collec
      *            the table our hashes will be written to
      * @param maxValues
      *            the threshold for generation of hashed values.
+     * @param timestamp
+     *            the timestamp for the entry
      */
     public HashTableFunction(ContextWriter<KEYOUT,VALUEOUT> contextWriter, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
                     Text outputTable, long maxValues, long timestamp) {

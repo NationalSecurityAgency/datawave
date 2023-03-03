@@ -788,8 +788,11 @@ public class Document extends AttributeBag<Document> implements Serializable {
             }
             if (anySet != null) {
                 anySet.addAll(visitObject);
-                context.set(Constants.ANY_FIELD, anySet);
             }
+        }
+        // now if we have anything in the anySet, add it to the context
+        if (anySet != null && !anySet.isEmpty()) {
+            context.set(Constants.ANY_FIELD, anySet);
         }
         
         // Note: this will overwrite an existing termOffsetMap

@@ -44,7 +44,6 @@ public class ShardedTableMapFile {
     
     private static final Logger log = Logger.getLogger(ShardedTableMapFile.class);
     
-    public static final String TABLE_NAMES = "job.table.names";
     public static final String SHARD_TSERVER_MAP_FILE = PREFIX + ".shardTServerMapFile";
     public static final String SPLIT_WORK_DIR = "split.work.dir";
     
@@ -70,7 +69,7 @@ public class ShardedTableMapFile {
         try {
             return new SequenceFile.Reader(conf, SequenceFile.Reader.file(new Path(shardMapFileName)));
         } catch (Exception e) {
-            throw new IOException("Failed to create sequence file reader for " + shardMapFileName, e);
+            throw new IOException("Failed to create sequence file reader for " + shardMapFileName + " for " + tableName, e);
         }
     }
     
@@ -149,6 +148,8 @@ public class ShardedTableMapFile {
      *            mapping of shard to tablet
      * @param datePrefix
      *            to check
+     * @param maxShardsPerTserver
+     *            the max shards per server
      * @return if the shards are distributed in a balanced fashion
      */
     private static boolean shardsAreBalanced(Map<Text,String> locations, String datePrefix, int maxShardsPerTserver) {
@@ -210,11 +211,11 @@ public class ShardedTableMapFile {
                     AccumuloException {
         AccumuloHelper accumuloHelper = null;
         Path workDir = new Path(conf.get(SPLIT_WORK_DIR));// todo make sure this is set in ingest job
-        String[] tableNames = StringUtils.split(conf.get(TABLE_NAMES), ",");// todo make sure this is set in ingest job
-        
+        String[] tableNames = StringUtils.split(conf.get(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES), ",");// todo make sure this is set in ingest job
         Map<String,String> shardedTableMapFilePaths = extractShardedTableMapFilePaths(conf);
         // Get a list of "sharded" tables
         String[] shardedTableNames = ConfigurationHelper.isNull(conf, ShardedDataTypeHandler.SHARDED_TNAMES, String[].class);
+        
         Set<String> configuredShardedTableNames = new HashSet<>(Arrays.asList(shardedTableNames));
         
         // Remove all "sharded" tables that we aren't actually outputting to
@@ -292,7 +293,9 @@ public class ShardedTableMapFile {
      *            if validation of shards mappings should be performed
      * @return the path to the sharded table map file
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws URISyntaxException
+     *             for issues with URI syntax
      */
     public static Path createShardedMapFile(Logger log, Configuration conf, Path workDir, AccumuloHelper accumuloHelper, String shardedTableName,
                     boolean validateShardLocations) throws IOException, URISyntaxException {

@@ -11,10 +11,12 @@ import datawave.data.type.NumberType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.marking.MarkingFunctions;
+import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
@@ -22,6 +24,7 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
 import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
 import datawave.query.util.VisibilityWiseGuysIngestWithModel;
+import datawave.test.JexlNodeAssert;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
@@ -36,6 +39,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -111,6 +115,18 @@ public abstract class GroupingTestWithModel {
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
             return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
         }
+        
+        @Override
+        protected void runTestToComparePlans(String query, String expectedPlan, Date startDate, Date endDate, Map<String,String> extraParms,
+                        RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt) throws Exception {
+            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.getName(), log, teardown, interrupt);
+            Connector connector = qtth.connector;
+            VisibilityWiseGuysIngestWithModel.writeItAll(connector, VisibilityWiseGuysIngestWithModel.WhatKindaRange.SHARD);
+            PrintUtility.printTable(connector, auths, TableName.SHARD);
+            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            super.runTestToComparePlans(query, expectedPlan, startDate, endDate, extraParms, connector);
+        }
     }
     
     @RunWith(Arquillian.class)
@@ -127,6 +143,18 @@ public abstract class GroupingTestWithModel {
             PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
             return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
+        }
+        
+        @Override
+        protected void runTestToComparePlans(String query, String expectedPlan, Date startDate, Date endDate, Map<String,String> extraParms,
+                        RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt) throws Exception {
+            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.getName(), log, teardown, interrupt);
+            Connector connector = qtth.connector;
+            VisibilityWiseGuysIngestWithModel.writeItAll(connector, VisibilityWiseGuysIngestWithModel.WhatKindaRange.DOCUMENT);
+            PrintUtility.printTable(connector, auths, TableName.SHARD);
+            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            super.runTestToComparePlans(query, expectedPlan, startDate, endDate, extraParms, connector);
         }
     }
     
@@ -254,6 +282,36 @@ public abstract class GroupingTestWithModel {
             Assert.assertEquals(expected.get(key), value);
         }
         return response;
+    }
+    
+    protected abstract void runTestToComparePlans(String query, String expectedPlan, Date startDate, Date endDate, Map<String,String> extraParms,
+                    RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt) throws Exception;
+    
+    protected void runTestToComparePlans(String query, String expectedPlan, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
+                    throws Exception {
+        log.debug("test plan against expected plan");
+        
+        QueryImpl settings = new QueryImpl();
+        settings.setBeginDate(startDate);
+        settings.setEndDate(endDate);
+        settings.setPagesize(Integer.MAX_VALUE);
+        settings.setQueryAuthorizations(auths.serialize());
+        settings.setQuery(query);
+        settings.setParameters(extraParms);
+        settings.setId(UUID.randomUUID());
+        
+        log.debug("query: " + settings.getQuery());
+        log.debug("logic: " + settings.getQueryLogicName());
+        
+        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
+        logic.setupQuery(config);
+        
+        String plan = logic.getPlan(connector, settings, authSet, true, true);
+        
+        // order of terms in planned script is arbitrary, fall back to comparing the jexl trees
+        ASTJexlScript plannedScript = JexlASTHelper.parseJexlQuery(plan);
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expectedPlan);
+        JexlNodeAssert.assertThat(expectedScript).isEqualTo(plannedScript);
     }
     
     @Test
@@ -529,6 +587,44 @@ public abstract class GroupingTestWithModel {
                 }
             }
         }
+    }
+    
+    @Test
+    public void testNoExpansion() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        // base case with default query model expansion
+        String queryString = "COLOR == 'blue'";
+        String expectedPlan = "(COLOR == 'blue' || HUE == 'blue')";
+        runTestToComparePlans(queryString, expectedPlan, startDate, endDate, extraParameters, NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
+        
+        // case where #NO_EXPANSION is specified in the query string itself
+        queryString = "COLOR == 'blue' && f:noExpansion(COLOR)";
+        expectedPlan = "COLOR == 'blue'";
+        runTestToComparePlans(queryString, expectedPlan, startDate, endDate, extraParameters, NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
+        
+        // case where #NO_EXPANSION is specified via query parameters only
+        extraParameters.put(QueryParameters.NO_EXPANSION_FIELDS, "COLOR");
+        queryString = "COLOR == 'blue'";
+        expectedPlan = "COLOR == 'blue'";
+        runTestToComparePlans(queryString, expectedPlan, startDate, endDate, extraParameters, NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
+        
+        // case where #NO_EXPANSION is specified in both query parameters and the query string
+        extraParameters.clear();
+        extraParameters.put(QueryParameters.NO_EXPANSION_FIELDS, "COLOR");
+        queryString = "COLOR == 'blue' && f:noExpansion(COLOR)";
+        expectedPlan = "COLOR == 'blue'";
+        runTestToComparePlans(queryString, expectedPlan, startDate, endDate, extraParameters, NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
+        
+        // case where #NO_EXPANSION in query params is the wrong field and query string function is the correct one
+        extraParameters.clear();
+        extraParameters.put(QueryParameters.NO_EXPANSION_FIELDS, "HUE");
+        queryString = "COLOR == 'blue' && f:noExpansion(COLOR)";
+        expectedPlan = "COLOR == 'blue'";
+        runTestToComparePlans(queryString, expectedPlan, startDate, endDate, extraParameters, NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
     }
     
 }

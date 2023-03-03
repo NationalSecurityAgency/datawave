@@ -191,7 +191,8 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
                 auths.removeIf(a -> !accumuloAuthorizations.contains(a));
                 authMapping.entries().removeIf(e -> !accumuloAuthorizations.contains(e.getValue()));
                 
-                user = new DatawaveUser(user.getDn(), user.getUserType(), auths, user.getRoles(), authMapping, user.getCreationTime(), user.getExpirationTime());
+                user = new DatawaveUser(user.getDn(), user.getUserType(), user.getEmail(), auths, user.getRoles(), authMapping, user.getCreationTime(), user
+                                .getExpirationTime());
                 
                 cannedUsers.put(user.getDn(), user);
             } catch (IOException e) {

@@ -24,8 +24,11 @@ public class ConfigurationHelper extends Configuration {
      * Replaces all occurrences of match in the original configuration's set of key's and values to replacement and returns a new configuration object.
      * 
      * @param orig
+     *            the original configuration
      * @param regex
+     *            the keys anhd values to try and match
      * @param replacement
+     *            the string to replace the matches on the regex
      * @return new Configuration object with variables interpolated.
      */
     public static Configuration interpolate(Configuration orig, String regex, String replacement) {
@@ -42,9 +45,13 @@ public class ConfigurationHelper extends Configuration {
      * Helper method to get properties from Hadoop configuration
      * 
      * @param <T>
+     *            Type of the value of property
      * @param conf
+     *            the configuration to pull from
      * @param propertyName
+     *            the name of the property
      * @param resultClass
+     *            the class of the property
      * @throws IllegalArgumentException
      *             if property is not defined, null, or empty. Or if resultClass is not handled.
      * @return value of property
@@ -106,6 +113,7 @@ public class ConfigurationHelper extends Configuration {
      * @param value
      *            the parameter value
      * @param delimiter
+     *            object upon which to separate the strings
      */
     public static void setSetOfStrings(final Configuration conf, final String propertyName, final Set<String> value, final String delimiter) {
         if (value != null) {
@@ -142,8 +150,12 @@ public class ConfigurationHelper extends Configuration {
      * 
      * An exception is thrown if any of the classes does not exist, or if it does not implement the named interface.
      * 
+     * @param <U>
+     *            Type of list
      * @param name
-     *            the property name.
+     *            name of property
+     * @param conf
+     *            the configuration name.
      * @param xface
      *            the interface implemented by the classes named by <code>name</code>.
      * @return a <code>List</code> of objects implementing <code>xface</code>.

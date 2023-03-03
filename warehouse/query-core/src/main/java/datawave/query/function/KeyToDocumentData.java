@@ -225,7 +225,9 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                 
             }
         }
-        
+        if (log.isTraceEnabled()) {
+            log.trace("Document attributes: " + documentAttributes);
+        }
         return documentAttributes;
     }
     

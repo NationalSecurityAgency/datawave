@@ -1,6 +1,7 @@
 package org.apache.commons.jexl2.parser;
 
 import com.google.common.base.Preconditions;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -10,6 +11,10 @@ import java.util.List;
  * A utility class that can introspect JexlNodes for useful things like raw access to the children array and type ID. This makes cloning and mutation easier.
  */
 public class JexlNodes {
+    
+    private JexlNodes() {
+        // this is a static utility
+    }
     
     /**
      * Ensures that the child array as at least {i} capacity.
@@ -156,22 +161,33 @@ public class JexlNodes {
      * @param literal
      * @param value
      */
-    public static <T> void setLiteral(ASTNumberLiteral literal, Number value) {
+    public static void setLiteral(ASTNumberLiteral literal, Number value) {
         Preconditions.checkNotNull(literal);
         Preconditions.checkNotNull(value);
         
         literal.literal = value;
     }
     
-    public static <T> void setLiteral(ASTStringLiteral literal, String value) {
+    public static void setLiteral(ASTStringLiteral literal, String value) {
         Preconditions.checkNotNull(literal);
         Preconditions.checkNotNull(value);
         
         literal.image = value;
     }
     
+    /**
+     * Negate the provided JexlNode
+     *
+     * @param node
+     *            an arbitrary JexlNode
+     * @return a negated version of the provided JexlNode
+     */
     public static ASTNotNode negate(JexlNode node) {
-        return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), wrap(node));
+        if (QueryPropertyMarker.findInstance(node).isAnyType()) {
+            // marked node trees begin with ref-refExpr, no need to wrap again
+            return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), node);
+        }
+        return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), makeRef(wrap(node)));
     }
     
     public static ASTIdentifier makeIdentifierWithImage(String image) {

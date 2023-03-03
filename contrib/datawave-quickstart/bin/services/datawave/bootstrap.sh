@@ -163,6 +163,9 @@ function setBuildPropertyOverrides() {
    echo "accumulo.instance.name=${DW_ACCUMULO_INSTANCE_NAME}" >> ${BUILD_PROPERTIES_FILE}
    echo "accumulo.user.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
 
+#   # uncomment to enable environment passwords in the quickstart, and comment out above line
+#   echo "accumulo.user.password=env:DW_ACCUMULO_PASSWORD" >> ${BUILD_PROPERTIES_FILE}
+
    echo "cached.results.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
    echo "type.metadata.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
    echo "mapReduce.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
@@ -360,7 +363,7 @@ function datawaveUninstall() {
    datawaveIngestUninstall
    datawaveWebUninstall
 
-   [[ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_LONG}" || "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_SHORT}" ]] && rm -f "${DW_DATAWAVE_SERVICE_DIR}"/*.tar.gz
+   [[ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_LONG}" || "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_SHORT}" ]] && rm -f "${DW_DATAWAVE_SERVICE_DIR}"/datawave*.tar.gz
 }
 
 function datawaveInstall() {

@@ -2,11 +2,14 @@ package datawave.query.predicate;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import datawave.query.tld.TLD;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -63,9 +66,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     
     private Set<String> nonEventFields;
     
-    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek,
-                    long maxKeysBeforeSeek) {
-        this(script, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null, Collections.EMPTY_SET);
+    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist,
+                    long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
+        this(script, queryFields, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null,
+                        Collections.EMPTY_SET);
     }
     
     /**
@@ -78,8 +82,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * 
      * @param script
      */
-    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek,
-                    long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField, Set<String> nonEventFields) {
+    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist,
+                    long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField, Set<String> nonEventFields) {
         super(script, attributeFactory, nonEventFields);
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
@@ -91,7 +95,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         // set the anyFieldLimit once if specified otherwise set to -1
         anyFieldLimit = limitFieldsMap.get(Constants.ANY_FIELD) != null ? limitFieldsMap.get(Constants.ANY_FIELD) : -1;
         
-        extractQueryFieldsFromScript(script);
+        setQueryFields(queryFields, script);
         updateLists(whitelist, blacklist);
         setSortedLists(whitelist, blacklist);
     }
@@ -473,8 +477,13 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         
         for (int i = lastHit + 1; i < sortedWhitelist.size(); i++) {
             String nextField = sortedWhitelist.get(i);
-            // is the nextField after the current field?
-            if (fieldName.compareTo(nextField) < 0) {
+            
+            if (fieldName.compareTo(nextField) == 0) {
+                // do not generate a seek range if the iterator is still within
+                // a query field
+                return null;
+            } else if (fieldName.compareTo(nextField) < 0) {
+                // is the nextField after the current field?
                 // seek to this field
                 Key startKey = new Key(current.getRow(), current.getColumnFamily(), new Text(nextField + Constants.NULL_BYTE_STRING));
                 range = new Range(startKey, true, endKey, endKeyInclusive);
@@ -482,7 +491,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
                 break;
             } else if (i + 1 == sortedWhitelist.size()) {
                 // roll to the next uid and reset the lastSeekIndex
-                range = getRolloverRange(current, endKey, endKeyInclusive, sortedWhitelist);
+                range = getRolloverRange(current, endKey, endKeyInclusive);
                 lastListSeekIndex = -1;
                 break;
             }
@@ -491,31 +500,37 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         // none of the fields in the whitelist come after the current field
         if (range == null) {
             // roll to the next uid
-            range = getRolloverRange(current, endKey, endKeyInclusive, sortedWhitelist);
+            range = getRolloverRange(current, endKey, endKeyInclusive);
             lastListSeekIndex = -1;
         }
         
         return range;
     }
     
-    private Range getRolloverRange(Key current, Key end, boolean endInclusive, List<String> sortedWhitelist) {
-        Range range;
+    /**
+     * Get a rollover range that skips to the next child uid
+     *
+     * @param current
+     *            the current key
+     * @param end
+     *            the end key
+     * @param endInclusive
+     *            is end key inclusive flag
+     * @return a rollover range, or an empty range if the rollover range would extend beyond the end key
+     */
+    private Range getRolloverRange(Key current, Key end, boolean endInclusive) {
         
         // ensure this new key won't be beyond the end
         // new CF = current dataType\0uid\0 to ensure the next hit will be in another uid
-        // new CQ = first whitelist field\0 to ensure the next hit will be the first whitelisted field or later
-        Key startKey = new Key(current.getRow(), new Text(current.getColumnFamily() + Constants.NULL_BYTE_STRING), new Text(sortedWhitelist.get(0)
-                        + Constants.NULL_BYTE_STRING));
+        Key startKey = current.followingKey(PartialKey.ROW_COLFAM);
         
         if (startKey.compareTo(end) < 0) {
             // last one, roll over to the first
-            range = new Range(startKey, true, end, endInclusive);
-        } else {
-            // create a range that should have nothing in it
-            range = getEmptyRange(end, endInclusive);
+            return new Range(startKey, true, end, endInclusive);
         }
         
-        return range;
+        // create a range that should have nothing in it
+        return getEmptyRange(end, endInclusive);
     }
     
     /**
@@ -595,19 +610,34 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * Extract the query fields from the script and sort them
      *
      * @param script
+     *            the query script
+     * @return a set of identifiers
      */
-    private void extractQueryFieldsFromScript(ASTJexlScript script) {
-        queryFields = new ArrayList<>();
+    private Set<String> extractIdentifiersFromScript(ASTJexlScript script) {
+        Set<String> ids = new HashSet<>();
         String field;
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(script);
         for (ASTIdentifier identifier : identifiers) {
             field = JexlASTHelper.deconstructIdentifier(identifier);
-            if (!queryFields.contains(field)) {
-                queryFields.add(field);
-            }
+            ids.add(field);
         }
+        return ids;
+    }
+    
+    /**
+     * Intersect the fields serialized along with the query iterator with the identifiers in the query
+     *
+     * @param fields
+     *            the serialized fields
+     * @param script
+     *            the query script
+     */
+    private void setQueryFields(Set<String> fields, ASTJexlScript script) {
         
-        // sort the queryFields
+        Set<String> identifiers = extractIdentifiersFromScript(script);
+        fields = Sets.intersection(fields, identifiers);
+        
+        queryFields = Lists.newArrayList(fields);
         Collections.sort(queryFields);
         queryFields = Collections.unmodifiableList(queryFields);
     }
@@ -798,19 +828,19 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * If the current key is rejected due to a field limit and a field limit field is specified generate a value with the field in it
      * 
-     * @param toLimit
-     *            the
-     * @return
+     * @param key
+     *            the key to limit
+     * @return a key with the limit field specified, or null if no limit was configured
      */
     @Override
-    public Key transform(Key toLimit) {
-        ParseInfo info = getParseInfo(toLimit);
-        if (this.limitFieldsField != null && isFieldLimit(info.getField())) {
-            String limitedField = getParseInfo(toLimit).getField();
-            return new Key(toLimit.getRow(), toLimit.getColumnFamily(), new Text(limitFieldsField + Constants.NULL + limitedField));
-        } else {
-            return null;
+    public Key transform(Key key) {
+        if (this.limitFieldsField != null) {
+            ParseInfo info = getParseInfo(key);
+            if (isFieldLimit(info.getField())) {
+                return new Key(key.getRow(), key.getColumnFamily(), new Text(limitFieldsField + Constants.NULL + info.getField()));
+            }
         }
+        return null;
     }
     
     @Override

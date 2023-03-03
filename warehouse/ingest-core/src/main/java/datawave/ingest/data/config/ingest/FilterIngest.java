@@ -15,6 +15,7 @@ public interface FilterIngest {
      * Filters unnecessary fields from the given fields map.
      *
      * @param fields
+     *            map of fields to filter
      */
     void filter(Multimap<String,NormalizedContentInterface> fields);
 }

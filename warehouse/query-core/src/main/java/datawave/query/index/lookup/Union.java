@@ -2,6 +2,7 @@ package datawave.query.index.lookup;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -39,114 +40,104 @@ public class Union extends BaseIndexStream {
     private static final Logger log = Logger.getLogger(Union.class);
     
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public Union(Iterable<? extends IndexStream> children) {
+    public Union(Iterable<? extends IndexStream> streams) {
         this.children = new PriorityQueue(16, PeekOrdering.make(new TupleComparator<>()));
         this.childNodes = new JexlNodeSet();
         this.delayedNodes = new JexlNodeSet();
-        int childrenCount = 0;
-        boolean childrenIgnored = false;
-        boolean unindexedField = false;
-        boolean delayedField = false;
-        boolean exceededTermThreshold = false;
-        boolean exceededValueThreshold = false;
-        for (IndexStream stream : children) {
+        
+        boolean delayedFromUnindexed = false; // did any delayed node come from an unindexed stream?
+        
+        for (IndexStream stream : streams) {
             
             if (log.isDebugEnabled()) {
                 childrenContextDebug.add(stream.getContextDebug());
             }
             
-            childrenCount++;
             if (log.isTraceEnabled()) {
-                log.trace("Union of " + stream.currentNode() + " " + stream.hasNext() + " " + JexlStringBuildingVisitor.buildQuery(stream.currentNode()));
-                log.trace("Union of " + stream + " " + stream.context());
-            }
-            
-            if (StreamContext.NO_OP == stream.context())
-                continue;
-            if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context()) {
-                exceededValueThreshold = true;
-            } else if (StreamContext.EXCEEDED_TERM_THRESHOLD == stream.context()) {
-                exceededTermThreshold = true;
-            } else if (StreamContext.UNINDEXED == stream.context()) {
-                this.childNodes.add(stream.currentNode());
-                this.delayedNodes.add(stream.currentNode());
-                unindexedField = true;
-                continue;
-            } else if (StreamContext.DELAYED_FIELD == stream.context()) {
-                this.childNodes.add(stream.currentNode());
-                this.delayedNodes.add(stream.currentNode());
-                delayedField = true;
-                continue;
+                log.trace("Union child " + JexlStringBuildingVisitor.buildQuery(stream.currentNode()) + " - " + stream.context() + " hasNext: "
+                                + stream.hasNext());
             }
             
             if (stream.hasNext()) {
-                this.children.add(stream);
-                this.childNodes.add(stream.currentNode());
-            } else {
                 switch (stream.context()) {
-                
-                    case INITIALIZED:
-                        // this should never be returned
-                        throw new RuntimeException("Invalid state in RangeStream");
-                    case IGNORED:
-                        childrenIgnored = true;
-                        this.childNodes.add(stream.currentNode());
-                        this.delayedNodes.add(stream.currentNode());
-                        break;
-                    case EXCEEDED_VALUE_THRESHOLD:
-                    case EXCEEDED_TERM_THRESHOLD:
-                        if (log.isTraceEnabled())
-                            log.trace("Adding current node to stream");
-                        /*
-                         * Helpful for debugging
-                         */
-                        this.childNodes.add(stream.currentNode());
-                        break;
-                    case VARIABLE:
-                    case UNKNOWN_FIELD:
-                        this.delayedNodes.add(stream.currentNode());
-                    case ABSENT:
                     case PRESENT:
+                    case VARIABLE:
+                    case EXCEEDED_VALUE_THRESHOLD:
+                        // index streams with data are always added
+                        this.children.add(stream);
+                        this.childNodes.add(stream.currentNode());
+                        continue;
                     default:
-                        break;
+                        throw new IllegalStateException("Unexpected stream context " + stream.context());
                 }
             }
+            
+            switch (stream.context()) {
+                case NO_OP:
+                case ABSENT:
+                    // these index streams are dropped from the union
+                    continue;
+                case UNINDEXED:
+                    // a non-indexed field present in a top level union results in a non-executable query
+                    delayedFromUnindexed = true;
+                case IGNORED:
+                case DELAYED_FIELD:
+                case UNKNOWN_FIELD:
+                case EXCEEDED_TERM_THRESHOLD:
+                    // these nodes need to be persisted via the set of delayedNodes
+                    delayedNodes.add(stream.currentNode());
+                    continue;
+                case INITIALIZED:
+                    throw new RuntimeException("Invalid state in RangeStream");
+                default:
+                    throw new IllegalStateException("[Union] unhandled stream context: " + stream.context());
+            }
         }
-        if (log.isTraceEnabled())
-            log.trace("children count is " + childrenCount + " " + childNodes.size() + " " + this.children.size());
-        if (childNodes.size() == 1)
-            currNode = JexlNodeFactory.createUnwrappedOrNode(this.childNodes.getNodes());
-        else
-            currNode = JexlNodeFactory.createOrNode(this.childNodes.getNodes());
         
-        if (this.children.isEmpty()) {
-            if (childrenIgnored || childrenCount == 0) {
-                this.context = StreamContext.IGNORED;
-                this.contextDebug = "no children";
-            } else if (unindexedField) {
-                this.context = StreamContext.UNINDEXED;
-                this.contextDebug = "unindexed child";
-            } else if (delayedField) {
-                this.context = StreamContext.DELAYED_FIELD;
-                this.contextDebug = "delayed child";
-            } else {
-                this.context = StreamContext.ABSENT;
-                this.contextDebug = "no children";
-            }
+        // build the union based on updated information from the child index streams
+        JexlNodeSet nodes = new JexlNodeSet();
+        if (!childNodes.isEmpty()) {
+            nodes.addAll(childNodes);
+        }
+        if (!delayedNodes.isEmpty()) {
+            nodes.addAll(delayedNodes);
+        }
+        
+        if (nodes.size() == 1) {
+            currNode = nodes.iterator().next();
         } else {
-            if (exceededTermThreshold) {
-                this.context = StreamContext.EXCEEDED_TERM_THRESHOLD;
-                this.contextDebug = "ExceededTermThreshold child";
-            } else if (exceededValueThreshold) {
-                this.context = StreamContext.EXCEEDED_VALUE_THRESHOLD;
-                this.contextDebug = "ExceededValueThreshold child";
-            } else if (unindexedField) {
+            currNode = JexlNodeFactory.createOrNode(nodes.getNodes());
+        }
+        
+        if (log.isTraceEnabled()) {
+            log.trace("union has " + childNodes.size() + " active children and " + delayedNodes.size() + " delayed children");
+        }
+        
+        if (childNodes.isEmpty() && delayedNodes.isEmpty()) {
+            // both delayed and non-delayed nodes empty indicates an absent state
+            this.context = StreamContext.ABSENT;
+            this.contextDebug = "children are all absent";
+        } else if (!childNodes.isEmpty() && !delayedNodes.isEmpty()) {
+            // mix of delayed and non-delayed nodes indicates a variable state
+            this.context = StreamContext.VARIABLE;
+            this.contextDebug = "children are a mix of delayed and non-delayed";
+        } else if (!childNodes.isEmpty() && delayedNodes.isEmpty()) {
+            // only child nodes, no delayed
+            this.context = StreamContext.PRESENT;
+            this.contextDebug = "children are all present";
+        } else {
+            // only delayed nodes, figure out which context to surface
+            if (delayedFromUnindexed) {
                 this.context = StreamContext.UNINDEXED;
-                this.contextDebug = "Unindexed child";
+                this.contextDebug = "children contains at least one unindexed field";
             } else {
-                this.context = StreamContext.PRESENT;
-                this.contextDebug = "children are present";
+                this.context = StreamContext.DELAYED_FIELD;
+                this.contextDebug = "children are all delayed";
             }
+        }
+        
+        // advance the queue if we have active index streams
+        if (!this.children.isEmpty()) {
             next();
         }
     }
@@ -158,8 +149,19 @@ public class Union extends BaseIndexStream {
     
     @Override
     public Tuple2<String,IndexInfo> next() {
+        return next(null);
+    }
+    
+    /**
+     * Return the current result and search for the next result, optionally within a context
+     *
+     * @param context
+     *            determines if this union needs to return a result matching the context
+     * @return the current result
+     */
+    public Tuple2<String,IndexInfo> next(String context) {
         Tuple2<String,IndexInfo> ret = next;
-        next = advanceQueue();
+        next = advanceQueue(context);
         return ret;
     }
     
@@ -168,7 +170,16 @@ public class Union extends BaseIndexStream {
         return next;
     }
     
-    private Tuple2<String,IndexInfo> advanceQueue() {
+    /**
+     * Advance the priority queue of index streams, optionally within the provided context.
+     * <p>
+     * If a context is provided then this union is being advanced by an intersection
+     *
+     * @param context
+     *            optional parameter
+     * @return the next valid shard
+     */
+    private Tuple2<String,IndexInfo> advanceQueue(String context) {
         if (children.isEmpty()) {
             return null;
         }
@@ -176,11 +187,18 @@ public class Union extends BaseIndexStream {
         // shard can be either a specific shard or a day denoting all shards
         String dayOrShard = head.first();
         IndexInfo pointers = head.second();
+        
+        // check for edge case like 'A && (B || delayed_C)'
+        // in this case term A hits on a shard that sorts before the next shard for term B
+        // even though term B doesn't hit, this union should still return the delayed term
+        if (context != null && ShardEquality.lessThan(context, dayOrShard) && !delayedNodes.isEmpty()) {
+            return buildHitFromDelayedTerms(context);
+        }
+        
         // use startsWith to match shards with a day
         if (log.isTraceEnabled())
             log.trace("advancing " + pointers.getNode() + " " + children.peek().context());
         
-        boolean childrenAdded = false;
         /**
          * Since children is a PriorityQueue sorted by shard and its possible for a day_shard to call next() and then return a day. That iterator will sort to
          * the front. This may cause a break in the end loop condition before all iterators have had a chance to be evaluated. Until all iterators have been
@@ -208,7 +226,8 @@ public class Union extends BaseIndexStream {
             
             IndexStream itr = children.poll();
             
-            pointers = pointers.union(itr.peek().second(), Lists.newArrayList(delayedNodes.getNodes()));
+            // delayed nodes are not added to the union at this stage, lest they be duplicated once per active index stream
+            pointers = pointers.union(itr.peek().second(), Collections.emptyList());
             itr.next();
             if (itr.hasNext()) {
                 // add this to the processed list so other iterators have a chance to be first even if this one comes back earlier in the stack
@@ -218,7 +237,6 @@ public class Union extends BaseIndexStream {
                     log.trace("IndexStream exhausted for " + itr.getContextDebug());
                 }
             }
-            childrenAdded = true;
             
             // repopulate children with all processed children
             if (children.isEmpty() && !processedChildren.isEmpty()) {
@@ -227,12 +245,14 @@ public class Union extends BaseIndexStream {
             }
         }
         
+        // build set of nodes, to include any delayed nodes in this union
         JexlNodeSet nodeSet = new JexlNodeSet();
         if (pointers.myNode != null)
             nodeSet.add(pointers.myNode);
         if (delayedNodes != null && !delayedNodes.isEmpty())
             nodeSet.addAll(delayedNodes);
         
+        // rebuild current node
         currNode = null;
         if (nodeSet.size() == 1) {
             currNode = nodeSet.iterator().next();
@@ -240,11 +260,28 @@ public class Union extends BaseIndexStream {
             currNode = JexlNodeFactory.createUnwrappedOrNode(nodeSet.getNodes());
         }
         
-        if (!childrenAdded) {
+        // update pointers with the current node
+        if (!delayedNodes.isEmpty()) {
+            // pointers is composed of all live index streams, but we need to add in
+            // any delayed nodes
             pointers.setNode(currNode);
         }
         
         return Tuples.tuple(dayOrShard, pointers);
+    }
+    
+    private Tuple2<String,IndexInfo> buildHitFromDelayedTerms(String context) {
+        JexlNode node;
+        if (delayedNodes.size() == 1) {
+            node = delayedNodes.getNodes().iterator().next();
+        } else {
+            node = JexlNodeFactory.createOrNode(delayedNodes.getNodes());
+        }
+        
+        IndexInfo info = new IndexInfo(-1); // delayed nodes considered a shard range
+        info.applyNode(node);
+        
+        return new Tuple2<>(context, info);
     }
     
     @Override
@@ -383,7 +420,7 @@ public class Union extends BaseIndexStream {
         
         children.addAll(nextChildren);
         if (!children.isEmpty()) {
-            next = advanceQueue();
+            next = advanceQueue(null);
             if (next != null) {
                 return next.first();
             }

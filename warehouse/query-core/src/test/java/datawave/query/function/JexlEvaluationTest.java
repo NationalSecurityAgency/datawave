@@ -75,6 +75,7 @@ public class JexlEvaluationTest {
     public void testRegexUnion() {
         String query = "FOO == 'bar' || FOO =~ 'baz.*'";
         Document d = new Document();
+        d.getMetadata();
         d.put("FOO", new Content("bar", new Key("shard", "datatype\0uid"), true));
         d.put("FOO", new Content("bazaar", new Key("shard", "datatype\0uid"), true));
         
@@ -82,6 +83,24 @@ public class JexlEvaluationTest {
         d.visit(Collections.singleton("FOO"), context);
         
         assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
+    }
+    
+    @Test
+    public void testHitTermSource() {
+        String query = "FOO == 'bar'";
+        Document d = new Document();
+        Key expectedMetadata;
+        d.put("FOO", new Content("bar", expectedMetadata = new Key("shard", "datatype\0uid1"), true));
+        d.put("FOO", new Content("bazaar", new Key("shard", "datatype\0uid2"), true));
+        
+        DatawaveJexlContext context = new DatawaveJexlContext();
+        d.visit(Collections.singleton("FOO"), context);
+        
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
+        
+        Attributes hitTerm = (Attributes) d.getDictionary().get("HIT_TERM");
+        assertEquals(1, hitTerm.getAttributes().size());
+        assertEquals(expectedMetadata, hitTerm.getAttributes().iterator().next().getMetadata());
     }
     
     @Test

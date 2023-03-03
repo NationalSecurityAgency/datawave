@@ -11,6 +11,8 @@ import org.junit.Test;
 
 public class IsNotNullIntentVisitorTest {
     
+    private final ASTValidator validator = new ASTValidator();
+    
     @Test
     public void testMatchAnythingRegex() throws ParseException {
         String query = "FOO =~ '.*?'";
@@ -42,7 +44,7 @@ public class IsNotNullIntentVisitorTest {
         JexlNodeAssert.assertThat(actual).isEqualTo(expected).hasValidLineage();
         
         try {
-            ASTValidator.isValid(actual);
+            validator.isValid(actual);
         } catch (InvalidQueryTreeException e) {
             Assert.fail("IsNotNullIntentVisitor produced an invalid query tree: " + e.getMessage());
         }

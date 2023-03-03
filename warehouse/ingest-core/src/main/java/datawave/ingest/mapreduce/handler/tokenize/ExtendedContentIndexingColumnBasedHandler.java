@@ -101,8 +101,11 @@ import com.google.common.collect.Multimap;
  * RFiles and not add additional bloat to the RFiles containing the rest of the shard table.
  *
  * @param <KEYIN>
+ *            type of the input key
  * @param <KEYOUT>
+ *            type of the output key
  * @param <VALUEOUT>
+ *            type of the output value
  */
 public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN> implements
                 ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
@@ -274,11 +277,18 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
      * Tokenize the event, and write all of the shard, shardIndex, and shardReverseIndex keys out to the context
      * 
      * @param event
+     *            the event
      * @param context
+     *            the context
      * @param contextWriter
-     * @return
+     *            context writer
+     * @param reporter
+     *            the reporter
+     * @return value of tokenized event
      * @throws IOException
+     *             if there is an issue reading the event
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected abstract long tokenizeEvent(RawRecordContainer event, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
                     ContextWriter<KEYOUT,VALUEOUT> contextWriter, StatusReporter reporter) throws IOException, InterruptedException;
@@ -287,14 +297,23 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
      * Process a term and zone by writting all applicable keys to the context.
      * 
      * @param event
+     *            the event
      * @param position
+     *            position
      * @param termAndZone
+     *            the termandzone
      * @param alreadyIndexedTerms
+     *            the already indexed terms
      * @param context
+     *            the context
      * @param contextWriter
+     *            the context writer
      * @param reporter
+     *            the reporter
      * @throws IOException
+     *             if there is an issue reading the event
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     private void processTermAndZone(RawRecordContainer event, int position, TermAndZone termAndZone, BloomFilter alreadyIndexedTerms,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
@@ -433,6 +452,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
      * Return true if this term appears to be empty (all spaces)
      *
      * @param term
+     *            the term
      * @return true if term is zero or more spaces
      */
     protected static boolean isEmptyTerm(String term) {
@@ -444,13 +464,21 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
      * uses).
      * 
      * @param event
+     *            the event
      * @param contextWriter
+     *            the context writer
      * @param context
+     *            the context
      * @param nFV
+     *            the normalized field value interface
      * @param shardId
+     *            the shard id
      * @param visibility
+     *            the visibility
      * @throws IOException
+     *             if there is an issue reading the event
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected void createShardEventColumn(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,
@@ -479,13 +507,21 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
      * Creates and writes the BulkIngestKey for the event's field and global indexes to the ContextWriter
      * 
      * @param event
+     *            the event
      * @param contextWriter
+     *            the context writer
      * @param context
+     *            the context
      * @param nFV
+     *            the normalized content interface
      * @param shardId
+     *            the shard id
      * @param fieldVisibility
+     *            the field visibility
      * @throws IOException
+     *             if there is an issue reading the event
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected void createShardIndexColumns(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,
@@ -523,18 +559,29 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     /**
      * Writes the document's content into the {@link #FULL_CONTENT_COLUMN_FAMILY} column family. The data is compressed (GZIP) and Base64 encoded before being
      * placed into the value.
-     * 
+     *
      * @param event
+     *            the event
      * @param contextWriter
+     *            the context writer
      * @param context
+     *            the context
      * @param reporter
+     *            the reporter
      * @param uid
+     *            the uid
      * @param visibility
+     *            the visibility
      * @param shardId
+     *            the shard id
      * @param rawValue
+     *            the raw value
      * @throws IOException
+     *             if there is an issue reading the event
      * @throws InterruptedException
+     *             if the thread is interrupted
      * @throws MutationsRejectedException
+     *             if there is a problem writing the mutation
      */
     protected void createContentRecord(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, StatusReporter reporter, Text uid, byte[] visibility,
@@ -672,18 +719,29 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     
     /**
      * Creates and writes the BulkIngestKey for the field index to the ContextWriter (instead of the Multimap that the {@link ShardedDataTypeHandler} uses).
-     * 
+     *
      * @param event
+     *            the event
      * @param contextWriter
+     *            the context writer
      * @param context
+     *            the context
      * @param nFV
+     *            the normalized content interface
      * @param shardId
+     *            the shard id
      * @param value
+     *            the event value
      * @param visibility
+     *            the visibility
      * @param replaceMalformedUTF8
+     *            flag to replace malformed UTF8
      * @param deleteMode
+     *            deletion flag to set
      * @throws IOException
+     *             if there is an issue reading the event
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected void createShardFieldIndexColumn(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,
@@ -705,17 +763,27 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     
     /**
      * Creates a Term Frequency index key in the "tf" column family.
-     * 
+     *
      * @param event
+     *            the event
      * @param contextWriter
+     *            the context writer
      * @param context
+     *            the context
      * @param shardId
+     *            the shard id
      * @param nfv
+     *            the normalized content interface
      * @param offsets
+     *            the term offsets
      * @param visibility
+     *            the visibility
      * @param deleteMode
+     *            the deletion flag
      * @throws IOException
+     *             if there is an issue reading the event
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected void createTermFrequencyIndex(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, byte[] shardId, NormalizedFieldAndValue nfv,
@@ -741,18 +809,29 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     /**
      * Creates and writes the BulkIngestKey for the global (reverse) index to the ContextWriter (instead of the Multimap that the {@link ShardedDataTypeHandler}
      * uses).
-     * 
+     *
      * @param event
+     *            the event
      * @param contextWriter
+     *            the context writer
      * @param context
+     *            the context
      * @param nFV
+     *            the normalized content interface
      * @param shardId
+     *            the shard id
      * @param tableName
+     *            the name of the table
      * @param visibility
+     *            the visibility
      * @param replacedMalformedUTF8
+     *            flag to replace malformed UTF8
      * @param deleteMode
+     *            the deletion flag
      * @throws IOException
+     *             if there is an issue reading the event
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected void createIndexColumn(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,

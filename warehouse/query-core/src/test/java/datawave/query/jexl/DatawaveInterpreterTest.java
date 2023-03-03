@@ -11,6 +11,11 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.postprocessing.tf.TermOffsetMap;
+import datawave.data.type.DateType;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.DatawaveJexlScript;
 import org.apache.commons.jexl2.ExpressionImpl;
@@ -193,6 +198,96 @@ public class DatawaveInterpreterTest {
                 {"content:phrase(termOffsetMap, 'big', 'dog') && (TEXT == 'big' && TEXT == 'dog')", false},
                 //  full phrase
                 {"content:phrase(termOffsetMap, 'big', 'red', 'dog') && (TEXT == 'big' && TEXT == 'red' && TEXT == 'dog')", true}};
+        //  @formatter:on
+        
+        testInputs(array);
+    }
+    
+    @Test
+    public void testFilterBeforeDate() {
+        //  @formatter:off
+        Object[][] array = {
+                //  BIRTH_DATE is pre-epoch
+                {"filter:beforeDate(BIRTH_DATE, '19200101')", true},    //  single value match, pre-epoch
+                {"filter:beforeDate(BIRTH_DATE, '19600101')", true},    //  multi value match, pre-epoch
+                {"filter:beforeDate(BIRTH_DATE, '20220101')", true},    //  multi value match, post-epoch
+
+                //  with a pattern
+                {"filter:beforeDate(BIRTH_DATE, '19200101', 'yyyyMMdd')", true},    //  single value match, pre-epoch
+                {"filter:beforeDate(BIRTH_DATE, '19600101', 'yyyyMMdd')", true},    //  multi value match, pre-epoch
+                {"filter:beforeDate(BIRTH_DATE, '20220101', 'yyyyMMdd')", true},    //  multi value match, post-epoch
+
+                //  with multi fields
+                {"filter:beforeDate((BIRTH_DATE||BIRTH_DATE), '19200101')", true},  //  single value match, pre-epoch
+                {"filter:beforeDate((BIRTH_DATE||BIRTH_DATE), '19600101')", true},  //  multi value match, pre-epoch
+                {"filter:beforeDate((BIRTH_DATE||BIRTH_DATE), '20220101')", true},  //  multi value match, post-epoch
+
+                //  with a pattern
+                {"filter:beforeDate((BIRTH_DATE||BIRTH_DATE), '19200101', 'yyyyMMdd')", true},  //  single value match, pre-epoch
+                {"filter:beforeDate((BIRTH_DATE||BIRTH_DATE), '19600101', 'yyyyMMdd')", true},  //  multi value match, pre-epoch
+                {"filter:beforeDate((BIRTH_DATE||BIRTH_DATE), '20220101', 'yyyyMMdd')", true},  //  multi value match, post-epoch
+
+                //  DEATH_DATE is post-epoch
+                {"filter:beforeDate(DEATH_DATE, '20010101')", true},    //  single value match
+                {"filter:beforeDate(DEATH_DATE, '20030101')", true},    //  multi value match
+
+                //  single field with pattern
+                {"filter:beforeDate(DEATH_DATE, '20010101', 'yyyyMMdd')", true},    //  single value match
+                {"filter:beforeDate(DEATH_DATE, '20030101', 'yyyyMMdd')", true},    //  multi value match
+
+                //  multi field
+                {"filter:beforeDate((DEATH_DATE||DEATH_DATE), '20010101')", true},    //  single value match
+                {"filter:beforeDate((DEATH_DATE||DEATH_DATE), '20030101')", true},    //  multi value match
+
+                //  multi field with pattern
+                {"filter:beforeDate((DEATH_DATE||DEATH_DATE), '20010101', 'yyyyMMdd')", true},    //  single value match
+                {"filter:beforeDate((DEATH_DATE||DEATH_DATE), '20030101', 'yyyyMMdd')", true},    //  multi value match
+        };
+        //  @formatter:on
+        
+        testInputs(array);
+    }
+    
+    @Test
+    public void testFilterAfterDate() {
+        //  @formatter:off
+        Object[][] array = {
+                //  BIRTH_DATE is pre-epoch
+                {"filter:afterDate(BIRTH_DATE, '19400101')", true},    //  single value match, pre-epoch
+                {"filter:afterDate(BIRTH_DATE, '19200101')", true},    //  multi value match, pre-epoch
+
+                //  with a pattern
+                {"filter:afterDate(BIRTH_DATE, '19400101', 'yyyyMMdd')", true},    //  single value match, pre-epoch
+                {"filter:afterDate(BIRTH_DATE, '19200101', 'yyyyMMdd')", true},    //  multi value match, pre-epoch
+
+                //  with multi fields
+                {"filter:afterDate((BIRTH_DATE||BIRTH_DATE), '19400101')", true},  //  single value match, pre-epoch
+                {"filter:afterDate((BIRTH_DATE||BIRTH_DATE), '19200101')", true},  //  multi value match, pre-epoch
+
+                //  with a pattern
+                {"filter:afterDate((BIRTH_DATE||BIRTH_DATE), '19400101', 'yyyyMMdd')", true},  //  single value match, pre-epoch
+                {"filter:afterDate((BIRTH_DATE||BIRTH_DATE), '19200101', 'yyyyMMdd')", true},  //  multi value match, pre-epoch
+
+                //  DEATH_DATE is post-epoch
+                {"filter:afterDate(DEATH_DATE, '20010101')", true},    //  single value match, post-epoch
+                {"filter:afterDate(DEATH_DATE, '20000101')", true},    //  multi value match, post-epoch
+                {"filter:afterDate(DEATH_DATE, '19500101')", true},    //  multi value match, pre-epoch
+
+                //  single field with pattern
+                {"filter:afterDate(DEATH_DATE, '20010101', 'yyyyMMdd')", true},    //  single value match, post-epoch
+                {"filter:afterDate(DEATH_DATE, '20000101', 'yyyyMMdd')", true},    //  multi value match, post-epoch
+                {"filter:afterDate(DEATH_DATE, '19500101', 'yyyyMMdd')", true},    //  multi value match, pre-epoch
+
+                //  multi field
+                {"filter:afterDate((DEATH_DATE||DEATH_DATE), '20010101')", true},    //  single value match, post-epoch
+                {"filter:afterDate((DEATH_DATE||DEATH_DATE), '20000101')", true},    //  multi value match, post-epoch
+                {"filter:afterDate((DEATH_DATE||DEATH_DATE), '19500101')", true},    //  multi value match, pre-epoch
+
+                //  multi field with pattern
+                {"filter:afterDate((DEATH_DATE||DEATH_DATE), '20010101', 'yyyyMMdd')", true},    //  single value match, post-epoch
+                {"filter:afterDate((DEATH_DATE||DEATH_DATE), '20000101', 'yyyyMMdd')", true},    //  multi value match, post-epoch
+                {"filter:afterDate((DEATH_DATE||DEATH_DATE), '19500101', 'yyyyMMdd')", true},    //  multi value match, pre-epoch
+        };
         //  @formatter:on
         
         testInputs(array);
@@ -616,8 +711,8 @@ public class DatawaveInterpreterTest {
     protected Key docKey = new Key("dt\0uid");
     
     /**
-     * Build a jexl context with default values for several different type attributes
-     * 
+     * Build a jexl context with default values for several type attributes
+     *
      * <pre>
      *     FOO = {bar, baz}
      *     SPEED = {123, 147}
@@ -655,8 +750,10 @@ public class DatawaveInterpreterTest {
         context.set("BIRTH_DATE", new FunctionalSet(Arrays.asList(birthDate01, birthDate02, birthDate03)));
 
         DateType fourthDate = new DateType("2000-12-28T00:00:05.000Z");
+        DateType fifthDate = new DateType("2002-12-28T00:00:05.000Z");
         ValueTuple deathDate01 = new ValueTuple("DEATH_DATE", fourthDate, "2000-12-28T00:00:05.000Z", new TypeAttribute<>(fourthDate, docKey, true));
-        context.set("DEATH_DATE", new FunctionalSet(Arrays.asList(deathDate01)));
+        ValueTuple deathDate02 = new ValueTuple("DEATH_DATE", fifthDate, "2002-12-28T00:00:05.000Z", new TypeAttribute<>(fifthDate, docKey, true));
+        context.set("DEATH_DATE", new FunctionalSet(Arrays.asList(deathDate01, deathDate02)));
 
         //  term offsets for phrases
         TermOffsetMap map = new TermOffsetMap();

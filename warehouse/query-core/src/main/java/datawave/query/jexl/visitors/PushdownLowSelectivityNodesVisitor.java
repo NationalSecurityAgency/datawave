@@ -19,7 +19,7 @@ import java.util.NoSuchElementException;
 /**
  * Visitor meant to 'push down' predicates for expressions that reference low selectable fields.
  */
-public class PushdownLowSelectivityNodesVisitor extends BaseVisitor {
+public class PushdownLowSelectivityNodesVisitor extends ShortCircuitBaseVisitor {
     
     protected MetadataHelper helper;
     protected ShardQueryConfiguration config;

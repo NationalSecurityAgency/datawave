@@ -94,6 +94,7 @@ import org.apache.log4j.Logger;
  * 
  * 
  * @param <KEYIN>
+ *            type of the input key
  */
 public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
     
@@ -289,6 +290,16 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
     /**
      * Create Key from input parameters
      * 
+     * @param row
+     *            the row
+     * @param colf
+     *            the column family
+     * @param colq
+     *            the column qualifier
+     * @param vis
+     *            the column visibility
+     * @param ts
+     *            the timestamp
      * @return Accumulo Key object
      */
     private Key createKey(String row, Text colf, Text colq, byte[] vis, long ts) {
@@ -299,6 +310,10 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
     /**
      * A helper routine to determine the visibility for a field.
      * 
+     * @param event
+     *            the evenht container
+     * @param value
+     *            the value holding the markings
      * @return the visibility
      */
     protected byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
@@ -321,6 +336,8 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
     /**
      * Create a flattened visibility, using the cache if possible
      * 
+     * @param vis
+     *            the visibility
      * @return the flattened visibility
      */
     protected byte[] flatten(ColumnVisibility vis) {

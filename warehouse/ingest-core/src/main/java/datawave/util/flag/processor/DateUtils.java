@@ -30,7 +30,12 @@ public class DateUtils {
      * The month and date fields are optional
      * 
      * @param group
+     *            the group
      * @param path
+     *            the file path
+     * @return the time in milleseconds
+     * @throws UnusableFileException
+     *             if the file is unusable
      */
     public static long getBucket(String group, String path) throws UnusableFileException {
         if (group == null || "none".equals(group)) {
@@ -70,6 +75,10 @@ public class DateUtils {
      * Factory method to determine the timestamp for a file from the folder that contains it. This will be the yyyy/mm/dd pulled from the folder.
      * 
      * @param path
+     *            file path
+     * @return the folder timestamp
+     * @throws UnusableFileException
+     *             if the file is unusable
      */
     public static long getFolderTimestamp(String path) throws UnusableFileException {
         return getBucket("day", path);

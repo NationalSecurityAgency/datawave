@@ -19,6 +19,7 @@ import datawave.query.jexl.functions.arguments.RebuildingJexlArgumentDescriptor;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
+import datawave.query.util.GeoUtils;
 import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -30,8 +31,9 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateXY;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.util.GeometricShapeFactory;
 
@@ -86,9 +88,23 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 if (args.size() == 3) {
                     double[] ll = geoNormalizer.parseLatLon(args.get(1).image);
                     double[] ur = geoNormalizer.parseLatLon(args.get(2).image);
-                    char splitChar = args.get(1).image.charAt(geoNormalizer.findSplit(args.get(1).image));
                     
-                    returnNode = getIndexNode(args.get(0), ll[1], ur[1], ll[0], ur[0], Character.toString(splitChar));
+                    // is the lower left longitude greater than the upper right longitude?
+                    // if so, we have crossed the anti-meridian and should split
+                    Geometry geom;
+                    List<Envelope> envs = new ArrayList<>();
+                    if (ll[1] > ur[1]) {
+                        Polygon poly1 = createRectangle(ll[1], 180.0, ll[0], ur[0]);
+                        Polygon poly2 = createRectangle(-180.0, ur[1], ll[0], ur[0]);
+                        geom = createGeometryCollection(poly1, poly2);
+                        envs.add(poly1.getEnvelopeInternal());
+                        envs.add(poly2.getEnvelopeInternal());
+                    } else {
+                        geom = createRectangle(ll[1], ur[1], ll[0], ur[0]);
+                        envs.add(geom.getEnvelopeInternal());
+                    }
+                    
+                    returnNode = getIndexNode(geom, envs, getFieldNames(args.get(0)), config.getGeoMaxExpansion());
                 } else {
                     
                     double minLat, maxLat, minLon, maxLon;
@@ -128,7 +144,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                                         BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode2, leLatNode2)))));
                         
                         // link em up
-                        returnNode = JexlNodeFactory.createAndNode(Arrays.asList(andNode1, andNode2));
+                        returnNode = JexlNodeFactory.createOrNode(Arrays.asList(andNode1, andNode2));
                     } else {
                         JexlNode geLonNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), Double.toString(minLon));
                         JexlNode leLonNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), Double.toString(maxLon));
@@ -173,26 +189,47 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 double lat = c.getLatitude();
                 double lon = c.getLongitude();
                 
-                returnNode = getIndexNode(args.get(0), lon - radius, lon + radius, lat - radius, lat + radius, GeoNormalizer.separator);
-                
+                returnNode = getIndexNode(createCircle(lon, lat, radius), getFieldNames(args.get(0)), config.getGeoMaxExpansion());
             }
             return returnNode;
         }
         
-        public static JexlNode getIndexNode(JexlNode fieldsNode, double minLon, double maxLon, double minLat, double maxLat, String splitChar) {
-            JexlNode indexNode;
-            List<JexlNode> indexNodes = Lists.newArrayList();
-            if (fieldsNode.jjtGetNumChildren() > 1) {
-                for (int i = 0; i < fieldsNode.jjtGetNumChildren(); i++) {
-                    JexlNode kid = JexlASTHelper.dereference(fieldsNode.jjtGetChild(i));
+        public static List<String> getFieldNames(JexlNode node) {
+            List<String> fieldNames = new ArrayList<>();
+            if (node.jjtGetNumChildren() > 1) {
+                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                    JexlNode kid = JexlASTHelper.dereference(node.jjtGetChild(i));
                     if (kid.image != null) {
-                        indexNodes.add(getIndexNode(kid.image, minLon, maxLon, minLat, maxLat, splitChar));
+                        fieldNames.add(kid.image);
                     }
                 }
             } else {
-                indexNodes.add(getIndexNode(fieldsNode.image, minLon, maxLon, minLat, maxLat, splitChar));
+                fieldNames.add(node.image);
+            }
+            return fieldNames;
+        }
+        
+        public static JexlNode getIndexNode(Geometry geometry, List<String> fieldNames, int maxExpansion) {
+            return getIndexNode(geometry, Collections.singletonList(geometry.getEnvelopeInternal()), fieldNames, maxExpansion);
+        }
+        
+        public static JexlNode getIndexNode(Geometry geometry, List<Envelope> envs, List<String> fieldNames, int maxExpansion) {
+            List<String[]> indexRanges = GeoUtils.generateOptimizedIndexRanges(geometry, envs, maxExpansion);
+            
+            List<JexlNode> indexNodes = Lists.newArrayList();
+            for (String fieldName : fieldNames) {
+                if (fieldName != null) {
+                    for (String[] indexRange : indexRanges) {
+                        // @formatter:off
+                        indexNodes.add(BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(
+                                JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), fieldName, indexRange[0]),
+                                JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, indexRange[1])))));
+                        // @formatter:on
+                    }
+                }
             }
             
+            JexlNode indexNode;
             if (!indexNodes.isEmpty()) {
                 if (indexNodes.size() > 1) {
                     indexNode = JexlNodeFactory.createOrNode(indexNodes);
@@ -201,37 +238,6 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 }
             } else {
                 throw new IllegalArgumentException("Unable to create index node for geo function.");
-            }
-            
-            return indexNode;
-        }
-        
-        public static JexlNode getIndexNode(String fieldName, double minLon, double maxLon, double minLat, double maxLat, String splitChar) {
-            JexlNode indexNode;
-            // is the lower left longitude greater than the upper right longitude?
-            // if so, we have crossed the anti-meridian and should split
-            if (minLon > maxLon) {
-                JexlNode geNode1 = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), fieldName, minLat + splitChar + minLon);
-                JexlNode leNode1 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, maxLat + splitChar + "180");
-                
-                // now link em up
-                JexlNode andNode1 = BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode1, leNode1)));
-                
-                JexlNode geNode2 = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), fieldName, minLat + splitChar + "-180");
-                JexlNode leNode2 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, maxLat + splitChar + maxLon);
-                
-                // now link em up
-                JexlNode andNode2 = BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode2, leNode2)));
-                
-                // link em all up
-                indexNode = JexlNodeFactory.createAndNode(Arrays.asList(andNode1, andNode2));
-                
-            } else {
-                JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), fieldName, minLat + splitChar + minLon);
-                JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, maxLat + splitChar + maxLon);
-                
-                // now link em up
-                indexNode = BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
             }
             
             return indexNode;
@@ -370,7 +376,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 // is the lower left longitude greater than the upper right longitude?
                 // if so, we have crossed the anti-meridian and should split
                 if (ll[1] > ur[1]) {
-                    wkt = createMultiPolygon(createRectangle(ll[1], 180.0, ll[0], ur[0]), createRectangle(-180.0, ur[1], ll[0], ur[0])).toText();
+                    wkt = createGeometryCollection(createRectangle(ll[1], 180.0, ll[0], ur[0]), createRectangle(-180.0, ur[1], ll[0], ur[0])).toText();
                 } else {
                     wkt = createRectangle(ll[1], ur[1], ll[0], ur[0]).toText();
                 }
@@ -420,9 +426,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
             return geomFactory.createPolygon(coordinates.toArray(new Coordinate[0]));
         }
         
-        private MultiPolygon createMultiPolygon(Polygon poly1, Polygon poly2) {
+        private Geometry createGeometryCollection(Polygon poly1, Polygon poly2) {
             GeometryFactory geomFactory = new GeometryFactory();
-            return geomFactory.createMultiPolygon(new Polygon[] {poly1, poly2});
+            return geomFactory.createGeometryCollection(new Geometry[] {poly1, poly2});
         }
     }
     

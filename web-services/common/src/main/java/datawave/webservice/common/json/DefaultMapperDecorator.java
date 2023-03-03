@@ -1,5 +1,6 @@
 package datawave.webservice.common.json;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -21,6 +22,7 @@ public class DefaultMapperDecorator implements ObjectMapperDecorator {
         mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
         mapper.registerModule(new GuavaModule());
         mapper.registerModule(new JaxbAnnotationModule());
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         
         registerAbstractTypes(mapper);
         

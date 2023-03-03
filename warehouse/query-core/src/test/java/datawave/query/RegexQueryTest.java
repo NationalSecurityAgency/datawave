@@ -28,6 +28,7 @@ import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
+import static org.junit.Assert.assertEquals;
 
 public class RegexQueryTest extends AbstractFunctionalQuery {
     
@@ -161,6 +162,14 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + " not (" + CityField.STATE.name() + RE_OP + regex + ")";
             runTest(query, query);
         }
+    }
+    
+    @Test
+    public void testAndNotAgain() throws Exception {
+        String query = "(NUM == '2' || NUM == '3') && CITY !~ '.*iSs.*'";
+        String expected = "(NUM == '+aE2' || NUM == '+aE3') && !(((_Delayed_ = true) && (CITY =~ '.*iss.*')))";
+        String plan = getPlan(query, false, false);
+        assertEquals(expected, plan);
     }
     
     @Test

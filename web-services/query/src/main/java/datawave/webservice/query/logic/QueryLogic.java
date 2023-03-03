@@ -5,6 +5,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -89,9 +90,11 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     QueryLogicTransformer getTransformer(Query settings);
     
+    QueryLogicTransformer getEnrichedTransformer(Query settings);
+    
     default String getResponseClass(Query query) throws QueryException {
         try {
-            QueryLogicTransformer t = this.getTransformer(query);
+            QueryLogicTransformer t = this.getEnrichedTransformer(query);
             BaseResponse refResponse = t.createResponse(new ResultsPage());
             return refResponse.getClass().getCanonicalName();
         } catch (RuntimeException e) {
@@ -377,4 +380,12 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @param pageProcessingStartTime
      */
     void setPageProcessingStartTime(long pageProcessingStartTime);
+    
+    /**
+     * Normally this simply returns null as the query logic simply uses the user within the local system. However sometimes we may have a query that goes off
+     * system and hence needs to use a different set of auths when downgrading.
+     *
+     * @return A user operations interface implementation. Null if NA (i.e. the local principal is sufficient)
+     */
+    UserOperations getUserOperations();
 }
