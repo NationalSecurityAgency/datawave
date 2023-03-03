@@ -52,14 +52,14 @@ public class DocumentKeysFunctionTest {
         // biz+biz is all odd children
         // combined search space should be tld + all children
         String query = "(content:phrase(FOO, termOffsetMap, 'bar', 'baz') && FOO == 'bar' && FOO == 'baz') &&"
-                        + "(content:phrase(FOO, termOffsetMap, 'biz', 'biz') && FOO == 'biz' && FOO == 'biz') ";
+                        + "!(content:phrase(FOO, termOffsetMap, 'biz', 'biz') && FOO == 'biz' && FOO == 'biz') ";
         Set<Key> expected = Sets.newHashSet(docKey, docKey1, docKey2, docKey3, docKey4, docKey5);
         test(query, expected);
     }
     
     @Test
     public void testOnlyNegatedPhrase() throws Exception {
-        String query = "content:phrase(FOO, termOffsetMap, 'baz', 'baz') && FOO == 'baz'";
+        String query = "!(content:phrase(FOO, termOffsetMap, 'baz', 'baz') && FOO == 'baz')";
         Set<Key> expected = Sets.newHashSet(docKey, docKey2, docKey4);
         test(query, expected);
     }

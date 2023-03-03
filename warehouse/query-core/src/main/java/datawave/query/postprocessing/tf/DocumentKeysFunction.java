@@ -11,7 +11,6 @@ import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJexlArgumentDescriptor;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
@@ -29,8 +28,6 @@ public class DocumentKeysFunction {
     
     private static final Logger log = Logger.getLogger(DocumentKeysFunction.class);
     
-    // cannot intersect on negated values
-    private final Set<String> negatedValues = new HashSet<>();
     private final Multimap<String,ContentFunction> contentFunctions = LinkedListMultimap.create();
     
     /**
@@ -69,26 +66,8 @@ public class DocumentKeysFunction {
                 
                 ContentFunction contentFunction = new ContentFunction(fieldsAndTerms[0].iterator().next(), fieldsAndTerms[1]);
                 contentFunctions.put(contentFunction.getField(), contentFunction);
-                
-                // need to record any values that are part of a negative function
-                if (isFunctionNegated(f)) {
-                    negatedValues.addAll(contentFunction.getValues());
-                }
             }
         }
-    }
-    
-    private boolean isFunctionNegated(Function f) {
-        JexlNode node = f.args().get(0);
-        if (node != null) {
-            while (node.jjtGetParent() != null) {
-                node = node.jjtGetParent();
-                if (node instanceof ASTNotNode) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
     
     /**
@@ -102,19 +81,13 @@ public class DocumentKeysFunction {
      */
     protected Set<Key> getDocKeys(Document d, Set<Key> docKeys) {
         Multimap<String,Key> valueToKeys = buildValueToKeys(d);
-        
-        // each content function's intersected search space is added
-        // along with the entire search space for any negated function
         Set<Key> filterKeys = buildFilterKeys(valueToKeys);
         
-        int origSize = docKeys.size();
-        docKeys.retainAll(filterKeys);
-        int nextSize = docKeys.size();
-        if (origSize != nextSize) {
-            log.info("reduced document keys from " + origSize + " to " + nextSize + " (-" + (origSize - nextSize) + ")");
+        if (log.isDebugEnabled() && docKeys.size() != filterKeys.size()) {
+            log.debug("reduced document keys from " + docKeys.size() + " to " + filterKeys.size() + " (-" + (docKeys.size() - filterKeys.size()) + ")");
         }
         
-        return docKeys;
+        return filterKeys;
     }
     
     /**
@@ -183,6 +156,8 @@ public class DocumentKeysFunction {
     
     /**
      * Builds the filter keys from the content functions and value-to-keys multimap
+     * <p>
+     * The filter keys are effectively the union of each content function's intersection
      *
      * @param valueToKeys
      *            a multimap of value to document keys
@@ -208,11 +183,6 @@ public class DocumentKeysFunction {
             if (searchSpace != null) {
                 filterKeys.addAll(searchSpace);
             }
-        }
-        
-        // add in all keys for all negated values
-        for (String value : negatedValues) {
-            filterKeys.addAll(valueToKeys.get(value));
         }
         
         return filterKeys;
