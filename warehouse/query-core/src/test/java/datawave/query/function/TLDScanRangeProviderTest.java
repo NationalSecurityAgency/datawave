@@ -12,6 +12,14 @@ public class TLDScanRangeProviderTest {
     private final Key docKeyField = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok", "FIELD");
     private final Key docKeyFieldValue = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok", "FIELD\0value");
     
+    private final Key childDocKey = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12");
+    private final Key childDocKeyField = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12", "FIELD");
+    private final Key childDocKeyFieldValue = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12", "FIELD\0value");
+    
+    private final Key grandchildDocKey = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34");
+    private final Key grandchildDocKeyField = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34", "FIELD");
+    private final Key grandchildDocKeyFieldValue = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34", "FIELD\0value");
+    
     private final ScanRangeProvider rangeProvider = new TLDScanRangeProvider();
     
     @Test
@@ -19,6 +27,14 @@ public class TLDScanRangeProviderTest {
         assertEquals(docKey, rangeProvider.getStartKey(docKey));
         assertEquals(docKey, rangeProvider.getStartKey(docKeyField));
         assertEquals(docKey, rangeProvider.getStartKey(docKeyFieldValue));
+        
+        assertEquals(childDocKey, rangeProvider.getStartKey(childDocKey));
+        assertEquals(childDocKey, rangeProvider.getStartKey(childDocKeyField));
+        assertEquals(childDocKey, rangeProvider.getStartKey(childDocKeyFieldValue));
+        
+        assertEquals(grandchildDocKey, rangeProvider.getStartKey(grandchildDocKey));
+        assertEquals(grandchildDocKey, rangeProvider.getStartKey(grandchildDocKeyField));
+        assertEquals(grandchildDocKey, rangeProvider.getStartKey(grandchildDocKeyFieldValue));
     }
     
     @Test
@@ -28,6 +44,18 @@ public class TLDScanRangeProviderTest {
         assertEquals(expectedStopKey, rangeProvider.getStopKey(docKey));
         assertEquals(expectedStopKey, rangeProvider.getStopKey(docKeyField));
         assertEquals(expectedStopKey, rangeProvider.getStopKey(docKeyFieldValue));
+        
+        expectedStopKey = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12\uffff");
+        
+        assertEquals(expectedStopKey, rangeProvider.getStopKey(childDocKey));
+        assertEquals(expectedStopKey, rangeProvider.getStopKey(childDocKeyField));
+        assertEquals(expectedStopKey, rangeProvider.getStopKey(childDocKeyFieldValue));
+        
+        expectedStopKey = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34\uffff");
+        
+        assertEquals(expectedStopKey, rangeProvider.getStopKey(grandchildDocKey));
+        assertEquals(expectedStopKey, rangeProvider.getStopKey(grandchildDocKeyField));
+        assertEquals(expectedStopKey, rangeProvider.getStopKey(grandchildDocKeyFieldValue));
     }
     
     @Test
@@ -39,5 +67,21 @@ public class TLDScanRangeProviderTest {
         assertEquals(expectedRange, rangeProvider.getScanRange(docKey));
         assertEquals(expectedRange, rangeProvider.getScanRange(docKeyField));
         assertEquals(expectedRange, rangeProvider.getScanRange(docKeyFieldValue));
+        
+        start = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12");
+        end = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12\uffff");
+        expectedRange = new Range(start, true, end, false);
+        
+        assertEquals(expectedRange, rangeProvider.getScanRange(childDocKey));
+        assertEquals(expectedRange, rangeProvider.getScanRange(childDocKeyField));
+        assertEquals(expectedRange, rangeProvider.getScanRange(childDocKeyFieldValue));
+        
+        start = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34");
+        end = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34\uffff");
+        expectedRange = new Range(start, true, end, false);
+        
+        assertEquals(expectedRange, rangeProvider.getScanRange(grandchildDocKey));
+        assertEquals(expectedRange, rangeProvider.getScanRange(grandchildDocKey));
+        assertEquals(expectedRange, rangeProvider.getScanRange(grandchildDocKey));
     }
 }

@@ -19,7 +19,7 @@ public class ParentScanRangeProvider extends DocumentScanRangeProvider {
      */
     @Override
     public Key getStartKey(Key k) {
-        Text cf = new Text(TLD.parseRootPointerFromId(k.getColumnFamily().toString()));
+        Text cf = new Text(TLD.parseParentPointerFromId(k.getColumnFamilyData()).toArray());
         return new Key(k.getRow(), cf);
     }
 }
