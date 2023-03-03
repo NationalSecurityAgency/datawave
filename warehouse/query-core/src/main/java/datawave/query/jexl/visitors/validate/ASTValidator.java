@@ -47,6 +47,8 @@ public class ASTValidator {
      * @param root
      *            an arbitrary JexlNode
      * @return true if the tree is valid, otherwise throws an exception
+     * @throws InvalidQueryTreeException
+     *             for invalid tree
      */
     public boolean isValid(JexlNode root) throws InvalidQueryTreeException {
         return isValid(root, null, true);

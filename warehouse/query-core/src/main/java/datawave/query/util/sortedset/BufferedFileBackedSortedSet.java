@@ -240,7 +240,9 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
      * If the number of sets is over maxFiles, then start compacting those files down. The goal is to get the number of files down around 50% of maxFiles.
      * 
      * @param maxFiles
+     *            the max number of files
      * @throws IOException
+     *             for IO Exceptions
      */
     public void compact(int maxFiles) throws IOException {
         // if we have more sets than we are allowed, then we need to compact this down

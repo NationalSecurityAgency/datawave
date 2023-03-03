@@ -106,6 +106,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
      * translated ASTJexlScript back to a query string using JexlStringBuildingVisitor.
      * 
      * @param queryString
+     *            the query string
      * @return modified query string
      */
     protected String applyQueryModel(String queryString) {

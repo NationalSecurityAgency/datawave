@@ -33,6 +33,7 @@ public class ChainableEventDataQueryFilter implements EventDataQueryFilter {
      * Call startNewDocument on all filters in order
      * 
      * @param documentKey
+     *            a document key
      */
     @Override
     public void startNewDocument(Key documentKey) {
@@ -45,7 +46,8 @@ public class ChainableEventDataQueryFilter implements EventDataQueryFilter {
      * Call apply on filters in FIFO order, until one is false otherwise return true
      * 
      * @param entry
-     * @return
+     *            the entry key
+     * @return true until apply on filters is false
      */
     @Override
     public boolean apply(@Nullable Map.Entry<Key,String> entry) {
@@ -76,7 +78,8 @@ public class ChainableEventDataQueryFilter implements EventDataQueryFilter {
      * Call keep on filters in FIFO order, until one is false, otherwise return true
      * 
      * @param k
-     * @return
+     *            the key
+     * @return until one is false, otherwise return true
      */
     @Override
     public boolean keep(Key k) {
@@ -94,7 +97,8 @@ public class ChainableEventDataQueryFilter implements EventDataQueryFilter {
      * Get the maximum start key from all filters
      * 
      * @param from
-     * @return
+     *            from key
+     * @return maximum start key
      */
     @Override
     public Key getStartKey(Key from) {
@@ -115,7 +119,8 @@ public class ChainableEventDataQueryFilter implements EventDataQueryFilter {
      * Get the minimum end key from all filters
      * 
      * @param from
-     * @return
+     *            from key
+     * @return minimum end key
      */
     @Override
     public Key getStopKey(Key from) {
@@ -136,7 +141,8 @@ public class ChainableEventDataQueryFilter implements EventDataQueryFilter {
      * Get the minimum range from all filters combined (MAX(start), MIN(end))
      * 
      * @param from
-     * @return
+     *            from key
+     * @return minimum range from all filters
      */
     @Override
     public Range getKeyRange(Map.Entry<Key,Document> from) {
@@ -183,7 +189,7 @@ public class ChainableEventDataQueryFilter implements EventDataQueryFilter {
      *            the current range endKey
      * @param endKeyInclusive
      *            the endKeyInclusive flag from the current range
-     * @return
+     * @return minimum seek range across all filters
      */
     @Override
     public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
@@ -201,7 +207,7 @@ public class ChainableEventDataQueryFilter implements EventDataQueryFilter {
     /**
      * Get the minimum maxNextCount across all filters or -1 if no maxNextCount is set
      * 
-     * @return
+     * @return minimum maxNextCount across all filters
      */
     @Override
     public int getMaxNextCount() {
@@ -225,7 +231,7 @@ public class ChainableEventDataQueryFilter implements EventDataQueryFilter {
      * 
      * @param toTransform
      *            the Key to transform
-     * @return
+     * @return first successful transformation
      */
     @Override
     public Key transform(Key toTransform) {

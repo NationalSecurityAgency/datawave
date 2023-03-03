@@ -70,8 +70,10 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
      * Returns a boolean array with the decoded hourly activity from the Value's bitmask.
      * 
      * @param value
+     *            a value
      * @return the hourly activity
      * @throws InvalidProtocolBufferException
+     *             if the buffer is invalid
      */
     public static boolean[] decodeHourlyActivityToBooleanArray(Value value) throws InvalidProtocolBufferException {
         boolean[] hourlyActivity = new boolean[24];

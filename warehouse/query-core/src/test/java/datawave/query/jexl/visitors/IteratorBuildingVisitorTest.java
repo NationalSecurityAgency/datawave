@@ -125,6 +125,7 @@ public class IteratorBuildingVisitorTest {
      * For the sake of index lookups in the IteratorBuildingVisitor, all leading wildcards are full table FI scans since there is no reverse FI index
      * 
      * @throws ParseException
+     *             for issues with parsing
      */
     @Test
     public void buildLiteralRange_leadingWildcardTest() throws ParseException {

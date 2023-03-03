@@ -75,7 +75,8 @@ public class PushDownVisitor extends RebuildingVisitor {
      * Returns whether or not all top level children are delayed. if this is the case
      *
      * @param jexlScript
-     * @return
+     *            the jexl script
+     * @return whether or not all top level children are delayed
      */
     private boolean allDelayed(ASTJexlScript jexlScript) {
         if (jexlScript.jjtGetNumChildren() == 0) {

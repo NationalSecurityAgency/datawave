@@ -35,6 +35,9 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
      * Initialize the query field filter with all of the fields required to evaluation this query
      * 
      * @param script
+     *            a script
+     * @param nonEventFields
+     *            a set of non event fields
      */
     public EventDataQueryFieldFilter(ASTJexlScript script, Set<String> nonEventFields) {
         this.nonEventFields = nonEventFields;

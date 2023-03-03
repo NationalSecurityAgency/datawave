@@ -296,6 +296,8 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
      * @param input
      *            the string input
      * @return the string with the escape character removed
+     * @throws ParseException
+     *             for issues with parsing
      */
     public static UnescapedCharSequence discardEscapeChar(CharSequence input) throws ParseException {
         // Create char array to hold unescaped char sequence
@@ -367,6 +369,7 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
      *            a char
      * @throws ParseException
      *             for issues parsing
+     * @return numeric value of the hexadecimal character
      * */
     private static final int hexToInt(char c) throws ParseException {
         if ('0' <= c && c <= '9') {

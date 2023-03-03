@@ -153,6 +153,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
      * Tests to make sure QueryModel is applied properly to a query string
      * 
      * @throws Exception
+     *             if there are issues
      */
     @Test
     public void testQueryModelApplied() throws Exception {
