@@ -430,6 +430,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      * If we have a literal equality on an indexed field, then this can be used to defeat a wild card expansion.
      * 
      * @param node
+     *            a jexl node
      * @return `true` if we should expand a regular expression node given this subtree, `false` if we should not expand a regular expression node given this
      *         subtree
      */

@@ -42,6 +42,8 @@ public class Token {
     
     /**
      * Returns the image.
+     * 
+     * @return the image
      */
     public String toString() {
         return image;
@@ -55,6 +57,10 @@ public class Token {
      * case MyParserConstants.ID : return new IDToken();
      * 
      * to the following switch statement. Then you can cast matchedToken variable to the appropriate type and use it in your lexical actions.
+     * 
+     * @param ofKind
+     *            the value ofkind
+     * @return new token object
      */
     public static final Token newToken(int ofKind) {
         switch (ofKind) {

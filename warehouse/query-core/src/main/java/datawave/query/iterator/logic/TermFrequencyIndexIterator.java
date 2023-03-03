@@ -86,6 +86,12 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
      * 
      * @param source
      *            the source iterator
+     * @param fiEndKey
+     *            the index end key
+     * @param fiStartKey
+     *            the index start key
+     * @param timeFilter
+     *            a timefilter
      */
     public TermFrequencyIndexIterator(Key fiStartKey, Key fiEndKey, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter) {
         this(fiStartKey, fiEndKey, source, timeFilter, null, false, Predicates.<Key> alwaysTrue(), new TermFrequencyAggregator(null, null));

@@ -60,6 +60,8 @@ public class ASTValidator {
      * @param sourceVisitor
      *            the visitor calling this method
      * @return true if the AST is valid, otherwise
+     * @throws InvalidQueryTreeException
+     *             if the query tree is invalid
      */
     public boolean isValid(JexlNode root, String sourceVisitor) throws InvalidQueryTreeException {
         return isValid(root, sourceVisitor, true);
@@ -75,6 +77,8 @@ public class ASTValidator {
      * @param failHard
      *            boolean to throw an exception if the tree fails validation
      * @return true if the AST is valid, otherwise throws an exception
+     * @throws InvalidQueryTreeException
+     *             if the query tree is invalid
      */
     public boolean isValid(JexlNode root, String sourceVisitor, boolean failHard) throws InvalidQueryTreeException {
         
