@@ -1,13 +1,12 @@
-package datawave.query.predicate;
+package datawave.query.function;
 
-import datawave.query.function.ScanRangeProvider;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class ParentScanRangeProviderTest {
+public class DocumentRangeProviderTest {
     
     private final Key docKey = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok");
     private final Key docKeyField = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok", "FIELD");
@@ -21,7 +20,7 @@ public class ParentScanRangeProviderTest {
     private final Key grandchildDocKeyField = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34", "FIELD");
     private final Key grandchildDocKeyFieldValue = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34", "FIELD\0value");
     
-    private final ScanRangeProvider rangeProvider = new ParentScanRangeProvider();
+    private final RangeProvider rangeProvider = new DocumentRangeProvider();
     
     @Test
     public void testGetStartKey() {
@@ -29,15 +28,13 @@ public class ParentScanRangeProviderTest {
         assertEquals(docKey, rangeProvider.getStartKey(docKeyField));
         assertEquals(docKey, rangeProvider.getStartKey(docKeyFieldValue));
         
-        // docKey is the parent of the childDocKey
-        assertEquals(docKey, rangeProvider.getStartKey(childDocKey));
-        assertEquals(docKey, rangeProvider.getStartKey(childDocKeyField));
-        assertEquals(docKey, rangeProvider.getStartKey(childDocKeyFieldValue));
+        assertEquals(childDocKey, rangeProvider.getStartKey(childDocKey));
+        assertEquals(childDocKey, rangeProvider.getStartKey(childDocKeyField));
+        assertEquals(childDocKey, rangeProvider.getStartKey(childDocKeyFieldValue));
         
-        // childDocKey is the parent of the grandchildDockey
-        assertEquals(childDocKey, rangeProvider.getStartKey(grandchildDocKey));
-        assertEquals(childDocKey, rangeProvider.getStartKey(grandchildDocKeyField));
-        assertEquals(childDocKey, rangeProvider.getStartKey(grandchildDocKeyFieldValue));
+        assertEquals(grandchildDocKey, rangeProvider.getStartKey(grandchildDocKey));
+        assertEquals(grandchildDocKey, rangeProvider.getStartKey(grandchildDocKeyField));
+        assertEquals(grandchildDocKey, rangeProvider.getStartKey(grandchildDocKeyFieldValue));
     }
     
     @Test
@@ -71,6 +68,7 @@ public class ParentScanRangeProviderTest {
         assertEquals(expectedRange, rangeProvider.getScanRange(docKeyField));
         assertEquals(expectedRange, rangeProvider.getScanRange(docKeyFieldValue));
         
+        start = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12");
         end = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12\0");
         expectedRange = new Range(start, true, end, false);
         
@@ -78,7 +76,7 @@ public class ParentScanRangeProviderTest {
         assertEquals(expectedRange, rangeProvider.getScanRange(childDocKeyField));
         assertEquals(expectedRange, rangeProvider.getScanRange(childDocKeyFieldValue));
         
-        start = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12");
+        start = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34");
         end = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34\0");
         expectedRange = new Range(start, true, end, false);
         

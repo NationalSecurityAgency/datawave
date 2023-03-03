@@ -25,7 +25,7 @@ import datawave.query.function.DataTypeAsField;
 import datawave.query.function.DocumentMetadata;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
-import datawave.query.function.DocumentScanRangeProvider;
+import datawave.query.function.DocumentRangeProvider;
 import datawave.query.function.IndexOnlyContextCreator;
 import datawave.query.function.IndexOnlyContextCreatorBuilder;
 import datawave.query.function.JexlContextCreator;
@@ -35,7 +35,7 @@ import datawave.query.function.LimitFields;
 import datawave.query.function.MaskedValueFilterFactory;
 import datawave.query.function.MaskedValueFilterInterface;
 import datawave.query.function.RemoveGroupingContext;
-import datawave.query.function.ScanRangeProvider;
+import datawave.query.function.RangeProvider;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
@@ -204,7 +204,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     protected ExcerptTransform excerptTransform = null;
     
-    protected ScanRangeProvider scanRangeProvider;
+    protected RangeProvider rangeProvider;
     
     public QueryIterator() {}
     
@@ -1694,14 +1694,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     /**
-     * Get a default implementation of a {@link ScanRangeProvider}
+     * Get a default implementation of a {@link RangeProvider}
      *
-     * @return a {@link DocumentScanRangeProvider}
+     * @return a {@link DocumentRangeProvider}
      */
-    protected ScanRangeProvider getScanRangeProvider() {
-        if (scanRangeProvider == null) {
-            scanRangeProvider = new DocumentScanRangeProvider();
+    protected RangeProvider getScanRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new DocumentRangeProvider();
         }
-        return scanRangeProvider;
+        return rangeProvider;
     }
 }

@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.query.function.AncestorScanRangeProvider;
-import datawave.query.function.ScanRangeProvider;
+import datawave.query.function.AncestorRangeProvider;
+import datawave.query.function.RangeProvider;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
@@ -277,16 +277,16 @@ public class AncestorQueryIterator extends QueryIterator {
     }
     
     /**
-     * Get a {@link AncestorScanRangeProvider}
+     * Get a {@link AncestorRangeProvider}
      *
-     * @return a {@link AncestorScanRangeProvider}
+     * @return a {@link AncestorRangeProvider}
      */
     @Override
-    public ScanRangeProvider getScanRangeProvider() {
-        if (scanRangeProvider == null) {
-            scanRangeProvider = new AncestorScanRangeProvider();
+    public RangeProvider getScanRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new AncestorRangeProvider();
         }
-        return scanRangeProvider;
+        return rangeProvider;
     }
     
 }

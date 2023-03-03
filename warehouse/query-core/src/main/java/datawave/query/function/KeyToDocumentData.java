@@ -61,7 +61,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     private EventDataQueryFilter filter;
     
     // default implementation
-    protected ScanRangeProvider scanRangeProvider = new DocumentScanRangeProvider();
+    protected RangeProvider rangeProvider = new DocumentRangeProvider();
     
     private boolean includeParent = false;
     
@@ -103,14 +103,14 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     }
     
     /**
-     * Builder-style method for setting a non-default implementation of a {@link ScanRangeProvider}
+     * Builder-style method for setting a non-default implementation of a {@link RangeProvider}
      *
-     * @param scanRangeProvider
+     * @param rangeProvider
      *            a ScanRangeProvider
      * @return this object
      */
-    public KeyToDocumentData withScanRangeProvider(ScanRangeProvider scanRangeProvider) {
-        this.scanRangeProvider = scanRangeProvider;
+    public KeyToDocumentData withScanRangeProvider(RangeProvider rangeProvider) {
+        this.rangeProvider = rangeProvider;
         return this;
     }
     
@@ -135,7 +135,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         // We want to ensure that we have a non-empty colqual
         if (null == from || null == from.getKey() || null == from.getValue())
             return null;
-        Range keyRange = scanRangeProvider.getScanRange(from.getKey());
+        Range keyRange = rangeProvider.getScanRange(from.getKey());
         
         try {
             

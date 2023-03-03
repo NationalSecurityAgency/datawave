@@ -4,15 +4,14 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import datawave.query.attributes.Document;
-import datawave.query.function.ScanRangeProvider;
+import datawave.query.function.RangeProvider;
 import datawave.query.function.TLDEquality;
-import datawave.query.function.TLDScanRangeProvider;
+import datawave.query.function.TLDRangeProvider;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
@@ -40,7 +39,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * This is a TLD (Top Level Document) QueryIterator implementation.
@@ -217,16 +215,16 @@ public class TLDQueryIterator extends QueryIterator {
     }
     
     /**
-     * Get a {@link TLDScanRangeProvider}
+     * Get a {@link TLDRangeProvider}
      *
-     * @return a {@link TLDScanRangeProvider}
+     * @return a {@link TLDRangeProvider}
      */
     @Override
-    public ScanRangeProvider getScanRangeProvider() {
-        if (scanRangeProvider == null) {
-            scanRangeProvider = new TLDScanRangeProvider();
+    public RangeProvider getScanRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new TLDRangeProvider();
         }
-        return scanRangeProvider;
+        return rangeProvider;
     }
     
 }

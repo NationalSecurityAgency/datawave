@@ -6,7 +6,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class DocumentScanRangeProviderTest {
+public class TLDRangeProviderTest {
     
     private final Key docKey = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok");
     private final Key docKeyField = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok", "FIELD");
@@ -20,7 +20,7 @@ public class DocumentScanRangeProviderTest {
     private final Key grandchildDocKeyField = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34", "FIELD");
     private final Key grandchildDocKeyFieldValue = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34", "FIELD\0value");
     
-    private final ScanRangeProvider rangeProvider = new DocumentScanRangeProvider();
+    private final RangeProvider rangeProvider = new TLDRangeProvider();
     
     @Test
     public void testGetStartKey() {
@@ -39,19 +39,19 @@ public class DocumentScanRangeProviderTest {
     
     @Test
     public void testGetStopKey() {
-        Key expectedStopKey = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok\0");
+        Key expectedStopKey = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok\uffff");
         
         assertEquals(expectedStopKey, rangeProvider.getStopKey(docKey));
         assertEquals(expectedStopKey, rangeProvider.getStopKey(docKeyField));
         assertEquals(expectedStopKey, rangeProvider.getStopKey(docKeyFieldValue));
         
-        expectedStopKey = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12\0");
+        expectedStopKey = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12\uffff");
         
         assertEquals(expectedStopKey, rangeProvider.getStopKey(childDocKey));
         assertEquals(expectedStopKey, rangeProvider.getStopKey(childDocKeyField));
         assertEquals(expectedStopKey, rangeProvider.getStopKey(childDocKeyFieldValue));
         
-        expectedStopKey = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34\0");
+        expectedStopKey = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34\uffff");
         
         assertEquals(expectedStopKey, rangeProvider.getStopKey(grandchildDocKey));
         assertEquals(expectedStopKey, rangeProvider.getStopKey(grandchildDocKeyField));
@@ -61,7 +61,7 @@ public class DocumentScanRangeProviderTest {
     @Test
     public void testGetScanRange() {
         Key start = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok");
-        Key end = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok\0");
+        Key end = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok\uffff");
         Range expectedRange = new Range(start, true, end, false);
         
         assertEquals(expectedRange, rangeProvider.getScanRange(docKey));
@@ -69,7 +69,7 @@ public class DocumentScanRangeProviderTest {
         assertEquals(expectedRange, rangeProvider.getScanRange(docKeyFieldValue));
         
         start = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12");
-        end = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12\0");
+        end = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12\uffff");
         expectedRange = new Range(start, true, end, false);
         
         assertEquals(expectedRange, rangeProvider.getScanRange(childDocKey));
@@ -77,11 +77,11 @@ public class DocumentScanRangeProviderTest {
         assertEquals(expectedRange, rangeProvider.getScanRange(childDocKeyFieldValue));
         
         start = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34");
-        end = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34\0");
+        end = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34\uffff");
         expectedRange = new Range(start, true, end, false);
         
         assertEquals(expectedRange, rangeProvider.getScanRange(grandchildDocKey));
-        assertEquals(expectedRange, rangeProvider.getScanRange(grandchildDocKeyField));
-        assertEquals(expectedRange, rangeProvider.getScanRange(grandchildDocKeyFieldValue));
+        assertEquals(expectedRange, rangeProvider.getScanRange(grandchildDocKey));
+        assertEquals(expectedRange, rangeProvider.getScanRange(grandchildDocKey));
     }
 }

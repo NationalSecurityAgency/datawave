@@ -7,10 +7,10 @@ import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.Aggregation;
 import datawave.query.function.KeyToDocumentData;
-import datawave.query.function.ScanRangeProvider;
+import datawave.query.function.RangeProvider;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ParentEventDataFilter;
-import datawave.query.predicate.ParentScanRangeProvider;
+import datawave.query.predicate.ParentRangeProvider;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TupleToEntry;
 import org.apache.accumulo.core.data.Key;
@@ -101,15 +101,15 @@ public class ParentQueryIterator extends QueryIterator {
     }
     
     /**
-     * Get a {@link ParentScanRangeProvider}
+     * Get a {@link ParentRangeProvider}
      *
-     * @return a {@link ParentScanRangeProvider}
+     * @return a {@link ParentRangeProvider}
      */
     @Override
-    public ScanRangeProvider getScanRangeProvider() {
-        if (scanRangeProvider == null) {
-            scanRangeProvider = new ParentScanRangeProvider();
+    public RangeProvider getScanRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new ParentRangeProvider();
         }
-        return scanRangeProvider;
+        return rangeProvider;
     }
 }

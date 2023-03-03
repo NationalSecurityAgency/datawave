@@ -4,9 +4,9 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 
 /**
- * Given a key, provides a scan range
+ * Called by {@link KeyToDocumentData}, range is used to aggregate a document
  */
-public interface ScanRangeProvider {
+public interface RangeProvider {
     
     /**
      * Get the start key for the scan range

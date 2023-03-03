@@ -7,7 +7,7 @@ import org.apache.accumulo.core.data.Range;
 /**
  * Given arbitrary "Document Key", provides the scan range that covers the document.
  */
-public class DocumentScanRangeProvider implements ScanRangeProvider {
+public class DocumentRangeProvider implements RangeProvider {
     
     /**
      * Get the start key for the document range
