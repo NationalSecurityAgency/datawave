@@ -175,6 +175,11 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             }
         }
         
+        if (completeAndPresent && incompleteAndPresent) {
+            // Case like (FIELD == INCOMPLETE)
+            state = new State(true, true);
+        }
+        
         if (state != null) {
             resultMap.put(nodeString, state.copy());
         }
@@ -303,7 +308,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             JexlNode first = visitor.args().get(0);
             if (first instanceof ASTIdentifier) {
                 String field = JexlASTHelper.deconstructIdentifier((ASTIdentifier) first);
-                if (isFieldIncomplete(field)) {
+                if (isFieldIncomplete(field) && isFieldPresent(field)) {
                     return new State(true, true);
                 }
             }
@@ -313,7 +318,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             Set<String> fields = descriptor.fields(null, null);
             
             for (String field : fields) {
-                if (isFieldIncomplete(field)) {
+                if (isFieldIncomplete(field) && isFieldPresent(field)) {
                     return new State(true, true);
                 }
             }
@@ -959,7 +964,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
      * <li>a backing object</li>
      * </ul>
      * <p>
-     * The backing object may be a {@link FunctionalSet<?>}, {@link Collection<?>, {@link ValueTuple<?>}, or null}.
+     * The backing object may be a {@link FunctionalSet}, {@link Collection}, {@link ValueTuple}, or null.
      */
     public class State {
         

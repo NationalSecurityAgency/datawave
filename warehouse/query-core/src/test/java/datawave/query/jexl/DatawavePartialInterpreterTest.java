@@ -7,7 +7,6 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -347,6 +346,31 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         }
     }
     
+    // TODO -- consider breaking this apart and expanding
+    @Test
+    public void testMultiFieldedMinMaxFunctions() {
+        //  @formatter:off
+        Object[][] array = {
+            //  incomplete and present with an absent field
+            {"(FIELD_A || ABSENT).min() > 0", true, true},
+            {"(ABSENT || FIELD_A).min() > 0", true, true},
+            //  incomplete and absent with an absent field
+            {"(FIELD_B || ABSENT).min() > 0", false, false},
+            {"(ABSENT || FIELD_B).min() > 0", false, false},
+            //  incomplete and present with a present field
+            {"(FIELD_A || SPEED).min() > 0", true, true},
+            {"(SPEED || FIELD_A).min() > 0", true, true},
+            //  incomplete and absent with a present field
+            {"(FIELD_B || SPEED).min() > 0", true, false},
+            {"(SPEED || FIELD_B).min() > 0", true, false},
+        };
+        //  @formatter:on
+        
+        for (Object[] arr : array) {
+            test(buildDefaultIncompleteContext(), (String) arr[0], (Boolean) arr[1], (Boolean) arr[2]);
+        }
+    }
+    
     @Test
     public void testGreaterThanWithIncompleteField() {
         //  @formatter:off
@@ -378,8 +402,6 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         }
     }
     
-    // TODO -- come back to this one
-    @Ignore
     @Test
     public void testFieldEqualsFieldWithIncompleteFields() {
         //  @formatter:off
@@ -398,7 +420,7 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
     
     /**
      * Add incomplete fields to the default context
-     * 
+     *
      * @param query
      *            the query
      * @param expectedResult
