@@ -30,6 +30,14 @@ public class QueryFieldsVisitorTest {
     public void testEQ() throws ParseException {
         String query = "FOO == 'bar'";
         test(query, Collections.singleton("FOO"));
+        
+        // identifiers
+        query = "$12 == 'bar'";
+        test(query, Collections.singleton("12"));
+        
+        // grouping context
+        query = "FOO.12 == 'bar'";
+        test(query, Collections.singleton("FOO"));
     }
     
     @Test

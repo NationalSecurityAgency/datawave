@@ -25,7 +25,7 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
-import datawave.query.predicate.EventDataQueryExpressionFilter;
+import datawave.query.predicate.TermFrequencyDataFilter;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.UniversalSet;
 import datawave.query.iterator.SourceFactory;
@@ -1300,26 +1300,29 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return new TermFrequencyAggregator(toAggregate, filter, maxNextCount);
     }
     
+    /**
+     * Wrap an existing {@link EventDataQueryFilter} with a {@link TermFrequencyDataFilter}
+     *
+     * @param identifier
+     *            the field
+     * @param node
+     *            a node in the query
+     * @param existing
+     *            an existing EventDataQueryFilter
+     * @return a ChainableEventDataQueryFilter
+     */
     protected ChainableEventDataQueryFilter createWrappedTermFrequencyFilter(String identifier, JexlNode node, EventDataQueryFilter existing) {
         // combine index only and term frequency to create non-event fields
         final Set<String> nonEventFields = new HashSet<>(indexOnlyFields.size() + termFrequencyFields.size());
         nonEventFields.addAll(indexOnlyFields);
         nonEventFields.addAll(termFrequencyFields);
         
-        EventDataQueryFilter expressionFilter = new EventDataQueryExpressionFilter(node, typeMetadata, nonEventFields) {
-            @Override
-            public boolean keep(Key key) {
-                // for things that will otherwise be added need to ensure its actually a value match. This is necessary when dealing with TF ranges.
-                return peek(key);
-            }
-        };
-        
         ChainableEventDataQueryFilter chainableFilter = new ChainableEventDataQueryFilter();
         if (existing != null) {
             chainableFilter.addFilter(existing);
         }
         
-        chainableFilter.addFilter(expressionFilter);
+        chainableFilter.addFilter(new TermFrequencyDataFilter(node, typeMetadata, nonEventFields));
         
         return chainableFilter;
     }
