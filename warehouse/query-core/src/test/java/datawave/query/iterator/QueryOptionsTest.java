@@ -115,12 +115,12 @@ public class QueryOptionsTest {
         QueryOptions options = new QueryOptions();
         
         // initial state
-        assertEquals(0, options.getFiFieldSeek());
-        assertEquals(0, options.getFiNextSeek());
-        assertEquals(0, options.getEventFieldSeek());
-        assertEquals(0, options.getEventNextSeek());
-        assertEquals(0, options.getTfFieldSeek());
-        assertEquals(0, options.getTfNextSeek());
+        assertEquals(-1, options.getFiFieldSeek());
+        assertEquals(-1, options.getFiNextSeek());
+        assertEquals(-1, options.getEventFieldSeek());
+        assertEquals(-1, options.getEventNextSeek());
+        assertEquals(-1, options.getTfFieldSeek());
+        assertEquals(-1, options.getTfNextSeek());
         
         options.validateOptions(optionsMap);
         

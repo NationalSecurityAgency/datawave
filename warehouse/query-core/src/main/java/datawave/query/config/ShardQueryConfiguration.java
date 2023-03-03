@@ -395,12 +395,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // The class for the excerpt iterator
     private Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
     
-    private int fiFieldSeek;
-    private int fiNextSeek;
-    private int eventFieldSeek;
-    private int eventNextSeek;
-    private int tfFieldSeek;
-    private int tfNextSeek;
+    // controls when to issue a seek. disabled by default.
+    private int fiFieldSeek = -1;
+    private int fiNextSeek = -1;
+    private int eventFieldSeek = -1;
+    private int eventNextSeek = -1;
+    private int tfFieldSeek = -1;
+    private int tfNextSeek = -1;
     
     /**
      * The maximum weight for entries in the visitor function cache. The weight is calculated as the total number of characters for each key and value in the

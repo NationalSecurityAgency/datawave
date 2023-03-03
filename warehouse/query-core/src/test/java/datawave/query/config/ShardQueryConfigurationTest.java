@@ -208,12 +208,12 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(5000000L, config.getVisitorFunctionMaxWeight());
         
         // seeks
-        Assert.assertEquals(0, config.getFiFieldSeek());
-        Assert.assertEquals(0, config.getFiNextSeek());
-        Assert.assertEquals(0, config.getEventFieldSeek());
-        Assert.assertEquals(0, config.getEventNextSeek());
-        Assert.assertEquals(0, config.getTfFieldSeek());
-        Assert.assertEquals(0, config.getTfNextSeek());
+        Assert.assertEquals(-1, config.getFiFieldSeek());
+        Assert.assertEquals(-1, config.getFiNextSeek());
+        Assert.assertEquals(-1, config.getEventFieldSeek());
+        Assert.assertEquals(-1, config.getEventNextSeek());
+        Assert.assertEquals(-1, config.getTfFieldSeek());
+        Assert.assertEquals(-1, config.getTfNextSeek());
     }
     
     /**

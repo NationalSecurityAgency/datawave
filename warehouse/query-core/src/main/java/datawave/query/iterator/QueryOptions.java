@@ -414,12 +414,13 @@ public class QueryOptions implements OptionDescriber {
     
     protected Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
     
-    private int fiFieldSeek;
-    private int fiNextSeek;
-    private int eventFieldSeek;
-    private int eventNextSeek;
-    private int tfFieldSeek;
-    private int tfNextSeek;
+    // off by default, controls when to issue a seek
+    private int fiFieldSeek = -1;
+    private int fiNextSeek = -1;
+    private int eventFieldSeek = -1;
+    private int eventNextSeek = -1;
+    private int tfFieldSeek = -1;
+    private int tfNextSeek = -1;
     
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
