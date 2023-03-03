@@ -122,6 +122,23 @@
 
     <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
         <property name="logicDescription" value="Event query" />
+        <property name="configuredProfiles" >
+            <map>
+                <entry key="copyFieldEventQuery" value-ref="CopyFieldEventQuery" />
+            </map>
+        </property>
+    </bean>
+
+    <bean id="CopyFieldEventQuery" scope="prototype"  class="datawave.query.config.LookupUUIDTune">
+        <property name="primaryToSecondaryFieldMap">
+            <map>
+                <entry key="MAGIC_COPY">
+                    <list>
+                        <value>MAGIC</value>
+                    </list>
+                </entry>
+            </map>
+        </property>
     </bean>
     
     <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
@@ -307,4 +324,7 @@
     
     <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
     
+    <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">
+   </util:list>
+
 </beans>
