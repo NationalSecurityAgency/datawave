@@ -951,6 +951,10 @@
                         <groupId>org.apache.commons</groupId>
                         <artifactId>commons-lang3</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.emf</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -1024,18 +1028,6 @@
                 <groupId>org.apache.deltaspike.core</groupId>
                 <artifactId>deltaspike-core-impl</artifactId>
                 <version>${version.deltaspike}</version>
-                <scope>runtime</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop.thirdparty</groupId>
-                <artifactId>hadoop-shaded-guava</artifactId>
-                <version>${version.hadoop-shaded}</version>
-                <scope>runtime</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop.thirdparty</groupId>
-                <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
-                <version>${version.hadoop-shaded}</version>
                 <scope>runtime</scope>
             </dependency>
             <dependency>

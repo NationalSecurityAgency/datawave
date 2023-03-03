@@ -13,6 +13,7 @@
         <module>datawave</module>
         <module>audit</module>
         <module>cache</module>
+        <module>cached-results</module>
         <module>metadata</module>
         <module>query</module>
         <module>query-metric</module>

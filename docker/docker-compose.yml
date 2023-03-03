@@ -341,12 +341,30 @@ services:
       authorization:
         condition: service_healthy
 
+  # If you want to test cached results, enable the cachedresults profile
+  mysql:
+    profiles:
+      - cachedresults
+    image: mysql:8.0.32
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=true
+      - MYSQL_DATABASE=cachedresults
+      - MYSQL_USER=datawave
+      - MYSQL_PASSWORD=secret
+    networks:
+      - demo
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # If you want to test cached results, set the CACHED_RESULTS environment variable to 'true'
   query:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005","-jar","app.jar"]
     image: datawave/query-service:1.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,mrquery
+      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,mrquery,cachedresults
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
@@ -354,6 +372,7 @@ services:
       - HADOOP_HOST=${DW_HADOOP_HOST}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
       - "BACKEND=${BACKEND:-kafka}"
+      - CACHED_RESULTS=${CACHED_RESULTS:-false}
     ports:
       - "8080:8080"
       - "8443:8443"

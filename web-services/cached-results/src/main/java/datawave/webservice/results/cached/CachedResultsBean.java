@@ -18,6 +18,7 @@ import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.query.QueryParameters;
+import datawave.core.query.cachedresults.CachedResultsQueryParameters;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetric;
@@ -236,7 +237,7 @@ public class CachedResultsBean {
     private static Map<String,RunningQuery> loadingQueryMap = Collections.synchronizedMap(new HashMap<>());
     private static Set<String> loadingQueries = Collections.synchronizedSet(new HashSet<>());
     private URL importFileUrl = null;
-    private CachedResultsParameters cp = new CachedResultsParameters();
+    private CachedResultsQueryParameters cp = new CachedResultsQueryParameters();
     
     @PostConstruct
     public void init() {
@@ -550,57 +551,53 @@ public class CachedResultsBean {
                 
                 int maxLength = 0;
                 for (Object o : results.getResults()) {
+                    CacheableQueryRow cacheableQueryRow = cacheableLogic.writeToCache(o);
                     
-                    List<CacheableQueryRow> cacheableQueryRowList = cacheableLogic.writeToCache(o);
+                    Collection<String> values = cacheableQueryRow.getColumnValues().values();
+                    int maxValueLength = 0;
+                    for (String s : values) {
+                        if (s.length() > maxValueLength) {
+                            maxValueLength = s.length();
+                        }
+                    }
                     
-                    for (CacheableQueryRow cacheableQueryObject : cacheableQueryRowList) {
-                        
-                        Collection<String> values = ((CacheableQueryRow) cacheableQueryObject).getColumnValues().values();
-                        int maxValueLength = 0;
-                        for (String s : values) {
-                            if (s.length() > maxValueLength) {
-                                maxValueLength = s.length();
+                    boolean dataWritten = false;
+                    // If a successful maxLength has been determined, then don't change it.
+                    if (maxLength == 0)
+                        maxLength = maxValueLength + 1;
+                    else if (maxValueLength > maxLength) {
+                        maxLength = maxValueLength;
+                    }
+                    
+                    int attempt = 0;
+                    SQLException loadBatchException = null; // exception;
+                    while (dataWritten == false && attempt < 10) {
+                        try {
+                            loadBatch(ps, owner, queryId, logic.getLogicName(), fieldMap, cacheableQueryRow, maxLength);
+                            dataWritten = true;
+                            rowsWritten++;
+                        } catch (SQLException e) {
+                            loadBatchException = e;
+                            String msg = e.getMessage();
+                            if (msg.startsWith("Table") && msg.endsWith("doesn't exist")) {
+                                throw new QueryException(DatawaveErrorCode.CACHE_TABLE_MISSING, MessageFormat.format("message: {0}", msg));
+                            } else {
+                                log.info("Caught other SQLException:" + msg + " writing batch with maxLength:" + maxLength);
+                                maxLength = maxLength / 2;
                             }
                         }
+                        attempt++;
+                    }
+                    
+                    if (dataWritten == false) {
+                        String message = (loadBatchException == null) ? "unknown" : loadBatchException.getMessage();
                         
-                        boolean dataWritten = false;
-                        // If a successful maxLength has been determined, then don't change it.
-                        if (maxLength == 0)
-                            maxLength = maxValueLength + 1;
-                        else if (maxValueLength > maxLength) {
-                            maxLength = maxValueLength;
-                        }
-                        
-                        int attempt = 0;
-                        SQLException loadBatchException = null; // exception;
-                        while (dataWritten == false && attempt < 10) {
-                            try {
-                                loadBatch(ps, owner, queryId, logic.getLogicName(), fieldMap, cacheableQueryObject, maxLength);
-                                dataWritten = true;
-                                rowsWritten++;
-                            } catch (SQLException e) {
-                                loadBatchException = e;
-                                String msg = e.getMessage();
-                                if (msg.startsWith("Table") && msg.endsWith("doesn't exist")) {
-                                    throw new QueryException(DatawaveErrorCode.CACHE_TABLE_MISSING, MessageFormat.format("message: {0}", msg));
-                                } else {
-                                    log.info("Caught other SQLException:" + msg + " writing batch with maxLength:" + maxLength);
-                                    maxLength = maxLength / 2;
-                                }
-                            }
-                            attempt++;
-                        }
-                        
-                        if (dataWritten == false) {
-                            String message = (loadBatchException == null) ? "unknown" : loadBatchException.getMessage();
-                            
-                            log.error("Batch write FAILED - last exception = " + message + "record = " + cacheableQueryObject.getColumnValues().entrySet(),
-                                            loadBatchException);
-                        } else if (rowsWritten >= rowsPerBatch) {
-                            persistBatch(ps);
-                            ps.clearBatch();
-                            rowsWritten = 0;
-                        }
+                        log.error("Batch write FAILED - last exception = " + message + "record = " + cacheableQueryRow.getColumnValues().entrySet(),
+                                        loadBatchException);
+                    } else if (rowsWritten >= rowsPerBatch) {
+                        persistBatch(ps);
+                        ps.clearBatch();
+                        rowsWritten = 0;
                     }
                 }
             } // End of inserts into table
@@ -964,9 +961,9 @@ public class CachedResultsBean {
         Preconditions.checkNotNull(newQueryId, "newQueryId cannot be null");
         
         Preconditions.checkNotNull(queryId, "queryId cannot be null");
-        queryParameters.putSingle(CachedResultsParameters.QUERY_ID, queryId);
+        queryParameters.putSingle(CachedResultsQueryParameters.QUERY_ID, queryId);
         
-        String alias = queryParameters.getFirst(CachedResultsParameters.ALIAS);
+        String alias = queryParameters.getFirst(CachedResultsQueryParameters.ALIAS);
         
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
@@ -1018,9 +1015,9 @@ public class CachedResultsBean {
         
         // pagesize validated in create
         CreateQuerySessionIDFilter.QUERY_ID.set(newQueryId);
-        queryParameters.remove(CachedResultsParameters.QUERY_ID);
-        queryParameters.remove(CachedResultsParameters.VIEW);
-        queryParameters.putSingle(CachedResultsParameters.VIEW, view);
+        queryParameters.remove(CachedResultsQueryParameters.QUERY_ID);
+        queryParameters.remove(CachedResultsQueryParameters.VIEW);
+        queryParameters.putSingle(CachedResultsQueryParameters.VIEW, view);
         CachedResultsResponse response = create(newQueryId, queryParameters);
         try {
             persistByQueryId(newQueryId, alias, owner, CachedRunningQuery.Status.AVAILABLE, "", true);
@@ -1040,16 +1037,16 @@ public class CachedResultsBean {
                     @DefaultValue("-1") Integer pagesize, String fixedFieldsInEvent) {
         
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-        queryParameters.putSingle(CachedResultsParameters.QUERY_ID, queryId);
+        queryParameters.putSingle(CachedResultsQueryParameters.QUERY_ID, queryId);
         queryParameters.putSingle("newQueryId", newQueryId);
-        queryParameters.putSingle(CachedResultsParameters.ALIAS, alias);
-        queryParameters.putSingle(CachedResultsParameters.FIELDS, fields);
-        queryParameters.putSingle(CachedResultsParameters.CONDITIONS, conditions);
-        queryParameters.putSingle(CachedResultsParameters.GROUPING, grouping);
-        queryParameters.putSingle(CachedResultsParameters.ORDER, order);
+        queryParameters.putSingle(CachedResultsQueryParameters.ALIAS, alias);
+        queryParameters.putSingle(CachedResultsQueryParameters.FIELDS, fields);
+        queryParameters.putSingle(CachedResultsQueryParameters.CONDITIONS, conditions);
+        queryParameters.putSingle(CachedResultsQueryParameters.GROUPING, grouping);
+        queryParameters.putSingle(CachedResultsQueryParameters.ORDER, order);
         queryParameters.putSingle("columnVisibility", columnVisibility);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));
-        queryParameters.putSingle(CachedResultsParameters.FIXED_FIELDS_IN_EVENT, fixedFieldsInEvent);
+        queryParameters.putSingle(CachedResultsQueryParameters.FIXED_FIELDS_IN_EVENT, fixedFieldsInEvent);
         
         return loadAndCreateAsync(queryParameters);
     }
@@ -1062,7 +1059,7 @@ public class CachedResultsBean {
         String newQueryId = queryParameters.getFirst("newQueryId");
         Preconditions.checkNotNull(newQueryId, "newQueryId cannot be null");
         
-        String queryId = queryParameters.getFirst(CachedResultsParameters.QUERY_ID);
+        String queryId = queryParameters.getFirst(CachedResultsQueryParameters.QUERY_ID);
         Preconditions.checkNotNull(queryId, "queryId cannot be null");
         
         String alias = queryParameters.getFirst("alias");
@@ -1230,7 +1227,7 @@ public class CachedResultsBean {
     public CachedResultsResponse create(@Required("queryId") @PathParam("queryId") String queryId, MultivaluedMap<String,String> queryParameters) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
         
-        queryParameters.putSingle(CachedResultsParameters.QUERY_ID, queryId);
+        queryParameters.putSingle(CachedResultsQueryParameters.QUERY_ID, queryId);
         cp.clear();
         cp.validate(queryParameters);
         
@@ -2478,8 +2475,8 @@ public class CachedResultsBean {
     }
     
     protected boolean createView(String tableName, String viewName, Connection con, boolean viewCreated, Map<String,Integer> fieldMap) throws SQLException {
-        CachedResultsParameters.validate(tableName);
-        CachedResultsParameters.validate(viewName);
+        CachedResultsQueryParameters.validate(tableName);
+        CachedResultsQueryParameters.validate(viewName);
         StringBuilder viewCols = new StringBuilder();
         StringBuilder tableCols = new StringBuilder();
         viewCols.append(BASE_COLUMNS);

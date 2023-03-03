@@ -3,7 +3,6 @@ package datawave.query.transformer;
 import com.google.common.collect.Sets;
 import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.core.query.cachedresults.CacheableLogic;
-import datawave.core.query.cachedresults.CacheableQueryRowImpl;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.edge.model.EdgeModelFields;
 import datawave.edge.util.EdgeValue;
@@ -113,12 +112,11 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
     }
     
     @Override
-    public List<CacheableQueryRow> writeToCache(Object o) throws QueryException {
-        
-        List<CacheableQueryRow> cqoList = new ArrayList<>();
+    public CacheableQueryRow writeToCache(Object o) throws QueryException {
         EdgeBase edge = (EdgeBase) o;
         
         CacheableQueryRow cqo = responseObjectFactory.getCacheableQueryRow();
+        cqo.setMarkingFunctions(this.markingFunctions);
         cqo.setColFam("");
         cqo.setDataType("");
         cqo.setEventId(generateEventId(edge));
@@ -164,75 +162,67 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         if (edge.getActivityDate() != null) {
             cqo.addColumn(fields.getActivityDateFieldName(), edge.getActivityDate(), edge.getMarkings(), "", 0l);
         }
-        cqoList.add(cqo);
-        return cqoList;
+        return cqo;
     }
     
     @Override
-    public List<Object> readFromCache(List<CacheableQueryRow> cacheableQueryRowList) {
+    public Object readFromCache(CacheableQueryRow cacheableQueryRow) {
+        Map<String,String> markings = cacheableQueryRow.getMarkings();
         
-        List<Object> edgeList = new ArrayList<>();
+        EdgeBase edge = (EdgeBase) responseObjectFactory.getEdge();
         
-        for (CacheableQueryRow cqr : cacheableQueryRowList) {
-            Map<String,String> markings = cqr.getMarkings();
-            
-            EdgeBase edge = (EdgeBase) responseObjectFactory.getEdge();
-            
-            edge.setMarkings(markings);
-            
-            Map<String,String> columnValues = cqr.getColumnValues();
-            
-            if (columnValues.containsKey(fields.getSourceFieldName())) {
-                edge.setSource(columnValues.get(fields.getSourceFieldName()));
-            }
-            if (columnValues.containsKey(fields.getSinkFieldName())) {
-                edge.setSink(columnValues.get(fields.getSinkFieldName()));
-            }
-            if (columnValues.containsKey(fields.getTypeFieldName())) {
-                edge.setEdgeType(columnValues.get(fields.getTypeFieldName()));
-            }
-            if (columnValues.containsKey(fields.getRelationshipFieldName())) {
-                edge.setEdgeRelationship(columnValues.get(fields.getRelationshipFieldName()));
-            }
-            if (columnValues.containsKey(fields.getAttribute1FieldName())) {
-                edge.setEdgeAttribute1Source(columnValues.get(fields.getAttribute1FieldName()));
-            }
-            if (columnValues.containsKey(fields.getStatsEdgeFieldName())) {
-                edge.setStatsType(columnValues.get(fields.getStatsEdgeFieldName()));
-            }
-            if (columnValues.containsKey(fields.getAttribute2FieldName())) {
-                edge.setEdgeAttribute2(columnValues.get(fields.getAttribute2FieldName()));
-            }
-            if (columnValues.containsKey(fields.getDateFieldName())) {
-                edge.setDate(columnValues.get(fields.getDateFieldName()));
-            }
-            if (columnValues.containsKey(fields.getCountFieldName())) {
-                if (!columnValues.get(fields.getCountFieldName()).isEmpty()) {
-                    edge.setCount(Long.valueOf(columnValues.get(fields.getCountFieldName())));
-                }
-            }
-            if (columnValues.containsKey(fields.getAttribute3FieldName())) {
-                edge.setEdgeAttribute3(columnValues.get(fields.getAttribute3FieldName()));
-            }
-            if (columnValues.containsKey(fields.getCountsFieldName())) {
-                String countStr = columnValues.get(fields.getCountsFieldName());
-                String[] countSplit = StringUtils.split(countStr, '\0');
-                List<Long> countListAsLongs = new ArrayList<>();
-                for (String s : countSplit) {
-                    countListAsLongs.add(Long.valueOf(s));
-                }
-                edge.setCounts(countListAsLongs);
-            }
-            if (columnValues.containsKey(fields.getLoadDateFieldName())) {
-                edge.setLoadDate(columnValues.get(fields.getLoadDateFieldName()));
-            }
-            if (columnValues.containsKey(fields.getActivityDateFieldName())) {
-                edge.setActivityDate(columnValues.get(fields.getActivityDateFieldName()));
-            }
-            edgeList.add(edge);
+        edge.setMarkings(markings);
+        
+        Map<String,String> columnValues = cacheableQueryRow.getColumnValues();
+        
+        if (columnValues.containsKey(fields.getSourceFieldName())) {
+            edge.setSource(columnValues.get(fields.getSourceFieldName()));
         }
-        
-        return edgeList;
+        if (columnValues.containsKey(fields.getSinkFieldName())) {
+            edge.setSink(columnValues.get(fields.getSinkFieldName()));
+        }
+        if (columnValues.containsKey(fields.getTypeFieldName())) {
+            edge.setEdgeType(columnValues.get(fields.getTypeFieldName()));
+        }
+        if (columnValues.containsKey(fields.getRelationshipFieldName())) {
+            edge.setEdgeRelationship(columnValues.get(fields.getRelationshipFieldName()));
+        }
+        if (columnValues.containsKey(fields.getAttribute1FieldName())) {
+            edge.setEdgeAttribute1Source(columnValues.get(fields.getAttribute1FieldName()));
+        }
+        if (columnValues.containsKey(fields.getStatsEdgeFieldName())) {
+            edge.setStatsType(columnValues.get(fields.getStatsEdgeFieldName()));
+        }
+        if (columnValues.containsKey(fields.getAttribute2FieldName())) {
+            edge.setEdgeAttribute2(columnValues.get(fields.getAttribute2FieldName()));
+        }
+        if (columnValues.containsKey(fields.getDateFieldName())) {
+            edge.setDate(columnValues.get(fields.getDateFieldName()));
+        }
+        if (columnValues.containsKey(fields.getCountFieldName())) {
+            if (!columnValues.get(fields.getCountFieldName()).isEmpty()) {
+                edge.setCount(Long.valueOf(columnValues.get(fields.getCountFieldName())));
+            }
+        }
+        if (columnValues.containsKey(fields.getAttribute3FieldName())) {
+            edge.setEdgeAttribute3(columnValues.get(fields.getAttribute3FieldName()));
+        }
+        if (columnValues.containsKey(fields.getCountsFieldName())) {
+            String countStr = columnValues.get(fields.getCountsFieldName());
+            String[] countSplit = StringUtils.split(countStr, '\0');
+            List<Long> countListAsLongs = new ArrayList<>();
+            for (String s : countSplit) {
+                countListAsLongs.add(Long.valueOf(s));
+            }
+            edge.setCounts(countListAsLongs);
+        }
+        if (columnValues.containsKey(fields.getLoadDateFieldName())) {
+            edge.setLoadDate(columnValues.get(fields.getLoadDateFieldName()));
+        }
+        if (columnValues.containsKey(fields.getActivityDateFieldName())) {
+            edge.setActivityDate(columnValues.get(fields.getActivityDateFieldName()));
+        }
+        return edge;
     }
     
     public String generateEventId(EdgeBase edge) {

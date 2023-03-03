@@ -4,7 +4,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.util.TypedValue;
@@ -42,8 +41,6 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
     private Set<String> variableColumnNames = new TreeSet<>();
     private String queryOrigin = null;
     private String resultOrigin = null;
-    
-    private static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
     
     public void addColumn(String columnName, String columnValueString, Map<String,String> markings, String columnVisibility, Long timestamp) {
         addColumn(columnName, new TypedValue(columnValueString), markings, columnVisibility, timestamp);

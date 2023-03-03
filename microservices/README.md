@@ -60,7 +60,7 @@ Query flow:
 |:-------|:-------------|:------------|:-----------|:--------|:------|:----|
 |Yes|AuditBean|/Common/Auditor|Keep|AuditController|Audit Service|Add remote auth profile and add a route in HAProxy.|
 |Yes|QueryExecutorBean|/Query|Keep|QueryController|Query Service|Most endpoints will be preserved - some won't.|
-|No|CachedResultsBean|/CachedResults|Keep|?|?|Should this live in the query service, or somewhere else?|
+|Yes|CachedResultsBean|/CachedResults|Keep|CachedResultsQueryController|CachedResultsQueryService|Functionality lives in starter - rest API is in query service.|
 |Yes|TableAdminBean|/Accumulo|Keep|AdminController|Accumulo Service|Add remote auth profile and add a route in HAProxy.|
 |Yes|StatsBean|/Accumulo|Keep|StatsController|Accumulo Service|Add remote auth profile and add a route in HAProxy.|
 |Yes|LookupBean|/Accumulo|Keep|LookupController|Accumulo Service|Add remote auth profile and add a route in HAProxy.|
@@ -78,16 +78,16 @@ Query flow:
 |Yes|AccumuloConnectionFactoryBean|/Common/AccumuloConnectionFactory|Keep|QueryExecutorController|Executor Service|Add remote auth profile and add a route in HAProxy.|
 |Yes|HealthBean|/Common/Health|Keep|*|*|This will now be handled as part of the actuator health (i.e. mgmt/health) and shutdown (i.e. mgmt/shutdown) endpoints.  Shutdown prevents new requests while allowing existing requests to finish. |
 |Yes|ModelBean|/Model|Keep|?|?|Where should model access/manipulation live?  In the query service?|
-|No|ModificationBean|/Modification|Keep|?|?|INB - Is this used anywhere?  Do we need this?  It allows us to list and modify modification services.|
-|No|ModificationCacheBean|/Modification|Keep|?|?|INB - Is this used anywhere?  Do we need this?  It allows us to list mutable fields and reload the mutable field cache.|
+|Yes|ModificationBean|/Modification|Keep|?|?|INB - Is this used anywhere?  Do we need this?  It allows us to list and modify modification services.|
+|Yes|ModificationCacheBean|/Modification|Keep|?|?|INB - Is this used anywhere?  Do we need this?  It allows us to list mutable fields and reload the mutable field cache.|
 |No|QueryCacheBean|/Query/Cache|?|?|?|All queries are cached now.  What endpoints do we want to support for accessing our query cache and where should that live?|
 |Yes|DashboardBean|/Query/Metrics/dashboard|Drop| | |As far as I know, this is not used.  Seems droppable to me.|
 |Yes|HudBean|/Query/queryhud|Drop| | |As far as I know, this is not used.  Seems droppable to me.|
 |Yes|QueryMetricsBean|/Query/Metrics|Keep|QueryMetricOperations|Query Metric Service|Just need to add a route in HAProxy for this.|
 |No|BasicQueryBean|/BasicQuery|Shelve| | |Query wizard stuff.  Do we need this?  Does anyone use this?|
 |Yes|IdTranslatorBean|/Query|Keep|QueryController|Query Service| |
-|No|MapReduceBean|/MapReduce|?|?|?|JWO - Might still be needed?  Query Microservices might work as a substitute.  |
-|No|MapReduceStatusUpdateBean|/MapReduceStatus|?|?|?|Looks like this is a callback handler for BulkResults jobs which updates the internal state of the job.  Is this still needed?|
+|Yes|MapReduceBean|/MapReduce|?|?|?|JWO - Might still be needed?  Query Microservices might work as a substitute.  |
+|Yes|MapReduceStatusUpdateBean|/MapReduceStatus|?|?|?|Looks like this is a callback handler for BulkResults jobs which updates the internal state of the job.  Is this still needed?|
 |Yes|CredentialsCacheBean|/Security/Admin/Credentials|Keep|AuthorizationOperations|Authorization Service|Add remote auth profile and add a route in HAProxy.  The listAccumuloAuths and reloadAccumuloAuths endpoints will probably be left behind.  |
 |Yes|UserOperationsBase|/Security/User|Keep|AuthorizationOperations|AuthorizationService|Add remote auth profile and add a route in HAProxy.  |
 |Yes|web-services/deploy/docs/docs/index.html|index.html|Keep|  |  |Hosted as a static resource in the query service.  |

@@ -5,7 +5,7 @@ import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import org.apache.log4j.Logger;
 
-import javax.sql.rowset.CachedRowSet;
+import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -18,9 +18,11 @@ public class CacheableQueryRowReader {
     
     private static Logger log = Logger.getLogger(CacheableQueryRowReader.class);
     
-    public static CacheableQueryRow createRow(CachedRowSet cachedRowSet, Set<String> fixedFieldsInEvent, ResponseObjectFactory responseObjectFactory) {
+    public static CacheableQueryRow createRow(ResultSet cachedRowSet, Set<String> fixedFieldsInEvent, ResponseObjectFactory responseObjectFactory,
+                    MarkingFunctions markingFunctions) {
         
         CacheableQueryRow cqfc = responseObjectFactory.getCacheableQueryRow();
+        cqfc.setMarkingFunctions(markingFunctions);
         
         ResultSetMetaData metadata;
         try {

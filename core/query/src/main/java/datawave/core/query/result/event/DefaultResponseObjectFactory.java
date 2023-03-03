@@ -1,5 +1,6 @@
 package datawave.core.query.result.event;
 
+import datawave.core.query.cachedresults.CacheableQueryRowImpl;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.dictionary.data.DataDictionaryBase;
@@ -49,10 +50,9 @@ public class DefaultResponseObjectFactory extends ResponseObjectFactory {
         return new DefaultEventQueryResponse();
     }
     
-    // TODO: JWO: Figure out how we're going to deal with cached results
     @Override
     public CacheableQueryRow getCacheableQueryRow() {
-        return null;
+        return new CacheableQueryRowImpl();
     }
     
     @Override

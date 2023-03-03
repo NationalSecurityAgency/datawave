@@ -28,8 +28,8 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
     }
     
     @Override
-    public List<CacheableQueryRow> writeToCache(Object o) throws QueryException {
-        List<CacheableQueryRow> result = null;
+    public CacheableQueryRow writeToCache(Object o) throws QueryException {
+        CacheableQueryRow result = null;
         for (QueryLogicTransformer t : delegates) {
             if (t instanceof CacheableLogic) {
                 CacheableLogic c = (CacheableLogic) t;
@@ -44,13 +44,13 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
     }
     
     @Override
-    public List<Object> readFromCache(List<CacheableQueryRow> row) {
-        List<Object> result = null;
+    public Object readFromCache(CacheableQueryRow cacheableQueryRow) {
+        Object result = null;
         for (QueryLogicTransformer t : delegates) {
             if (t instanceof CacheableLogic) {
                 CacheableLogic c = (CacheableLogic) t;
                 try {
-                    result = c.readFromCache(row);
+                    result = c.readFromCache(cacheableQueryRow);
                 } catch (Exception e) {
                     log.warn("Error calling writeToCache on delegate, continuing...", e);
                 }

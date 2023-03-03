@@ -26,3 +26,4 @@ hadoop
 **/scripts/modification_*
 **/scripts/mapReduceQuery_*
 **/scripts/oozieQuery_*
+**/scripts/cachedResultsQuery_*

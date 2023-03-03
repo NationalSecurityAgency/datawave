@@ -26,7 +26,7 @@ import javax.sql.rowset.RowSetFactory;
 import javax.sql.rowset.RowSetProvider;
 
 import datawave.configuration.spring.SpringBean;
-import datawave.webservice.results.cached.CachedResultsParameters;
+import datawave.core.query.cachedresults.CachedResultsQueryParameters;
 import org.apache.log4j.Logger;
 
 /**
@@ -87,7 +87,7 @@ public class CachedResultsCleanupBean {
                             ResultSet rs = s.executeQuery(GET_TABLES_TO_REMOVE.replace("?", schema).replace("XYZ",
                                             Integer.toString(cachedResultsCleanupConfiguration.getDaysToLive())))) {
                 while (rs.next()) {
-                    String objectName = CachedResultsParameters.validate(rs.getString(1));
+                    String objectName = CachedResultsQueryParameters.validate(rs.getString(1));
                     // Drop the table
                     String dropTable = "DROP TABLE " + objectName;
                     try (Statement statement = con.createStatement()) {
@@ -95,7 +95,7 @@ public class CachedResultsCleanupBean {
                     }
                     removeCrqRow(objectName);
                     
-                    String viewName = CachedResultsParameters.validate(objectName.replaceFirst("t", "v"));
+                    String viewName = CachedResultsQueryParameters.validate(objectName.replaceFirst("t", "v"));
                     // Drop the associated view
                     String dropView = "DROP VIEW " + viewName;
                     try (Statement statement = con.createStatement()) {
