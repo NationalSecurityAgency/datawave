@@ -225,7 +225,8 @@ public class SortedByteSetBuffer extends AbstractSet<byte[]> implements SortedSe
      * A binary search of the byte array based on a sorted index array
      * 
      * @param term
-     * @return
+     *            aterm
+     * @return location result of the search
      */
     protected int binarySearch(byte[] term) {
         return binarySearch(term, 0, this.size - 1);

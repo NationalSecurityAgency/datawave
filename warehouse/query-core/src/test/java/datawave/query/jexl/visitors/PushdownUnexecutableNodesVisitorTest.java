@@ -24,11 +24,6 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
     
-    /**
-     * Collection of tests
-     * 
-     * @return
-     */
     @Parameterized.Parameters(name = "{0}")
     public static Collection testCases() {
         // @formatter:off

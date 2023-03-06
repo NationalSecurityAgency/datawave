@@ -148,6 +148,7 @@ public class RegexTrie {
      * Does this character require escaping
      * 
      * @param c
+     *            a character
      * @return true if escaping is required
      */
     private boolean escape(char c) {

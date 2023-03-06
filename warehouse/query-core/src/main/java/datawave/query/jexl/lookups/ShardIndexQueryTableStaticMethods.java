@@ -353,8 +353,6 @@ public class ShardIndexQueryTableStaticMethods {
      * @param execService
      *            the executor service
      * @return The index lookup instance
-     * @throws TableNotFoundException
-     *             if the table was not found
      */
     public static IndexLookup expandRegexTerms(ASTERNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, String fieldName,
                     Collection<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) {

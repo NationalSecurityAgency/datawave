@@ -89,7 +89,7 @@ public class PartitionedQueryLogic extends ShardQueryLogic {
     /**
      * Returns the iterator exposed by the ShardQueryLogic chain. This is used to construct the
      *
-     * @return
+     * @return the iterator exposed by the ShardQueryLogic chain
      */
     private Iterator<Entry<Key,Value>> scanIterator() {
         return super.iterator();

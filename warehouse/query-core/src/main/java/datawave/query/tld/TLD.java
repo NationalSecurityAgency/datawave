@@ -172,7 +172,8 @@ public class TLD {
      * NOTE: This method is non-deterministic. If you require certainty when parsing out the root pointer use {@link #parseRootPointerFromId(ByteSequence)}
      *
      * @param id
-     * @return
+     *            the sequence id
+     * @return an estimated root pointer
      */
     public static ByteSequence estimateRootPointerFromId(ByteSequence id) {
         if (id.length() > 21) {

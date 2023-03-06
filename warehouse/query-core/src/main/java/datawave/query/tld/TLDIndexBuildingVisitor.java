@@ -80,11 +80,6 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         return null;
     }
     
-    /**
-     * @param kvIter
-     * @param node
-     * @throws IOException
-     */
     @Override
     protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key,Value> kvIter, ASTEQNode node) throws IOException {
         if (null != rangeLimiter && limitLookup) {
@@ -220,7 +215,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
      * 
      * @param range
      *            non-null literal range to generate an FI range from
-     * @return
+     * @return a range
      */
     @Override
     protected Range getFiRangeForTF(LiteralRange<?> range) {

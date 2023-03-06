@@ -112,7 +112,7 @@ public class TermOffsetPopulator {
      *            set of keys that map to hits on tf fields
      * @param fields
      *            set of fields to remove from the search space
-     * @return
+     * @return TermOffset map
      */
     public Map<String,Object> getContextMap(Key docKey, Set<Key> keys, Set<String> fields) {
         document = new Document();
@@ -393,6 +393,7 @@ public class TermOffsetPopulator {
          * Essentially we want the inverse of the number of bytes that match. document.
          *
          * @param fv
+         *            a field value
          * @return a distance between here and there (negative means there is before here)
          */
         public double distance(FieldValue fv) {

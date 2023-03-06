@@ -33,7 +33,7 @@ public class QueryStopwatch {
     /**
      * Creates a new Stopwatch for use but does not start it
      * 
-     * @return
+     * @return new Stopwatch
      */
     private TraceStopwatch newStopwatch(String header) {
         checkNotNull(header);

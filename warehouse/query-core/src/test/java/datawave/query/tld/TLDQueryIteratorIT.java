@@ -82,6 +82,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
      * document specific range, tf via TermFrequencyAggregator
      * 
      * @throws IOException
+     *             for issues with read/write
      */
     @Test
     public void tf_exceededValue_leadingWildcard_documentSpecific_tld_test() throws IOException {
@@ -119,6 +120,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
      * fiFullySatisfies query, Create an ivarator for tf
      * 
      * @throws IOException
+     *             for issues with read/write
      */
     @Test
     public void tf_exceededValue_leadingWildcard_shardRange_tld_test() throws IOException {
