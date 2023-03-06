@@ -158,9 +158,14 @@ public class ScannerFactory {
      *            a set of auths
      * @param settings
      *            query settings
+     * @param <T>
+     *            type of the wrapper
+     * @param wrapper
+     *            a wrapper class
      * @return a new scanner session
      * @throws Exception
      *             if there are issues
+     *
      */
     public synchronized <T extends ScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths,
                     final Query settings) throws Exception {

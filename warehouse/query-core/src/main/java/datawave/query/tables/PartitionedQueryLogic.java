@@ -74,6 +74,10 @@ public class PartitionedQueryLogic extends ShardQueryLogic {
     
     /**
      * This method will pull the next sub-query from the chunker and use that query to reinitialize the query logic.
+     * 
+     * @return query configuration
+     * @throws Exception
+     *             if there are issues
      */
     public GenericQueryConfiguration initializeNextChunk() throws Exception {
         log.trace("initializeNextChunk()");

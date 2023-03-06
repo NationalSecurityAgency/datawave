@@ -136,6 +136,8 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      *            scanner queue
      * @param maxResults
      *            the max results
+     * @param settings
+     *            query settings
      */
     public ScannerSession(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings) {
         this(tableName, auths, delegator, maxResults, settings, new SessionOptions(), null);
@@ -387,6 +389,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      *            the last key
      * @param previousRange
      *            the previous range
+     * @return a new range
      */
     public Range buildNextRange(final Key lastKey, final Range previousRange) {
         return new Range(lastKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME), true, previousRange.getEndKey(), previousRange.isEndKeyInclusive());
@@ -593,6 +596,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * 
      * @param options
      *            options to set
+     * @return scanner options
      */
     public ScannerSession setOptions(SessionOptions options) {
         Preconditions.checkNotNull(options);
@@ -609,10 +613,6 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     public SessionOptions getOptions() {
         return this.options;
     }
-    
-    /**
-     * Methods, below, are solely for testing.
-     */
     
     protected void waitUntilCapacity() throws InterruptedException {
         while (resultQueue.remainingCapacity() > 0) {

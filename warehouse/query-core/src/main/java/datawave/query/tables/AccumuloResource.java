@@ -105,6 +105,8 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
          * @return the set resource
          * @throws TableNotFoundException
          *             if the table was not found
+         * @param <T>
+         *            type of the class
          */
         public static <T> AccumuloResource initializeResource(Class<T> clazz, AccumuloResource baseResource, final String tableName,
                         final Set<Authorizations> auths, Range currentRange) throws TableNotFoundException {

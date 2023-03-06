@@ -19,6 +19,10 @@ public class AncestorEventDataFilter extends EventDataQueryExpressionFilter {
      * 
      * @param script
      *            a script
+     * @param nonEventFields
+     *            set of non event fields
+     * @param metadata
+     *            type metadata
      */
     public AncestorEventDataFilter(ASTJexlScript script, TypeMetadata metadata, Set<String> nonEventFields) {
         super(script, metadata, nonEventFields);

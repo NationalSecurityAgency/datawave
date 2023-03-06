@@ -89,6 +89,8 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
      *            the sorted set
      * @param handler
      *            the sorted set file handler
+     * @param persist
+     *            boolean flag for persist
      */
     public FileKeySortedSet(SortedSet<Key> set, SortedSetFileHandler handler, boolean persist) throws IOException {
         super(set, new KeyFileHandler(handler), new FileKeySortedSet.Factory(), persist);

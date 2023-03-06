@@ -87,6 +87,11 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     
     /**
      * Loads the query model specified by the current configuration, to be applied to the incoming query.
+     * 
+     * @param auths
+     *            set of auths
+     * @param connector
+     *            the connector
      */
     protected void loadEdgeQueryModel(Connector connector, Set<Authorizations> auths) {
         String model = getEdgeModelName() == null ? "" : getEdgeModelName();

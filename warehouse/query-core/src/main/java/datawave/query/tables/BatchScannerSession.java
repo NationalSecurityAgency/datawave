@@ -48,9 +48,6 @@ import datawave.query.tables.async.SessionArbiter;
 import datawave.query.tables.async.SpeculativeScan;
 import datawave.webservice.query.Query;
 
-/**
- * 
- */
 public class BatchScannerSession extends ScannerSession implements Iterator<Entry<Key,Value>>, FutureCallback<Scan>, SessionArbiter, UncaughtExceptionHandler {
     
     private static final int THIRTY_MINUTES = 108000000;
@@ -147,6 +144,12 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      *            scanner queue
      * @param maxResults
      *            the max results
+     * @param settings
+     *            the query settings
+     * @param options
+     *            the scanner options
+     * @param ranges
+     *            list of ranges
      */
     public BatchScannerSession(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, ScannerOptions options,
                     Collection<Range> ranges) {

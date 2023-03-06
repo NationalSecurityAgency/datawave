@@ -337,6 +337,7 @@ public class Scan implements Callable<Scan> {
      *            the last key
      * @param previousRange
      *            a previous range
+     * @return a new range
      */
     public Range buildNextRange(final Key lastKey, final Range previousRange) {
         return new Range(lastKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME), true, previousRange.getEndKey(), previousRange.isEndKeyInclusive());
