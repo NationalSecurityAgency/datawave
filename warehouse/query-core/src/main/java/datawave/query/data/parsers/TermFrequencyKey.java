@@ -43,6 +43,7 @@ public class TermFrequencyKey implements KeyParser {
         
         this.datatype = null;
         this.uid = null;
+        this.rootUid = null;
         this.value = null;
         this.field = null;
         

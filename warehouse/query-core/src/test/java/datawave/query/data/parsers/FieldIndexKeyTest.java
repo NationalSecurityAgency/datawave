@@ -56,6 +56,7 @@ public class FieldIndexKeyTest {
     private void assertNormalKey() {
         assertEquals("datatype", parser.getDatatype());
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getUid());
+        assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
         assertEquals("value", parser.getValue());
     }
@@ -63,6 +64,7 @@ public class FieldIndexKeyTest {
     private void asserKeyWithNullsInValue() {
         assertEquals("datatype", parser.getDatatype());
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getUid());
+        assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
         assertEquals("v\0al\0ue", parser.getValue());
     }
@@ -70,6 +72,7 @@ public class FieldIndexKeyTest {
     private void assertKeyWithChildUid() {
         assertEquals("datatype", parser.getDatatype());
         assertEquals("d8zay2.-3pnndm.-anolok.12.37", parser.getUid());
+        assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
         assertEquals("value", parser.getValue());
     }
@@ -81,6 +84,7 @@ public class FieldIndexKeyTest {
         // column qualifier parse works fine
         assertEquals("datatype", parser.getDatatype());
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getUid());
+        assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("value", parser.getValue());
         assertTrue("made it this far", true);
         
