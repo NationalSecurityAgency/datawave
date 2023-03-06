@@ -46,10 +46,8 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
     
     @Override
     public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
-        if (!(callerObject instanceof DatawavePrincipal)) {
-            throw new AuthorizationException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
-        }
-        final DatawavePrincipal principal = (DatawavePrincipal) callerObject;
+        init();
+        final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         final String suffix = LIST_EFFECTIVE_AUTHS;
         // includeRemoteServices=false to avoid any loops
         return executeGetMethodWithRuntimeException(suffix, uriBuilder -> {
@@ -65,10 +63,8 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
     
     @Override
     public GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException {
-        if (!(callerObject instanceof DatawavePrincipal)) {
-            throw new AuthorizationException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
-        }
-        final DatawavePrincipal principal = (DatawavePrincipal) callerObject;
+        init();
+        final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         final String suffix = FLUSH_CREDS;
         // includeRemoteServices=false to avoid any loops
         return executeGetMethodWithRuntimeException(suffix, uriBuilder -> {
@@ -81,4 +77,12 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
             return readResponse(entity, genericResponseReader);
         }, () -> suffix);
     }
+    
+    private DatawavePrincipal getDatawavePrincipal(Object callerObject) {
+        if (callerObject instanceof DatawavePrincipal) {
+            return (DatawavePrincipal) callerObject;
+        }
+        throw new RuntimeException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
+    }
+    
 }
