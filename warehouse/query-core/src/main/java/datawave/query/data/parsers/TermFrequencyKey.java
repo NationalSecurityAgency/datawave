@@ -18,6 +18,7 @@ public class TermFrequencyKey implements KeyParser {
     // CQ partitions
     private String datatype;
     private String uid;
+    private String rootUid;
     private String value;
     private String field;
     private String uidAndValue;
@@ -116,10 +117,30 @@ public class TermFrequencyKey implements KeyParser {
     
     @Override
     public String getRootUid() {
-        if (uid == null) {
-            throw new IllegalArgumentException("Failed to parse root UID from tf key");
+        if (rootUid == null) {
+            
+            if (uid == null) {
+                getUid();
+            }
+            
+            if (uid == null) {
+                throw new IllegalArgumentException("Failed to parse root UID from tf key");
+            }
+            
+            int dotCount = 0;
+            for (int i = 0; i < uid.length(); i++) {
+                if (uid.charAt(i) == '.' && ++dotCount == 3) {
+                    rootUid = uid.substring(0, i);
+                    break;
+                }
+            }
+            
+            // if no root uid was found, use the original uid
+            if (rootUid == null) {
+                rootUid = uid;
+            }
         }
-        return null;
+        return rootUid;
     }
     
     @Override

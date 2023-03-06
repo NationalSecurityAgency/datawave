@@ -4,7 +4,6 @@ import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
 public class TermFrequencyKeyTest {
@@ -58,6 +57,7 @@ public class TermFrequencyKeyTest {
     private void assertNormalKey(KeyParser parser) {
         assertEquals("datatype", parser.getDatatype());
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getUid());
+        assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
         assertEquals("value", parser.getValue());
     }
@@ -65,6 +65,7 @@ public class TermFrequencyKeyTest {
     private void assertValueWithNulls(KeyParser parser) {
         assertEquals("datatype", parser.getDatatype());
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getUid());
+        assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
         assertEquals("v\0a\0l\0u\0e", parser.getValue());
     }
@@ -72,6 +73,7 @@ public class TermFrequencyKeyTest {
     private void assertChildUid(KeyParser parser) {
         assertEquals("datatype", parser.getDatatype());
         assertEquals("d8zay2.-3pnndm.-anolok.12.34", parser.getUid());
+        assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
         assertEquals("value", parser.getValue());
     }
