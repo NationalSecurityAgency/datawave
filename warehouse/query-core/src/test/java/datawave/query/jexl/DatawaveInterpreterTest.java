@@ -30,6 +30,8 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -754,6 +756,7 @@ public class DatawaveInterpreterTest {
         ValueTuple deathDate01 = new ValueTuple("DEATH_DATE", fourthDate, "2000-12-28T00:00:05.000Z", new TypeAttribute<>(fourthDate, docKey, true));
         ValueTuple deathDate02 = new ValueTuple("DEATH_DATE", fifthDate, "2002-12-28T00:00:05.000Z", new TypeAttribute<>(fifthDate, docKey, true));
         context.set("DEATH_DATE", new FunctionalSet(Arrays.asList(deathDate01, deathDate02)));
+//        context.set("DEATH_DATE", new FunctionalSet(Collections.singleton(deathDate01)));
 
         //  term offsets for phrases
         TermOffsetMap map = new TermOffsetMap();

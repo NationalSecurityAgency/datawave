@@ -7,17 +7,13 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
-/**
- * Run all tests in {@link DatawaveInterpreterTest} but with a JexlEngine built with a partial interpreter.
- * <p>
- * Additional tests for events that contain incomplete fields
- */
 public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
     
     private final String FIELD_A = "FIELD_A";
