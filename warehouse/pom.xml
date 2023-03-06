@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>gov.nsa.datawave</groupId>
@@ -43,7 +42,7 @@
         <!-- <runOrder>random</runOrder> -->
         <runOrder>filesystem</runOrder>
         <!-- default value -->
-        <tests.to.skip/>
+        <tests.to.skip />
         <!-- default value - override on command-line to skip tests -->
         <version.basis-rlp>7.5.0</version.basis-rlp>
         <version.dropwizard-metrics>3.2.6</version.dropwizard-metrics>
@@ -466,8 +465,7 @@
                         <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -DBT_ROOT=${env.BT_ROOT}
                             -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g
                             -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true
-                            -Djava.security.krb5.realm= -Djava.security.krb5.kdc=
-                        </argLine>
+                            -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <runOrder>${runOrder}</runOrder>
                         <environmentVariables>
@@ -477,8 +475,7 @@
                             <HADOOP_CONF_DIR>/dev/null</HADOOP_CONF_DIR>
                         </environmentVariables>
                         <systemPropertyVariables>
-                            <log4j.configuration>file:${project.build.testOutputDirectory}/log4j.properties
-                            </log4j.configuration>
+                            <log4j.configuration>file:${project.build.testOutputDirectory}/log4j.properties</log4j.configuration>
                         </systemPropertyVariables>
                     </configuration>
                     <executions>
@@ -535,8 +532,7 @@
                     <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -DBT_ROOT=${env.BT_ROOT}
                         -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g
                         -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true
-                        -Djava.security.krb5.realm= -Djava.security.krb5.kdc=
-                    </argLine>
+                        -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
                     <groups>datawave.common.test.integration.IntegrationTest</groups>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>${runOrder}</runOrder>

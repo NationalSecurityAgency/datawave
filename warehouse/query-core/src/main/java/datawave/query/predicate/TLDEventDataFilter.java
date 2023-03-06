@@ -1,15 +1,9 @@
 package datawave.query.predicate;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import datawave.query.Constants;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tld.TLD;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -21,8 +15,13 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 
-import datawave.query.Constants;
-import datawave.query.jexl.JexlASTHelper;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query except for the root document in which case all fields
@@ -79,7 +78,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     
     /**
      * Initialize the query field filter with all of the fields required to evaluation this query
-     * 
+     *
      * @param script
      */
     public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist,
@@ -133,7 +132,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * Keep for context evaluation and potential return to the client. If a Key returns false the Key will not be used for context evaluation or returned to the
      * client. If a Key returns true but keep() returns false the document will be used for context evaluation, but will not be returned to the client. If a Key
      * returns true and keep() returns true the key will be used for context evaluation and returned to the client.
-     * 
+     *
      * @param input
      * @return true if Key should be added to context, false otherwise
      */
@@ -173,7 +172,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     
     /**
      * Define the end key given the from condition.
-     * 
+     *
      * @param from
      * @return
      */
@@ -186,11 +185,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * Determine if a Key should be kept. If a Key is a part of the TLD it will always be kept as long as we have not exceeded the key count limit for that
      * field if limits are enabled. Otherwise all TLD Key's will be kept. For a non-TLD the Key will only be kept if it is a nonEvent field which will be used
      * for query evaluation (apply()==true)
-     * 
-     * @see datawave.query.predicate.Filter#keep(Key)
      *
      * @param k
      * @return true to keep, false otherwise
+     * @see datawave.query.predicate.Filter#keep(Key)
      */
     @Override
     public boolean keep(Key k) {
@@ -421,7 +419,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     
     /**
      * Seek starting from the end of the current field
-     * 
+     *
      * @param current
      *            the current key
      * @param fieldName
@@ -534,7 +532,6 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
     
     /**
-     *
      * @param end
      * @param endInclusive
      * @return return an empty range based to be seeked
@@ -766,7 +763,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     
     /**
      * Parse the field from a key. The field will always be stripped of grouping notation since that is how they have been parsed from the original query
-     * 
+     *
      * @param current
      * @return
      */
@@ -815,7 +812,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     
     /**
      * Test if the field is limited by anyField or specific field limitations and is not a query field
-     * 
+     *
      * @param field
      *            the field to test
      * @return true if the field limit has been reached for this field, false otherwise
@@ -827,7 +824,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     
     /**
      * If the current key is rejected due to a field limit and a field limit field is specified generate a value with the field in it
-     * 
+     *
      * @param key
      *            the key to limit
      * @return a key with the limit field specified, or null if no limit was configured

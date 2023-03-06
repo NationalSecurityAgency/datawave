@@ -10,7 +10,6 @@ import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
@@ -38,7 +37,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * This is a TLD (Top Level Document) QueryIterator implementation.
@@ -100,7 +98,7 @@ public class TLDQueryIterator extends QueryIterator {
     
     /**
      * Distinct from getEvaluation filter as the FI filter is used to prevent FI hits on nonEventFields that are not indexOnly fields
-     * 
+     *
      * @return an {@link EventDataQueryFilter}
      */
     protected EventDataQueryFilter getFIEvaluationFilter() {
@@ -116,7 +114,7 @@ public class TLDQueryIterator extends QueryIterator {
     public EventDataQueryFilter getEvaluationFilter() {
         if (this.evaluationFilter == null && script != null) {
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, typeMetadata, useAllowedFields ? allowedFields : null,
+            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), typeMetadata, useAllowedFields ? allowedFields : null,
                             useDisallowedFields ? disallowedFields : null, maxFieldHitsBeforeSeek, maxKeysBeforeSeek,
                             limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.EMPTY_MAP, limitFieldsField, getNonEventFields());
         }
