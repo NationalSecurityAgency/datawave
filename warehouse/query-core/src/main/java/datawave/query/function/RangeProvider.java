@@ -9,7 +9,7 @@ import org.apache.accumulo.core.data.Range;
 public interface RangeProvider {
     
     /**
-     * Get the start key for the scan range
+     * Get the start key for the range
      * 
      * @param k
      *            an initial key
@@ -18,7 +18,7 @@ public interface RangeProvider {
     Key getStartKey(Key k);
     
     /**
-     * Get the stop key for the scan range
+     * Get the stop key for the range
      * 
      * @param k
      *            an initial key
@@ -27,11 +27,11 @@ public interface RangeProvider {
     Key getStopKey(Key k);
     
     /**
-     * Get the scan range given an initial key
+     * Get the range given an initial key
      *
      * @param k
      *            an initial key
-     * @return the scan range
+     * @return the range
      */
-    Range getScanRange(Key k);
+    Range getRange(Key k);
 }

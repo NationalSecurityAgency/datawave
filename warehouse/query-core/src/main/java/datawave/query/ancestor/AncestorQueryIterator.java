@@ -282,7 +282,7 @@ public class AncestorQueryIterator extends QueryIterator {
      * @return a {@link AncestorRangeProvider}
      */
     @Override
-    public RangeProvider getScanRangeProvider() {
+    public RangeProvider getRangeProvider() {
         if (rangeProvider == null) {
             rangeProvider = new AncestorRangeProvider();
         }

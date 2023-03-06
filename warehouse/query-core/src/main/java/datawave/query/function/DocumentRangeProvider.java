@@ -5,7 +5,7 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 
 /**
- * Given arbitrary "Document Key", provides the scan range that covers the document.
+ * Given arbitrary "Document Key", provides the range that covers the document.
  */
 public class DocumentRangeProvider implements RangeProvider {
     
@@ -34,14 +34,14 @@ public class DocumentRangeProvider implements RangeProvider {
     }
     
     /**
-     * Get the scan range for the document
+     * Get the range for the document
      * 
      * @param k
      *            an initial key
-     * @return the scan range
+     * @return the range
      */
     @Override
-    public Range getScanRange(Key k) {
+    public Range getRange(Key k) {
         return new Range(getStartKey(k), true, getStopKey(k), false);
     }
 }

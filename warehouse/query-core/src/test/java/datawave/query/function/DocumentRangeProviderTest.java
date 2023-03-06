@@ -64,24 +64,24 @@ public class DocumentRangeProviderTest {
         Key end = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok\0");
         Range expectedRange = new Range(start, true, end, false);
         
-        assertEquals(expectedRange, rangeProvider.getScanRange(docKey));
-        assertEquals(expectedRange, rangeProvider.getScanRange(docKeyField));
-        assertEquals(expectedRange, rangeProvider.getScanRange(docKeyFieldValue));
+        assertEquals(expectedRange, rangeProvider.getRange(docKey));
+        assertEquals(expectedRange, rangeProvider.getRange(docKeyField));
+        assertEquals(expectedRange, rangeProvider.getRange(docKeyFieldValue));
         
         start = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12");
         end = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12\0");
         expectedRange = new Range(start, true, end, false);
         
-        assertEquals(expectedRange, rangeProvider.getScanRange(childDocKey));
-        assertEquals(expectedRange, rangeProvider.getScanRange(childDocKeyField));
-        assertEquals(expectedRange, rangeProvider.getScanRange(childDocKeyFieldValue));
+        assertEquals(expectedRange, rangeProvider.getRange(childDocKey));
+        assertEquals(expectedRange, rangeProvider.getRange(childDocKeyField));
+        assertEquals(expectedRange, rangeProvider.getRange(childDocKeyFieldValue));
         
         start = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34");
         end = new Key("row", "datatype\0d8zay2.-3pnndm.-anolok.12.34\0");
         expectedRange = new Range(start, true, end, false);
         
-        assertEquals(expectedRange, rangeProvider.getScanRange(grandchildDocKey));
-        assertEquals(expectedRange, rangeProvider.getScanRange(grandchildDocKeyField));
-        assertEquals(expectedRange, rangeProvider.getScanRange(grandchildDocKeyFieldValue));
+        assertEquals(expectedRange, rangeProvider.getRange(grandchildDocKey));
+        assertEquals(expectedRange, rangeProvider.getRange(grandchildDocKeyField));
+        assertEquals(expectedRange, rangeProvider.getRange(grandchildDocKeyFieldValue));
     }
 }

@@ -220,7 +220,7 @@ public class TLDQueryIterator extends QueryIterator {
      * @return a {@link TLDRangeProvider}
      */
     @Override
-    public RangeProvider getScanRangeProvider() {
+    public RangeProvider getRangeProvider() {
         if (rangeProvider == null) {
             rangeProvider = new TLDRangeProvider();
         }

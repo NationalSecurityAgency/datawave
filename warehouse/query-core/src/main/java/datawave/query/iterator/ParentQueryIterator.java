@@ -69,7 +69,7 @@ public class ParentQueryIterator extends QueryIterator {
         
         KeyToDocumentData k2d = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, this.equality, null,
                         this.includeHierarchyFields, this.includeHierarchyFields);
-        k2d.withScanRangeProvider(getScanRangeProvider());
+        k2d.withRangeProvider(getRangeProvider());
         
         Iterator<Tuple2<Key,Document>> parentDocuments = Iterators.transform(documents, new GetParentDocument(k2d, aggregation));
         
@@ -106,7 +106,7 @@ public class ParentQueryIterator extends QueryIterator {
      * @return a {@link ParentRangeProvider}
      */
     @Override
-    public RangeProvider getScanRangeProvider() {
+    public RangeProvider getRangeProvider() {
         if (rangeProvider == null) {
             rangeProvider = new ParentRangeProvider();
         }

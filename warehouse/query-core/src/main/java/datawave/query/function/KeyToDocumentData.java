@@ -106,10 +106,10 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      * Builder-style method for setting a non-default implementation of a {@link RangeProvider}
      *
      * @param rangeProvider
-     *            a ScanRangeProvider
+     *            a {@link RangeProvider}
      * @return this object
      */
-    public KeyToDocumentData withScanRangeProvider(RangeProvider rangeProvider) {
+    public KeyToDocumentData withRangeProvider(RangeProvider rangeProvider) {
         this.rangeProvider = rangeProvider;
         return this;
     }
@@ -135,7 +135,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         // We want to ensure that we have a non-empty colqual
         if (null == from || null == from.getKey() || null == from.getValue())
             return null;
-        Range keyRange = rangeProvider.getScanRange(from.getKey());
+        Range keyRange = rangeProvider.getRange(from.getKey());
         
         try {
             

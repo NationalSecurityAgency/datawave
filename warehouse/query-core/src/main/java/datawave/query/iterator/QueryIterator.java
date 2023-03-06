@@ -879,7 +879,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             };
         } else {
             docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, super.equality, getEvaluationFilter(),
-                            this.includeHierarchyFields, this.includeHierarchyFields).withScanRangeProvider(getScanRangeProvider());
+                            this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
         }
         
         Iterator<Entry<DocumentData,Document>> sourceIterator = Iterators.transform(documentSpecificSource, from -> {
@@ -1196,7 +1196,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         if (fieldIndexSatisfiesQuery) {
             final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, super.equality,
-                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withScanRangeProvider(getScanRangeProvider());
+                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
             
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(
                             documents,
@@ -1698,7 +1698,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      *
      * @return a {@link DocumentRangeProvider}
      */
-    protected RangeProvider getScanRangeProvider() {
+    protected RangeProvider getRangeProvider() {
         if (rangeProvider == null) {
             rangeProvider = new DocumentRangeProvider();
         }
