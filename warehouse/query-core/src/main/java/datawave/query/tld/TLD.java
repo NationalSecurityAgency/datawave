@@ -187,6 +187,25 @@ public class TLD {
     }
     
     /**
+     * Method to get the root pointer from an uid, if it exists.
+     *
+     * @param uid
+     *            a uid
+     * @return the root uid, or the original uid
+     */
+    public static String getRootUid(String uid) {
+        
+        int dotCount = 0;
+        for (int i = 0; i < uid.length(); i++) {
+            if (uid.charAt(i) == '.' && ++dotCount == 3) {
+                return uid.substring(0, i);
+            }
+        }
+        
+        return uid; // no root uid detected, return the original uid
+    }
+    
+    /**
      * Determines if the provided ByteSequence contains an id with a root pointer (parent document id)
      *
      * @param id

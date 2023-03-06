@@ -1,5 +1,6 @@
 package datawave.query.data.parsers;
 
+import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 
@@ -128,18 +129,7 @@ public class TermFrequencyKey implements KeyParser {
                 throw new IllegalArgumentException("Failed to parse root UID from tf key");
             }
             
-            int dotCount = 0;
-            for (int i = 0; i < uid.length(); i++) {
-                if (uid.charAt(i) == '.' && ++dotCount == 3) {
-                    rootUid = uid.substring(0, i);
-                    break;
-                }
-            }
-            
-            // if no root uid was found, use the original uid
-            if (rootUid == null) {
-                rootUid = uid;
-            }
+            rootUid = TLD.getRootUid(uid);
         }
         return rootUid;
     }

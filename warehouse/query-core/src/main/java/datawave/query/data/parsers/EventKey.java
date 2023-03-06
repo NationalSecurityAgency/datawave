@@ -1,5 +1,6 @@
 package datawave.query.data.parsers;
 
+import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 
@@ -22,7 +23,6 @@ public class EventKey implements KeyParser {
     
     private int cfSplit;
     private int cqSplit;
-    private int rootUidStop;
     
     private String datatype;
     private String uid;
@@ -42,7 +42,6 @@ public class EventKey implements KeyParser {
         
         this.cfSplit = -1;
         this.cqSplit = -1;
-        this.rootUidStop = -1;
         
         this.datatype = null;
         this.uid = null;
@@ -119,46 +118,17 @@ public class EventKey implements KeyParser {
     @Override
     public String getRootUid() {
         if (rootUid == null) {
-            
-            if (cfSplit == -1) {
-                scanColumnFamily();
+            if (uid == null) {
+                getUid();
             }
             
-            if (rootUidStop == -1) {
-                scanUid();
-            }
-            
-            if (rootUidStop == -1) {
-                rootUid = uid;
-            } else {
-                rootUid = cf.subSequence(cfSplit + 1, rootUidStop).toString();
-            }
-            
-            if (rootUid == null) {
+            if (uid == null) {
                 throw new IllegalArgumentException("Failed to parse root uid from event key");
             }
+            
+            rootUid = TLD.getRootUid(uid);
         }
         return rootUid;
-    }
-    
-    /**
-     * Performs an optimized scan of the uid.
-     * <p>
-     * A HashUID is minimally a 21 character string of three alphanumerics of length six, joined by two dots
-     */
-    private void scanUid() {
-        if (key == null) {
-            return;
-        }
-        
-        // given that we're working with a HashUID we could probably optimize the start
-        // three parts of length 6 and two dots gives us a minimum start of 21
-        for (int i = (cfSplit + 21); i < cf.length(); i++) {
-            if (cf.byteAt(i) == '.') {
-                rootUidStop = i;
-                break;
-            }
-        }
     }
     
     @Override
