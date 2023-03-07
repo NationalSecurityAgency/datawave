@@ -14,13 +14,13 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import datawave.webservice.xml.util.StringMapAdapter;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
 
 import datawave.data.type.Type;
-import datawave.webservice.query.util.StringMapAdapter;
 import datawave.webservice.query.util.TypedValue;
 
 import org.apache.commons.lang.builder.EqualsBuilder;

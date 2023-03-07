@@ -8,19 +8,13 @@ import datawave.configuration.RefreshableScope;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
-import datawave.webservice.results.edgedictionary.MetadataBase;
+import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
+import datawave.webservice.dictionary.edge.MetadataBase;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * Retrieves an {@link EdgeDictionaryBase} from the remote edge dictionary service.

@@ -1,7 +1,7 @@
 package datawave.webservice.query.result.event;
 
 import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.query.util.StringMapAdapter;
+import datawave.webservice.xml.util.StringMapAdapter;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;

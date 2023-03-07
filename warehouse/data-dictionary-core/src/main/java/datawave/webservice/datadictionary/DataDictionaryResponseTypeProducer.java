@@ -1,7 +1,7 @@
 package datawave.webservice.datadictionary;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import datawave.webservice.results.datadictionary.DefaultDataDictionary;
+import datawave.webservice.dictionary.data.DefaultDataDictionary;
 
 import javax.enterprise.inject.Produces;
 

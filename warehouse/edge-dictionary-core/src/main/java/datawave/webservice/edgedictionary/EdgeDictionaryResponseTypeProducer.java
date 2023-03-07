@@ -1,7 +1,7 @@
 package datawave.webservice.edgedictionary;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import datawave.webservice.results.edgedictionary.DefaultEdgeDictionary;
+import datawave.webservice.dictionary.edge.DefaultEdgeDictionary;
 
 import javax.enterprise.inject.Produces;
 

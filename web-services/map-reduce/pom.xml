@@ -161,7 +161,7 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.contrib</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-in-memory-accumulo</artifactId>
             <scope>test</scope>
         </dependency>
