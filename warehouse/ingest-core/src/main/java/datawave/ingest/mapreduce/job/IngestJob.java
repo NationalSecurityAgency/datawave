@@ -546,15 +546,18 @@ public class IngestJob implements Tool {
     
     private void setupHandlers(Configuration conf) {
         for (Type t : TypeRegistry.getTypes()) {
-            for (String handler : t.getDefaultDataTypeHandlers()) {
-                try {
-                    Object o = Class.forName(handler).newInstance();
-                    if (o instanceof JobSetupHandler) {
-                        JobSetupHandler setupHandler = (JobSetupHandler) o;
-                        setupHandler.setup(conf);
+            String[] handlers = t.getDefaultDataTypeHandlers();
+            if (handlers != null) {
+                for (String handler : handlers) {
+                    try {
+                        Object o = Class.forName(handler).newInstance();
+                        if (o instanceof JobSetupHandler) {
+                            JobSetupHandler setupHandler = (JobSetupHandler) o;
+                            setupHandler.setup(conf);
+                        }
+                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                        log.warn("Could not setup handler: " + handler, e);
                     }
-                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                    log.warn("Could not setup handler: " + handler, e);
                 }
             }
         }
