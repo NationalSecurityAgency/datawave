@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import com.google.common.collect.Maps;
 import datawave.query.function.Equality;
 import datawave.query.function.PrefixEquality;
+import datawave.query.function.RangeProvider;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.attributes.Document;
 import datawave.query.function.KeyToDocumentData;
@@ -40,7 +41,7 @@ public class DocumentDataIterator implements Iterator<DocumentData> {
     
     private Entry<DocumentData,Document> documentData = null;
     
-    private EventDataQueryFilter evaluationFilter = null;
+    private final RangeProvider rangeProvider;
     
     private final Predicate<Key> dataTypeFilter;
     
@@ -54,16 +55,17 @@ public class DocumentDataIterator implements Iterator<DocumentData> {
     
     public DocumentDataIterator(SortedKeyValueIterator<Key,Value> source, Range totalRange, Predicate<Key> dataTypeFilter, Equality eq,
                     boolean includeChildCount, boolean includeParent) {
-        this(source, totalRange, dataTypeFilter, eq, null, includeChildCount, includeParent);
+        this(source, totalRange, dataTypeFilter, eq, null, null, includeChildCount, includeParent);
     }
     
     public DocumentDataIterator(SortedKeyValueIterator<Key,Value> source, Range totalRange, Predicate<Key> dataTypeFilter, Equality eq,
-                    EventDataQueryFilter evaluationFilter, boolean includeChildCount, boolean includeParent) {
-        this(source, null, null, totalRange, dataTypeFilter, eq, evaluationFilter, includeChildCount, includeParent);
+                    EventDataQueryFilter evaluationFilter, RangeProvider rangeProvider, boolean includeChildCount, boolean includeParent) {
+        this(source, null, null, totalRange, dataTypeFilter, eq, evaluationFilter, rangeProvider, includeChildCount, includeParent);
     }
     
     public DocumentDataIterator(SortedKeyValueIterator<Key,Value> source, final IteratorEnvironment env, final Map<String,String> options, Range totalRange,
-                    Predicate<Key> dataTypeFilter, Equality eq, EventDataQueryFilter evaluationFilter, boolean includeChildCount, boolean includeParent) {
+                    Predicate<Key> dataTypeFilter, Equality eq, EventDataQueryFilter evaluationFilter, RangeProvider rangeProvider, boolean includeChildCount,
+                    boolean includeParent) {
         this.source = source;
         this.totalRange = totalRange;
         
@@ -74,10 +76,10 @@ public class DocumentDataIterator implements Iterator<DocumentData> {
         }
         
         this.dataTypeFilter = dataTypeFilter;
+        this.rangeProvider = rangeProvider;
         
-        this.evaluationFilter = evaluationFilter;
-        
-        this.documentMapper = new KeyToDocumentData(source, env, options, eq, evaluationFilter, includeChildCount, includeParent);
+        this.documentMapper = new KeyToDocumentData(source, env, options, eq, evaluationFilter, includeChildCount, includeParent)
+                        .withRangeProvider(rangeProvider);
         
         findNextDocument();
     }
@@ -155,7 +157,7 @@ public class DocumentDataIterator implements Iterator<DocumentData> {
                         this.documentData = this.documentMapper.apply(Maps.immutableEntry(pointer, new Document()));
                     }
                     // now bounce to the next document as the documentMapper may have moved the source considerably
-                    Key nextDocKey = this.evaluationFilter != null ? this.evaluationFilter.getStopKey(pointer) : pointer.followingKey(PartialKey.ROW_COLFAM);
+                    Key nextDocKey = this.rangeProvider != null ? this.rangeProvider.getStopKey(pointer) : pointer.followingKey(PartialKey.ROW_COLFAM);
                     if (totalRange.contains(nextDocKey)) {
                         Range nextCF = new Range(nextDocKey, true, totalRange.getEndKey(), totalRange.isEndKeyInclusive());
                         source.seek(nextCF, columnFamilies, inclusive);

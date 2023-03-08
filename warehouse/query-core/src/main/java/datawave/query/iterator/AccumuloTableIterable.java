@@ -73,7 +73,7 @@ public class AccumuloTableIterable extends AccumuloTreeIterable<Key,DocumentData
     @Override
     public Iterator<Entry<DocumentData,Document>> iterator() {
         final DocumentDataIterator docItr = new DocumentDataIterator(this.source, this.environment, this.options, this.totalRange, this.filter, this.eq,
-                        this.evaluationFilter, this.includeChildCount, this.includeParent);
+                        this.evaluationFilter, null, this.includeChildCount, this.includeParent);
         
         return Iterators.transform(docItr, from -> Maps.immutableEntry(from, new Document()));
     }
