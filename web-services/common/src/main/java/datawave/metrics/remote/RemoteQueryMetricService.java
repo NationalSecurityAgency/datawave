@@ -17,9 +17,6 @@ import datawave.webservice.query.map.QueryGeometryResponse;
 import datawave.webservice.result.VoidResponse;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 
 import javax.annotation.PostConstruct;
@@ -29,14 +26,10 @@ import javax.inject.Inject;
 import javax.interceptor.Interceptor;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * Sends query metric updates to a remote microservice.
@@ -54,7 +47,6 @@ public class RemoteQueryMetricService extends RemoteHttpService {
     private static final String SUMMARY_ALL_SUFFIX = "summary/all";
     private static final String SUMMARY_USER_SUFFIX = "summary/user";
     private static final String AUTH_HEADER_NAME = "Authorization";
-    private ObjectReader voidResponseReader;
     private ObjectReader baseQueryMetricListResponseReader;
     private ObjectReader queryGeometryResponseReader;
     private ObjectReader queryMetricsSummaryResponseReader;
