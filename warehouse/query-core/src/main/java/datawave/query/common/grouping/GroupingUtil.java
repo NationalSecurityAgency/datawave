@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -83,25 +84,24 @@ public class GroupingUtil {
                                 int count = ((BigDecimal) countTypeAttribute.getType().getDelegate()).intValue();
                                 countKeyMap.put(countKey, count);
                             });
-            
-            Multimap<String,String> fieldToFieldWithContextMap = getFieldToFieldWithGroupingContextMap(entry.getValue(), expandedGroupFieldsList, fieldMap,
-                            groupFieldsSet, reverseModelMapping);
+            Set<String> groupingContextSet = new HashSet<>();
+            TreeMultimap<String,String> fieldToFieldWithContextMap = (TreeMultimap<String, String>) getFieldToFieldWithGroupingContextMap(entry.getValue(), expandedGroupFieldsList, fieldMap,
+                            groupFieldsSet, groupingContextSet, reverseModelMapping);
             log.trace("got a new fieldToFieldWithContextMap: {}", fieldToFieldWithContextMap);
             int longest = longestValueList(fieldToFieldWithContextMap);
-            for (int i = 0; i < longest; i++) {
+            for (String currentGroupingContext : groupingContextSet) {
                 Collection<GroupingUtil.GroupingTypeAttribute<?>> fieldCollection = new HashSet<>();
-                String currentGroupingContext = "";
                 for (String fieldListItem : expandedGroupFieldsList) {
                     log.trace("fieldListItem: {}", fieldListItem);
-                    Collection<String> gtNames = fieldToFieldWithContextMap.get(fieldListItem);
+                    NavigableSet<String> gtNames = fieldToFieldWithContextMap.get(fieldListItem);
                     if (gtNames == null || gtNames.isEmpty()) {
                         log.trace("gtNames: {}", gtNames);
                         log.trace("fieldToFieldWithContextMap: {} did not contain: {}", fieldToFieldWithContextMap, fieldListItem);
                     } else {
-                        String gtName = gtNames.iterator().next();
-                        int idx = gtName.indexOf('.');
-                        if (idx != -1) {
-                            currentGroupingContext = gtName.substring(idx + 1);
+                        String nameWithGrouping = fieldListItem + "." + currentGroupingContext;
+                        final String gtName = gtNames.contains(nameWithGrouping) ? nameWithGrouping : null;
+                        if (gtName == null || gtName.isEmpty()) {
+                            continue;
                         }
                         if (!fieldListItem.equals(gtName)) {
                             fieldToFieldWithContextMap.remove(fieldListItem, gtName);
@@ -136,21 +136,31 @@ public class GroupingUtil {
         return new GroupingInfo(countingMap, fieldVisibilities);
     }
     
-    private Multimap<String,String> getFieldToFieldWithGroupingContextMap(Document d, Set<String> expandedGroupFieldsList,
-                    Map<String,GroupingTypeAttribute<?>> fieldMap, Set<String> groupFieldsSet, Map<String,String> reverseModelMapping) {
+    protected Multimap<String,String> getFieldToFieldWithGroupingContextMap(Document d, Set<String> expandedGroupFieldsList,
+                    Map<String,GroupingTypeAttribute<?>> fieldMap, Set<String> groupFieldsSet, Set<String> contextSet, Map<String,String> reverseModelMapping) {
         
         Multimap<String,String> fieldToFieldWithContextMap = TreeMultimap.create();
         for (Map.Entry<String,Attribute<? extends Comparable<?>>> entry : d.entrySet()) {
             Attribute<?> field = entry.getValue();
             log.trace("field is {}", field);
+
             String fieldName = entry.getKey();
             String shortName = fieldName;
             String shorterName = shortName;
-            if (shortName.indexOf('.') != -1)
-                shortName = shortName.substring(0, shortName.lastIndexOf('.'));
-            if (shorterName.indexOf('.') != -1)
+            boolean containsContext = false;
+
+            if (shortName.indexOf('.') != -1) {
+                int lastDotIndex = shortName.lastIndexOf('.');
+                shortName = shortName.substring(0, lastDotIndex);
+                containsContext = true;
+                contextSet.add(fieldName.substring(++lastDotIndex));
+            }
+
+            if (shorterName.indexOf('.') != -1) {
                 shorterName = shorterName.substring(0, shorterName.indexOf('.'));
+            }
             log.trace("fieldName: {}, shortName: {}", fieldName, shortName);
+
             if (reverseModelMapping != null) {
                 String finalName = reverseModelMapping.get(shorterName);
                 if (finalName != null) {
@@ -164,7 +174,9 @@ public class GroupingUtil {
                 log.trace("{} contains {}", groupFieldsSet, shorterName);
                 
                 if (field.getData() instanceof Collection<?>) {
-                    // This handles multivalued entries that do not have grouping context
+                    // This handles multivalued entries that do not have grouping context.
+                    // Also handles multivalued entries from separate entries, but the field names contain
+                    //  the same context number
                     // Create GroupingTypeAttribute and put in ordered map ordered on the attribute type
                     SortedSetMultimap<Type<?>,GroupingTypeAttribute<?>> attrSortedMap = TreeMultimap.create();
                     for (Object typeAttribute : ((Collection<?>) field.getData())) {
@@ -177,15 +189,27 @@ public class GroupingUtil {
                     // Add GroupingTypeAttribute to fieldMap with a grouping context that is based on ordered attribute type
                     int i = 0;
                     for (Map.Entry<Type<?>,GroupingTypeAttribute<?>> sortedEntry : attrSortedMap.entries()) {
-                        String fieldNameWithContext = fieldName + "." + i++;
+                        String fieldNameWithContext = null;
+                        String context = convertGroupingContext(i++);
+                        if (containsContext) {
+                            // multivalued entries from separate entries, but the field names contain the same context number
+                            fieldNameWithContext = shortName + "." + context;
+                        } else {
+                            // multivalued entries that do not have grouping context
+                            fieldNameWithContext = fieldName + "." + context;
+                        }
+
                         fieldMap.put(fieldNameWithContext, sortedEntry.getValue());
                         fieldToFieldWithContextMap.put(shortName, fieldNameWithContext);
+                        contextSet.add(context);
                     }
                 } else {
                     GroupingTypeAttribute<?> created = new GroupingTypeAttribute<>((Type) field.getData(), new Key(shortName), true);
                     created.setColumnVisibility(field.getColumnVisibility());
-                    fieldMap.put(fieldName, created);
-                    fieldToFieldWithContextMap.put(shortName, fieldName);
+                    String fieldNameWithContext = containsContext ? fieldName : fieldName + ".0";
+                    contextSet.add("0");
+                    fieldMap.put(fieldNameWithContext, created);
+                    fieldToFieldWithContextMap.put(shortName, fieldNameWithContext);
                 }
             } else {
                 log.trace("{} does not contain {}", groupFieldsSet, shorterName);
@@ -205,7 +229,11 @@ public class GroupingUtil {
         }
         return max;
     }
-    
+
+    private String convertGroupingContext(int contextGrouping) {
+        return Integer.toHexString(contextGrouping).toUpperCase();
+    }
+
     /**
      * Provides a clear way to return multiple things related to grouping that are generated from one method.
      */

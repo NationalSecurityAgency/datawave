@@ -182,8 +182,6 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             countingMap.clear();
             return entry;
         }
-        
         return null;
     }
-    
 }
