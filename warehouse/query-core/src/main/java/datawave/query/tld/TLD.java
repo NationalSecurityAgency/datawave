@@ -60,7 +60,7 @@ public class TLD {
         ArrayList<Integer> dots = instancesOf('.', id);
         int stop;
         if (dots.size() > 2) {
-            stop = dots.get(Math.max(2, dots.size() - 2));
+            stop = dots.get(Math.max(2, dots.size() - 1));
         } else {
             stop = id.length();
         }
