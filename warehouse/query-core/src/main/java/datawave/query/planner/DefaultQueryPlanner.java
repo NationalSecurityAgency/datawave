@@ -2058,6 +2058,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         configureAdditionalOptions(config, cfg);
                         
                         loadFields(cfg, config, isPreload);
+                        configureSeekingOptions(cfg, config);
                         
                         try {
                             CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
@@ -2131,6 +2132,35 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
             throw new DatawaveQueryException(qe);
+        }
+    }
+    
+    /**
+     * Configure options related to seek thresholds
+     *
+     * @param cfg
+     *            iterator setting
+     * @param config
+     *            shard query config
+     */
+    protected void configureSeekingOptions(IteratorSetting cfg, ShardQueryConfiguration config) {
+        if (config.getFiFieldSeek() > 0) {
+            addOption(cfg, QueryOptions.FI_FIELD_SEEK, String.valueOf(config.getFiFieldSeek()), false);
+        }
+        if (config.getFiNextSeek() > 0) {
+            addOption(cfg, QueryOptions.FI_NEXT_SEEK, String.valueOf(config.getFiNextSeek()), false);
+        }
+        if (config.getEventFieldSeek() > 0) {
+            addOption(cfg, QueryOptions.EVENT_FIELD_SEEK, String.valueOf(config.getEventFieldSeek()), false);
+        }
+        if (config.getEventNextSeek() > 0) {
+            addOption(cfg, QueryOptions.EVENT_NEXT_SEEK, String.valueOf(config.getEventNextSeek()), false);
+        }
+        if (config.getTfFieldSeek() > 0) {
+            addOption(cfg, QueryOptions.TF_FIELD_SEEK, String.valueOf(config.getTfFieldSeek()), false);
+        }
+        if (config.getTfNextSeek() > 0) {
+            addOption(cfg, QueryOptions.TF_NEXT_SEEK, String.valueOf(config.getTfNextSeek()), false);
         }
     }
     
