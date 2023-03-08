@@ -4,13 +4,14 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import datawave.query.attributes.Document;
+import datawave.query.function.RangeProvider;
 import datawave.query.function.TLDEquality;
+import datawave.query.function.TLDRangeProvider;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
@@ -38,7 +39,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * This is a TLD (Top Level Document) QueryIterator implementation.
@@ -212,6 +212,19 @@ public class TLDQueryIterator extends QueryIterator {
     protected Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
         tfConfig.setTld(true);
         return TFFactory.getFunction(tfConfig);
+    }
+    
+    /**
+     * Get a {@link TLDRangeProvider}
+     *
+     * @return a {@link TLDRangeProvider}
+     */
+    @Override
+    public RangeProvider getRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new TLDRangeProvider();
+        }
+        return rangeProvider;
     }
     
 }
