@@ -48,7 +48,7 @@ import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
 public class TermOffsetPopulator {
     private static final Logger log = Logger.getLogger(TermOffsetPopulator.class);
     
-    static final Set<String> phraseFunctions;
+    private static final Set<String> phraseFunctions;
     
     static {
         Set<String> _phraseFunctions = Sets.newHashSet();
@@ -65,14 +65,14 @@ public class TermOffsetPopulator {
     private Document document;
     private Set<String> contentExpansionFields;
     
-    private TermFrequencyConfig config;
+    private final TermFrequencyConfig config;
     
     public TermOffsetPopulator(Multimap<String,String> termFrequencyFieldValues, TermFrequencyConfig config) {
         this.termFrequencyFieldValues = termFrequencyFieldValues;
-        this.contentExpansionFields = config.getContentExpansionFields();
-        this.source = config.getSource();
-        this.evaluationFilter = config.getEvaluationFilter();
         this.config = config;
+        this.contentExpansionFields = this.config.getContentExpansionFields();
+        this.source = this.config.getSource();
+        this.evaluationFilter = this.config.getEvaluationFilter();
     }
     
     public Document document() {
