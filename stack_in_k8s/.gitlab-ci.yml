@@ -1,0 +1,94 @@
+---
+
+##########################################################
+# Variables Supporting this Pipeline (Context Dependent) #
+##########################################################
+
+variables:
+  ARTIFACTORY_REPOSITORY: "https://artifactory.adv.evoforge.org/artifactory/y341-helm-local/datawave/"
+
+#################################################
+# Default Configuration for this CI/CD Pipeline #
+#################################################
+
+default:
+  before_script:
+    - yum install -y openssl
+    - curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+
+#####################################
+# Stages Supported by this Pipeline #
+#####################################
+
+stages:
+  - lint
+  - package
+  - release
+
+################################################################
+# Basic Terraform Module Pipeline for Merge Request Validation #
+################################################################
+
+image:
+  name: containeryard.evoforge.org/warehouses/centos:7
+services:
+  - name: containeryard.evoforge.org/warehouses/docker
+
+################################
+# Pre-Execution Pipeline Stage #
+################################
+
+debug:
+  stage: .pre
+  script:
+    - export
+    - echo "Docker Image Name -> $DOCKER_IMAGE_NAME"
+    - echo "Docker Image Version -> $DOCKER_IMAGE_VERSION"
+
+
+##########################
+# Linting Pipeline Stage #
+##########################
+lint:
+  stage: lint
+  parallel:
+    matrix:
+    - DIRECTORY: hadoop
+    - DIRECTORY: accumulo
+    - DIRECTORY: zookeeper
+    - DIRECTORY: ingest
+    - DIRECTORY: web
+  script:
+    - helm lint $DIRECTORY --strict
+
+##########################
+# Package Pipeline Stage #
+##########################
+
+package:
+  stage: package
+  script: 
+  - for chart in hadoop accumulo zookeeper ingest web; do cd $chart; helm package .; cd ..; done
+  artifacts:
+    paths:
+      - accumulo/*.tgz
+      - zookeeper/*.tgz
+      - hadoop/*.tgz
+      - ingest/*.tgz
+      - web/*.tgz
+
+##########################
+# Release Pipeline Stage #
+##########################
+
+release:
+  stage: release
+  script: |-
+     for chart in hadoop accumulo zookeeper ingest web; do echo curl -H "X-JFrog-Art-Api:AKCp8krL24AEao8yJQmsMyGrBJMsyh8cy82NsuMLyciixspc6nT7iwKibavAy2EqokX3hZoD4" -T ${chart}/dwv-${chart}-*.tgz "${ARTIFACTORY_REPOSITORY}" -k; done
+     for chart in hadoop accumulo zookeeper ingest web; do  curl -H "X-JFrog-Art-Api:AKCp8krL24AEao8yJQmsMyGrBJMsyh8cy82NsuMLyciixspc6nT7iwKibavAy2EqokX3hZoD4" -T ${chart}/dwv-${chart}-*.tgz "${ARTIFACTORY_REPOSITORY}" -k; done
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  needs:
+    - job: package
+      artifacts: true
+

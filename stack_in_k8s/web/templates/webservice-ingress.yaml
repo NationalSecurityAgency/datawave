@@ -1,0 +1,43 @@
+####################################
+# Core Helm Template Configuration #
+####################################
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+######################################
+# Basic Metadata for this Deployment #
+######################################
+
+metadata:
+  name: "{{ .Chart.Name }}-web-ingress"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+
+
+####################################
+# Ingress Controller Specification #
+####################################
+
+spec:
+
+  ################################################
+  # Transport-Layer Security (TLS) Configuration #
+  ################################################
+
+
+  #########################################
+  # Ingress Controller Rule Configuration #
+  #########################################
+  ingressClassName: nginx
+  rules:
+    - host: "{{ .Values.web.ingress.webservice.domain }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: "{{ .Chart.Name }}-{{ .Values.web.datawaveService.meta.name }}"
+                port: 
+                  number: {{ .Values.web.datawaveService.ports.https }}

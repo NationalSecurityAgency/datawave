@@ -1,0 +1,18 @@
+dependencies:
+- name: dwv-ingest
+  repository: https://artifactory.adv.evoforge.org/artifactory/y341-helm-local/
+  version: 3.39.0
+- name: dwv-web
+  repository: https://artifactory.adv.evoforge.org/artifactory/y341-helm-local/
+  version: 3.40.0
+- name: dwv-zookeeper
+  repository: https://artifactory.adv.evoforge.org/artifactory/y341-helm-local/
+  version: 3.6.3
+- name: dwv-accumulo
+  repository: https://artifactory.adv.evoforge.org/artifactory/y341-helm-local/
+  version: 1.10.2
+- name: dwv-hadoop
+  repository: https://artifactory.adv.evoforge.org/artifactory/y341-helm-local/
+  version: 3.3.3
+digest: sha256:6c46dbf62f1bbc906756dad522be90a292758acd1bed94eb92952d42144affc1
+generated: "2023-02-21T13:06:04.217423251-05:00"

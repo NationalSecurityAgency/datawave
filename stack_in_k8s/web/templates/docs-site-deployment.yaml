@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: docs
+  name: docs
+spec:
+  selector:
+    matchLabels:
+      io.kompose.service: docs
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: docs
+    spec:
+    {{ if .Values.web.tolerations.enabled }}
+      tolerations:
+    {{ range $k, $v := .Values.web.tolerations.list }}
+      - key: {{ $v.key }}
+        operator: {{ $v.operator }}
+        value: {{ $v.value }}
+        effect: {{ $v.effect }}
+    {{ end }}
+    {{ end }}
+      containers:
+      - image: "{{ .Values.web.dockerRegistry.url }}/{{ .Values.web.docsSite.image.name }}:{{ .Values.web.docsSite.image.tag }}"
+        name: docs
+
+        ports:
+        - containerPort: 8080
+        resources: {}
+      restartPolicy: Always
+status: {}

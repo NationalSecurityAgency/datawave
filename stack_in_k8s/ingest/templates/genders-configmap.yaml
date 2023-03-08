@@ -1,0 +1,28 @@
+####################################
+# Core Helm Template Configuration #
+####################################
+
+apiVersion: v1
+kind: ConfigMap
+
+######################################
+# Basic Metadata for this Deployment #
+######################################
+
+metadata:
+  name: "{{ .Chart.Name }}-genders"
+
+##########################
+# Configuration Map Data #
+##########################
+
+data: 
+
+  #################################################
+  # Kubernetes-Specific Application Configuration #
+  #################################################
+
+  genders: |
+    ingestmaster ingest=master
+    hdfs-nn ingest=namenode
+    zookeeper zookeeper
