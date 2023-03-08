@@ -206,6 +206,14 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Collections.emptySet(), config.getNoExpansionFields());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         Assert.assertEquals(5000000L, config.getVisitorFunctionMaxWeight());
+        
+        // seeks
+        Assert.assertEquals(-1, config.getFiFieldSeek());
+        Assert.assertEquals(-1, config.getFiNextSeek());
+        Assert.assertEquals(-1, config.getEventFieldSeek());
+        Assert.assertEquals(-1, config.getEventNextSeek());
+        Assert.assertEquals(-1, config.getTfFieldSeek());
+        Assert.assertEquals(-1, config.getTfNextSeek());
     }
     
     /**
@@ -297,6 +305,13 @@ public class ShardQueryConfigurationTest {
         other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
         other.setAccumuloPassword("ChangeIt");
         other.setReduceQueryFields(true);
+        // seeks
+        other.setFiFieldSeek(12);
+        other.setFiNextSeek(13);
+        other.setEventFieldSeek(14);
+        other.setEventNextSeek(15);
+        other.setTfFieldSeek(16);
+        other.setTfNextSeek(17);
         
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
@@ -393,6 +408,14 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(expectedUniqueFields, config.getUniqueFields());
         Assert.assertEquals(Lists.newArrayList("fieldA"), config.getContentFieldNames());
         Assert.assertEquals(Sets.newHashSet("NoExpansionFieldA"), config.getNoExpansionFields());
+        
+        // assert seeks
+        Assert.assertEquals(12, other.getFiFieldSeek());
+        Assert.assertEquals(13, other.getFiNextSeek());
+        Assert.assertEquals(14, other.getEventFieldSeek());
+        Assert.assertEquals(15, other.getEventNextSeek());
+        Assert.assertEquals(16, other.getTfFieldSeek());
+        Assert.assertEquals(17, other.getTfNextSeek());
     }
     
     @Test
@@ -483,7 +506,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 191;
+        int expectedObjectCount = 197;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
