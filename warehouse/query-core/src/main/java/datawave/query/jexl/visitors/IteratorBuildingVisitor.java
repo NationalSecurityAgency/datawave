@@ -169,6 +169,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected CompositeMetadata compositeMetadata;
     protected int compositeSeekThreshold = 10;
     
+    // disabled by default
+    protected int fiNextSeek = -1;
+    protected int eventNextSeek = -1;
+    protected int tfNextSeek = -1;
+    
     protected Range rangeLimiter;
     
     // should the UIDs be sorted. If so, then ivarators will be used. Otherwise it is determined that
@@ -446,8 +451,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setAttrFilter(attrFilter);
             builder.setDatatypeFilter(datatypeFilter);
             builder.setEnv(env);
-            builder.setTermFrequencyAggregator(getTermFrequencyAggregator(identifier, sourceNode, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount()
-                            : -1));
+            builder.setTermFrequencyAggregator(getTermFrequencyAggregator(identifier, sourceNode, attrFilter, tfNextSeek));
             builder.setNode(rootNode);
             Range fiRange = getFiRangeForTF(range);
             
@@ -465,7 +469,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     protected EventFieldAggregator getEventFieldAggregator(String field, ChainableEventDataQueryFilter filter) {
-        return new EventFieldAggregator(field, filter, attrFilter != null ? attrFilter.getMaxNextCount() : -1, typeMetadata, NoOpType.class.getName());
+        return new EventFieldAggregator(field, filter, eventNextSeek, typeMetadata, NoOpType.class.getName());
     }
     
     /**
@@ -1556,6 +1560,42 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     public IteratorBuildingVisitor setCompositeSeekThreshold(int compositeSeekThreshold) {
         this.compositeSeekThreshold = compositeSeekThreshold;
+        return this;
+    }
+    
+    /**
+     * Builder-style method of setting the 'next' seek threshold
+     *
+     * @param fiNextSeek
+     *            next calls before a seek is issued
+     * @return the IteratorBuildingVisitor
+     */
+    public IteratorBuildingVisitor setFiNextSeek(int fiNextSeek) {
+        this.fiNextSeek = fiNextSeek;
+        return this;
+    }
+    
+    /**
+     * Builder-style method of setting the 'next' seek threshold
+     *
+     * @param eventNextSeek
+     *            next calls before a seek is issued
+     * @return the IteratorBuildingVisitor
+     */
+    public IteratorBuildingVisitor setEventNextSeek(int eventNextSeek) {
+        this.eventNextSeek = eventNextSeek;
+        return this;
+    }
+    
+    /**
+     * Builder-style method of setting the 'next' seek threshold
+     *
+     * @param tfNextSeek
+     *            next calls before a seek is issued
+     * @return the IteratorBuildingVisitor
+     */
+    public IteratorBuildingVisitor setTfNextSeek(int tfNextSeek) {
+        this.tfNextSeek = tfNextSeek;
         return this;
     }
     
