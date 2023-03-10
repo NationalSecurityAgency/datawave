@@ -4,7 +4,9 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import datawave.query.attributes.Document;
+import datawave.query.function.RangeProvider;
 import datawave.query.function.TLDEquality;
+import datawave.query.function.TLDRangeProvider;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.SourcedOptions;
@@ -114,9 +116,9 @@ public class TLDQueryIterator extends QueryIterator {
     public EventDataQueryFilter getEvaluationFilter() {
         if (this.evaluationFilter == null && script != null) {
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, typeMetadata, useWhiteListedFields ? whiteListedFields : null,
+            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), typeMetadata, useWhiteListedFields ? whiteListedFields : null,
                             useBlackListedFields ? blackListedFields : null, maxFieldHitsBeforeSeek, maxKeysBeforeSeek,
-                            limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.EMPTY_MAP, limitFieldsField, getNonEventFields());
+                            limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
         }
         return this.evaluationFilter != null ? evaluationFilter.clone() : null;
     }
@@ -210,6 +212,19 @@ public class TLDQueryIterator extends QueryIterator {
     protected Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
         tfConfig.setTld(true);
         return TFFactory.getFunction(tfConfig);
+    }
+    
+    /**
+     * Get a {@link TLDRangeProvider}
+     *
+     * @return a {@link TLDRangeProvider}
+     */
+    @Override
+    public RangeProvider getRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new TLDRangeProvider();
+        }
+        return rangeProvider;
     }
     
 }

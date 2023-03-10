@@ -18,6 +18,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,6 +73,7 @@ public class TermFrequencyIndexIteratorTest {
         filter = new EventDataQueryExpressionFilter(
                         JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='buz' || FOO=='alf' || FOO=='arm'"), typeMetadata,
                         fieldsToKeep);
+        
         aggregator = new TermFrequencyAggregator(fieldsToKeep, filter);
     }
     
@@ -308,9 +310,13 @@ public class TermFrequencyIndexIteratorTest {
     
     @Test
     public void testScanFullRangeExclusiveTLD() throws IOException, ParseException {
+        String query = "FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'";
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+        
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), false, getFiKey("row", "type1", "123.345.456.2", "FOO", "buz"), false);
-        filter = new TLDEventDataFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata, null, null, -1, -1,
-                        Collections.emptyMap(), null, fieldsToKeep);
+        
+        filter = new TLDEventDataFilter(script, Collections.singleton("FOO"), typeMetadata, null, null, -1, -1, Collections.emptyMap(), null, fieldsToKeep);
+        
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
         

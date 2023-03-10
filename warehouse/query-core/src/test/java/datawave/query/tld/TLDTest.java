@@ -187,7 +187,7 @@ public class TLDTest {
         
         assertEquals(root, TLD.parseParentPointerFromId(root));
         assertEquals(root, TLD.parseParentPointerFromId(child));
-        assertEquals(root, TLD.parseParentPointerFromId(grandchild));
+        assertEquals(child, TLD.parseParentPointerFromId(grandchild));
     }
     
     @Test
