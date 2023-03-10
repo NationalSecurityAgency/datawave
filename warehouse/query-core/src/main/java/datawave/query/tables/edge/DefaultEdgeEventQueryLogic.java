@@ -11,7 +11,7 @@ import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
@@ -65,12 +65,12 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         
         setEdgeDictionary(getEdgeDictionary(settings.getQueryAuthorizations())); // TODO grab threads from somewhere
         
         // Load and apply the configured edge query model
-        loadEdgeQueryModel(connection, auths);
+        loadEdgeQueryModel(client, auths);
         
         String queryString = applyQueryModel(getJexlQueryString(settings));
         
@@ -82,18 +82,18 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
         // new query string will always be in the JEXL syntax
         settings.addParameter(QueryParameters.QUERY_SYNTAX, "JEXL");
         
-        return super.initialize(connection, settings, auths);
+        return super.initialize(client, settings, auths);
     }
     
     /**
      * Loads the query model specified by the current configuration, to be applied to the incoming query.
      */
-    protected void loadEdgeQueryModel(Connector connector, Set<Authorizations> auths) {
+    protected void loadEdgeQueryModel(AccumuloClient client, Set<Authorizations> auths) {
         String model = getEdgeModelName() == null ? "" : getEdgeModelName();
         String modelTable = getModelTableName() == null ? "" : getModelTableName();
         if (null == getEdgeQueryModel() && (!model.isEmpty() && !modelTable.isEmpty())) {
             try {
-                setEdgeQueryModel(new EdgeQueryModel(getMetadataHelperFactory().createMetadataHelper(connector, getConfig().getMetadataTableName(), auths)
+                setEdgeQueryModel(new EdgeQueryModel(getMetadataHelperFactory().createMetadataHelper(client, getConfig().getMetadataTableName(), auths)
                                 .getQueryModel(getConfig().getModelTableName(), getConfig().getModelName())));
             } catch (Throwable t) {
                 log.error("Unable to load edgeQueryModel from metadata table", t);

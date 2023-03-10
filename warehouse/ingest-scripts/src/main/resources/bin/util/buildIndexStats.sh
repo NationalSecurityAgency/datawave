@@ -216,14 +216,14 @@ setupLockFile
 
 
 #
-# set the job cache
-#
-. ../ingest/job-cache-env.sh
-
-#
 # set the classpath
 #
 . ../ingest/ingest-libs.sh
+
+#
+# set the job cache
+#
+. ../ingest/job-cache-env.sh
 
 if [[ -z "$DATAWAVE_INGEST_HOME" ]]; then
     export DATAWAVE_INGEST_HOME=$THIS_DIR/../..

@@ -8,7 +8,7 @@ import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.extjs.ExtJsResponse;
 import datawave.webservice.query.runner.QueryExecutorBean;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -62,13 +62,13 @@ public class DashboardBean {
     @Path("/dpsjmc/heartbeat")
     @GET
     public boolean getHeartbeat() throws Exception {
-        Connector c = null;
+        AccumuloClient c = null;
         try {
-            c = createConnector();
+            c = createClient();
             return createScanner(c).iterator().hasNext();
         } finally {
             try {
-                connectionFactory.returnConnection(c);
+                connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error returning connection to factory.", e);
             }
@@ -131,17 +131,17 @@ public class DashboardBean {
     /**
      * Create scanner for last 60 minutes of logs.
      *
-     * @param c
-     *            the {@link Connector} to use when creating scanners
+     * @param accumuloClient
+     *            the {@link AccumuloClient} to use when creating scanners
      *
      * @return a {@link Scanner} that will only scan over the last 60 minutes of logs
      *
      * @throws TableNotFoundException
      */
-    private Scanner createScanner(Connector c) throws TableNotFoundException {
+    private Scanner createScanner(AccumuloClient accumuloClient) throws TableNotFoundException {
         long start = Instant.now().toEpochMilli() - MS_IN_12_HRS;
         long end = start + (1000 * 60 * 10);// 10 minutes
-        Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME_JMC, getAuths());
+        Scanner scanner = ScannerHelper.createScanner(accumuloClient, TABLE_NAME_JMC, getAuths());
         Key startKey = new Key(Long.toString(start));
         Key endKey = new Key(Long.toString(end));
         Range range = new Range(startKey, endKey);
@@ -149,8 +149,8 @@ public class DashboardBean {
         return scanner;
     }
     
-    private Connector createConnector() throws Exception {
+    private AccumuloClient createClient() throws Exception {
         Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-        return connectionFactory.getConnection(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+        return connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
     }
 }

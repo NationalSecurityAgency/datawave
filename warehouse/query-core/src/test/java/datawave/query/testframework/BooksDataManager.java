@@ -6,7 +6,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import datawave.data.hash.UID;
 import datawave.data.normalizer.Normalizer;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.log4j.Logger;
@@ -33,7 +33,7 @@ public class BooksDataManager extends AbstractDataManager {
     private static final Logger log = Logger.getLogger(BooksDataManager.class);
     
     private final String datatype;
-    private final Connector accumuloConn;
+    private final AccumuloClient accumuloClient;
     private final FieldConfig fieldIndex;
     private final ConfigData cfgData;
     
@@ -41,17 +41,17 @@ public class BooksDataManager extends AbstractDataManager {
      *
      * @param datatype
      *            datatype name
-     * @param conn
+     * @param client
      *            accumulo connection for writing
      * @param indexes
      *            indexes for the datatype
      * @param data
      *            configuration data
      */
-    public BooksDataManager(final String datatype, final Connector conn, final FieldConfig indexes, final ConfigData data) {
+    public BooksDataManager(final String datatype, final AccumuloClient client, final FieldConfig indexes, final ConfigData data) {
         super(data.getEventId(), data.getDateField());
         this.datatype = datatype;
-        this.accumuloConn = conn;
+        this.accumuloClient = client;
         this.fieldIndex = indexes;
         this.cfgData = data;
         RawMetaData shardMetdata = new RawMetaData(this.cfgData.getDateField(), Normalizer.LC_NO_DIACRITICS_NORMALIZER, false);
@@ -76,7 +76,7 @@ public class BooksDataManager extends AbstractDataManager {
      */
     public void loadTestData(final List<Map.Entry<Multimap<String,String>,UID>> data) {
         try {
-            GroupingAccumuloWriter writer = new GroupingAccumuloWriter(this.datatype, this.accumuloConn, this.cfgData.getDateField(), this.fieldIndex,
+            GroupingAccumuloWriter writer = new GroupingAccumuloWriter(this.datatype, this.accumuloClient, this.cfgData.getDateField(), this.fieldIndex,
                             this.cfgData);
             writer.addData(data);
             Set<RawData> testData = new HashSet<>();
@@ -102,7 +102,7 @@ public class BooksDataManager extends AbstractDataManager {
         Assert.assertFalse("datatype has already been configured(" + this.datatype + ")", this.rawData.containsKey(this.datatype));
         
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
-            GroupingAccumuloWriter writer = new GroupingAccumuloWriter(this.datatype, this.accumuloConn, this.cfgData.getDateField(), this.fieldIndex,
+            GroupingAccumuloWriter writer = new GroupingAccumuloWriter(this.datatype, this.accumuloClient, this.cfgData.getDateField(), this.fieldIndex,
                             this.cfgData);
             
             Set<RawData> bookData = new HashSet<>();

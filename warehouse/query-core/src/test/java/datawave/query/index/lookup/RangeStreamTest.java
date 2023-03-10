@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
@@ -19,12 +20,11 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
 import datawave.query.util.Tuple2;
 import datawave.test.JexlNodeAssert;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -59,7 +59,7 @@ import static org.junit.Assert.assertTrue;
 public class RangeStreamTest {
     
     private static final InMemoryInstance instance = new InMemoryInstance(RangeStreamTest.class.toString());
-    private static Connector connector;
+    private static AccumuloClient client;
     private ShardQueryConfiguration config;
     
     @BeforeClass
@@ -67,11 +67,10 @@ public class RangeStreamTest {
         
         final String SHARD_INDEX = "shardIndex";
         
-        // Zero byte password, so secure it hurts.
-        connector = instance.getConnector("", new PasswordToken(new byte[0]));
-        connector.tableOperations().create(SHARD_INDEX);
+        client = new InMemoryAccumuloClient("", new InMemoryInstance());
+        client.tableOperations().create(SHARD_INDEX);
         
-        BatchWriter bw = connector.createBatchWriter(SHARD_INDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
+        BatchWriter bw = client.createBatchWriter(SHARD_INDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
                         .setMaxWriteThreads(1));
         
         Uid.List.Builder builder = Uid.List.newBuilder();
@@ -419,7 +418,7 @@ public class RangeStreamTest {
     @Before
     public void setupTest() {
         config = new ShardQueryConfiguration();
-        config.setConnector(connector);
+        config.setClient(client);
         config.setShardsPerDayThreshold(20);
     }
     
@@ -442,7 +441,7 @@ public class RangeStreamTest {
         helper.setIndexedFields(dataTypes.keySet());
         
         Set<Range> expectedRanges = Sets.newHashSet(makeTestRange("20190314", "datatype1\u0000234"), makeTestRange("20190314", "datatype1\u0000345"));
-        for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getConnector()), helper).streamPlans(script)) {
+        for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getClient()), helper).streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range from expected ranges: " + range.toString(), expectedRanges.remove(range));
             }
@@ -469,7 +468,7 @@ public class RangeStreamTest {
         helper.setIndexedFields(dataTypes.keySet());
         
         Set<Range> expectedRanges = Sets.newHashSet(makeShardedRange("20190314_1"));
-        for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getConnector()), helper).streamPlans(script)) {
+        for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getClient()), helper).streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges, expectedRanges.remove(range));
             }
@@ -497,8 +496,8 @@ public class RangeStreamTest {
         for (String shard : Lists.newArrayList("20190314_0", "20190314_1", "20190314_9", "20190314_10", "20190314_100")) {
             expectedRanges.add(makeShardedRange(shard));
         }
-        
-        for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getConnector()), helper).streamPlans(script)) {
+
+        for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getClient()), helper).streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges, expectedRanges.remove(range));
             }
@@ -557,7 +556,7 @@ public class RangeStreamTest {
         
         Set<Range> expectedRanges = Sets.newHashSet(makeShardedRange("20190314_1"));
         
-        for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getConnector()), helper).streamPlans(script)) {
+        for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getClient()), helper).streamPlans(script)) {
             // verify the query plan dropped no terms
             JexlNode queryTree = JexlASTHelper.parseJexlQuery(queryPlan.getQueryString());
             JexlNode expectedTree = JexlASTHelper
@@ -595,7 +594,7 @@ public class RangeStreamTest {
         Range range2 = makeTestRange("20190314", "datatype1\u0000345");
         Range range3 = makeTestRange("20190314", "datatype1\u0000123");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3);
-        for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getConnector()), helper).streamPlans(script)) {
+        for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getClient()), helper).streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
                                 expectedRanges.remove(range));
@@ -627,7 +626,7 @@ public class RangeStreamTest {
         Range range3 = makeTestRange("20190314", "datatype1\u0000123");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient(), 1), helper);
         rangeStream.setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
@@ -662,7 +661,7 @@ public class RangeStreamTest {
         Range range4 = makeTestRange("20190414_1", "datatype1\u0000345");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3, range4);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper).setLimitScanners(true);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient(), 1), helper).setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
@@ -691,7 +690,7 @@ public class RangeStreamTest {
         helper.setIndexedFields(dataTypes.keySet());
         helper.addFields(ImmutableSet.of("TACO"));
         
-        assertFalse(new RangeStream(config, new ScannerFactory(config.getConnector()), helper).streamPlans(script).iterator().hasNext());
+        assertFalse(new RangeStream(config, new ScannerFactory(config.getClient()), helper).streamPlans(script).iterator().hasNext());
     }
     
     @Test
@@ -712,7 +711,7 @@ public class RangeStreamTest {
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
         
-        assertFalse(new RangeStream(config, new ScannerFactory(config.getConnector()), helper).streamPlans(script).iterator().hasNext());
+        assertFalse(new RangeStream(config, new ScannerFactory(config.getClient()), helper).streamPlans(script).iterator().hasNext());
     }
     
     @Test
@@ -733,7 +732,7 @@ public class RangeStreamTest {
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
         
-        assertFalse(new RangeStream(config, new ScannerFactory(config.getConnector()), helper).streamPlans(script).iterator().hasNext());
+        assertFalse(new RangeStream(config, new ScannerFactory(config.getClient()), helper).streamPlans(script).iterator().hasNext());
     }
     
     @Test
@@ -759,7 +758,7 @@ public class RangeStreamTest {
         Range range2 = makeTestRange("20190314", "datatype1\u0000345");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
@@ -787,7 +786,7 @@ public class RangeStreamTest {
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
         
-        assertFalse(new RangeStream(config, new ScannerFactory(config.getConnector()), helper).streamPlans(script).iterator().hasNext());
+        assertFalse(new RangeStream(config, new ScannerFactory(config.getClient()), helper).streamPlans(script).iterator().hasNext());
     }
     
     @Test
@@ -812,7 +811,7 @@ public class RangeStreamTest {
         Range range2 = makeTestRange("20190314", "datatype1\u0000345");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
@@ -839,7 +838,7 @@ public class RangeStreamTest {
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper);
         rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.UNINDEXED, rangeStream.context());
         assertEquals(Collections.emptyIterator(), rangeStream.iterator());
@@ -869,7 +868,7 @@ public class RangeStreamTest {
         Range range2 = makeTestRange("20190314", "datatype1\u0000345");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             assertEquals("FOO == 'bag'", JexlStringBuildingVisitor.buildQuery(queryPlan.getQueryTree()));
             for (Range range : queryPlan.getRanges()) {
@@ -902,7 +901,7 @@ public class RangeStreamTest {
         Range range2 = makeTestRange("20190314", "datatype1\u0000345");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
@@ -933,7 +932,7 @@ public class RangeStreamTest {
         Range range2 = makeTestRange("20190314", "datatype1\u0000345");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper).setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
@@ -964,7 +963,7 @@ public class RangeStreamTest {
         Range range2 = makeTestRange("20190314", "datatype1\u0000345");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper).setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
@@ -995,7 +994,7 @@ public class RangeStreamTest {
         Range range2 = makeTestRange("20190314", "datatype1\u0000345");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper).setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
@@ -1026,7 +1025,7 @@ public class RangeStreamTest {
         Range range2 = makeTestRange("20190314", "datatype1\u0000345");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper).setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
@@ -1057,7 +1056,7 @@ public class RangeStreamTest {
         Range range2 = makeTestRange("20190314", "datatype1\u0000345");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper).setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
@@ -1094,7 +1093,7 @@ public class RangeStreamTest {
         Range range2 = makeTestRange("20190314", "datatype1\u0000345");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper).setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         
         assertEquals(IndexStream.StreamContext.VARIABLE, rangeStream.context());
@@ -1129,7 +1128,7 @@ public class RangeStreamTest {
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper).setLimitScanners(true);
         rangeStream.streamPlans(script);
         // streamPlans(script) to populate the StreamContext.
         assertEquals(IndexStream.StreamContext.ABSENT, rangeStream.context());
@@ -1153,7 +1152,7 @@ public class RangeStreamTest {
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper).setLimitScanners(true);
         rangeStream.streamPlans(script);
         // streamPlans(script) to populate the StreamContext.
         assertFalse(rangeStream.iterator().hasNext());
@@ -1179,7 +1178,7 @@ public class RangeStreamTest {
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector()), helper).setLimitScanners(true);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient()), helper).setLimitScanners(true);
         rangeStream.streamPlans(script);
         // streamPlans(script) to populate the StreamContext.
         assertFalse(rangeStream.iterator().hasNext());
@@ -1208,13 +1207,13 @@ public class RangeStreamTest {
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
         helper.addFields(Arrays.asList("FOO", "LAUGH"));
-        
+
         Set<Range> expectedRanges = Sets.newHashSet();
         for (String shard : Arrays.asList("20190314_0", "20190314_1", "20190314_10", "20190314_100", "20190314_9")) {
             expectedRanges.add(makeShardedRange(shard));
         }
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper).setLimitScanners(true);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getClient(), 1), helper).setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         // streamPlans(script) to populate the StreamContext.
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
@@ -1265,7 +1264,7 @@ public class RangeStreamTest {
         Range range3 = makeTestRange("20190315_49", "datatype1\u0000a.b.c");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
@@ -1307,7 +1306,7 @@ public class RangeStreamTest {
         Range range3 = makeTestRange("20190315_49", "datatype1\u0000a.b.c");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
@@ -1351,7 +1350,7 @@ public class RangeStreamTest {
         Range range6 = makeTestRange("20190317_1", "datatype1\u0000a.b.c");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3, range4, range5, range6);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
@@ -1398,7 +1397,7 @@ public class RangeStreamTest {
         expectedRanges.add(makeTestRange("20190315_33", "datatype1\u0000a.b.c"));
         expectedRanges.add(makeTestRange("20190317_1", "datatype1\u0000a.b.c"));
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
@@ -1442,7 +1441,7 @@ public class RangeStreamTest {
             }
         }
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
@@ -1487,7 +1486,7 @@ public class RangeStreamTest {
         Range range6 = makeTestRange("20190317_1", "datatype1\u0000a.b.c");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3, range4, range5, range6);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
@@ -1529,7 +1528,7 @@ public class RangeStreamTest {
         Range range2 = makeShardedRange("20190315_51");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());

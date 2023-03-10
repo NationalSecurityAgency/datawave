@@ -30,11 +30,18 @@ import datawave.util.StringUtils;
 import datawave.util.cli.PasswordConverter;
 
 import org.apache.accumulo.core.Constants;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.NamespaceOperations;
+import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
@@ -131,7 +138,7 @@ public class IngestJob implements Tool {
     
     protected boolean eventProcessingError = false;
     protected Logger log = Logger.getLogger("datawave.ingest");
-    private ConsoleAppender ca = new ConsoleAppender(new PatternLayout("%p [%c{1}] %m%n"));
+    private ConsoleAppender ca = new ConsoleAppender();
     
     protected ArrayList<String[]> confOverrides = new ArrayList<>();
     protected int reduceTasks = 0;
@@ -250,7 +257,8 @@ public class IngestJob implements Tool {
     public int run(String[] args) throws Exception {
         
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
-        
+
+        ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
         ca.setThreshold(Level.INFO);
         log.addAppender(ca);
         log.setLevel(Level.INFO);
@@ -1006,8 +1014,9 @@ public class IngestJob implements Tool {
         // Setup the Output
         job.setWorkingDirectory(workDirPath);
         if (outputMutations) {
-            CBMutationOutputFormatter.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
-            CBMutationOutputFormatter.setOutputInfo(job, userName, password, true, null);
+            CBMutationOutputFormatter.configure()
+                            .clientProperties(Accumulo.newClientProperties().to(instanceName, zooKeepers).as(userName, new PasswordToken(password)).build())
+                            .createTables(true).store(job);
             job.setOutputFormatClass(CBMutationOutputFormatter.class);
         } else {
             FileOutputFormat.setOutputPath(job, new Path(workDirPath, "mapFiles"));

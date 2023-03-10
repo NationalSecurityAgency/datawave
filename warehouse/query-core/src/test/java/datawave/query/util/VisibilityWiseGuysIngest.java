@@ -8,9 +8,9 @@ import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -47,7 +47,7 @@ public class VisibilityWiseGuysIngest {
      *
      * @return
      */
-    public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
+    public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
@@ -55,7 +55,7 @@ public class VisibilityWiseGuysIngest {
         
         try {
             // write the shard table :
-            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             mutation = new Mutation(shard);
             
             mutation.put(datatype + "\u0000" + corleoneUID, "NAME.0" + "\u0000" + "SANTINO", columnVisibilityItalian, timeStamp, emptyValue);
@@ -125,7 +125,7 @@ public class VisibilityWiseGuysIngest {
         
         try {
             // write shard index table:
-            bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
             // corleones
             // uuid
             mutation = new Mutation(lcNoDiacriticsType.normalize("CORLEONE"));
@@ -258,7 +258,7 @@ public class VisibilityWiseGuysIngest {
             
             // write the field index table:
             
-            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             
             mutation = new Mutation(shard);
             // corleones
@@ -357,7 +357,7 @@ public class VisibilityWiseGuysIngest {
         
         try {
             // write metadata table:
-            bw = con.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
             
             mutation = new Mutation("NAME");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);

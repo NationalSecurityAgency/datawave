@@ -62,7 +62,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         dataTypes.add(new CarsDataType(CarsDataType.CarEntry.ford, generic));
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     @Before

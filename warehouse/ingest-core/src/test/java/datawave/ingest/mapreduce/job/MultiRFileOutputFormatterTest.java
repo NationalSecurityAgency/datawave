@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.common.test.logging.CommonTestAppender;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -51,15 +50,9 @@ public class MultiRFileOutputFormatterTest {
     
     protected Level testDriverLevel;
     protected Level uutLevel;
-    protected CommonTestAppender uutAppender;
     private MultiRFileOutputFormatter formatter;
     private Configuration conf;
-    
-    protected List<String> retrieveUUTLogs() throws IOException {
-        
-        return uutAppender.retrieveLogsEntries();
-    }
-    
+
     protected boolean checkProcessOutput(List<String> output, String message) {
         
         boolean results = false;
@@ -138,14 +131,6 @@ public class MultiRFileOutputFormatterTest {
         
         testDriverLevel = MultiRFileOutputFormatterTest.logger.getLevel();
         MultiRFileOutputFormatterTest.logger.setLevel(Level.ALL);
-        
-        Logger uutLogger = Logger.getLogger(ShardedTableMapFile.class);
-        uutAppender = new CommonTestAppender();
-        
-        uutLevel = uutLogger.getLevel();
-        uutLogger.setLevel(Level.ALL);
-        uutLogger.addAppender(uutAppender);
-        
         MultiRFileOutputFormatterTest.mockedConfiguration.clear();
     }
     
@@ -153,9 +138,8 @@ public class MultiRFileOutputFormatterTest {
     public void teardown() {
         
         MultiRFileOutputFormatterTest.logger.setLevel(testDriverLevel);
-        MultiRFileOutputFormatterTest.logger.removeAppender(uutAppender);
         Logger.getLogger(MultiRFileOutputFormatter.class).setLevel(uutLevel);
-        
+
     }
     
     @Test(expected = IllegalArgumentException.class)

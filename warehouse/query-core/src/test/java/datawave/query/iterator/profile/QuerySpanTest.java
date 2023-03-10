@@ -3,7 +3,8 @@ package datawave.query.iterator.profile;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.accumulo.core.util.SimpleThreadPool;
+import org.apache.accumulo.core.util.threads.ThreadPools;
+import org.apache.accumulo.core.util.threads.Threads;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -83,7 +84,7 @@ public class QuerySpanTest {
         Runnable r2 = new QSRunnable(qsc, qs2);
         Runnable r3 = new QSRunnable(qsc, qs3);
         
-        ExecutorService executorService = new SimpleThreadPool(10, "QSExecutor");
+        ExecutorService executorService = ThreadPools.getClientThreadPools(Threads.UEH).createFixedThreadPool(10, "QSExecutor", false);
         executorService.execute(r1);
         executorService.execute(r2);
         executorService.execute(r3);

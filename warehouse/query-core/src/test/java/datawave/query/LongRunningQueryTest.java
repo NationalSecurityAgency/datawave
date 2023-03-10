@@ -18,6 +18,7 @@ import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.runner.RunningQuery;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
@@ -53,7 +54,7 @@ public class LongRunningQueryTest {
     private static MockAccumuloRecordWriter recordWriter;
     private DatawavePrincipal datawavePrincipal;
     private static final Logger log = Logger.getLogger(LongRunningQueryTest.class);
-    private static Connector connector = null;
+    private static AccumuloClient client = null;
     private ShardQueryLogic logic;
     
     @Before
@@ -65,13 +66,13 @@ public class LongRunningQueryTest {
         QueryTestTableHelper testTableHelper = new QueryTestTableHelper(LongRunningQueryTest.class.toString(), log);
         recordWriter = new MockAccumuloRecordWriter();
         testTableHelper.configureTables(recordWriter);
-        connector = testTableHelper.connector;
+        client = testTableHelper.client;
         
         // Load data for the test
-        VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.DOCUMENT);
-        PrintUtility.printTable(connector, auths, TableName.SHARD);
-        PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        VisibilityWiseGuysIngest.writeItAll(client, VisibilityWiseGuysIngest.WhatKindaRange.DOCUMENT);
+        PrintUtility.printTable(client, auths, TableName.SHARD);
+        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         
         logic = new ShardQueryLogic();
         logic.setIncludeGroupingContext(true);
@@ -119,10 +120,10 @@ public class LongRunningQueryTest {
         // (and not the 200 milliseconds that it is set to) which will return only 1 page of 8 results, thereby failing this test.
         // the smaller this timeout, the more pages of results that will be returned.
         logic.setQueryExecutionForPageTimeout(1);
-        GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
+        GenericQueryConfiguration config = logic.initialize(client, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
+        RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
                         null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
@@ -174,10 +175,10 @@ public class LongRunningQueryTest {
         // this parameter is what makes the query long running. Failing to set this will let it default to 50 minutes
         // (and not the 1 millisecond that it is set to)
         logic.setQueryExecutionForPageTimeout(1);
-        GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
+        GenericQueryConfiguration config = logic.initialize(client, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
+        RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
                         null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
@@ -231,10 +232,10 @@ public class LongRunningQueryTest {
         // (and not the 500 milliseconds that it is set to) which will return only 1 page of 8 results, thereby failing this test.
         // the smaller this timeout, the more pages of results that will be returned.
         logic.setQueryExecutionForPageTimeout(5);
-        GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
+        GenericQueryConfiguration config = logic.initialize(client, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
+        RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
                         null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         

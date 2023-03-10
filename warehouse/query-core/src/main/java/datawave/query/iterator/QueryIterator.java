@@ -3,6 +3,7 @@ package datawave.query.iterator;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -85,13 +86,11 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IterationInterruptedException;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
-import org.apache.accumulo.core.trace.Span;
-import org.apache.accumulo.core.trace.Trace;
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl2.JexlArithmetic;
@@ -105,6 +104,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.io.Text;
+
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
@@ -162,7 +162,7 @@ import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOC
  *
  */
 public class QueryIterator extends QueryOptions implements YieldingKeyValueIterator<Key,Value>, JexlContextCreator.JexlContextValueComparator,
-                SourceFactory<Key,Value> {
+                SourceFactory<Key,Value>, SortedKeyValueIterator<Key,Value> {
     
     private static final Logger log = Logger.getLogger(QueryIterator.class);
     
@@ -365,19 +365,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     @Override
     public void next() throws IOException {
         getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.NEXT);
-        Span s = Trace.start("QueryIterator.next()");
-        if (log.isTraceEnabled()) {
-            log.trace("next");
-        }
-        
         try {
-            prepareKeyValue(s);
+            if (log.isTraceEnabled()) {
+                log.trace("next");
+            }
+            prepareKeyValue();
         } catch (Exception e) {
             handleException(e);
         } finally {
-            if (null != s) {
-                s.stop();
-            }
             QueryStatsDClient client = getStatsdClient();
             if (client != null) {
                 client.flush();
@@ -396,18 +391,18 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // so the FinalDocumentTracking iterator needs the start key with the count already appended
         originalRange = range;
         getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
-        Span span = Trace.start("QueryIterator.seek");
-        
-        if (!this.isIncludeGroupingContext()
-                        && (this.query.contains("grouping:") || this.query.contains("matchesInGroup") || this.query.contains("MatchesInGroup") || this.query
-                                        .contains("atomValuesMatch"))) {
-            this.setIncludeGroupingContext(true);
-            this.groupingContextAddedByMe = true;
-        } else {
-            this.groupingContextAddedByMe = false;
-        }
+        ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         
         try {
+            if (this.isIncludeGroupingContext() == false
+                            && (this.query.contains("grouping:") || this.query.contains("matchesInGroup") || this.query.contains("MatchesInGroup") || this.query
+                                            .contains("atomValuesMatch"))) {
+                this.setIncludeGroupingContext(true);
+                this.groupingContextAddedByMe = true;
+            } else {
+                this.groupingContextAddedByMe = false;
+            }
+            
             if (log.isDebugEnabled()) {
                 log.debug("Seek range: " + range + " " + query);
             }
@@ -420,7 +415,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 if (collectTimingDetails && FinalDocumentTrackingIterator.isFinalDocumentKey(range.getStartKey())) {
                     this.seekKeySource = new EmptyTreeIterable();
                     this.serializedDocuments = EmptyIterator.emptyIterator();
-                    prepareKeyValue(span);
+                    prepareKeyValue();
                     return;
                 }
                 
@@ -459,7 +454,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     log.trace("Received event specific range: " + documentRange);
                 }
                 // We can take a shortcut to the directly to the event
-                Map.Entry<Key,Document> documentKey = Maps.immutableEntry(super.getDocumentKey.apply(documentRange), new Document());
+                Entry<Key,Document> documentKey = Maps.immutableEntry(super.getDocumentKey.apply(documentRange), new Document());
                 if (log.isTraceEnabled()) {
                     log.trace("Transformed document key: " + documentKey);
                 }
@@ -573,15 +568,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
             
             // Determine if we have items to return
-            prepareKeyValue(span);
+            prepareKeyValue();
         } catch (Exception e) {
             handleException(e);
         } finally {
             if (gatherTimingDetails() && trackingSpan != null && querySpanCollector != null) {
                 querySpanCollector.addQuerySpan(trackingSpan);
-            }
-            if (null != span) {
-                span.stop();
             }
             QueryStatsDClient client = getStatsdClient();
             if (client != null) {
@@ -1236,7 +1228,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
     }
     
-    private void prepareKeyValue(Span span) {
+    private void prepareKeyValue() {
         if (this.serializedDocuments.hasNext()) {
             Entry<Key,Value> entry = this.serializedDocuments.next();
             
@@ -1246,10 +1238,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             this.key = entry.getKey();
             this.value = entry.getValue();
-            
-            if (Trace.isTracing()) {
-                span.data("Key", rowColFamToString(this.key));
-            }
+
         } else {
             if (log.isTraceEnabled()) {
                 log.trace("Exhausted all keys");
