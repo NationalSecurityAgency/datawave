@@ -7,8 +7,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import datawave.query.function.DocumentRangeProvider;
 import datawave.query.function.Equality;
 import datawave.query.function.PrefixEquality;
+import datawave.query.function.RangeProvider;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.aggregation.DocumentData;
@@ -43,6 +45,7 @@ public class AccumuloTableIterable extends AccumuloTreeIterable<Key,DocumentData
     private final Map<String,String> options;
     
     private Range totalRange;
+    private RangeProvider rangeProvider;
     
     public AccumuloTableIterable(SortedKeyValueIterator<Key,Value> source, Predicate<Key> filter, boolean includeChildCount, boolean includeParent) {
         this(source, null, null, filter, new PrefixEquality(PartialKey.ROW_COLFAM), null, includeChildCount, includeParent);
@@ -73,7 +76,7 @@ public class AccumuloTableIterable extends AccumuloTreeIterable<Key,DocumentData
     @Override
     public Iterator<Entry<DocumentData,Document>> iterator() {
         final DocumentDataIterator docItr = new DocumentDataIterator(this.source, this.environment, this.options, this.totalRange, this.filter, this.eq,
-                        this.evaluationFilter, null, this.includeChildCount, this.includeParent);
+                        this.evaluationFilter, getRangeProvider(), this.includeChildCount, this.includeParent);
         
         return Iterators.transform(docItr, from -> Maps.immutableEntry(from, new Document()));
     }
@@ -95,4 +98,10 @@ public class AccumuloTableIterable extends AccumuloTreeIterable<Key,DocumentData
         this.source.seek(range, columnFamilies, inclusive);
     }
     
+    protected RangeProvider getRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new DocumentRangeProvider();
+        }
+        return rangeProvider;
+    }
 }

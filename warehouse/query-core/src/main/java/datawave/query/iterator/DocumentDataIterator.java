@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.google.common.collect.Maps;
+import datawave.query.function.DocumentRangeProvider;
 import datawave.query.function.Equality;
 import datawave.query.function.PrefixEquality;
 import datawave.query.function.RangeProvider;
@@ -41,7 +42,7 @@ public class DocumentDataIterator implements Iterator<DocumentData> {
     
     private Entry<DocumentData,Document> documentData = null;
     
-    private final RangeProvider rangeProvider;
+    private RangeProvider rangeProvider;
     
     private final Predicate<Key> dataTypeFilter;
     
@@ -79,7 +80,7 @@ public class DocumentDataIterator implements Iterator<DocumentData> {
         this.rangeProvider = rangeProvider;
         
         this.documentMapper = new KeyToDocumentData(source, env, options, eq, evaluationFilter, includeChildCount, includeParent)
-                        .withRangeProvider(rangeProvider);
+                        .withRangeProvider(getRangeProvider());
         
         findNextDocument();
     }
@@ -183,4 +184,10 @@ public class DocumentDataIterator implements Iterator<DocumentData> {
                                         .getLength() == 2 && cf.charAt(0) == 't' && cf.charAt(1) == 'f'));
     }
     
+    protected RangeProvider getRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new DocumentRangeProvider();
+        }
+        return rangeProvider;
+    }
 }
