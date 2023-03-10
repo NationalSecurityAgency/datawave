@@ -1,5 +1,30 @@
 package datawave.query.tables;
 
+import com.google.common.base.Throwables;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Queues;
+import datawave.mr.bulk.RfileScanner;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.index.lookup.IndexInfo;
+import datawave.query.index.lookup.IndexMatch;
+import datawave.query.index.lookup.ShardEquality;
+import datawave.query.tables.stats.ScanSessionStats.TIMERS;
+import datawave.webservice.query.Query;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Column;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.util.PeekingIterator;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -16,38 +41,12 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import com.google.common.base.Throwables;
-import datawave.mr.bulk.RfileScanner;
-import datawave.query.index.lookup.IndexInfo;
-import datawave.query.index.lookup.IndexMatch;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.index.lookup.ShardEquality;
-import datawave.query.tables.stats.ScanSessionStats.TIMERS;
-import datawave.webservice.query.Query;
-
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Column;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.PeekingIterator;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
-import com.google.common.collect.Maps;
-import com.google.common.collect.Queues;
-import com.google.common.util.concurrent.MoreExecutors;
 
 /**
  * Purpose: Extends Scanner session so that we can modify how we build our subsequent ranges. Breaking this out cleans up the code. May require implementation
@@ -115,7 +114,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         currentQueue = Queues.newArrayDeque();
         readLock = queueLock.readLock();
         writeLock = queueLock.writeLock();
-        myExecutor = MoreExecutors.sameThreadExecutor();
+        myExecutor = Executors.newSingleThreadExecutor();
         if (null != stats)
             initializeTimers();
     }
@@ -133,7 +132,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         currentQueue = Queues.newArrayDeque();
         readLock = queueLock.readLock();
         writeLock = queueLock.writeLock();
-        myExecutor = MoreExecutors.sameThreadExecutor();
+        myExecutor = Executors.newSingleThreadExecutor();
         if (null != stats)
             initializeTimers();
     }
@@ -375,7 +374,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         try {
             if (null != stats)
                 stats.getTimer(TIMERS.HASNEXT).resume();
-            
+            if (log.isTraceEnabled()) {
+                log.trace("Looking for current entry in hasnext with a wait of " + getPollTime());
+            }
             while (null == currentEntry && (!finished || !resultQueue.isEmpty() || flushNeeded())) {
                 
                 try {
@@ -393,8 +394,14 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 if (currentEntry == null && (!finished && resultQueue.isEmpty())) {
                     submitTask();
                 } else if (flushNeeded()) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Attempting to flush");
+                    }
                     flush();
                 }
+            }
+            if (log.isTraceEnabled()) {
+                log.trace("Found current entry or null");
             }
         } finally {
             if (null != stats) {
@@ -414,12 +421,20 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     
     private void submitTask() {
         // wait on results. submit the task if we can
+        if (log.isTraceEnabled())
+            log.trace("Submitting tasks");
         Future future = myExecutor.submit(this);
-        try {
-            future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
+        while (resultQueue.isEmpty() && !future.isDone() && !future.isCancelled()) {
+            try {
+                future.get(100, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            } catch (TimeoutException e) {
+                continue;
+            }
         }
+        if (log.isTraceEnabled())
+            log.trace("Tasks are submitted");
     }
     
     /*
@@ -515,14 +530,27 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                         }
                         lastSeenKey = kvIter.next().getKey();
                     } else {
-                        
-                        int dequeueCount = dequeue();
-                        retrievalCount += dequeueCount;
-                        int queueSize = currentQueue.size();
-                        dequeue(true);
+                        if (log.isTraceEnabled()) {
+                            log.trace("it's a new day! no longer matching");
+                            log.trace("adding " + currentKeyValue.getKey() + " to queue because it matches " + currentDay);
+                        }
+                        retrievalCount += dequeue(true);
                         currentDay = null;
-                        
-                        if (dequeueCount != queueSize || retrievalCount <= Math.ceil(maxResults * 1.5)) {
+                        /**
+                         * The original logic here was meant to enforce fairness. The concept was aged, but viewed dequeueCount != the current queue size and
+                         * retrieval count being less than max results as a reflection of "less activity" and thus we could spend time on other threads. This
+                         * isn't always a correct assumption. A more simple method is to "switch" when retrieval count for this thread is more than the max
+                         * results. That will support a methodology of fairness without causing starvation.
+                         *
+                         * The problem the prior logic enforces is that ThreadedRangeBundlerIterator becomes serialized and slowed. Further, the AccumuloScanner
+                         * for this thread will still have results ( potentially ) increasing the load on accumulo through index scans. The change, coupled with
+                         * synchronization changes in RangeStreamScanner allows QueryData objects to be produced earlier and thus moving through all possible
+                         * ranges faster.
+                         */
+                        if (retrievalCount >= Math.ceil(maxResults * 1.5)) {
+                            if (log.isTraceEnabled()) {
+                                log.trace("breaking because " + retrievalCount + " >= " + maxResults * 1.5);
+                            }
                             break;
                         }
                     }
@@ -661,12 +689,20 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     }
     
     protected boolean flushNeeded() {
-        readLock.lock();
+        
         try {
-            return !currentQueue.isEmpty();
-        } finally {
-            readLock.unlock();
+            if (readLock.tryLock(2, TimeUnit.MILLISECONDS)) {
+                try {
+                    return !currentQueue.isEmpty();
+                } finally {
+                    readLock.unlock();
+                }
+            }
+        } catch (InterruptedException e) {
+            log.error(e);
+            throw new RuntimeException(e);
         }
+        return false;
     }
     
     /**
@@ -753,6 +789,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             
             if (baseScanner instanceof Scanner)
                 ((Scanner) baseScanner).setReadaheadThreshold(Long.MAX_VALUE);
+            else if (baseScanner instanceof RfileScanner)
+                ((RfileScanner) baseScanner).setRanges(Collections.singleton(currentRange));
             
             for (Column family : options.getFetchedColumns()) {
                 if (family.columnQualifier != null)
@@ -799,7 +837,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             else if (baseScanner instanceof RfileScanner) {
                 ((RfileScanner) baseScanner).setRanges(Collections.singleton(currentRange));
             }
-            
             Iterator<Entry<Key,Value>> iter = baseScanner.iterator();
             
             // do not continue if we've reached the end of the corpus
