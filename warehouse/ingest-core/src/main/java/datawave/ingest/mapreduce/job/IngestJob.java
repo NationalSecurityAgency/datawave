@@ -1,16 +1,12 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.data.Type;
+import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.filter.KeyValueFilter;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
 import datawave.ingest.mapreduce.EventMapper;
-import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.NumShards;
-import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
-import datawave.ingest.mapreduce.job.reduce.AggregatingReducer;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
 import datawave.ingest.mapreduce.job.statsd.CounterStatsDClient;
@@ -25,32 +21,30 @@ import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.mapreduce.job.writer.TableCachingContextWriter;
 import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.ingest.metric.IngestInput;
+import datawave.ingest.metric.IngestOutput;
 import datawave.ingest.metric.IngestProcess;
-import datawave.ingest.table.config.ShardTableConfigHelper;
-import datawave.ingest.table.config.TableConfigHelper;
-import datawave.iterators.PropogatingIterator;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
 import datawave.util.cli.PasswordConverter;
 
 import org.apache.accumulo.core.Constants;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.Combiner;
-import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.apache.commons.io.filefilter.RegexFileFilter;
@@ -71,6 +65,8 @@ import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobStatus;
 import org.apache.hadoop.mapred.RunningJob;
+import org.apache.hadoop.mapreduce.Counter;
+import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
@@ -116,6 +112,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Observer;
 import java.util.Set;
 
 /**
@@ -173,7 +170,7 @@ public class IngestJob implements Tool {
     protected boolean disableSpeculativeExecution = false;
     protected boolean enableBloomFilters = false;
     protected boolean collectDistributionStats = false;
-    protected boolean createTablesOnly = false;
+    protected boolean createTables = false;
     protected boolean metricsOutputEnabled = true;
     private String metricsLabelOverride = null;
     protected boolean generateMapFileRowKeys = false;
@@ -204,6 +201,8 @@ public class IngestJob implements Tool {
     protected boolean writeDirectlyToDest = false;
     
     private Configuration hadoopConfiguration;
+    private List<Observer> jobObservers = new ArrayList<>();
+    private JobObservable jobObservable;
     
     public static void main(String[] args) throws Exception {
         System.out.println("Running main");
@@ -219,7 +218,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-distCpConfDir distCpHadoopConfDir] [-distCpBandwidth bandwidth]");
         System.out.println("                     [-distCpMaxMaps maps] [-distCpStrategy strategy]");
         System.out.println("                     [-writeDirectlyToDest]");
-        System.out.println("                     [-createTablesOnly]");
+        System.out.println("                     [-createTables]");
         System.out.println("                     [-doNotDeleteAfterDistCp]");
         System.out.println("                     [-idFilterFsts comma-separated-list-of-files]");
         System.out.println("                     [-inputFormat inputFormatClass]");
@@ -227,6 +226,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-splitsCacheTimeoutMs timeout]");
         System.out.println("                     [-disableRefreshSplits]");
         System.out.println("                     [-splitsCacheDir /path/to/directory]");
+        System.out.println("                     [-accumuloConfigCachePath /path/to/file]");
         System.out.println("                     [-cacheBaseDir baseDir] [-cacheJars jar,jar,...]");
         System.out.println("                     [-multipleNumShardsCacheDir /path/to/directory]");
         System.out.println("                     [-skipMarkerFileGeneration] [-markerFileLIFO]");
@@ -248,6 +248,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-compressionTableBlackList table,table,...");
         System.out.println("                     [-maxRFileUndeduppedEntries maxEntries]");
         System.out.println("                     [-maxRFileUncompressedSize maxSize]");
+        System.out.println("                     [-jobObservers jobObserverClasses]");
         System.out.println("                     [-shardedMapFiles table1=/hdfs/path/table1splits.seq[,table2=/hdfs/path/table2splits.seq] ]");
     }
     
@@ -273,6 +274,16 @@ public class IngestJob implements Tool {
         }
         
         updateConfWithOverrides(conf);
+        
+        jobObservable = new JobObservable(srcHdfs != null ? getFileSystem(conf, srcHdfs) : null);
+        for (Observer observer : jobObservers) {
+            this.jobObservable.addObserver(observer);
+            if (observer instanceof Configurable) {
+                log.info("Applying configuration to observer");
+                ((Configurable) observer).setConf(conf);
+            }
+        }
+        
         AccumuloHelper cbHelper = new AccumuloHelper();
         cbHelper.setup(conf);
         
@@ -291,23 +302,21 @@ public class IngestJob implements Tool {
             return -1;
         }
         
-        if (!registerTableNames(conf)) {
-            return -1;
-        }
+        TableConfigurationUtil tableConfigUtil = new TableConfigurationUtil(conf);
+        tableNames = tableConfigUtil.getTableNames();
         
-        boolean wasConfigureTablesSuccessful = configureTables(cbHelper, conf);
-        if (!wasConfigureTablesSuccessful) {
-            return -1;
-        } else if (createTablesOnly) {
-            // Exit early if we are only creating tables
-            log.info("Created tables: " + getTables(conf) + " successfully!");
-            return 0;
+        if (createTables) {
+            boolean wasConfigureTablesSuccessful = tableConfigUtil.configureTables(conf);
+            if (!wasConfigureTablesSuccessful) {
+                return -1;
+            } else
+                log.info("Created tables: " + tableNames + " successfully!");
         }
         
         try {
-            serializeAggregatorConfiguration(cbHelper, conf, log);
+            tableConfigUtil.serializeAggregatorConfiguration(cbHelper, conf, log);
         } catch (TableNotFoundException tnf) {
-            log.error("One or more configured DataWave tables are missing in Accumulo. If this is a new system or if new tables have recently been introduced, run a job using the '-createTablesOnly' flag before attempting to ingest more data",
+            log.error("One or more configured DataWave tables are missing in Accumulo. If this is a new system or if new tables have recently been introduced, run a job using the '-createTables' flag before attempting to ingest more data",
                             tnf);
             return -1;
         }
@@ -336,6 +345,12 @@ public class IngestJob implements Tool {
                 configureBulkPartitionerAndOutputFormatter(job, cbHelper, conf, outputFs);
             } catch (Exception e) {
                 log.error(e);
+                log.info("Deleting orphaned directory: " + workDirPath);
+                try {
+                    inputFs.delete(workDirPath, true);
+                } catch (Exception er) {
+                    log.error("Unable to remove directory: " + workDirPath, er);
+                }
                 return -1;
             }
         }
@@ -424,7 +439,6 @@ public class IngestJob implements Tool {
         // output the counters to the log
         Counters counters = job.getCounters();
         log.info(counters);
-        
         try (JobClient jobClient = new JobClient((org.apache.hadoop.mapred.JobConf) job.getConfiguration())) {
             RunningJob runningJob = jobClient.getJob(new org.apache.hadoop.mapred.JobID(jobID.getJtIdentifier(), jobID.getId()));
             
@@ -432,12 +446,28 @@ public class IngestJob implements Tool {
             if (!job.isSuccessful()) {
                 return jobFailed(job, runningJob, outputFs, workDirPath);
             }
-        }
-        
-        // determine if we had processing errors
-        if (counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue() > 0) {
-            eventProcessingError = true;
-            log.error("Found Runtime Exceptions in the counters");
+            
+            // determine if we had processing errors
+            if (counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue() > 0) {
+                eventProcessingError = true;
+                log.error("Found Runtime Exceptions in the counters");
+                long numExceptions = 0;
+                long numRecords = 0;
+                CounterGroup exceptionCounterGroup = counters.getGroup(IngestProcess.RUNTIME_EXCEPTION.name());
+                for (Counter exceptionC : exceptionCounterGroup) {
+                    numExceptions += exceptionC.getValue();
+                }
+                CounterGroup recordCounterGroup = counters.getGroup(IngestOutput.EVENTS_PROCESSED.name());
+                for (Counter recordC : recordCounterGroup) {
+                    numRecords += recordC.getValue();
+                }
+                // records that throw runtime exceptions are still counted as processed
+                float percentError = 100 * ((float) numExceptions / numRecords);
+                log.info(String.format("Percent Error: %.2f", percentError));
+                if (conf.getInt("job.percent.error.threshold", 101) <= percentError) {
+                    return jobFailed(job, runningJob, outputFs, workDirPath);
+                }
+            }
         }
         if (counters.findCounter(IngestInput.EVENT_FATAL_ERROR).getValue() > 0) {
             eventProcessingError = true;
@@ -450,7 +480,7 @@ public class IngestJob implements Tool {
         // write out a marker file to indicate that the job is complete and a
         // separate process will bulk import the map files.
         if (outputMutations) {
-            markFilesLoaded(inputFs, FileInputFormat.getInputPaths(job));
+            markFilesLoaded(inputFs, FileInputFormat.getInputPaths(job), job.getJobID());
             boolean deleted = outputFs.delete(workDirPath, true);
             if (!deleted) {
                 log.error("Unable to remove job working directory: " + workDirPath);
@@ -591,13 +621,18 @@ public class IngestJob implements Tool {
             } else if (args[i].equals("-mapper")) {
                 mapper = Class.forName(args[++i]).asSubclass(Mapper.class);
             } else if (args[i].equals("-splitsCacheTimeoutMs")) {
-                conf.set(MetadataTableSplitsCacheStatus.SPLITS_CACHE_TIMEOUT_MS, args[++i]);
+                conf.set(TableSplitsCacheStatus.SPLITS_CACHE_TIMEOUT_MS, args[++i]);
             } else if (args[i].equals("-disableRefreshSplits")) {
-                conf.setBoolean(MetadataTableSplits.REFRESH_SPLITS, false);
+                conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
             } else if (args[i].equals("-splitsCacheDir")) {
-                conf.set(MetadataTableSplits.SPLITS_CACHE_DIR, args[++i]);
+                conf.set(TableSplitsCache.SPLITS_CACHE_DIR, args[++i]);
             } else if (args[i].equals("-multipleNumShardsCacheDir")) {
                 conf.set(NumShards.MULTIPLE_NUMSHARDS_CACHE_PATH, args[++i]);
+            } else if (args[i].equals("-enableAccumuloConfigCache")) {
+                conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_CACHE_ENABLE_PROPERTY, true);
+            } else if (args[i].equalsIgnoreCase("-accumuloConfigCachePath")) {
+                conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, args[++i]);
+                conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_CACHE_ENABLE_PROPERTY, true);
             } else if (args[i].equals("-disableSpeculativeExecution")) {
                 disableSpeculativeExecution = true;
             } else if (args[i].equals("-skipMarkerFileGeneration")) {
@@ -662,14 +697,35 @@ public class IngestJob implements Tool {
             } else if (args[i].equals("-shardedMapFiles")) {
                 conf.set(ShardedTableMapFile.SHARDED_MAP_FILE_PATHS_RAW, args[++i]);
                 ShardedTableMapFile.extractShardedTableMapFilePaths(conf);
-            } else if (args[i].equals("-createTablesOnly")) {
-                createTablesOnly = true;
+            } else if (args[i].equals("-createTables")) {
+                createTables = true;
             } else if (args[i].startsWith(REDUCE_TASKS_ARG_PREFIX)) {
                 try {
                     reduceTasks = Integer.parseInt(args[i].substring(REDUCE_TASKS_ARG_PREFIX.length(), args[i].length()));
                 } catch (NumberFormatException e) {
                     log.error("ERROR: mapred.reduce.tasks must be set to an integer (" + REDUCE_TASKS_ARG_PREFIX + "#)");
                     return null;
+                }
+            } else if (args[i].equals("-jobObservers")) {
+                if (i + 2 > args.length) {
+                    log.error("-jobObservers must be followed by a class name");
+                    System.exit(-2);
+                }
+                String jobObserverClasses = args[++i];
+                try {
+                    String[] classes = jobObserverClasses.split(",");
+                    for (String jobObserverClass : classes) {
+                        log.info("Adding job observer: " + jobObserverClass);
+                        Class clazz = Class.forName(jobObserverClass);
+                        Observer o = (Observer) clazz.newInstance();
+                        jobObservers.add(o);
+                    }
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                    log.error("cannot instantiate job observer class '" + jobObserverClasses + "'", e);
+                    System.exit(-2);
+                } catch (ClassCastException e) {
+                    log.error("cannot cast '" + jobObserverClasses + "' to Observer", e);
+                    System.exit(-2);
                 }
             } else if (args[i].startsWith("-")) {
                 // Configuration key/value entries can be overridden via the command line
@@ -688,79 +744,40 @@ public class IngestJob implements Tool {
             conf.addResource(resource);
         }
         
-        if (!createTablesOnly) {
-            // To enable passing the MONITOR_SERVER_HOME environment variable through to the monitor,
-            // pull it into the configuration
-            String monitorHostValue = System.getenv("MONITOR_SERVER_HOST");
-            log.info("Setting MONITOR_SERVER_HOST to " + monitorHostValue);
-            if (null != monitorHostValue) {
-                conf.set("MONITOR_SERVER_HOST", monitorHostValue);
-            }
-            
-            if (workDir == null) {
-                log.error("ERROR: Must provide a working directory name");
-                return null;
-            }
-            
-            if ((!useMapOnly) && (reduceTasks == 0)) {
-                log.error("ERROR: -mapred.reduce.tasks must be set");
-                return null;
-            }
-            
-            if (flagFileDir == null && generateMarkerFile) {
-                log.error("ERROR: -flagFileDir must be set");
-                return null;
-            }
-            
-            if (useMapOnly && !outputMutations) {
-                log.error("ERROR: Cannot do bulk ingest mapOnly (i.e. without the reduce phase).  Bulk ingest required sorted keys.");
-                return null;
-            }
-            
-            if (!outputMutations && destHdfs == null) {
-                log.error("ERROR: -destHdfs must be specified for bulk ingest");
-                return null;
-            }
+        // To enable passing the MONITOR_SERVER_HOME environment variable through to the monitor,
+        // pull it into the configuration
+        String monitorHostValue = System.getenv("MONITOR_SERVER_HOST");
+        log.info("Setting MONITOR_SERVER_HOST to " + monitorHostValue);
+        if (null != monitorHostValue) {
+            conf.set("MONITOR_SERVER_HOST", monitorHostValue);
+        }
+        
+        if (workDir == null) {
+            log.error("ERROR: Must provide a working directory name");
+            return null;
+        }
+        
+        if ((!useMapOnly) && (reduceTasks == 0)) {
+            log.error("ERROR: -mapred.reduce.tasks must be set");
+            return null;
+        }
+        
+        if (flagFileDir == null && generateMarkerFile) {
+            log.error("ERROR: -flagFileDir must be set");
+            return null;
+        }
+        
+        if (useMapOnly && !outputMutations) {
+            log.error("ERROR: Cannot do bulk ingest mapOnly (i.e. without the reduce phase).  Bulk ingest required sorted keys.");
+            return null;
+        }
+        
+        if (!outputMutations && destHdfs == null) {
+            log.error("ERROR: -destHdfs must be specified for bulk ingest");
+            return null;
         }
         
         return conf;
-    }
-    
-    /**
-     * Configure the accumulo tables (create and set aggregators etc)
-     *
-     * @param cbHelper
-     * @param conf
-     * @throws AccumuloSecurityException
-     * @throws AccumuloException
-     * @throws TableNotFoundException
-     * @throws ClassNotFoundException
-     */
-    private boolean configureTables(AccumuloHelper cbHelper, Configuration conf) throws AccumuloSecurityException, AccumuloException, TableNotFoundException,
-                    ClassNotFoundException {
-        // Check to see if the tables exist
-        TableOperations tops = cbHelper.getConnector().tableOperations();
-        NamespaceOperations namespaceOperations = cbHelper.getConnector().namespaceOperations();
-        createAndConfigureTablesIfNecessary(tableNames, tops, namespaceOperations, conf, log, enableBloomFilters);
-        
-        return true;
-    }
-    
-    /**
-     * @param conf
-     *            configuration file that contains data handler types and other information necessary for determining the set of tables required
-     * @return true if a non-empty comma separated list of table names was properly set to conf's job table.names property
-     */
-    private boolean registerTableNames(Configuration conf) {
-        Set<String> tables = getTables(conf);
-        
-        if (tables.isEmpty()) {
-            log.error("Configured tables for configured data types is empty");
-            return false;
-        }
-        tableNames = tables.toArray(new String[tables.size()]);
-        conf.set("job.table.names", org.apache.hadoop.util.StringUtils.join(",", tableNames));
-        return true;
     }
     
     /**
@@ -963,8 +980,9 @@ public class IngestJob implements Tool {
         // Setup the Output
         job.setWorkingDirectory(workDirPath);
         if (outputMutations) {
-            CBMutationOutputFormatter.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
-            CBMutationOutputFormatter.setOutputInfo(job, userName, password, true, null);
+            CBMutationOutputFormatter.configure()
+                            .clientProperties(Accumulo.newClientProperties().to(instanceName, zooKeepers).as(userName, new PasswordToken(password)).build())
+                            .createTables(true).store(job);
             job.setOutputFormatClass(CBMutationOutputFormatter.class);
         } else {
             FileOutputFormat.setOutputPath(job, new Path(workDirPath, "mapFiles"));
@@ -1125,220 +1143,6 @@ public class IngestJob implements Tool {
     }
     
     /**
-     * Creates the tables that are needed to load data using this ingest job if they don't already exist. If a table is created, it is configured with the
-     * appropriate iterators, aggregators, and locality groups that are required for ingest and query functionality to work correctly.
-     *
-     * @param tableNames
-     *            the names of the table to create if they don't exist
-     * @param tops
-     *            accumulo table operations helper for checking/creating tables
-     * @param conf
-     *            the Hadoop {@link Configuration} for retrieving table configuration information
-     * @param log
-     *            a logger for diagnostic messages
-     * @param enableBloomFilters
-     *            an indication of whether bloom filters should be enabled in the configuration
-     * @throws AccumuloSecurityException
-     * @throws AccumuloException
-     * @throws TableNotFoundException
-     */
-    protected void createAndConfigureTablesIfNecessary(String[] tableNames, TableOperations tops, NamespaceOperations namespaceOperations, Configuration conf,
-                    Logger log, boolean enableBloomFilters) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-        for (String table : tableNames) {
-            createNamespaceIfNecessary(namespaceOperations, table);
-            // If the tables don't exist, then create them.
-            try {
-                if (!tops.exists(table)) {
-                    tops.create(table);
-                }
-            } catch (TableExistsException te) {
-                // in this case, somebody else must have created the table after our existence check
-                log.info("Tried to create " + table + " but somebody beat us to the punch");
-            }
-        }
-        
-        // Pass along the enabling of bloom filters using the configuration
-        conf.setBoolean(ShardTableConfigHelper.ENABLE_BLOOM_FILTERS, enableBloomFilters);
-        
-        configureTablesIfNecessary(tableNames, tops, conf, log);
-    }
-    
-    private void createNamespaceIfNecessary(NamespaceOperations namespaceOperations, String table) throws AccumuloException, AccumuloSecurityException {
-        // if the table has a namespace in it that doesn't already exist, create it
-        if (table.contains(".")) {
-            String namespace = table.split("\\.")[0];
-            try {
-                if (!namespaceOperations.exists(namespace)) {
-                    namespaceOperations.create(namespace);
-                }
-            } catch (NamespaceExistsException e) {
-                // in this case, somebody else must have created the namespace after our existence check
-                log.info("Tried to create " + namespace + " but somebody beat us to the punch");
-            }
-        }
-    }
-    
-    /**
-     * Instantiates TableConfigHelper classes for tables as defined in the configuration
-     *
-     * @param log
-     *            a {@link Logger} for diagnostic messages
-     * @param conf
-     *            the Hadoop {@link Configuration} for retrieving ingest table configuration information
-     * @param tableNames
-     *            the names of the tables to configure
-     * @return Map&lt;String,TableConfigHelper&gt; map from table names to their setup TableConfigHelper classes
-     */
-    private Map<String,TableConfigHelper> getTableConfigs(Logger log, Configuration conf, String[] tableNames) {
-        
-        Map<String,TableConfigHelper> helperMap = new HashMap<>(tableNames.length);
-        
-        for (String table : tableNames) {
-            helperMap.put(table, TableConfigHelperFactory.create(table, conf, log));
-        }
-        
-        return helperMap;
-    }
-    
-    /**
-     * Configures tables that are needed to load data using this ingest job, only if they don't already have the required configuration.
-     *
-     * @param tableNames
-     *            the names of the tables to configure
-     * @param tops
-     *            accumulo table operations helper for configuring tables
-     * @param conf
-     *            the Hadoop {@link Configuration} for retrieving ingest table configuration information
-     * @param log
-     *            a {@link Logger} for diagnostic messages
-     * @throws AccumuloSecurityException
-     * @throws AccumuloException
-     * @throws TableNotFoundException
-     */
-    private void configureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf, Logger log) throws AccumuloSecurityException,
-                    AccumuloException, TableNotFoundException {
-        
-        Map<String,TableConfigHelper> tableConfigs = getTableConfigs(log, conf, tableNames);
-        
-        for (String table : tableNames) {
-            TableConfigHelper tableHelper = tableConfigs.get(table);
-            if (tableHelper != null) {
-                tableHelper.configure(tops);
-            } else {
-                log.info("No configuration supplied for table " + table);
-            }
-        }
-    }
-    
-    /**
-     * Looks up aggregator configuration for all of the tables in {@code tableNames} and serializes the configuration into {@code conf}, so that it is available
-     * for retrieval and use in mappers or reducers. Currently, this is used in {@link AggregatingReducer} and its subclasses to aggregate output key/value
-     * pairs rather than making accumulo do it at scan or major compaction time on the resulting rfile.
-     *
-     * @param accumuloHelper
-     *            for accessing tableOperations
-     * @param conf
-     *            the Hadoop configuration into which serialized aggregator configuration is placed
-     * @param log
-     *            a logger for sending diagnostic information
-     * @throws AccumuloSecurityException
-     * @throws AccumuloException
-     * @throws TableNotFoundException
-     * @throws ClassNotFoundException
-     */
-    void serializeAggregatorConfiguration(AccumuloHelper accumuloHelper, Configuration conf, Logger log) throws AccumuloSecurityException, AccumuloException,
-                    TableNotFoundException, ClassNotFoundException {
-        TableOperations tops = accumuloHelper.getConnector().tableOperations();
-        
-        // We're arbitrarily choosing the scan scope for gathering aggregator information.
-        // For the aggregators configured in this job, that's ok since they are added to all
-        // scopes. If someone manually added another aggregator and didn't apply it to scan
-        // time, then we wouldn't pick that up here, but the chances of that are very small
-        // since any aggregation we care about in the reducer doesn't make sense unless the
-        // aggregator is a scan aggregator.
-        IteratorScope scope = IteratorScope.scan;
-        for (String table : tableNames) {
-            ArrayList<IteratorSetting> iters = new ArrayList<>();
-            HashMap<String,Map<String,String>> allOptions = new HashMap<>();
-            
-            // Go through all of the configuration properties of this table and figure out which
-            // properties represent iterator configuration. For those that do, store the iterator
-            // setup and options in a map so that we can group together all of the options for each
-            // iterator.
-            for (Entry<String,String> entry : tops.getProperties(table)) {
-                
-                if (entry.getKey().startsWith(Property.TABLE_ITERATOR_PREFIX.getKey())) {
-                    
-                    String suffix = entry.getKey().substring(Property.TABLE_ITERATOR_PREFIX.getKey().length());
-                    String suffixSplit[] = suffix.split("\\.", 4);
-                    
-                    if (!suffixSplit[0].equals(scope.name())) {
-                        continue;
-                    }
-                    
-                    if (suffixSplit.length == 2) {
-                        String sa[] = entry.getValue().split(",");
-                        int prio = Integer.parseInt(sa[0]);
-                        String className = sa[1];
-                        iters.add(new IteratorSetting(prio, suffixSplit[1], className));
-                    } else if (suffixSplit.length == 4 && suffixSplit[2].equals("opt")) {
-                        String iterName = suffixSplit[1];
-                        String optName = suffixSplit[3];
-                        
-                        Map<String,String> options = allOptions.get(iterName);
-                        if (options == null) {
-                            options = new HashMap<>();
-                            allOptions.put(iterName, options);
-                        }
-                        
-                        options.put(optName, entry.getValue());
-                        
-                    } else {
-                        log.warn("Unrecognizable option: " + entry.getKey());
-                    }
-                }
-            }
-            
-            // Now go through all of the iterators, and for those that are aggregators, store
-            // the options in the Hadoop config so that we can parse it back out in the reducer.
-            for (IteratorSetting iter : iters) {
-                Class<?> klass = Class.forName(iter.getIteratorClass());
-                if (PropogatingIterator.class.isAssignableFrom(klass)) {
-                    Map<String,String> options = allOptions.get(iter.getName());
-                    if (null != options) {
-                        for (Entry<String,String> option : options.entrySet()) {
-                            String key = String.format("aggregator.%s.%d.%s", table, iter.getPriority(), option.getKey());
-                            conf.set(key, option.getValue());
-                        }
-                    } else
-                        log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
-                    
-                } else {
-                    log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't appear to be a combiner.");
-                }
-            }
-            
-            for (IteratorSetting iter : iters) {
-                Class<?> klass = Class.forName(iter.getIteratorClass());
-                if (Combiner.class.isAssignableFrom(klass)) {
-                    Map<String,String> options = allOptions.get(iter.getName());
-                    if (null != options) {
-                        String key = String.format("combiner.%s.%d.iterClazz", table, iter.getPriority());
-                        conf.set(key, iter.getIteratorClass());
-                        for (Entry<String,String> option : options.entrySet()) {
-                            key = String.format("combiner.%s.%d.%s", table, iter.getPriority(), option.getKey());
-                            conf.set(key, option.getValue());
-                        }
-                    } else
-                        log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
-                    
-                }
-            }
-            
-        }
-    }
-    
-    /**
      * Writes the input paths for this job into the work directory in a file named "job.paths"
      */
     protected void writeInputPathsFile(FileSystem fs, Path workDir, Path[] inputPaths) throws IOException {
@@ -1396,7 +1200,7 @@ public class IngestJob implements Tool {
     /**
      * Marks the input files given to this job as loaded by moving them from the "flagged" directory to the "loaded" directory.
      */
-    protected void markFilesLoaded(FileSystem fs, Path[] inputPaths) throws IOException {
+    protected void markFilesLoaded(FileSystem fs, Path[] inputPaths, JobID jobID) throws IOException {
         for (Path src : inputPaths) {
             String ssrc = src.toString();
             if (ssrc.contains("/flagged/")) {
@@ -1412,6 +1216,9 @@ public class IngestJob implements Tool {
                 }
             }
         }
+        
+        // notify observers
+        jobObservable.setJobId(jobID.toString());
     }
     
     /**
@@ -1505,18 +1312,21 @@ public class IngestJob implements Tool {
         // not carry block size or replication across. This is especially important because by default the
         // MapReduce jobs produce output with the replication set to 1 and we definitely don't want to preserve
         // that when copying across clusters.
-        DistCpOptions options = new DistCpOptions(Collections.singletonList(srcPath), destPath);
-        options.setLogPath(logPath);
-        options.setMapBandwidth(distCpBandwidth);
-        options.setMaxMaps(distCpMaxMaps);
-        options.setCopyStrategy(distCpStrategy);
-        options.setSyncFolder(true);
-        options.preserve(DistCpOptions.FileAttribute.USER);
-        options.preserve(DistCpOptions.FileAttribute.GROUP);
-        options.preserve(DistCpOptions.FileAttribute.PERMISSION);
-        options.preserve(DistCpOptions.FileAttribute.BLOCKSIZE);
-        options.preserve(DistCpOptions.FileAttribute.CHECKSUMTYPE);
-        options.setBlocking(true);
+        //@formatter:off
+        DistCpOptions options = new DistCpOptions.Builder(Collections.singletonList(srcPath), destPath)
+            .withLogPath(logPath)
+            .withMapBandwidth(distCpBandwidth)
+            .maxMaps(distCpMaxMaps)
+            .withCopyStrategy(distCpStrategy)
+            .withSyncFolder(true)
+            .preserve(DistCpOptions.FileAttribute.USER)
+            .preserve(DistCpOptions.FileAttribute.GROUP)
+            .preserve(DistCpOptions.FileAttribute.PERMISSION)
+            .preserve(DistCpOptions.FileAttribute.BLOCKSIZE)
+            .preserve(DistCpOptions.FileAttribute.CHECKSUMTYPE)
+            .withBlocking(true)
+            .build();
+        //@formatter:on
         
         DistCp cp = new DistCp(distcpConfig, options);
         log.info("Starting distcp from " + srcPath + " to " + destPath + " with configuration: " + options);
@@ -1712,140 +1522,6 @@ public class IngestJob implements Tool {
                             .hasTimestamp() ? update.getTimestamp() : -1), update.isDeleted()), update.getValue()));
         }
         return values;
-    }
-    
-    /**
-     * Get the table priorities
-     *
-     * @param conf
-     *            hadoop configuration
-     * @return map of table names to priorities
-     */
-    public static Map<String,Integer> getTablePriorities(Configuration conf) {
-        TypeRegistry.getInstance(conf);
-        Map<String,Integer> tablePriorities = new HashMap<>();
-        for (Type type : TypeRegistry.getTypes()) {
-            if (null != type.getDefaultDataTypeHandlers()) {
-                for (String handlerClassName : type.getDefaultDataTypeHandlers()) {
-                    Class<? extends DataTypeHandler<?>> handlerClass;
-                    try {
-                        handlerClass = TypeRegistry.getHandlerClass(handlerClassName);
-                    } catch (ClassNotFoundException e) {
-                        throw new IllegalArgumentException("Unable to find " + handlerClassName, e);
-                    }
-                    DataTypeHandler<?> handler;
-                    try {
-                        handler = handlerClass.newInstance();
-                    } catch (InstantiationException e) {
-                        throw new IllegalArgumentException("Unable to instantiate " + handlerClassName, e);
-                    } catch (IllegalAccessException e) {
-                        throw new IllegalArgumentException("Unable to access default constructor for " + handlerClassName, e);
-                    }
-                    String[] handlerTableNames = handler.getTableNames(conf);
-                    int[] handlerTablePriorities = handler.getTableLoaderPriorities(conf);
-                    for (int i = 0; i < handlerTableNames.length; i++) {
-                        tablePriorities.put(handlerTableNames[i], handlerTablePriorities[i]);
-                    }
-                }
-            }
-            if (null != type.getDefaultDataTypeFilters()) {
-                for (String filterClassNames : type.getDefaultDataTypeFilters()) {
-                    Class<? extends KeyValueFilter<?,?>> filterClass;
-                    try {
-                        filterClass = TypeRegistry.getFilterClass(filterClassNames);
-                    } catch (ClassNotFoundException e) {
-                        throw new IllegalArgumentException("Unable to find " + filterClassNames, e);
-                    }
-                    KeyValueFilter<?,?> filter;
-                    try {
-                        filter = filterClass.newInstance();
-                    } catch (InstantiationException e) {
-                        throw new IllegalArgumentException("Unable to instantiate " + filterClassNames, e);
-                    } catch (IllegalAccessException e) {
-                        throw new IllegalArgumentException("Unable to access default constructor for " + filterClassNames, e);
-                    }
-                    String[] filterTableNames = filter.getTableNames(conf);
-                    int[] filterTablePriorities = filter.getTableLoaderPriorities(conf);
-                    for (int i = 0; i < filterTableNames.length; i++) {
-                        tablePriorities.put(filterTableNames[i], filterTablePriorities[i]);
-                    }
-                }
-            }
-        }
-        
-        if (MetricsConfiguration.isEnabled(conf)) {
-            String metricsTable = MetricsConfiguration.getTable(conf);
-            int priority = MetricsConfiguration.getTablePriority(conf);
-            if (org.apache.commons.lang.StringUtils.isNotBlank(metricsTable)) {
-                tablePriorities.put(metricsTable, priority);
-            }
-        }
-        
-        return tablePriorities;
-    }
-    
-    /**
-     * Get the table names
-     *
-     * @param conf
-     *            hadoop configuration
-     * @return map of table names to priorities
-     */
-    public static Set<String> getTables(Configuration conf) throws IllegalArgumentException {
-        TypeRegistry.getInstance(conf);
-        
-        Set<String> tables = new HashSet<>();
-        for (Type type : TypeRegistry.getTypes()) {
-            if (type.getDefaultDataTypeHandlers() != null) {
-                for (String handlerClassName : type.getDefaultDataTypeHandlers()) {
-                    Class<? extends DataTypeHandler<?>> handlerClass;
-                    try {
-                        handlerClass = TypeRegistry.getHandlerClass(handlerClassName);
-                    } catch (ClassNotFoundException e) {
-                        throw new IllegalArgumentException("Unable to find " + handlerClassName, e);
-                    }
-                    DataTypeHandler<?> handler;
-                    try {
-                        handler = handlerClass.newInstance();
-                    } catch (InstantiationException e) {
-                        throw new IllegalArgumentException("Unable to instantiate " + handlerClassName, e);
-                    } catch (IllegalAccessException e) {
-                        throw new IllegalArgumentException("Unable to access default constructor for " + handlerClassName, e);
-                    }
-                    String[] handlerTableNames = handler.getTableNames(conf);
-                    Collections.addAll(tables, handlerTableNames);
-                }
-            }
-            if (type.getDefaultDataTypeFilters() != null) {
-                for (String filterClassNames : type.getDefaultDataTypeFilters()) {
-                    Class<? extends KeyValueFilter<?,?>> filterClass;
-                    try {
-                        filterClass = TypeRegistry.getFilterClass(filterClassNames);
-                    } catch (ClassNotFoundException e) {
-                        throw new IllegalArgumentException("Unable to find " + filterClassNames, e);
-                    }
-                    KeyValueFilter<?,?> filter;
-                    try {
-                        filter = filterClass.newInstance();
-                    } catch (InstantiationException e) {
-                        throw new IllegalArgumentException("Unable to instantiate " + filterClassNames, e);
-                    } catch (IllegalAccessException e) {
-                        throw new IllegalArgumentException("Unable to access default constructor for " + filterClassNames, e);
-                    }
-                    String[] filterTableNames = filter.getTableNames(conf);
-                    Collections.addAll(tables, filterTableNames);
-                }
-            }
-        }
-        
-        if (MetricsConfiguration.isEnabled(conf)) {
-            String metricsTable = MetricsConfiguration.getTable(conf);
-            if (org.apache.commons.lang.StringUtils.isNotBlank(metricsTable)) {
-                tables.add(metricsTable);
-            }
-        }
-        
-        return tables;
     }
     
     @Override

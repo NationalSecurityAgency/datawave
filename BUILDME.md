@@ -19,6 +19,14 @@ In order to build a release, you must also define the dist variable by adding `-
 mvn -Pdev,examples -Ddeploy -Dtar -Ddist -DskipTests clean install
 ```
 
+### Building a Docker web image
+
+In order to build a Docker container for the web services, you can run with the following maven profiles: `-Pdeploy-ws,docker`
+
+```bash
+mvn clean package -Pdev,assemble,deploy-ws -Pdocker -DskipTests  
+```
+
 Note that this will build javadocs and source jars.
 
 ### Building an RPM

@@ -285,8 +285,15 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             // until we've completed the start process
             if (null != stats)
                 initializeTimers();
-            startAndWait();
             
+            // these two guava methods replaced behavior of startAndWait() from version 15 but
+            // will now throw an exception if another thread closes the session so catch and ignore
+            startAsync();
+            try {
+                awaitRunning();
+            } catch (IllegalStateException e) {
+                log.debug("Session was closed while waiting to start up.");
+            }
         }
         
         // isFlushNeeded is only in the case of when we are finished
@@ -409,7 +416,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 flush();
                 return;
             }
-            stop();
+            stopAsync();
             
             return;
         }
@@ -521,27 +528,29 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         int retrievalCount = 0;
         
         Entry<Key,Value> myEntry = null;
-        
+        Key highest = null;
         while (iter.hasNext()) {
             myEntry = iter.next();
             
-            try {
-                if (!resultQueue.offer(myEntry, 200, TimeUnit.MILLISECONDS))
-                    break;
-            } catch (InterruptedException exception) {
-                break;
+            // different underlying scanners may not always guarantee ordered results
+            if (highest == null || highest.compareTo(myEntry.getKey()) < 0) {
+                highest = myEntry.getKey();
             }
             
-            lastSeenKey = myEntry.getKey();
-            // do not continue if we have reached the capacity of the queue
-            // or we are 1.5x the maxResults ( to ensure fairness to other threads
-            if (resultQueue.remainingCapacity() == 0 || (isFair && retrievalCount >= Math.ceil(maxResults * 1.5))) {
-                if (log.isTraceEnabled())
-                    log.trace("stopping because we're full after adding " + resultQueue.remainingCapacity() + " " + retrievalCount + " " + maxResults);
-                break;
+            // this creates a bottleneck on the resultQueue size, but guarantees no results will be lost
+            boolean accepted = false;
+            while (!accepted) {
+                try {
+                    accepted = resultQueue.offer(myEntry, 200, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    // keep trying
+                }
             }
+            
             retrievalCount++;
         }
+        
+        lastSeenKey = highest;
         
         return retrievalCount;
     }
@@ -671,7 +680,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     
     public void close() {
         forceClose = true;
-        stop();
+        stopAsync();
         synchronized (sessionDelegator) {
             if (null != delegatedResource) {
                 try {

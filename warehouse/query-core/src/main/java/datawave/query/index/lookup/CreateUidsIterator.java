@@ -164,7 +164,6 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
         Key startKey = range.getStartKey();
         Key newKey = new Key(startKey.getRow(), startKey.getColumnFamily(), new Text(startKey.getColumnQualifier() + "\u0000\uffff"));
         return new Range(newKey, true, range.getEndKey(), range.isEndKeyInclusive());
-        
     }
     
     @Override

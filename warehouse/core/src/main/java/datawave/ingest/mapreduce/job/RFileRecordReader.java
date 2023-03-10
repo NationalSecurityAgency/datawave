@@ -2,13 +2,14 @@ package datawave.ingest.mapreduce.job;
 
 import java.io.IOException;
 
+import org.apache.accumulo.core.conf.DefaultConfiguration;
+import org.apache.accumulo.core.crypto.CryptoServiceFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileOperations;
@@ -35,8 +36,8 @@ public class RFileRecordReader extends RecordReader<Key,Value> {
         FileOperations ops = RFileOperations.getInstance();
         String file = fileSplit.getPath().toString();
         FileSystem fs = fileSplit.getPath().getFileSystem(context.getConfiguration());
-        fileIterator = ops.newReaderBuilder().forFile(file, fs, context.getConfiguration())
-                        .withTableConfiguration(AccumuloConfiguration.getDefaultConfiguration()).seekToBeginning().build();
+        fileIterator = ops.newReaderBuilder().forFile(file, fs, context.getConfiguration(), CryptoServiceFactory.newDefaultInstance())
+                        .withTableConfiguration(DefaultConfiguration.getInstance()).seekToBeginning().build();
     }
     
     @Override

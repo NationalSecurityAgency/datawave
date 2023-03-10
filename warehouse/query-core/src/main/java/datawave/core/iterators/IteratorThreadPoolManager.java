@@ -54,8 +54,8 @@ public class IteratorThreadPoolManager {
                 int max = getMaxThreads(prop, accumuloConfiguration);
                 if (service.getMaximumPoolSize() != max) {
                     log.info("Changing " + prop + " to " + max);
-                    service.setCorePoolSize(max);
                     service.setMaximumPoolSize(max);
+                    service.setCorePoolSize(max);
                 }
             } catch (Throwable t) {
                 log.error(t, t);

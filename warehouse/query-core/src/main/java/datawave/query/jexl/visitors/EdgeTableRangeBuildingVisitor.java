@@ -20,6 +20,7 @@ import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
@@ -30,6 +31,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
 /**
  * Once an edge query has been parsed into a jexl tree this class is run to traverse the nodes of the tree gathering up necessary information to use to build
@@ -168,75 +171,86 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             log.error("Query has too many terms");
             throw new IllegalArgumentException("Too many search terms " + termCount);
         }
-        int numChildren = node.jjtGetNumChildren();
         
-        if (numChildren != 2) {
-            log.error("AND node had unexpected number of children" + numChildren);
-            throw new RuntimeException("Problem parsing query");
+        // run the visitor against all of the children
+        List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
+        for (JexlNode child : children(node)) {
+            childContexts.add((List<? extends EdgeContext>) child.jjtAccept(this, null));
         }
         
-        List<? extends EdgeContext> contexts1 = (List<? extends EdgeContext>) node.jjtGetChild(0).jjtAccept(this, null);
-        List<? extends EdgeContext> contexts2 = (List<? extends EdgeContext>) node.jjtGetChild(1).jjtAccept(this, null);
-        
-        if ((contexts1.get(0) instanceof IdentityContext) && (contexts2.get(0) instanceof IdentityContext)) {
-            QueryContext qContext = new QueryContext();
-            
-            qContext.packageIdentities((List<IdentityContext>) contexts1);
-            qContext.packageIdentities((List<IdentityContext>) contexts2);
-            
-            ArrayList<QueryContext> aList = new ArrayList<>();
-            aList.add(qContext);
-            return aList;
-        } else if ((contexts1.get(0) instanceof IdentityContext) && (contexts2.get(0) instanceof QueryContext)) {
-            
-            for (QueryContext qContext : (List<QueryContext>) contexts2) {
-                qContext.packageIdentities((List<IdentityContext>) contexts1);
-            }
-            
-            return contexts2;
-        } else if ((contexts1.get(0) instanceof QueryContext) && (contexts2.get(0) instanceof IdentityContext)) {
-            
-            for (QueryContext qContext : (List<QueryContext>) contexts1) {
-                qContext.packageIdentities((List<IdentityContext>) contexts2);
-            }
-            
-            return contexts1;
-            /*
-             * On rare occasion a group of Query contexts without a source can get grouped together, this happens with queries like: SOURCE == 's1' && ((TYPE ==
-             * 't1' && RELATIONSHIP == 'r1') || (TYPE == 't2' && RELATIONSHIP == 'r2'))
-             * 
-             * This probably was not supposed to be allowed, you should only be ANDing groups of sources with groups of other identifiers rather here it is
-             * ANDing source(s) with groups of expressions. Honestly it would be safer to split that type of query up into two separate ones but limited support
-             * has been included. However it can be dangerous if the user tries to use SINK in one of the grouped expressions so that is not allowed.
-             */
-        } else if ((contexts1.get(0) instanceof QueryContext) && (contexts2.get(0) instanceof QueryContext)) {
-            // Assumes that if the first query context does not have a row context then they all don't
-            if (((List<QueryContext>) contexts1).get(0).getRowContext() != null) {
-                // The size of the list for contexts1 is usually going to be 1
-                for (QueryContext qContext : ((List<QueryContext>) contexts1)) {
-                    // Combine the query contexts if anything fails blame the user
-                    if (!(qContext.combineQueryContexts(((List<QueryContext>) contexts2), false))) {
-                        log.error("And node had unexpected return type");
-                        throw new IllegalArgumentException("Error: problem with query syntax");
-                    }
-                }
-                return contexts1;
-            } else if (((List<QueryContext>) contexts2).get(0).getRowContext() != null) {
-                for (QueryContext qContext : ((List<QueryContext>) contexts2)) {
-                    if (!(qContext.combineQueryContexts(((List<QueryContext>) contexts1), false))) {
-                        log.error("And node had unexpected return type");
-                        throw new IllegalArgumentException("Error: problem with query syntax");
-                    }
-                }
-                return contexts2;
-            }
-            log.error("Problem parsing query");
-            throw new IllegalArgumentException("Error: problem with query syntax");
-        } else {
-            
-            log.error("And node had unexpected return type");
-            throw new IllegalArgumentException("Error: problem with query syntax");
+        if (childContexts.isEmpty()) {
+            log.error("Unable to get edge context from AND node");
+            throw new IllegalArgumentException("Unable to get edge context from AND node");
         }
+        
+        List<? extends EdgeContext> mergedContext = childContexts.remove(childContexts.size() - 1);
+        
+        // now merge the child contexts
+        while (!childContexts.isEmpty()) {
+            List<? extends EdgeContext> childContext = childContexts.remove(childContexts.size() - 1);
+            
+            if ((childContext.get(0) instanceof IdentityContext) && (mergedContext.get(0) instanceof IdentityContext)) {
+                QueryContext qContext = new QueryContext();
+                
+                qContext.packageIdentities((List<IdentityContext>) childContext);
+                qContext.packageIdentities((List<IdentityContext>) mergedContext);
+                
+                ArrayList<QueryContext> aList = new ArrayList<>();
+                aList.add(qContext);
+                mergedContext = aList;
+            } else if ((childContext.get(0) instanceof IdentityContext) && (mergedContext.get(0) instanceof QueryContext)) {
+                
+                for (QueryContext qContext : (List<QueryContext>) mergedContext) {
+                    qContext.packageIdentities((List<IdentityContext>) childContext);
+                }
+                
+            } else if ((childContext.get(0) instanceof QueryContext) && (mergedContext.get(0) instanceof IdentityContext)) {
+                
+                for (QueryContext qContext : (List<QueryContext>) childContext) {
+                    qContext.packageIdentities((List<IdentityContext>) mergedContext);
+                }
+                
+                mergedContext = childContext;
+                /*
+                 * On rare occasion a group of Query contexts without a source can get grouped together, this happens with queries like: SOURCE == 's1' &&
+                 * ((TYPE == 't1' && RELATIONSHIP == 'r1') || (TYPE == 't2' && RELATIONSHIP == 'r2'))
+                 * 
+                 * This probably was not supposed to be allowed, you should only be ANDing groups of sources with groups of other identifiers rather here it is
+                 * ANDing source(s) with groups of expressions. Honestly it would be safer to split that type of query up into two separate ones but limited
+                 * support has been included. However it can be dangerous if the user tries to use SINK in one of the grouped expressions so that is not
+                 * allowed.
+                 */
+            } else if ((childContext.get(0) instanceof QueryContext) && (mergedContext.get(0) instanceof QueryContext)) {
+                // Assumes that if the first query context does not have a row context then they all don't
+                if (((List<QueryContext>) childContext).get(0).getRowContext() != null) {
+                    // The size of the list for contexts1 is usually going to be 1
+                    for (QueryContext qContext : ((List<QueryContext>) childContext)) {
+                        // Combine the query contexts if anything fails blame the user
+                        if (!(qContext.combineQueryContexts(((List<QueryContext>) mergedContext), false))) {
+                            log.error("And node had unexpected return type");
+                            throw new IllegalArgumentException("Error: problem with query syntax");
+                        }
+                    }
+                    mergedContext = childContext;
+                } else if (((List<QueryContext>) mergedContext).get(0).getRowContext() != null) {
+                    for (QueryContext qContext : ((List<QueryContext>) mergedContext)) {
+                        if (!(qContext.combineQueryContexts(((List<QueryContext>) childContext), false))) {
+                            log.error("And node had unexpected return type");
+                            throw new IllegalArgumentException("Error: problem with query syntax");
+                        }
+                    }
+                } else {
+                    log.error("Problem parsing query");
+                    throw new IllegalArgumentException("Error: problem with query syntax");
+                }
+            } else {
+                
+                log.error("And node had unexpected return type");
+                throw new IllegalArgumentException("Error: problem with query syntax");
+            }
+        }
+        
+        return mergedContext;
     }
     
     /**
@@ -257,90 +271,99 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             log.error("Query has too many terms");
             throw new IllegalArgumentException("Too many search terms " + termCount);
         }
-        int numChildren = node.jjtGetNumChildren();
         
-        if (numChildren != 2) {
-            log.error("AND node had unexpected number of children" + numChildren);
-            throw new RuntimeException("Problem parsing query");
+        // run the visitor against all of the children
+        List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
+        for (JexlNode child : children(node)) {
+            childContexts.add((List<? extends EdgeContext>) child.jjtAccept(this, null));
         }
         
-        List<? extends EdgeContext> contexts1 = (List<? extends EdgeContext>) node.jjtGetChild(0).jjtAccept(this, null);
-        List<? extends EdgeContext> contexts2 = (List<? extends EdgeContext>) node.jjtGetChild(1).jjtAccept(this, null);
+        if (childContexts.isEmpty()) {
+            log.error("Unable to get edge context from OR node");
+            throw new IllegalArgumentException("Unable to get edge context from OR node");
+        }
         
-        if ((contexts1.get(0) instanceof IdentityContext) && (contexts2.get(0) instanceof IdentityContext)) {
-            // Combine two lists of Identity contexts
-            IdentityContext iContext1 = (IdentityContext) contexts1.get(0);
-            IdentityContext iContext2 = (IdentityContext) contexts2.get(0);
+        List<? extends EdgeContext> mergedContext = childContexts.remove(childContexts.size() - 1);
+        
+        // now merge the child contexts
+        while (!childContexts.isEmpty()) {
+            List<? extends EdgeContext> childContext = childContexts.remove(childContexts.size() - 1);
             
-            checkNotExclusion(iContext1, "Can't OR exclusion expressions");
-            checkNotExclusion(iContext2, "Can't OR exclusion expressions");
-            if (iContext1.getIdentity().equals(iContext2.getIdentity())) {
-                ((List<IdentityContext>) contexts1).addAll((List<IdentityContext>) contexts2);
-                return contexts1;
-            } else {
-                log.error("Query attempted to or like terms: " + iContext1.getIdentity() + " and " + iContext1.getIdentity());
-                throw new IllegalArgumentException("Can't OR unlike terms: " + iContext1.getIdentity() + " and " + iContext2.getIdentity());
-            }
-            
-        } else if ((contexts1.get(0) instanceof QueryContext) && (contexts2.get(0) instanceof QueryContext)) {
-            List<QueryContext> context1 = (List<QueryContext>) contexts1;
-            List<QueryContext> context2 = (List<QueryContext>) contexts2;
-            
-            if (context1.size() == 1 && context1.get(0).hasSourceList() == false) {
-                runCombine(context2, context1);
+            if ((childContext.get(0) instanceof IdentityContext) && (mergedContext.get(0) instanceof IdentityContext)) {
+                // Combine two lists of Identity contexts
+                IdentityContext iContext1 = (IdentityContext) childContext.get(0);
+                IdentityContext iContext2 = (IdentityContext) mergedContext.get(0);
                 
-                return context2;
-            } else if (context2.size() == 1 && context2.get(0).hasSourceList() == false) {
-                runCombine(context1, context2);
+                checkNotExclusion(iContext1, "Can't OR exclusion expressions");
+                checkNotExclusion(iContext2, "Can't OR exclusion expressions");
+                if (iContext1.getIdentity().equals(iContext2.getIdentity())) {
+                    ((List<IdentityContext>) childContext).addAll((List<IdentityContext>) mergedContext);
+                    mergedContext = childContext;
+                } else {
+                    log.error("Query attempted to or like terms: " + iContext1.getIdentity() + " and " + iContext1.getIdentity());
+                    throw new IllegalArgumentException("Can't OR unlike terms: " + iContext1.getIdentity() + " and " + iContext2.getIdentity());
+                }
                 
-                return context1;
+            } else if ((childContext.get(0) instanceof QueryContext) && (mergedContext.get(0) instanceof QueryContext)) {
+                List<QueryContext> context1 = (List<QueryContext>) childContext;
+                List<QueryContext> context2 = (List<QueryContext>) mergedContext;
+                
+                if (context1.size() == 1 && context1.get(0).hasSourceList() == false) {
+                    runCombine(context2, context1);
+                    
+                    mergedContext = context2;
+                } else if (context2.size() == 1 && context2.get(0).hasSourceList() == false) {
+                    runCombine(context1, context2);
+                    
+                    mergedContext = context1;
+                } else {
+                    context1.addAll(context2);
+                    mergedContext = context1;
+                }
+            }
+            
+            /*
+             * The next two else if statements are used when we have a query that technically follows the rules but it is not clear how it should be evaluated.
+             * Basically we make an effort to keep going. No guarantees as to what happens Ex) SOURCE == 's1' || SOURCE == 's2 && SINK == 't1' || SINK == 't2'
+             * Instead of: (SOURCE == 's1' || SOURCE == 's2) && (SINK == 't1' || SINK == 't2') Or: SOURCE == 's1' || (SOURCE == 's2 && (SINK == 't1' || SINK ==
+             * 't2'))
+             */
+            
+            else if ((childContext.get(0) instanceof IdentityContext) && (mergedContext.get(0) instanceof QueryContext)) {
+                checkNotExclusion((IdentityContext) childContext.get(0), "Can't OR exclusion expressions");
+                
+                QueryContext queryContext = new QueryContext();
+                queryContext.packageIdentities((List<IdentityContext>) childContext, false);
+                
+                if (isSourceList((List<IdentityContext>) childContext)) {
+                    ((List<QueryContext>) mergedContext).add(queryContext);
+                } else {
+                    List<QueryContext> otherContexts = new ArrayList<>();
+                    otherContexts.add(queryContext);
+                    runCombine((List<QueryContext>) mergedContext, otherContexts);
+                }
+            } else if ((childContext.get(0) instanceof QueryContext) && (mergedContext.get(0) instanceof IdentityContext)) {
+                checkNotExclusion((IdentityContext) mergedContext.get(0), "Can't OR exclusion expressions");
+                
+                QueryContext queryContext = new QueryContext();
+                queryContext.packageIdentities((List<IdentityContext>) mergedContext, false);
+                
+                if (isSourceList((List<IdentityContext>) mergedContext)) {
+                    ((List<QueryContext>) childContext).add(queryContext);
+                } else {
+                    List<QueryContext> otherContexts = new ArrayList<>();
+                    otherContexts.add(queryContext);
+                    runCombine((List<QueryContext>) childContext, otherContexts);
+                }
+                
+                mergedContext = childContext;
             } else {
-                context1.addAll(context2);
-                return context1;
+                log.error("OR node had unexpected return type");
+                throw new IllegalArgumentException("Error: problem with query syntax");
             }
         }
         
-        /*
-         * The next two else if statements are used when we have a query that technically follows the rules but it is not clear how it should be evaluated.
-         * Basically we make an effort to keep going. No guarantees as to what happens Ex) SOURCE == 's1' || SOURCE == 's2 && SINK == 't1' || SINK == 't2'
-         * Instead of: (SOURCE == 's1' || SOURCE == 's2) && (SINK == 't1' || SINK == 't2') Or: SOURCE == 's1' || (SOURCE == 's2 && (SINK == 't1' || SINK ==
-         * 't2'))
-         */
-        
-        else if ((contexts1.get(0) instanceof IdentityContext) && (contexts2.get(0) instanceof QueryContext)) {
-            checkNotExclusion((IdentityContext) contexts1.get(0), "Can't OR exclusion expressions");
-            
-            QueryContext queryContext = new QueryContext();
-            queryContext.packageIdentities((List<IdentityContext>) contexts1, false);
-            
-            if (isSourceList((List<IdentityContext>) contexts1)) {
-                ((List<QueryContext>) contexts2).add(queryContext);
-            } else {
-                List<QueryContext> otherContexts = new ArrayList<>();
-                otherContexts.add(queryContext);
-                runCombine((List<QueryContext>) contexts2, otherContexts);
-            }
-            return contexts2;
-        } else if ((contexts1.get(0) instanceof QueryContext) && (contexts2.get(0) instanceof IdentityContext)) {
-            checkNotExclusion((IdentityContext) contexts2.get(0), "Can't OR exclusion expressions");
-            
-            QueryContext queryContext = new QueryContext();
-            queryContext.packageIdentities((List<IdentityContext>) contexts2, false);
-            
-            if (isSourceList((List<IdentityContext>) contexts2)) {
-                ((List<QueryContext>) contexts1).add(queryContext);
-            } else {
-                List<QueryContext> otherContexts = new ArrayList<>();
-                otherContexts.add(queryContext);
-                runCombine((List<QueryContext>) contexts1, otherContexts);
-            }
-            
-            return contexts1;
-            
-        } else {
-            log.error("OR node had unexpected return type");
-            throw new IllegalArgumentException("Error: problem with query syntax");
-        }
+        return mergedContext;
     }
     
     private void runCombine(List<QueryContext> q1, List<QueryContext> q2) {

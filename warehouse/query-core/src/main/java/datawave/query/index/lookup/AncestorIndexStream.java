@@ -44,6 +44,18 @@ public class AncestorIndexStream implements IndexStream {
         return delegate.currentNode();
     }
     
+    /**
+     * Seek the delegate IndexStream
+     * 
+     * @param seekShard
+     *            the seek target
+     * @return
+     */
+    @Override
+    public String seek(String seekShard) {
+        return delegate.seek(seekShard);
+    }
+    
     @Override
     public Tuple2<String,IndexInfo> peek() {
         return removeOverlappingRanges(delegate.peek());

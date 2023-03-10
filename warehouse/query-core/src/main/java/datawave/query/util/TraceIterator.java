@@ -1,11 +1,11 @@
 package datawave.query.util;
 
+import org.apache.htrace.Trace;
+import org.apache.htrace.TraceScope;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Iterator;
-
-import org.apache.accumulo.core.trace.Span;
-import org.apache.accumulo.core.trace.Trace;
 
 /**
  *
@@ -26,14 +26,8 @@ public abstract class TraceIterator<F,T> implements Iterator<T> {
     public abstract T tracedTransform(F from);
     
     public T transform(F from) {
-        Span s = null;
-        try {
-            s = Trace.start(description + ": transform");
+        try (TraceScope ignored = Trace.startSpan(description + ": transform")) {
             return tracedTransform(from);
-        } finally {
-            if (s != null) {
-                s.stop();
-            }
         }
     }
     
@@ -54,18 +48,12 @@ public abstract class TraceIterator<F,T> implements Iterator<T> {
      */
     @Override
     public T next() {
-        Span s = null;
-        try {
-            s = Trace.start(description + ": next");
+        try (TraceScope ignored = Trace.startSpan(description + ": next")) {
             
             // Probably don't need to trace these individually..
             F next = this.source.next();
             
             return transform(next);
-        } finally {
-            if (s != null) {
-                s.stop();
-            }
         }
     }
     
@@ -76,14 +64,8 @@ public abstract class TraceIterator<F,T> implements Iterator<T> {
      */
     @Override
     public void remove() {
-        Span s = null;
-        try {
-            s = Trace.start(description + ": remove");
+        try (TraceScope ignored = Trace.startSpan(description + ": remove")) {
             this.source.remove();
-        } finally {
-            if (s != null) {
-                s.stop();
-            }
         }
     }
     

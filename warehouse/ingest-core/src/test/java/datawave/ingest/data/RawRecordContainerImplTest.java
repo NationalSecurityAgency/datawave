@@ -374,7 +374,7 @@ public class RawRecordContainerImplTest {
             if (getAltIds() == null || getAltIds().isEmpty()) {
                 addError(RawDataErrorNames.UUID_MISSING);
             }
-            if (0 == getDate()) {
+            if (Long.MIN_VALUE == getDate()) {
                 addError(RawDataErrorNames.EVENT_DATE_MISSING);
             }
             if (0 == getRawRecordNumber()) {

@@ -13,6 +13,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.BooleanQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
+@Deprecated
 public class IsNull extends LuceneQueryFunction {
     public IsNull() {
         super("isnull", new ArrayList<>());

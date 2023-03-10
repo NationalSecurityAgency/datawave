@@ -70,7 +70,6 @@ public class FlagMetrics {
         String fileName = baseFileName;
         Path finishedMetricsFile = new Path(fileName);
         Path src = new Path(fileName + ".working");
-        
         if (!fs.exists(finishedMetricsFile.getParent())) {
             if (!fs.mkdirs(finishedMetricsFile.getParent())) {
                 log.warn("unable to create directory (" + finishedMetricsFile.getParent() + ") metrics write terminated");

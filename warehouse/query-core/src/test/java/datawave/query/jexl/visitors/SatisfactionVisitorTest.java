@@ -23,9 +23,9 @@ public class SatisfactionVisitorTest {
     String[] originalQueries = {"MAKE == 'Ford' && COLOR == 'red' && OWNER != null", "MAKE == 'Ford' && COLOR == 'red' && OWNER == null",
             "MAKE == 'Ford' && COLOR == 'red'", "filter:includeRegex(MAKE, 'vw') && COLOR == 'red'",
             "intersects_bounding_box(BBOX_USER, 50.932610, 51.888420, 35.288080, 35.991210)", "f:between(COLOR, 'red', 'rouge')",
-            "MAKE == 'Ford' && EXCLUDEME == 'foo'", "((ExceededValueThresholdMarkerJexlNode = true) && (FOO_USER >= '09021f44' && FOO_USER <= '09021f47'))",
-            "((ExceededOrThresholdMarkerJexlNode = true) && (FOO_USER >= '09021f44' && FOO_USER <= '09021f47'))",
-            "FOO_USER >= '09021f44' && FOO_USER <= '09021f47'", "(MAKE == null || ((ASTDelayedPredicate = true) && (MAKE == '020')) || MAKE == null)"};
+            "MAKE == 'Ford' && EXCLUDEME == 'foo'", "((_Value_ = true) && (FOO_USER >= '09021f44' && FOO_USER <= '09021f47'))",
+            "((_List_ = true) && (FOO_USER >= '09021f44' && FOO_USER <= '09021f47'))", "FOO_USER >= '09021f44' && FOO_USER <= '09021f47'",
+            "(MAKE == null || ((_Delayed_ = true) && (MAKE == '020')) || MAKE == null)"};
     boolean[] expectedResults = {false, false, true, false, false, true, false, true, true, false, false};
     
     @Test

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="test/xsl" href="configuration.xsl"?>
+<configuration>
+    <property>
+        <name>facet.table.name</name>
+        <value>datawave.facets</value>
+    </property>
+    <property>
+        <name>facet.table.loader.priority</name>
+        <value>40</value>
+    </property>
+    <property>
+        <name>facet.metadata.table.name</name>
+        <value>datawave.facetMetadata</value>
+    </property>
+    <property>
+        <name>facet.metadata.table.loader.priority</name>
+        <value>40</value>
+    </property>
+    <property>
+        <name>facet.hash.table.name</name>
+        <value>datawave.facetHashes</value>
+    </property>
+    <property>
+        <name>facet.hash.table.loader.priority</name>
+        <value>40</value>
+    </property>
+</configuration>

@@ -12,6 +12,7 @@ import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
@@ -52,7 +53,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 
                 // now link em up
                 
-                returnNode = JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode));
+                returnNode = BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
             } else if (name.equals("length")) {
                 // create a regex node with the appropriate number of matching characters
                 

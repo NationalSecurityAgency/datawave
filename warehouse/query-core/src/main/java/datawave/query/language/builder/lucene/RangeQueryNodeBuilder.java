@@ -31,6 +31,7 @@ import org.apache.lucene.search.TermRangeQuery;
 /**
  * Builds a {@link TermRangeQuery} object from a {@link RangeQueryNode} object.
  */
+@Deprecated
 public class RangeQueryNodeBuilder implements QueryBuilder {
     
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {

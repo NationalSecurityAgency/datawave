@@ -2,18 +2,17 @@ package datawave.query;
 
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.GenericCityFields;
-import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
+import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -23,11 +22,13 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(IndexOnlyQueryTest.class);
     
     @BeforeClass
     public static void filterSetup() throws Exception {
-        Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
         Set<String> comp = new HashSet<>();
         comp.add(CityField.CITY.name());
@@ -35,10 +36,9 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
         generic.addCompositeField(comp);
         generic.addIndexField(CityField.COUNTRY.name());
         generic.addIndexOnlyField(CityField.STATE.name());
-        dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.generic, generic));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, new CitiesDataType(CitiesDataType.CityEntry.generic, generic));
+        client = accumuloSetup.loadTables(log);
     }
     
     public IndexOnlyQueryTest() {
@@ -97,7 +97,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
             String query = "(" + CityField.CONTINENT.name() + EQ_OP + cont + OR_OP + CityField.CITY.name().toLowerCase() + " == 'none')" + " and "
                             +
                             // NOTE: the ASTDelayedPredicate will not normalize the value - convert to lower case before query
-                            "((ASTDelayedPredicate = true) and (" + CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "'" + "))" + " and "
+                            "((_Delayed_ = true) and (" + CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "'" + "))" + " and "
                             + CityField.STATE.name() + EQ_OP + state;
             String expectQuery = "(" + CityField.CONTINENT.name() + EQ_OP + cont + OR_OP + CityField.CITY.name() + " == 'none')" + " and " + "("
                             + CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "')" + " and " + CityField.STATE.name() + EQ_OP + state;
@@ -110,7 +110,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
         log.info("------  testOneDelayedPredicate  ------");
         for (final TestCities city : TestCities.values()) {
             // NOTE: the ASTDelayedPredicate will not normalize the value - convert to lower case before query
-            String query = "((ASTDelayedPredicate = true) and (" + CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "'))";
+            String query = "((_Delayed_ = true) and (" + CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "'))";
             String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "'";
             runTest(query, expectQuery);
         }

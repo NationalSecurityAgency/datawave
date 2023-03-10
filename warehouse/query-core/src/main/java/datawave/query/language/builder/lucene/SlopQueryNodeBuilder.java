@@ -32,6 +32,7 @@ import org.apache.lucene.search.Query;
  * This builder basically reads the {@link Query} object set on the {@link SlopQueryNode} child using {@link QueryTreeBuilder#QUERY_TREE_BUILDER_TAGID} and
  * applies the slop value defined in the {@link SlopQueryNode}.
  */
+@Deprecated
 public class SlopQueryNodeBuilder implements QueryBuilder {
     
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {

@@ -7,6 +7,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.data.type.NoOpType;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.iterator.EventFieldIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
@@ -15,6 +18,8 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.logic.OrIterator;
+import datawave.query.jexl.functions.EventFieldAggregator;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
@@ -98,6 +103,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -248,12 +254,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // index checking has already been done, otherwise we would not have
             // an "ExceededValueThresholdMarker"
             // hence the "IndexAgnostic" method can be used here
-            Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(and, null, true);
-            if (ranges.size() != 1) {
+            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(and);
+            if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
             }
-            ((IndexRangeIteratorBuilder) data).setRange(ranges.keySet().iterator().next());
+            ((IndexRangeIteratorBuilder) data).setRange(range);
         } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(and)) {
             // if the parent is our ExceededValueThreshold marker, then use an
             // Ivarator to get the job done unless we don't have to
@@ -387,14 +393,14 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             LiteralRange<String> range = new LiteralRange<>(JexlASTHelper.getIdentifier(node), NodeOperand.AND);
             if (!analyzer.isLeadingLiteral()) {
                 // if the range is a leading wildcard we have to seek over the whole range since it's forward indexed only
-                range.updateLower(Constants.NULL_BYTE_STRING, true);
-                range.updateUpper(Constants.MAX_UNICODE_STRING, true);
+                range.updateLower(Constants.NULL_BYTE_STRING, true, node);
+                range.updateUpper(Constants.MAX_UNICODE_STRING, true, node);
             } else {
-                range.updateLower(analyzer.getLeadingLiteral(), true);
+                range.updateLower(analyzer.getLeadingLiteral(), true, node);
                 if (analyzer.hasWildCard()) {
-                    range.updateUpper(analyzer.getLeadingLiteral() + Constants.MAX_UNICODE_STRING, true);
+                    range.updateUpper(analyzer.getLeadingLiteral() + Constants.MAX_UNICODE_STRING, true, node);
                 } else {
-                    range.updateUpper(analyzer.getLeadingLiteral(), true);
+                    range.updateUpper(analyzer.getLeadingLiteral(), true, node);
                 }
             }
             return range;
@@ -409,8 +415,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             analyzer = new JavaRegexAnalyzer(String.valueOf(JexlASTHelper.getLiteralValue(node)));
             
             LiteralRange<String> range = new LiteralRange<>(JexlASTHelper.getIdentifier(node), NodeOperand.AND);
-            range.updateLower(analyzer.getLeadingOrTrailingLiteral(), true);
-            range.updateUpper(analyzer.getLeadingOrTrailingLiteral() + Constants.MAX_UNICODE_STRING, true);
+            range.updateLower(analyzer.getLeadingOrTrailingLiteral(), true, node);
+            range.updateUpper(analyzer.getLeadingOrTrailingLiteral() + Constants.MAX_UNICODE_STRING, true, node);
             
             return range;
         } catch (JavaRegexParseException | NoSuchElementException e) {
@@ -424,7 +430,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      */
     private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, JexlNode rootNode, JexlNode sourceNode, LiteralRange<?> range, Object data) {
         if (limitLookup) {
-            
+            ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(identifier, sourceNode, attrFilter);
+            NestedIterator<Key> eventFieldIterator = new EventFieldIterator(rangeLimiter, source.deepCopy(env), identifier, new AttributeFactory(
+                            this.typeMetadata), getEventFieldAggregator(identifier, wrapped));
             TermFrequencyIndexBuilder builder = new TermFrequencyIndexBuilder();
             builder.setSource(source.deepCopy(env));
             builder.setTypeMetadata(typeMetadata);
@@ -441,12 +449,18 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setRange(fiRange);
             builder.setField(identifier);
             
-            return builder.build();
+            NestedIterator<Key> tfIterator = builder.build();
+            OrIterator tfMerge = new OrIterator(Arrays.asList(tfIterator, eventFieldIterator));
+            return tfMerge;
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}", "buildExceededFromTermFrequency"));
             throw new DatawaveFatalQueryException(qe);
         }
         
+    }
+    
+    protected EventFieldAggregator getEventFieldAggregator(String field, ChainableEventDataQueryFilter filter) {
+        return new EventFieldAggregator(field, filter, attrFilter != null ? attrFilter.getMaxNextCount() : -1, typeMetadata, NoOpType.class.getName());
     }
     
     /**
@@ -1018,23 +1032,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return null;
     }
     
-    private boolean isUsable(Path path) throws IOException {
-        try {
-            if (!hdfsFileSystem.getFileSystem(path.toUri()).mkdirs(path)) {
-                throw new IOException("Unable to mkdirs: fs.mkdirs(" + path + ")->false");
-            }
-        } catch (MalformedURLException e) {
-            throw new IOException("Unable to load hadoop configuration", e);
-        } catch (Exception e) {
-            log.warn("Unable to access " + path, e);
-            return false;
-        }
-        return true;
-    }
-    
     /**
-     * Create a cache directory path for a specified regex node. If alternatives have been specified, then random alternatives will be attempted until one is
-     * found that can be written to.
+     * Build a list of potential hdfs directories based on each ivarator cache dir configs.
      * 
      * @return A path
      */
@@ -1056,10 +1055,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         path = new Path(path, scanId);
                     }
                     path = new Path(path, subdirectory);
-                    if (isUsable(path)) {
-                        URI uri = path.toUri();
-                        pathAndFs.add(new IvaratorCacheDir(config, hdfsFileSystem.getFileSystem(uri), uri.toString()));
-                    }
+                    URI uri = path.toUri();
+                    pathAndFs.add(new IvaratorCacheDir(config, hdfsFileSystem.getFileSystem(uri), uri.toString()));
                 }
             }
         }
@@ -1109,7 +1106,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         
         try {
             String id = ExceededOrThresholdMarkerJexlNode.getId(sourceNode);
-            String field = ExceededOrThresholdMarkerJexlNode.getField(sourceNode);
+            String field = JexlASTHelper.deconstructIdentifier(ExceededOrThresholdMarkerJexlNode.getField(sourceNode));
             ExceededOrThresholdMarkerJexlNode.ExceededOrParams params = ExceededOrThresholdMarkerJexlNode.getParameters(sourceNode);
             
             if (params.getRanges() != null && !params.getRanges().isEmpty()) {
@@ -1161,7 +1158,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             
             builder.setField(field);
         } catch (IOException | URISyntaxException | NullPointerException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, MessageFormat.format("Class: {0}",
+            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, e, MessageFormat.format("Class: {0}",
                             ExceededOrThresholdMarkerJexlNode.class.getSimpleName()));
             throw new DatawaveFatalQueryException(qe);
         }
@@ -1184,12 +1181,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // "ExceededValueThresholdMarker"
         // hence the "IndexAgnostic" method can be used here
         if (source instanceof ASTAndNode) {
-            Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic((ASTAndNode) source, null, true);
-            if (ranges.size() != 1) {
+            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(source);
+            if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
             }
-            return ranges.keySet().iterator().next();
+            return range;
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
                             MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
@@ -1213,12 +1210,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // "ExceededValueThresholdMarker"
         // hence the "IndexAgnostic" method can be used here
         if (sourceNode instanceof ASTAndNode) {
-            Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic((ASTAndNode) sourceNode, null, true);
-            if (ranges.size() != 1) {
+            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(sourceNode);
+            if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
             }
-            builder.setRange(ranges.keySet().iterator().next());
+            builder.setRange(range);
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
                             MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
@@ -1244,12 +1241,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // "ExceededValueThresholdMarker"
         // hence the "IndexAgnostic" method can be used here
         if (sourceNode instanceof ASTAndNode) {
-            Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic((ASTAndNode) sourceNode, null, true);
-            if (ranges.size() != 1) {
+            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(sourceNode);
+            if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
             }
-            builder.setRangeAndFunction(ranges.keySet().iterator().next(), new FunctionFilter(functionNodes));
+            builder.setRangeAndFunction(range, new FunctionFilter(functionNodes));
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}", "ASTFunctionNode"));
             throw new DatawaveFatalQueryException(qe);
@@ -1298,7 +1295,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     public static class FunctionFilter implements Filter {
-        private Script script;
+        
+        private final Script script;
+        private final DatawaveJexlContext context;
         
         public FunctionFilter(List<ASTFunctionNode> nodes) {
             ASTJexlScript script = new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT);
@@ -1319,6 +1318,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             
             // Evaluate the JexlContext against the Script
             this.script = engine.createScript(query);
+            
+            // setup a re-usable context
+            this.context = new DatawaveJexlContext();
         }
         
         @Override
@@ -1333,13 +1335,15 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             index = fieldValue.lastIndexOf('\0', index - 1);
             fieldValue = fieldValue.substring(0, index);
             
-            // create a jexl context with this valud
-            JexlContext context = new DatawaveJexlContext();
+            // set the field value into the JexlContext
             context.set(fieldName, new ValueTuple(fieldName, fieldValue, fieldValue, null));
             
             boolean matched = false;
             
             Object o = script.execute(context);
+            
+            // Clear the context for future reuse
+            context.clear();
             
             // Jexl might return us a null depending on the AST
             if (o != null && Boolean.class.isAssignableFrom(o.getClass())) {

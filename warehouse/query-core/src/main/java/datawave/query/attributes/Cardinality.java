@@ -68,7 +68,7 @@ public class Cardinality extends Attribute<Cardinality> {
     @Override
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         writeMetadata(out, reducedResponse);
-        
+        WritableUtils.writeString(out, content.fieldName);
         WritableUtils.writeString(out, content.lower);
         WritableUtils.writeString(out, content.upper);
         WritableUtils.writeCompressedByteArray(out, content.estimate.getBytes());
@@ -79,6 +79,7 @@ public class Cardinality extends Attribute<Cardinality> {
     public void readFields(DataInput in) throws IOException {
         readMetadata(in);
         content = new FieldValueCardinality();
+        content.fieldName = WritableUtils.readString(in);
         content.lower = WritableUtils.readString(in);
         content.upper = WritableUtils.readString(in);
         byte[] cardArray = WritableUtils.readCompressedByteArray(in);
@@ -143,8 +144,7 @@ public class Cardinality extends Attribute<Cardinality> {
     @Override
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(2099, 2129);
-        hcb.append(content.lower).append(this.getMetadata().getColumnVisibility()).append(this.getMetadata().getTimestamp());
-        
+        hcb.appendSuper(content.hashCode()).append(this.getMetadata().getColumnVisibility()).append(this.getMetadata().getTimestamp());
         return hcb.toHashCode();
     }
     
@@ -156,7 +156,7 @@ public class Cardinality extends Attribute<Cardinality> {
     @Override
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         super.writeMetadata(kryo, output, reducedResponse);
-        
+        output.writeString(this.content.fieldName);
         output.writeString(this.content.lower);
         output.writeString(this.content.upper);
         byte[] cardArray;
@@ -174,6 +174,7 @@ public class Cardinality extends Attribute<Cardinality> {
     public void read(Kryo kryo, Input input) {
         super.readMetadata(kryo, input);
         content = new FieldValueCardinality();
+        this.content.fieldName = input.readString();
         this.content.lower = input.readString();
         this.content.upper = input.readString();
         int size = input.readInt();

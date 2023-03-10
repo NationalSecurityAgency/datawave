@@ -1,19 +1,18 @@
 package datawave.query;
 
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
-import datawave.query.testframework.IpAddressDataType;
-import datawave.query.testframework.IpAddressDataType.IpAddrField;
-import datawave.query.testframework.IpAddressDataType.IpAddrEntry;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.IpAddrFields;
+import datawave.query.testframework.IpAddressDataType;
+import datawave.query.testframework.IpAddressDataType.IpAddrEntry;
+import datawave.query.testframework.IpAddressDataType.IpAddrField;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collection;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
@@ -25,16 +24,17 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class IpAddressQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(IpAddressQueryTest.class);
     
     @BeforeClass
     public static void filterSetup() throws Exception {
-        Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig fieldInfo = new IpAddrFields();
-        dataTypes.add(new IpAddressDataType(IpAddrEntry.ipbase, fieldInfo));
-        
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        DataTypeHadoopConfig dataType = new IpAddressDataType(IpAddrEntry.ipbase, fieldInfo);
+        accumuloSetup.setData(FileType.CSV, dataType);
+        client = accumuloSetup.loadTables(log);
     }
     
     public IpAddressQueryTest() {
@@ -55,29 +55,30 @@ public class IpAddressQueryTest extends AbstractFunctionalQuery {
     
     @Test
     public void testRange() throws Exception {
-        String query = IpAddrField.PUBLIC_IP.name() + GTE_OP + "'9.9.9.9'" + AND_OP + IpAddrField.PUBLIC_IP.name() + LTE_OP + "'9.9.40.1'";
+        String query = "((_Bounded_ = true) && (" + IpAddrField.PUBLIC_IP.name() + GTE_OP + "'9.9.9.9'" + AND_OP + IpAddrField.PUBLIC_IP.name() + LTE_OP
+                        + "'9.9.40.1'))";
         runTest(query, query);
     }
     
     @Test
     public void testRangeWithRegexField() throws Exception {
-        String query = IpAddrField.PUBLIC_IP.name() + GTE_OP + "'9.9.9.9'" + AND_OP + IpAddrField.PUBLIC_IP.name() + LTE_OP + "'9.9.40.1'" + AND_OP
-                        + IpAddrField.PLANET.name() + RE_OP + "'m.*'";
+        String query = "((_Bounded_ = true) && (" + IpAddrField.PUBLIC_IP.name() + GTE_OP + "'9.9.9.9'" + AND_OP + IpAddrField.PUBLIC_IP.name() + LTE_OP
+                        + "'9.9.40.1'))" + AND_OP + IpAddrField.PLANET.name() + RE_OP + "'m.*'";
         runTest(query, query);
     }
     
     @Test
     public void testRangeWithNotEq() throws Exception {
-        String query = "(" + IpAddrField.PRIVATE_IP.name() + GTE_OP + "'20.20.20.20'" + AND_OP + IpAddrField.PRIVATE_IP.name() + LTE_OP + "'30.30.30.30'" + ")"
-                        + AND_OP + IpAddrField.LOCATION.name() + NE_OP + "'paris'";
+        String query = "((_Bounded_ = true) && (" + IpAddrField.PRIVATE_IP.name() + GTE_OP + "'20.20.20.20'" + AND_OP + IpAddrField.PRIVATE_IP.name() + LTE_OP
+                        + "'30.30.30.30'" + "))" + AND_OP + IpAddrField.LOCATION.name() + NE_OP + "'paris'";
         runTest(query, query);
     }
     
     @Test
     public void testMultiRange() throws Exception {
-        String query = "(" + IpAddrField.PRIVATE_IP.name() + GTE_OP + "'20.20.20.20'" + AND_OP + IpAddrField.PRIVATE_IP.name() + LTE_OP + "'22.90.90.200'"
-                        + ")" + OR_OP + "(((" + IpAddrField.PRIVATE_IP.name() + GTE_OP + "'33.60.60.60'" + ")" + AND_OP + IpAddrField.PRIVATE_IP.name()
-                        + LTE_OP + "'33.100.100.200'" + "))";
+        String query = "((_Bounded_ = true) && (" + IpAddrField.PRIVATE_IP.name() + GTE_OP + "'20.20.20.20'" + AND_OP + IpAddrField.PRIVATE_IP.name() + LTE_OP
+                        + "'22.90.90.200')" + ")" + OR_OP + "((((_Bounded_ = true) && (" + IpAddrField.PRIVATE_IP.name() + GTE_OP + "'33.60.60.60'" + ")"
+                        + AND_OP + IpAddrField.PRIVATE_IP.name() + LTE_OP + "'33.100.100.200'" + ")))";
         runTest(query, query);
     }
     

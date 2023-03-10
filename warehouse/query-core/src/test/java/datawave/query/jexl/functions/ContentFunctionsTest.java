@@ -1604,4 +1604,54 @@ public class ContentFunctionsTest {
         return new Zone("BODY", true, "shard\u0000dt\u0000uid");
     }
     
+    private Zone genTestZone(String zone) {
+        return new Zone(zone, true, "shard\u0000dt\u0000uid");
+    }
+    
+    @Test
+    public void testIgnoreIrrelevantZones() {
+        Zone zone1 = genTestZone("ZONE1");
+        Zone zone2 = genTestZone("ZONE2");
+        
+        String[] terms = new String[] {"some", "phrase"};
+        
+        TreeMultimap<Zone,TermWeightPosition> multimap;
+        Map<String,TermFrequencyList> termList = Maps.newHashMap();
+        
+        // Build term 1 offsets...
+        
+        multimap = TreeMultimap.create();
+        multimap.put(zone1, getPosition(1));
+        multimap.put(zone1, getPosition(100));
+        termList.put(terms[0], new TermFrequencyList(multimap));
+        
+        multimap = TreeMultimap.create();
+        multimap.put(zone2, getPosition(19));
+        termList.put(terms[0], new TermFrequencyList(multimap));
+        
+        // Build term 2 offsets...
+        
+        multimap = TreeMultimap.create();
+        multimap.put(zone1, getPosition(10));
+        multimap.put(zone1, getPosition(1000));
+        termList.put(terms[1], new TermFrequencyList(multimap));
+        
+        multimap = TreeMultimap.create();
+        multimap.put(zone2, getPosition(20));
+        multimap.put(zone2, getPosition(27));
+        termList.put(terms[1], new TermFrequencyList(multimap));
+        
+        // The only match, [19, 20], is in ZONE2.
+        // Thus, evaluating ZONE1 should return false here (see #1171)...
+        Assert.assertFalse(ContentFunctions.phrase(zone1.getZone(), termList, terms));
+        
+        // Ensure that we do get the hit if we evaluate the other zone
+        Assert.assertTrue(ContentFunctions.phrase(zone2.getZone(), termList, terms));
+        
+        // Ensure that we get the hit if we evaluate both zones
+        Assert.assertTrue(ContentFunctions.phrase(Arrays.asList(zone1.getZone(), zone2.getZone()), termList, terms));
+        
+        // Ensure that we get the hit if we evaluate null zone
+        Assert.assertTrue(ContentFunctions.phrase((Object) null, termList, terms));
+    }
 }

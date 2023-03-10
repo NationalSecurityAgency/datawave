@@ -16,13 +16,13 @@ import com.google.common.collect.Lists;
 /**
  * Callable class that the executor will use to stand up the ScannerSessions
  *
- * We are not concerned about the threads in this pool as we are simply building a scanner session when we call hasnext, if records exist.
+ * We are not concerned about the threads in this pool as we are simply building a scanner session when we call hasNext(), if records exist.
  */
-public class ConcurrentScannerInitializer implements Callable<IndexStream> {
+public class ConcurrentScannerInitializer implements Callable<BaseIndexStream> {
     
-    private IndexStream stream;
+    private BaseIndexStream stream;
     
-    public ConcurrentScannerInitializer(IndexStream stream) {
+    public ConcurrentScannerInitializer(BaseIndexStream stream) {
         this.stream = stream;
     }
     
@@ -32,32 +32,29 @@ public class ConcurrentScannerInitializer implements Callable<IndexStream> {
      * @see java.util.concurrent.Callable#call()
      */
     @Override
-    public IndexStream call() throws Exception {
+    public BaseIndexStream call() throws Exception {
         if (stream.context() == StreamContext.INITIALIZED) {
             if (stream.hasNext()) {
-                
                 return ScannerStream.variable(stream, stream.currentNode());
             } else {
                 return ScannerStream.noData(stream.currentNode());
             }
         } else {
             return stream;
-            
         }
-        
     }
     
-    public static Collection<IndexStream> initializeScannerStreams(List<ConcurrentScannerInitializer> todo, ExecutorService executor) {
+    public static Collection<BaseIndexStream> initializeScannerStreams(List<ConcurrentScannerInitializer> todo, ExecutorService executor) {
         
-        List<Future<IndexStream>> futures;
-        List<IndexStream> streams = Lists.newArrayList();
+        List<Future<BaseIndexStream>> futures;
+        List<BaseIndexStream> streams = Lists.newArrayList();
         try {
             futures = executor.invokeAll(todo);
             
-            for (Future<IndexStream> future : futures) {
+            for (Future<BaseIndexStream> future : futures) {
                 Exception sawException = null;
                 try {
-                    IndexStream newStream = null;
+                    BaseIndexStream newStream = null;
                     
                     while (!executor.isShutdown()) {
                         try {
@@ -72,9 +69,7 @@ public class ConcurrentScannerInitializer implements Callable<IndexStream> {
                     if (newStream != null) {
                         streams.add(newStream);
                     }
-                } catch (InterruptedException e) {
-                    sawException = (Exception) e.getCause();
-                } catch (ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     sawException = (Exception) e.getCause();
                 }
                 
@@ -82,15 +77,11 @@ public class ConcurrentScannerInitializer implements Callable<IndexStream> {
                     throw new RuntimeException(sawException);
                 }
             }
-            
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
             todo.clear();
         }
-        
         return streams;
-        
     }
-    
 }

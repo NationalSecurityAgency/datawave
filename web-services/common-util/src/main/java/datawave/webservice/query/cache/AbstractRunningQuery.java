@@ -1,15 +1,12 @@
 package datawave.webservice.query.cache;
 
-import java.io.Serializable;
-
 import datawave.webservice.query.metric.BaseQueryMetric;
 
 /**
- * getLastUsed() on Infinispan Cache entry objects is probably used for eviction from the L1 cache and is therefore unreliable. This class will be used as the
- * base class for all objects put into the query cache.
+ * This class will be used as the base class for all objects put into the query cache.
  *
  */
-public abstract class AbstractRunningQuery implements Serializable {
+public abstract class AbstractRunningQuery {
     
     private static final long serialVersionUID = 1L;
     

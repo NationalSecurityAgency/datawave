@@ -146,8 +146,6 @@ public class QueryParameters {
      */
     public static final String HIT_LIST = "hit.list";
     
-    public static final String TYPE_METADATA_IN_HDFS = "type.metadata.in.hdfs";
-    
     /**
      * The type of dates used in the date range. Leaving blank will use the default.
      */

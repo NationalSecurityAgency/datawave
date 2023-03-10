@@ -7,9 +7,10 @@ import datawave.query.Constants;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.cardata.CarsDataType;
 import datawave.query.testframework.cardata.CarsDataType.CarField;
@@ -23,6 +24,7 @@ import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -43,6 +45,9 @@ import java.util.Set;
  */
 public class IndexQueryLogicTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(IndexQueryLogicTest.class);
     
     public IndexQueryLogicTest() {
@@ -56,8 +61,8 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         dataTypes.add(new CarsDataType(CarsDataType.CarEntry.tesla, generic));
         dataTypes.add(new CarsDataType(CarsDataType.CarEntry.ford, generic));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        client = accumuloSetup.loadTables(log);
     }
     
     @Before
@@ -86,10 +91,6 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
         DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(this.auths.toString().split(",")), null, null, -1L);
         this.principal = new DatawavePrincipal(Collections.singleton(user));
-        
-        QueryLogicTestHarness.TestResultParser resp = (key, document) -> {
-            return this.parse(key, document);
-        };
         
         this.testHarness = new QueryLogicTestHarness(this);
     }
@@ -261,7 +262,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         expected.add("tesla-eventid-002");
         expected.add("tesla-eventid-003");
         
-        String query = CarField.WHEELS.name() + ">='0' and " + CarField.WHEELS.name() + "<='5'";
+        String query = "((_Bounded_ = true) && (" + CarField.WHEELS.name() + ">='0' and " + CarField.WHEELS.name() + "<='5'))";
         runTest(query, expected);
     }
     

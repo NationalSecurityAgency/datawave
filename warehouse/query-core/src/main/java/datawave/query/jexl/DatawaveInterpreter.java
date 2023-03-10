@@ -1,6 +1,7 @@
 package datawave.query.jexl;
 
 import com.google.common.collect.Maps;
+import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.functions.QueryFunctions;
@@ -26,9 +27,13 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -88,19 +93,11 @@ public class DatawaveInterpreter extends Interpreter {
         if (null != result) {
             return result;
         }
+        
         result = super.visit(node, data);
         
-        if (this.arithmetic instanceof HitListArithmetic) {
-            HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
-            Set<String> hitSet = hitListArithmetic.getHitSet();
-            if (hitSet != null && result instanceof Collection<?>) {
-                for (Object o : ((Collection<?>) result)) {
-                    if (o instanceof ValueTuple) {
-                        hitListArithmetic.add((ValueTuple) o);
-                    }
-                }
-            }
-        }
+        addHits(result);
+        
         // if the function stands alone, then it needs to return ag boolean
         // if the function is paired with a method that is called on its results (like 'size') then the
         // actual results must be returned.
@@ -126,6 +123,18 @@ public class DatawaveInterpreter extends Interpreter {
         }
         // do not warn
         return null;
+    }
+    
+    /**
+     * Triggered when method, function or constructor invocation fails.
+     * 
+     * @param xjexl
+     *            the JexlException wrapping the original error
+     * @return throws JexlException
+     */
+    @Override
+    protected Object invocationFailed(JexlException xjexl) {
+        throw xjexl;
     }
     
     @Override
@@ -181,23 +190,44 @@ public class DatawaveInterpreter extends Interpreter {
         Deque<JexlNode> stack = new ArrayDeque<>();
         stack.push(node);
         
+        boolean allIdentifiers = true;
+        
         // iterative depth-first traversal of tree to avoid stack
         // overflow when traversing large or'd lists
+        JexlNode current;
+        JexlNode child;
         while (!stack.isEmpty()) {
-            JexlNode currNode = stack.pop();
+            current = stack.pop();
             
-            if (currNode instanceof ASTOrNode) {
-                for (int i = currNode.jjtGetNumChildren() - 1; i >= 0; i--) {
-                    stack.push(JexlASTHelper.dereference(currNode.jjtGetChild(i)));
+            if (current instanceof ASTOrNode) {
+                for (int i = current.jjtGetNumChildren() - 1; i >= 0; i--) {
+                    child = JexlASTHelper.dereference(current.jjtGetChild(i));
+                    stack.push(child);
                 }
             } else {
-                children.push(currNode);
+                children.push(current);
+                if (allIdentifiers && !(current instanceof ASTIdentifier)) {
+                    allIdentifiers = false;
+                }
             }
         }
         
+        // If all ASTIdentifiers, then traverse the whole queue. Otherwise we can attempt to short circuit.
         Object result = null;
-        while (!arithmetic.toBoolean(result) && !children.isEmpty())
-            result = interpretOr(children.pop().jjtAccept(this, data), result);
+        if (allIdentifiers) {
+            // Likely within a function and must visit every child in the stack.
+            // Failure to do so will short circuit value aggregation leading to incorrect function evaluation.
+            while (!children.isEmpty()) {
+                // Child nodes were put onto the stack left to right. PollLast to evaluate left to right.
+                result = interpretOr(children.pollLast().jjtAccept(this, data), result);
+            }
+        } else {
+            // We are likely within a normal union and can short circuit
+            while (!arithmetic.toBoolean(result) && !children.isEmpty()) {
+                // Child nodes were put onto the stack left to right. PollLast to evaluate left to right.
+                result = interpretOr(children.pollLast().jjtAccept(this, data), result);
+            }
+        }
         
         return result;
     }
@@ -264,52 +294,63 @@ public class DatawaveInterpreter extends Interpreter {
      */
     private Collection<?> evaluateRange(ASTAndNode node) {
         Collection<?> evaluation = null;
-        JexlNode left = node.jjtGetChild(0);
-        JexlNode right = node.jjtGetChild(1);
-        if (left instanceof ASTLENode || left instanceof ASTLTNode) {
-            JexlNode temp = left;
-            left = right;
-            right = temp;
-        }
-        if ((left instanceof ASTGENode || left instanceof ASTGTNode) && (right instanceof ASTLENode || right instanceof ASTLTNode)) {
-            JexlNode leftIdentifier = dereference(left.jjtGetChild(0));
-            JexlNode rightIdentifier = dereference(right.jjtGetChild(0));
-            if (leftIdentifier instanceof ASTIdentifier && rightIdentifier instanceof ASTIdentifier) {
-                String fieldName = leftIdentifier.image;
-                if (fieldName.equals(rightIdentifier.image)) {
-                    Object fieldValue = leftIdentifier.jjtAccept(this, null);
-                    Object leftValue = left.jjtGetChild(1).jjtAccept(this, null);
-                    boolean leftInclusive = left instanceof ASTGENode;
-                    Object rightValue = right.jjtGetChild(1).jjtAccept(this, null);
-                    boolean rightInclusive = right instanceof ASTLENode;
-                    if (leftValue instanceof Number && rightValue instanceof Number) {
-                        if (fieldValue instanceof Collection) {
-                            evaluation = QueryFunctions.between((Collection) fieldValue, ((Number) leftValue).floatValue(), leftInclusive,
-                                            ((Number) rightValue).floatValue(), rightInclusive);
+        
+        LiteralRange range = JexlASTHelper.findRange().getRange(node);
+        if (range != null) {
+            JexlNode left = range.getLowerNode();
+            JexlNode right = range.getUpperNode();
+            if (left instanceof ASTLENode || left instanceof ASTLTNode) {
+                JexlNode temp = left;
+                left = right;
+                right = temp;
+            }
+            if ((left instanceof ASTGENode || left instanceof ASTGTNode) && (right instanceof ASTLENode || right instanceof ASTLTNode)) {
+                JexlNode leftIdentifier = dereference(left.jjtGetChild(0));
+                JexlNode rightIdentifier = dereference(right.jjtGetChild(0));
+                if (leftIdentifier instanceof ASTIdentifier && rightIdentifier instanceof ASTIdentifier) {
+                    String fieldName = leftIdentifier.image;
+                    if (fieldName.equals(rightIdentifier.image)) {
+                        Object fieldValue = leftIdentifier.jjtAccept(this, null);
+                        Object leftValue = left.jjtGetChild(1).jjtAccept(this, null);
+                        boolean leftInclusive = left instanceof ASTGENode;
+                        Object rightValue = right.jjtGetChild(1).jjtAccept(this, null);
+                        boolean rightInclusive = right instanceof ASTLENode;
+                        if (leftValue instanceof Number && rightValue instanceof Number) {
+                            if (fieldValue instanceof Collection) {
+                                evaluation = QueryFunctions.between((Collection) fieldValue, ((Number) leftValue).floatValue(), leftInclusive,
+                                                ((Number) rightValue).floatValue(), rightInclusive);
+                            } else {
+                                evaluation = QueryFunctions.between(fieldValue, ((Number) leftValue).floatValue(), leftInclusive,
+                                                ((Number) rightValue).floatValue(), rightInclusive);
+                            }
                         } else {
-                            evaluation = QueryFunctions.between(fieldValue, ((Number) leftValue).floatValue(), leftInclusive,
-                                            ((Number) rightValue).floatValue(), rightInclusive);
+                            if (fieldValue instanceof Collection) {
+                                evaluation = QueryFunctions.between((Collection) fieldValue, String.valueOf(leftValue), leftInclusive,
+                                                String.valueOf(rightValue), rightInclusive);
+                            } else {
+                                evaluation = QueryFunctions.between(fieldValue, String.valueOf(leftValue), leftInclusive, String.valueOf(rightValue),
+                                                rightInclusive);
+                            }
                         }
-                    } else {
-                        if (fieldValue instanceof Collection) {
-                            evaluation = QueryFunctions.between((Collection) fieldValue, String.valueOf(leftValue), leftInclusive, String.valueOf(rightValue),
-                                            rightInclusive);
-                        } else {
-                            evaluation = QueryFunctions.between(fieldValue, String.valueOf(leftValue), leftInclusive, String.valueOf(rightValue),
-                                            rightInclusive);
-                        }
-                    }
-                    if (this.arithmetic instanceof HitListArithmetic) {
-                        HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
-                        Set<String> hitSet = hitListArithmetic.getHitSet();
-                        if (hitSet != null) {
-                            hitSet.addAll((Collection<String>) evaluation);
-                        }
+                        addHits(fieldValue);
                     }
                 }
             }
         }
         return evaluation;
+    }
+    
+    private void addHits(Object fieldValue) {
+        if (this.arithmetic instanceof HitListArithmetic && fieldValue != null) {
+            HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
+            if (fieldValue instanceof Collection<?>) {
+                for (Object o : ((Collection<?>) fieldValue)) {
+                    addHits(o);
+                }
+            } else if (fieldValue instanceof ValueTuple) {
+                hitListArithmetic.add((ValueTuple) fieldValue);
+            }
+        }
     }
     
     public Object visit(ASTAndNode node, Object data) {
@@ -444,6 +485,24 @@ public class DatawaveInterpreter extends Interpreter {
         FST evalFst = null;
         SortedSet<Range> evalRanges = null;
         
+        // if the context isn't cached, load it now
+        if (!getContext().has(id)) {
+            try {
+                ExceededOrThresholdMarkerJexlNode.ExceededOrParams params = ExceededOrThresholdMarkerJexlNode.getParameters(node);
+                if (params != null) {
+                    if (params.getRanges() != null && !params.getRanges().isEmpty()) {
+                        getContext().set(id, params.getSortedAccumuloRanges());
+                    } else if (params.getValues() != null && !params.getValues().isEmpty()) {
+                        getContext().set(id, params.getValues());
+                    } else if (params.getFstURI() != null) {
+                        getContext().set(id, DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(new URI(params.getFstURI()))));
+                    }
+                }
+            } catch (IOException | URISyntaxException e) {
+                log.warn("Unable to load ExceededOrThreshold Parameters during evaluation", e);
+            }
+        }
+        
         // determine what we're dealing with
         Object contextObj = getContext().get(id);
         if (contextObj instanceof FST) {
@@ -509,6 +568,8 @@ public class DatawaveInterpreter extends Interpreter {
         
         if (evaluation.isEmpty())
             return Boolean.FALSE;
+        
+        addHits(evaluation);
         
         return evaluation;
     }

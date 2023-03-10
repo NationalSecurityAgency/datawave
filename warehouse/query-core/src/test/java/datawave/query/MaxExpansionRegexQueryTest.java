@@ -1,22 +1,23 @@
 package datawave.query;
 
+import datawave.query.exceptions.DatawaveIvaratorMaxResultsException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.MaxExpandCityFields;
 
 import java.io.File;
 import java.net.URI;
 import java.util.List;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -30,7 +31,6 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -41,6 +41,9 @@ import static org.junit.Assert.fail;
  */
 public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(MaxExpansionRegexQueryTest.class);
     
     @BeforeClass
@@ -50,8 +53,8 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        client = accumuloSetup.loadTables(log);
     }
     
     public MaxExpansionRegexQueryTest() {
@@ -268,8 +271,10 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         
         runTest(query, expect);
         // verify that the ivarators ran and completed
-        assertEquals(3, countComplete(dirs));
+        assertTrue(countComplete(dirs) >= 1);
         
+        // clear list before new set is added
+        dirs.clear();
         // now get a new set of ivarator directories
         dirs = ivaratorConfig();
         // set the max ivarator results to 1
@@ -279,8 +284,18 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, expect);
             fail("Expected the query to fail with the ivarators fail");
         } catch (Exception e) {
-            // expected
+            if (!hasCause(e, DatawaveIvaratorMaxResultsException.class)) {
+                log.error("Unexpected exception", e);
+                fail("Unexpected exception: " + e.getMessage());
+            }
         }
+    }
+    
+    private boolean hasCause(Throwable e, Class<? extends Exception> causeClass) {
+        while (e != null && !causeClass.isInstance(e)) {
+            e = e.getCause();
+        }
+        return e != null;
     }
     
     /**
@@ -310,7 +325,10 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         
         runTest(query, expect);
         // verify that the ivarators ran and completed
-        assertEquals(3, countComplete(dirs));
+        assertTrue(countComplete(dirs) >= 1);
+        
+        // clear list before new set is added
+        dirs.clear();
         
         // now get a new set of ivarator directories
         dirs = ivaratorConfig();

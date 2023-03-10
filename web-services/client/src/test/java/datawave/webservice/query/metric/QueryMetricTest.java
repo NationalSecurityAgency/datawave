@@ -1,21 +1,32 @@
 package datawave.webservice.query.metric;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
+import datawave.marking.MarkingFunctions;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 
+import io.protostuff.LinkedBuffer;
+import io.protostuff.ProtostuffIOUtil;
+import io.protostuff.Schema;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 
 public class QueryMetricTest {
     
@@ -30,7 +41,8 @@ public class QueryMetricTest {
     public static void setup() {
         queryMetric = new QueryMetric();
         markings = new HashMap<String,String>();
-        markings.put("test", "colvis");
+        markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, "PUBLIC");
+        queryMetric.setMarkings(markings);
         negativeSelectors = new ArrayList<String>();
         negativeSelectors.add("negativeSelector1");
         positiveSelectors = new ArrayList<String>();
@@ -49,21 +61,20 @@ public class QueryMetricTest {
         Exception e = new Exception(qe);
         
         queryMetric.setError(e);
-        assertEquals(queryMetric.getErrorMessage(), "The query contained fields which do not exist in the data dictionary for any specified datatype. test");
-        assertEquals(queryMetric.getErrorCode(), "400-16");
+        assertEquals("The query contained fields which do not exist in the data dictionary for any specified datatype. test", queryMetric.getErrorMessage());
+        assertEquals("400-16", queryMetric.getErrorCode());
         
         queryMetric.setErrorCode("");
         Throwable t = new Throwable("non-datawave error");
         queryMetric.setError(t);
-        assertEquals(queryMetric.getErrorMessage(), "non-datawave error");
-        assertEquals(queryMetric.getErrorCode(), "");
+        assertEquals("non-datawave error", queryMetric.getErrorMessage());
+        assertEquals("", queryMetric.getErrorCode());
     }
     
     @Test
     public void testSettersGetters() {
         Date d = new Date();
         queryMetric.setBeginDate(d);
-        queryMetric.setColumnVisibility("colvis");
         queryMetric.setCreateCallTime(0);
         queryMetric.setCreateDate(d);
         queryMetric.setEndDate(d);
@@ -89,34 +100,63 @@ public class QueryMetricTest {
         queryMetric.setUser("user");
         queryMetric.setUserDN("userDN");
         
-        assertEquals(queryMetric.getBeginDate(), d);
-        assertTrue(queryMetric.getColumnVisibility().contains("colvis"));
-        assertEquals(queryMetric.getCreateCallTime(), 0);
-        assertEquals(queryMetric.getCreateDate(), d);
-        assertEquals(queryMetric.getElapsedTime(), 0);
-        assertEquals(queryMetric.getEndDate(), d);
-        assertEquals(queryMetric.getErrorCode(), "error");
-        assertEquals(queryMetric.getErrorMessage(), "errorMessage");
-        assertEquals(queryMetric.getHost(), "host");
-        assertEquals(queryMetric.getLastUpdated(), d);
-        assertEquals(queryMetric.getLastWrittenHash(), 0);
-        assertEquals(queryMetric.getLifecycle(), Lifecycle.INITIALIZED);
-        assertEquals(queryMetric.getMarkings().get("test"), "colvis");
-        assertEquals(queryMetric.getNegativeSelectors().get(0), "negativeSelector1");
-        assertEquals(queryMetric.getNumPages(), 0);
-        assertEquals(queryMetric.getNumResults(), 0);
-        assertEquals(queryMetric.getNumUpdates(), 0);
-        assertEquals(queryMetric.getPageTimes().get(0).getCallTime(), 0);
-        assertEquals(queryMetric.getPositiveSelectors().get(0), "positiveSelector1");
-        assertEquals(queryMetric.getProxyServers().iterator().next(), "proxyServer1");
-        assertEquals(queryMetric.getQuery(), "query");
-        assertEquals(queryMetric.getQueryAuthorizations(), "auths");
-        assertEquals(queryMetric.getQueryId(), "queryId");
-        assertEquals(queryMetric.getQueryLogic(), "queryLogic");
-        assertEquals(queryMetric.getQueryType(), "queryType");
-        assertEquals(queryMetric.getSetupTime(), 0);
-        assertEquals(queryMetric.getUser(), "user");
-        assertEquals(queryMetric.getUserDN(), "userDN");
-        
+        assertEquals(d, queryMetric.getBeginDate());
+        assertEquals("PUBLIC", queryMetric.getColumnVisibility());
+        assertEquals(0, queryMetric.getCreateCallTime());
+        assertEquals(d, queryMetric.getCreateDate());
+        assertEquals(0, queryMetric.getElapsedTime());
+        assertEquals(d, queryMetric.getEndDate());
+        assertEquals("error", queryMetric.getErrorCode());
+        assertEquals("errorMessage", queryMetric.getErrorMessage());
+        assertEquals("host", queryMetric.getHost());
+        assertEquals(d, queryMetric.getLastUpdated());
+        assertEquals(0, queryMetric.getLastWrittenHash());
+        assertEquals(Lifecycle.INITIALIZED, queryMetric.getLifecycle());
+        assertEquals("PUBLIC", queryMetric.getMarkings().get(MarkingFunctions.Default.COLUMN_VISIBILITY));
+        assertEquals("negativeSelector1", queryMetric.getNegativeSelectors().get(0));
+        assertEquals(0, queryMetric.getNumPages());
+        assertEquals(0, queryMetric.getNumResults());
+        assertEquals(0, queryMetric.getNumUpdates());
+        assertEquals(0, queryMetric.getPageTimes().get(0).getCallTime());
+        assertEquals("positiveSelector1", queryMetric.getPositiveSelectors().get(0));
+        assertEquals("proxyServer1", queryMetric.getProxyServers().iterator().next());
+        assertEquals("query", queryMetric.getQuery());
+        assertEquals("auths", queryMetric.getQueryAuthorizations());
+        assertEquals("queryId", queryMetric.getQueryId());
+        assertEquals("queryLogic", queryMetric.getQueryLogic());
+        assertEquals("queryType", queryMetric.getQueryType());
+        assertEquals(0, queryMetric.getSetupTime());
+        assertEquals("user", queryMetric.getUser());
+        assertEquals("userDN", queryMetric.getUserDN());
+    }
+    
+    @Test
+    public void testJsonSerialization() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JaxbAnnotationModule());
+        String metricAsBytes = objectMapper.writeValueAsString(queryMetric);
+        QueryMetric deserializedMetric = objectMapper.readValue(metricAsBytes, QueryMetric.class);
+        assertEquals(queryMetric, deserializedMetric);
+    }
+    
+    @Test
+    public void testXmlSerialization() throws Exception {
+        JAXBContext jaxbContext = JAXBContext.newInstance(QueryMetric.class);
+        Marshaller marshaller = jaxbContext.createMarshaller();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        marshaller.marshal(queryMetric, baos);
+        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        QueryMetric deserializedMetric = (QueryMetric) unmarshaller.unmarshal(new ByteArrayInputStream(baos.toByteArray()));
+        assertEquals(queryMetric, deserializedMetric);
+    }
+    
+    @Test
+    public void testProtobufSerialization() throws Exception {
+        Schema<QueryMetric> schema = (Schema<QueryMetric>) queryMetric.getSchemaInstance();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ProtostuffIOUtil.writeTo(baos, queryMetric, schema, LinkedBuffer.allocate());
+        QueryMetric deserializedMetric = schema.newMessage();
+        ProtostuffIOUtil.mergeFrom(baos.toByteArray(), deserializedMetric, schema);
+        assertEquals(queryMetric, deserializedMetric);
     }
 }

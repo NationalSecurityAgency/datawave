@@ -1,15 +1,17 @@
 package datawave.query;
 
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
+import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -26,6 +28,9 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 
 public class JexlNumericQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(JexlNumericQueryTest.class);
     
     @BeforeClass
@@ -35,8 +40,8 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
         generic.addIndexField(CityField.NUM.name());
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        client = accumuloSetup.loadTables(log);
     }
     
     public JexlNumericQueryTest() {
@@ -77,29 +82,29 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testLteGteBound() throws Exception {
         log.info("------  testLteGteBound  ------");
-        String query = CityField.NUM.name() + LTE_OP + "20 " + AND_OP + CityField.NUM.name() + GTE_OP + "20";
+        String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "20 " + AND_OP + CityField.NUM.name() + GTE_OP + "20))";
         runTest(query, query);
     }
     
     @Test
     public void testGteLteBound() throws Exception {
         log.info("------  testGteLteBound  ------");
-        String query = CityField.NUM.name() + GTE_OP + "20 " + AND_OP + CityField.NUM.name() + LTE_OP + "40";
+        String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + GTE_OP + "20 " + AND_OP + CityField.NUM.name() + LTE_OP + "40))";
         runTest(query, query);
     }
     
     @Test
     public void testGtLtBound() throws Exception {
         log.info("------  testGtLtBound  ------");
-        String query = CityField.NUM.name() + GT_OP + "24 " + AND_OP + CityField.NUM.name() + LT_OP + "105";
+        String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + GT_OP + "24 " + AND_OP + CityField.NUM.name() + LT_OP + "105))";
         runTest(query, query);
     }
     
     @Test
     public void testMultiBound() throws Exception {
         log.info("------  testMultiBound  ------");
-        String query = "(" + CityField.NUM.name() + GT_OP + "15 " + AND_OP + CityField.NUM.name() + LT_OP + "24)" + OR_OP + "(" + CityField.NUM.name() + GT_OP
-                        + "31 and " + CityField.NUM.name() + LT_OP + "42)";
+        String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + GT_OP + "15 " + AND_OP + CityField.NUM.name() + LT_OP + "24))" + OR_OP
+                        + "((_Bounded_ = true) && (" + CityField.NUM.name() + GT_OP + "31 and " + CityField.NUM.name() + LT_OP + "42))";
         runTest(query, query);
     }
     
@@ -137,8 +142,8 @@ public class JexlNumericQueryTest extends AbstractFunctionalQuery {
     public void testAndGteLte() throws Exception {
         log.info("------  testAndGteLte  ------");
         for (final TestCities city : TestCities.values()) {
-            String query = "(" + CityField.NUM.name() + GTE_OP + "100 " + AND_OP + CityField.NUM.name() + LTE_OP + "130 " + ") and " + CityField.CITY.name()
-                            + EQ_OP + "'" + city.name() + "'";
+            String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + GTE_OP + "100 " + AND_OP + CityField.NUM.name() + LTE_OP + "130 " + ")) and "
+                            + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'";
             runTest(query, query);
         }
     }

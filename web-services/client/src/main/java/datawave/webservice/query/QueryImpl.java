@@ -843,6 +843,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         qm.setQueryAuthorizations(this.getQueryAuthorizations());
         qm.setQueryName(this.getQueryName());
         qm.setParameters(this.getParameters());
+        qm.setColumnVisibility(this.getColumnVisibility());
     }
     
     @Override

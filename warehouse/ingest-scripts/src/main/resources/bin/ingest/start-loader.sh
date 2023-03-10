@@ -36,6 +36,16 @@ for PID in $PIDS; do
 done
 if [[ COUNT -eq 0 ]]; then
 	for (( LOADER=0; LOADER < ${#MAP_LOADER_HDFS_NAME_NODES[@]}; LOADER=$((LOADER + 1)) )); do
+                FILES_STUCK_LOADING=`$INGEST_HADOOP_HOME/bin/hadoop fs -ls "${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}$BASE_WORK_DIR/*/job.loading" | awk '{print $NF}'`
+                if [[ ! -z $FILES_STUCK_LOADING ]]; then
+                    for stuckFile in $FILES_STUCK_LOADING; do
+                        echo "Resetting ${stuckFile}"
+                        moving_result=`$INGEST_HADOOP_HOME/bin/hadoop fs -mv $stuckFile ${stuckFile%.loading}.complete 2>&1`
+                            if [[ ! -z $moving_result ]]; then
+                                echo "Error resetting file: $moving_result . Manually check for orphans."
+                            fi
+                    done
+                fi
 		COUNT=${NUM_MAP_LOADERS[$LOADER]}
         	echo "starting $COUNT map file loaders for ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]} ..."
 		for (( ; $COUNT; COUNT=$((COUNT-1)) )) ; do

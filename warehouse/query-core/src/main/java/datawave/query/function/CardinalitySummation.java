@@ -11,6 +11,7 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
@@ -24,6 +25,9 @@ import com.google.common.collect.TreeMultimap;
 public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<Key,Document>> {
     
     private static final Logger log = Logger.getLogger(CardinalitySummation.class);
+    
+    private static final Text MAX_UNICODE = new Text(new String(Character.toChars(Character.MAX_CODE_POINT)));
+    
     protected Document referenceDocument;
     
     protected Key referenceKey = null;
@@ -38,8 +42,9 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
     
     public CardinalitySummation(Key topKey, Document doc, boolean merge) {
         
-        // reduce the key to the document key pieces only
-        topKey = new Key(topKey.getRow(), topKey.getColumnFamily());
+        // reduce the key to the document key pieces only and a max cq in order to ensure the top key
+        // sorts after the pieces it is summarizing.
+        topKey = new Key(topKey.getRow(), topKey.getColumnFamily(), MAX_UNICODE);
         
         this.merge = merge;
         
@@ -150,8 +155,9 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
         
         Key topKey = input.getKey();
         
-        // reduce the key to the document key pieces only
-        topKey = new Key(topKey.getRow(), topKey.getColumnFamily());
+        // reduce the key to the document key pieces only and a max cq in order to ensure the top key
+        // sorts after the pieces it is summarizing.
+        topKey = new Key(topKey.getRow(), topKey.getColumnFamily(), MAX_UNICODE);
         
         DatawaveKey parser = new DatawaveKey(topKey);
         

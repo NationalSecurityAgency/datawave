@@ -153,9 +153,11 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
     }
     
+    private static final int MIN_THREADS = 1;
+    
     protected void setupThreadResources() {
-        int threads = this.config.getNumIndexLookupThreads().intValue();
-        executor = Executors.newFixedThreadPool((int) Math.max(threads, 10), new ParallelExpansionFactory(this.config.getQuery(), this.threadName));
+        int threads = this.config.getNumIndexLookupThreads();
+        executor = Executors.newFixedThreadPool(Math.max(threads, MIN_THREADS), new ParallelExpansionFactory(this.config.getQuery(), this.threadName));
     }
     
     @Override
@@ -223,7 +225,8 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
      * @throws IllegalAccessException
      * @throws InstantiationException
      */
-    protected IndexLookupCallable buildIndexLookup(JexlNode node) throws TableNotFoundException, IOException, InstantiationException, IllegalAccessException {
+    protected IndexLookupCallable buildIndexLookup(JexlNode node, boolean keepOriginalNode) throws TableNotFoundException, IOException, InstantiationException,
+                    IllegalAccessException {
         
         String fieldName = JexlASTHelper.getIdentifier(node);
         
@@ -240,7 +243,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             
         }
         
-        return new IndexLookupCallable(task, node, true, false);
+        return new IndexLookupCallable(task, node, true, false, keepOriginalNode);
     }
     
     /**
@@ -344,6 +347,11 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         // determine whether we have the tools to expand this in the first place
         try {
+            // check special case NO_FIELD
+            if (fieldName.equals(Constants.NO_FIELD)) {
+                return node;
+            }
+            
             if (!isExpandable(node)) {
                 if (mustExpand(node)) {
                     throw new DatawaveFatalQueryException("We must expand but yet cannot expand a regex: " + PrintingVisitor.formattedQueryString(node));
@@ -403,7 +411,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             throw new DatawaveFatalQueryException(e);
         }
         
-        return expandFieldNames(node);
+        return expandFieldNames(node, false);
     }
     
     @Override
@@ -610,12 +618,12 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
      * @param node
      * @return
      */
-    protected Object expandFieldNames(JexlNode node) {
+    protected Object expandFieldNames(JexlNode node, boolean keepOriginalNode) {
         
         if (shouldExpand(node)) {
             
             try {
-                IndexLookupCallable runnableLookup = buildIndexLookup(node);
+                IndexLookupCallable runnableLookup = buildIndexLookup(node, keepOriginalNode);
                 
                 JexlNode newNode = new IndexLookupCallback(ParserTreeConstants.JJTREFERENCE, runnableLookup);
                 todo.add(((IndexLookupCallback) newNode).get());
@@ -708,17 +716,19 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         protected IndexLookup lookup;
         protected JexlNode node;
         protected boolean ignoreComposites;
+        protected boolean keepOriginalNode;
         
         protected JexlNode parentNode = null;
         private int id;
         private JexlNode newNode;
         protected boolean enforceTimeout;
         
-        public IndexLookupCallable(IndexLookup lookup, JexlNode currNode, boolean enforceTimeout, boolean ignoreComposites) {
+        public IndexLookupCallable(IndexLookup lookup, JexlNode currNode, boolean enforceTimeout, boolean ignoreComposites, boolean keepOriginalNode) {
             this.lookup = lookup;
             this.node = currNode;
             this.enforceTimeout = enforceTimeout;
             this.ignoreComposites = ignoreComposites;
+            this.keepOriginalNode = keepOriginalNode;
             parentNode = currNode.jjtGetParent();
         }
         
@@ -764,7 +774,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 // simply replace the _ANYFIELD_ with _NOFIELD_ denoting that there was no expansion. This will naturally evaluate correctly when applying
                 // the query against the document
                 for (ASTIdentifier id : JexlASTHelper.getIdentifiers(node)) {
-                    if (Constants.ANY_FIELD.equals(id.image)) {
+                    if (!keepOriginalNode && Constants.ANY_FIELD.equals(id.image)) {
                         id.image = Constants.NO_FIELD;
                     }
                 }
@@ -774,11 +784,11 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 if (isNegativeNode(node)) {
                     // for a negative node, we want negative equalities in an AND
                     newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.AND_NODE, new ASTNENode(ParserTreeConstants.JJTNENODE), node,
-                                    fieldsToValues, expandFields, expandValues);
+                                    fieldsToValues, expandFields, expandValues, keepOriginalNode);
                 } else {
                     // for a positive node, we want equalities in a OR
                     newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTEQNODE), node,
-                                    fieldsToValues, expandFields, expandValues);
+                                    fieldsToValues, expandFields, expandValues, keepOriginalNode);
                 }
             }
             

@@ -9,10 +9,10 @@ import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import org.apache.accumulo.core.trace.Span;
-import org.apache.accumulo.core.trace.Trace;
-import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.htrace.Trace;
+import org.apache.htrace.TraceInfo;
+import org.apache.htrace.TraceScope;
 import org.apache.log4j.Logger;
 
 import javax.annotation.PostConstruct;
@@ -146,18 +146,20 @@ public class QueryExpirationBean {
                     log.debug("Entry evicted, connection returned.");
                 }
                 
-                TInfo traceInfo = query.getTraceInfo();
+                TraceInfo traceInfo = query.getTraceInfo();
                 if (traceInfo != null) {
-                    Span span = Trace.trace(traceInfo, "query:expiration");
-                    span.data("expiredAt", new Date().toString());
-                    // Spans aren't recorded if they take no time, so sleep for a
-                    // couple milliseconds just to ensure we get something saved.
-                    try {
-                        Thread.sleep(2);
-                    } catch (InterruptedException e) {
-                        // ignore
+                    try (TraceScope scope = Trace.startSpan("query:expiration", traceInfo)) {
+                        if (scope.getSpan() != null) {
+                            scope.getSpan().addKVAnnotation("expiredAt", new Date().toString());
+                        }
+                        // Spans aren't recorded if they take no time, so sleep for a
+                        // couple milliseconds just to ensure we get something saved.
+                        try {
+                            Thread.sleep(2);
+                        } catch (InterruptedException e) {
+                            // ignore
+                        }
                     }
-                    span.stop();
                 }
             }
         }

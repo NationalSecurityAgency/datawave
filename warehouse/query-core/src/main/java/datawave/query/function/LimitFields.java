@@ -219,27 +219,25 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     }
     
     private Map<String,String> getHitTermMap(Document document) {
-        Attribute<?> attr = document.get("HIT_TERM");
         Map<String,String> attrMap = new HashMap<>();
-        if (attr instanceof Attributes) {
-            Attributes attrs = (Attributes) attr;
-            for (Attribute<?> at : attrs.getAttributes()) {
-                if (at instanceof Content) {
-                    Content content = (Content) at;
-                    // split the content into its fieldname:value
-                    String contentString = content.getContent();
-                    String[] fieldValue = new String[] {contentString.substring(0, contentString.indexOf(":")),
-                            contentString.substring(contentString.indexOf(":") + 1)};
-                    attrMap.put(fieldValue[0], fieldValue[1]);
-                }
-            }
-        } else if (attr instanceof Content) {
-            Content content = (Content) attr;
-            // split the content into its fieldname:value
-            String[] fieldValue = Iterables.toArray(Splitter.on(":").omitEmptyStrings().trimResults().split(content.getContent()), String.class);
-            attrMap.put(fieldValue[0], fieldValue[1]);
-        }
+        fillHitTermMap(document.get(JexlEvaluation.HIT_TERM_FIELD), attrMap);
         return attrMap;
+    }
+    
+    private void fillHitTermMap(Attribute<?> attr, Map<String,String> attrMap) {
+        if (attr != null) {
+            if (attr instanceof Attributes) {
+                Attributes attrs = (Attributes) attr;
+                for (Attribute<?> at : attrs.getAttributes()) {
+                    fillHitTermMap(at, attrMap);
+                }
+            } else if (attr instanceof Content) {
+                Content content = (Content) attr;
+                // split the content into its fieldname:value
+                String contentString = content.getContent();
+                attrMap.put(contentString.substring(0, contentString.indexOf(":")), contentString.substring(contentString.indexOf(":") + 1));
+            }
+        }
     }
     
     /**

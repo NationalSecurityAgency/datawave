@@ -30,7 +30,7 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     private Map<String,String> securityMarkings = new TreeMap<>();
     private UID id = uidBuilder.newId();
     private Type dataType;
-    private long date = 0;
+    private long date = Long.MIN_VALUE;
     private Collection<String> errors = new ArrayList<>();
     private Collection<String> altIds = Collections.emptyList();
     private String rawFileName = "";

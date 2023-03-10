@@ -5,18 +5,20 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.webservice.query.configuration.QueryData;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -35,6 +37,9 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 
 public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(UnindexedNumericQueryTest.class);
     
     @BeforeClass
@@ -48,8 +53,8 @@ public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
         }
         dataTypes.add(new CitiesDataType(CityEntry.usa, generic));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        client = accumuloSetup.loadTables(log);
     }
     
     public UnindexedNumericQueryTest() {
@@ -96,8 +101,8 @@ public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
         String max = "122";
         String ohio = "'ohio'";
         String iowa = "'iowa'";
-        String query = "(" + CityField.STATE.name() + EQ_OP + ohio + OR_OP + CityField.STATE.name() + EQ_OP + iowa + ")" + AND_OP + "(" + CityField.NUM.name()
-                        + GT_OP + min + AND_OP + CityField.NUM.name() + LT_OP + max + ")";
+        String query = "(" + CityField.STATE.name() + EQ_OP + ohio + OR_OP + CityField.STATE.name() + EQ_OP + iowa + ")" + AND_OP + "((_Bounded_ = true) && ("
+                        + CityField.NUM.name() + GT_OP + min + AND_OP + CityField.NUM.name() + LT_OP + max + "))";
         
         ShardQueryConfiguration config = (ShardQueryConfiguration) setupConfig(query);
         // verify NUM is NumberType

@@ -2,7 +2,6 @@ package datawave.query.cardinality;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -13,11 +12,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.io.Files;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -28,10 +26,11 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 import org.junit.Test;
 
 import com.google.common.collect.Sets;
-
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
@@ -56,7 +55,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 public class TestCardinalityWithQuery {
     
     static InMemoryInstance instance;
-    private static Connector connector;
+    private static AccumuloClient client;
     private static ShardQueryLogic logic;
     static BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1000L).setMaxWriteThreads(1);
     
@@ -64,6 +63,9 @@ public class TestCardinalityWithQuery {
     static String METADATA_TABLE_NAME = "metadata";
     static String SHARD_TABLE_NAME = "shard";
     static String SHARD_INDEX_TABLE_NAME = "shardIndex";
+    
+    @Rule
+    public TemporaryFolder tempDir = new TemporaryFolder();
     
     private DatawavePrincipal datawavePrincipal;
     private Authorizations auths = new Authorizations("STUFF,THINGS");
@@ -75,22 +77,22 @@ public class TestCardinalityWithQuery {
     @BeforeClass
     public static void setUp() throws Exception {
         instance = new InMemoryInstance();
-        connector = instance.getConnector("root", new PasswordToken(""));
+        client = new InMemoryAccumuloClient("root", instance);
         
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
         Date date = format.parse("20190101");
         timestamp = date.getTime();
         
-        connector.tableOperations().create(SHARD_TABLE_NAME);
-        connector.tableOperations().create(SHARD_INDEX_TABLE_NAME);
-        connector.tableOperations().create(METADATA_TABLE_NAME);
+        client.tableOperations().create(SHARD_TABLE_NAME);
+        client.tableOperations().create(SHARD_INDEX_TABLE_NAME);
+        client.tableOperations().create(METADATA_TABLE_NAME);
         
     }
     
     @Before
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        temporaryFolder = Paths.get(Files.createTempDir().toURI());
+        temporaryFolder = tempDir.newFolder().toPath();
         
         logic = new ShardQueryLogic();
         logic.setMarkingFunctions(new MarkingFunctions.Default());
@@ -117,7 +119,7 @@ public class TestCardinalityWithQuery {
         ColumnVisibility vis = new ColumnVisibility("");
         
         // metadata
-        BatchWriter bw = connector.createBatchWriter(METADATA_TABLE_NAME, bwConfig);
+        BatchWriter bw = client.createBatchWriter(METADATA_TABLE_NAME, bwConfig);
         
         Mutation m = new Mutation("ID");
         m.put(new Text("e"), new Text(datatype), timestamp, NULL_VALUE);
@@ -135,7 +137,7 @@ public class TestCardinalityWithQuery {
         bw.close();
         
         // shard
-        bw = connector.createBatchWriter(SHARD_TABLE_NAME, bwConfig);
+        bw = client.createBatchWriter(SHARD_TABLE_NAME, bwConfig);
         
         m = new Mutation("20190101_0");
         m.put(colf, new Text("ID\u0000id-001"), vis, timestamp, NULL_VALUE);
@@ -155,7 +157,7 @@ public class TestCardinalityWithQuery {
         builder.setCOUNT(1);
         Uid.List list = builder.build();
         
-        bw = connector.createBatchWriter(SHARD_INDEX_TABLE_NAME, bwConfig);
+        bw = client.createBatchWriter(SHARD_INDEX_TABLE_NAME, bwConfig);
         m = new Mutation("id-001");
         m.put(new Text("ID"), new Text("20190101_0\u0000mytype"), vis, timestamp, new Value(list.toByteArray()));
         bw.addMutation(m);
@@ -181,8 +183,7 @@ public class TestCardinalityWithQuery {
         q.addParameter("reduced.response", "true");
         q.setQueryLogicName("EventQuery");
         
-        RunningQuery query = new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, logic, q, "", datawavePrincipal,
-                        new QueryMetricFactoryImpl());
+        RunningQuery query = new RunningQuery(client, AccumuloConnectionFactory.Priority.NORMAL, logic, q, "", datawavePrincipal, new QueryMetricFactoryImpl());
         TransformIterator<?,?> it = query.getTransformIterator();
         AbstractQueryLogicTransformer<?,?> et = (DocumentTransformer) it.getTransformer();
         

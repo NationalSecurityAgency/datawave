@@ -1,5 +1,6 @@
 package datawave.security.authorization.test;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.CachedDatawaveUserService;
@@ -9,9 +10,9 @@ import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -190,7 +191,7 @@ public class TestDatawaveUserServiceTest {
         
         @Override
         public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
-            return dns.stream().map(dn -> new DatawaveUser(dn, UserType.USER, null, Collections.singleton(getName()), null, -1L, -1L))
+            return dns.stream().map(dn -> new DatawaveUser(dn, UserType.USER, null, null, Collections.singleton(getName()), null, -1L, -1L))
                             .collect(Collectors.toList());
         }
     }
@@ -250,17 +251,17 @@ public class TestDatawaveUserServiceTest {
         }
         
         @Override
-        public Connector getConnection(Priority priority, Map<String,String> trackingMap) throws Exception {
-            return inMemoryInstance.getConnector("root", "");
+        public AccumuloClient getClient(Priority priority, Map<String,String> trackingMap) throws Exception {
+            return new InMemoryAccumuloClient("root", inMemoryInstance);
         }
         
         @Override
-        public Connector getConnection(String poolName, Priority priority, Map<String,String> trackingMap) throws Exception {
-            return inMemoryInstance.getConnector("root", "");
+        public AccumuloClient getClient(String poolName, Priority priority, Map<String,String> trackingMap) throws Exception {
+            return new InMemoryAccumuloClient("root", inMemoryInstance);
         }
         
         @Override
-        public void returnConnection(Connector connection) throws Exception {
+        public void returnClient(AccumuloClient client) {
             
         }
         

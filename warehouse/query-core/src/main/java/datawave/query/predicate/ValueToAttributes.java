@@ -21,7 +21,6 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.collections4.map.LRUMap;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -42,7 +41,7 @@ import java.util.Map.Entry;
 public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<Entry<String,Attribute<? extends Comparable<?>>>>> {
     private static final Logger log = Logger.getLogger(ValueToAttributes.class);
     
-    private final Text holder = new Text(), cvHolder = new Text();
+    private final Text holder = new Text();
     
     private AttributeFactory attrFactory;
     
@@ -52,8 +51,6 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     private Multimap<String,Attribute<?>> componentFieldToValues = ArrayListMultimap.create();
     
     private EventDataQueryFilter attrFilter;
-    
-    private LRUMap cvCache = new LRUMap(256);
     
     public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter, MarkingFunctions markingFunctions) {
         this.attrFactory = new AttributeFactory(typeMetadata);
@@ -71,11 +68,11 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         String modifiedFieldName = JexlASTHelper.deconstructIdentifier(origFieldName, false);
         Key key = from.getKey();
         
-        Attribute curAttr = getFieldValue(modifiedFieldName, key);
+        Attribute<?> curAttr = getFieldValue(modifiedFieldName, key);
         
         // by default, we will return the attribute for the given entry
         List<Entry<String,Attribute<? extends Comparable<?>>>> list = new ArrayList<>();
-        list.add(Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(origFieldName, curAttr));
+        list.add(Maps.immutableEntry(origFieldName, curAttr));
         
         // check to see if we can create any composite attributes using this entry
         String ingestDatatype = this.getDatatypeFromKey(key);
@@ -129,8 +126,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         if (componentAttributes == null) {
             // finally create the composite from what we have
             try {
-                return Arrays.asList(Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(compositeField,
-                                joinAttributes(compositeField, currentAttributes, isOverloadedComposite, separator)));
+                return Arrays.asList(Maps.immutableEntry(compositeField, joinAttributes(compositeField, currentAttributes, isOverloadedComposite, separator)));
             } catch (Exception e) {
                 log.debug("could not join attributes:", e);
             }
@@ -165,8 +161,6 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         
         try {
             String data = Text.decode(holder.getBytes(), index + 1, (holder.getLength() - (index + 1)));
-            
-            ColumnVisibility cv = getCV(k);
             
             Attribute<?> attr = this.attrFactory.create(fieldName, data, k, (attrFilter == null || attrFilter.keep(k)));
             if (attrFilter != null) {
@@ -246,7 +240,9 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                 columnVisibilities.add(attr.getColumnVisibility());
             }
         }
-        log.debug("dataList is " + dataList);
+        if (log.isDebugEnabled()) {
+            log.debug("dataList is " + dataList);
+        }
         ColumnVisibility combinedColumnVisibility = this.markingFunctions.combine(columnVisibilities);
         metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), new Text(), combinedColumnVisibility, timestamp);
         if (dataList.size() == 1) {
@@ -262,7 +258,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     
     private List<String> attributeValues(Attributes attrs) {
         List<String> attributeValues = new ArrayList<>();
-        for (Attribute attr : attrs.getAttributes()) {
+        for (Attribute<?> attr : attrs.getAttributes()) {
             List<String> attrValues = attributeValues(attr);
             if (attrValues != null && !attrValues.isEmpty())
                 attributeValues.addAll(attrValues);
@@ -270,32 +266,21 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         return attributeValues;
     }
     
-    private List<String> attributeValues(Attribute attr) {
+    private List<String> attributeValues(Attribute<?> attr) {
         if (attr instanceof TypeAttribute) {
-            Type type = ((TypeAttribute) attr).getType();
-            return (type instanceof OneToManyNormalizerType) ? ((OneToManyNormalizerType) type).getNormalizedValues() : Arrays
-                            .asList(type.getNormalizedValue());
+            Type<?> type = ((TypeAttribute<?>) attr).getType();
+            return (type instanceof OneToManyNormalizerType) ? ((OneToManyNormalizerType<?>) type).getNormalizedValues() : Arrays.asList(type
+                            .getNormalizedValue());
         } else {
             new Exception().printStackTrace(System.err);
             return Arrays.asList(String.valueOf(attr.getData()));
         }
     }
     
-    private ColumnVisibility getCV(Key k) {
-        Text expr = k.getColumnVisibility(cvHolder);
-        ColumnVisibility vis = (ColumnVisibility) cvCache.get(expr);
-        if (vis == null) {
-            // the column visibility needs to take ownership of the expression
-            vis = new ColumnVisibility(new Text(expr));
-            cvCache.put(expr, vis);
-        }
-        return vis;
-    }
-    
     protected String getDatatypeFromKey(Key key) {
-        String colf = key.getColumnFamily().toString();
-        int indexOfNull = colf.indexOf("\0");
-        return colf.substring(0, indexOfNull);
+        String cf = key.getColumnFamily().toString();
+        int indexOfNull = cf.indexOf('\u0000');
+        return cf.substring(0, indexOfNull);
     }
     
 }

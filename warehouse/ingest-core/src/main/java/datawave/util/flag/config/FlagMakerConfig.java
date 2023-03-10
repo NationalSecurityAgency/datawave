@@ -12,6 +12,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,8 +37,12 @@ public class FlagMakerConfig {
     private int socketPort;
     private String flagFileDirectory;
     
-    // default to a year, month, day pattern
-    private String filePattern = "2*/*/*/*";
+    public static final String DEFAULT_FILE_PATTERN = "2*/*/*/*";
+    
+    // a list of file patterns.
+    @XmlElement(name = "filePattern")
+    private List<String> filePatterns = new ArrayList<>();
+    
     // default to simple. valid values are simple|date|folderdate
     private String distributorType = "simple";
     // default timeout
@@ -87,12 +92,12 @@ public class FlagMakerConfig {
         this.distributorType = distributorType;
     }
     
-    public String getFilePattern() {
-        return filePattern;
+    public List<String> getFilePatterns() {
+        return (filePatterns.isEmpty() ? Collections.singletonList(DEFAULT_FILE_PATTERN) : filePatterns);
     }
     
-    public void setFilePattern(String filePattern) {
-        this.filePattern = filePattern;
+    public void addFilePattern(String filePattern) {
+        this.filePatterns.add(filePattern);
     }
     
     public String getBaseHDFSDir() {
@@ -351,7 +356,7 @@ public class FlagMakerConfig {
         result.append("baseHDFSDir: " + this.getBaseHDFSDir() + "\n");
         result.append("socketPort: " + this.getSocketPort() + "\n");
         result.append("flagFileDirectory: " + this.getFlagFileDirectory() + "\n");
-        result.append("filePattern: " + this.getFilePattern() + "\n");
+        result.append("filePatterns: " + this.getFilePatterns() + "\n");
         result.append("distributorType: " + this.getDistributorType() + "\n");
         result.append("timeoutMilliSecs: " + this.getTimeoutMilliSecs() + "\n");
         result.append("sleepMilliSecs: " + this.getSleepMilliSecs() + "\n");
@@ -366,5 +371,4 @@ public class FlagMakerConfig {
         result.append("flagMakerClass: " + this.getFlagMakerClass() + "\n");
         return result.toString();
     }
-    
 }

@@ -205,6 +205,7 @@ public class CreateUidsIteratorTest {
     public void testWithCollapse() throws IOException {
         // Setup data for test.
         TreeMap<Key,Value> data = new TreeMap<>();
+        
         List<String> docIds = Arrays.asList("doc1", "doc2", "doc3", "doc4");
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.addAllUID(docIds);

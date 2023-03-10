@@ -57,6 +57,7 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
     @Override
     public IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
                     Boolean isFullTable) throws DatawaveQueryException {
+        
         if (isFullTable) {
             QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_DISALLOWED);
             throw new FullTableScansDisallowedException(qe);
@@ -66,7 +67,7 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
         if (!usePrecomputedFacets)
             cfg.setIteratorClass(DynamicFacetIterator.class.getName());
         else {
-            config.setShardTableName("FacetsNating");
+            config.setShardTableName(facetedConfig.getFacetTableName());
             cfg.setIteratorClass(FacetedTableIterator.class.getName());
         }
         
@@ -85,7 +86,7 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
                     ShardQueryConfiguration config, JexlNode queryTree) throws DatawaveQueryException {
         if (usePrecomputedFacets) {
             config.setBypassExecutabilityCheck();
-            FacetQueryPlanVisitor visitor = new FacetQueryPlanVisitor(config, metadataHelper, facetedConfig.getFacetedFields());
+            FacetQueryPlanVisitor visitor = new FacetQueryPlanVisitor(config, facetedConfig, metadataHelper, facetedConfig.getFacetedFields());
             queryTree.jjtAccept(visitor, null);
             return new Tuple2<>(visitor, false);
             
@@ -131,7 +132,7 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
         // Assert that all of the terms in the query are indexed (so we can completely use the field index)
         // Also removes any spurious _ANYFIELD_ nodes left in from upstream
         try {
-            FacetCheck check = new FacetCheck(config, metadataHelper);
+            FacetCheck check = new FacetCheck(config, facetedConfig, metadataHelper);
             if (null != script.jjtAccept(check, null))
                 return true;
         } catch (RuntimeException e) {

@@ -180,7 +180,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                 accumuloHelper.setup(conf);
                 
                 log.debug("Attempting to create Accumulo connection.");
-                docWriter = accumuloHelper.getConnector().createBatchWriter(conf.get("shard.table.name"),
+                docWriter = accumuloHelper.newClient().createBatchWriter(conf.get("shard.table.name"),
                                 new BatchWriterConfig().setMaxLatency(60, TimeUnit.SECONDS).setMaxMemory(100000000L).setMaxWriteThreads(10));
                 log.debug("Created connection to Accumulo for asynchronous document storage.");
             } catch (Exception e) {

@@ -1,50 +1,14 @@
 package datawave.query;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.data.TypeRegistry;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
-import datawave.query.util.TypeMetadata;
-import datawave.query.util.TypeMetadataHelper;
-import datawave.query.util.TypeMetadataWriter;
-import datawave.query.util.WiseGuysIngest;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-import javax.inject.Inject;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -53,38 +17,31 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
+import org.junit.ClassRule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
 
-import static datawave.query.QueryTestTableHelper.METADATA_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimeZone;
+
 import static datawave.query.iterator.QueryOptions.SORTED_UIDS;
-import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class IvaratorYieldingTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(IvaratorYieldingTest.class);
-    @Rule
-    public TemporaryFolder tmpDir = new TemporaryFolder();
     
     public IvaratorYieldingTest() {
         super(CitiesDataType.getManager());
@@ -104,8 +61,9 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
         generic.addIndexField(CitiesDataType.CityField.NUM.name());
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.generic, generic));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log, RebuildingScannerTestHelper.TEARDOWN.ALWAYS_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.FI_EVERY_OTHER);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        client = accumuloSetup.loadTables(log, RebuildingScannerTestHelper.TEARDOWN.ALWAYS_SANS_CONSISTENCY,
+                        RebuildingScannerTestHelper.INTERRUPT.FI_EVERY_OTHER);
     }
     
     @Before
@@ -123,8 +81,7 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
         
         // setup a directory for cache results
-        File tmpDir = this.tmpDir.newFolder("Ivarator.cache");
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
         
         logic.setYieldThresholdMs(1);
@@ -153,7 +110,7 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
         runTest(query, expected);
     }
     
-    public static class YieldingQueryIterator implements YieldingKeyValueIterator<Key,Value> {
+    public static class YieldingQueryIterator implements SortedKeyValueIterator<Key,Value> {
         
         private QueryIterator __delegate;
         private YieldCallback<Key> __yield = new YieldCallback<>();

@@ -40,7 +40,6 @@ import static org.junit.Assert.assertTrue;
 public class FlagMakerTest extends AbstractFlagConfig {
     
     private static final Logger log = LoggerFactory.getLogger(FlagMaker.class);
-    
     private static final String TEST_CONFIG = "target/test-classes/TestFlagMakerConfig.xml";
     private static final String FLAG_DIR = "target/test/flags";
     private static final int COUNTER_LIMIT = 102;
@@ -92,6 +91,9 @@ public class FlagMakerTest extends AbstractFlagConfig {
         assertEquals(CONFIG_FLAG_FILE_DIR, flagMakerConfig.getFlagFileDirectory());
         assertEquals(CONFIG_BASE_HDFS_DIR, flagMakerConfig.getBaseHDFSDir());
         assertEquals(CONFIG_EXTRA_INGEST_ARGS, flagMakerConfig.getDefaultCfg().getExtraIngestArgs());
+        assertEquals(2, flagMakerConfig.getFilePatterns().size());
+        assertTrue(flagMakerConfig.getFilePatterns().contains("2*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]"));
+        assertTrue(flagMakerConfig.getFilePatterns().contains("2*/*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]"));
     }
     
     @Test

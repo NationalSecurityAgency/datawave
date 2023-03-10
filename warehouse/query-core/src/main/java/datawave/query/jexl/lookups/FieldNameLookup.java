@@ -77,7 +77,7 @@ public class FieldNameLookup extends IndexLookup {
         
         final Text holder = new Text();
         
-        Iterator<Entry<Key,Value>> iter = Iterators.emptyIterator();
+        Iterator<Entry<Key,Value>> iter = Collections.emptyIterator();
         
         Collection<ScannerSession> sessions = Lists.newArrayList();
         

@@ -12,6 +12,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public abstract class AbstractEvaluationPhaseFunction extends LuceneQueryFunction {
     private boolean includeIfMatch;
     

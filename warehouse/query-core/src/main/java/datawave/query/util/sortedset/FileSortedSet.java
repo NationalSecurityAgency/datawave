@@ -13,12 +13,14 @@ import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 
 /**
  * A sorted set that can be persisted into a file and still be read in its persisted state. The set can always be re-loaded and then all operations will work as
@@ -151,6 +153,20 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     }
     
     /**
+     * This will revert this set to whatever contents are in the underlying file, making the set "persisted". This is intended to be used following a load
+     * command when no changes were actually made the the set If the persist options included verification, then the files will be verified prior to unloading.
+     *
+     * @throws IOException
+     */
+    public void unload() throws IOException {
+        if (!persisted) {
+            verifyPersistance(handler, this.set.size(), Collections.emptyList());
+            this.set.clear();
+            persisted = true;
+        }
+    }
+    
+    /**
      * This will dump the set to the file, making the set "persisted"
      *
      * @throws IOException
@@ -208,30 +224,9 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
                 }
                 stream.writeSize(actualSize);
             }
-            // verify we wrote at least the size....
-            if (handler.getSize() == 0) {
-                throw new IOException("Failed to verify file existence");
-            }
-            // now verify the first n objects were written correctly
-            if (persistOptions.isVerifyElements()) {
-                try (SortedSetInputStream<E> inStream = handler.getInputStream()) {
-                    int count = 0;
-                    for (E t : setToVerify) {
-                        count++;
-                        E input = inStream.readObject();
-                        if (!equals(t, input)) {
-                            throw new IOException("Failed to verify element " + count + " was written");
-                        }
-                    }
-                }
-            }
+            // now verify the written file
+            verifyPersistance(handler, actualSize, setToVerify);
             
-            // now verify the size was written at the end
-            if (persistOptions.isVerifySize()) {
-                if (readSize() != actualSize) {
-                    throw new IOException("Failed to verify file size was written");
-                }
-            }
         } catch (IOException e) {
             handler.deleteFile();
             this.handler = null;
@@ -241,6 +236,34 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         if (log.isDebugEnabled()) {
             long delta = System.currentTimeMillis() - start;
             log.debug("Persisting " + handler + " took " + delta + "ms");
+        }
+    }
+    
+    private void verifyPersistance(TypedSortedSetFileHandler handler, int size, List<E> setToVerify) throws IOException {
+        // verify we wrote at least the size....
+        if (handler.getSize() == 0) {
+            throw new IOException("Failed to verify file existence");
+        }
+        PersistOptions persistOptions = handler.getPersistOptions();
+        // now verify the first n objects were written correctly
+        if (persistOptions.isVerifyElements() && !setToVerify.isEmpty()) {
+            try (SortedSetInputStream<E> inStream = handler.getInputStream()) {
+                int count = 0;
+                for (E t : setToVerify) {
+                    count++;
+                    E input = inStream.readObject();
+                    if (!equals(t, input)) {
+                        throw new IOException("Failed to verify element " + count + " was written");
+                    }
+                }
+            }
+        }
+        
+        // now verify the size was written at the end
+        if (persistOptions.isVerifySize()) {
+            if (readSize() != size) {
+                throw new IOException("Failed to verify file size was written");
+            }
         }
     }
     
@@ -272,7 +295,6 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
                     obj = stream.readObject();
                 }
             }
-            handler.deleteFile();
             persisted = false;
         }
     }
@@ -492,6 +514,15 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             throw new IllegalStateException("Unable to remove from a persisted FileSortedSet.  Please call load() first.");
         } else {
             return set.removeAll(c);
+        }
+    }
+    
+    @Override
+    public boolean removeIf(Predicate<? super E> filter) {
+        if (persisted) {
+            throw new IllegalStateException("Unable to remove from a persisted FileSortedSet.  Please call load() first.");
+        } else {
+            return set.removeIf(filter);
         }
     }
     
@@ -723,7 +754,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("Cannot remove elements from a persisted file.  Please call load() first.");
+            throw new UnsupportedOperationException("Iterator.remove() not supported.");
         }
         
         @Override

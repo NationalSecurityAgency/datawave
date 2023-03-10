@@ -1,4 +1,4 @@
-FROM openjdk:8-jdk-alpine
+FROM centos:centos7
 
 ARG DATAWAVE_COMMIT_ID
 ARG DATAWAVE_BRANCH_NAME
@@ -6,15 +6,10 @@ ARG DATAWAVE_JAVA_HOME
 
 USER root
 
-# ENV params for hadoop here are a hack/fix for the "chown: missing operand after '**/hadoop/logs'"
-# errors thrown by hadoop startup scripts for both the resourcemanager and historyserver. Those
-# errors occur due to $USER being mysteriously null/undefined at the point that log file names are
-# established and subsequently chowned in those scripts. But aside from the chown errors and a few
-# irregularly-named log files, the null $USER issue doesn't seem to have any other negative impact.
-# Mostly an annoyance and odd that it only seems to occur in Docker, which is why I'm documenting
-# it here (issue has been observed w/ both centos6 and centos7 base images)
-
-ENV YARN_IDENT_STRING=root HADOOP_MAPRED_IDENT_STRING=root
+ENV HADOOP_IDENT_STRING=root
+ENV HDFS_NAMENODE_USER=root HDFS_DATANODE_USER=root
+ENV HDFS_SECONDARYNAMENODE_USER=root YARN_RESOURCEMANAGER_USER=root
+ENV YARN_NODEMANAGER_USER=root
 
 # Build context should be the DataWave source root, minus .git and other dirs. See .dockerignore
 
@@ -22,7 +17,8 @@ COPY . /opt/datawave
 
 # Install dependencies, configure password-less/zero-prompt SSH...
 
-RUN apk --no-cache add --upgrade openssl openssh which bc wget git bash procps findutils curl gettext && \
+RUN yum -y install openssl openssh openssh-server openssh-clients openssl-libs which bc wget git java-1.8.0-openjdk-devel iproute  && \
+    yum clean all && \
     ssh-keygen -q -N "" -t rsa -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
     chmod 0600 ~/.ssh/authorized_keys && \
@@ -32,11 +28,7 @@ RUN apk --no-cache add --upgrade openssl openssh which bc wget git bash procps f
     ssh-keygen -q -N "" -t ed25519 -f /etc/ssh/ssh_host_ed25519_key && \
     echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config && \
     echo "UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config && \
-    echo "LogLevel QUIET" >> /etc/ssh/ssh_config && \
-    sed -i s/#PermitRootLogin.*/PermitRootLogin\ yes/ /etc/ssh/sshd_config && \
-    sed -i s/root:!/"root:*"/g /etc/shadow
-
-SHELL ["/bin/bash", "-c"]
+    echo "LogLevel QUIET" >> /etc/ssh/ssh_config
 
 WORKDIR /opt/datawave
 
@@ -78,7 +70,7 @@ RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/data"]
 
 # In case user wants to rebuild DW
-VOLUME ["~/.m2/repository"]
+VOLUME ["$HOME/.m2/repository"]
 
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/hadoop/logs"]
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/accumulo/logs"]

@@ -2,7 +2,6 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.collect.Lists;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
@@ -23,7 +22,6 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
@@ -35,7 +33,7 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  */
 public class TreeFlatteningRebuilder {
     private static final Logger log = Logger.getLogger(TreeFlatteningRebuilder.class);
-    private boolean removeReferences = false;
+    private final boolean removeReferences;
     
     public TreeFlatteningRebuilder(boolean removeReferences) {
         this.removeReferences = removeReferences;
@@ -183,7 +181,7 @@ public class TreeFlatteningRebuilder {
                 }
                 
                 // Reassign the children for this copied node
-                JexlNodes.children(poppedNode, copiedChildren.toArray(new JexlNode[copiedChildren.size()]));
+                JexlNodes.children(poppedNode, copiedChildren.toArray(new JexlNode[0]));
             }
         }
         
@@ -275,7 +273,7 @@ public class TreeFlatteningRebuilder {
             String rightField = JexlASTHelper.getIdentifier(upper);
             return leftField.equals(rightField);
         } catch (Exception e) {
-            log.info("Unable to compare idenfitiers.");
+            log.info("Unable to compare identifiers.");
         }
         return false;
     }
@@ -359,7 +357,7 @@ public class TreeFlatteningRebuilder {
                 }
             }
             
-            return JexlNodes.children(node, children.toArray(new JexlNode[children.size()]));
+            return JexlNodes.children(node, children.toArray(new JexlNode[0]));
         }
     }
     

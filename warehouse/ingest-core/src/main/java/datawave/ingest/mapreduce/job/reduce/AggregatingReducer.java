@@ -14,8 +14,11 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import datawave.ingest.mapreduce.job.IngestJob;
-
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
@@ -36,10 +39,6 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 
 @SuppressWarnings("deprecation")
 public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,OV> {
@@ -107,7 +106,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         configureReductionInterface(conf);
         
         // turn off aggregation for tables so configured
-        for (String table : IngestJob.getTables(conf)) {
+        for (String table : TableConfigurationUtil.getTables(conf)) {
             useAggregators.put(new Text(table), conf.getBoolean(table + USE_AGGREGATOR_PROPERTY, true));
         }
         
@@ -158,7 +157,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         // to a map of table => priority list of column=>class mappings. Users can just call the
         // method getAggregator with a key, and get back a list of aggregators that should be applied
         // to the corresponding value. The return list aggregators should be applied in order.
-        Set<String> tables = IngestJob.getTables(conf);
+        Set<String> tables = TableConfigurationUtil.getTables(conf);
         for (String table : tables) {
             
             TreeMap<Integer,Map<String,String>> priorityOptions = allOptions.get(table);
@@ -199,7 +198,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                             mapping = new CustomColumnToClassMapping(priority, clazz);
                             myCombiner = mapping.getObject(CustomColumnToClassMapping.ALL_CF_KEY);
                             options.put("all", "true");
-                            myCombiner.init(null, options, null);
+                            myCombiner.init(null, options, new CustomColumnToClassMapping.StubbedIteratorEnvironment());
                         }
                         
                         list.add(mapping);
@@ -245,7 +244,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         // to a map of table => priority list of column=>class mappings. Users can just call the
         // method getAggregator with a key, and get back a list of aggregators that should be applied
         // to the corresponding value. The return list aggregators should be applied in order.
-        Set<String> tables = IngestJob.getTables(conf);
+        Set<String> tables = TableConfigurationUtil.getTables(conf);
         for (String table : tables) {
             
             TreeMap<Integer,Map<String,String>> priorityOptions = allOptions.get(table);
@@ -432,52 +431,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     
                     agg = clazz.newInstance();
                     // init with a stubbed-out class so that an upcoming call to env.getConfig in Combiner will not throw a NPE
-                    agg.init(null, clazzOptions.getKey(), new IteratorEnvironment() {
-                        @Override
-                        public AccumuloConfiguration getConfig() {
-                            return null;
-                        }
-                        
-                        @Override
-                        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
-                            return null;
-                        }
-                        
-                        @Override
-                        public IteratorUtil.IteratorScope getIteratorScope() {
-                            return null;
-                        }
-                        
-                        @Override
-                        public boolean isFullMajorCompaction() {
-                            return false;
-                        }
-                        
-                        @Override
-                        public Authorizations getAuthorizations() {
-                            throw new UnsupportedOperationException();
-                        }
-                        
-                        @Override
-                        public IteratorEnvironment cloneWithSamplingEnabled() {
-                            throw new SampleNotPresentException();
-                        }
-                        
-                        @Override
-                        public boolean isSamplingEnabled() {
-                            return false;
-                        }
-                        
-                        @Override
-                        public SamplerConfiguration getSamplerConfiguration() {
-                            return null;
-                        }
-                        
-                        @Override
-                        public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
-                            
-                        }
-                    });
+                    agg.init(null, clazzOptions.getKey(), new StubbedIteratorEnvironment());
                     
                 } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IOException e) {
                     throw new RuntimeException(e);
@@ -518,6 +472,53 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         @Override
         public int compareTo(CustomColumnToClassMapping o) {
             return priority.compareTo(o.priority);
+        }
+        
+        private static class StubbedIteratorEnvironment implements IteratorEnvironment {
+            @Override
+            public AccumuloConfiguration getConfig() {
+                return null;
+            }
+            
+            @Override
+            public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
+                return null;
+            }
+            
+            @Override
+            public IteratorUtil.IteratorScope getIteratorScope() {
+                return null;
+            }
+            
+            @Override
+            public boolean isFullMajorCompaction() {
+                return false;
+            }
+            
+            @Override
+            public Authorizations getAuthorizations() {
+                throw new UnsupportedOperationException();
+            }
+            
+            @Override
+            public IteratorEnvironment cloneWithSamplingEnabled() {
+                throw new SampleNotPresentException();
+            }
+            
+            @Override
+            public boolean isSamplingEnabled() {
+                return false;
+            }
+            
+            @Override
+            public SamplerConfiguration getSamplerConfiguration() {
+                return null;
+            }
+            
+            @Override
+            public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
+                
+            }
         }
     }
 }

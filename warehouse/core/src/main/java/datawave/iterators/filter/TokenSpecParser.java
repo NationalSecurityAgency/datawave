@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 
 public abstract class TokenSpecParser<B extends TokenSpecParser> {
@@ -29,13 +30,15 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
      *           &lt;- &lt;tokens&gt; &lt;tokenspec&gt;
      * tokenspec &lt;- "strliteral"
      *           &lt;- "strliteral" : &lt;num&gt;&lt;unit&gt;
+     *           &lt;- word strliteral2=&lt;num&gt;&lt;unit&gt;
      * </pre>
      */
     protected static class ParserState {
         
         private enum ParseTokenType {
-            SEPARATION("[\\s\\n,]+"), STRLITERAL("\"(?:[^\\\"]|\\.)*\""), COLON(":"), NUMBER("[0-9]+"), UNIT(AgeOffTtlUnits.MILLISECONDS + "|"
-                            + AgeOffTtlUnits.DAYS + "|" + AgeOffTtlUnits.HOURS + "|" + AgeOffTtlUnits.MINUTES + "|" + AgeOffTtlUnits.SECONDS), ;
+            SEPARATION("[\\s\\n,]+"), STRLITERAL("\"(?:[^\\\"]|\\.)*\""), WORD("^[a-z]{3,}"), STRLITERAL2("[\\w]*\\="), COLON(":"), EQUALS("="), NUMBER(
+                            "[0-9]+"), UNIT(AgeOffTtlUnits.MILLISECONDS + "|" + AgeOffTtlUnits.DAYS + "|" + AgeOffTtlUnits.HOURS + "|" + AgeOffTtlUnits.MINUTES
+                            + "|" + AgeOffTtlUnits.SECONDS);
             
             private final Pattern matchPattern;
             
@@ -81,7 +84,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             while (curPos < input.length()) {
                 boolean foundMatch = false;
                 nextToken: for (ParseTokenType type : ParseTokenType.values()) {
-                    // To avoid quadratic parsing time, initally assume no token is more than 50 characters long.
+                    // To avoid quadratic parsing time, initially assume no token is more than 50 characters long.
                     int maxTokenLength = 50;
                     while (true) {
                         Matcher m = type.matchPattern.matcher(input.substring(curPos, Math.min(input.length(), curPos + maxTokenLength)));
@@ -92,8 +95,14 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                                 continue;
                             }
                             foundMatch = true;
-                            if (type != ParseTokenType.SEPARATION) {
-                                result.add(new ParseToken(type, input.substring(curPos, curPos + m.end()), curPos));
+                            if (type != ParseTokenType.SEPARATION && type != ParseTokenType.WORD) {
+                                if (type == ParseTokenType.STRLITERAL2) {
+                                    result.add(new ParseToken(type, input.substring(curPos, curPos + m.end() - 1), curPos));
+                                    result.add(new ParseToken(ParseTokenType.EQUALS, input.substring(curPos + m.end() - 1, curPos + m.end()), curPos + m.end()
+                                                    - 1));
+                                } else {
+                                    result.add(new ParseToken(type, input.substring(curPos, curPos + m.end()), curPos));
+                                }
                             }
                             curPos += m.end();
                             break nextToken;
@@ -142,7 +151,9 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                 
                 long ttl = -1;
                 if (peek() != null && peek().type == ParseTokenType.COLON) {
-                    ttl = parseTtl();
+                    ttl = parseTtl(ParseTokenType.COLON);
+                } else if (peek() != null && peek().type == ParseTokenType.EQUALS) {
+                    ttl = parseTtl(ParseTokenType.EQUALS);
                 }
                 try {
                     builder.addToken(tokenStr.getBytes(), ttl);
@@ -157,8 +168,15 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
          */
         protected String parseStrliteral() {
             ParseToken token = peek();
-            String literalContent = expect(ParseTokenType.STRLITERAL);
-            literalContent = literalContent.substring(1, literalContent.length() - 1);
+            String literalContent = null;
+            
+            if (token.type == ParseTokenType.STRLITERAL) {
+                literalContent = expect(ParseTokenType.STRLITERAL);
+                literalContent = literalContent.substring(1, literalContent.length() - 1);
+            } else if (token.type == ParseTokenType.STRLITERAL2) {
+                literalContent = expect(ParseTokenType.STRLITERAL2);
+            }
+            
             StringBuilder sb = new StringBuilder();
             for (int charPos = 0; charPos < literalContent.length(); charPos++) {
                 char c = literalContent.charAt(charPos);
@@ -230,9 +248,9 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             return sb.toString();
         }
         
-        protected long parseTtl() {
+        protected long parseTtl(ParseTokenType type) {
             ParseToken token = peek();
-            expect(ParseTokenType.COLON);
+            expect(type);
             String ttlNum = expect(ParseTokenType.NUMBER);
             String ttlUnit = expect(ParseTokenType.UNIT);
             try {

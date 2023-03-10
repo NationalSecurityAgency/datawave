@@ -168,7 +168,7 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
         
         // ***** event column *****
         String eventDate = "";
-        if (event.getDate() > 0) {
+        if (event.getDate() > Long.MIN_VALUE) {
             eventDate = DateHelper.format(event.getDate());
         }
         Text colq = safeAppend(null, eventDate);

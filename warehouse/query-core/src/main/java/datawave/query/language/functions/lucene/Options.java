@@ -12,6 +12,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public class Options extends LuceneQueryFunction {
     public Options() {
         super(QueryFunctions.OPTIONS_FUNCTION, new ArrayList<>());

@@ -197,6 +197,7 @@ PDSH_LOG_DIR="${PDSH_LOG_DIR}"
 FLAG_DIR="${FLAG_DIR}"
 BIN_DIR_FOR_FLAGS="${BIN_DIR_FOR_FLAGS}"
 FLAG_MAKER_CONFIG="${FLAG_MAKER_CONFIG}"
+FLAG_EXTRA_ARGS="${FLAG_EXTRA_ARGS}"
 
 declare -i NUM_SHARDS=${NUM_SHARDS}
 declare -i NUM_DATE_INDEX_SHARDS=${NUM_DATE_INDEX_SHARDS}
@@ -213,7 +214,6 @@ findHadoopVersion (){
 }
 METRICS_VERSION=$(findVersion ../../lib datawave-metrics-core)
 INGEST_VERSION=$(findVersion ../../lib datawave-ingest-csv)
-ZOOKEEPER_VERSION=$(findVersion $ZOOKEEPER_HOME zookeeper)
 HADOOP_VERSION=$(findHadoopVersion $INGEST_HADOOP_HOME)
 
 

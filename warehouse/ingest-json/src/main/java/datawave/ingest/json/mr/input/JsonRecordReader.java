@@ -70,7 +70,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
     
     // Json parser-related stuff
     
-    protected Multimap currentValue = HashMultimap.create();
+    protected Multimap<String,String> currentValue = HashMultimap.create();
     protected Iterator<JsonElement> jsonIterator;
     protected JsonReader reader;
     protected JsonElement currentJsonObj;
@@ -200,7 +200,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
             JsonElement jsonElement = jsonIterator.next();
             
             parseCurrentValue(jsonElement.getAsJsonObject());
-            pos = countingInputStream.getCount();
+            pos = countingInputStream.getByteCount();
             
             // Save ref to the current json element, to be used when writing the raw data to the record in getEvent
             currentJsonObj = jsonElement;
@@ -218,7 +218,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
             event.setDate(this.inputDate);
         }
         
-        for (Map.Entry<String,String> entry : ((Multimap<String,String>) currentValue).entries()) {
+        for (Map.Entry<String,String> entry : currentValue.entries()) {
             String fieldName = entry.getKey();
             String fieldValue = entry.getValue();
             if (fieldValue != null) {
@@ -230,7 +230,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
         
         event.setRawData(currentJsonObj.toString().getBytes());
         
-        if (0 == event.getDate()) {
+        if (Long.MIN_VALUE == event.getDate()) {
             event.setDate(System.currentTimeMillis());
         }
         

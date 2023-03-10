@@ -3,6 +3,7 @@ package datawave.query.function;
 import datawave.query.attributes.Attributes;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DefaultArithmetic;
+import datawave.query.jexl.DelayedNonEventIndexContext;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl2.JexlArithmetic;
@@ -21,6 +22,8 @@ import datawave.query.util.Tuple3;
 
 public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJexlContext>> {
     private static final Logger log = Logger.getLogger(JexlEvaluation.class);
+    
+    public static final String HIT_TERM_FIELD = "HIT_TERM";
     
     private String query;
     private JexlArithmetic arithmetic;
@@ -43,7 +46,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         this.engine = ArithmeticJexlEngines.getEngine(arithmetic);
         
         // Evaluate the JexlContext against the Script
-        this.script = this.engine.createScript(query);
+        this.script = this.engine.createScript(this.query);
     }
     
     public JexlArithmetic getArithmetic() {
@@ -73,6 +76,11 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         
         boolean matched = isMatched(o);
         
+        // Add delayed info to document
+        if (matched && input.third() instanceof DelayedNonEventIndexContext) {
+            ((DelayedNonEventIndexContext) input.third()).populateDocument(input.second());
+        }
+        
         if (arithmetic instanceof HitListArithmetic) {
             HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
             if (matched) {
@@ -94,14 +102,12 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                     }
                 }
                 if (attributes.size() > 0) {
-                    document.put("HIT_TERM", attributes);
+                    document.put(HIT_TERM_FIELD, attributes);
                 }
             }
             hitListArithmetic.clear();
         }
-        
         return matched;
-        
     }
     
 }

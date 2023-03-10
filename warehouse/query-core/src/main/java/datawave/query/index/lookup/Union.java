@@ -19,10 +19,14 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
+import static datawave.query.index.lookup.ShardEquality.isDay;
+
 /**
  * Creates a union of global index range streams.
+ *
+ * This implementation of an IndexStream supports seeking to a specific shard. Such calls originate in the {@link Intersection}.
  */
-public class Union implements IndexStream {
+public class Union extends BaseIndexStream {
     protected final PriorityQueue<IndexStream> children;
     protected final JexlNodeSet childNodes;
     protected final StreamContext context;
@@ -76,7 +80,6 @@ public class Union implements IndexStream {
             }
             
             if (stream.hasNext()) {
-                
                 this.children.add(stream);
                 this.childNodes.add(stream.currentNode());
             } else {
@@ -144,7 +147,6 @@ public class Union implements IndexStream {
                 this.context = StreamContext.PRESENT;
                 this.contextDebug = "children are present";
             }
-            
             next();
         }
     }
@@ -183,18 +185,25 @@ public class Union implements IndexStream {
             String streamDayOrShard = children.peek().peek().first();
             if (log.isTraceEnabled())
                 log.trace("we have " + streamDayOrShard + " " + dayOrShard);
+            
             if (!streamDayOrShard.equals(dayOrShard)) {
                 // additional test if dayOrShard is a day
                 if (!(isDay(dayOrShard) && streamDayOrShard.startsWith(dayOrShard))) {
                     break;
                 }
             }
+            
             IndexStream itr = children.poll();
             
             pointers = pointers.union(itr.peek().second(), Lists.newArrayList(delayedNodes.getNodes()));
             itr.next();
-            if (itr.hasNext())
+            if (itr.hasNext()) {
                 children.add(itr);
+            } else {
+                if (log.isTraceEnabled()) {
+                    log.trace("IndexStream exhausted for " + itr.getContextDebug());
+                }
+            }
             childrenAdded = true;
         }
         
@@ -218,25 +227,17 @@ public class Union implements IndexStream {
         return Tuples.tuple(dayOrShard, pointers);
     }
     
-    public static boolean isDay(String dayOrShard) {
-        return (dayOrShard.indexOf('_') < 0);
-    }
-    
-    public static boolean isShard(String dayOrShard) {
-        return !isDay(dayOrShard);
-    }
-    
     @Override
     public void remove() {}
     
     public static class Builder {
         protected boolean built = false;
-        protected IdentityHashMap<IndexStream,Object> children = new IdentityHashMap<>();
+        protected IdentityHashMap<BaseIndexStream,Object> children = new IdentityHashMap<>();
         protected List<ConcurrentScannerInitializer> todo = Lists.newArrayList();
         
         private Builder() {}
         
-        public boolean addChild(IndexStream child) {
+        public boolean addChild(BaseIndexStream child) {
             if (built) {
                 throw new IllegalStateException("Builder already built an Union!");
             } else {
@@ -248,20 +249,19 @@ public class Union implements IndexStream {
             return children.size() + todo.size();
         }
         
-        public ArrayList<IndexStream> children() {
+        public ArrayList<BaseIndexStream> children() {
             return Lists.newArrayList(children.keySet());
         }
         
         public void addChildren(List<ConcurrentScannerInitializer> todo) {
             this.todo.addAll(todo);
-            
         }
         
         public Union build(ExecutorService service) {
             if (!todo.isEmpty()) {
                 
-                Collection<IndexStream> streams = ConcurrentScannerInitializer.initializeScannerStreams(todo, service);
-                for (IndexStream stream : streams) {
+                Collection<BaseIndexStream> streams = ConcurrentScannerInitializer.initializeScannerStreams(todo, service);
+                for (BaseIndexStream stream : streams) {
                     addChild(stream);
                 }
             }
@@ -270,12 +270,11 @@ public class Union implements IndexStream {
         }
         
         public void consume(Builder builder) {
-            for (IndexStream childStream : builder.children()) {
+            for (BaseIndexStream childStream : builder.children()) {
                 addChild(childStream);
             }
             todo.addAll(builder.todo);
         }
-        
     }
     
     public static Builder builder() {
@@ -310,5 +309,88 @@ public class Union implements IndexStream {
     @Override
     public JexlNode currentNode() {
         return currNode;
+    }
+    
+    /**
+     * Seek every IndexStream whose top shard is lower than the specified shard.
+     *
+     * @param seekShard
+     *            the shard to seek to.
+     * @return the lowest shard within this union after seeking
+     */
+    @Override
+    public String seek(String seekShard) {
+        
+        // Guard against the case when a seek range like YYYYMMDD_ is provided.
+        if (seekShard.charAt(seekShard.length() - 1) == '_')
+            seekShard = new String(seekShard.getBytes(), 0, seekShard.length() - 1);
+        
+        // Check the current element first
+        String topShard = isTopElementAMatch(seekShard);
+        if (topShard != null) {
+            // If the top element is a day and we are seeking to a shard range within the day, re-map the top element to the shard range.
+            // This allows us to actually intersect.
+            if (!isDay(seekShard) && ShardEquality.matches(this.next.first(), seekShard)) {
+                this.next = new Tuple2<>(seekShard, this.next.second());
+            }
+            
+            return topShard;
+        } else {
+            // If the top element did not match then null it out
+            this.next = null;
+        }
+        
+        List<IndexStream> nextChildren = new ArrayList<>();
+        while (!children.isEmpty()) {
+            
+            IndexStream stream = children.poll();
+            
+            // If the top of the shard-sorted priority queue is beyond the specified shard then we can bail out.
+            String streamDayOrShard = stream.peek().first();
+            
+            // Avoid seeking if the stream shard matches the seek shard, or if the stream shard is greater than the seek shard.
+            if (ShardEquality.matches(streamDayOrShard, seekShard) || ShardEquality.greaterThanOrEqual(streamDayOrShard, seekShard)) {
+                nextChildren.add(stream);
+                continue;
+            }
+            
+            // If the IndexStream has more elements after seeking, add it back into the priority queue.
+            stream.seek(seekShard);
+            if (stream.hasNext()) {
+                nextChildren.add(stream);
+            }
+        }
+        
+        children.addAll(nextChildren);
+        if (!children.isEmpty()) {
+            next = advanceQueue();
+            if (next != null) {
+                return next.first();
+            }
+        }
+        
+        // If no child IndexStreams remain then this union is exhausted.
+        return null;
+    }
+    
+    // Is the top shard greater than or equal to the seek shard
+    public String isTopElementAMatch(String seekShard) {
+        // Check the current element first
+        if (next != null) {
+            
+            String topShard = next.first();
+            
+            // If the top shard exceeds the seek shard then return the top shard
+            if (ShardEquality.greaterThanOrEqual(topShard, seekShard)) {
+                return topShard;
+            }
+            
+            // If the top shard is a day range that matches the seek shard, return the seek shard.
+            if (ShardEquality.matches(topShard, seekShard)) {
+                // Return the existing maximum instead of the day
+                return seekShard;
+            }
+        }
+        return null;
     }
 }

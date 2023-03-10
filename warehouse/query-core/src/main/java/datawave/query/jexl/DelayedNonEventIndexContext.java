@@ -2,6 +2,8 @@ package datawave.query.jexl;
 
 import com.google.common.collect.Multimap;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
 import datawave.query.function.Equality;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableIterator;
@@ -130,5 +132,25 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
         }
         
         return documentList;
+    }
+    
+    /**
+     * Add the elements fetched by this context to the main document
+     * 
+     * @param d
+     *            the main document
+     */
+    public void populateDocument(Document d) {
+        for (String field : fetched) {
+            Object obj = get(field);
+            if (obj instanceof FunctionalSet<?>) {
+                FunctionalSet<?> fs = (FunctionalSet<?>) obj;
+                for (Object element : fs) {
+                    if (element instanceof ValueTuple) {
+                        d.put(field, ((ValueTuple) element).getSource());
+                    }
+                }
+            }
+        }
     }
 }

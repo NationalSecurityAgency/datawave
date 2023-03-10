@@ -51,19 +51,19 @@ public class RootNegationCheckVisitorTest {
     
     @Test
     public void testNegatedMarker() throws ParseException {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((ASTDelayedPredicate = true) && !(FOO == 'bar' && FOO == 'baz'))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Delayed_ = true) && !(FOO == 'bar' && FOO == 'baz'))");
         Assert.assertTrue(RootNegationCheckVisitor.hasTopLevelNegation(script));
     }
     
     @Test
     public void testWrappedNegatedMarker() throws ParseException {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("!((ASTDelayedPredicate = true) && (FOO == 'bar' && FOO == 'baz'))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("!((_Delayed_ = true) && (FOO == 'bar' && FOO == 'baz'))");
         Assert.assertTrue(RootNegationCheckVisitor.hasTopLevelNegation(script));
     }
     
     @Test
     public void testNegatedMarkerOneLeaf() throws ParseException {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((ASTDelayedPredicate = true) && !(FOO != 'bar' && FOO == 'baz'))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Delayed_ = true) && !(FOO != 'bar' && FOO == 'baz'))");
         Assert.assertFalse(RootNegationCheckVisitor.hasTopLevelNegation(script));
     }
     

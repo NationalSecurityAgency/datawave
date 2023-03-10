@@ -8,7 +8,7 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.ModificationRequestBase;
 import datawave.webservice.query.runner.QueryExecutorBean;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
 public abstract class ModificationServiceConfiguration {
@@ -66,7 +66,7 @@ public abstract class ModificationServiceConfiguration {
     
     /**
      * 
-     * @param con
+     * @param client
      *            Accumulo Connector
      * @param request
      *            the modification request to process
@@ -78,8 +78,8 @@ public abstract class ModificationServiceConfiguration {
      *            user identifier
      * @throws Exception
      */
-    public abstract void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
-                    String user) throws Exception;
+    public abstract void process(AccumuloClient client, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList,
+                    Set<Authorizations> userAuths, String user) throws Exception;
     
     /**
      * 

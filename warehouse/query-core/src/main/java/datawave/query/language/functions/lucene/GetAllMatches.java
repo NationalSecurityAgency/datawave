@@ -12,6 +12,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
+@Deprecated
 public class GetAllMatches extends LuceneQueryFunction {
     public GetAllMatches() {
         super("getAllMatches", new ArrayList<>());

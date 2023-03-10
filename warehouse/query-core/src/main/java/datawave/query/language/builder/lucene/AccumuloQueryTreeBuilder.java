@@ -16,6 +16,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.SlopQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.TokenizedPhraseQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
 
+@Deprecated
 public class AccumuloQueryTreeBuilder extends QueryTreeBuilder {
     public AccumuloQueryTreeBuilder() {
         setBuilder(TermRangeQueryNode.class, new RangeQueryNodeBuilder());

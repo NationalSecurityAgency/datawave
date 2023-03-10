@@ -174,6 +174,9 @@ public class NestedIteratorContextUtil {
             headMapKey = headMap.isEmpty() ? null : headMap.keySet().last();
         }
         
+        // grab any existing null heads that match the context (not requiring a move due to already being there)
+        nullSources.addAll(nullHeadMap.get(context));
+        
         // check for nulls first, since a null source means that the move on the iterator yielded no matches
         if (nullSources.size() > 0) {
             // add them to the nullHeads with the current key

@@ -3,9 +3,10 @@ package datawave.query.jexl.functions;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
-import com.google.common.collect.Maps;
 import datawave.marking.ColumnVisibilityCache;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
@@ -21,7 +22,6 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 
 /**
@@ -51,9 +51,13 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
         super(-1);
     }
     
+    protected ByteSequence getPointerData(Key key) {
+        return key.getColumnQualifierData();
+    }
+    
     @Override
     protected ByteSequence parsePointer(Key current) {
-        return parsePointer(current.getColumnQualifierData());
+        return parsePointer(getPointerData(current));
     }
     
     @Override
@@ -76,7 +80,7 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
     public Key apply(SortedKeyValueIterator<Key,Value> itr) throws IOException {
         Key key = itr.getTopKey();
         Text row = key.getRow();
-        ByteSequence pointer = parsePointer(key.getColumnQualifierData());
+        ByteSequence pointer = parsePointer(getPointerData(key));
         while (itr.hasTop() && samePointer(row, pointer, itr.getTopKey()))
             itr.next();
         
@@ -86,7 +90,7 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
     
     protected boolean samePointer(Text row, ByteSequence pointer, Key key) {
         if (row.equals(key.getRow())) {
-            ByteSequence pointer2 = parsePointer(key.getColumnQualifierData());
+            ByteSequence pointer2 = parsePointer(getPointerData(key));
             return (pointer.equals(pointer2));
         }
         return false;
@@ -96,21 +100,23 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
     public Key apply(SortedKeyValueIterator<Key,Value> itr, Document doc, AttributeFactory attrs) throws IOException {
         Key key = itr.getTopKey();
         Text row = key.getRow();
-        ByteSequence pointer = parsePointer(key.getColumnQualifierData());
+        ByteSequence pointer = parsePointer(getPointerData(key));
         Key nextKey = key;
         while (nextKey != null && samePointer(row, pointer, nextKey)) {
             Key topKey = nextKey;
-            Tuple2<String,String> fieldNameValue = parserFieldNameValue(topKey);
+            List<Tuple2<String,String>> fieldNameValues = parserFieldNameValue(topKey);
             
-            Attribute<?> attr = attrs.create(fieldNameValue.first(), fieldNameValue.second(), topKey, true);
-            // only keep fields that are index only and pass the attribute filter
-            boolean toKeep = (fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first())))
-                            && (filter == null || filter.keep(topKey));
-            attr.setToKeep(toKeep);
-            
-            // Anything that is being kept has to be added to the doc to be returned, if we aren't keeping only add to the doc if necessary for evaluation
-            if (toKeep || (filter == null || filter.apply(new AbstractMap.SimpleEntry<>(topKey, null)))) {
-                doc.put(fieldNameValue.first(), attr);
+            for (Tuple2<String,String> fieldNameValue : fieldNameValues) {
+                Attribute<?> attr = attrs.create(fieldNameValue.first(), fieldNameValue.second(), topKey, true);
+                // only keep fields that are index only and pass the attribute filter
+                boolean toKeep = (fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first())))
+                                && (filter == null || filter.keep(topKey));
+                attr.setToKeep(toKeep);
+                
+                // Anything that is being kept has to be added to the doc to be returned, if we aren't keeping only add to the doc if necessary for evaluation
+                if (toKeep || (filter == null || filter.apply(new AbstractMap.SimpleEntry<>(topKey, null)))) {
+                    doc.put(fieldNameValue.first(), attr);
+                }
             }
             itr.next();
             nextKey = (itr.hasTop() ? itr.getTopKey() : null);
@@ -137,8 +143,8 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
         return TLD.parseFieldAndValueFromFI(cf, cq);
     }
     
-    protected Tuple2<String,String> parserFieldNameValue(Key topKey) {
-        return new Tuple2<>(topKey.getColumnFamily().toString().substring(3), parseValue(topKey.getColumnQualifier().toString()));
+    protected List<Tuple2<String,String>> parserFieldNameValue(Key topKey) {
+        return Arrays.asList(new Tuple2<>(topKey.getColumnFamily().toString().substring(3), parseValue(topKey.getColumnQualifier().toString())));
     }
     
     private static final ArrayByteSequence EMPTY_BYTES = new ArrayByteSequence(new byte[0]);

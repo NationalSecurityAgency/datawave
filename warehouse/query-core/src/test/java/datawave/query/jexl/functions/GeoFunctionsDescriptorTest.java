@@ -1,6 +1,5 @@
 package datawave.query.jexl.functions;
 
-import datawave.data.normalizer.GeoNormalizer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -17,7 +16,8 @@ public class GeoFunctionsDescriptorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         JexlArgumentDescriptor argDesc = new GeoFunctionsDescriptor().getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0).jjtGetChild(0));
         JexlNode queryNode = argDesc.getIndexQuery(null, null, null, null);
-        Assert.assertEquals("((GEO_FIELD >= '40.0_170.0' && GEO_FIELD <= '50.0_180') && (GEO_FIELD >= '40.0_-180' && GEO_FIELD <= '50.0_-170.0'))",
+        Assert.assertEquals(
+                        "(((_Bounded_ = true) && (GEO_FIELD >= '40.0_170.0' && GEO_FIELD <= '50.0_180')) && ((_Bounded_ = true) && (GEO_FIELD >= '40.0_-180' && GEO_FIELD <= '50.0_-170.0')))",
                         JexlStringBuildingVisitor.buildQuery(queryNode));
     }
     
@@ -28,7 +28,7 @@ public class GeoFunctionsDescriptorTest {
         JexlArgumentDescriptor argDesc = new GeoFunctionsDescriptor().getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0).jjtGetChild(0));
         JexlNode queryNode = argDesc.getIndexQuery(null, null, null, null);
         Assert.assertEquals(
-                        "(((LON_FIELD >= '170.0' && LON_FIELD <= '180') && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0')) && ((LON_FIELD >= '-180' && LON_FIELD <= '-170.0') && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0')))",
+                        "((((_Bounded_ = true) && (LON_FIELD >= '170.0' && LON_FIELD <= '180')) && ((_Bounded_ = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))) && (((_Bounded_ = true) && (LON_FIELD >= '-180' && LON_FIELD <= '-170.0')) && ((_Bounded_ = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))))",
                         JexlStringBuildingVisitor.buildQuery(queryNode));
     }
     

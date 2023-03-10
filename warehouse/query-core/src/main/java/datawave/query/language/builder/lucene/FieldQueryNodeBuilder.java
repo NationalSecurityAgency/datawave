@@ -35,6 +35,7 @@ import org.apache.lucene.search.TermQuery;
 /**
  * Builds a {@link TermQuery} object from a {@link FieldQueryNode} object.
  */
+@Deprecated
 public class FieldQueryNodeBuilder implements QueryBuilder {
     
     private static final String WHITE_SPACE_ESCAPE_STRING = "~~";

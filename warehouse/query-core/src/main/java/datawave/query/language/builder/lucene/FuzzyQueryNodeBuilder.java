@@ -26,6 +26,7 @@ import org.apache.lucene.search.FuzzyQuery;
 /**
  * Builds a {@link FuzzyQuery} object from a {@link FuzzyQueryNode} object.
  */
+@Deprecated
 public class FuzzyQueryNodeBuilder implements QueryBuilder {
     
     public FuzzyQuery build(QueryNode queryNode) throws QueryNodeException {

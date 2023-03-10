@@ -3,32 +3,30 @@ package datawave.query.tables;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
-/**
- * Created on 9/13/16.
- */
+import java.io.Serializable;
+import java.util.Iterator;
+import java.util.Map.Entry;
+
 class DedupingIterator implements Iterator<Entry<Key,Value>> {
+    static final int BLOOM_EXPECTED_DEFAULT = 500000;
+    static final double BLOOM_FPP_DEFAULT = 1e-15;
+    
     private Iterator<Entry<Key,Value>> delegate;
     private Entry<Key,Value> next;
     private BloomFilter<byte[]> bloom = null;
-    private HashSet<ByteSequence> seen;
-    private final boolean DEBUG = true;
+    
+    public DedupingIterator(Iterator<Entry<Key,Value>> iterator, int bloomFilterExpected, double bloomFilterFpp) {
+        this.delegate = iterator;
+        this.bloom = BloomFilter.create(new ByteFunnel(), bloomFilterExpected, bloomFilterFpp);
+        getNext();
+    }
     
     public DedupingIterator(Iterator<Entry<Key,Value>> iterator) {
-        this.delegate = iterator;
-        this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
-        if (DEBUG) {
-            this.seen = new HashSet<>();
-        }
-        getNext();
+        this(iterator, BLOOM_EXPECTED_DEFAULT, BLOOM_FPP_DEFAULT);
     }
     
     private void getNext() {
@@ -88,18 +86,10 @@ class DedupingIterator implements Iterator<Entry<Key,Value>> {
     
     private boolean isDuplicate(Entry<Key,Value> entry) {
         byte[] bytes = getBytes(entry);
-        ByteSequence byteSeq = new ArrayByteSequence(bytes);
         if (bloom.mightContain(bytes)) {
-            if (DEBUG && !seen.contains(byteSeq)) {
-                throw new IllegalStateException("This event is 1 in 1Q!");
-            } else {
-                return true;
-            }
+            return true;
         }
         bloom.put(bytes);
-        if (DEBUG) {
-            seen.add(byteSeq);
-        }
         return false;
     }
     
@@ -113,5 +103,4 @@ class DedupingIterator implements Iterator<Entry<Key,Value>> {
         }
         
     }
-    
 }

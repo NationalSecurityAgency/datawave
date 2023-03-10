@@ -358,13 +358,13 @@ public class RebuildingScannerTestHelper {
                     if (lastKey != null && teardown.teardown()) {
                         boolean hasNext = delegate.hasNext();
                         Map.Entry<Key,Value> next = (hasNext ? delegate.next() : null);
-                        if ((hasNext == false) != (next == null)) {
-                            throw new RuntimeException("Has next does not equate to next being null: " + hasNext + " vs " + next + " interrupted: "
-                                            + interruptCount);
+                        if (hasNext && (next == null)) {
+                            throw new RuntimeException("Pre teardown: If hasNext() is true, next() must not return null. interrupted: " + interruptCount);
                         }
                         
                         if (!rebuilt) {
                             delegate = scanner.rebuild(lastKey.getKey());
+                            rebuilt = true;
                         } else {
                             // was already rebuilt once with this key, just re-create the iterator
                             delegate = scanner.rebuild(null);
@@ -372,15 +372,13 @@ public class RebuildingScannerTestHelper {
                         
                         boolean rebuildHasNext = delegate.hasNext();
                         Map.Entry<Key,Value> rebuildNext = (rebuildHasNext ? delegate.next() : null);
-                        if ((rebuildHasNext == false) != (rebuildNext == null)) {
-                            throw new RuntimeException("Has next does not equate to next being null: " + rebuildHasNext + " vs " + rebuildNext
-                                            + " interrupted: " + interruptCount);
+                        if (rebuildHasNext && (rebuildNext == null)) {
+                            throw new RuntimeException("After rebuild: If hasNext() is true, next() must not return null. interrupted: " + interruptCount);
                         }
                         
                         if (hasNext != rebuildHasNext) {
                             // the only known scenario where this is ok is when the rebuild causes us to have a "FinalDocument" where previously we did not
-                            // have/need
-                            // one
+                            // have/need one
                             if (teardown.checkConsistency() && (hasNext || !FinalDocumentTrackingIterator.isFinalDocumentKey(rebuildNext.getKey()))) {
                                 throw new RuntimeException("Unexpected change in top key: hasNext is no longer " + hasNext + " interrupted: " + interruptCount);
                             }
@@ -525,16 +523,6 @@ public class RebuildingScannerTestHelper {
             } catch (Exception e) {
                 throw new RuntimeException("Misconfigured teardown listener class most likely", e);
             }
-        }
-        
-        @Override
-        public void setTimeOut(int timeOut) {
-            ((InMemoryScanner) delegate).setTimeOut(timeOut);
-        }
-        
-        @Override
-        public int getTimeOut() {
-            return ((InMemoryScanner) delegate).getTimeOut();
         }
         
         @Override

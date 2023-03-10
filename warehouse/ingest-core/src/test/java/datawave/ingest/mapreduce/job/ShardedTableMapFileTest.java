@@ -15,10 +15,12 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import datawave.util.TableName;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
@@ -32,21 +34,27 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.StringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
-
-import com.google.common.io.Files;
+import org.junit.rules.TemporaryFolder;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 
 public class ShardedTableMapFileTest {
+    private static final Log LOG = LogFactory.getLog(ShardedTableMapFileTest.class);
+    
     public static final String PASSWORD = "123";
     public static final String USERNAME = "root";
     private static final String TABLE_NAME = "unitTestTable";
     private static final int SHARDS_PER_DAY = 10;
     private static Configuration conf;
+    
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     @BeforeClass
     public static void defineShardLocationsFile() throws IOException {
@@ -77,8 +85,14 @@ public class ShardedTableMapFileTest {
         Assert.assertEquals(1, result.size());
     }
     
-    @Test
+    @Test(timeout = 240000)
     public void testWriteSplitsToAccumuloAndReadThem() throws Exception {
+        
+        // Added timeout to this test b/c it could hang infinitely without failing, e.g., whenever
+        // MiniAccumuloCluster starts up but tserver subsequently dies. To troubleshoot timeout errors
+        // here in the future, the MAC instance's local /tmp/ path should logged in
+        // createMiniAccumuloWithTestTableAndSplits method
+        
         Configuration conf = new Configuration();
         conf.setInt(ShardIdFactory.NUM_SHARDS, 1);
         conf.setInt(ShardedTableMapFile.SHARDS_BALANCED_DAYS_TO_VERIFY, 1);
@@ -111,13 +125,16 @@ public class ShardedTableMapFileTest {
     private MiniAccumuloCluster createMiniAccumuloWithTestTableAndSplits(SortedSet<Text> sortedSet) throws IOException, InterruptedException,
                     AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
         MiniAccumuloCluster accumuloCluster;
-        accumuloCluster = new MiniAccumuloCluster(Files.createTempDir(), PASSWORD);
+        File clusterDir = temporaryFolder.newFolder();
+        LOG.info("Created local directory for MiniAccumuloCluster: " + clusterDir.getAbsolutePath());
+        accumuloCluster = new MiniAccumuloCluster(clusterDir, PASSWORD);
         accumuloCluster.start();
         
-        Connector connector = accumuloCluster.getConnector(USERNAME, PASSWORD);
-        TableOperations tableOperations = connector.tableOperations();
-        tableOperations.create(TABLE_NAME);
-        tableOperations.addSplits(TABLE_NAME, sortedSet);
+        try (AccumuloClient client = Accumulo.newClient().from(accumuloCluster.getClientProperties()).build()) {
+            TableOperations tableOperations = client.tableOperations();
+            tableOperations.create(TABLE_NAME);
+            tableOperations.addSplits(TABLE_NAME, sortedSet);
+        }
         
         return accumuloCluster;
     }
@@ -152,7 +169,7 @@ public class ShardedTableMapFileTest {
     
     private FileSystem setWorkingDirectory(Configuration conf) throws IOException {
         FileSystem fs = FileSystem.getLocal(conf);
-        File tempWorkDir = Files.createTempDir();
+        File tempWorkDir = temporaryFolder.newFolder();
         fs.setWorkingDirectory(new Path(tempWorkDir.toString()));
         conf.set(ShardedTableMapFile.SPLIT_WORK_DIR, tempWorkDir.toString());
         return fs;
@@ -161,7 +178,7 @@ public class ShardedTableMapFileTest {
     @Test(expected = IOException.class)
     public void testGetAllShardedTableMapFilesWithoutPath() throws Exception {
         Configuration conf = new Configuration();
-        File tempWorkDir = Files.createTempDir();
+        File tempWorkDir = temporaryFolder.newFolder();
         conf.set(FileSystem.FS_DEFAULT_NAME_KEY, tempWorkDir.toURI().toString());
         FileSystem fs = FileSystem.get(tempWorkDir.toURI(), conf);
         fs.setWorkingDirectory(new Path(tempWorkDir.toString()));

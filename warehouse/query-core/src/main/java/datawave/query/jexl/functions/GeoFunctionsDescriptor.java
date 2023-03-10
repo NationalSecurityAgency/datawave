@@ -15,6 +15,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.functions.arguments.RebuildingJexlArgumentDescriptor;
+import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
@@ -96,7 +97,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                                         + splitChar + "180");
                         
                         // now link em up
-                        JexlNode andNode1 = JexlNodeFactory.createAndNode(Arrays.asList(geNode1, leNode1));
+                        JexlNode andNode1 = BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode1, leNode1)));
                         
                         JexlNode geNode2 = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), Double.toString(ll[0])
                                         + splitChar + "-180");
@@ -104,7 +105,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                                         + splitChar + Double.toString(ur[1]));
                         
                         // now link em up
-                        JexlNode andNode2 = JexlNodeFactory.createAndNode(Arrays.asList(geNode2, leNode2));
+                        JexlNode andNode2 = BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode2, leNode2)));
                         
                         // link em all up
                         returnNode = JexlNodeFactory.createAndNode(Arrays.asList(andNode1, andNode2));
@@ -115,7 +116,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), args.get(2).image);
                         
                         // now link em up
-                        returnNode = JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode));
+                        returnNode = BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
                     }
                 } else {
                     
@@ -140,8 +141,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         JexlNode leLatNode1 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(1), Double.toString(maxLat));
                         
                         // now link em up
-                        JexlNode andNode1 = JexlNodeFactory.createAndNode(Arrays.asList(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode1, leLonNode1)),
-                                        JexlNodeFactory.createAndNode(Arrays.asList(geLatNode1, leLatNode1))));
+                        JexlNode andNode1 = JexlNodeFactory.createAndNode(Arrays.asList(
+                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode1, leLonNode1))),
+                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode1, leLatNode1)))));
                         
                         JexlNode geLonNode2 = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), "-180");
                         JexlNode leLonNode2 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), Double.toString(maxLon));
@@ -150,8 +152,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         JexlNode leLatNode2 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(1), Double.toString(maxLat));
                         
                         // now link em up
-                        JexlNode andNode2 = JexlNodeFactory.createAndNode(Arrays.asList(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode2, leLonNode2)),
-                                        JexlNodeFactory.createAndNode(Arrays.asList(geLatNode2, leLatNode2))));
+                        JexlNode andNode2 = JexlNodeFactory.createAndNode(Arrays.asList(
+                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode2, leLonNode2))),
+                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode2, leLatNode2)))));
                         
                         // link em up
                         returnNode = JexlNodeFactory.createAndNode(Arrays.asList(andNode1, andNode2));
@@ -164,8 +167,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         
                         // now link em up
                         
-                        returnNode = JexlNodeFactory.createAndNode(Arrays.asList(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode, leLonNode)),
-                                        JexlNodeFactory.createAndNode(Arrays.asList(geLatNode, leLatNode))));
+                        returnNode = JexlNodeFactory.createAndNode(Arrays.asList(
+                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode, leLonNode))),
+                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode, leLatNode)))));
                     }
                 }
             } else if (name.equals("within_circle")) {
@@ -206,7 +210,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 
                 // now link em up
                 
-                returnNode = JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode));
+                returnNode = BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
             }
             return returnNode;
         }

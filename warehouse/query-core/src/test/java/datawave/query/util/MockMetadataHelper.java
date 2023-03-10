@@ -8,6 +8,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.MetadataCardinalityCounts;
 import datawave.data.type.LcNoDiacriticsType;
@@ -16,11 +17,10 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.model.QueryModel;
 import datawave.util.TableName;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
@@ -62,27 +62,23 @@ public class MockMetadataHelper extends MetadataHelper {
     };
     
     public MockMetadataHelper() {
-        this(getConnector(), Collections.EMPTY_SET, TableName.METADATA);
+        super(createAllFieldMetadataHelper(getClient()), Collections.emptySet(), getClient(), TableName.METADATA, Collections.emptySet(), Collections
+                        .emptySet());
     }
     
-    public MockMetadataHelper(Connector connector, Set<Authorizations> someAuths, String tableName) {
-        super(createAllFieldMetadataHelper(connector, someAuths), someAuths, connector, tableName, someAuths, someAuths);
-    }
-    
-    private static AllFieldMetadataHelper createAllFieldMetadataHelper(Connector connector, Set<Authorizations> someAuths) {
-        final Set<Authorizations> allMetadataAuths = someAuths;
-        final Set<Authorizations> auths = someAuths;
-        
-        TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, connector, TableName.METADATA, auths, false);
-        CompositeMetadataHelper cmh = new CompositeMetadataHelper(connector, TableName.METADATA, auths);
-        return new AllFieldMetadataHelper(tmh, cmh, connector, TableName.METADATA, auths, allMetadataAuths);
+    private static AllFieldMetadataHelper createAllFieldMetadataHelper(AccumuloClient client) {
+        final Set<Authorizations> allMetadataAuths = Collections.emptySet();
+        final Set<Authorizations> auths = Collections.emptySet();
+        TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, client, TableName.METADATA, auths, false);
+        CompositeMetadataHelper cmh = new CompositeMetadataHelper(client, TableName.METADATA, auths);
+        return new AllFieldMetadataHelper(tmh, cmh, client, TableName.METADATA, auths, allMetadataAuths);
         
     }
     
-    private static Connector getConnector() {
+    private static AccumuloClient getClient() {
         try {
-            return new InMemoryInstance().getConnector("root", new PasswordToken(""));
-        } catch (AccumuloException | AccumuloSecurityException e) {
+            return new InMemoryAccumuloClient("root", new InMemoryInstance());
+        } catch (AccumuloSecurityException e) {
             throw new RuntimeException(e);
         }
     }

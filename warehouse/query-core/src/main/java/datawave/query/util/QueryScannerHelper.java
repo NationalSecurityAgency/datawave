@@ -6,8 +6,8 @@ import datawave.query.iterator.QueryInformationIterator;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.query.Query;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -18,29 +18,29 @@ import org.apache.accumulo.core.security.Authorizations;
  */
 public class QueryScannerHelper {
     
-    public static Scanner createScanner(Connector connector, String tableName, Collection<Authorizations> authorizations, Query query)
+    public static Scanner createScanner(AccumuloClient client, String tableName, Collection<Authorizations> authorizations, Query query)
                     throws TableNotFoundException {
-        Scanner scanner = ScannerHelper.createScanner(connector, tableName, authorizations);
+        Scanner scanner = ScannerHelper.createScanner(client, tableName, authorizations);
         
         scanner.addScanIterator(getQueryInfoIterator(query, false));
         
         return scanner;
     }
     
-    public static Scanner createScannerWithoutInfo(Connector connector, String tableName, Collection<Authorizations> authorizations, Query query)
+    public static Scanner createScannerWithoutInfo(AccumuloClient client, String tableName, Collection<Authorizations> authorizations, Query query)
                     throws TableNotFoundException {
         
-        return ScannerHelper.createScanner(connector, tableName, authorizations);
+        return ScannerHelper.createScanner(client, tableName, authorizations);
     }
     
-    public static BatchScanner createBatchScanner(Connector connector, String tableName, Collection<Authorizations> authorizations, int numQueryThreads,
+    public static BatchScanner createBatchScanner(AccumuloClient client, String tableName, Collection<Authorizations> authorizations, int numQueryThreads,
                     Query query) throws TableNotFoundException {
-        return createBatchScanner(connector, tableName, authorizations, numQueryThreads, query, false);
+        return createBatchScanner(client, tableName, authorizations, numQueryThreads, query, false);
     }
     
-    public static BatchScanner createBatchScanner(Connector connector, String tableName, Collection<Authorizations> authorizations, int numQueryThreads,
+    public static BatchScanner createBatchScanner(AccumuloClient client, String tableName, Collection<Authorizations> authorizations, int numQueryThreads,
                     Query query, boolean reportErrors) throws TableNotFoundException {
-        BatchScanner batchScanner = ScannerHelper.createBatchScanner(connector, tableName, authorizations, numQueryThreads);
+        BatchScanner batchScanner = ScannerHelper.createBatchScanner(client, tableName, authorizations, numQueryThreads);
         
         batchScanner.addScanIterator(getQueryInfoIterator(query, reportErrors));
         

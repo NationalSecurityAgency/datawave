@@ -3,8 +3,10 @@ package datawave.query.jexl.visitors;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTNotNode;
@@ -71,6 +73,12 @@ public class PushdownNegationVisitor extends BaseVisitor {
         }
     }
     
+    // never push a negation inside of a function
+    @Override
+    public Object visit(ASTFunctionNode node, Object data) {
+        return data;
+    }
+    
     @Override
     public Object visit(ASTOrNode node, Object data) {
         if (data instanceof NegationState) {
@@ -109,6 +117,9 @@ public class PushdownNegationVisitor extends BaseVisitor {
                     if (JexlASTHelper.isIvaratorMarker(node)) {
                         // don't propagate inside
                         return data;
+                    } else if (BoundedRange.instanceOf(node)) {
+                        // don't propagate inside
+                        return data;
                     }
                     // move inside to the source node
                     JexlNode source = QueryPropertyMarker.getQueryPropertySource(node, null);
@@ -116,9 +127,7 @@ public class PushdownNegationVisitor extends BaseVisitor {
                 }
                 
                 // look for bounded ranges which will prevent propagation
-                List<JexlNode> otherNodes = new ArrayList<>();
-                Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, otherNodes, false);
-                if (ranges.size() == 1 && otherNodes.isEmpty()) {
+                if (JexlASTHelper.findRange().notDelayed().isRange(node)) {
                     // bounded range, can't do it
                     return data;
                 }

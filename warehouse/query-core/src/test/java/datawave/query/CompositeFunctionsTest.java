@@ -7,24 +7,20 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.query.util.TypeMetadata;
-import datawave.query.util.TypeMetadataHelper;
-import datawave.query.util.TypeMetadataWriter;
 import datawave.query.util.WiseGuysIngest;
+import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -35,12 +31,13 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -55,95 +52,90 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.*;
-
 /**
  * Tests the composite functions, the #JEXL lucene function, the matchesAtLeastCountOf function. and others
  * 
  */
 public abstract class CompositeFunctionsTest {
     
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     @RunWith(Arquillian.class)
     public static class ShardRange extends CompositeFunctionsTest {
-        protected static Connector connector = null;
-        private static final String tempDirForCompositeFunctionsTest = "/tmp/TempDirForCompositeFunctionsTestShardRange";
+        protected static AccumuloClient client = null;
         
         @BeforeClass
         public static void setUp() throws Exception {
             // this will get property substituted into the TypeMetadataBridgeContext.xml file
             // for the injection test (when this unit test is first created)
-            System.setProperty("type.metadata.dir", tempDirForCompositeFunctionsTest);
+            File tempDir = temporaryFolder.newFolder("TempDirForCompositeFunctionsTestShardRange");
+            System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
+            WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, METADATA_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(client, auths, TableName.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @AfterClass
         public static void teardown() {
-            // maybe delete the temp folder here
-            File tempFolder = new File(tempDirForCompositeFunctionsTest);
-            if (tempFolder.exists()) {
-                try {
-                    FileUtils.forceDelete(tempFolder);
-                } catch (IOException ex) {
-                    log.error(ex);
-                }
-            }
             TypeRegistry.reset();
         }
         
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
+            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client, eventQueryLogic);
+        }
+        
+        @Override
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, ShardQueryLogic logic)
+                        throws Exception {
+            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client, logic);
         }
     }
     
     @RunWith(Arquillian.class)
     public static class DocumentRange extends CompositeFunctionsTest {
-        protected static Connector connector = null;
-        private static final String tempDirForCompositeFunctionsTest = "/tmp/TempDirForCompositeFunctionsTestDocumentRange";
+        protected static AccumuloClient client = null;
         
         @BeforeClass
         public static void setUp() throws Exception {
             // this will get property substituted into the TypeMetadataBridgeContext.xml file
             // for the injection test (when this unit test is first created)
-            System.setProperty("type.metadata.dir", tempDirForCompositeFunctionsTest);
+            File tempDir = temporaryFolder.newFolder("TempDirForCompositeFunctionsTestDocumentRange");
+            System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.DocumentRange.class.toString(), log);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
+            WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, METADATA_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(client, auths, TableName.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @AfterClass
         public static void teardown() {
-            // maybe delete the temp folder here
-            File tempFolder = new File(tempDirForCompositeFunctionsTest);
-            if (tempFolder.exists()) {
-                try {
-                    FileUtils.forceDelete(tempFolder);
-                } catch (IOException ex) {
-                    log.error(ex);
-                }
-            }
             TypeRegistry.reset();
         }
         
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
+            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client, eventQueryLogic);
+        }
+        
+        @Override
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, ShardQueryLogic logic)
+                        throws Exception {
+            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client, logic);
         }
     }
     
@@ -155,7 +147,11 @@ public abstract class CompositeFunctionsTest {
     
     @Inject
     @SpringBean(name = "EventQuery")
-    protected ShardQueryLogic logic;
+    protected ShardQueryLogic eventQueryLogic;
+    
+    @Inject
+    @SpringBean(name = "TLDEventQuery")
+    protected ShardQueryLogic tldEventQueryLogic;
     
     private KryoDocumentDeserializer deserializer;
     
@@ -181,14 +177,20 @@ public abstract class CompositeFunctionsTest {
     public void setup() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
-        logic.setFullTableScanEnabled(true);
+        eventQueryLogic.setFullTableScanEnabled(true);
+        eventQueryLogic.setMaxDepthThreshold(6);
+        tldEventQueryLogic.setFullTableScanEnabled(true);
+        tldEventQueryLogic.setMaxDepthThreshold(6);
         deserializer = new KryoDocumentDeserializer();
     }
     
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
-    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
-                    throws Exception {
+    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
+                    ShardQueryLogic logic) throws Exception;
+    
+    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, AccumuloClient client,
+                    ShardQueryLogic logic) throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
@@ -204,13 +206,8 @@ public abstract class CompositeFunctionsTest {
         log.debug("logic: " + settings.getQueryLogicName());
         logic.setMaxEvaluationPipelines(1);
         
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
+        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
-        
-        TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
-        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory().createTypeMetadataHelper(connector, MODEL_TABLE_NAME, authSet, false);
-        Map<Set<String>,TypeMetadata> typeMetadataMap = typeMetadataHelper.getTypeMetadataMap(authSet);
-        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, MODEL_TABLE_NAME);
         
         HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
@@ -222,8 +219,9 @@ public abstract class CompositeFunctionsTest {
             log.debug(entry.getKey() + " => " + d);
             
             Attribute<?> attr = d.get("UUID");
-            if (attr == null)
+            if (attr == null) {
                 attr = d.get("UUID.0");
+            }
             
             Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
             Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(), attr instanceof TypeAttribute
@@ -289,10 +287,10 @@ public abstract class CompositeFunctionsTest {
         // @formatter:off
         String[] queryStrings = {
                 "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAM,'MICHAEL','VINCENT','FREDO','TONY') "+
-                        "AND f:options('type.metadata.in.hdfs','true','include.grouping.context','true','hit.list','true')",
+                        "AND f:options('include.grouping.context','true','hit.list','true')",
 
                 "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAME,'MICHAEL','VINCENT','FRED','TONY') "+
-                        "OR f:options('type.metadata.in.hdfs','true','include.grouping.context','true','hit.list','true')"
+                        "OR f:options('include.grouping.context','true','hit.list','true')"
         };
 
         @SuppressWarnings("unchecked")
@@ -329,7 +327,7 @@ public abstract class CompositeFunctionsTest {
                 Collections.singletonList("CAPONE"), Collections.singletonList("CAPONE"),};
         for (int i = 0; i < queryStrings.length; i++) {
             if (i == 3) {
-                logic.setParser(new LuceneToJexlQueryParser());
+                eventQueryLogic.setParser(new LuceneToJexlQueryParser());
             }
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -454,10 +452,10 @@ public abstract class CompositeFunctionsTest {
         
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Collections.emptyList(),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
                 Collections.emptyList(), Collections.emptyList(),
                 
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Collections.emptyList(),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"), Collections.emptyList(),
                 Collections.emptyList(), Collections.emptyList(),};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
@@ -496,9 +494,9 @@ public abstract class CompositeFunctionsTest {
         };
         
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Collections.emptyList(), Collections.emptyList(),
-                Collections.emptyList(), Collections.emptyList(), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
+        List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"), Collections.emptyList(), Collections.emptyList(),
+                Collections.emptyList(), Collections.emptyList(), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
                 
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),};
@@ -564,7 +562,7 @@ public abstract class CompositeFunctionsTest {
     
     @Test
     public void testMatchesAtLeastCountOfWithLucene() throws Exception {
-        logic.setParser(new LuceneToJexlQueryParser());
+        eventQueryLogic.setParser(new LuceneToJexlQueryParser());
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         
@@ -578,13 +576,13 @@ public abstract class CompositeFunctionsTest {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
-    
+
     @Test
     public void testWithLucene() throws Exception {
-        logic.setParser(new LuceneToJexlQueryParser());
+        eventQueryLogic.setParser(new LuceneToJexlQueryParser());
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
-        
+
         if (log.isDebugEnabled()) {
             log.debug("testWithLucene");
         }
@@ -609,10 +607,70 @@ public abstract class CompositeFunctionsTest {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
-    
+
+    @Test
+    public void testTLDWithLuceneAndIdentifierToLiteralLTJexl() throws Exception {
+        tldEventQueryLogic.setParser(new LuceneToJexlQueryParser());
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        if (log.isDebugEnabled()) {
+            log.debug("testWithLucene");
+        }
+        // @formatter:off
+        String[] queryStrings = {
+                "UUID:ANDOLINI AND #JEXL(ETA < 15)" // family name is ANDOLINI
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters, tldEventQueryLogic);
+        }
+    }
+
+    @Test
+    public void testTLDWithLuceneAndIdentifierToLiteralEQJexl() throws Exception {
+        tldEventQueryLogic.setParser(new LuceneToJexlQueryParser());
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        if (log.isDebugEnabled()) {
+            log.debug("testWithLucene");
+        }
+        // @formatter:off
+        String[] queryStrings = {
+                "UUID:ANDOLINI AND #JEXL(ETA == 12)"
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters, tldEventQueryLogic);
+        }
+    }
+
+    @Test
+    public void testTLDWithLuceneAndIdentifierToIdentifierJexl() throws Exception {
+        tldEventQueryLogic.setParser(new LuceneToJexlQueryParser());
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        if (log.isDebugEnabled()) {
+            log.debug("testWithLucene");
+        }
+        // @formatter:off
+        String[] queryStrings = {
+                "UUID:ANDOLINI AND #JEXL(ETA < MAGIC)"
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters, tldEventQueryLogic);
+        }
+    }
+
     @Test
     public void testWithLuceneAndOptionsFunction() throws Exception {
-        logic.setParser(new LuceneToJexlQueryParser());
+        eventQueryLogic.setParser(new LuceneToJexlQueryParser());
         Map<String,String> extraParameters = new HashMap<>();
         
         if (log.isDebugEnabled()) {

@@ -238,11 +238,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         Iterator<Entry<Key,Document>> fieldIndexDocuments = null;
         try {
             fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
-        } catch (ConfigException e) {
-            throw new IOException("Unable to create document iterator", e);
-        } catch (IllegalAccessException e) {
-            throw new IOException("Unable to create document iterator", e);
-        } catch (InstantiationException e) {
+        } catch (ConfigException | IllegalAccessException | InstantiationException e) {
             throw new IOException("Unable to create document iterator", e);
         }
         

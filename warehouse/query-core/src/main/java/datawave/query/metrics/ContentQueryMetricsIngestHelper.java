@@ -140,7 +140,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                     List<ASTEQNode> positiveEQNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);
                     for (ASTEQNode pos : positiveEQNodes) {
                         String identifier = JexlASTHelper.getIdentifier(pos);
-                        Object literal = JexlASTHelper.getLiteralValue(pos);
+                        Object literal = JexlASTHelper.getLiteralValueSafely(pos);
                         if (identifier != null && literal != null) {
                             fields.put("POSITIVE_SELECTORS", identifier + ":" + literal);
                         }
@@ -148,7 +148,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                     List<ASTEQNode> negativeEQNodes = JexlASTHelper.getNegativeEQNodes(jexlScript);
                     for (ASTEQNode neg : negativeEQNodes) {
                         String identifier = JexlASTHelper.getIdentifier(neg);
-                        Object literal = JexlASTHelper.getLiteralValue(neg);
+                        Object literal = JexlASTHelper.getLiteralValueSafely(neg);
                         if (identifier != null && literal != null) {
                             fields.put("NEGATIVE_SELECTORS", identifier + ":" + literal);
                         }

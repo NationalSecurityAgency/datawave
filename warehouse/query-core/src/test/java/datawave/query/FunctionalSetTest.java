@@ -7,14 +7,15 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
+import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -46,8 +47,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.*;
-
 /**
  * Loads some data in a mock accumulo table and then issues queries against the table using the shard query table.
  * 
@@ -56,45 +55,45 @@ public abstract class FunctionalSetTest {
     
     @RunWith(Arquillian.class)
     public static class ShardRange extends FunctionalSetTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient client = null;
         
         @BeforeClass
         public static void setUp() throws Exception {
             QueryTestTableHelper qtth = new QueryTestTableHelper(FunctionalSetTest.ShardRange.class.toString(), log);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
+            WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(client, auths, TableName.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
+            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
     
     @RunWith(Arquillian.class)
     public static class DocumentRange extends FunctionalSetTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient client = null;
         
         @BeforeClass
         public static void setUp() throws Exception {
             QueryTestTableHelper qtth = new QueryTestTableHelper(FunctionalSetTest.DocumentRange.class.toString(), log);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
+            WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(client, auths, TableName.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
+            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
     
@@ -144,7 +143,7 @@ public abstract class FunctionalSetTest {
     
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
-    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
+    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, AccumuloClient client)
                     throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
@@ -162,7 +161,7 @@ public abstract class FunctionalSetTest {
         logic.setMaxEvaluationPipelines(1);
         logic.setMaxDepthThreshold(6);
         
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
+        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
         HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
@@ -260,7 +259,7 @@ public abstract class FunctionalSetTest {
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("ANDOLINI", "SOPRANO", "CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList(),
@@ -269,12 +268,12 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("CORLEONE", "CAPONE"),
                 
                 Arrays.asList("CAPONE"),
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
                 
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
-                Arrays.asList("CORLEONE"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "ANDOLINI"),
                 Arrays.asList("SOPRANO", "CAPONE"),};
         // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
@@ -331,9 +330,9 @@ public abstract class FunctionalSetTest {
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
         
-                Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18"
-                Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18",
-                Arrays.asList("SOPRANO", "CORLEONE"), // "18 >= AG && 10 <= AG",
+                Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "10 <= AG && AG <= 18"
+                Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "10 <= AG && AG <= 18",
+                Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "18 >= AG && 10 <= AG",
                 Arrays.asList("SOPRANO", "CORLEONE"), // "AGE == 18"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "18 == AGE"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "GENDER == 'FEMALE'"

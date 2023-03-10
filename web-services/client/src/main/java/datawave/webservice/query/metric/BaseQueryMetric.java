@@ -1,5 +1,6 @@
 package datawave.webservice.query.metric;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
@@ -21,6 +22,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -581,6 +583,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     @XmlElementWrapper(name = "predictions")
     @XmlElement(name = "prediction")
     protected Set<Prediction> predictions = new HashSet<Prediction>();
+    
     protected int lastWrittenHash = 0;
     protected long numUpdates = 0;
     
@@ -645,6 +648,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
         return numPages;
     }
     
+    @JsonIgnore
     @XmlElement(name = "elapsedTime")
     public long getElapsedTime() {
         if (lastUpdated != null && createDate != null) {
@@ -834,6 +838,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
      *
      * @return true if lifecycle represents a final status, false otherwise
      */
+    @JsonIgnore
     public boolean isLifecycleFinal() {
         return Lifecycle.CLOSED == lifecycle || Lifecycle.CANCELLED == lifecycle || Lifecycle.MAXRESULTS == lifecycle || Lifecycle.NEXTTIMEOUT == lifecycle
                         || Lifecycle.TIMEOUT == lifecycle || Lifecycle.SHUTDOWN == lifecycle;
@@ -941,16 +946,21 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     @Override
     public void setMarkings(Map<String,String> markings) {
-        // TODO: We need only the columnVisibility piece here....create separate implementations?
-        this.columnVisibility = MarkingFunctions.Encoding.toString(markings);
+        if (markings == null || markings.isEmpty()) {
+            this.columnVisibility = null;
+        } else {
+            this.columnVisibility = markings.get(MarkingFunctions.Default.COLUMN_VISIBILITY);
+        }
     }
     
     @Override
     public Map<String,String> getMarkings() {
-        return MarkingFunctions.Encoding.fromString(this.columnVisibility);
+        Map<String,String> markings = new HashMap<>();
+        markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, this.columnVisibility);
+        return markings;
     }
     
-    public Schema<? extends BaseQueryMetric> geteSchemaInstance() {
+    public Schema<? extends BaseQueryMetric> getSchemaInstance() {
         return null;
     }
     

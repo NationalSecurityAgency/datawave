@@ -54,6 +54,7 @@ public class EventDataQueryExpressionVisitorTest {
         
         TypeMetadata md = new TypeMetadata();
         md.put("FOO", DATATYPE, lcNoDiacritics);
+        md.put("FOO2", DATATYPE, lcNoDiacritics);
         md.put("BAZ", DATATYPE, number);
         md.put("BAR", DATATYPE, lcNoDiacritics);
         md.put("BAR", DATATYPE, number);
@@ -212,6 +213,71 @@ public class EventDataQueryExpressionVisitorTest {
         assertNotNull(filter.get("FOO"));
         assertTrue(filter.get("FOO").apply(p1));
         assertFalse(filter.get("FOO").apply(n1));
+        
+        assertNull(filter.get("BAR"));
+    }
+    
+    @Test
+    public void testFieldToFieldComparison() throws Exception {
+        String originalQuery = "FOO == FOO2";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        assertNotNull(filter.get("FOO"));
+        assertNotNull(filter.get("FOO2"));
+        
+        Key p1 = createKey("FOO", "anything");
+        Key p2 = createKey("FOO2", "anything");
+        
+        assertTrue(filter.get("FOO").apply(p1));
+        assertTrue(filter.get("FOO2").apply(p2));
+        assertNull(filter.get("BAZ"));
+    }
+    
+    @Test
+    public void testMultipleFieldsToLiteralComparison() throws Exception {
+        String originalQuery = "(FOO || FOO2).min().hashCode() == 0";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        assertNotNull(filter.get("FOO"));
+        assertNotNull(filter.get("FOO2"));
+        
+        Key p1 = createKey("FOO", "anything");
+        Key p2 = createKey("FOO2", "anything");
+        
+        assertTrue(filter.get("FOO").apply(p1));
+        assertTrue(filter.get("FOO2").apply(p2));
+        assertNull(filter.get("BAZ"));
+    }
+    
+    @Test
+    public void testFieldToFieldNEComparison() throws Exception {
+        String originalQuery = "FOO != FOO2";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        assertNotNull(filter.get("FOO"));
+        assertNotNull(filter.get("FOO2"));
+        
+        Key p1 = createKey("FOO", "anything");
+        Key p2 = createKey("FOO2", "anything");
+        
+        assertTrue(filter.get("FOO").apply(p1));
+        assertTrue(filter.get("FOO2").apply(p2));
+        assertNull(filter.get("BAZ"));
+    }
+    
+    @Test
+    public void testLT() throws Exception {
+        String originalQuery = "FOO < 'abc'";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        assertNotNull(filter.get("FOO"));
+        
+        Key p1 = createKey("FOO", "abc");
+        Key p2 = createKey("FOO", "123");
+        
+        assertNotNull(filter.get("FOO"));
+        assertTrue(filter.get("FOO").apply(p1));
+        assertTrue(filter.get("FOO").apply(p2));
         
         assertNull(filter.get("BAR"));
     }
@@ -470,7 +536,7 @@ public class EventDataQueryExpressionVisitorTest {
     
     @Test
     public void testRange1() throws Exception {
-        String originalQuery = "BAZ >= '+aE5' AND BAZ <= '+bE1.2'";
+        String originalQuery = "((_Bounded_ = true) && (BAZ >= '+aE5' AND BAZ <= '+bE1.2'))";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         
@@ -494,7 +560,7 @@ public class EventDataQueryExpressionVisitorTest {
     @Test
     public void testRange2() throws Exception {
         // Between 5 and 12.
-        String originalQuery = "FOO == 'abc' AND (BAZ >= '+aE5' AND BAZ <= '+bE1.2')";
+        String originalQuery = "FOO == 'abc' AND ((_Bounded_ = true) && (BAZ >= '+aE5' AND BAZ <= '+bE1.2'))";
         // @TODO, use ExpandMultiNormalizedTerms to normalize this query?
         
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);

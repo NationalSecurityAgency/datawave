@@ -12,6 +12,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public class Unique extends LuceneQueryFunction {
     public Unique() {
         super(QueryFunctions.UNIQUE_FUNCTION, new ArrayList<>());

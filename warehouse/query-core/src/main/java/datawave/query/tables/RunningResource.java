@@ -7,8 +7,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import datawave.security.util.ScannerHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
@@ -79,14 +79,14 @@ public class RunningResource extends AccumuloResource {
      */
     protected int hashCode = 31;
     
-    protected RunningResource(final Connector cxn) {
-        super(cxn);
+    protected RunningResource(final AccumuloClient client) {
+        super(client);
         internalTimer = new StopWatch();
         internalTimer.start();
     }
     
     public RunningResource(AccumuloResource copy) {
-        this(copy.getConnector());
+        this(copy.getClient());
     }
     
     /**
@@ -118,7 +118,7 @@ public class RunningResource extends AccumuloResource {
         // let's pre-compute the hashcode.
         hashCode += new HashCodeBuilder().append(tableName).append(auths).append(ranges).toHashCode();
         
-        baseScanner = ScannerHelper.createScanner(getConnector(), tableName, auths);
+        baseScanner = ScannerHelper.createScanner(getClient(), tableName, auths);
         
         if (baseScanner != null) {
             ((Scanner) baseScanner).setRange(currentRange.iterator().next());

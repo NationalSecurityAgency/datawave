@@ -40,6 +40,7 @@ import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.table.config.TableConfigHelper;
+import datawave.marking.MarkingFunctions;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
@@ -48,7 +49,6 @@ import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.common.logging.ThreadLocalLogLevel;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryImpl.Parameter;
@@ -75,9 +75,9 @@ import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
@@ -135,6 +135,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     
     private Collection<String> connectorAuthorizationCollection = null;
     private String connectorAuthorizations = null;
+    private MarkingFunctions markingFunctions = null;
     
     @SuppressWarnings("FieldCanBeLocal")
     private final String JOB_ID = "job_201109071404_1";
@@ -162,15 +163,16 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         String accumuloPassword = conf.get("AccumuloRecordWriter.password");
         byte[] encodedAccumuloPassword = Base64.encodeBase64(accumuloPassword.getBytes());
         conf.set("AccumuloRecordWriter.password", new String(encodedAccumuloPassword));
+        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     }
     
     @PostConstruct
     private void initialize() {
-        Connector connector = null;
+        AccumuloClient client = null;
         
         try {
-            connector = connectionFactory.getConnection(Priority.ADMIN, new HashMap<>());
-            connectorAuthorizations = connector.securityOperations().getUserAuthorizations(connector.whoami()).toString();
+            client = connectionFactory.getClient(Priority.ADMIN, new HashMap<>());
+            connectorAuthorizations = client.securityOperations().getUserAuthorizations(client.whoami()).toString();
             connectorAuthorizationCollection = Lists.newArrayList(StringUtils.split(connectorAuthorizations, ","));
             reload();
             
@@ -179,9 +181,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         } catch (Exception e) {
             log.error("Error setting connection factory", e);
         } finally {
-            if (connector != null) {
+            if (client != null) {
                 try {
-                    connectionFactory.returnConnection(connector);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection to connection factory", e);
                 }
@@ -201,18 +203,18 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     }
     
     private void verifyTables() {
-        Connector connector = null;
+        AccumuloClient client = null;
         
         try {
-            connector = this.connectionFactory.getConnection(Priority.ADMIN, new HashMap<>());
+            client = this.connectionFactory.getClient(Priority.ADMIN, new HashMap<>());
             AbstractColumnBasedHandler<Key> handler = new ContentQueryMetricsHandler<>();
-            createAndConfigureTablesIfNecessary(handler.getTableNames(conf), connector.tableOperations(), conf);
+            createAndConfigureTablesIfNecessary(handler.getTableNames(conf), client.tableOperations(), conf);
         } catch (Exception e) {
             log.error("Error verifying table configuration", e);
         } finally {
-            if (null != connector) {
+            if (null != client) {
                 try {
-                    this.connectionFactory.returnConnection(connector);
+                    this.connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection to connection factory");
                 }
@@ -280,11 +282,17 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         event.setConf(this.conf);
         event.setDataType(type);
         event.setDate(storedQueryMetric.getCreateDate().getTime());
-        // get security marking set in the config, otherwise default to PUBLIC
-        if (visibilityString != null) {
-            event.setVisibility(new ColumnVisibility(visibilityString));
-        } else {
+        // get security markings from metric, otherwise default to PUBLIC
+        Map<String,String> markings = updatedQueryMetric.getMarkings();
+        if (markingFunctions == null || markings == null || markings.isEmpty()) {
             event.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));
+        } else {
+            try {
+                event.setVisibility(this.markingFunctions.translateToColumnVisibility(markings));
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                event.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));
+            }
         }
         event.setAuxData(storedQueryMetric);
         event.setRawRecordNumber(1000L);
@@ -449,17 +457,16 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     private List<QueryMetric> getQueryMetrics(BaseResponse response, Query query, DatawavePrincipal datawavePrincipal) {
         List<QueryMetric> queryMetrics = new ArrayList<>();
         RunningQuery runningQuery = null;
-        Connector connector = null;
+        AccumuloClient client = null;
         
         try {
             Map<String,String> trackingMap = this.connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connector = this.connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            client = this.connectionFactory.getClient(Priority.ADMIN, trackingMap);
             QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(query.getQueryLogicName(), datawavePrincipal);
             if (queryLogic instanceof QueryMetricQueryLogic) {
                 ((QueryMetricQueryLogic) queryLogic).setRolesSets(datawavePrincipal.getPrimaryUser().getRoles());
             }
-            runningQuery = new RunningQuery(null, connector, Priority.ADMIN, queryLogic, query, query.getQueryAuthorizations(), datawavePrincipal,
-                            metricFactory);
+            runningQuery = new RunningQuery(null, client, Priority.ADMIN, queryLogic, query, query.getQueryAuthorizations(), datawavePrincipal, metricFactory);
             
             boolean done = false;
             List<Object> objectList = new ArrayList<>();
@@ -505,15 +512,15 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
         } finally {
             if (null != this.connectionFactory) {
-                if (null != runningQuery && null != connector) {
+                if (null != runningQuery && null != client) {
                     try {
                         runningQuery.closeConnection(this.connectionFactory);
                     } catch (Exception e) {
                         log.warn("Could not return connector to factory", e);
                     }
-                } else if (null != connector) {
+                } else if (null != client) {
                     try {
-                        this.connectionFactory.returnConnection(connector);
+                        this.connectionFactory.returnClient(client);
                     } catch (Exception e) {
                         log.warn("Could not return connector to factory", e);
                     }
@@ -640,7 +647,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         try {
             QueryMetric m = new QueryMetric();
             List<FieldBase> field = event.getFields();
-            
+            m.setMarkings(event.getMarkings());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
             
             for (FieldBase f : field) {
@@ -857,7 +864,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     
     private void enableLogs(boolean enable) {
         if (enable) {
-            ThreadLocalLogLevel.clear();
+            ThreadConfigurableLogger.clearThreadLevels();
         } else {
             // All loggers that are encountered in the call chain during metrics calls should be included here.
             // If you need to add a logger name here, you also need to change the Logger declaration where that Logger is instantiated
@@ -866,24 +873,24 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             // to
             // Logger log = ThreadConfigurableLogger.getLogger(MyClass.class);
             
-            ThreadLocalLogLevel.setLevel("datawave.query.index.lookup.RangeStream", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.planner.DefaultQueryPlanner", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.planner.ThreadedRangeBundlerIterator", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.scheduler.SequentialScheduler", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.tables.ShardQueryLogic", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.jexl.visitors.QueryModelVisitor", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.jexl.visitors.ExpandMultiNormalizedTerms", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.jexl.lookups.LookupBoundedRangeForTerms", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.query.index.lookup.RangeStream", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.query.planner.DefaultQueryPlanner", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.query.planner.ThreadedRangeBundlerIterator", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.query.scheduler.SequentialScheduler", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.query.tables.ShardQueryLogic", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.visitors.QueryModelVisitor", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.visitors.ExpandMultiNormalizedTerms", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.lookups.LookupBoundedRangeForTerms", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor", Level.ERROR);
             
-            ThreadLocalLogLevel.setLevel("datawave.ingest.data.TypeRegistry", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.ingest.data.config.ingest.BaseIngestHelper", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.ingest.util.RegionTimer", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.ingest.data.Event", Level.OFF);
+            ThreadConfigurableLogger.setLevelForThread("datawave.ingest.data.TypeRegistry", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.ingest.data.config.ingest.BaseIngestHelper", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.ingest.util.RegionTimer", Level.ERROR);
+            ThreadConfigurableLogger.setLevelForThread("datawave.ingest.data.Event", Level.OFF);
         }
     }
     

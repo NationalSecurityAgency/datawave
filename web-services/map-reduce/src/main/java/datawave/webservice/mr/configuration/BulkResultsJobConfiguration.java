@@ -19,18 +19,18 @@ import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.runner.RunningQuery;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.mapreduce.AccumuloOutputFormat;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -41,15 +41,15 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.infinispan.commons.util.Base64;
 import org.jboss.security.JSSESecurityDomain;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -191,17 +191,27 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
                 job.setOutputValueClass(Mutation.class);
                 job.setNumReduceTasks(0);
                 job.setOutputFormatClass(AccumuloOutputFormat.class);
-                AccumuloOutputFormat.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zookeepers));
-                AccumuloOutputFormat.setConnectorInfo(job, user, new PasswordToken(password));
-                AccumuloOutputFormat.setCreateTables(job, true);
-                AccumuloOutputFormat.setDefaultTableName(job, tableName);
+                
+                // @formatter:off
+                Properties clientProps = Accumulo.newClientProperties()
+                        .to(instanceName, zookeepers)
+                        .as(user, password)
+                        .batchWriterConfig(new BatchWriterConfig()
+                                .setMaxLatency(30, TimeUnit.SECONDS)
+                                .setMaxMemory(10485760)
+                                .setMaxWriteThreads(2))
+                        .build();
+
+                AccumuloOutputFormat.configure()
+                        .clientProperties(clientProps)
+                        .createTables(true)
+                        .defaultTable(tableName)
+                        .store(job);
+                // @formatter:on
+                
                 // AccumuloOutputFormat.loglevel
-                AccumuloOutputFormat.setLogLevel(job, Level.INFO);
-                // AccumuloOutputFormat.maxlatency
-                // AccumuloOutputFormat.maxmemory
-                // AccumuloOutputFormat.writethreads
-                AccumuloOutputFormat.setBatchWriterOptions(job, new BatchWriterConfig().setMaxLatency(30, TimeUnit.SECONDS).setMaxMemory(10485760)
-                                .setMaxWriteThreads(2));
+                // TODO: this is not supported on the new output format -- just use normal logging configuration
+                // AccumuloOutputFormat.setLogLevel(job, Level.INFO);
             }
         } catch (WebApplicationException wex) {
             throw wex;
@@ -304,12 +314,18 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
     }
     
     private String encodePrincipal(DatawavePrincipal principal) throws IOException {
-        return Base64.encodeObject(principal, Base64.GZIP | Base64.DONT_BREAK_LINES);
+        
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+            
+            // create a copy because this DatawavePrincipal might be CDI injected and have a reference to Weld
+            oos.writeObject(new DatawavePrincipal(principal.getProxiedUsers(), principal.getCreationTime()));
+            return Base64.encodeBase64String(baos.toByteArray());
+        }
     }
     
     private QuerySettings setupQuery(String sid, String queryId, Principal principal) throws Exception {
         
-        Connector connector = null;
+        AccumuloClient client = null;
         QueryLogic<?> logic = null;
         try {
             // Get the query by the query id
@@ -323,20 +339,20 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             
             // Get an accumulo connection
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connector = connectionFactory.getConnection(logic.getConnectionPriority(), trackingMap);
+            client = connectionFactory.getClient(logic.getConnectionPriority(), trackingMap);
             
             // Merge user auths with the auths that they use in the Query
             Set<Authorizations> runtimeQueryAuthorizations = AuthorizationsUtil.getDowngradedAuthorizations(q.getQueryAuthorizations(), principal);
             
             // Initialize the logic so that the configuration contains all of the iterator options
-            GenericQueryConfiguration queryConfig = logic.initialize(connector, q, runtimeQueryAuthorizations);
+            GenericQueryConfiguration queryConfig = logic.initialize(client, q, runtimeQueryAuthorizations);
             
             String base64EncodedQuery = BulkResultsFileOutputMapper.serializeQuery(q);
             
             return new QuerySettings(logic, queryConfig, base64EncodedQuery, q.getClass(), runtimeQueryAuthorizations);
         } finally {
-            if (null != logic && null != connector)
-                connectionFactory.returnConnection(connector);
+            if (null != logic && null != client)
+                connectionFactory.returnClient(client);
         }
         
     }

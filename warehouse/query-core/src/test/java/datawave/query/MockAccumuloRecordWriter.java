@@ -32,7 +32,7 @@ public class MockAccumuloRecordWriter extends RecordWriter<Text,Mutation> {
                                                 .getTimestamp()));
             }
             if (writerMap.get(key) == null) {
-                log.error("key had null value: " + key);
+                throw new NullPointerException("Can't write mutation: No entry in writerMap for table '" + key + "'");
             }
             writerMap.get(key).addMutation(value);
         } catch (MutationsRejectedException e) {

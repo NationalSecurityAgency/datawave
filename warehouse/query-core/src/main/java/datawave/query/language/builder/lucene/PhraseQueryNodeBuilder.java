@@ -34,6 +34,7 @@ import org.apache.lucene.search.PhraseQuery;
 /**
  * Builds a {@link PhraseQuery} object from a {@link TokenizedPhraseQueryNode} object.
  */
+@Deprecated
 public class PhraseQueryNodeBuilder implements QueryBuilder {
     
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {

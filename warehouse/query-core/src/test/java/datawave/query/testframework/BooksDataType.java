@@ -108,7 +108,7 @@ public class BooksDataType extends AbstractDataTypeConfig {
     
     public BooksDataType(final String datatype, final String file, final FieldConfig fieldData, final ConfigData cfgData) throws IOException,
                     URISyntaxException {
-        super(datatype, file, FileLoaderFactory.FileType.GROUPING, fieldData, null);
+        super(datatype, file, FileType.GROUPING, fieldData, null);
         this.fieldConfig = fieldData;
         this.configData = cfgData;
         

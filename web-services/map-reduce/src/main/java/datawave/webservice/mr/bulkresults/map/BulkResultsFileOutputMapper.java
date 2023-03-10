@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,10 +26,10 @@ import datawave.webservice.util.ProtostuffMessageBodyWriter;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.log4j.Logger;
-import org.infinispan.commons.util.Base64;
 import org.jboss.weld.environment.se.Weld;
 import org.springframework.util.Assert;
 
@@ -182,11 +183,11 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
         Marshaller m = ctx.createMarshaller();
         m.marshal(q, writer);
         // Probably need to base64 encode it so that it will not mess up the Hadoop Configuration object
-        return Base64.encodeBytes(writer.toString().getBytes());
+        return new String(Base64.encodeBase64(writer.toString().getBytes()), Charset.forName("UTF-8"));
     }
     
     public static Query deserializeQuery(String base64EncodedQuery, Class<? extends Query> queryImplClass) throws JAXBException {
-        String query = new String(Base64.decode(base64EncodedQuery));
+        String query = new String(Base64.decodeBase64(base64EncodedQuery), Charset.forName("UTF-8"));
         JAXBContext ctx = JAXBContext.newInstance(queryImplClass);
         Unmarshaller u = ctx.createUnmarshaller();
         return (Query) u.unmarshal(new StringReader(query));

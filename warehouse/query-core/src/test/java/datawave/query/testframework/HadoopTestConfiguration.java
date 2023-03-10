@@ -10,6 +10,7 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.mapreduce.job.writer.DedupeContextWriter;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.query.QueryTestTableHelper;
+import datawave.util.TableName;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
@@ -28,11 +29,11 @@ public class HadoopTestConfiguration extends Configuration {
     
     static {
         DefaultTables.put(ShardedDataTypeHandler.METADATA_TABLE_NAME, QueryTestTableHelper.METADATA_TABLE_NAME);
-        DefaultTables.put(ShardedDataTypeHandler.SHARD_TNAME, QueryTestTableHelper.SHARD_TABLE_NAME);
-        DefaultTables.put(ShardedDataTypeHandler.SHARD_GIDX_TNAME, QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
-        DefaultTables.put(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);
+        DefaultTables.put(ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
+        DefaultTables.put(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
+        DefaultTables.put(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
         DefaultTables.put(ShardedDataTypeHandler.SHARD_DINDX_NAME, QueryTestTableHelper.SHARD_DICT_INDEX_NAME);
-        DefaultTables.put(DateIndexDataTypeHandler.DATEINDEX_TNAME, QueryTestTableHelper.DATE_INDEX_TABLE_NAME);
+        DefaultTables.put(DateIndexDataTypeHandler.DATEINDEX_TNAME, TableName.DATE_INDEX);
     }
     
     public HadoopTestConfiguration(DataTypeHadoopConfig dataType) {

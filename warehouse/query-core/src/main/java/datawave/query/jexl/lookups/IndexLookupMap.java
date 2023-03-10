@@ -73,6 +73,15 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
         return index.remove(key);
     }
     
+    public boolean remove(Object key, Object value) {
+        checkExceededAndThrow("remove");
+        if (index.containsKey(key)) {
+            return index.get(key).remove(value);
+        } else {
+            return false;
+        }
+    }
+    
     public boolean putAll(String key, Collection<String> values) {
         testExceeded(key);
         if (!index.containsKey(key)) {

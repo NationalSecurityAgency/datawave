@@ -11,6 +11,7 @@ public class ActiveQuerySnapshot {
     
     public static final Comparator<ActiveQuerySnapshot> greatestElapsedTime = Comparator.comparingLong(ActiveQuerySnapshot::totalElapsedTime).reversed();
     
+    private final String activeQueryLogName;
     private final String queryId;
     private final long lastSourceCount;
     private final long lastNextCount;
@@ -25,10 +26,10 @@ public class ActiveQuerySnapshot {
     private final Map<ActiveQuery.CallType,Long> numCallsMap = new HashMap<>();
     private final Map<ActiveQuery.CallType,Snapshot> snapshotMap = new HashMap<>();
     
-    public ActiveQuerySnapshot(String queryId, long lastSourceCount, long lastNextCount, long lastSeekCount, long documentSizeBytes, int numActiveRanges,
-                    long totalElapsedTime, boolean isInCall, long currentCallTime, Map<ActiveQuery.CallType,Long> numCallsMap,
+    public ActiveQuerySnapshot(String activeQueryLogName, String queryId, long lastSourceCount, long lastNextCount, long lastSeekCount, long documentSizeBytes,
+                    int numActiveRanges, long totalElapsedTime, boolean isInCall, long currentCallTime, Map<ActiveQuery.CallType,Long> numCallsMap,
                     Map<ActiveQuery.CallType,Timer> timerMap) {
-        
+        this.activeQueryLogName = activeQueryLogName;
         this.queryId = queryId;
         this.lastSourceCount = lastSourceCount;
         this.lastNextCount = lastNextCount;
@@ -62,6 +63,7 @@ public class ActiveQuerySnapshot {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("[").append(activeQueryLogName).append("]");
         sb.append("[").append(this.queryId).append("] ");
         sb.append("ranges=").append(this.numActiveRanges).append(" ");
         if (this.isInCall) {

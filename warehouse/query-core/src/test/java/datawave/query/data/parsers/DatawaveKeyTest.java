@@ -58,7 +58,31 @@ public class DatawaveKeyTest {
     public void parseShardFiKeyInvalid() {
         Key testKey = new Key("row", "fi\u0000fieldNameA", "fieldValueA\u0000datatype", "viz");
         DatawaveKey key = new DatawaveKey(testKey);
-        
         Assert.assertTrue(key.isInvalidKey());
+    }
+    
+    @Test
+    public void parseShardTfKey() {
+        Key testKey = new Key("row", "tf", "datatype\u0000uid\u0000fieldValue\u0000fieldName", "viz");
+        DatawaveKey key = new DatawaveKey(testKey);
+        Assert.assertFalse(key.isInvalidKey());
+        Assert.assertEquals("row", key.getShardId());
+        Assert.assertEquals(DatawaveKey.KeyType.TERM_OFFSETS, key.getType());
+        Assert.assertEquals("datatype", key.getDataType());
+        Assert.assertEquals("uid", key.getUid());
+        Assert.assertEquals("fieldValue", key.getFieldValue());
+        Assert.assertEquals("fieldName", key.getFieldName());
+    }
+    
+    @Test
+    public void parseShardTfKey_valueHasNulls() {
+        Key testKey = new Key("row", "tf", "datatype\u0000uid\u0000fi\u0000eldVa\u0000lue\u0000fieldName", "viz");
+        DatawaveKey key = new DatawaveKey(testKey);
+        Assert.assertEquals("row", key.getShardId());
+        Assert.assertEquals(DatawaveKey.KeyType.TERM_OFFSETS, key.getType());
+        Assert.assertEquals("datatype", key.getDataType());
+        Assert.assertEquals("uid", key.getUid());
+        Assert.assertEquals("fi\0eldVa\0lue", key.getFieldValue());
+        Assert.assertEquals("fieldName", key.getFieldName());
     }
 }

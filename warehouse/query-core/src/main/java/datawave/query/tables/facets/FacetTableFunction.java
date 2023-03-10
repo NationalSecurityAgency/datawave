@@ -27,6 +27,7 @@ public class FacetTableFunction implements Function<Entry<Key,Value>,Entry<Key,D
             String[] fieldValues = StringUtils.split(key.getRow().toString(), "\u0000");
             
             FieldValueCardinality fvc = new FieldValueCardinality(HyperLogLogPlus.Builder.build(input.getValue().get()));
+            fvc.setFieldName(fields[1]);
             fvc.setContent(fieldValues[1]);
             
             Cardinality card = new Cardinality(fvc, key, false);

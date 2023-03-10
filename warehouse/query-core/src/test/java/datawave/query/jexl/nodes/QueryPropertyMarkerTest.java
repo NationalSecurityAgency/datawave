@@ -8,13 +8,11 @@ import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import org.junit.Assert;
-
-import java.util.Arrays;
 
 public class QueryPropertyMarkerTest {
     
@@ -43,7 +41,7 @@ public class QueryPropertyMarkerTest {
         
         JexlNode delayedNode = ASTDelayedPredicate.create(sourceNode);
         String delayedString = JexlStringBuildingVisitor.buildQueryWithoutParse(delayedNode);
-        assertEquals(delayedString, "((ASTDelayedPredicate = true) && (FOO == 'bar'))");
+        assertEquals(delayedString, "((_Delayed_ = true) && (FOO == 'bar'))");
         
         JexlNode parsedSource = QueryPropertyMarker.getQueryPropertySource(delayedNode, ASTDelayedPredicate.class);
         assertEquals(sourceNode, parsedSource);
@@ -54,7 +52,12 @@ public class QueryPropertyMarkerTest {
         String query = "FIELD == 'value'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         JexlNode evalOnly = ASTEvaluationOnly.create(script);
-        Assert.assertFalse(QueryPropertyMarkerVisitor.instanceOfAnyExcept(evalOnly, Arrays.asList(ASTEvaluationOnly.class)));
-        Assert.assertTrue(QueryPropertyMarkerVisitor.instanceOfAnyExcept(evalOnly, Arrays.asList(ASTDelayedPredicate.class)));
+        Assert.assertFalse(QueryPropertyMarkerVisitor.instanceOfAnyExcept(evalOnly, ASTEvaluationOnly.class));
+        Assert.assertTrue(QueryPropertyMarkerVisitor.instanceOfAnyExcept(evalOnly, ASTDelayedPredicate.class));
+    }
+    
+    @Test
+    public void verifyEachSubclassHasDistinctLabel() {
+        
     }
 }
