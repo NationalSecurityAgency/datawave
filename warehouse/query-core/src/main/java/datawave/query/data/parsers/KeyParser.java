@@ -68,4 +68,11 @@ public interface KeyParser {
      * @return the field value
      */
     String getValue();
+    
+    /**
+     * Get the backing key
+     *
+     * @return the key
+     */
+    Key getKey();
 }
