@@ -17,5 +17,35 @@ Documentation is located [here](https://code.nsa.gov/datawave/docs/)
 
 Basic build instructions are [here](BUILDME.md)
 
+## How to Use this Repository
+
+The microservices and associated utility projects are intended to be
+developed, versioned, and released independently and as such are stored
+in separate repositories. This repository includes them all as submodules
+in order to provide an easy way to import them all in an IDE for viewing
+the code, or refactoring. [Git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
+require some extra commands over the normal ones that one may be familiar
+with.
+
+### Cloning with all submodules
+It's easiest to clone the repository pointing the submodules AT the same branch
+```bash
+# This will checkout the main branch for all of the submodules.
+# By default, the submodules will all be in a detached head state.
+git clone --recurse-submodules git@github.com:NationalSecurityAgency/datawave.git --branch main
+
+# Checkout the main branch for each submodule so that we are no longer in a detached head state.
+# The addition of `|| :` will ensure that the command is executed for each submodule, 
+# ignoring failures for submodules that don't have a main branch.
+cd datawave
+git submodule foreach 'git checkout main || :'
+
+# It is recommended to build the project using multiple threads
+mvn -Pdocker,dist clean install -T 1C
+
+# If you don't want to build the microservices, you can skip them
+mvn -Pdocker,dist -DskipMicroservices clean install -T 1C
+```
+
 [li]: http://img.shields.io/badge/license-ASL-blue.svg
 [ll]: https://www.apache.org/licenses/LICENSE-2.0

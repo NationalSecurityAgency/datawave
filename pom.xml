@@ -16,6 +16,7 @@
     </licenses>
     <modules>
         <module>common-test</module>
+        <module>core</module>
         <module>web-services</module>
         <module>warehouse</module>
     </modules>
@@ -1763,6 +1764,17 @@
             </build>
         </profile>
         <profile>
+            <id>microservices</id>
+            <activation>
+                <property>
+                    <name>!skipMicroservices</name>
+                </property>
+            </activation>
+            <modules>
+                <module>microservices</module>
+            </modules>
+        </profile>
+        <profile>
             <id>dev</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
@@ -1895,8 +1907,17 @@
                                         </pluginExecution>
                                         <pluginExecution>
                                             <pluginExecutionFilter>
-                                                <groupId>net.revelc.code</groupId>
-                                                <artifactId>formatter-maven-plugin</artifactId>
+                                                <profile>
+                                                    <id>microservices</id>
+                                                    <activation>
+                                                        <property>
+                                                            <name>!skipMicroservices</name>
+                                                        </property>
+                                                    </activation>
+                                                    <modules>
+                                                        <module>microservices</module>
+                                                    </modules>
+                                                </profile>
                                                 <versionRange>[0.5.0,)</versionRange>
                                                 <goals>
                                                     <goal>format</goal>

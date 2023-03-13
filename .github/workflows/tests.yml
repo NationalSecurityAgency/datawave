@@ -98,7 +98,7 @@ jobs:
     # Builds the quickstart docker image and run the query tests
     - name: Quickstart Query Tests
       env:
-        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -ntp -Dstyle.color=always -Pdev -Ddeploy -Dtar -DskipTests clean package"
+        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -ntp -Dstyle.color=always -Pdev -Ddeploy -Dtar -DskipTests -DskipServices clean package"
         DOCKER_BUILD_OPTS: "--squash --force-rm"
         MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Djava.awt.headless=true"
       run: |
