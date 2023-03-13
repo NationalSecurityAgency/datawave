@@ -1,84 +1,84 @@
 [submodule "microservices/services/authorization"]
 	path = microservices/services/authorization
 	url = git@github.com:NationalSecurityAgency/datawave-authorization-service.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "core/in-memory-accumulo"]
 	path = core/in-memory-accumulo
 	url = git@github.com:NationalSecurityAgency/datawave-in-memory-accumulo.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "core/utils/accumulo-utils"]
 	path = core/utils/accumulo-utils
 	url = git@github.com:NationalSecurityAgency/datawave-accumulo-utils.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "core/utils/common-utils"]
 	path = core/utils/common-utils
 	url = git@github.com:NationalSecurityAgency/datawave-common-utils.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "core/base-rest-responses"]
 	path = core/base-rest-responses
 	url = git@github.com:NationalSecurityAgency/datawave-base-rest-responses.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "core/utils/type-utils"]
 	path = core/utils/type-utils
 	url = git@github.com:NationalSecurityAgency/datawave-type-utils.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "core/utils/metadata-utils"]
 	path = core/utils/metadata-utils
 	url = git@github.com:NationalSecurityAgency/datawave-metadata-utils.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "microservices/services/accumulo"]
 	path = microservices/services/accumulo
 	url = git@github.com:NationalSecurityAgency/datawave-accumulo-service.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "microservices/services/dictionary"]
 	path = microservices/services/dictionary
 	url = git@github.com:NationalSecurityAgency/datawave-dictionary-service.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "microservices/services/audit"]
 	path = microservices/services/audit
 	url = git@github.com:NationalSecurityAgency/datawave-audit-service.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "microservices/services/query-metric"]
 	path = microservices/services/query-metric
 	url = git@github.com:NationalSecurityAgency/datawave-query-metric-service.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "core/metrics-reporter"]
 	path = core/metrics-reporter
 	url = git@github.com:NationalSecurityAgency/datawave-metrics-reporter.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "microservices/starters/cache"]
 	path = microservices/starters/cache
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-cache.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "microservices/starters/datawave"]
 	path = microservices/starters/datawave
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "microservices/services/hazelcast"]
 	path = microservices/services/hazelcast
 	url = git@github.com:NationalSecurityAgency/datawave-hazelcast-service.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "microservices/starters/metadata"]
 	path = microservices/starters/metadata
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-metadata.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "microservices/starters/query-metric"]
 	path = microservices/starters/query-metric
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-query-metric.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "microservices/starters/audit"]
 	path = microservices/starters/audit
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-audit.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "microservices/services/config"]
 	path = microservices/services/config
 	url = git@github.com:NationalSecurityAgency/datawave-config-service.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "microservices/microservice-parent"]
 	path = microservices/microservice-parent
 	url = git@github.com:NationalSecurityAgency/datawave-parent.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
 [submodule "microservices/microservice-service-parent"]
 	path = microservices/microservice-service-parent
 	url = git@github.com:NationalSecurityAgency/datawave-service-parent.git
-	branch = feature/spring-boot-2.x
+	branch = feature/spring-boot-2.x-accumulo-2.1
