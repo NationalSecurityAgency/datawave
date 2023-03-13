@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>gov.nsa.datawave.microservice</groupId>
+        <artifactId>datawave-microservice-build-parent</artifactId>
+        <version>3.41.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>datawave-microservice-starter-build-parent</artifactId>
+    <packaging>pom</packaging>
+    <name>${project.artifactId}</name>
+    <modules>
+        <module>datawave</module>
+        <module>audit</module>
+        <module>cache</module>
+        <module>metadata</module>
+        <module>query-metric</module>
+    </modules>
+</project>
