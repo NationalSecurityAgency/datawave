@@ -93,6 +93,8 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
      *            a file handler
      * @param persist
      *            a persist flag
+     * @throws IOException
+     *             for issues with read/write
      */
     public FileSerializableSortedSet(SortedSet<E> set, TypedSortedSetFileHandler handler, boolean persist) throws IOException {
         super(set, handler, new Factory(), persist);

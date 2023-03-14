@@ -63,6 +63,8 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
      *            marking functions
      * @param document
      *            a document
+     * @param topLevelColumnVisibility
+     *            top level column vis
      * @return list of facets
      */
     protected Collection<FieldCardinalityBase> buildFacets(Key documentKey, String fieldName, Document document, ColumnVisibility topLevelColumnVisibility,

@@ -140,6 +140,10 @@ public class DateIndexHelper implements ApplicationContextAware {
      *            the date index table name
      * @param auths
      *            auths
+     * @param collapseDatePercentThreshold
+     *            collapseDatePercentThreshold
+     * @param numQueryThreads
+     *            numQueryThreads
      * @return the date index helper
      */
     public DateIndexHelper initialize(Connector connector, String dateIndexTableName, Set<Authorizations> auths, int numQueryThreads,
@@ -160,6 +164,13 @@ public class DateIndexHelper implements ApplicationContextAware {
      *            The name of the date index table
      * @param auths
      *            Any {@link Authorizations} to use
+     * @param numQueryThreads
+     *            number of query threads
+     * @param collapseDatePercentThreshold
+     *            the date percent threshold
+     * @param instance
+     *            an instance
+     * @return the instance
      */
     protected DateIndexHelper initialize(Connector connector, Instance instance, String dateIndexTableName, Set<Authorizations> auths, int numQueryThreads,
                     float collapseDatePercentThreshold) {

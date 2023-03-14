@@ -159,6 +159,8 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
      *            the sorted set factory
      * @param persist
      *            the persist boolean flag
+     * @throws IOException
+     *             for issues with read/write
      */
     public FileSortedSet(SortedSet<E> set, TypedSortedSetFileHandler handler, FileSortedSetFactory factory, boolean persist) throws IOException {
         this.handler = handler;
@@ -200,7 +202,9 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     
     /**
      * This will dump the set to the file, making the set "persisted"
-     *
+     * 
+     * @param handler
+     *            the handler
      * @throws IOException
      *             for issues with read/write
      */
@@ -225,6 +229,14 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     
     /**
      * Persist the supplied set to a file as defined by this classes sorted set file handler.
+     * 
+     * @param set
+     *            the set
+     * @param handler
+     *            the handler
+     * @throws IOException
+     *             for issues with read/write
+     *
      */
     private void persist(SortedSet<E> set, TypedSortedSetFileHandler handler) throws IOException {
         if (log.isDebugEnabled()) {
@@ -340,7 +352,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         stream.writeObject(obj);
     }
     
-    /**
+    /*
      * Is this set persisted?
      */
     public boolean isPersisted() {
@@ -648,15 +660,14 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     
     /**
      * Extending classes must implement cloneable
-     * 
+     *
      * @return A clone
      */
     public FileSortedSet<E> clone() {
         return factory.newInstance(this);
     }
     
-    /********* Some utilities ***********/
-    
+    /* Some utilities */
     private boolean equals(E o1, E o2) {
         if (o1 == null) {
             return o2 == null;
@@ -803,6 +814,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
          *
          * @param other
          *            the other factory
+         * @return a new instance
          */
         FileSortedSet<E> newInstance(FileSortedSet<E> other);
         
@@ -815,6 +827,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
          *            from instance
          * @param to
          *            to instance
+         * @return a new instance
          */
         FileSortedSet<E> newInstance(FileSortedSet<E> other, E from, E to);
         

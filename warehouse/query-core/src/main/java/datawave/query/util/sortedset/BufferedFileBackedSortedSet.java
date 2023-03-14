@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
  * After that, those operations will not work as specified by the underlying FileSortedSet.
  * 
  * @param <E>
+ *            type of the set
  */
 public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     private static final Logger log = Logger.getLogger(BufferedFileBackedSortedSet.class);

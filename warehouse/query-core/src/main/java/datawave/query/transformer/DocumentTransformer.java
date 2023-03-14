@@ -45,6 +45,8 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
      *            query settings
      * @param responseObjectFactory
      *            the response object factory
+     * @param markingFunctions
+     *            the marking functions
      */
     public DocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {

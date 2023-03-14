@@ -64,6 +64,7 @@ public class RegexTrie {
      * 
      * @param string
      *            A string
+     * @return if this trie contains a string
      */
     public boolean contains(final String string) {
         // starting with the root node

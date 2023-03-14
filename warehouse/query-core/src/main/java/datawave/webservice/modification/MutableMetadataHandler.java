@@ -452,6 +452,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      *            the user string
      * @param mode
      *            the mode
+     * @param isIndexOnlyField
+     *            isIndexOnlyField
      * @throws Exception
      *             if there are issues
      */
@@ -555,6 +557,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      *            the user string
      * @param mode
      *            the mode
+     * @param isIndexOnlyField
+     *            isIndexOnlyField
      * @throws Exception
      *             if there are issues
      */
@@ -601,6 +605,14 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      *            field name string
      * @param fieldValue
      *            field value string
+     * @param isIndexOnlyField
+     *            isIndexOnlyField
+     * @param insertHistory
+     *            insert history flag
+     * @param markings
+     *            markings
+     * @param ts
+     *            timestamp
      * @param isIndexed
      *            boolean flag for isIndexed
      * @param isReverseIndexed
@@ -648,6 +660,12 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      *            the user string
      * @param mode
      *            the mode
+     * @param isIndexOnlyField
+     *            isIndexOnlyField
+     * @param con
+     *            a connector
+     * @param userAuths
+     *            userAuths
      * @param ts
      *            the timestamp
      * @param purgeTokens
@@ -958,6 +976,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      *            the uuid
      * @param uuidType
      *            type of uuid
+     * @param operation
+     *            operation
      * @param userAuths
      *            set of user auths
      * @return Event

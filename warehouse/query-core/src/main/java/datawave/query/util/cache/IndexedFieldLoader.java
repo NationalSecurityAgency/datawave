@@ -37,6 +37,8 @@ public class IndexedFieldLoader extends AccumuloLoader<String,Set<String>> {
      *            auths
      * @param columnFamilyList
      *            the column family list
+     * @param dataTypeFilters
+     *            the data type filters
      */
     public IndexedFieldLoader(Connector connector, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList,
                     Collection<String> dataTypeFilters) {

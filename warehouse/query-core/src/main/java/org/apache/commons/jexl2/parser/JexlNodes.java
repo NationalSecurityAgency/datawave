@@ -18,6 +18,14 @@ public class JexlNodes {
     
     /**
      * Ensures that the child array as at least {i} capacity.
+     * 
+     * @param <T>
+     *            type of node
+     * @param node
+     *            a node
+     * @param capacity
+     *            the capacity
+     * @return a node
      */
     public static <T extends JexlNode> T ensureCapacity(T node, final int capacity) {
         JexlNode[] children = node.children;
@@ -48,6 +56,8 @@ public class JexlNodes {
      *
      * @param node
      *            the jexl node
+     * @param <T>
+     *            type of node
      * @return new instance of type of node supplied to this method.
      */
     @SuppressWarnings("unchecked")
@@ -77,6 +87,8 @@ public class JexlNodes {
      *
      * @param node
      *            the jexl node
+     * @param <T>
+     *            type of node
      * @param children
      *            the children nodes
      * @return the provided node
@@ -123,6 +135,8 @@ public class JexlNodes {
      *            the child
      * @param parent
      *            the parent node
+     * @param <T>
+     *            type of node
      * @return the child data
      */
     public static <T extends JexlNode> T newParent(T child, JexlNode parent) {
@@ -141,6 +155,7 @@ public class JexlNodes {
      *            b node
      * @param parent
      *            the parent
+     * @return the parent
      */
     public static <T extends JexlNode> T replaceChild(T parent, JexlNode a, JexlNode b) {
         for (int i = 0; i < parent.children.length; ++i) {
@@ -163,6 +178,7 @@ public class JexlNodes {
      *            b node
      * @param parent
      *            the parent
+     * @return the parent
      */
     public static <T extends JexlNode> T swap(T parent, JexlNode a, JexlNode b) {
         for (int i = 0; i < parent.children.length; ++i) {
