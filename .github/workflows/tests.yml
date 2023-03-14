@@ -68,7 +68,7 @@ jobs:
           ${{ runner.os }}-maven-
     - name: Build and Run Unit Tests
       run: |
-        RUN_TESTS="mvn -V -B -e -Pdev,examples,assemble,spotbugs -Ddeploy -Ddist -T1C clean verify"
+        RUN_TESTS="mvn -V -B -e -Pdev,examples,assemble,spotbugs -DskipMicroservices -Ddeploy -Ddist -T1C clean verify"
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
@@ -144,7 +144,7 @@ jobs:
     # Builds the quickstart docker image and run the query tests
     - name: Quickstart Query Tests
       env:
-        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -Pdev -Ddeploy -Dtar -DskipTests -DskipServices clean package"
+        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -Pdev -DskipServices -Ddeploy -Dtar -DskipTests clean package"
         DOCKER_BUILD_OPTS: "--squash --force-rm"
       run: |
         TAG=$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
