@@ -87,6 +87,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      *            Configuration parameters relevant to our query
      * @param script
      *            The jexl node representing the query
+     * @param <T>
+     *            type of node
      * @return An expanded version of the passed-in script containing composite nodes
      */
     @SuppressWarnings("unchecked")
@@ -1070,6 +1072,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * arises.
      * 
      * @param fieldName
+     *            the field name
      * @return true if fieldName is a fixed length field
      */
     private boolean isFixedLengthField(String fieldName) {

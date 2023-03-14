@@ -113,6 +113,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
      * Get the next non-null result from the queue. Pop/remove that pipeline as specified.
      * 
      * @param remove
+     *            flag to remove
      * @return the next non-null entry. null if there are no more entries to get.
      */
     private Entry<Key,Document> getNext(boolean remove) {
@@ -166,7 +167,9 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
      * poll results from the evaluation queue until we get one that is non-null
      * 
      * @throws ExecutionException
+     *             for execution exceptions
      * @throws InterruptedException
+     *             for interrupted exceptions
      */
     private void cacheNextResult() throws InterruptedException, ExecutionException {
         Entry<Key,Document> result = null;
@@ -203,9 +206,11 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
     
     /**
      * flush the results from the evaluation queue that are complete up to the max number of cached results
-     * 
+     *
      * @throws ExecutionException
+     *             for execution exceptions
      * @throws InterruptedException
+     *             for interrupted exceptions
      */
     private void flushCompletedResults() throws InterruptedException, ExecutionException {
         while (!evaluationQueue.isEmpty() && evaluationQueue.peek().first().isDone() && results.size() < this.maxResults) {
@@ -221,9 +226,15 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
     /**
      * Poll the next evaluation future, start a new evaluation in its place, queue and return the result. This assumes there is a queued evaluation to get.
      * 
+     * @param waitMs
+     *            time in ms to wait
      * @return The next evaluation result
-     * @throws InterruptedException
      * @throws ExecutionException
+     *             for execution exceptions
+     * @throws InterruptedException
+     *             for interrupted exceptions
+     * @throws TimeoutException
+     *             for timeout exceptions
      */
     private Entry<Key,Document> poll(long waitMs) throws InterruptedException, ExecutionException, TimeoutException {
         // get the next evaluated result

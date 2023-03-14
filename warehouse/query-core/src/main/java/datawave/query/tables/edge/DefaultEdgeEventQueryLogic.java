@@ -87,6 +87,11 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     
     /**
      * Loads the query model specified by the current configuration, to be applied to the incoming query.
+     * 
+     * @param auths
+     *            set of auths
+     * @param client
+     *            the client
      */
     protected void loadEdgeQueryModel(AccumuloClient client, Set<Authorizations> auths) {
         String model = getEdgeModelName() == null ? "" : getEdgeModelName();
@@ -106,6 +111,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
      * translated ASTJexlScript back to a query string using JexlStringBuildingVisitor.
      * 
      * @param queryString
+     *            the query string
      * @return modified query string
      */
     protected String applyQueryModel(String queryString) {

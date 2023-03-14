@@ -31,10 +31,11 @@ public class ConditionalRemoteUserOperations implements UserOperations {
     
     @Override
     public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
-        if (!(callerObject instanceof DatawavePrincipal)) {
-            throw new AuthorizationException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
-        }
-        final DatawavePrincipal principal = (DatawavePrincipal) callerObject;
+        assert (delegate != null);
+        assert (condition != null);
+        assert (responseObjectFactory != null);
+        
+        final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         
         if (condition.apply(principal)) {
             return delegate.listEffectiveAuthorizations(callerObject);
@@ -47,16 +48,24 @@ public class ConditionalRemoteUserOperations implements UserOperations {
     
     @Override
     public GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException {
-        if (!(callerObject instanceof DatawavePrincipal)) {
-            throw new AuthorizationException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
-        }
-        final DatawavePrincipal principal = (DatawavePrincipal) callerObject;
+        assert (delegate != null);
+        assert (condition != null);
+        assert (responseObjectFactory != null);
+        
+        final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         
         if (condition.apply(principal)) {
             return delegate.flushCachedCredentials(callerObject);
         } else {
             return EMPTY_RESPONSE;
         }
+    }
+    
+    private DatawavePrincipal getDatawavePrincipal(Object callerObject) {
+        if (callerObject instanceof DatawavePrincipal) {
+            return (DatawavePrincipal) callerObject;
+        }
+        throw new RuntimeException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
     }
     
     public UserOperations getDelegate() {

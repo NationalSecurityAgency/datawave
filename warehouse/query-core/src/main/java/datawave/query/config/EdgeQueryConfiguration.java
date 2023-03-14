@@ -105,6 +105,10 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration {
     
     /**
      * Fluent interface for parsing the parameters out of the Parameter set provided by the Query.
+     * 
+     * @param settings
+     *            the settings
+     * @return an edge query configuration
      */
     public EdgeQueryConfiguration parseParameters(Query settings) {
         if (settings.getParameters() != null) {

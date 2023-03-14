@@ -21,21 +21,12 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
-/**
- * 
- */
 public class DatatypeLoader extends AccumuloLoader<String,Multimap<String,Type<?>>> {
     
     protected Collection<String> dataTypeFilters;
     
     private static final Logger log = Logger.getLogger(DatatypeLoader.class);
-    
-    /**
-     * @param client
-     * @param tableName
-     * @param auths
-     * @param columnFamilyList
-     */
+
     public DatatypeLoader(AccumuloClient client, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList,
                     Collection<String> dataTypeFilters) {
         super(client, tableName, auths, columnFamilyList);

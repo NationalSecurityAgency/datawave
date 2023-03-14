@@ -29,13 +29,7 @@ public class NormalizerLoader extends AccumuloLoader<String,Multimap<String,Type
     protected Collection<String> dataTypeFilters;
     
     private static final Logger log = Logger.getLogger(NormalizerLoader.class);
-    
-    /**
-     * @param client
-     * @param tableName
-     * @param auths
-     * @param columnFamilyList
-     */
+
     public NormalizerLoader(AccumuloClient client, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList,
                     Collection<String> dataTypeFilters) {
         super(client, tableName, auths, columnFamilyList);

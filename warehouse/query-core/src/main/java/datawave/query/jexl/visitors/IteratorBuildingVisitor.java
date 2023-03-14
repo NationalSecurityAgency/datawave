@@ -25,7 +25,7 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
-import datawave.query.predicate.EventDataQueryExpressionFilter;
+import datawave.query.predicate.TermFrequencyDataFilter;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.UniversalSet;
 import datawave.query.iterator.SourceFactory;
@@ -168,6 +168,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     protected CompositeMetadata compositeMetadata;
     protected int compositeSeekThreshold = 10;
+    
+    // disabled by default
+    protected int fiNextSeek = -1;
+    protected int eventNextSeek = -1;
+    protected int tfNextSeek = -1;
     
     protected Range rangeLimiter;
     
@@ -429,10 +434,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
     }
     
-    /**
-     *
-     * @param data
-     */
     private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, JexlNode rootNode, JexlNode sourceNode, LiteralRange<?> range, Object data) {
         if (limitLookup) {
             ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(identifier, sourceNode, attrFilter);
@@ -446,8 +447,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setAttrFilter(attrFilter);
             builder.setDatatypeFilter(datatypeFilter);
             builder.setEnv(env);
-            builder.setTermFrequencyAggregator(getTermFrequencyAggregator(identifier, sourceNode, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount()
-                            : -1));
+            builder.setTermFrequencyAggregator(getTermFrequencyAggregator(identifier, sourceNode, attrFilter, tfNextSeek));
             builder.setNode(rootNode);
             Range fiRange = getFiRangeForTF(range);
             
@@ -465,7 +465,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     protected EventFieldAggregator getEventFieldAggregator(String field, ChainableEventDataQueryFilter filter) {
-        return new EventFieldAggregator(field, filter, attrFilter != null ? attrFilter.getMaxNextCount() : -1, typeMetadata, NoOpType.class.getName());
+        return new EventFieldAggregator(field, filter, eventNextSeek, typeMetadata, NoOpType.class.getName());
     }
     
     /**
@@ -795,8 +795,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     /**
      * @param kvIter
+     *            the key value iterator
      * @param node
+     *            the node
      * @throws IOException
+     *             for issues with read/write
      */
     protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key,Value> kvIter, ASTEQNode node) throws IOException {
         if (null != rangeLimiter && limitLookup) {
@@ -810,7 +813,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     /**
      * @param node
-     * @return
+     *            a node
+     * @return a collection of entries
      */
     protected Collection<Entry<Key,Value>> getNodeEntry(ASTEQNode node) {
         Key key = getKey(node);
@@ -820,8 +824,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     /**
      * @param identifier
+     *            the identifier
      * @param range
-     * @return
+     *            a range
+     * @return a collection of entries
      */
     protected Collection<Entry<Key,Value>> getExceededEntry(String identifier, LiteralRange<?> range) {
         
@@ -892,8 +898,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * expression during final evaluation
      * 
      * @param identifier
+     *            an identifier
      * @param range
-     * @return
+     *            the range
+     * @param rootNode
+     *            the root node
+     * @return a key iterator
      */
     protected NestedIterator<Key> createExceededCheck(String identifier, LiteralRange<?> range, JexlNode rootNode) {
         IndexIteratorBuilder builder = null;
@@ -1042,6 +1052,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * Build a list of potential hdfs directories based on each ivarator cache dir configs.
      * 
      * @return A path
+     * @throws IOException
+     *             for issues with read/write
      */
     private List<IvaratorCacheDir> getIvaratorCacheDirs() throws IOException {
         List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
@@ -1081,6 +1093,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param sourceNode
      *            the source node derived from the root
      * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarateRegex(JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
         IndexRegexIteratorBuilder builder = new IndexRegexIteratorBuilder();
@@ -1106,6 +1121,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param sourceNode
      *            the source node derived from the root
      * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarateList(JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
         IvaratorBuilder builder = null;
@@ -1179,8 +1197,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * Build the iterator stack using the regex ivarator (field index caching regex iterator)
      * 
      * @param source
+     *            the jexl node
      * @param data
-     * @return
+     *            the node data
+     * @return a range
      */
     public LiteralRange<?> buildLiteralRange(JexlNode source, Object data) {
         // index checking has already been done, otherwise we would not have an
@@ -1208,6 +1228,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param sourceNode
      *            the source node derived from the root
      * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarateRange(JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
         IndexRangeIteratorBuilder builder = new IndexRangeIteratorBuilder();
@@ -1238,7 +1261,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      *            the node that was processed to generated this builder
      * @param sourceNode
      *            the source node derived from the root
+     * @param functionNodes
+     *            list of function nodes
      * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarateFilter(JexlNode rootNode, JexlNode sourceNode, Object data, List<ASTFunctionNode> functionNodes) throws IOException {
         IndexFilterIteratorBuilder builder = new IndexFilterIteratorBuilder();
@@ -1276,26 +1304,29 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return new TermFrequencyAggregator(toAggregate, filter, maxNextCount);
     }
     
+    /**
+     * Wrap an existing {@link EventDataQueryFilter} with a {@link TermFrequencyDataFilter}
+     *
+     * @param identifier
+     *            the field
+     * @param node
+     *            a node in the query
+     * @param existing
+     *            an existing EventDataQueryFilter
+     * @return a ChainableEventDataQueryFilter
+     */
     protected ChainableEventDataQueryFilter createWrappedTermFrequencyFilter(String identifier, JexlNode node, EventDataQueryFilter existing) {
         // combine index only and term frequency to create non-event fields
         final Set<String> nonEventFields = new HashSet<>(indexOnlyFields.size() + termFrequencyFields.size());
         nonEventFields.addAll(indexOnlyFields);
         nonEventFields.addAll(termFrequencyFields);
         
-        EventDataQueryFilter expressionFilter = new EventDataQueryExpressionFilter(node, typeMetadata, nonEventFields) {
-            @Override
-            public boolean keep(Key key) {
-                // for things that will otherwise be added need to ensure its actually a value match. This is necessary when dealing with TF ranges.
-                return peek(key);
-            }
-        };
-        
         ChainableEventDataQueryFilter chainableFilter = new ChainableEventDataQueryFilter();
         if (existing != null) {
             chainableFilter.addFilter(existing);
         }
         
-        chainableFilter.addFilter(expressionFilter);
+        chainableFilter.addFilter(new TermFrequencyDataFilter(node, typeMetadata, nonEventFields));
         
         return chainableFilter;
     }
@@ -1364,11 +1395,15 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * Set up a builder for an ivarator
      * 
      * @param builder
+     *            the ivarator builder
      * @param rootNode
      *            the node that was processed to generated this builder
      * @param sourceNode
      *            the source node derived from the root
      * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarate(IvaratorBuilder builder, JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
         builder.setQueryId(queryId);
@@ -1431,7 +1466,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     /**
      * @param documentRange
-     * @return
+     *            the document range
+     * @return an iterator visitor
      */
     public IteratorBuildingVisitor limit(Range documentRange) {
         return setRange(documentRange).setLimitLookup(true);
@@ -1441,7 +1477,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * Limits the number of source counts.
      * 
      * @param sourceCount
-     * @return
+     *            the source count
+     * @return an iterator visitor
      */
     public IteratorBuildingVisitor limit(long sourceCount) {
         source.setInitialSize(sourceCount);
@@ -1450,6 +1487,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     /**
      * @param limitLookup
+     *            the limit lookup to set
+     * @return the iterator visitor
      */
     public IteratorBuildingVisitor setLimitLookup(boolean limitLookup) {
         if (rangeLimiter != null) {
@@ -1553,6 +1592,42 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     public IteratorBuildingVisitor setCompositeSeekThreshold(int compositeSeekThreshold) {
         this.compositeSeekThreshold = compositeSeekThreshold;
+        return this;
+    }
+    
+    /**
+     * Builder-style method of setting the 'next' seek threshold
+     *
+     * @param fiNextSeek
+     *            next calls before a seek is issued
+     * @return the IteratorBuildingVisitor
+     */
+    public IteratorBuildingVisitor setFiNextSeek(int fiNextSeek) {
+        this.fiNextSeek = fiNextSeek;
+        return this;
+    }
+    
+    /**
+     * Builder-style method of setting the 'next' seek threshold
+     *
+     * @param eventNextSeek
+     *            next calls before a seek is issued
+     * @return the IteratorBuildingVisitor
+     */
+    public IteratorBuildingVisitor setEventNextSeek(int eventNextSeek) {
+        this.eventNextSeek = eventNextSeek;
+        return this;
+    }
+    
+    /**
+     * Builder-style method of setting the 'next' seek threshold
+     *
+     * @param tfNextSeek
+     *            next calls before a seek is issued
+     * @return the IteratorBuildingVisitor
+     */
+    public IteratorBuildingVisitor setTfNextSeek(int tfNextSeek) {
+        this.tfNextSeek = tfNextSeek;
         return this;
     }
     

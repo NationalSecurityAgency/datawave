@@ -583,12 +583,6 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         }
     }
     
-    /**
-     * allows a document specific range
-     * 
-     * @param in
-     * @return
-     */
     private static Value getValueForBuilderFor(String... in) {
         Uid.List.Builder builder = Uid.List.newBuilder();
         for (String s : in) {
@@ -599,11 +593,6 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         return new Value(builder.build().toByteArray());
     }
     
-    /**
-     * forces a shard range
-     * 
-     * @return
-     */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setCOUNT(50); // better not be zero!!!!

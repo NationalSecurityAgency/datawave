@@ -128,8 +128,24 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * into <code>this</code> Document.
      *
      * @param iter
+     *            iterator of entry map
      * @param typeMetadata
-     * @return
+     *            the type metadata
+     * @param docKey
+     *            document key
+     * @param attrFilter
+     *            attribute filter
+     * @param compositeMetadata
+     *            the composite metadata
+     * @param docKeys
+     *            the document keys
+     * @param fromIndex
+     *            boolean flag for fromIndex
+     * @param includeGroupingContext
+     *            check for including the grouping context
+     * @param keepRecordId
+     *            check for keepRecordId
+     * @return a Document object
      */
     public Document consumeRawData(Key docKey, Set<Key> docKeys, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
                     CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter,
@@ -214,7 +230,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * Returns true if this <code>Document</code> contains the given <code>key</code>
      *
      * @param key
-     * @return
+     *            a key
+     * @return a boolean on if a key is found
      */
     public boolean containsKey(String key) {
         return this.dict.containsKey(key);
@@ -224,7 +241,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * Fetch the value for the given <code>key</code>. Will return <code>null</code> if no such mapping exists.
      *
      * @param key
-     * @return
+     *            the key
+     * @return the attribute value
      */
     public Attribute<?> get(String key) {
         return this.dict.get(key);
@@ -238,7 +256,13 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * Replaces an attribute within a document
      *
      * @param key
+     *            the key
      * @param value
+     *            a value
+     * @param includeGroupingContext
+     *            flag to include grouping context
+     * @param reducedResponse
+     *            flag for reducedResponse
      */
     public void replace(String key, Attribute<?> value, Boolean includeGroupingContext, boolean reducedResponse) {
         dict.put(key, value);
@@ -250,7 +274,13 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * <code>value</code> and existing attribute to that list.
      *
      * @param key
+     *            the key
      * @param value
+     *            the attribute value
+     * @param includeGroupingContext
+     *            flag to include grouping context
+     * @param reducedResponse
+     *            flag for reducedResponse
      */
     public void put(String key, Attribute<?> value, Boolean includeGroupingContext, boolean reducedResponse) {
         
@@ -398,7 +428,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * Remove an Attribute, non-recursively, from the internal dictionary
      *
      * @param key
-     * @return
+     *            a key
+     * @return the dictionary with the key removed
      */
     public Attribute<?> remove(String key) {
         if (this.getDictionary().containsKey(key)) {
@@ -419,8 +450,9 @@ public class Document extends AttributeBag<Document> implements Serializable {
     
     /**
      * Remove all Attributes from the Document (recursively) whose field is the provided key.
-     *
+     * 
      * @param key
+     *            a key
      */
     public void removeAll(String key) {
         _removeAll(this._getDictionary(), key);

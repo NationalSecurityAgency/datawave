@@ -102,8 +102,10 @@ public class PushdownNegationVisitor extends BaseVisitor {
     
     /**
      * @param node
+     *            a and node
      * @param data
-     * @return
+     *            the node's data
+     * @return result of visiting the node
      */
     @Override
     public Object visit(ASTAndNode node, Object data) {

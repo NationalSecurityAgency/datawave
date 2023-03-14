@@ -360,9 +360,12 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
      * Applies the table configuration if one is specified.
      * 
      * @param topIter
+     *            a iterator of key/values
      * @param conf
-     * @return
+     *            a configuration
+     * @return the loaded table iterator
      * @throws IOException
+     *             for issues with read/write
      */
     protected SortedKeyValueIterator<Key,Value> applyTableIterators(SortedKeyValueIterator<Key,Value> topIter, Configuration conf) throws IOException {
         
@@ -383,12 +386,18 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     
     /**
      * @param topIter
+     *            the top iterator
      * @param conf
-     * @return
+     *            the configuration
+     * @return the loaded iterators
      * @throws ClassNotFoundException
+     *             if there is an issue finding the class
      * @throws IllegalAccessException
+     *             for issues instantiating the sub iterator
      * @throws InstantiationException
+     *             for issues with instantiation
      * @throws IOException
+     *             for read/write issues
      */
     protected SortedKeyValueIterator<Key,Value> buildTopIterators(SortedKeyValueIterator<Key,Value> topIter, Configuration conf) throws ClassNotFoundException,
                     InstantiationException, IllegalAccessException, IOException {
@@ -652,7 +661,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     
     /**
      * @throws IOException
-     * 
+     *             for issues with read/write
      */
     private void seekLastSeen() throws IOException {
         
@@ -669,6 +678,9 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     
     /**
      * Seek to the next range containing a key.
+     * 
+     * @throws IOException
+     *             for issues with read/write
      */
     private void seekToNextKey() throws IOException {
         try {
@@ -687,6 +699,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     
     /**
      * @throws IOException
+     *             for issues with read/write
      * 
      */
     private void seekRange() throws IOException {
@@ -747,6 +760,8 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
      * Get the progress for the last key returned. This will try to minimize the underlying progress calculations by reusing the last progress until the
      * progress had changed significantly enough. This is done by estimating how many keys to cache the last value. If the progress does not change
      * significantly over a set of keys, then the number of keys for which to cache the value is doubled.
+     * 
+     * @return the current progress
      */
     public float getProgress() {
         count++;

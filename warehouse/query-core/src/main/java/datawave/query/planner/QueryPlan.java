@@ -72,9 +72,6 @@ public class QueryPlan {
         buildHashCode();
     }
     
-    /**
-     * 
-     */
     private void buildHashCode() {
         
         HashCodeBuilder builder = new HashCodeBuilder();
@@ -99,9 +96,6 @@ public class QueryPlan {
         
     }
     
-    /**
-     * @param currentQueryData
-     */
     public QueryPlan(QueryData currentQueryData) throws ParseException {
         this.queryTreeString = currentQueryData.getQuery();
         this.ranges = Lists.newArrayList(currentQueryData.getRanges());
@@ -110,12 +104,6 @@ public class QueryPlan {
         buildHashCode();
     }
     
-    /**
-     * @param queryTree
-     * @param rangeIter
-     * @param settings
-     * @param columnFamilies
-     */
     public QueryPlan(JexlNode queryTree, Iterable<Range> rangeIter, List<IteratorSetting> settings, Collection<String> columnFamilies) {
         this.queryTree = queryTree;
         this.ranges = Lists.newArrayList(rangeIter);
@@ -134,11 +122,6 @@ public class QueryPlan {
         buildHashCode();
     }
     
-    /**
-     * @param queryTree
-     * @param rangeIter
-     * @param settings
-     */
     public QueryPlan(JexlNode queryTree, Iterable<Range> rangeIter, List<IteratorSetting> settings) {
         this(queryTree, rangeIter, settings, null);
     }
@@ -197,9 +180,6 @@ public class QueryPlan {
         return ranges;
     }
     
-    /**
-     * @return
-     */
     public List<IteratorSetting> getSettings() {
         return settings;
     }

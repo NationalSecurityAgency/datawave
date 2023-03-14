@@ -66,11 +66,6 @@ public class VisibilityWiseGuysIngestWithModel {
         }
     }
     
-    /**
-     * gparent - parent - child -
-     *
-     * @return
-     */
     public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
@@ -888,12 +883,7 @@ public class VisibilityWiseGuysIngestWithModel {
         builder.setIGNORE(false);
         return new Value(builder.build().toByteArray());
     }
-    
-    /**
-     * forces a shard range
-     *
-     * @return
-     */
+
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setCOUNT(50); // better not be zero!!!!

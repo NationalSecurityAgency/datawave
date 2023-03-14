@@ -70,10 +70,14 @@ public class IndexStatsClient {
      * If getStat throws any exceptions, return the default EMPTY_STATS instead of throwing the exception.
      *
      * @param fields
+     *            set of fields
      * @param dataTypes
+     *            set of datatypes
      * @param start
+     *            startdate
      * @param end
-     * @return
+     *            enddate
+     * @return mapping of stats
      */
     public Map<String,Double> safeGetStat(Set<String> fields, Set<String> dataTypes, Date start, Date end) {
         try {

@@ -32,7 +32,10 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
     /**
      * This constructor allows the class to be used in conjunction with existing QueryModel loaders.
      * 
+     * @param other
+     *            the other model
      * @throws InvalidModelException
+     *             if the model is invalid
      */
     public EdgeQueryModel(QueryModel other) throws InvalidModelException {
         super(other);
@@ -58,7 +61,11 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
     /**
      * Simple factory method to load a query model from the specified classpath resource.
      * 
+     * @param queryModelXml
+     *            the model xml
      * @return EdgeQueryModel instance
+     * @throws Exception
+     *             if there is an issue
      */
     public static EdgeQueryModel loadModel(String queryModelXml) throws Exception {
         return new EdgeQueryModel(LoadModelFromXml.loadModel(queryModelXml));
@@ -91,7 +98,9 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
      * Ensures that the given model contains valid 1-to-1 mappings of alias to internal field.
      * 
      * @param model
+     *            a query model
      * @throws InvalidModelException
+     *             if the model is invalid
      */
     public static void validateModel(EdgeQueryModel model) throws InvalidModelException {
         if (null == model.getForwardQueryMapping()) {

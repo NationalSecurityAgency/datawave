@@ -126,6 +126,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
      * </ul>
      * 
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testMaxValueAnyField() throws Exception {
@@ -252,6 +253,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
      * This tests a query without an intersection such that when we force the ivarators to fail with a maxResults setting of 1, the query will fail.
      *
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testMaxIvaratorResultsFailsQuery() throws Exception {
@@ -304,6 +306,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
      * still complete.
      *
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testMaxIvaratorResults() throws Exception {

@@ -33,19 +33,16 @@ public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,Entry<
      * Fetch a query model loader without a known set of fields
      *
      * @param client
+     *            a client
      * @param tableName
+     *            the table name
      * @param auths
+     *            set of auths
      */
     public QueryModelLoader(AccumuloClient client, String tableName, Set<Authorizations> auths) {
         this(client, tableName, auths, null);
     }
-    
-    /**
-     * @param client
-     * @param tableName
-     * @param auths
-     * @param allFields
-     */
+
     public QueryModelLoader(AccumuloClient client, String tableName, Set<Authorizations> auths, Set<String> allFields) {
         super(client, tableName, auths, new ArrayList<>());
         

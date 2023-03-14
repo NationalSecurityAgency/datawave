@@ -42,8 +42,11 @@ public class RfileResource extends BatchResource {
      * Initializes the scanner resource
      * 
      * @param auths
+     *            the auths
      * @param tableName
+     *            a table name
      * @throws TableNotFoundException
+     *             if the table was not found
      * 
      */
     @Override
@@ -95,7 +98,8 @@ public class RfileResource extends BatchResource {
      * Sets the option on this currently running resource.
      * 
      * @param options
-     * @return
+     *            the options to set
+     * @return the current resource
      */
     @Override
     public AccumuloResource setOptions(SessionOptions options) {

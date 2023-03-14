@@ -139,8 +139,11 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
      * Create and initialize a metadata helper
      * 
      * @param client
+     *            the client
      * @param metadataTableName
+     *            metadata table name
      * @param auths
+     *            a set of auths
      * @return a new initialized MetadataHelper
      */
     protected MetadataHelper initializeMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths) {
@@ -493,15 +496,24 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
      * scanned are trimmed based on a set of terms to match, and a set of data types (found in the config)
      *
      * @param config
+     *            the shard config
      * @param scannerFactory
+     *            the scanner factory
      * @param tableName
+     *            the table name
      * @param ranges
+     *            a set of ranges
      * @param literals
+     *            the list of literals
      * @param patterns
+     *            the list of patterns
      * @param reverseIndex
+     *            the reverse index flag
      * @param expansionFields
+     *            the expansion fields
      * @return the batch scanner
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     public static BatchScanner configureBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName, Collection<Range> ranges,
                     Collection<String> literals, Collection<String> patterns, boolean reverseIndex, Collection<String> expansionFields)
@@ -597,7 +609,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     /**
      * Query model
      * 
-     * @return
+     * @return the model name
      */
     public String getModelName() {
         return modelName;

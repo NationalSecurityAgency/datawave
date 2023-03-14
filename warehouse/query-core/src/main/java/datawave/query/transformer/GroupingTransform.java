@@ -92,6 +92,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      *            the fields (user provided) to group by
      * @param queryExecutionForPageTimeout
      *            how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client
+     * @param markingFunctions
+     *            the marking functions
      */
     public GroupingTransform(QueryModel model, Collection<String> groupFieldsSet, MarkingFunctions markingFunctions, long queryExecutionForPageTimeout) {
         super.initialize(settings, markingFunctions);

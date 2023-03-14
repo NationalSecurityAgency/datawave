@@ -62,7 +62,8 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
      * Builds the range for our lookup.
      * 
      * @param key
-     * @return
+     *            a key
+     * @return a range
      */
     protected abstract Range buildRange(K key);
     
@@ -70,7 +71,8 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
      * Retrieves the column families for the provided key.
      * 
      * @param key
-     * @return
+     *            a key
+     * @return column families for the provided key
      */
     protected Collection<Text> getColumnFamilies(K key) {
         return columnFamilyList;
@@ -85,8 +87,11 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
      * Builds the key using the provided table name, so that we load the data into our cache.
      * 
      * @param key
+     *            a key
      * @param myTableName
+     *            table name string
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     protected void build(K key, String myTableName) throws TableNotFoundException {
         if (log.isDebugEnabled())
@@ -124,9 +129,12 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
      * Store the key/value pair and the key into the underlying cache
      * 
      * @param key
+     *            a key
      * @param accKey
+     *            accumulo key
      * @param accValue
-     * @return
+     *            accumulo value
+     * @return if the pair was stored
      */
     protected abstract boolean store(K key, Key accKey, Value accValue);
     

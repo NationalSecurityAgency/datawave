@@ -96,6 +96,7 @@ public class LongRunningQueryTest {
      * have 8 results and have a status of COMPLETE.
      *
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testLongRunningGroupByQuery() throws Exception {
@@ -151,6 +152,7 @@ public class LongRunningQueryTest {
      * Tests that the code path that allows long running queries does not interfere or create a never ending query if a query legitimately doesn't have results.
      * 
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testLongRunningQueryWithNoResults() throws Exception {
@@ -206,6 +208,7 @@ public class LongRunningQueryTest {
      * COMPLETE, and the next to last page should have a status of PARTIAL.
      *
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testLongRunningQueryWithSmallPageSize() throws Exception {

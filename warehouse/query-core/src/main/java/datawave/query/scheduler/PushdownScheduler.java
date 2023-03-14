@@ -115,13 +115,6 @@ public class PushdownScheduler extends Scheduler {
         
     }
     
-    /**
-     * @return
-     * @throws ParseException
-     * @throws TableNotFoundException
-     * @throws AccumuloSecurityException
-     * @throws AccumuloException
-     */
     protected Iterator<Entry<Key,Value>> concatIterators() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ParseException {
         
         String tableName = config.getShardTableName();

@@ -38,12 +38,7 @@ public class LimitFieldsTestingIngest {
     protected static final ColumnVisibility columnVisibility = new ColumnVisibility("ALL");
     protected static final Value emptyValue = new Value(new byte[0]);
     protected static final long timeStamp = 1356998400000l;
-    
-    /**
-     *
-     * 
-     * @return
-     */
+
     public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
@@ -253,12 +248,7 @@ public class LimitFieldsTestingIngest {
         builder.setIGNORE(false);
         return new Value(builder.build().toByteArray());
     }
-    
-    /**
-     * forces a shard range
-     * 
-     * @return
-     */
+
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setCOUNT(50); // better not be zero!!!!

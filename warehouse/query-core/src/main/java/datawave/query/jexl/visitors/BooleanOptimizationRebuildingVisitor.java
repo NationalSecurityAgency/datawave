@@ -83,8 +83,12 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
      * Returns a tuple where the first element is the new node and the second element is the node that was pruned.
      * 
      * @param currentNode
+     *            the current node
      * @param newNode
+     *            the new node
      * @param prunedNode
+     *            the pruned node
+     * @return a tuple
      */
     private Tuple2<JexlNode,JexlNode> prune(JexlNode currentNode, JexlNode newNode, JexlNode prunedNode) {
         for (int i = 0; i < currentNode.jjtGetNumChildren(); i++) {
@@ -114,7 +118,8 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
      * Returns true if there is a child OR (or OR directly inside ASTReference or ASTReferenceException).
      * 
      * @param currentNode
-     * @return
+     *            the current node
+     * @return boolean
      */
     private boolean hasChildOr(JexlNode currentNode) {
         boolean foundChildOr = false;

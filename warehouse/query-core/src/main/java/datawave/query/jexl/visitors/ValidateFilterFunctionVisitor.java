@@ -88,6 +88,8 @@ public class ValidateFilterFunctionVisitor extends BaseVisitor {
      *
      * @param node
      *            an arbitrary JexlNode
+     * @param indexOnlyFields
+     *            a set of index only fields
      * @return the original node
      */
     public static JexlNode validate(JexlNode node, Set<String> indexOnlyFields) {

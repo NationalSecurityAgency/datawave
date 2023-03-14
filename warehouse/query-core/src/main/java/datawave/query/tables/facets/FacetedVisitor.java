@@ -178,10 +178,6 @@ public class FacetedVisitor extends BaseVisitor {
         return this;
     }
     
-    /**
-     * @param documentRange
-     * @return
-     */
     public FacetedVisitor limit(Range documentRange) {
         return setRange(documentRange).setLimitLookup(true);
     }
@@ -190,16 +186,14 @@ public class FacetedVisitor extends BaseVisitor {
      * Limits the number of source counts.
      * 
      * @param sourceCount
-     * @return
+     *            the source count
+     * @return the current visitor
      */
     public FacetedVisitor limit(long sourceCount) {
         source.setInitialSize(sourceCount);
         return this;
     }
     
-    /**
-     * @param limitLookup
-     */
     public FacetedVisitor setLimitLookup(boolean limitLookup) {
         if (rangeLimiter != null) {
             this.limitLookup = limitLookup;
