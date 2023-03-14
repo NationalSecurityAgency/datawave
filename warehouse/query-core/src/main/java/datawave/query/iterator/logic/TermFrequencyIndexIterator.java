@@ -5,9 +5,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import datawave.core.iterators.key.TFKey;
 import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.data.parsers.DatawaveKey;
+import datawave.query.data.parsers.TermFrequencyKey;
 import datawave.query.iterator.DocumentIterator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
@@ -79,7 +79,7 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     private final Text cf = new Text();
     private final Text cq = new Text();
     
-    private final TFKey tfParser = new TFKey();
+    private final TermFrequencyKey tfParser = new TermFrequencyKey();
     
     /**
      * A convenience constructor that allows all keys to pass through unmodified from the source.

@@ -154,6 +154,15 @@ public class TLDTest {
     }
     
     @Test
+    public void testGetRootUid() {
+        assertEquals("d8zay2.-3pnndm.-anolok", TLD.getRootUid("d8zay2.-3pnndm.-anolok"));
+        assertEquals("d8zay2.-3pnndm.-anolok", TLD.getRootUid("d8zay2.-3pnndm.-anolok.12"));
+        assertEquals("d8zay2.-3pnndm.-anolok", TLD.getRootUid("d8zay2.-3pnndm.-anolok.12.34"));
+        
+        assertEquals("not.a.uid", TLD.getRootUid("not.a.uid"));
+    }
+    
+    @Test
     public void testIsRootPointer() {
         ByteSequence root = new ArrayByteSequence(rootId);
         ByteSequence child = new ArrayByteSequence(childId);
