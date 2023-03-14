@@ -89,7 +89,7 @@ jobs:
         fi
         sudo systemctl restart docker
         echo Docker Experimental Features: $(docker version -f '{{.Server.Experimental}}')
-    - uses: actions/cache@v1
+    - uses: actions/cache@v3
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
