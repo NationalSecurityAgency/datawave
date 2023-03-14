@@ -1326,6 +1326,54 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
     }
     
+    public int getFiFieldSeek() {
+        return getConfig().getFiFieldSeek();
+    }
+    
+    public void setFiFieldSeek(int fiFieldSeek) {
+        getConfig().setFiFieldSeek(fiFieldSeek);
+    }
+    
+    public int getFiNextSeek() {
+        return getConfig().getFiNextSeek();
+    }
+    
+    public void setFiNextSeek(int fiNextSeek) {
+        getConfig().setFiNextSeek(fiNextSeek);
+    }
+    
+    public int getEventFieldSeek() {
+        return getConfig().getEventFieldSeek();
+    }
+    
+    public void setEventFieldSeek(int eventFieldSeek) {
+        getConfig().setEventFieldSeek(eventFieldSeek);
+    }
+    
+    public int getEventNextSeek() {
+        return getConfig().getEventNextSeek();
+    }
+    
+    public void setEventNextSeek(int eventNextSeek) {
+        getConfig().setEventNextSeek(eventNextSeek);
+    }
+    
+    public int getTfFieldSeek() {
+        return getConfig().getTfFieldSeek();
+    }
+    
+    public void setTfFieldSeek(int tfFieldSeek) {
+        getConfig().setTfFieldSeek(tfFieldSeek);
+    }
+    
+    public int getTfNextSeek() {
+        return getConfig().getTfNextSeek();
+    }
+    
+    public void setTfNextSeek(int tfNextSeek) {
+        getConfig().setTfNextSeek(tfNextSeek);
+    }
+    
     public String getBlacklistedFieldsString() {
         return getConfig().getBlacklistedFieldsAsString();
     }

@@ -1,30 +1,24 @@
 package datawave.query.postprocessing.tf;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedSet;
-
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
+import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.core.iterators.TermFrequencyIterator;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
-import datawave.query.jexl.functions.TermFrequencyList;
-import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.Constants;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.functions.ContentFunctions;
+import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.jexl.visitors.LiteralNodeSubsetVisitor;
-
+import datawave.query.predicate.EventDataQueryFilter;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -37,13 +31,17 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.Sets;
-import com.google.common.collect.TreeMultimap;
-import com.google.protobuf.InvalidProtocolBufferException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedSet;
 
 import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
 
@@ -67,12 +65,14 @@ public class TermOffsetPopulator {
     private Document document;
     private Set<String> contentExpansionFields;
     
-    public TermOffsetPopulator(Multimap<String,String> termFrequencyFieldValues, Set<String> contentExpansionFields, EventDataQueryFilter evaluationFilter,
-                    SortedKeyValueIterator<Key,Value> source) {
+    private final TermFrequencyConfig config;
+    
+    public TermOffsetPopulator(Multimap<String,String> termFrequencyFieldValues, TermFrequencyConfig config) {
         this.termFrequencyFieldValues = termFrequencyFieldValues;
-        this.contentExpansionFields = contentExpansionFields;
-        this.source = source;
-        this.evaluationFilter = evaluationFilter;
+        this.config = config;
+        this.contentExpansionFields = this.config.getContentExpansionFields();
+        this.source = this.config.getSource();
+        this.evaluationFilter = this.config.getEvaluationFilter();
     }
     
     public Document document() {
@@ -132,10 +132,14 @@ public class TermOffsetPopulator {
             }
         }
         
+        if (keys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        
         Range range = getRange(keys);
         try {
             tfSource.init(source, null, null);
-            tfSource.seek(getRange(keys), null, false);
+            tfSource.seek(range, null, false);
         } catch (IOException e) {
             log.error("Seek to the range failed: " + range, e);
         }

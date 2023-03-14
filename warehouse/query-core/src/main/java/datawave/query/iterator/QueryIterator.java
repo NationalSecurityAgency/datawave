@@ -25,6 +25,7 @@ import datawave.query.function.DataTypeAsField;
 import datawave.query.function.DocumentMetadata;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
+import datawave.query.function.DocumentRangeProvider;
 import datawave.query.function.IndexOnlyContextCreator;
 import datawave.query.function.IndexOnlyContextCreatorBuilder;
 import datawave.query.function.JexlContextCreator;
@@ -34,6 +35,7 @@ import datawave.query.function.LimitFields;
 import datawave.query.function.MaskedValueFilterFactory;
 import datawave.query.function.MaskedValueFilterInterface;
 import datawave.query.function.RemoveGroupingContext;
+import datawave.query.function.RangeProvider;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
@@ -201,6 +203,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected ActiveQueryLog activeQueryLog;
     
     protected ExcerptTransform excerptTransform = null;
+    
+    protected RangeProvider rangeProvider;
     
     public QueryIterator() {}
     
@@ -905,7 +909,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             };
         } else {
             docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, super.equality, getEvaluationFilter(),
-                            this.includeHierarchyFields, this.includeHierarchyFields);
+                            this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
         }
         
         Iterator<Entry<DocumentData,Document>> sourceIterator = Iterators.transform(documentSpecificSource, from -> {
@@ -1222,7 +1226,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         if (fieldIndexSatisfiesQuery) {
             final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, super.equality,
-                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields);
+                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
+            
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(
                             documents,
                             new GetDocument(docMapper, new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata, this
@@ -1717,5 +1722,17 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
         }
         return excerptTransform;
+    }
+    
+    /**
+     * Get a default implementation of a {@link RangeProvider}
+     *
+     * @return a {@link DocumentRangeProvider}
+     */
+    protected RangeProvider getRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new DocumentRangeProvider();
+        }
+        return rangeProvider;
     }
 }
