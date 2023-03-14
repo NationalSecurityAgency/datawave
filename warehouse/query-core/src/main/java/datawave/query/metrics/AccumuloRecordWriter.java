@@ -111,6 +111,13 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     /**
      * Push a mutation into a table. If table is null, the defaultTable will be used. If canCreateTable is set, the table will be created if it does not exist.
      * The table name must only contain alphanumerics and underscore.
+     * 
+     * @param mutation
+     *            a mutation
+     * @param table
+     *            the table
+     * @throws IOException
+     *             for issues with read/write
      */
     @Override
     public void write(Text table, Mutation mutation) throws IOException {
@@ -298,6 +305,10 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     /**
      * WARNING: The password is stored in the Configuration and shared with all MapReduce tasks; It is BASE64 encoded to provide a charset safe conversion to a
      * string, and is not intended to be secure.
+     * 
+     * @param conf
+     *            a configuration
+     * @return the password
      */
     protected static byte[] getPassword(Configuration conf) {
         byte[] bytes = Base64.decodeBase64(conf.get(PASSWORD, "").getBytes());

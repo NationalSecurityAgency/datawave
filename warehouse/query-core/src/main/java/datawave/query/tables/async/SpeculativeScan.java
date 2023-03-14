@@ -147,7 +147,9 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
      * Override this for your specific implementation.
      * 
      * @param lastKey
+     *            a lastkey
      * @param previousRange
+     *            the previous range
      */
     public Range buildNextRange(final Key lastKey, final Range previousRange) {
         return scans.iterator().next().buildNextRange(lastKey, previousRange);

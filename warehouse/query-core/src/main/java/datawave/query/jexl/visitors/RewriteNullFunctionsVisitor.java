@@ -90,6 +90,8 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
      *
      * @param node
      *            an arbitrary JexlNode
+     * @param <T>
+     *            type of node
      * @return the original query tree
      */
     @SuppressWarnings("unchecked")

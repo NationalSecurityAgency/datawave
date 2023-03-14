@@ -41,7 +41,13 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
      *
      * @param script
      *            An ASTJexlScript
-     * @return
+     * @param <T>
+     *            type of the script
+     * @param config
+     *            the query configuration
+     * @param helper
+     *            the metadata helper
+     * @return the provided script
      */
     public static <T extends JexlNode> T upperCaseIdentifiers(ShardQueryConfiguration config, MetadataHelper helper, T script) {
         CaseSensitivityVisitor visitor = new CaseSensitivityVisitor(config, helper);

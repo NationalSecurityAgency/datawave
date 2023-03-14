@@ -22,6 +22,7 @@ import com.google.common.collect.Maps;
  * enhanced for loop with the tree, as well as tracking Accumulo's initialization sequence by deferring full initialization until seek is called.
  * 
  * @param <T>
+ *            the type of the tree
  */
 public class AccumuloTreeIterable<S,T extends Comparable<T>> implements Iterable<Entry<T,Document>> {
     public NestedIterator<S> tree;

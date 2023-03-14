@@ -17,10 +17,6 @@ public class ConnectorCacheId extends CacheId {
     
     int hashCode = 31;
     
-    /**
-     * @param instanceId
-     * @param auths
-     */
     public ConnectorCacheId(String instanceId, Set<Authorizations> auths) {
         super(instanceId);
         

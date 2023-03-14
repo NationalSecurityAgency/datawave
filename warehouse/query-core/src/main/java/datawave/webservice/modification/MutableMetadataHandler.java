@@ -423,21 +423,39 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * Insert new field value with provided timestamp
      * 
      * @param writer
+     *            the batch writer
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
      * @param viz
+     *            the column visibility
      * @param fieldName
+     *            field name string
      * @param fieldValue
+     *            field value string
      * @param timestamp
+     *            timestamp
      * @param isIndexed
+     *            boolean flag for isIndexed
      * @param isReverseIndexed
+     *            boolean flag for isReverseIndexed
      * @param dataTypes
+     *            set of datatypes
      * @param historicalValue
+     *            historical value flag
      * @param insertHistory
+     *            flag for insertHistory
      * @param user
+     *            the user string
      * @param mode
+     *            the mode
+     * @param isIndexOnlyField
+     *            isIndexOnlyField
      * @throws Exception
+     *             if there are issues
      */
     protected void insert(MultiTableBatchWriter writer, String shardId, String datatype, String eventUid, ColumnVisibility viz, String fieldName,
                     String fieldValue, long timestamp, boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed, Set<Type<?>> dataTypes,
@@ -512,22 +530,37 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     
     /**
      * Prepares the value to be inserted as history, then calls insert
-     * 
+     *
      * @param writer
+     *            the batch writer
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
      * @param viz
+     *            the column visibility
      * @param fieldName
+     *            field name string
      * @param fieldValue
+     *            field value string
      * @param timestamp
-     * @param isIndexOnlyField
+     *            timestamp
      * @param isIndexed
+     *            boolean flag for isIndexed
      * @param isReverseIndexed
+     *            boolean flag for isReverseIndexed
      * @param dataTypes
+     *            set of datatypes
      * @param user
+     *            the user string
      * @param mode
+     *            the mode
+     * @param isIndexOnlyField
+     *            isIndexOnlyField
      * @throws Exception
+     *             if there are issues
      */
     protected void insertHistory(MultiTableBatchWriter writer, String shardId, String datatype, String eventUid, ColumnVisibility viz, String fieldName,
                     String fieldValue, long timestamp, boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed, Set<Type<?>> dataTypes,
@@ -557,19 +590,41 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     
     /**
      * Insert new field value with original event timestamp
-     * 
+     *
      * @param writer
+     *            the batch writer
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
+     * @param viz
+     *            the column visibility
      * @param fieldName
+     *            field name string
      * @param fieldValue
+     *            field value string
+     * @param isIndexOnlyField
+     *            isIndexOnlyField
+     * @param insertHistory
+     *            insert history flag
+     * @param markings
+     *            markings
+     * @param ts
+     *            timestamp
      * @param isIndexed
+     *            boolean flag for isIndexed
      * @param isReverseIndexed
+     *            boolean flag for isReverseIndexed
      * @param dataTypes
+     *            set of datatypes
      * @param user
+     *            the user string
      * @param mode
+     *            the mode
      * @throws Exception
+     *             if there are issues
      */
     protected void insert(MultiTableBatchWriter writer, String shardId, String datatype, String eventUid, Map<String,String> markings, ColumnVisibility viz,
                     String fieldName, String fieldValue, boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed, Set<Type<?>> dataTypes,
@@ -590,18 +645,35 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * Delete the current K,V from the event, put in a history element
      *
      * @param writer
+     *            the batch writer
      * @param currentEntryList
+     *            the current entry list
      * @param isIndexed
+     *            boolean flag for isIndexed
      * @param isReverseIndexed
+     *            boolean flag for isReverseIndexed
      * @param isContentField
+     *            boolean flag for isContentField
      * @param dataTypes
+     *            set of datatypes
      * @param user
+     *            the user string
      * @param mode
+     *            the mode
+     * @param isIndexOnlyField
+     *            isIndexOnlyField
+     * @param con
+     *            a connector
+     * @param userAuths
+     *            userAuths
      * @param ts
+     *            the timestamp
      * @param purgeTokens
      *            If set true, then this will delete all tokens for a field as well.
      * @param insertHistory
+     *            flag to insert history
      * @throws Exception
+     *             if there are issues
      */
     protected void delete(MultiTableBatchWriter writer, Connector con, Set<Authorizations> userAuths, List<Pair<Key,Value>> currentEntryList,
                     boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed, boolean isContentField, Set<Type<?>> dataTypes, String user,
@@ -710,16 +782,26 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * Get the Key,Value pair for the field to be updated/deleted from the event table
      * 
      * @param con
+     *            the connector
      * @param userAuths
+     *            set of user auths
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
      * @param fieldName
+     *            field name string
      * @param oldFieldValue
+     *            old field value
      * @param oldFieldMarkings
+     *            the old field markings
      * @param oldColumnVisibility
-     * @return
+     *            the old column visibility
+     * @return the Key,Value pair for the field to be updated/deleted from the event table
      * @throws Exception
+     *             if there are issues
      */
     protected List<Pair<Key,Value>> getField(Connector con, Set<Authorizations> userAuths, String shardId, String datatype, String eventUid, String fieldName,
                     String oldFieldValue, Map<String,String> oldFieldMarkings, ColumnVisibility oldColumnVisibility) throws Exception {
@@ -778,14 +860,20 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     /**
      * Pulls the entire event and returns the most common timestamp for the event. This *assumes* the most common timestamp is the original one. If this is not
      * the case, then it needs to change. Another option could be to return the earliest timestamp, which is also an assumption.
-     * 
+     *
      * @param con
+     *            the connector
      * @param userAuths
+     *            set of user auths
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
      * @return long - highestOccurrenceTimestamp - most common timestamp in the event
      * @throws Exception
+     *             if there are issues
      */
     protected long getOriginalEventTimestamp(Connector con, Set<Authorizations> userAuths, String shardId, String datatype, String eventUid) throws Exception {
         
@@ -838,11 +926,16 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * Get an instance of a MetadataHelper object
      * 
      * @param con
-     * @return
+     *            the connector
+     * @return instance of a MetadataHelper object
      * @throws AccumuloException
+     *             for issues with accumulo
      * @throws AccumuloSecurityException
-     * @throws ExecutionException
+     *             for accumulo authentication issues
      * @throws TableNotFoundException
+     *             if the table is not found
+     * @throws ExecutionException
+     *             for execution exceptions
      */
     protected MetadataHelper getMetadataHelper(Connector con) throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
         Authorizations auths = con.securityOperations().getUserAuthorizations(con.whoami());
@@ -853,9 +946,12 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * Check to see if a field is mutable
      * 
      * @param mutableFieldList
+     *            a mutable field list map
      * @param datatype
+     *            the datatype
      * @param fieldName
-     * @return
+     *            field name string
+     * @return if a field is mutable
      */
     protected boolean isFieldMutable(Map<String,Set<String>> mutableFieldList, String datatype, String fieldName) {
         if (null == mutableFieldList)
@@ -877,10 +973,16 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * Finds the event by creating a query by UUID from the keys and values in the runtime parameters.
      * 
      * @param uuid
+     *            the uuid
      * @param uuidType
+     *            type of uuid
+     * @param operation
+     *            operation
      * @param userAuths
+     *            set of user auths
      * @return Event
      * @throws Exception
+     *             if there are issues
      */
     protected EventBase<?,?> findMatchingEventUuid(String uuid, String uuidType, Set<Authorizations> userAuths, ModificationOperation operation)
                     throws Exception {
@@ -950,18 +1052,28 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * token fields if includeTokens is true.
      *
      * @param con
-     * @param shardTable
+     *            the connector
      * @param userAuths
+     *            set of user auths
+     * @param shardTable
+     *            shard table name
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
      * @param fieldName
+     *            the field name string
      * @param fieldValue
+     *            field value string
      * @param dataTypes
+     *            set of datatypes
      * @param includeTokens
      *            If true then this will return all associated token fields as well
      * @return An iterable of Keys
      * @throws Exception
+     *             if there are issues
      */
     protected FieldIndexIterable getFieldIndexKeys(Connector con, String shardTable, Set<Authorizations> userAuths, String shardId, String datatype,
                     String eventUid, String fieldName, String fieldValue, Set<Type<?>> dataTypes, boolean includeTokens) throws Exception {
@@ -1042,13 +1154,20 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * Find the index only keys associated with a specified field and a specified event
      *
      * @param con
+     *            the connector
      * @param shardTable
+     *            shard table name
      * @param userAuths
+     *            set of user auths
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
      * @return An iterable of Keys
      * @throws Exception
+     *             if there are issues
      */
     protected ContentIterable getContentKeys(Connector con, String shardTable, Set<Authorizations> userAuths, String shardId, String datatype, String eventUid)
                     throws Exception {

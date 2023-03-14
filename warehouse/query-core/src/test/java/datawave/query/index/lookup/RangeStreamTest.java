@@ -1071,6 +1071,7 @@ public class RangeStreamTest {
      * Interesting case when the right side terms are indexed and the left side terms are not indexed.
      *
      * @throws Exception
+     *             for unexpected issues
      */
     @Test
     public void testIntersectionOfTwoUnions() throws Exception {

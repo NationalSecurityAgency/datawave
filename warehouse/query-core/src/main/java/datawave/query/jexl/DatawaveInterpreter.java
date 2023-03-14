@@ -74,6 +74,7 @@ public class DatawaveInterpreter extends Interpreter {
      * This convenience method can be used to interpret the result of the script.execute() result which calls the interpret method below.
      * 
      * @param scriptExecuteResult
+     *            the script result
      * @return true if we matched, false otherwise.
      */
     public static boolean isMatched(Object scriptExecuteResult) {
@@ -185,7 +186,8 @@ public class DatawaveInterpreter extends Interpreter {
      * unused because hasSiblings should cover every case with the size method, plus other methods
      * 
      * @param node
-     * @return
+     *            a node
+     * @return if we have a size method sibling
      */
     private boolean hasSizeMethodSibling(ASTFunctionNode node) {
         JexlNode parent = node.jjtGetParent();
@@ -308,9 +310,12 @@ public class DatawaveInterpreter extends Interpreter {
     }
     
     /**
-     * * This will determine if this ANDNode contains a range, and will invoke the appropriate range function instead of evaluating the LT/LE and GT/GE nodes *
-     * independently as that does not work when there are sets of values in the context. * * @param node * @return a collection of hits (or empty set) if we
-     * evaluated a range. null otherwise.
+     * This will determine if this ANDNode contains a range, and will invoke the appropriate range function instead of evaluating the LT/LE and GT/GE nodes *
+     * independently as that does not work when there are sets of values in the context.
+     * 
+     * @param node
+     *            a node
+     * @return a collection of hits (or empty set) if we evaluated a range. null otherwise.
      */
     private Collection<?> evaluateRange(ASTAndNode node) {
         Collection<?> evaluation = null;
@@ -520,7 +525,8 @@ public class DatawaveInterpreter extends Interpreter {
      * results for the other method to use, instead of a boolean indicating that there were results
      * 
      * @param node
-     * @return
+     *            a node
+     * @return if the node has siblings
      */
     private boolean hasSiblings(ASTFunctionNode node) {
         

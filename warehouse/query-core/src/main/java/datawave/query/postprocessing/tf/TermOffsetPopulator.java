@@ -112,7 +112,7 @@ public class TermOffsetPopulator {
      *            set of keys that map to hits on tf fields
      * @param fields
      *            set of fields to remove from the search space
-     * @return
+     * @return TermOffset map
      */
     public Map<String,Object> getContextMap(Key docKey, Set<Key> keys, Set<String> fields) {
         document = new Document();
@@ -234,6 +234,10 @@ public class TermOffsetPopulator {
     
     /**
      * Finds all the content functions and returns a map indexed by function name to the function.
+     * 
+     * @param query
+     *            the query node
+     * @return a map indexed by function name to the function
      */
     public static Multimap<String,Function> getContentFunctions(JexlNode query) {
         FunctionReferenceVisitor visitor = new FunctionReferenceVisitor();
@@ -246,6 +250,14 @@ public class TermOffsetPopulator {
     
     /**
      * Get the list of content function fields to normalized values
+     * 
+     * @param contentExpansionFields
+     *            set of content expansion fields
+     * @param dataTypes
+     *            map of datatypes
+     * @param functions
+     *            map of functions
+     * @return list of content function fields to normalized values
      */
     public static Multimap<String,String> getContentFieldValues(Set<String> contentExpansionFields, Multimap<String,Class<? extends Type<?>>> dataTypes,
                     Multimap<String,Function> functions) {
@@ -342,6 +354,16 @@ public class TermOffsetPopulator {
      * to those values actually in the index The query is scraped for content functions from which a list of zones to normalized values is determined (the
      * contentExpansionFields are used for unfielded content functions). The list of fields to values as a subset of the term frequency fields is gathered. The
      * intersection of those two sets are returned.
+     * 
+     * @param dataTypes
+     *            map of datatypes
+     * @param contentExpansionFields
+     *            set of content expansion fields
+     * @param query
+     *            the query script
+     * @param termFrequencyFields
+     *            set of term frequency fields
+     * @return list of fields and values for which term frequencies need to be gathered
      */
     public static Multimap<String,String> getTermFrequencyFieldValues(ASTJexlScript query, Set<String> contentExpansionFields, Set<String> termFrequencyFields,
                     Multimap<String,Class<? extends Type<?>>> dataTypes) {
@@ -397,6 +419,7 @@ public class TermOffsetPopulator {
          * Essentially we want the inverse of the number of bytes that match. document.
          *
          * @param fv
+         *            a field value
          * @return a distance between here and there (negative means there is before here)
          */
         public double distance(FieldValue fv) {

@@ -41,7 +41,8 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
      * @param node
      *            - the root node for a query tree
      * @param <T>
-     * @return
+     *            type of the node
+     * @return a reference to the tree
      */
     public static <T extends JexlNode> T enforce(T node) {
         if (node == null)

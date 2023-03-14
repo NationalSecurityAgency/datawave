@@ -425,6 +425,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      * 
      * @param rangeKey
      *            a key formatted like a document key
+     * @param inclusive
+     *            flag to determine to add a null bye
      * @return a key formatted for a field index range
      */
     protected Key permuteRangeKey(Key rangeKey, boolean inclusive) {

@@ -73,6 +73,8 @@ public abstract class QueryNode implements Cloneable {
     
     /**
      * determines if this nodes parent is a different operation. used to determine when to modify the weights
+     * 
+     * @return if this nodes parent is a different operation
      */
     protected abstract boolean isParentDifferent();
     
@@ -97,6 +99,7 @@ public abstract class QueryNode implements Cloneable {
      * sets the parent of this node
      * 
      * @param p
+     *            a query node
      */
     private void setParent(QueryNode p) {
         parent = p;

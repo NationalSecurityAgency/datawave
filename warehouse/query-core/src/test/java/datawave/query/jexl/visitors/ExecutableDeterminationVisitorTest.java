@@ -243,6 +243,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      * == EXECUTABLE
      * 
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testNegatedAndExecutable() throws Exception {
@@ -289,6 +290,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      * EXECUTABLE == EXECUTABLE
      * 
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testDoubleNegatedAndExecutable() throws Exception {
@@ -335,6 +337,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      * NOT_EXECUTABLE == PARTIAL
      * 
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testNegatedAndNotExecutable() throws Exception {
@@ -381,6 +384,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      * EXECUTABLE == EXECUTABLE
      * 
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testDoubleNegatedAndNotExecutable() throws Exception {
@@ -427,6 +431,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      * EXECUTABLE == EXECUTABLE
      * 
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testNegatedOrExecutable() throws Exception {
@@ -477,6 +482,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      * NON_EXECUTABLE == PARTIAL
      * 
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testDoubleNegatedOrExecutable() throws Exception {
@@ -537,7 +543,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      * Copied from JexlNodeFactory without the AND/OR restrictions
      * 
      * @param toWrap
-     * @return
+     *            the jexl node to wrap
+     * @return reference to the wrapped node
      */
     private JexlNode wrap(JexlNode toWrap) {
         ASTReference reference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
