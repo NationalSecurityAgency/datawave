@@ -79,6 +79,17 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
      * 
      * includingSources and includingSinks are used to remember if a previous qContext had a regex for SOURCE and SINK, if so then we have to include SOURCEs
      * and SINKs for ever Query context regardless of weather or not they all have regex's.
+     * 
+     * @param qContext
+     *            query context
+     * @param includColumnFamilyTerms
+     *            whether to include column family terms
+     * @param includeSinks
+     *            flag to include the sinks
+     * @param includeSources
+     *            flag to include sources
+     * @param updateWhitelist
+     *            flag to update whitelist
      */
     public void updateQueryStrings(QueryContext qContext, boolean includeSources, boolean includeSinks, boolean includColumnFamilyTerms, boolean updateWhitelist) {
         StringBuilder trimmedQuery = new StringBuilder();
@@ -116,6 +127,12 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
      * Takes a list of IdentityContext's containing all sources and another containing all sinks as input and returns a set of ranges Loops through each
      * provided SOURCE IdentityContext. If the SOURCE is not a regex and there are SINKs then build the range using the SOURCE and SINK else build the range
      * with just the SOURCE.
+     * 
+     * @param sinks
+     *            list of sinks
+     * @param sources
+     *            list of sources
+     * @return set of ranges
      */
     private Set<Range> buildRanges(List<IdentityContext> sources, List<IdentityContext> sinks) {
         Set<Range> ranges = new HashSet<>();
@@ -152,6 +169,10 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
      * then the end key should end in unicode 1 that way we don't pick up extra sources
      * 
      * Use this method when there is either no sink or the source is a regex expression
+     * 
+     * @param source
+     *            a source
+     * @return a range
      */
     private Range buildRange(IdentityContext source) {
         String rowID = getLeadingLiteral(source, false);
@@ -165,6 +186,12 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
      * Builds an Accumulo edge table range for a given SOURCE and SINK. The SOURCE is assumed to not be a regex expression.
      * 
      * If including stats edges then only build range for the SOURCE and the SOURCE+SINK, no stats edges for SINK will be returned.
+     * 
+     * @param source
+     *            a source
+     * @param sink
+     *            a sink
+     * @return a set of ranges
      */
     private Set<Range> buildRange(IdentityContext source, IdentityContext sink) {
         String rowSource = getLeadingLiteral(source, false);
@@ -191,6 +218,12 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
      * 
      * The leading wildCardAllowed parameter says if leading wild cards are allowed in the search term (leading wild cards are not allowed with SOURCE
      * expressions but allowed with every thing else)
+     * 
+     * @param leadingWildCardAllowed
+     *            leadingWildCardAllowed
+     * @param term
+     *            a term
+     * @return the leading literal
      */
     private String getLeadingLiteral(IdentityContext term, boolean leadingWildCardAllowed) {
         String leadingLiteral = "";

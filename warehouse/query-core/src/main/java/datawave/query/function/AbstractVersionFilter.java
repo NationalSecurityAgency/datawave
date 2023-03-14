@@ -156,8 +156,10 @@ public abstract class AbstractVersionFilter<A> {
      * input, as applicable.
      * 
      * @param input
+     *            the input
      * @param forceNullIfInvalid
-     * @return
+     *            boolean flag to force null
+     * @return the input
      */
     @SuppressWarnings("unchecked")
     protected A apply(final A input, boolean forceNullIfInvalid) {

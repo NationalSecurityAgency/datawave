@@ -691,7 +691,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * A convenience method that determines whether we can handle when we have exceeded the value threshold on some node. We can handle this if the Ivarators
      * can be used which required a hadoop config and a base hdfs cache directory.
      *
-     * @return
+     * @return if we can handle the exceeded value
      */
     public boolean canHandleExceededValueThreshold() {
         return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheDirConfigs && !this.ivaratorCacheDirConfigs.isEmpty());
@@ -700,7 +700,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     /**
      * A convenience method that determines whether we can handle when we have exceeded the term threshold on some node. Currently we cannot.
      *
-     * @return
+     * @return if we can handle exceeding the term threshold
      */
     public boolean canHandleExceededTermThreshold() {
         return false;
@@ -1113,7 +1113,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     /**
      * Join unevaluated fields together on comma
      *
-     * @return
+     * @return the unevaluated fields string
      */
     public String getUnevaluatedFieldsAsString() {
         return StringUtils.join(this.unevaluatedFields, Constants.PARAM_VALUE_SEP);

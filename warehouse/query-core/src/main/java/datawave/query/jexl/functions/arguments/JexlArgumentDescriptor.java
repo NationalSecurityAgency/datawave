@@ -28,8 +28,13 @@ public interface JexlArgumentDescriptor {
      * Get the nodes that can be used to determine ranges from the global index.
      *
      * @param metadataHelper
+     *            the metadata helper
      * @param dateIndexHelper
+     *            the date index helper
      * @param datatypeFilter
+     *            the datatype filter
+     * @param settings
+     *            the config settings
      * @return The query which will be used against the global index
      */
     JexlNode getIndexQuery(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter);
@@ -40,7 +45,9 @@ public interface JexlArgumentDescriptor {
      * implementations this function will do nothing. For the EvaluationPhaseFilterFunctions however this will have to be implemented.
      * 
      * @param attributeFactory
+     *            the attribute factory
      * @param filterMap
+     *            the filter map
      */
     void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap);
     
@@ -48,7 +55,9 @@ public interface JexlArgumentDescriptor {
      * Get the entire set of fields that are referenced by this function. If you need subsets of fields required to satisfy the function, then use fieldSets()
      * 
      * @param metadata
+     *            the metadata helper
      * @param datatypeFilter
+     *            the datatype filter
      * @return the set of fields
      */
     Set<String> fields(MetadataHelper metadata, Set<String> datatypeFilter);
@@ -56,9 +65,11 @@ public interface JexlArgumentDescriptor {
     /**
      * Get the fields separated into sets that are required to satisfy this function. So if one of the identifiers is actually an "OR" expression, then each of
      * the identifiers would be returned in a separate set.
-     * 
+     *
      * @param metadata
+     *            the metadata helper
      * @param datatypeFilter
+     *            the datatype filter
      * @return the set of fields
      */
     Set<Set<String>> fieldSets(MetadataHelper metadata, Set<String> datatypeFilter);
@@ -67,10 +78,13 @@ public interface JexlArgumentDescriptor {
      * Get the fields that are referenced by the specified argument in this function. Argument 0 is the first argument to the function (child node 3 of the
      * ASTFunctionNode as the first two are the namespace and function name). Note that it is very important for the string literal arguments that the set of
      * fields are correct as this will determine which normalizers are applied to that argument.
-     * 
+     *
      * @param metadata
+     *            the metadata helper
      * @param datatypeFilter
+     *            the datatype filter
      * @param arg
+     *            the node argument
      * @return the set of fields referenced by the specified arg
      */
     Set<String> fieldsForNormalization(MetadataHelper metadata, Set<String> datatypeFilter, int arg);

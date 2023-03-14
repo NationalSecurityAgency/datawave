@@ -15,6 +15,7 @@ public class RootNegationCheckVisitor {
      * Since negations may be pushed down instead of simply looking for a top level negation, look for a leaf node without a negation.
      * 
      * @param script
+     *            jexl script
      * @return true if there is no path to a leaf node without passing through a negation, false otherwise
      */
     public static Boolean hasTopLevelNegation(JexlNode script) {
@@ -30,6 +31,7 @@ public class RootNegationCheckVisitor {
      * found
      * 
      * @param node
+     *            jexl node
      * @return true if a leaf node was found, false otherwise
      */
     private boolean hasLeafWithoutNegation(JexlNode node) {

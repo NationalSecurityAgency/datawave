@@ -15,6 +15,11 @@ public class ParentEventDataFilter extends EventDataQueryExpressionFilter {
      * Initialize the query field filter with all of the fields required to evaluation this query
      * 
      * @param script
+     *            the script
+     * @param metadata
+     *            type metadata
+     * @param nonEventFields
+     *            set of non event fields
      */
     public ParentEventDataFilter(ASTJexlScript script, TypeMetadata metadata, Set<String> nonEventFields) {
         super(script, metadata, nonEventFields);

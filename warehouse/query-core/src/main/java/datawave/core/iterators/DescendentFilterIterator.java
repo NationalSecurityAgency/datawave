@@ -126,6 +126,13 @@ public class DescendentFilterIterator extends SkippingIterator implements Option
      * Determine if the specified uid is of the appropriate relationship to the parent uid
      * 
      * @param uid
+     *            the uid
+     * @param shardId
+     *            the shard id
+     * @param dataType
+     *            the data type
+     * @param parentUids
+     *            the parent uids
      * @return true if accepted, false if not
      */
     protected boolean acceptUid(String shardId, String dataType, String uid, Set<String> parentUids) {

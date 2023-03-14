@@ -32,11 +32,6 @@ public class NormalizerConfigLoader extends Loader<String,Multimap<String,Type<?
     
     private static final Logger log = Logger.getLogger(NormalizerConfigLoader.class);
     
-    /**
-     * @param conf
-     * @param configItem
-     * @throws IOException
-     */
     public NormalizerConfigLoader(final Configuration conf, String configItem) throws IOException {
         String configValue = conf.get(configItem);
         if (null != configValue) {

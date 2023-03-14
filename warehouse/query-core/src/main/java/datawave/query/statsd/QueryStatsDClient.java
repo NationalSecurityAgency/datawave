@@ -57,6 +57,8 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     
     /**
      * Get the client, creating it if needed. This should only be called when the clientMonitor has been acquired.
+     * 
+     * @return the client
      */
     private NonBlockingUdpSender client() {
         if (this.client == null) {

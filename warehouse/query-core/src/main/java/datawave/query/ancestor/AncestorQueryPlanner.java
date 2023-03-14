@@ -36,11 +36,16 @@ public class AncestorQueryPlanner extends DefaultQueryPlanner {
      * Test for top level negation in query and throw exception otherwise proceed
      * 
      * @param scannerFactory
+     *            the scanner factory
      * @param metadataHelper
+     *            the metadata helper
      * @param config
+     *            the shard config
      * @param queryTree
-     * @return
+     *            the query tree
+     * @return the query ranges
      * @throws DatawaveQueryException
+     *             for issues related to the query
      */
     @Override
     public Tuple2<CloseableIterable<QueryPlan>,Boolean> getQueryRanges(ScannerFactory scannerFactory, MetadataHelper metadataHelper,
