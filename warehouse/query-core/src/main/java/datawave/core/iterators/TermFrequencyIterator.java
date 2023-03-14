@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import datawave.core.iterators.key.TFKey;
+import datawave.query.data.parsers.TermFrequencyKey;
 import datawave.query.Constants;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
@@ -57,7 +57,7 @@ public class TermFrequencyIterator extends WrappingIterator {
     protected TreeSet<String> fields;
     protected TreeSet<String> uidsAndValues;
     
-    protected TFKey tfKey = new TFKey();
+    protected TermFrequencyKey tfKey = new TermFrequencyKey();
     
     // Wrapping iterator only accesses its private source in setSource and getSource
     // Since this class overrides these methods, it's safest to keep the source declaration here
@@ -192,11 +192,6 @@ public class TermFrequencyIterator extends WrappingIterator {
             }
             
             tfKey.parse(k);
-            
-            if (!tfKey.isValid()) {
-                log.error("Invalid tf key found: " + tfKey.getDatatype() + ":" + tfKey.getUid() + ":" + tfKey.getField());
-                continue;
-            }
             
             if (fieldValueAccepted()) {
                 topKey = k;
