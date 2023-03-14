@@ -269,8 +269,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.source = source;
         }
         
-        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
-                        .getMaxNextCount() : -1);
+        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEventNextSeek());
         
         if (isDebugMultithreadedSources()) {
             this.source = new SourceThreadTrackingIterator(this.source);
@@ -1569,6 +1568,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setIndexOnlyFields(this.getAllIndexOnlyFields())
                 .setAllowTermFrequencyLookup(this.allowTermFrequencyLookup)
                 .setCompositeMetadata(compositeMetadata)
+                .setFiNextSeek(this.getFiNextSeek())
+                .setEventNextSeek(this.getEventNextSeek())
+                .setTfNextSeek(this.getTfNextSeek())
                 .setExceededOrEvaluationCache(exceededOrEvaluationCache);
         // @formatter:on
         // TODO: .setStatsPort(this.statsdHostAndPort);
