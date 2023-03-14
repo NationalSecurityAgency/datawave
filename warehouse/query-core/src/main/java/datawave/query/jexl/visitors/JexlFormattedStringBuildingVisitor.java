@@ -44,6 +44,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      * (add necessary number of tab characters to each line). This is called after all the nodes have been visited to finalize the formatting of the query.
      * 
      * @param query
+     *            a query
      * @return the final formatted String
      */
     private static String formatBuiltQuery(String query) {
@@ -85,8 +86,10 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      * Returns true if str contains only ch characters (1 or more). False otherwise.
      * 
      * @param str
+     *            the str
      * @param ch
-     * @return
+     *            the char
+     * @return boolean
      */
     private static boolean containsOnly(String str, char ch) {
         return str.matches("^[" + ch + "]+$");
@@ -96,7 +99,8 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      * Returns true if a string contains only closing parenthesis (1 or more) followed by the and or or operator
      * 
      * @param str
-     * @return
+     *            the str
+     * @return boolean
      */
     private static boolean closeParensFollowedByAndOr(String str) {
         return str.matches("^([)]+ (&&|\\|\\|) )$");
@@ -108,7 +112,8 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      * return true.
      * 
      * @param node
-     * @return
+     *            a node
+     * @return boolean
      */
     private static boolean needNewLines(JexlNode node) {
         int numChildren = node.jjtGetNumChildren();
@@ -152,7 +157,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      * @param sortDedupeChildren
      *            Whether or not to sort the child nodes, and dedupe them. Note: Only siblings (children with the same parent node) will be deduped. Flatten
      *            beforehand for maximum 'dedupeage'.
-     * @return
+     * @return the query string
      */
     public static String buildQuery(JexlNode script, boolean sortDedupeChildren) {
         JexlFormattedStringBuildingVisitor visitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren);
@@ -188,7 +193,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      *
      * @param script
      *            An ASTJexlScript
-     * @return
+     * @return query string
      */
     public static String buildQuery(JexlNode script) {
         return buildQuery(script, false);
@@ -202,7 +207,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      * @param sortDedupeChildren
      *            Whether or not to sort the child nodes, and dedupe them. Note: Only siblings (children with the same parent node) will be deduped. Flatten
      *            beforehand for maximum 'dedupeage'.
-     * @return
+     * @return query string
      */
     public static String buildQueryWithoutParse(JexlNode script, boolean sortDedupeChildren) {
         JexlFormattedStringBuildingVisitor visitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren);
@@ -224,7 +229,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      *
      * @param script
      *            An ASTJexlScript
-     * @return
+     * @return query string
      */
     public static String buildQueryWithoutParse(JexlNode script) {
         return buildQueryWithoutParse(script, false);

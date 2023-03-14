@@ -65,6 +65,8 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
     
     /**
      * This method is used to get an explanation of how we arrived at the provided context().
+     * 
+     * @return the context string
      */
     String getContextDebug();
     

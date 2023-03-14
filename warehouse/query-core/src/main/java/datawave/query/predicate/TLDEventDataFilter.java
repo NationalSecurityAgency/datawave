@@ -81,6 +81,25 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * Initialize the query field filter with all of the fields required to evaluation this query
      * 
      * @param script
+     *            - script
+     * @param attributeFactory
+     *            - attributeFactory
+     * @param blacklist
+     *            - blacklist
+     * @param limitFieldsField
+     *            - limitFieldsField
+     * @param limitFieldsMap
+     *            - limitFieldsMap
+     * @param maxFieldsBeforeSeek
+     *            - maxFieldsBeforeSeek
+     * @param maxKeysBeforeSeek
+     *            - maxFieldsBeforeSeek
+     * @param nonEventFields
+     *            - nonEventFields
+     * @param queryFields
+     *            - queryFields
+     * @param whitelist
+     *            - whitelist
      */
     public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist,
                     long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField, Set<String> nonEventFields) {
@@ -135,6 +154,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * returns true and keep() returns true the key will be used for context evaluation and returned to the client.
      * 
      * @param input
+     *            an input
      * @return true if Key should be added to context, false otherwise
      */
     @Override
@@ -175,7 +195,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * Define the end key given the from condition.
      * 
      * @param from
-     * @return
+     *            the from key
+     * @return the stop key
      */
     @Override
     public Key getStopKey(Key from) {
@@ -190,6 +211,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * @see datawave.query.predicate.Filter#keep(Key)
      *
      * @param k
+     *            a key
      * @return true to keep, false otherwise
      */
     @Override
@@ -340,7 +362,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      *            the current range endKey
      * @param endKeyInclusive
      *            the endKeyInclusive flag from the current range
-     * @return
+     * @return the new range or null if a seek should not be performed
      */
     @Override
     public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
@@ -536,7 +558,9 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      *
      * @param end
+     *            the end key
      * @param endInclusive
+     *            end inclusive flag
      * @return return an empty range based to be seeked
      */
     protected Range getEmptyRange(Key end, boolean endInclusive) {
@@ -768,7 +792,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * Parse the field from a key. The field will always be stripped of grouping notation since that is how they have been parsed from the original query
      * 
      * @param current
-     * @return
+     *            the current key
+     * @return the field string
      */
     protected String getCurrentField(Key current) {
         ByteSequence cf = current.getColumnFamilyData();

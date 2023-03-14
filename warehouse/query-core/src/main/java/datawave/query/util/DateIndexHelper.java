@@ -129,7 +129,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                             new Exception("exception for debug purposes"));
         return new DateIndexHelper();
     }
-    
+
     /**
      * Initializes the instance with a provided update interval.
      * 
@@ -139,6 +139,11 @@ public class DateIndexHelper implements ApplicationContextAware {
      *            The name of the date index table
      * @param auths
      *            Any {@link Authorizations} to use
+     * @param numQueryThreads
+     *            number of query threads
+     * @param collapseDatePercentThreshold
+     *            the date percent threshold
+     * @return the instance
      */
     public DateIndexHelper initialize(AccumuloClient client, String dateIndexTableName, Set<Authorizations> auths, int numQueryThreads,
                     float collapseDatePercentThreshold) {
@@ -146,7 +151,7 @@ public class DateIndexHelper implements ApplicationContextAware {
             log.warn("Attempting to create a date index helper however the date index table name is empty");
             return null;
         }
-        
+
         this.client = client;
         this.dateIndexTableName = dateIndexTableName;
         this.auths = auths;
@@ -203,11 +208,16 @@ public class DateIndexHelper implements ApplicationContextAware {
      * Get the date type description which includes the fields and the mapped date range.
      * 
      * @param dateType
+     *            date type
      * @param begin
+     *            begin date
      * @param end
+     *            end date
      * @param datatypeFilter
+     *            data type filter
      * @return the date type description
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     @Cacheable(value = "getTypeDescription", key = "{#root.target.dateIndexTableName,#root.target.auths,#dateType,#begin,#end,#datatypeFilter}",
                     cacheManager = "dateIndexHelperCacheManager")
@@ -289,6 +299,7 @@ public class DateIndexHelper implements ApplicationContextAware {
      *            The data type filter
      * @return A string of comma delimited days and shards, order unspecified
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     @Cacheable(
                     value = "getShardsAndDaysHint",

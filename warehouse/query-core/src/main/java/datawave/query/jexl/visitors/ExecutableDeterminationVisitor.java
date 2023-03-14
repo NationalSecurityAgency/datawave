@@ -131,40 +131,57 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
          * Write a line to the output, and potentially add it to the summary contributors
          * 
          * @param prefix
+         *            the prefix
          * @param node
+         *            the node
          * @param state
+         *            the state
          * @param partOfSummary
+         *            flag for the partOfSummary
          */
         void writeLine(Object prefix, JexlNode node, STATE state, boolean partOfSummary);
         
         /**
          * Write a line to the output, and potentially add it to the summary contributors
-         * 
+         *
          * @param prefix
+         *            the prefix
          * @param node
-         * @param extra
+         *            the node
          * @param state
+         *            the state
+         * @param extra
+         *            an extra string
          * @param partOfSummary
+         *            flag for the partOfSummary
          */
         void writeLine(Object prefix, JexlNode node, String extra, STATE state, boolean partOfSummary);
         
         /**
          * Write a formatted query string for the node to the output, and potentially add it to the summary contributors
-         * 
+         *
          * @param prefix
+         *            the prefix
          * @param node
+         *            the node
          * @param state
+         *            the state
          * @param partOfSummary
+         *            flag for the partOfSummary
          */
         void writeNode(Object prefix, JexlNode node, STATE state, boolean partOfSummary);
         
         /**
          * Write a line to the output, and potentially add it to the summary contributors
-         * 
+         *
          * @param prefix
+         *            the prefix
          * @param value
+         *            the value
          * @param state
+         *            the state
          * @param partOfSummary
+         *            flag for the partOfSummary
          */
         void writeLine(Object prefix, String value, STATE state, boolean partOfSummary);
         
@@ -183,6 +200,8 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         /**
          * Pop a map of summary contributors off the stack, adding contained states to the new top-of-stack.
          * 
+         * @param states
+         *            set of states
          * @return the popped off summary contributer map
          */
         Multimap<STATE,String> pop(Set<STATE> states);
@@ -191,7 +210,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
          * Move contributors from one state to another
          * 
          * @param state
+         *            the first state
          * @param newState
+         *            the new state
          */
         void move(STATE state, STATE newState);
         
@@ -489,6 +510,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     
     /**
      * allOrNone means that all contained children must be executable for this node to be executable. Used for expressions, scripts, and or nodes.
+     * 
+     * @param node
+     *            the node
+     * @param data
+     *            data object
+     * @return a state
      */
     protected STATE allOrNone(JexlNode node, Object data) {
         STATE state;
@@ -566,6 +593,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     /**
      * allOrSome means that some of the nodes must be executable for this to be executable. Any partial state results in a partial state however. Used for and
      * nodes.
+     * 
+     * @param node
+     *            the node
+     * @param data
+     *            data object
+     * @return a state
      */
     protected STATE allOrSome(JexlNode node, Object data) {
         STATE state;

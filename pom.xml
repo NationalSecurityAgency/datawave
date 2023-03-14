@@ -1907,17 +1907,8 @@
                                         </pluginExecution>
                                         <pluginExecution>
                                             <pluginExecutionFilter>
-                                                <profile>
-                                                    <id>microservices</id>
-                                                    <activation>
-                                                        <property>
-                                                            <name>!skipMicroservices</name>
-                                                        </property>
-                                                    </activation>
-                                                    <modules>
-                                                        <module>microservices</module>
-                                                    </modules>
-                                                </profile>
+                                                <groupId>net.revelc.code</groupId>
+                                                <artifactId>formatter-maven-plugin</artifactId>
                                                 <versionRange>[0.5.0,)</versionRange>
                                                 <goals>
                                                     <goal>format</goal>

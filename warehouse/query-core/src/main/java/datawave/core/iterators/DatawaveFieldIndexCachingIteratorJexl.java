@@ -698,6 +698,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * to maintain the position in the FI for reseeking purposes
      *
      * @param key
+     *            a key
+     * @param keyType
+     *            the key type
      * @return Key(shardId, datatype\0UID)
      */
     public Key buildEventKey(Key key, PartialKey keyType) {
@@ -734,6 +737,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     /**
      * Since we are looking for a regular expression and not a specified value, we have to scan the entire range so that we can return the key/values in a
      * sorted order. We are using an Hdfs backed sorted set to this end.
+     * 
+     * @throws IOException
+     *             if there are issues with read/write
      */
     protected void findTop() throws IOException {
         
@@ -986,6 +992,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     
     /**
      * Was the timed out flag set.
+     * 
+     * @return a boolean if timed out
      */
     protected boolean isTimedOut() {
         return this.timedOut;
@@ -1021,6 +1029,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     
     /**
      * Return a source copy to the source pool.
+     * 
+     * @param source
+     *            a source
      */
     protected void returnPoolSource(SortedKeyValueIterator<Key,Value> source) {
         try {
@@ -1034,9 +1045,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * Add the key to the underlying cached set if it passes the filters and the matches call.
      * 
      * @param topFiKey
+     *            the top index key
      * @param value
+     *            the value
      * @return true if it matched
      * @throws IOException
+     *             for issues with read/write
      */
     protected boolean addKey(Key topFiKey, Value value) throws IOException {
         if (log.isTraceEnabled()) {
@@ -1070,6 +1084,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * This method will asynchronously fill the set with matches from within the specified bounding FI range.
      * 
      * @param boundingFiRange
+     *            the bounding index range
+     * @param totalResults
+     *            total results
      * @return the Future
      */
     protected Future<?> fillSet(final Range boundingFiRange, final TotalResults totalResults) {
@@ -1208,7 +1225,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * Get the unique directory for a specific row
      *
      * @param uniqueDir
+     *            the unique directory
      * @param row
+     *            a row
      * @return the unique dir
      */
     protected Path getRowDir(Path uniqueDir, String row) {
@@ -1219,6 +1238,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * Clear out the current row based hdfs backed set
      * 
      * @throws IOException
+     *             for issues with read/write
      */
     protected void clearRowBasedHdfsBackedSet() throws IOException {
         this.keys = null;
@@ -1230,7 +1250,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * This will setup the set for the specified range. This will attempt to reuse precomputed and persisted sets if we are allowed to.
      * 
      * @param row
+     *            a row
      * @throws IOException
+     *             for issues with read/write
      */
     protected void setupRowBasedHdfsBackedSet(String row) throws IOException {
         // we are done if cancelled
@@ -1287,7 +1309,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * superclasses). If multiple are returned, then they must be sorted. These ranges are expected to be exclusively in the field index!
      * 
      * @param rowId
-     * @return
+     *            a row id
+     * @param fieldValue
+     *            the field value
+     * @param fiName
+     *            the field index name
+     * @return a list of ranges
      */
     @SuppressWarnings("hiding")
     protected abstract List<Range> buildBoundingFiRanges(Text rowId, Text fiName, Text fieldValue);
@@ -1296,6 +1323,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * Does the last range seeked contain the passed in range
      * 
      * @param r
+     *            the range
      * @return true if there is a last seeked range and it contains the passed in range
      */
     protected boolean lastRangeSeekedContains(Range r) {
@@ -1385,7 +1413,10 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * Does this key match. Note we are not overriding the super.isMatchingKey() as we need that to work as is NOTE: This method must be thread safe
      * 
      * @param k
-     * @return
+     *            the key
+     * @return a boolean based on if the key matches
+     * @throws IOException
+     *             for issues with read/write
      */
     protected abstract boolean matches(Key k) throws IOException;
     
@@ -1393,6 +1424,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * A protected method to force persistence of the set. This can be used by test cases to verify tear down and rebuilding with reuse of the previous results.
      * 
      * @throws IOException
+     *             for issues with read/write
      */
     protected void forcePersistence() throws IOException {
         if (this.set != null && !this.set.isPersisted()) {

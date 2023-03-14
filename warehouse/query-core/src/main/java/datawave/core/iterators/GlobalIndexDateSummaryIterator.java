@@ -119,6 +119,9 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
     
     /**
      * This method aggregates all information from the global index for a term for one day, type, and fieldname.
+     * 
+     * @throws IOException
+     *             for issues with read/write
      */
     protected void findTop() throws IOException {
         if (log.isDebugEnabled()) {
@@ -163,6 +166,7 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
      * 
      * @return The next valid term info.
      * @throws IOException
+     *             for issues with read/write
      */
     protected TermInfo getNextValidTermInfo() throws IOException {
         while (this.iterator.hasTop()) {
@@ -180,6 +184,7 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
      * 
      * @return The next term info
      * @throws IOException
+     *             for issues with read/write
      */
     protected TermInfo getNextTermInfo() throws IOException {
         return new TermInfo(this.iterator.getTopKey(), this.iterator.getTopValue());

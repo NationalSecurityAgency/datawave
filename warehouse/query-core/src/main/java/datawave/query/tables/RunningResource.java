@@ -91,10 +91,13 @@ public class RunningResource extends AccumuloResource {
     
     /**
      * Initializes the scanner resource
-     * 
+     *
      * @param auths
+     *            the auths
      * @param tableName
+     *            a table name
      * @throws TableNotFoundException
+     *             if the table was not found
      * 
      */
     @Override
@@ -130,7 +133,8 @@ public class RunningResource extends AccumuloResource {
      * Sets the option on this currently running resource.
      * 
      * @param options
-     * @return
+     *            the options to set
+     * @return the current resource
      */
     @Override
     public AccumuloResource setOptions(SessionOptions options) {
@@ -155,7 +159,7 @@ public class RunningResource extends AccumuloResource {
     /**
      * Return the iterator for this currently running resource.
      * 
-     * @return
+     * @return the iterator
      */
     public Iterator<Entry<Key,Value>> iterator() {
         return baseScanner.iterator();
@@ -164,7 +168,7 @@ public class RunningResource extends AccumuloResource {
     /**
      * Returns the currently running scan
      * 
-     * @return
+     * @return current scan
      */
     public ScannerBase getRunningResource() {
         return baseScanner;

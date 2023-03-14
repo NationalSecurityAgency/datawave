@@ -284,6 +284,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
          * A helper method to clone a set of filters
          * 
          * @param filters
+         *            set of filters
          * @return a cloned set of filters
          */
         public static Map<String,? extends PeekingPredicate<Key>> clone(Map<String,? extends PeekingPredicate<Key>> filters) {
@@ -302,6 +303,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
          * A helper method to reset a set of filters
          *
          * @param filters
+         *            set of filters
          */
         public static void reset(Map<String,? extends PeekingPredicate<Key>> filters) {
             for (Map.Entry<String,? extends PeekingPredicate<Key>> entry : filters.entrySet()) {
@@ -333,7 +335,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
      * @param node
      *            the node that should be used to build the expression filters
      * @param factory
-     * @return
+     *            An AttributeFactory used when generating normalized attributes.
+     * @return a map of expression filters
      */
     public static Map<String,ExpressionFilter> getExpressionFilters(JexlNode node, AttributeFactory factory) {
         final EventDataQueryExpressionVisitor v = new EventDataQueryExpressionVisitor(factory);
@@ -458,7 +461,9 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
      * generate value filter based on IdentifierOpLiteral
      *
      * @param iol
+     *            the op literal
      * @param isPattern
+     *            boolean flag to check for a pattern
      */
     protected void generateValueFilter(JexlASTHelper.IdentifierOpLiteral iol, boolean isPattern) {
         generateValueFilter(iol, isPattern, false);
@@ -468,8 +473,11 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
      * conditionally generate value filter based on IdentifierOpLiteral and handle isAcceptAll case
      *
      * @param iol
+     *            the op literal
      * @param isPattern
+     *            boolean flag to check for a pattern
      * @param isAcceptAll
+     *            boolean flag for accept all
      */
     protected void generateValueFilter(JexlASTHelper.IdentifierOpLiteral iol, boolean isPattern, boolean isAcceptAll) {
         if (iol != null) {

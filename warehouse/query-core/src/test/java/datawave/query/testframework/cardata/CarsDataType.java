@@ -203,7 +203,9 @@ public class CarsDataType extends AbstractDataTypeConfig {
      * @param config
      *            hadoop field configuration
      * @throws IOException
+     *             for IO exceptions
      * @throws URISyntaxException
+     *             for URI Syntax exceptions
      */
     public CarsDataType(final String car, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
         super(car, ingestFile, config, carManager);

@@ -133,7 +133,7 @@ public class SortedByteSetBuffer extends AbstractSet<byte[]> implements SortedSe
         return get(size - 1);
     }
     
-    /***************************** Other public methods *************************/
+    /* Other public methods */
     
     public byte[] get(int index) {
         if (index < 0 || index >= size) {
@@ -146,7 +146,7 @@ public class SortedByteSetBuffer extends AbstractSet<byte[]> implements SortedSe
         return term;
     }
     
-    /******************************* The protected stuff ***************************/
+    /* The protected stuff */
     
     protected void checkCapacity(int plusSize) {
         int plusLen = 1;
@@ -225,7 +225,8 @@ public class SortedByteSetBuffer extends AbstractSet<byte[]> implements SortedSe
      * A binary search of the byte array based on a sorted index array
      * 
      * @param term
-     * @return
+     *            aterm
+     * @return location result of the search
      */
     protected int binarySearch(byte[] term) {
         return binarySearch(term, 0, this.size - 1);

@@ -42,7 +42,6 @@ import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
-import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
@@ -761,7 +760,7 @@ public class QueryOptions implements OptionDescriber {
     /**
      * Get the fields that contain data that may not be in the event
      *
-     * @return
+     * @return a set of event fields
      */
     public Set<String> getNonEventFields() {
         Set<String> nonEventFields = new HashSet<>();
@@ -1368,9 +1367,9 @@ public class QueryOptions implements OptionDescriber {
                 HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
                 
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
-                if (options.containsKey(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)) {
-                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, Integer.parseInt(options
-                                    .get(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)));
+                
+                if (options.containsKey(FI_NEXT_SEEK)) {
+                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, getFiNextSeek());
                 } else {
                     this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed);
                 }
@@ -1395,8 +1394,7 @@ public class QueryOptions implements OptionDescriber {
             this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
         }
         
-        this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
-                        .getMaxNextCount() : -1);
+        this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEventNextSeek());
         
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
             this.ignoreColumnFamilies = buildIgnoredColumnFamilies(options.get(IGNORE_COLUMN_FAMILIES));
@@ -1736,7 +1734,8 @@ public class QueryOptions implements OptionDescriber {
      * Restore the mapping of field name to dataTypes from a String-ified representation
      *
      * @param data
-     * @return
+     *            the data
+     * @return a mapping of field name to data types
      */
     public static Map<String,Set<String>> buildFieldDataTypeMap(String data) {
         
@@ -1797,7 +1796,8 @@ public class QueryOptions implements OptionDescriber {
      * Build a String-ified version of the Map to serialize to this SKVI.
      *
      * @param map
-     * @return
+     *            a map to normalize
+     * @return the string representation of the map
      */
     public static String buildFieldNormalizerString(Map<String,Set<String>> map) {
         StringBuilder sb = new StringBuilder();
@@ -1827,7 +1827,8 @@ public class QueryOptions implements OptionDescriber {
      * Build a String-ified version of the Map to serialize to this SKVI.
      *
      * @param map
-     * @return
+     *            a map to normalize
+     * @return the string representation of the map
      */
     public static String buildFieldNormalizerString(Multimap<String,Type<?>> map) {
         StringBuilder sb = new StringBuilder();

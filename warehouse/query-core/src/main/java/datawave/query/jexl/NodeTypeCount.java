@@ -21,6 +21,7 @@ public class NodeTypeCount {
      * Increment the count for the specified node type by 1.
      *
      * @param type
+     *            the node type
      */
     public void increment(Class<? extends Node> type) {
         typeTotals.compute(type.getName(), (key, val) -> (val == null) ? 1 : val + 1);
@@ -159,7 +160,7 @@ public class NodeTypeCount {
     /**
      * Return a formatted line-by-line string of the node type counts in alphabetical order.
      * 
-     * @return
+     * @return the formatted string
      */
     public String toPrettyString() {
         StringBuilder sb = new StringBuilder();

@@ -80,10 +80,6 @@ public class CompositeTerm extends Composite {
         }
     }
     
-    /**
-     *
-     * @return
-     */
     private String getAppendedExpressions() {
         return String.join(separator, expressionList);
     }

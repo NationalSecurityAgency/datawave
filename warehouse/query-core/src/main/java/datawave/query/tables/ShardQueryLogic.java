@@ -462,6 +462,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     /**
      * Validate that the configuration is in a consistent state
      *
+     * @param config
+     *            the config
      * @throws IllegalArgumentException
      *             when config constraints are violated
      */
@@ -1024,11 +1026,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * Loads a query Model
      *
      * @param helper
+     *            the metadata helper
      * @param config
+     *            the config
      * @throws InstantiationException
+     *             for problems with instantiation
      * @throws IllegalAccessException
+     *             for illegal access exceptions
      * @throws TableNotFoundException
+     *             if the table is not found
      * @throws ExecutionException
+     *             for execution exceptions
      */
     protected void loadQueryModel(MetadataHelper helper, ShardQueryConfiguration config) throws InstantiationException, IllegalAccessException,
                     TableNotFoundException, ExecutionException {
@@ -2077,10 +2085,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setRealmSuffixExclusionPatterns(List<String> realmSuffixExclusionPatterns) {
         getConfig().setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
     }
-    
-    /**
-     * @return
-     */
+
     public String getAccumuloPassword() {
         return getConfig().getAccumuloPassword();
     }

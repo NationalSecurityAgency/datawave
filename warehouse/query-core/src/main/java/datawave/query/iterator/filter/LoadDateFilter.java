@@ -50,6 +50,9 @@ public class LoadDateFilter extends DateTypeFilter {
      * Method to setup the jexl query expression from the iterator options for evaluation.
      *
      * @param options
+     *            map of options
+     * @throws IOException
+     *             for issues with read/write
      */
     private void initOptions(Map<String,String> options) throws IOException {
         
@@ -70,7 +73,9 @@ public class LoadDateFilter extends DateTypeFilter {
      * Determines if the edge key satisfies the conditions expressed in the supplied JEXL query string.
      *
      * @param k
+     *            key
      * @param V
+     *            value
      * @return boolean - true if it is a match.
      */
     @Override

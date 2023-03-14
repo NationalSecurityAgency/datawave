@@ -37,9 +37,6 @@ public class MockLoader extends CacheLoader<LoaderKey,InMemoryInstance> {
     
     public static final byte[] MOCK_PASSWORD = "".getBytes();
     
-    /**
-     * @param listeningDecorator
-     */
     public MockLoader(ListeningExecutorService listeningDecorator) {
         executorService = listeningDecorator;
     }
