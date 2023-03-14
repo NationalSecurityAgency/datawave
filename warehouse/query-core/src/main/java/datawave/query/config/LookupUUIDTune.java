@@ -31,6 +31,11 @@ public class LookupUUIDTune implements Profile {
     protected boolean speculativeScanning = false;
     protected int maxFieldHitsBeforeSeek = -1;
     protected int maxKeysBeforeSeek = -1;
+    // lookup uuid profiles can override seeking configs for field index and event keys
+    protected int fiFieldSeek = -1;
+    protected int fiNextSeek = -1;
+    protected int eventFieldSeek = -1;
+    protected int eventNextSeek = -1;
     protected String queryIteratorClass = TLDQueryIterator.class.getCanonicalName();
     protected int maxShardsPerDayThreshold = -1;
     protected int pageByteTrigger = -1;
@@ -57,6 +62,11 @@ public class LookupUUIDTune implements Profile {
             rsq.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
             rsq.setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
             rsq.setReduceQueryFields(reduceQueryFields);
+            
+            rsq.setFiFieldSeek(getFiFieldSeek());
+            rsq.setFiNextSeek(getFiNextSeek());
+            rsq.setEventFieldSeek(getEventFieldSeek());
+            rsq.setEventNextSeek(getEventNextSeek());
             
             if (querySyntaxParsers != null) {
                 rsq.setQuerySyntaxParsers(querySyntaxParsers);
@@ -125,6 +135,11 @@ public class LookupUUIDTune implements Profile {
             if (maxShardsPerDayThreshold != -1) {
                 rsqc.setShardsPerDayThreshold(maxShardsPerDayThreshold);
             }
+            
+            rsqc.setFiFieldSeek(getFiFieldSeek());
+            rsqc.setFiNextSeek(getFiNextSeek());
+            rsqc.setEventFieldSeek(getEventFieldSeek());
+            rsqc.setEventNextSeek(getEventNextSeek());
             
             // we need this since we've finished the deep copy already
             rsqc.setSpeculativeScanning(speculativeScanning);
@@ -204,6 +219,38 @@ public class LookupUUIDTune implements Profile {
     
     public int getMaxKeysBeforeSeek() {
         return maxKeysBeforeSeek;
+    }
+    
+    public int getFiFieldSeek() {
+        return fiFieldSeek;
+    }
+    
+    public void setFiFieldSeek(int fiFieldSeek) {
+        this.fiFieldSeek = fiFieldSeek;
+    }
+    
+    public int getFiNextSeek() {
+        return fiNextSeek;
+    }
+    
+    public void setFiNextSeek(int fiNextSeek) {
+        this.fiNextSeek = fiNextSeek;
+    }
+    
+    public int getEventFieldSeek() {
+        return eventFieldSeek;
+    }
+    
+    public void setEventFieldSeek(int eventFieldSeek) {
+        this.eventFieldSeek = eventFieldSeek;
+    }
+    
+    public int getEventNextSeek() {
+        return eventNextSeek;
+    }
+    
+    public void setEventNextSeek(int eventNextSeek) {
+        this.eventNextSeek = eventNextSeek;
     }
     
     public void setQueryIteratorClass(String queryIteratorClass) {
