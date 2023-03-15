@@ -25,7 +25,7 @@ import static datawave.security.authorization.DatawaveUser.ANONYMOUS_USER;
 @XmlRootElement
 @XmlType(factoryMethod = "anonymousPrincipal", propOrder = {"name", "proxiedUsers", "creationTime"})
 @XmlAccessorType(XmlAccessType.NONE)
-public class DatawavePrincipal implements Principal, Serializable {
+public class DatawavePrincipal implements ProxiedUserDetails, Principal, Serializable {
     private final String username;
     private final DatawaveUser primaryUser;
     @XmlElement
