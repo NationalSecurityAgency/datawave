@@ -54,6 +54,8 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
     private static final Logger log = Logger.getLogger(GeoFunctionsDescriptor.class);
     
     private static final int NUM_CIRCLE_POINTS = 60;
+    private static final String WITHIN_BOUNDING_BOX = "within_bounding_box";
+    private static final String WITHIN_CIRCLE = "within_circle";
     
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
@@ -80,7 +82,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
             // return the true node if unable to parse arguments
             JexlNode returnNode = TRUE_NODE;
             
-            if (name.equals("within_bounding_box")) {
+            if (name.equals(WITHIN_BOUNDING_BOX)) {
                 
                 GeoNormalizer geoNormalizer = ((GeoNormalizer) Normalizer.GEO_NORMALIZER);
                 
@@ -159,7 +161,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                                         BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode, leLatNode)))));
                     }
                 }
-            } else if (name.equals("within_circle")) {
+            } else if (name.equals(WITHIN_CIRCLE)) {
                 
                 String center = args.get(1).image;
                 GeoType gn = new GeoType();
@@ -251,7 +253,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
         @Override
         public Set<String> fieldsForNormalization(MetadataHelper helper, Set<String> datatypeFilter, int arg) {
             if (arg > 0) {
-                if (name.equals("within_bounding_box")) {
+                if (name.equals(WITHIN_BOUNDING_BOX)) {
                     if (args.size() == 6) {
                         if (arg == 2 || arg == 4) {
                             return JexlASTHelper.getIdentifierNames(args.get(0));
@@ -270,7 +272,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
         
         @Override
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
-            if (name.equals("within_bounding_box") && args.size() == 6) {
+            if (name.equals(WITHIN_BOUNDING_BOX) && args.size() == 6) {
                 Set<String> fields = new HashSet<>();
                 fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
                 fields.addAll(JexlASTHelper.getIdentifierNames(args.get(1)));
@@ -282,7 +284,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
         
         @Override
         public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
-            if (name.equals("within_bounding_box") && args.size() == 6) {
+            if (name.equals(WITHIN_BOUNDING_BOX) && args.size() == 6) {
                 // if we have an or node anywhere, then we need to produce a cartesion product
                 return JexlArgumentDescriptor.Fields.product(args.get(0), args.get(1));
             } else {
@@ -308,7 +310,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
         public String getWkt() {
             String wkt = null;
             
-            if (name.equals("within_bounding_box")) {
+            if (name.equals(WITHIN_BOUNDING_BOX)) {
                 if (args.size() == 3) {
                     GeoNormalizer geoNormalizer = ((GeoNormalizer) Normalizer.GEO_NORMALIZER);
                     double[] ll = geoNormalizer.parseLatLon(args.get(1).image);
@@ -342,7 +344,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         wkt = createRectangle(minLon, maxLon, minLat, maxLat).toText();
                     }
                 }
-            } else if (name.equals("within_circle")) {
+            } else if (name.equals(WITHIN_CIRCLE)) {
                 String center = args.get(1).image;
                 
                 try {
@@ -422,7 +424,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
             String wkt = null;
             
             // only allow conversion to geowave function for the indexed geo types, not the individual lat/lon fields
-            if ((name.equals("within_bounding_box") && args.size() == 3) || name.equals("within_circle")) {
+            if ((name.equals(WITHIN_BOUNDING_BOX) && args.size() == 3) || name.equals(WITHIN_CIRCLE)) {
                 wkt = getWkt();
             }
             
@@ -485,12 +487,12 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
     }
     
     private static void verify(String name, int numArgs) {
-        if (name.equals("within_bounding_box")) {
+        if (name.equals(WITHIN_BOUNDING_BOX)) {
             // three arguments is the form within_bounding_box(fieldName, lowerLeft, upperRight)
             if (numArgs != 3 && numArgs != 6) {
                 throw new IllegalArgumentException("Wrong number of arguments to within_bounding_box function");
             }
-        } else if (name.equals("within_circle")) {
+        } else if (name.equals(WITHIN_CIRCLE)) {
             if (numArgs != 3) {
                 throw new IllegalArgumentException("Wrong number of arguments to within_circle function");
             }
