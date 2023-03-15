@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>5.1.1-SNAPSHOT</version>
+        <version>5.1.1</version>
     </parent>
     <artifactId>datawave-edge-model-configuration-core</artifactId>
     <packaging>jar</packaging>
