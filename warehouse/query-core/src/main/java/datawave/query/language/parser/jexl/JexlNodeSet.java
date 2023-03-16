@@ -198,7 +198,8 @@ public class JexlNodeSet implements Set<JexlNode> {
      * Convenience method to perform a bulk add without generating new node keys.
      *
      * @param other
-     * @return
+     *            the jexl set
+     * @return if the set has been modified
      */
     private boolean directAddAll(JexlNodeSet other) {
         boolean modified = false;
@@ -259,7 +260,8 @@ public class JexlNodeSet implements Set<JexlNode> {
      * {@link datawave.query.jexl.nodes.QueryPropertyMarker} nodes when generating the node key.
      *
      * @param node
-     * @return
+     *            the provided node
+     * @return the string key
      */
     public String buildKey(JexlNode node) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);

@@ -167,8 +167,10 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
      * if either one are Dates, try to
      * 
      * @param left
+     *            the left date
      * @param right
-     * @return
+     *            the right date
+     * @return if we can subtract the dates
      */
     public Object subtract(Object left, Object right) {
         if (left == null && right == null) {
@@ -248,7 +250,8 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
      * This method deals with the ValueTuple objects and turns them into the normalized value parts
      *
      * @param o
-     * @return
+     *            an object
+     * @return the normalized values
      */
     protected Object normalizedValues(Object o) {
         if (o instanceof Set) {
@@ -320,6 +323,10 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
     
     /**
      * some of our nodes evaluate to a collection of matches. Coerce this collection to true or false based on the size of matches
+     * 
+     * @param val
+     *            a value
+     * @return a boolean
      */
     @Override
     public boolean toBoolean(Object val) {

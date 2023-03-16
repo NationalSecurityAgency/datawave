@@ -48,8 +48,10 @@ public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
      * delayedNonEventFieldMapNodes.
      * 
      * @param node
+     *            the node
      * @param data
-     * @return
+     *            the data
+     * @return the result of the visit
      */
     @Override
     public Object visit(ASTAndNode node, Object data) {

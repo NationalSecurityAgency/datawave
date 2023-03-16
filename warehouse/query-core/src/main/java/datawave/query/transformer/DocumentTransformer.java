@@ -40,8 +40,13 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
      * By default, assume each cell still has the visibility attached to it
      *
      * @param logic
+     *            the query logic
      * @param settings
+     *            query settings
      * @param responseObjectFactory
+     *            the response object factory
+     * @param markingFunctions
+     *            the marking functions
      */
     public DocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {

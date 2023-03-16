@@ -43,7 +43,6 @@ import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
-import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
@@ -257,6 +256,14 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String EXCERPT_ITERATOR = "excerpt.iterator.class";
     
+    // field and next thresholds before a seek is issued
+    public static final String FI_FIELD_SEEK = "fi.field.seek";
+    public static final String FI_NEXT_SEEK = "fi.next.seek";
+    public static final String EVENT_FIELD_SEEK = "event.field.seek";
+    public static final String EVENT_NEXT_SEEK = "event.next.seek";
+    public static final String TF_FIELD_SEEK = "tf.field.seek";
+    public static final String TF_NEXT_SEEK = "tf.next.seek";
+    
     protected Map<String,String> options;
     
     protected String scanId;
@@ -406,6 +413,14 @@ public class QueryOptions implements OptionDescriber {
     
     protected Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
     
+    // off by default, controls when to issue a seek
+    private int fiFieldSeek = -1;
+    private int fiNextSeek = -1;
+    private int eventFieldSeek = -1;
+    private int eventNextSeek = -1;
+    private int tfFieldSeek = -1;
+    private int tfNextSeek = -1;
+    
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -506,6 +521,12 @@ public class QueryOptions implements OptionDescriber {
         this.excerptFields = other.excerptFields;
         this.excerptIterator = other.excerptIterator;
         
+        this.fiFieldSeek = other.fiFieldSeek;
+        this.fiNextSeek = other.fiNextSeek;
+        this.eventFieldSeek = other.eventFieldSeek;
+        this.eventNextSeek = other.eventNextSeek;
+        this.tfFieldSeek = other.tfFieldSeek;
+        this.tfNextSeek = other.tfNextSeek;
     }
     
     public String getQuery() {
@@ -739,7 +760,7 @@ public class QueryOptions implements OptionDescriber {
     /**
      * Get the fields that contain data that may not be in the event
      *
-     * @return
+     * @return a set of event fields
      */
     public Set<String> getNonEventFields() {
         Set<String> nonEventFields = new HashSet<>();
@@ -1144,6 +1165,12 @@ public class QueryOptions implements OptionDescriber {
                                         + "', will use the default shared Active Query Log instance. If provided otherwise, uses a separate distinct Active Query Log that will include the unique name in log messages.");
         options.put(EXCERPT_FIELDS, "excerpt fields");
         options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
+        options.put(FI_FIELD_SEEK, "The number of fields traversed by a Field Index data filter or aggregator before a seek is issued");
+        options.put(FI_NEXT_SEEK, "The number of next calls made by a Field Index data filter or aggregator before a seek is issued");
+        options.put(EVENT_FIELD_SEEK, "The number of fields traversed by an Event data filter or aggregator before a seek is issued");
+        options.put(EVENT_NEXT_SEEK, "The number of next calls made by an Event data filter or aggregator before a seek is issued");
+        options.put(TF_FIELD_SEEK, "The number of fields traversed by a Term Frequency data filter or aggregator before a seek is issued");
+        options.put(TF_NEXT_SEEK, "The number of next calls made by a Term Frequency data filter or aggregator before a seek is issued");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
     
@@ -1273,8 +1300,6 @@ public class QueryOptions implements OptionDescriber {
             }
         }
         
-        // log.info("Performing regular query : queryId=" + this.queryId);
-        
         this.equality = new PrefixEquality(PartialKey.ROW_COLFAM);
         this.evaluationFilter = null;
         this.getDocumentKey = GetStartKey.instance();
@@ -1311,15 +1336,40 @@ public class QueryOptions implements OptionDescriber {
             this.includeHierarchyFields = Boolean.parseBoolean(options.get(INCLUDE_HIERARCHY_FIELDS));
         }
         
+        // parse seek thresholds before building filters/aggregators
+        if (options.containsKey(FI_FIELD_SEEK)) {
+            this.fiFieldSeek = Integer.parseInt(options.get(FI_FIELD_SEEK));
+        }
+        
+        if (options.containsKey(FI_NEXT_SEEK)) {
+            this.fiNextSeek = Integer.parseInt(options.get(FI_NEXT_SEEK));
+        }
+        
+        if (options.containsKey(EVENT_FIELD_SEEK)) {
+            this.eventFieldSeek = Integer.parseInt(options.get(EVENT_FIELD_SEEK));
+        }
+        
+        if (options.containsKey(EVENT_NEXT_SEEK)) {
+            this.eventNextSeek = Integer.parseInt(options.get(EVENT_NEXT_SEEK));
+        }
+        
+        if (options.containsKey(TF_FIELD_SEEK)) {
+            this.tfFieldSeek = Integer.parseInt(options.get(TF_FIELD_SEEK));
+        }
+        
+        if (options.containsKey(TF_NEXT_SEEK)) {
+            this.tfNextSeek = Integer.parseInt(options.get(TF_NEXT_SEEK));
+        }
+        
         if (options.containsKey(DATATYPE_FILTER)) {
             String filterCsv = options.get(DATATYPE_FILTER);
             if (filterCsv != null && !filterCsv.isEmpty()) {
                 HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
                 
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
-                if (options.containsKey(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)) {
-                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, Integer.parseInt(options
-                                    .get(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)));
+                
+                if (options.containsKey(FI_NEXT_SEEK)) {
+                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, getFiNextSeek());
                 } else {
                     this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed);
                 }
@@ -1344,8 +1394,7 @@ public class QueryOptions implements OptionDescriber {
             this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
         }
         
-        this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
-                        .getMaxNextCount() : -1);
+        this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEventNextSeek());
         
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
             this.ignoreColumnFamilies = buildIgnoredColumnFamilies(options.get(IGNORE_COLUMN_FAMILIES));
@@ -1685,7 +1734,8 @@ public class QueryOptions implements OptionDescriber {
      * Restore the mapping of field name to dataTypes from a String-ified representation
      *
      * @param data
-     * @return
+     *            the data
+     * @return a mapping of field name to data types
      */
     public static Map<String,Set<String>> buildFieldDataTypeMap(String data) {
         
@@ -1746,7 +1796,8 @@ public class QueryOptions implements OptionDescriber {
      * Build a String-ified version of the Map to serialize to this SKVI.
      *
      * @param map
-     * @return
+     *            a map to normalize
+     * @return the string representation of the map
      */
     public static String buildFieldNormalizerString(Map<String,Set<String>> map) {
         StringBuilder sb = new StringBuilder();
@@ -1776,7 +1827,8 @@ public class QueryOptions implements OptionDescriber {
      * Build a String-ified version of the Map to serialize to this SKVI.
      *
      * @param map
-     * @return
+     *            a map to normalize
+     * @return the string representation of the map
      */
     public static String buildFieldNormalizerString(Multimap<String,Type<?>> map) {
         StringBuilder sb = new StringBuilder();
@@ -2022,4 +2074,51 @@ public class QueryOptions implements OptionDescriber {
         this.yieldThresholdMs = yieldThresholdMs;
     }
     
+    public int getFiFieldSeek() {
+        return fiFieldSeek;
+    }
+    
+    public void setFiFieldSeek(int fiFieldSeek) {
+        this.fiFieldSeek = fiFieldSeek;
+    }
+    
+    public int getFiNextSeek() {
+        return fiNextSeek;
+    }
+    
+    public void setFiNextSeek(int fiNextSeek) {
+        this.fiNextSeek = fiNextSeek;
+    }
+    
+    public int getEventFieldSeek() {
+        return eventFieldSeek;
+    }
+    
+    public void setEventFieldSeek(int eventFieldSeek) {
+        this.eventFieldSeek = eventFieldSeek;
+    }
+    
+    public int getEventNextSeek() {
+        return eventNextSeek;
+    }
+    
+    public void setEventNextSeek(int eventNextSeek) {
+        this.eventNextSeek = eventNextSeek;
+    }
+    
+    public int getTfFieldSeek() {
+        return tfFieldSeek;
+    }
+    
+    public void setTfFieldSeek(int tfFieldSeek) {
+        this.tfFieldSeek = tfFieldSeek;
+    }
+    
+    public int getTfNextSeek() {
+        return tfNextSeek;
+    }
+    
+    public void setTfNextSeek(int tfNextSeek) {
+        this.tfNextSeek = tfNextSeek;
+    }
 }

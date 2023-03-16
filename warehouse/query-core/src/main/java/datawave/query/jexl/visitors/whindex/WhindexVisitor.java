@@ -111,6 +111,12 @@ public class WhindexVisitor extends RebuildingVisitor {
      *            Configuration parameters relevant to our query
      * @param script
      *            The jexl node representing the query
+     * @param <T>
+     *            type of script
+     * @param beginDate
+     *            the begin date
+     * @param metadataHelper
+     *            the metadata helper
      * @return An expanded version of the passed-in script containing whindex nodes
      */
     public static <T extends JexlNode> T apply(T script, ShardQueryConfiguration config, Date beginDate, MetadataHelper metadataHelper) {
@@ -130,6 +136,12 @@ public class WhindexVisitor extends RebuildingVisitor {
      *            The value-specific field mapping creation dates
      * @param script
      *            The jexl node representing the query
+     * @param <T>
+     *            type of script
+     * @param beginDate
+     *            the begin date
+     * @param metadataHelper
+     *            the metadata helper
      * @return An expanded version of the passed-in script containing whindex nodes
      */
     public static <T extends JexlNode> T apply(T script, Set<String> mappingFields, Map<String,Map<String,String>> fieldMappings,
@@ -612,6 +624,8 @@ public class WhindexVisitor extends RebuildingVisitor {
      * @param usedLeafNodes
      *            A multimap of used leaf child nodes, keyed by field name, used to create the returned whindexes
      * @return A list of modified and unmodified leaf child nodes, from the parent node
+     * @param whindexTerms
+     *            list of index terms
      */
     private List<JexlNode> processUnusedLeafNodes(ExpandData parentData, Multimap<String,JexlNode> leafNodes, Multimap<String,JexlNode> usedLeafNodes,
                     List<WhindexTerm> whindexTerms) {

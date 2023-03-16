@@ -61,6 +61,16 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     
     /**
      * helper method that constructs and applies the visitor.
+     * 
+     * @param config
+     *            a config
+     * @param helper
+     *            the metadata helper
+     * @param queryTree
+     *            the query tree
+     * @param <T>
+     *            type of the query tree
+     * @return a reference to the node
      */
     public static <T extends JexlNode> T pushdownPredicates(T queryTree, ShardQueryConfiguration config, MetadataHelper helper) {
         PushdownMissingIndexRangeNodesVisitor visitor = new PushdownMissingIndexRangeNodesVisitor(config, helper);
@@ -91,6 +101,14 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     
     /**
      * Delay the ranges that overlap holes. The range map is expected to only be indexed ranges.
+     * 
+     * @param data
+     *            the node data
+     * @param range
+     *            the range
+     * @param currentNode
+     *            the current node
+     * @return a jexl node
      */
     protected JexlNode delayBoundedIndexHole(LiteralRange range, ASTAndNode currentNode, Object data) {
         

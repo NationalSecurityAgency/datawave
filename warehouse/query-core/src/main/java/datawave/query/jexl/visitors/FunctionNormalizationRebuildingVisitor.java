@@ -157,10 +157,15 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
      * produce a separate function instance.
      *
      * @param function
+     *            a function
      * @param allNormalizers
+     *            the normalizers
      * @param descriptor
+     *            a descriptor
      * @param helper
+     *            a helper
      * @param datatypeFilter
+     *            a datatype filter
      * @return the list of normalizer lists
      */
     private static List<List<Type<?>>> getNormalizerListsForArgs(ASTFunctionNode function, Multimap<String,Type<?>> allNormalizers,

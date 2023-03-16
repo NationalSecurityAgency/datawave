@@ -4,7 +4,9 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import datawave.query.attributes.Document;
+import datawave.query.function.RangeProvider;
 import datawave.query.function.TLDEquality;
+import datawave.query.function.TLDRangeProvider;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.SourcedOptions;
@@ -83,7 +85,7 @@ public class TLDQueryIterator extends QueryIterator {
         
         super.init(source, options, env);
         
-        super.fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getFIEvaluationFilter(), maxKeysBeforeSeek);
+        super.fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getFIEvaluationFilter(), getFiNextSeek());
         
         // Replace the fieldIndexKeyDataTypeFilter with a chain of "anded" index-filtering predicates.
         // If no other predicates are configured via the indexfiltering.classes property, the method
@@ -210,6 +212,19 @@ public class TLDQueryIterator extends QueryIterator {
     protected Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
         tfConfig.setTld(true);
         return TFFactory.getFunction(tfConfig);
+    }
+    
+    /**
+     * Get a {@link TLDRangeProvider}
+     *
+     * @return a {@link TLDRangeProvider}
+     */
+    @Override
+    public RangeProvider getRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new TLDRangeProvider();
+        }
+        return rangeProvider;
     }
     
 }

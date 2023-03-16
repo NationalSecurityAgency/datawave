@@ -251,9 +251,7 @@ public class TestLuceneQueryParser {
     
     /**
      * The include is now allowed within an or as it could be pushed down or handled by a full table scan. This is no longer an error.
-     * 
-     * @Test(expected = ParseException.class) public void testFunctionWrongStructure() throws ParseException { LuceneQueryParser luceneParser = new
-     *                LuceneQueryParser(); luceneParser.parse("field:selector OR #include(field, test[abc]*.*)"); }
+     *
      */
     
     @Test

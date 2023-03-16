@@ -26,6 +26,7 @@ public interface NestedIterator<T> extends Iterator<T> {
      * Tells the underlying iterator to return the first element that is greater than or equal to <code>minimum</code>.
      * 
      * @param minimum
+     *            the minimum
      * @return the first Key in the iterator greater than or equal to minimum or null if no Key exists
      * @throws IllegalStateException
      *             if the iterator is already at or beyond minimum
@@ -36,31 +37,36 @@ public interface NestedIterator<T> extends Iterator<T> {
      * Returns a reference to all of the leaf nodes at or below <code>this</code>. This is useful when we need to call <code>seek</code> on leaf nodes that are
      * <code>SortedKeyValueIterators</code>.
      * 
-     * @return
+     * @return a collection of iterators
      */
     Collection<NestedIterator<T>> leaves();
     
     /**
      * Returns a reference to all of the children of <code>this</code>.
      * 
-     * @return
+     * @return a collection of iterators
      */
     Collection<NestedIterator<T>> children();
     
     /**
      * Returns a <code>Document</code> object that is composed of attributes read in by the leaf nodes of this sub-tree.
+     * 
+     * @return Document
      */
     Document document();
     
     /**
      * Provides configuration information to the Iterator before initializing and seeking. Default does nothing.
+     * 
+     * @param env
+     *            env
      */
     default void setEnvironment(IteratorEnvironment env) {}
     
     /**
      * Returns true if the NestedIterator requires context for evaluation or false if it can be evaluated without context
      * 
-     * @return
+     * @return boolean
      */
     boolean isContextRequired();
     
