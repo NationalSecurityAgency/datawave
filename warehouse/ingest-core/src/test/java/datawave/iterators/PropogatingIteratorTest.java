@@ -31,6 +31,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
 
+import static datawave.ingest.table.aggregator.GlobalIndexUidAggregator.MAX_UIDS;
 import static org.junit.Assert.assertTrue;
 
 public class PropogatingIteratorTest {
@@ -45,6 +46,12 @@ public class PropogatingIteratorTest {
         for (String uid : uids) {
             assertTrue(v.getUIDList().contains(uid));
         }
+    }
+    
+    private void validateCountOnly(Value topValue, int count) throws InvalidProtocolBufferException {
+        Uid.List v = Uid.List.parseFrom(topValue.get());
+        Assert.assertEquals(count, v.getCOUNT());
+        Assert.assertEquals(0, v.getUIDList().size());
     }
     
     private void validateRemoval(Value topValue, String... uids) throws InvalidProtocolBufferException {
@@ -212,6 +219,95 @@ public class PropogatingIteratorTest {
         Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         validateUids(iter.getTopValue(), "abc.3");
         
+    }
+    
+    @Test
+    public void testAggregateWithMaxUids() throws IOException {
+        TreeMultimap<Key,Value> map = TreeMultimap.create();
+        
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.1").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.2").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.4").build().toByteArray()));
+        
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
+        
+        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
+        
+        PropogatingIterator iter = new PropogatingIterator();
+        Map<String,String> options = Maps.newHashMap();
+        
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        
+        // reduce the max uids down to 0
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT + PropogatingIterator.AGGREGATOR_OPTS + MAX_UIDS, "0");
+        // although it is never used by GlobalIndexUidAggregator this must be set to have valid options
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT + PropogatingIterator.AGGREGATOR_OPTS + "all", "true");
+        
+        IteratorEnvironment env = new MockIteratorEnvironment(false);
+        
+        iter.init(data, options, env);
+        
+        iter.seek(new Range(), Collections.emptyList(), false);
+        
+        assertTrue(iter.hasTop());
+        
+        Key topKey = iter.getTopKey();
+        
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
+        validateCountOnly(iter.getTopValue(), 4);
+        iter.next();
+        topKey = iter.getTopKey();
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        validateCountOnly(iter.getTopValue(), 1);
+    }
+    
+    @Test
+    public void testAggregateWithMaxOneUid() throws IOException {
+        TreeMultimap<Key,Value> map = TreeMultimap.create();
+        
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.1").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.2").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.4").build().toByteArray()));
+        
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
+        
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abe"), new Value(createValueWithUid("abc.1").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abe"), new Value(createValueWithUid("abc.3").build().toByteArray()));
+        
+        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
+        
+        PropogatingIterator iter = new PropogatingIterator();
+        Map<String,String> options = Maps.newHashMap();
+        
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        
+        // reduce the max uids down to 0
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT + PropogatingIterator.AGGREGATOR_OPTS + MAX_UIDS, "1");
+        // although it is never used by GlobalIndexUidAggregator this must be set to have valid options
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT + PropogatingIterator.AGGREGATOR_OPTS + "all", "true");
+        
+        IteratorEnvironment env = new MockIteratorEnvironment(false);
+        
+        iter.init(data, options, env);
+        
+        iter.seek(new Range(), Collections.emptyList(), false);
+        
+        assertTrue(iter.hasTop());
+        
+        Key topKey = iter.getTopKey();
+        
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
+        validateCountOnly(iter.getTopValue(), 4);
+        iter.next();
+        topKey = iter.getTopKey();
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        validateUids(iter.getTopValue(), "abc.3");
+        iter.next();
+        topKey = iter.getTopKey();
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abe"), topKey);
+        validateCountOnly(iter.getTopValue(), 2);
     }
     
     @Test(expected = NullPointerException.class)

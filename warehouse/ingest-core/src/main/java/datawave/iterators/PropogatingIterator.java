@@ -16,20 +16,24 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.conf.ColumnToClassMapping;
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * Purpose: Handle arbitrary propogating aggregations.
- * 
+ *
  * Design: Though very similar to the DeletingIterator, due to private methods and members, we cannot directly extend the DeletingIterator. As a result, the
  * class extends SKVI. This class {@code USES --> PropogatingAggregator}. Note that propAgg can be null
- * 
+ *
  * Initially the TotalAggregatingIterator, this class was a direct copy. At some point it was identified that there was an artifact where deletes would not be
  * propogated. As a result, this class becomes nearly identical to the DeletingIterator, whereby deletes are always propogated until a full major compaction.
  */
@@ -44,6 +48,8 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     public static final String AGGREGATOR_DEFAULT = "DEFAULT";
     
     public static final String AGGREGATOR_DEFAULT_OPT = "*";
+    
+    public static final String AGGREGATOR_OPTS = ".opts.";
     
     public static final Map<String,String> defaultMapOptions;
     
@@ -100,7 +106,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     
     /**
      * Private constructor.
-     * 
+     *
      * @param other
      *            the other iterator
      * @param env
@@ -123,7 +129,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     
     /**
      * Aggregates the same partial key.
-     * 
+     *
      * @return a partial key
      * @throws IOException
      *             for issues with read/write
@@ -207,7 +213,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     
     /**
      * SKVI Constructor
-     * 
+     *
      * @param iterator
      *            an iterator
      * @param Aggregators
@@ -319,11 +325,49 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
         
         PropogatingCombiner propAgg = null;
         
+        Map<String,Map<String,String>> allAggOptions = new HashedMap();
+        // make a first pass of the options to find any aggregator options and build them up for each aggregator
         for (Entry<String,String> familyOption : options.entrySet()) {
+            String option = familyOption.getKey();
+            // if this property specifies aggregator options skip
+            if (option.contains(AGGREGATOR_OPTS)) {
+                // get the aggregator name
+                String[] splits = option.split("\\.");
+                String aggName = splits[0];
+                if (splits.length < 3) {
+                    throw new IllegalArgumentException("When specifying options for an aggregator specify <cf>." + AGGREGATOR_OPTS + "<option>");
+                }
+                
+                Map<String,String> aggOptions = allAggOptions.get(aggName);
+                if (aggOptions == null) {
+                    aggOptions = new HashMap<>();
+                    allAggOptions.put(aggName, aggOptions);
+                }
+                
+                // strip off the first two sections of the option to build an option for the aggregator
+                String aggOption = option.replace(splits[0] + "." + splits[1] + ".", "");
+                aggOptions.put(aggOption, familyOption.getValue());
+            }
+        }
+        
+        for (Entry<String,String> familyOption : options.entrySet()) {
+            // if this property specifies aggregator options skip
+            if (familyOption.getKey().contains(AGGREGATOR_OPTS)) {
+                continue;
+            }
+            
+            // the property should an aggregator class since it isn't aggregator class options
             Object agg = createAggregator(familyOption.getValue());
             if (agg instanceof PropogatingCombiner) {
                 propAgg = PropogatingCombiner.class.cast(agg);
                 propAgg.setPropogate(shouldPropogate);
+                
+                // if there are aggregator options, apply them via validate options
+                Map<String,String> aggOptions = allAggOptions.get(familyOption.getKey());
+                if (aggOptions != null) {
+                    propAgg.validateOptions(aggOptions);
+                }
+                
                 if (familyOption.getKey().equals(AGGREGATOR_DEFAULT) || familyOption.getKey().equals(AGGREGATOR_DEFAULT_OPT)) {
                     if (log.isTraceEnabled())
                         log.debug("Default aggregator is " + propAgg.getClass());
