@@ -30,6 +30,7 @@ import javax.ws.rs.QueryParam;
 import datawave.configuration.ConfigurationEvent;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.RefreshLifecycle;
+import datawave.security.DnList;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;

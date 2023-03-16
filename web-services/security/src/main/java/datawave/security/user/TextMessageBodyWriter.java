@@ -13,7 +13,7 @@ import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
 
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.cache.DnList;
+import datawave.security.DnList;
 import datawave.user.AuthorizationsListBase;
 
 /**
