@@ -24,7 +24,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils.NpeUtils;
+import datawave.security.util.DnUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.mr.state.MapReduceStatePersisterBean.MapReduceState;
 import datawave.webservice.results.mr.MapReduceInfoResponse;
@@ -72,7 +72,7 @@ public class MapReduceStatePersisterTest {
     
     @Before
     public void setup() throws Exception {
-        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         client = new InMemoryAccumuloClient("root", instance);
         if (client.tableOperations().exists(TABLE_NAME))

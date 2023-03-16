@@ -9,7 +9,6 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils.NpeUtils;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,11 +17,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -44,7 +41,7 @@ public class AuthorizationsUtilTest {
     
     @Before
     public void initialize() {
-        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         methodAuths = "A,C";
         userAuths = new HashSet<>();
         userAuths.add(Sets.newHashSet("A", "C", "D"));
@@ -230,7 +227,7 @@ public class AuthorizationsUtilTest {
     @Test
     public void testBuildUserAuthorizationsString() throws Exception {
         String expected = new Authorizations("A", "C", "D").toString();
-        assertEquals(expected, AuthorizationsUtil.buildUserAuthorizationString(proxiedUserPrincipal));
+        assertEquals(expected, AuthorizationsUtil.buildUserAuthorizationString((DatawavePrincipal)proxiedUserPrincipal));
     }
     
     @Test
@@ -266,18 +263,18 @@ public class AuthorizationsUtilTest {
     
     @Test(expected = IllegalArgumentException.class)
     public void testCannotMergeUser() {
-        AuthorizationsUtil.mergeUsers(proxiedServerPrincipal1.getPrimaryUser(), proxiedServerPrincipal2.getPrimaryUser());
+        AuthorizationsUtil.mergeUsers(((DatawavePrincipal)proxiedServerPrincipal1).getPrimaryUser(), ((DatawavePrincipal)proxiedServerPrincipal2).getPrimaryUser());
     }
     
     @Test
     public void testMergePrincipals() {
-        DatawavePrincipal merged = AuthorizationsUtil.mergePrincipals(proxiedUserPrincipal, remoteUserPrincipal);
-        assertPrincipalEquals(overallUserPrincipal, merged);
+        DatawavePrincipal merged = AuthorizationsUtil.mergePrincipals((DatawavePrincipal)proxiedUserPrincipal, (DatawavePrincipal)remoteUserPrincipal);
+        assertPrincipalEquals((DatawavePrincipal)overallUserPrincipal, merged);
     }
     
     @Test(expected = IllegalArgumentException.class)
     public void testCannotMergePrincipal() {
-        AuthorizationsUtil.mergePrincipals(proxiedServerPrincipal1, proxiedServerPrincipal2);
+        AuthorizationsUtil.mergePrincipals((DatawavePrincipal)proxiedServerPrincipal1, (DatawavePrincipal)proxiedServerPrincipal2);
     }
     
     private void assertUserEquals(DatawaveUser user1, DatawaveUser user2) {

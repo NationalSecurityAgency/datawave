@@ -3,7 +3,7 @@ package datawave.webservice.query.interceptor;
 import com.google.common.io.CountingOutputStream;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
-import datawave.security.util.DnUtils.NpeUtils;
+import datawave.security.util.DnUtils;
 import datawave.webservice.query.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.interceptor.QueryMetricsEnrichmentInterceptor.QueryCall;
@@ -114,7 +114,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
     
     @Before
     public void setup() {
-        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         
         // noinspection unchecked

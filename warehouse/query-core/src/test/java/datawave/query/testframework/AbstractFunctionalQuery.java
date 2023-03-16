@@ -103,7 +103,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     static {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", StandardCharsets.UTF_8.name());
-        System.setProperty(DnUtils.NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         try {
             File dir = new File(ClassLoader.getSystemClassLoader().getResource(".").toURI());
             File targetDir = dir.getParentFile();
