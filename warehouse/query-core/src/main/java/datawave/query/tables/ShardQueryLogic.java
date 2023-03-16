@@ -461,7 +461,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     /**
      * Validate that the configuration is in a consistent state
-     * 
+     *
      * @param config
      *            the config
      * @throws IllegalArgumentException
@@ -1328,7 +1328,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public String getDisallowedFieldsString() {
         return getConfig().getDisallowedFieldsAsString();
-      
+    }
+    
     public int getFiFieldSeek() {
         return getConfig().getFiFieldSeek();
     }
