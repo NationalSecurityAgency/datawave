@@ -20,6 +20,7 @@ import org.apache.commons.collections.map.HashedMap;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -96,6 +97,10 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     protected Map<String,String> options = Maps.newHashMap();
     
     private static final Logger log = Logger.getLogger(PropogatingIterator.class);
+    
+    public static String getOptString(String cf, String aggOpt) {
+        return cf + AGGREGATOR_OPTS + aggOpt;
+    }
     
     /**
      * Deep copy implementation
@@ -309,7 +314,8 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     @Override
     public IteratorOptions describeOptions() {
         
-        return new IteratorOptions(ATTRIBUTE_NAME, ATTRIBUTE_DESCRIPTION, defaultMapOptions, Collections.singletonList("<ColumnFamily> <Combiner>"));
+        return new IteratorOptions(ATTRIBUTE_NAME, ATTRIBUTE_DESCRIPTION, defaultMapOptions, Arrays.asList("<ColumnFamily> <Combiner>", "<ColumnFamily>"
+                        + AGGREGATOR_OPTS + "<CombinerOptionName> <CombinerOptionValue>"));
     }
     
     @Override

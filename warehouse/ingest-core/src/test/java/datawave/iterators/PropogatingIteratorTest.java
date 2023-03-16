@@ -225,12 +225,12 @@ public class PropogatingIteratorTest {
     public void testAggregateWithMaxUids() throws IOException {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
         
-        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.1").build().toByteArray()));
-        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.2").build().toByteArray()));
-        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.3").build().toByteArray()));
-        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.4").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("xyz.1").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("xyz.2").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("xyz.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("xyz.4").build().toByteArray()));
         
-        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("xyz.3").build().toByteArray()));
         
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
         
@@ -240,9 +240,9 @@ public class PropogatingIteratorTest {
         options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
         
         // reduce the max uids down to 0
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT + PropogatingIterator.AGGREGATOR_OPTS + MAX_UIDS, "0");
+        options.put(PropogatingIterator.getOptString(PropogatingIterator.AGGREGATOR_DEFAULT, MAX_UIDS), "0");
         // although it is never used by GlobalIndexUidAggregator this must be set to have valid options
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT + PropogatingIterator.AGGREGATOR_OPTS + "all", "true");
+        options.put(PropogatingIterator.getOptString(PropogatingIterator.AGGREGATOR_DEFAULT, "all"), "true");
         
         IteratorEnvironment env = new MockIteratorEnvironment(false);
         
@@ -266,15 +266,15 @@ public class PropogatingIteratorTest {
     public void testAggregateWithMaxOneUid() throws IOException {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
         
-        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.1").build().toByteArray()));
-        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.2").build().toByteArray()));
-        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.3").build().toByteArray()));
-        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.4").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("xyz.1").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("xyz.2").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("xyz.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("xyz.4").build().toByteArray()));
         
-        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("xyz.3").build().toByteArray()));
         
-        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abe"), new Value(createValueWithUid("abc.1").build().toByteArray()));
-        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abe"), new Value(createValueWithUid("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abe"), new Value(createValueWithUid("xyz.1").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abe"), new Value(createValueWithUid("xyz.3").build().toByteArray()));
         
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
         
@@ -283,10 +283,10 @@ public class PropogatingIteratorTest {
         
         options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
         
-        // reduce the max uids down to 0
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT + PropogatingIterator.AGGREGATOR_OPTS + MAX_UIDS, "1");
+        // reduce the max uids down to 1
+        options.put(PropogatingIterator.getOptString(PropogatingIterator.AGGREGATOR_DEFAULT, MAX_UIDS), "1");
         // although it is never used by GlobalIndexUidAggregator this must be set to have valid options
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT + PropogatingIterator.AGGREGATOR_OPTS + "all", "true");
+        options.put(PropogatingIterator.getOptString(PropogatingIterator.AGGREGATOR_DEFAULT, "all"), "true");
         
         IteratorEnvironment env = new MockIteratorEnvironment(false);
         
@@ -303,7 +303,7 @@ public class PropogatingIteratorTest {
         iter.next();
         topKey = iter.getTopKey();
         Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
-        validateUids(iter.getTopValue(), "abc.3");
+        validateUids(iter.getTopValue(), "xyz.3");
         iter.next();
         topKey = iter.getTopKey();
         Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abe"), topKey);
