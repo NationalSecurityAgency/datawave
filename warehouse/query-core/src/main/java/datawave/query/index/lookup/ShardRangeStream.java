@@ -117,9 +117,6 @@ public class ShardRangeStream extends RangeStream {
     public class FieldIndexParser implements Function<Entry<Key,Value>,QueryPlan> {
         protected JexlNode node;
         
-        /**
-         * @param node
-         */
         public FieldIndexParser(JexlNode node) {
             this.node = node;
         }

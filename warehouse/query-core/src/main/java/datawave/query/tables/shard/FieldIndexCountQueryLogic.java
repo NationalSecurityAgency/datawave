@@ -202,6 +202,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
      * @param genericConfig
      *            configuration object
      * @throws Exception
+     *             for any exceptions encountered
      */
     @Override
     public void setupQuery(GenericQueryConfiguration genericConfig) throws Exception {

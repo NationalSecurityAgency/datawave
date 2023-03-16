@@ -99,8 +99,13 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      * By default, assume each cell still has the visibility attached to it
      *
      * @param logic
+     *            the query logic
      * @param settings
+     *            query settings
+     * @param markingFunctions
+     *            the marking functions
      * @param responseObjectFactory
+     *            the response object factory
      */
     public DocumentTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
@@ -165,8 +170,16 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      * Builds the document's fields provided the given document key and the document itself.
      *
      * @param documentKey
+     *            a document key
      * @param document
-     * @return
+     *            the document
+     * @param documentName
+     *            the document name
+     * @param markingFunctions
+     *            marking functions
+     * @param topLevelColumnVisibility
+     *            the column visibility
+     * @return a collection of the document fields
      */
     protected Collection<FieldBase<?>> buildDocumentFields(Key documentKey, String documentName, Document document, ColumnVisibility topLevelColumnVisibility,
                     MarkingFunctions markingFunctions) {
@@ -373,7 +386,16 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      * Accepts an attribute. The document data will be placed into the value of the Field.
      *
      * @param documentKey
-     * @return
+     *            the document key
+     * @param markingFunctions
+     *            marking functions
+     * @param fieldName
+     *            the field name
+     * @param attr
+     *            an attribute
+     * @param topLevelColumnVisibility
+     *            the top level visibility
+     * @return a collection of fields
      */
     protected Collection<FieldBase<?>> buildDocumentFields(Key documentKey, String fieldName, Attribute<?> attr, ColumnVisibility topLevelColumnVisibility,
                     MarkingFunctions markingFunctions) {
@@ -411,9 +433,16 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      * Helper method to create a field for a given attribute.
      *
      * @param fieldName
+     *            the field name
      * @param ts
+     *            a timestamp
      * @param attribute
-     * @return
+     *            an attribute
+     * @param columnVisibility
+     *            the column visibility
+     * @param markings
+     *            mapping of markings
+     * @return a field
      */
     protected FieldBase<?> createField(final String fieldName, final long ts, final Attribute<?> attribute, Map<String,String> markings, String columnVisibility) {
         
@@ -503,6 +532,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      * If the caller does not want the replacement behavior, call containsTransform and decide whether to call this method based on what that returns.*
      *
      * @param transform
+     *            the document transformer
      */
     public void addTransform(DocumentTransform transform) {
         int replacementIndex = -1;
@@ -525,7 +555,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      *
      * @param transform
      *            the transform (type) to determine if an instance is already in the list of transforms.
-     * @return
+     * @return the documenttransform if it is found in the list
      */
     public DocumentTransform containsTransform(Class transform) {
         for (DocumentTransform t : transforms) {

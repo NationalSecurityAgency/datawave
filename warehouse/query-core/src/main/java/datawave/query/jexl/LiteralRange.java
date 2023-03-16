@@ -11,6 +11,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
  * 
  * 
  * @param <T>
+ *            type of the range
  */
 public class LiteralRange<T extends Comparable<T>> implements Comparable<LiteralRange<T>> {
     

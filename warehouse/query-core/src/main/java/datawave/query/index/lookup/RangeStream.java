@@ -825,6 +825,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
      * Setter for limit scanners
      * 
      * @param limitScanners
+     *            flag for the limit scanners
+     * @return the range stream
      */
     public RangeStream setLimitScanners(final boolean limitScanners) {
         this.limitScanners = limitScanners;

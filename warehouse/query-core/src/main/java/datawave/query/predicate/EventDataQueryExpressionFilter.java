@@ -136,7 +136,7 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
      *            the current range endKey
      * @param endKeyInclusive
      *            the endKeyInclusive flag from the current range
-     * @return
+     * @return null
      */
     @Override
     public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {

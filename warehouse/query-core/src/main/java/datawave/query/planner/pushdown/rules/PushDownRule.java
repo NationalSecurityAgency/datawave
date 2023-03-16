@@ -33,8 +33,10 @@ public abstract class PushDownRule extends RebuildingVisitor {
      * Determines if parent is a type
      * 
      * @param currentNode
+     *            the current node
      * @param clazz
-     * @return
+     *            a class
+     * @return if parent is a type
      */
     public static boolean isParent(final JexlNode currentNode, final Class<? extends JexlNode> clazz) {
         JexlNode parentNode = currentNode.jjtGetParent();

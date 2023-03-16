@@ -30,12 +30,6 @@ public class NormalizerLoader extends AccumuloLoader<String,Multimap<String,Type
     
     private static final Logger log = Logger.getLogger(NormalizerLoader.class);
     
-    /**
-     * @param connector
-     * @param tableName
-     * @param auths
-     * @param columnFamilyList
-     */
     public NormalizerLoader(Connector connector, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList,
                     Collection<String> dataTypeFilters) {
         super(connector, tableName, auths, columnFamilyList);

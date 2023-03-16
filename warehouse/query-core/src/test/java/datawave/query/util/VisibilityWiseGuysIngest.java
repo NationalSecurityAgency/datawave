@@ -42,11 +42,6 @@ public class VisibilityWiseGuysIngest {
     public static final String sopranoUID = UID.builder().newId("Soprano".getBytes(), (Date) null).toString();
     public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
     
-    /**
-     * 
-     *
-     * @return
-     */
     public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
@@ -422,11 +417,6 @@ public class VisibilityWiseGuysIngest {
         return new Value(builder.build().toByteArray());
     }
     
-    /**
-     * forces a shard range
-     *
-     * @return
-     */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setCOUNT(50); // better not be zero!!!!

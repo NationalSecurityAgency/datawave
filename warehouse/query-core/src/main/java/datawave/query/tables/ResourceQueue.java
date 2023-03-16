@@ -26,7 +26,9 @@ public final class ResourceQueue implements Closeable {
      * Constructor for the queue that accepts the capacity and the connector. Defaults to the block when exhausted queue option
      * 
      * @param capacity
+     *            the capacity
      * @param cxn
+     *            a connector
      */
     public ResourceQueue(int capacity, Connector cxn) {
         this(capacity, cxn, GenericObjectPool.WHEN_EXHAUSTED_BLOCK);
@@ -34,10 +36,13 @@ public final class ResourceQueue implements Closeable {
     
     /**
      * Constructor that accepts the type of pool, the connector, and the capacity
-     * 
+     *
      * @param capacity
+     *            the capacity
      * @param cxn
+     *            a connector
      * @param type
+     *            type of pool
      */
     public ResourceQueue(int capacity, Connector cxn, byte type) {
         Preconditions.checkNotNull(cxn);
@@ -75,7 +80,9 @@ public final class ResourceQueue implements Closeable {
      * Closes the scanner resource, and returns the object to the pool
      * 
      * @param resource
+     *            a resource
      * @throws Exception
+     *             if there are issues
      */
     public void close(final AccumuloResource resource) throws Exception {
         resource.close();

@@ -224,6 +224,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
      *
      * @param documents
      *            the list of documents to flatten into a single document
+     * @return a flattened document
      */
     private Document flatten(List<Document> documents) {
         log.trace("flatten {}", documents);

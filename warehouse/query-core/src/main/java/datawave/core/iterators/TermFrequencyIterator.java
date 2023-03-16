@@ -170,6 +170,7 @@ public class TermFrequencyIterator extends WrappingIterator {
      * Basic method to find our topKey which matches our given FieldName,FieldValue.
      *
      * @throws IOException
+     *             for issues with read/write
      */
     protected void findTop() throws IOException {
         if (log.isTraceEnabled())
@@ -233,6 +234,8 @@ public class TermFrequencyIterator extends WrappingIterator {
     
     /**
      * IFF this value is greater than the maximum search value or less than the first search value by a distance measure.
+     * 
+     * @return true/false based on if the value is greater than the maximum
      */
     private boolean shouldSeekByValue() {
         
@@ -253,7 +256,7 @@ public class TermFrequencyIterator extends WrappingIterator {
      *
      * @param count
      *            the current next count
-     * @return
+     * @return true if the current field is past the last possible field
      */
     protected boolean shouldSeekByCount(int count) {
         boolean beyondField = tfKey.getField().compareTo(fields.last()) > 0;
@@ -291,7 +294,7 @@ public class TermFrequencyIterator extends WrappingIterator {
      *
      * @param k
      *            the current key
-     * @return
+     * @return the next range
      */
     public Range getNextSeekRange(Key k) {
         

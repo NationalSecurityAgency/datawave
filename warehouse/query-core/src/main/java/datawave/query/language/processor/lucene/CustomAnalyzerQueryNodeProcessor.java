@@ -386,7 +386,13 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
         return node;
     }
     
-    /** Work around a Lucene Bug in UnescapedCharSequence.toStringEscaped() */
+    /**
+     * Work around a Lucene Bug in UnescapedCharSequence.toStringEscaped()
+     * 
+     * @param unescaped
+     *            string value
+     * @return unescaped string
+     * */
     private String toStringEscaped(UnescapedCharSequence unescaped) {
         // non efficient implementation
         final StringBuilder result = new StringBuilder();

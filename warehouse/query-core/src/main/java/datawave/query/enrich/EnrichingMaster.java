@@ -50,9 +50,13 @@ public class EnrichingMaster {
      * log message will be generated).
      * 
      * @param source
+     *            the iterator source
      * @param env
+     *            the iterator environment
      * @param classNames
+     *            list of class names
      * @param options
+     *            mapping of options
      */
     public EnrichingMaster(SortedKeyValueIterator<Key,Value> source, IteratorEnvironment env, String[] classNames, Map<String,Object> options) {
         this.enrichers = new ArrayList<>();
@@ -94,7 +98,9 @@ public class EnrichingMaster {
      * been run.
      * 
      * @param key
+     *            the key
      * @param value
+     *            the value
      */
     public void enrich(Key key, Value value) {
         if (key == null && value == null) {
