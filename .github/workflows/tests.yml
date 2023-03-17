@@ -102,10 +102,9 @@ jobs:
         run: |
           BUILD="mvn -V -B -e -Pdev,examples,assemble,spotbugs -Ddeploy -Ddist -T1C clean install -DskipTests"
           $BUILD
-      # QueryMetricSplitBrainMergePolicyTest always fails in GitHub CI (presumably due to resource limits), so we will skip it
       - name: Run Microservice Unit Tests
         run: |
-          RUN_TESTS="mvn -V -B -e -DskipSplitBrainTest verify"
+          RUN_TESTS="mvn -V -B -e verify"
           cd microservices
           $RUN_TESTS \
             || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
