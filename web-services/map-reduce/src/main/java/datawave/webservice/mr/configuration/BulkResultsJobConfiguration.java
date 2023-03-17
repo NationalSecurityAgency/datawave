@@ -4,7 +4,7 @@ import datawave.mr.bulk.BulkInputFormat;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
 import datawave.security.iterator.ConfigurableVisibilityFilter;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.mr.bulkresults.map.BulkResultsFileOutputMapper;
@@ -350,7 +350,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
             DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal : userOperations
                             .getRemoteUser((DatawavePrincipal) principal);
-            Set<Authorizations> runtimeQueryAuthorizations = AuthorizationsUtil.getDowngradedAuthorizations(q.getQueryAuthorizations(), overallPrincipal,
+            Set<Authorizations> runtimeQueryAuthorizations = WSAuthorizationsUtil.getDowngradedAuthorizations(q.getQueryAuthorizations(), overallPrincipal,
                             queryPrincipal);
             
             // Initialize the logic so that the configuration contains all of the iterator options

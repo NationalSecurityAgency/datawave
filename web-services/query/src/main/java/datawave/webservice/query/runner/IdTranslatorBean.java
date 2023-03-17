@@ -41,7 +41,7 @@ import datawave.interceptor.ResponseInterceptor;
 import datawave.query.data.UUIDType;
 import datawave.resteasy.util.DateFormatter;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryPersistence;
@@ -271,7 +271,7 @@ public class IdTranslatorBean {
             // the query principal is our local principal unless the query logic has a different user operations
             DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal : logic.getUserOperations().getRemoteUser(
                             (DatawavePrincipal) principal);
-            userAuths = AuthorizationsUtil.buildUserAuthorizationString(queryPrincipal);
+            userAuths = WSAuthorizationsUtil.buildUserAuthorizationString(queryPrincipal);
         } catch (Exception e) {
             log.error("Failed to get user query authorizations", e);
             throw new DatawaveWebApplicationException(e, new VoidResponse());

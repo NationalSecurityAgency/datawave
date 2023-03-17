@@ -20,7 +20,7 @@ import javax.ws.rs.core.StreamingOutput;
 import datawave.query.data.UUIDType;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.WSAuthorizationsUtil;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
@@ -413,9 +413,9 @@ public class LookupUUIDUtil {
             DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal : userOperations
                             .getRemoteUser((DatawavePrincipal) principal);
             if (queryAuths != null) {
-                userAuths = AuthorizationsUtil.downgradeUserAuths(queryAuths, overallPrincipal, queryPrincipal);
+                userAuths = WSAuthorizationsUtil.downgradeUserAuths(queryAuths, overallPrincipal, queryPrincipal);
             } else {
-                userAuths = AuthorizationsUtil.buildUserAuthorizationString(queryPrincipal);
+                userAuths = WSAuthorizationsUtil.buildUserAuthorizationString(queryPrincipal);
             }
         } catch (Exception e) {
             log.error("Failed to get user query authorizations", e);

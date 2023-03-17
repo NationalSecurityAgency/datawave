@@ -6,7 +6,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.UserOperations;
 import datawave.security.cache.CredentialsCacheBean;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.WSAuthorizationsUtil;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -131,7 +131,7 @@ public class UserOperationsBean implements UserOperations {
                 for (UserOperations remote : remoteUserOperationsList) {
                     try {
                         DatawavePrincipal remotePrincipal = remote.getRemoteUser(datawavePrincipal);
-                        datawavePrincipal = AuthorizationsUtil.mergePrincipals(datawavePrincipal, remotePrincipal);
+                        datawavePrincipal = WSAuthorizationsUtil.mergePrincipals(datawavePrincipal, remotePrincipal);
                     } catch (Exception e) {
                         log.error("Failed to lookup users from remote user service", e);
                         list.addMessage("Failed to lookup user from remote service: " + e.getMessage());

@@ -6,7 +6,7 @@ import datawave.configuration.spring.SpringBean;
 import datawave.marking.SecurityMarking;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.ServerPrincipal;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
@@ -1039,7 +1039,7 @@ public class MapReduceBean {
         if (null != queryParameters) {
             if (requiredAuths != null && !requiredAuths.isEmpty()) {
                 String authsString = queryParameters.getFirst("auths");
-                List<String> authorizations = AuthorizationsUtil.splitAuths(authsString);
+                List<String> authorizations = WSAuthorizationsUtil.splitAuths(authsString);
                 if (!authorizations.containsAll(requiredAuths)) {
                     throw new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED, MessageFormat.format(
                                     "Requires the following auths: {0}", requiredAuths));

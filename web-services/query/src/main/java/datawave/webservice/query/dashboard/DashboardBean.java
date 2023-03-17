@@ -3,7 +3,7 @@ package datawave.webservice.query.dashboard;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.WSAuthorizationsUtil;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.extjs.ExtJsResponse;
@@ -87,7 +87,7 @@ public class DashboardBean {
         if (principal == null) {
             auths = "ALL";
         } else {
-            auths = AuthorizationsUtil.buildAuthorizationString(principal.getAuthorizations());
+            auths = WSAuthorizationsUtil.buildAuthorizationString(principal.getAuthorizations());
         }
         
         ExtJsResponse<DashboardSummary> summary = null;

@@ -5,7 +5,7 @@ import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.WSAuthorizationsUtil;
 import datawave.user.AuthorizationsListBase;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.exception.QueryException;
@@ -111,7 +111,7 @@ public class CompositeUserOperations implements UserOperations {
             principals.add(ops.getRemoteUser(principal));
         }
         
-        return AuthorizationsUtil.mergePrincipals(principals.toArray(new DatawavePrincipal[0]));
+        return WSAuthorizationsUtil.mergePrincipals(principals.toArray(new DatawavePrincipal[0]));
     }
     
     public static Exception getException(QueryExceptionType qet) {

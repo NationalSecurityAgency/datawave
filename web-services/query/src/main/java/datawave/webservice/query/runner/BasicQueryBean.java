@@ -54,10 +54,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import java.lang.reflect.Method;
-import java.security.Principal;
 import java.util.*;
 
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.WSAuthorizationsUtil;
 
 @Path("/BasicQuery")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser"})
@@ -298,7 +297,7 @@ public class BasicQueryBean {
         try {
             DatawavePrincipal queryPrincipal = (userService == null) ? (DatawavePrincipal) ctx.getCallerPrincipal() : userService
                             .getRemoteUser((DatawavePrincipal) ctx.getCallerPrincipal());
-            response.setAuthString(AuthorizationsUtil.buildUserAuthorizationString(queryPrincipal));
+            response.setAuthString(WSAuthorizationsUtil.buildUserAuthorizationString(queryPrincipal));
         } catch (AuthorizationException e) {
             throw new RuntimeException(e);
         }

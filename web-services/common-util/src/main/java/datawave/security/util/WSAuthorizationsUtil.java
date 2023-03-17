@@ -1,5 +1,6 @@
 package datawave.security.util;
 
+import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.security.authorization.DatawavePrincipal;
 
 /**
@@ -10,7 +11,7 @@ import datawave.security.authorization.DatawavePrincipal;
  * may be applicable. queryPrincipal: This is the principal that represents all of the auths that are valid for the query being made. The requested auths will
  * be reduced by this set of auths.
  */
-public class AuthorizationsUtil extends datawave.microservice.authorization.util.AuthorizationsUtil {
+public class WSAuthorizationsUtil extends AuthorizationsUtil {
 
     /**
      * Merge principals. This can be used to create a composite view of a principal when including remote systems
