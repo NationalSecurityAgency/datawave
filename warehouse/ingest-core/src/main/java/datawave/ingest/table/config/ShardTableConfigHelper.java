@@ -14,6 +14,7 @@ import datawave.ingest.table.balancer.ShardedTableTabletBalancer;
 import datawave.ingest.table.bloomfilter.ShardKeyFunctor;
 import datawave.ingest.table.bloomfilter.ShardIndexKeyFunctor;
 
+import datawave.iterators.PropogatingIterator;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -32,6 +33,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     protected static final String SHARDED_TABLET_BALANCER_CLASS = ShardedTableTabletBalancer.class.getName();
     
     public static final String KEEP_COUNT_ONLY_INDEX_ENTRIES = "index.tables.keep.count.only.entries";
+    public static final String MAX_INDEX_UIDS = "index.tables.max.uids";
     
     public static final String SHARD_TABLE_BALANCER_CONFIG = "shard.table.balancer.class";
     protected String shardTableBalancerClass = SHARDED_TABLET_BALANCER_CLASS;
@@ -203,6 +205,16 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
                 aggClass = KeepCountOnlyUidAggregator.class.getName();
             }
             
+            if (conf.get(MAX_INDEX_UIDS) != null) {
+                String maxUids = conf.get(MAX_INDEX_UIDS);
+                String maxUidProperty = stem + PropogatingIterator.getOptString("*", GlobalIndexUidAggregator.MAX_UIDS);
+                setPropertyIfNecessary(tableName, maxUidProperty, maxUids, tops, log);
+                
+                // anytime a property is set also must set this property for Combiner properties
+                String combinerProperty = stem + PropogatingIterator.getOptString("*", "all");
+                setPropertyIfNecessary(tableName, combinerProperty, "true", tops, log);
+            }
+            
             setPropertyIfNecessary(tableName, stem + "*", aggClass, tops, log);
             
             if (markingsSetupIteratorEnabled) {
@@ -230,6 +242,16 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             String aggClass = GlobalIndexUidAggregator.class.getName();
             if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_ENTRIES, false)) {
                 aggClass = KeepCountOnlyUidAggregator.class.getName();
+            }
+            
+            if (conf.get(MAX_INDEX_UIDS) != null) {
+                String maxUids = conf.get(MAX_INDEX_UIDS);
+                String maxUidProperty = stem + PropogatingIterator.getOptString("*", GlobalIndexUidAggregator.MAX_UIDS);
+                setPropertyIfNecessary(tableName, maxUidProperty, maxUids, tops, log);
+                
+                // anytime a property is set also must set this property for Combiner properties
+                String combinerProperty = stem + PropogatingIterator.getOptString("*", "all");
+                setPropertyIfNecessary(tableName, combinerProperty, "true", tops, log);
             }
             
             setPropertyIfNecessary(tableName, stem + "*", aggClass, tops, log);
