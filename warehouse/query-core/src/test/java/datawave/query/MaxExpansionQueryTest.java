@@ -80,7 +80,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         super(CitiesDataType.getManager());
     }
     
-    @Test
+    @Test(expected = DatawaveFatalQueryException.class)
     public void testMaxUnfielded() throws Exception {
         log.info("------  testMaxUnfielded  ------");
         
