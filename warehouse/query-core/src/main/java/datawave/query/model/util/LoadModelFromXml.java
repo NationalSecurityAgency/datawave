@@ -1,7 +1,7 @@
 package datawave.query.model.util;
 
+import datawave.query.model.FieldMapping;
 import datawave.query.model.QueryModel;
-import datawave.webservice.model.FieldMapping;
 import datawave.webservice.model.Model;
 import org.apache.log4j.Logger;
 import org.xml.sax.InputSource;
