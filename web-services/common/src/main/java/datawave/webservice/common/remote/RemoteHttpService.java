@@ -373,7 +373,6 @@ public abstract class RemoteHttpService {
     
     public <T> T executePostMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer,
                     IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        init();
         try {
             return executePostMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
         } catch (URISyntaxException e) {
@@ -398,7 +397,6 @@ public abstract class RemoteHttpService {
     
     public <T> T executeGetMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
                     IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        init();
         try {
             return executeGetMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
         } catch (URISyntaxException e) {
