@@ -40,6 +40,12 @@ public class TreeFlatteningRebuilder {
     
     /**
      * This will flatten ands and ors.
+     * 
+     * @param node
+     *            a node
+     * @param <T>
+     *            node type
+     * @return a jexl node
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T flatten(T node) {
@@ -49,6 +55,12 @@ public class TreeFlatteningRebuilder {
     /**
      * This will flatten ands, ors, and references and references expressions NOTE: If you remove reference expressions and references, this may adversely
      * affect the evaluation of the query (true in the index query logic case: bug?).
+     * 
+     * @param node
+     *            a node
+     * @param <T>
+     *            node type
+     * @return a jexl node
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T flattenAll(T node) {
@@ -58,6 +70,14 @@ public class TreeFlatteningRebuilder {
     /**
      * This will flatten ands and ors. If requested this will also remove reference expressions and references where possible. NOTE: If you remove reference
      * expressions and references, this may adversely affect the evaluation of the query (true in the index query logic case: bug?).
+     * 
+     * @param <T>
+     *            type of the node
+     * @param removeReferences
+     *            flag to remove references
+     * @param rootNode
+     *            the root node
+     * @return the flattened copy
      */
     @SuppressWarnings("unchecked")
     private static <T extends JexlNode> T flatten(T rootNode, boolean removeReferences) {
@@ -71,6 +91,7 @@ public class TreeFlatteningRebuilder {
      * @param rootNode
      *            the node to flatten
      * @param <T>
+     *            type of the node
      * @return the flattened copy
      */
     public <T extends JexlNode> T flattenTree(T rootNode) {

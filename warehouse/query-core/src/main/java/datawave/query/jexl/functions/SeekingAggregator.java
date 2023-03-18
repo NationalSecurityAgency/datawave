@@ -33,11 +33,17 @@ public abstract class SeekingAggregator implements FieldIndexAggregator {
      * Advance an iterator until skip(...) returns false. May be a combination of seek() and next() calls
      * 
      * @param itr
+     *            the iterator
      * @param pointer
+     *            a byte sequence pointer
      * @param currentRange
+     *            the current range
      * @param columnFamilies
+     *            the column families
      * @param includeColumnFamilies
+     *            flag to include column families
      * @throws IOException
+     *             for issues with read/write
      */
     protected void advanceItr(SortedKeyValueIterator<Key,Value> itr, ByteSequence pointer, Range currentRange, Collection<ByteSequence> columnFamilies,
                     boolean includeColumnFamilies) throws IOException {
@@ -63,6 +69,7 @@ public abstract class SeekingAggregator implements FieldIndexAggregator {
      * Produce a pointer from the current key
      * 
      * @param current
+     *            the current key
      * @return non-null ByteSequence
      */
     protected abstract ByteSequence parsePointer(Key current);
@@ -74,7 +81,7 @@ public abstract class SeekingAggregator implements FieldIndexAggregator {
      *            the initial Key from the iterator
      * @param pointer
      *            the pointer produced by calling parsePointer(current)
-     * @return
+     * @return a result key
      */
     protected abstract Key getResult(Key current, ByteSequence pointer);
     

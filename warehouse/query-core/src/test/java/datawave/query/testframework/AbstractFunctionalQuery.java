@@ -681,6 +681,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * When provided, the QueryMetric object will be used for running the query and so can be later inspected. Also see #useRunningQuery()
      * 
      * @param metric
+     *            the base metric
      */
     protected void withMetric(BaseQueryMetric metric) {
         this.metricFactory = new QueryMetricFactory() {

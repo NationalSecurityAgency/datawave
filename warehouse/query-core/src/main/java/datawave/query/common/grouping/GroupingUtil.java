@@ -54,10 +54,10 @@ public class GroupingUtil {
      * is called that it is expecting the countingMap to be mutated) or the caller can reset the instance of countingMap by calling getCountingMap on the
      * GroupInfo object (clearer, but relies more on garbage collection)
      *
-     * @param entry
-     * @param groupFieldsSet
-     * @param countingMap
-     * @return
+     * @param entry the map entry
+     * @param groupFieldsSet group fields set
+     * @param countingMap the counting map
+     * @return grouping info
      */
     public GroupingInfo getGroupingInfo(Map.Entry<Key,Document> entry, Set<String> groupFieldsSet, GroupCountingHashMap countingMap) {
         return getGroupingInfo(entry, groupFieldsSet, countingMap, null);

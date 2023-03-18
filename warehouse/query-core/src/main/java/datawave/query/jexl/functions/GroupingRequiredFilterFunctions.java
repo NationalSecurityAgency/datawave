@@ -40,6 +40,7 @@ public class GroupingRequiredFilterFunctions {
      * </pre>
      * 
      * @param args
+     *            set of arguments
      * @return a collection of the groups that matched.
      */
     public static Collection<?> getGroupsForMatchesInGroup(Object... args) {
@@ -104,11 +105,16 @@ public class GroupingRequiredFilterFunctions {
      * helper function for getGroupsForMatchesInGroup.
      * 
      * @param fieldValue
+     *            the field value
      * @param regex
+     *            regex string
      * @param context
+     *            current context
      * @param allMatches
+     *            group of matches
      * @param currentMatch
-     * @return
+     *            a current match
+     * @return if the context has a match or not
      */
     private static boolean manageGroupsForMatchesInGroupRemainingArgs(Object fieldValue, String regex, String context, Collection<ValueTuple> allMatches,
                     ValueTuple currentMatch) {
@@ -201,10 +207,15 @@ public class GroupingRequiredFilterFunctions {
      * helper function for matchesInGroup
      *
      * @param fieldValue
+     *            the field value
      * @param regex
+     *            regex string
      * @param context
+     *            current context
      * @param allMatches
+     *            group of matches
      * @param currentMatch
+     *            a current match
      */
     private static void manageMatchesInGroupRemainingArgs(Object fieldValue, String regex, String context, Collection<ValueTuple> allMatches,
                     ValueTuple currentMatch) {
@@ -231,6 +242,7 @@ public class GroupingRequiredFilterFunctions {
      * </pre>
      *
      * @param args
+     *            matched set of field/regex pairs
      * @return a collection of matches
      */
     public static Collection<?> matchesInGroupLeft(Object... args) {
@@ -331,6 +343,7 @@ public class GroupingRequiredFilterFunctions {
      * test that fields (field names) have values that match within the same grouping context.
      * 
      * @param fields
+     *            field names
      * @return a collection of matches
      * */
     public static Collection<ValueTuple> atomValuesMatch(Object... fields) {
@@ -349,6 +362,7 @@ public class GroupingRequiredFilterFunctions {
      * test that fields have values that match within the same grouping context.
      * 
      * @param fields
+     *            list of fields
      * @return a collection of matches
      */
     public static Collection<ValueTuple> atomValuesMatch(Iterable<?>... fields) {

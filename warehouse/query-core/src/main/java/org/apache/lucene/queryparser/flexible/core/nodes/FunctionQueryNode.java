@@ -64,6 +64,10 @@ public class FunctionQueryNode extends QueryNodeImpl {
      *            - position in the query string
      * @param end
      *            - position in the query string
+     * @param text
+     *            text string
+     * @throws ParseException
+     *             for issues parsing
      */
     public FunctionQueryNode(CharSequence text, int begin, int end) throws ParseException {
         String s = text.toString();

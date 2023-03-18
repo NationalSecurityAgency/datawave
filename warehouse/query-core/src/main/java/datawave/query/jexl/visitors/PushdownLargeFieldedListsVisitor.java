@@ -72,6 +72,15 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
      * Expand functions to be AND'ed with their index query equivalents.
      *
      * @param script
+     *            a script
+     * @param config
+     *            a config
+     * @param <T>
+     *            type of script
+     * @param fs
+     *            filesystem
+     * @param fstHdfsUri
+     *            the filesystem hdfs uri
      * @return The tree with additional index query portions
      */
     @SuppressWarnings("unchecked")

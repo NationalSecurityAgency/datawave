@@ -90,6 +90,22 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
      *            Normalizers applied to the value(s) of fields fetched for a given document
      * @param options
      *            Various query parameters and helper components
+     * @param compositeMetadata
+     *            the composite metadata
+     * @param inclusive
+     *            flag indicating if the range is inclusive
+     * @param columnFamilies
+     *            the column families
+     * @param comparatorFactory
+     *            the comparator factory to use
+     * @param delayedNonEventFieldMap
+     *            map of the delated non event fields
+     * @param equality
+     *            the equality object
+     * @param iteratorBuildingVisitor
+     *            the iterator visitor
+     * @param variables
+     *            collection of variables
      */
     public IndexOnlyContextCreator(final SortedKeyValueIterator<Key,Value> source, final Range range, final TypeMetadata typeMetadata,
                     final CompositeMetadata compositeMetadata, final QueryOptions options, Collection<String> variables,

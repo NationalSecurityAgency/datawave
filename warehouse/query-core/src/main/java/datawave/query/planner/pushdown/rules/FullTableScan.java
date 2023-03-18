@@ -46,10 +46,6 @@ public class FullTableScan extends PushDownRule {
         
     }
     
-    /**
-     * @param delayedPredicates
-     * @return
-     */
     protected JexlNode reverseDepth(JexlNode parentNode, List<JexlNode> delayedPredicates) {
         JexlNode returnNode = ASTDelayedPredicate.create(parentNode);
         JexlNode newAnd = new ASTAndNode(ParserTreeConstants.JJTANDNODE);

@@ -47,6 +47,8 @@ public class ConjunctionEliminationVisitor extends RebuildingVisitor {
      *
      * @param node
      *            a query node
+     * @param <T>
+     *            type of node
      * @return a re-written query tree for the node
      */
     public static <T extends JexlNode> T optimize(T node) {

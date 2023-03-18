@@ -129,6 +129,7 @@ public class PushdownNegationVisitorTest {
      * Same as testNestedAnd but validate that the original is not modified
      *
      * @throws ParseException
+     *             if the query does not parse
      */
     @Test
     public void testGuarantees() throws ParseException {
