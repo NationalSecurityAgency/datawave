@@ -7,6 +7,7 @@ public class QueryMetricsWriterConfiguration {
 
     private String timelyHost = null;
     private int timelyPort = 0;
+    private int batchSize = 100;
     private Set<String> timelyMetricTags = new HashSet<>();
     private boolean useRemoteService = false;
 
@@ -24,6 +25,14 @@ public class QueryMetricsWriterConfiguration {
 
     public void setTimelyPort(int timelyPort) {
         this.timelyPort = timelyPort;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
     }
 
     public Set<String> getTimelyMetricTags() {
