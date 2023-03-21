@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.query.function.PrefixEquality;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
 import datawave.query.iterator.errors.UnindexedException;
@@ -37,7 +36,6 @@ import datawave.query.predicate.TimeFilter;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -130,7 +128,6 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             setReducedResponse(Boolean.parseBoolean(options.get(REDUCED_RESPONSE)));
         }
         
-        this.equality = new PrefixEquality(PartialKey.ROW_COLFAM);
         this.getDocumentKey = GetStartKey.instance();
         this.mustUseFieldIndex = true;
         
