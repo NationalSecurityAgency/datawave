@@ -54,7 +54,7 @@ public class FieldMissingFromSchemaVisitorTest {
         // Case 2 - check with a null datatype filter, implies all fields.
         checkNullDatatypeFilter(Collections.emptySet(), script);
         
-        // Case 3 - check with an empty datatype filter, implies all fields.
+        // Case 3 - check with an empty datatype filter, implies no fields.
         checkEmptyDatatypeFilter(Collections.emptySet(), script);
     }
     
@@ -86,7 +86,7 @@ public class FieldMissingFromSchemaVisitorTest {
         // Case 2 - check with a null datatype filter, implies all fields.
         checkNullDatatypeFilter(expected, script);
         
-        // Case 3 - check with an empty datatype filter, implies all fields.
+        // Case 3 - check with an empty datatype filter, implies no fields.
         checkEmptyDatatypeFilter(expected, script);
     }
     
@@ -115,7 +115,7 @@ public class FieldMissingFromSchemaVisitorTest {
         // Case 2 - check with a null datatype filter, implies all fields.
         checkNullDatatypeFilter(expected, script);
         
-        // Case 3 - check with an empty datatype filter, implies all fields.
+        // Case 3 - check with an empty datatype filter, implies no fields.
         checkEmptyDatatypeFilter(expected, script);
     }
     
@@ -145,7 +145,7 @@ public class FieldMissingFromSchemaVisitorTest {
         // Case 2 - check with a null datatype filter, implies all fields.
         checkNullDatatypeFilter(Collections.emptySet(), script);
         
-        // Case 3 - check with an empty datatype filter, implies all fields.
+        // Case 3 - check with an empty datatype filter, implies no fields.
         checkEmptyDatatypeFilter(Collections.emptySet(), script);
     }
     
@@ -173,7 +173,7 @@ public class FieldMissingFromSchemaVisitorTest {
         // Case 2 - check with a null datatype filter, implies all fields.
         checkNullDatatypeFilter(Collections.emptySet(), script);
         
-        // Case 3 - check with an empty datatype filter, implies all fields.
+        // Case 3 - check with an empty datatype filter, implies no fields.
         checkEmptyDatatypeFilter(Collections.emptySet(), script);
     }
     
@@ -198,7 +198,7 @@ public class FieldMissingFromSchemaVisitorTest {
         // Case 2 - check with a null datatype filter, implies all fields.
         checkNullDatatypeFilter(expected, script);
         
-        // Case 3 - check with an empty datatype filter, implies all fields.
+        // Case 3 - check with an empty datatype filter, implies no fields.
         checkEmptyDatatypeFilter(expected, script);
     }
     
@@ -227,7 +227,7 @@ public class FieldMissingFromSchemaVisitorTest {
         // Case 2 - check with a null datatype filter, implies all fields.
         checkNullDatatypeFilter(Collections.emptySet(), script);
         
-        // Case 3 - check with an empty datatype filter, implies all fields.
+        // Case 3 - check with an empty datatype filter, implies no fields.
         checkEmptyDatatypeFilter(Collections.emptySet(), script);
     }
     
@@ -260,7 +260,7 @@ public class FieldMissingFromSchemaVisitorTest {
         // Case 2 - check with a null datatype filter, implies all fields.
         checkNullDatatypeFilter(expected, script);
         
-        // Case 3 - check with an empty datatype filter, implies all fields.
+        // Case 3 - check with an empty datatype filter, implies no fields.
         checkEmptyDatatypeFilter(expected, script);
     }
     

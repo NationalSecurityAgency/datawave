@@ -150,13 +150,15 @@ public class MockMetadataHelper extends MetadataHelper {
     
     @Override
     public Set<String> getAllFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
-        if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
-            return Collections.unmodifiableSet(getMetadata().getAllFields());
-        }
         Set<String> fields = new HashSet<>();
-        for (Map.Entry<String,String> entry : fieldsToDatatype.entries()) {
-            if (ingestTypeFilter.contains(entry.getValue())) {
-                fields.add(entry.getKey());
+        
+        if (ingestTypeFilter == null) {
+            return Collections.unmodifiableSet(getMetadata().getAllFields());
+        } else if (!ingestTypeFilter.isEmpty()) {
+            for (Map.Entry<String,String> entry : fieldsToDatatype.entries()) {
+                if (ingestTypeFilter.contains(entry.getValue())) {
+                    fields.add(entry.getKey());
+                }
             }
         }
         return Collections.unmodifiableSet(fields);

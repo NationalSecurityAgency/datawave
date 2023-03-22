@@ -49,7 +49,6 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
         this.helper = helper;
         this.specialFields = specialFields;
         try {
-            // if given datatypeFilter is null, assume that means ALL datatypes
             this.allFieldsForDatatypes = this.helper.getAllFields(datatypeFilter);
         } catch (TableNotFoundException e) {
             log.error(e);
