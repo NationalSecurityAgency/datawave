@@ -6,6 +6,7 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -156,7 +157,12 @@ public class QueryFieldsVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-        Set<String> fields = desc.fields(helper, null);
+        Set<String> fields = null;
+        try {
+            fields = desc.fields(helper, null);
+        } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
         ((Set<String>) data).addAll(fields);
         return data;
     }

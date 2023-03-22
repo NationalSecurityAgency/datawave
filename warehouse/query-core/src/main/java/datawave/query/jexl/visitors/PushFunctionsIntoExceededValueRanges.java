@@ -10,6 +10,7 @@ import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -35,7 +36,6 @@ import static org.apache.commons.jexl2.parser.JexlNodes.newInstanceOfType;
  * Visits an JexlNode tree, pushing functions into exceeded value ranges. This is to enable use of the filtering ivarator instead of simply the range ivarator.
  * The idea is to enable handling ranges for which there are many false positives relative to the matching function. The fields for the functions must match
  * that of the range. Presumably the range was created by the getIndexQuery on the function descriptor.
- *
  */
 public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(PushFunctionsIntoExceededValueRanges.class);
@@ -86,15 +86,19 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         List<JexlNode> children = new ArrayList<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
-            if (isSingleFieldFunctionNode(child)) {
-                functionNodes.add(child);
-                for (String field : getFunctionFields(child)) {
-                    functionNodesByField.put(field, child);
+            try {
+                if (isSingleFieldFunctionNode(child)) {
+                    functionNodes.add(child);
+                    for (String field : getFunctionFields(child)) {
+                        functionNodesByField.put(field, child);
+                    }
+                } else if (isExceededValueRangeNode(child)) {
+                    exceededValueRangeNodes.put(getRangeField(child), child);
+                } else {
+                    children.add(child);
                 }
-            } else if (isExceededValueRangeNode(child)) {
-                exceededValueRangeNodes.put(getRangeField(child), child);
-            } else {
-                children.add(child);
+            } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(e);
             }
         }
         
@@ -141,7 +145,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         }
     }
     
-    private boolean isSingleFieldFunctionNode(JexlNode child) {
+    private boolean isSingleFieldFunctionNode(JexlNode child) throws TableNotFoundException, InstantiationException, IllegalAccessException {
         child = JexlASTHelper.dereference(child);
         if (child instanceof ASTFunctionNode) {
             Set<Set<String>> fieldSets = JexlASTHelper.getFieldNameSets((ASTFunctionNode) child, helper, datatypeFilter);
@@ -158,7 +162,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         return false;
     }
     
-    private Set<String> getFunctionFields(JexlNode child) {
+    private Set<String> getFunctionFields(JexlNode child) throws TableNotFoundException, InstantiationException, IllegalAccessException {
         child = JexlASTHelper.dereference(child);
         if (child instanceof ASTFunctionNode) {
             return JexlASTHelper.getFieldNames((ASTFunctionNode) child, helper, datatypeFilter);

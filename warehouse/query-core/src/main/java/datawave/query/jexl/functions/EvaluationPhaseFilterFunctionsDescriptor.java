@@ -1,13 +1,7 @@
 package datawave.query.jexl.functions;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
@@ -17,17 +11,21 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
-
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Evaluation phase filter functions cannot be evaluated against index-only fields
@@ -46,9 +44,6 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
     
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
-     *
-     * 
-     *
      */
     public static class EvaluationPhaseFilterJexlArgumentDescriptor implements JexlArgumentDescriptor {
         private static final Logger log = Logger.getLogger(EvaluationPhaseFilterJexlArgumentDescriptor.class);
@@ -165,7 +160,8 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         }
         
         @Override
-        public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
+        public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap)
+                        throws TableNotFoundException, InstantiationException, IllegalAccessException {
             // Since the getIndexQuery does not supply actual filters on the fields, we need to add those filters here
             Set<String> queryFields = fields(null, null);
             // argument 0 (child 2) is the fieldname, argument 1 (child 3) is the regex
@@ -190,41 +186,67 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         }
         
         @Override
-        public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
+        public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) throws TableNotFoundException, InstantiationException,
+                        IllegalAccessException {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
             Set<String> fields = Sets.newHashSet();
             
             List<JexlNode> arguments = functionMetadata.args();
             if (MATCHCOUNTOF.equals(functionMetadata.name())) {
-                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(1)));
+                fields.addAll(filterFields(JexlASTHelper.getIdentifierNames(arguments.get(1)), helper, datatypeFilter));
             } else if (TIMEFUNCTION.equals(functionMetadata.name())) {
-                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
-                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(1)));
+                fields.addAll(filterFields(JexlASTHelper.getIdentifierNames(arguments.get(0)), helper, datatypeFilter));
+                fields.addAll(filterFields(JexlASTHelper.getIdentifierNames(arguments.get(1)), helper, datatypeFilter));
             } else if (COMPARE.equals(functionMetadata.name())) {
-                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
-                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(3)));
+                fields.addAll(filterFields(JexlASTHelper.getIdentifierNames(arguments.get(0)), helper, datatypeFilter));
+                fields.addAll(filterFields(JexlASTHelper.getIdentifierNames(arguments.get(3)), helper, datatypeFilter));
             } else {
-                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
+                fields.addAll(filterFields(JexlASTHelper.getIdentifierNames(arguments.get(0)), helper, datatypeFilter));
             }
             return fields;
         }
         
         @Override
-        public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
+        public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) throws TableNotFoundException, InstantiationException,
+                        IllegalAccessException {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
             
             List<JexlNode> arguments = functionMetadata.args();
             if (MATCHCOUNTOF.equals(functionMetadata.name())) {
-                return JexlArgumentDescriptor.Fields.product(arguments.get(1));
+                return filterSets(JexlArgumentDescriptor.Fields.product(arguments.get(1)), helper, datatypeFilter);
             } else if (TIMEFUNCTION.equals(functionMetadata.name())) {
-                return JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(1));
+                return filterSets(JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(1)), helper, datatypeFilter);
             } else if (COMPARE.equals(functionMetadata.name())) {
-                return JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(3));
+                return filterSets(JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(3)), helper, datatypeFilter);
             } else {
-                return JexlArgumentDescriptor.Fields.product(arguments.get(0));
+                return filterSets(JexlArgumentDescriptor.Fields.product(arguments.get(0)), helper, datatypeFilter);
             }
+        }
+        
+        private Set<String> filterFields(Set<String> fields, MetadataHelper helper, Set<String> datatypeFilter) throws TableNotFoundException,
+                        InstantiationException, IllegalAccessException {
+            Set<String> filteredFields = new HashSet<>();
+            if (datatypeFilter == null) {
+                filteredFields.addAll(fields);
+            } else if (!datatypeFilter.isEmpty()) {
+                for (String field : fields) {
+                    if (!helper.getDatatypesForField(field, datatypeFilter).isEmpty()) {
+                        filteredFields.add(field);
+                    }
+                }
+            } // non-null but empty typeFilters allow nothing
+            return Collections.unmodifiableSet(filteredFields);
+        }
+        
+        private Set<Set<String>> filterSets(Set<Set<String>> sets, MetadataHelper helper, Set<String> datatypeFilter) throws TableNotFoundException,
+                        InstantiationException, IllegalAccessException {
+            Set<Set<String>> filteredSets = new HashSet<>();
+            for (Set<String> set : sets) {
+                filteredSets.add(filterFields(set, helper, datatypeFilter));
+            }
+            return Collections.unmodifiableSet(filteredSets);
         }
         
         @Override

@@ -22,6 +22,7 @@ import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -66,7 +67,6 @@ import java.util.stream.Collectors;
  * <p>
  * The update function uses the value-specific geowave field, and drops the anded term (since all of the data indexed under the value-specific geowave field
  * already satisfies that term).
- *
  */
 public class WhindexVisitor extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(WhindexVisitor.class);
@@ -166,7 +166,7 @@ public class WhindexVisitor extends RebuildingVisitor {
      * This method is used to ensure that we don't allow mapping to fields which did not exist prior to the begin date of the query. If the new field didn't
      * exist before the begin date of the query, then we should not allow a mapping to be made. New fields which were created after the begin date, but before
      * the end date of the query will be mapped when this visitor is called in the visitor function. {@link datawave.query.tables.async.event.VisitorFunction}
-     * 
+     *
      * @param valueSpecificFieldMappings
      *            the configured value-specific field mappings
      * @param beginDate
@@ -302,7 +302,12 @@ public class WhindexVisitor extends RebuildingVisitor {
         // first, find all leaf nodes
         // note: an 'and' node defining a range over a single term is considered a leaf node for our purposes
         List<JexlNode> nonLeafNodes = new ArrayList<>();
-        Multimap<String,JexlNode> leafNodes = getLeafNodes(node, nonLeafNodes);
+        Multimap<String,JexlNode> leafNodes = null;
+        try {
+            leafNodes = getLeafNodes(node, nonLeafNodes);
+        } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
         
         // if any of the non-leaf nodes is an OR with a marker node, distribute all of the sibling nodes into those OR nodes
         List<JexlNode> orNodesWithMarkers = nonLeafNodes.stream().filter(this::isFieldValueMatchOrNode).collect(Collectors.toList());
@@ -623,9 +628,9 @@ public class WhindexVisitor extends RebuildingVisitor {
      *            A multimap of leaf child nodes, keyed by field name, from the parent node
      * @param usedLeafNodes
      *            A multimap of used leaf child nodes, keyed by field name, used to create the returned whindexes
-     * @return A list of modified and unmodified leaf child nodes, from the parent node
      * @param whindexTerms
      *            list of index terms
+     * @return A list of modified and unmodified leaf child nodes, from the parent node
      */
     private List<JexlNode> processUnusedLeafNodes(ExpandData parentData, Multimap<String,JexlNode> leafNodes, Multimap<String,JexlNode> usedLeafNodes,
                     List<WhindexTerm> whindexTerms) {
@@ -870,7 +875,8 @@ public class WhindexVisitor extends RebuildingVisitor {
      *            Non-leaf child nodes of the root node
      * @return A multimap of field name to leaf node
      */
-    private Multimap<String,JexlNode> getLeafNodes(JexlNode rootNode, Collection<JexlNode> otherNodes) {
+    private Multimap<String,JexlNode> getLeafNodes(JexlNode rootNode, Collection<JexlNode> otherNodes) throws TableNotFoundException, InstantiationException,
+                    IllegalAccessException {
         Multimap<String,JexlNode> childrenLeafNodes = ArrayListMultimap.create();
         
         if (rootNode instanceof ASTAndNode) {

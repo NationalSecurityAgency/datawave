@@ -1,10 +1,5 @@
 package datawave.query.jexl.functions.arguments;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import datawave.core.iterators.DatawaveFieldIndexFilterIteratorJexl;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
@@ -12,16 +7,18 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
-
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This interface will describe the arguments for a jexl function that has implemented (@see JexlArgumentDescriptor). The initial use of this is to determine
  * what fields and values should be queried for in the index for shard range determination.
- *
- * 
- *
  */
 public interface JexlArgumentDescriptor {
     /**
@@ -43,24 +40,25 @@ public interface JexlArgumentDescriptor {
      * Get the expression filters for this function. NOTE NOTE NOTE: This only needs to add expression filters IFF the getIndexQuery does not add appropriate
      * expression filters in the first place. This is because addFilters is used after the query had been expanded to include the index query. So for most
      * implementations this function will do nothing. For the EvaluationPhaseFilterFunctions however this will have to be implemented.
-     * 
+     *
      * @param attributeFactory
      *            the attribute factory
      * @param filterMap
      *            the filter map
      */
-    void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap);
+    void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) throws TableNotFoundException,
+                    InstantiationException, IllegalAccessException;
     
     /**
      * Get the entire set of fields that are referenced by this function. If you need subsets of fields required to satisfy the function, then use fieldSets()
-     * 
+     *
      * @param metadata
      *            the metadata helper
      * @param datatypeFilter
      *            the datatype filter
      * @return the set of fields
      */
-    Set<String> fields(MetadataHelper metadata, Set<String> datatypeFilter);
+    Set<String> fields(MetadataHelper metadata, Set<String> datatypeFilter) throws TableNotFoundException, InstantiationException, IllegalAccessException;
     
     /**
      * Get the fields separated into sets that are required to satisfy this function. So if one of the identifiers is actually an "OR" expression, then each of
@@ -72,7 +70,8 @@ public interface JexlArgumentDescriptor {
      *            the datatype filter
      * @return the set of fields
      */
-    Set<Set<String>> fieldSets(MetadataHelper metadata, Set<String> datatypeFilter);
+    Set<Set<String>> fieldSets(MetadataHelper metadata, Set<String> datatypeFilter) throws TableNotFoundException, InstantiationException,
+                    IllegalAccessException;
     
     /**
      * Get the fields that are referenced by the specified argument in this function. Argument 0 is the first argument to the function (child node 3 of the
@@ -91,14 +90,14 @@ public interface JexlArgumentDescriptor {
     
     /**
      * Should expansions (e.g. from a model) use ORs or ANDs. For example isNull should use ANDs, but includeRegex should use ORs.
-     * 
+     *
      * @return true is an OR node is required
      */
     boolean useOrForExpansion();
     
     /**
      * Are the string literal arguments regexes. Used to determine how to normalize them (see {@link datawave.data.type.BaseType})
-     * 
+     *
      * @return true if literal arguments are regexes
      */
     boolean regexArguments();

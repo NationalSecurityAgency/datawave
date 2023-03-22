@@ -8,6 +8,7 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.util.MetadataHelper;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
@@ -37,7 +38,12 @@ class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
     public Object visit(ASTFunctionNode node, Object data) {
         JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         if (descriptor instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
-            Set<String> fields = descriptor.fields(metadataHelper, Collections.emptySet());
+            Set<String> fields = null;
+            try {
+                fields = descriptor.fields(metadataHelper, Collections.emptySet());
+            } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
             if (fields.size() > 1) {
                 List<JexlNode> functionNodes = new ArrayList<>();
                 
@@ -60,7 +66,12 @@ class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
                 return JexlNodeFactory.createUnwrappedOrNode(functionNodes);
             }
         } else if (descriptor instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
-            Set<String> fields = descriptor.fields(metadataHelper, Collections.emptySet());
+            Set<String> fields = null;
+            try {
+                fields = descriptor.fields(metadataHelper, Collections.emptySet());
+            } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
             if (fields.size() > 1) {
                 List<JexlNode> functionNodes = new ArrayList<>();
                 

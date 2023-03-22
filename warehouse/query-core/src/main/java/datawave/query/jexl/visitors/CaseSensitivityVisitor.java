@@ -4,6 +4,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.MetadataHelper;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -62,7 +63,12 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
         // lets determine which of the arguments are actually field name identifiers (e.g. termFrequencyMap is not)
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         
-        Set<String> fields = desc.fields(helper, config.getDatatypeFilter());
+        Set<String> fields = null;
+        try {
+            fields = desc.fields(helper, config.getDatatypeFilter());
+        } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
         
         return super.visit(node, fields);
     }

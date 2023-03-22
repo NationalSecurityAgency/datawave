@@ -23,7 +23,6 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -50,10 +49,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
         this.helper = helper;
         this.specialFields = specialFields;
         try {
-            // if given datatypeFilter is empty or null, assume that means ALL datatypes
-            if (datatypeFilter == null) {
-                datatypeFilter = Collections.emptySet();
-            }
+            // if given datatypeFilter is null, assume that means ALL datatypes
             this.allFieldsForDatatypes = this.helper.getAllFields(datatypeFilter);
         } catch (TableNotFoundException e) {
             log.error(e);
@@ -148,13 +144,17 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
         @SuppressWarnings("unchecked")
         Set<String> nonExistentFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
         
-        for (String fieldName : desc.fields(this.helper, this.datatypeFilter)) {
-            // deconstruct the identifier
-            final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
-            // changed to allow _ANYFIELD_ in functions
-            if (!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName)) {
-                nonExistentFieldNames.add(testFieldName);
+        try {
+            for (String fieldName : desc.fields(this.helper, this.datatypeFilter)) {
+                // deconstruct the identifier
+                final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
+                // changed to allow _ANYFIELD_ in functions
+                if (!this.allFieldsForDatatypes.contains(testFieldName) && !specialFields.contains(fieldName)) {
+                    nonExistentFieldNames.add(testFieldName);
+                }
             }
+        } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
         
         return nonExistentFieldNames;

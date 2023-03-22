@@ -13,6 +13,7 @@ import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.predicate.PeekingPredicate;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -51,32 +52,46 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     
     /**
      * ExpressionFilter is used to select those Keys that are required in order to evaluate a query.
-     *
+     * <p>
      * Each instance of this class corresponds to a single field and may contain a set of literal values, patterns, ranges or a nullValueFlag. These are
      * populated by the EventDataQueryExpressionVisitor as it traverses the query parse tree.
-     *
+     * <p>
      * When traversing tables at query time, the apply method is called for the keys encountered. If the field value embedded in the key matches the literal,
      * pattern or range, the key is kept indicating that the key is necessary for evaluating that portion of the query.
-     *
+     * <p>
      * The null value flag is a bit of an unusual case and is generated in cases where a null (or non-null) comparison is performed for a field. It indicates
      * that at least one key for a field must be kept regardless of value. As such, this flag is set to false once its predicate has be satisfied.
      */
     public static class ExpressionFilter implements PeekingPredicate<Key>, Cloneable {
         final AttributeFactory attributeFactory;
         
-        /** The field this filter apples to */
+        /**
+         * The field this filter apples to
+         */
         final String fieldName;
-        /** fieldValues contains a set of literal values for which we need to keep data in order to satisfy the query */
+        /**
+         * fieldValues contains a set of literal values for which we need to keep data in order to satisfy the query
+         */
         final Set<String> fieldValues;
-        /** fieldPatterns contains a set of patterns for which we need to keep data in order to satisfy the query */
+        /**
+         * fieldPatterns contains a set of patterns for which we need to keep data in order to satisfy the query
+         */
         final Map<Pattern,Matcher> fieldPatterns;
-        /** fieldRanges contains a set of ranges for which we need to keep data in order to satisfy the query */
+        /**
+         * fieldRanges contains a set of ranges for which we need to keep data in order to satisfy the query
+         */
         final Set<LiteralRange<?>> fieldRanges;
-        /** nullValueFlag indicates that we need to capture at least one instance of the field in order to satisfy a null value check in the query */
+        /**
+         * nullValueFlag indicates that we need to capture at least one instance of the field in order to satisfy a null value check in the query
+         */
         boolean nullValueFlag;
-        /** nonNullValueSeen indicates that we have seen a nonNullValue. This is used with the nullValueFlag. */
+        /**
+         * nonNullValueSeen indicates that we have seen a nonNullValue. This is used with the nullValueFlag.
+         */
         boolean nonNullValueSeen;
-        /** acceptAll indicates that all values should be returned */
+        /**
+         * acceptAll indicates that all values should be returned
+         */
         boolean acceptAll;
         
         public ExpressionFilter(AttributeFactory attributeFactory, String fieldName) {
@@ -143,7 +158,6 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         }
         
         /**
-         *
          * @param key
          *            the key to evaluate, must be parsable by DatawaveKey
          * @return true if the key should be kept in order to evaluare the query, false otherwise
@@ -282,7 +296,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         
         /**
          * A helper method to clone a set of filters
-         * 
+         *
          * @param filters
          *            set of filters
          * @return a cloned set of filters
@@ -315,7 +329,6 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     }
     
     /**
-     *
      * @param script
      *            The query that will be used to generate the set of expression filters
      * @param factory
@@ -331,7 +344,6 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     }
     
     /**
-     *
      * @param node
      *            the node that should be used to build the expression filters
      * @param factory
@@ -422,7 +434,11 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     public Object visit(ASTFunctionNode node, Object data) {
         
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-        desc.addFilters(attributeFactory, filterMap);
+        try {
+            desc.addFilters(attributeFactory, filterMap);
+        } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
         
         return null;
     }
