@@ -55,7 +55,8 @@ public class FieldMissingFromSchemaVisitorTest {
         checkNullDatatypeFilter(Collections.emptySet(), script);
         
         // Case 3 - check with an empty datatype filter, implies no fields.
-        checkEmptyDatatypeFilter(Collections.emptySet(), script);
+        Set<String> expected = Sets.newHashSet("FOO", "FOO2");
+        checkEmptyDatatypeFilter(expected, script);
     }
     
     /**
@@ -91,7 +92,7 @@ public class FieldMissingFromSchemaVisitorTest {
     }
     
     /**
-     * Test query with two field:datatype pairs, one of which does not exist in the metadta helper.
+     * Test query with two field:datatype pairs, one of which does not exist in the metadata helper.
      */
     @Test
     public void testOneMissingField() throws ParseException {
@@ -116,6 +117,7 @@ public class FieldMissingFromSchemaVisitorTest {
         checkNullDatatypeFilter(expected, script);
         
         // Case 3 - check with an empty datatype filter, implies no fields.
+        expected = Sets.newHashSet("FOO", "FOO2");
         checkEmptyDatatypeFilter(expected, script);
     }
     
@@ -146,7 +148,8 @@ public class FieldMissingFromSchemaVisitorTest {
         checkNullDatatypeFilter(Collections.emptySet(), script);
         
         // Case 3 - check with an empty datatype filter, implies no fields.
-        checkEmptyDatatypeFilter(Collections.emptySet(), script);
+        expected = Sets.newHashSet("FOO", "FOO2");
+        checkEmptyDatatypeFilter(expected, script);
     }
     
     /**
@@ -174,7 +177,8 @@ public class FieldMissingFromSchemaVisitorTest {
         checkNullDatatypeFilter(Collections.emptySet(), script);
         
         // Case 3 - check with an empty datatype filter, implies no fields.
-        checkEmptyDatatypeFilter(Collections.emptySet(), script);
+        Set<String> expected = Sets.newHashSet("FOO");
+        checkEmptyDatatypeFilter(expected, script);
     }
     
     /**
@@ -228,7 +232,7 @@ public class FieldMissingFromSchemaVisitorTest {
         checkNullDatatypeFilter(Collections.emptySet(), script);
         
         // Case 3 - check with an empty datatype filter, implies no fields.
-        checkEmptyDatatypeFilter(Collections.emptySet(), script);
+        checkEmptyDatatypeFilter(expected, script);
     }
     
     /**
@@ -261,6 +265,7 @@ public class FieldMissingFromSchemaVisitorTest {
         checkNullDatatypeFilter(expected, script);
         
         // Case 3 - check with an empty datatype filter, implies no fields.
+        expected = Sets.newHashSet("BAR", "BAZ");
         checkEmptyDatatypeFilter(expected, script);
     }
     
@@ -294,7 +299,8 @@ public class FieldMissingFromSchemaVisitorTest {
         expected = Sets.newHashSet("BAR");
         checkNullDatatypeFilter(expected, script);
         
-        // Case 3 - check with an empty datatype filter, implies all fields.
+        // Case 3 - check with an empty datatype filter, implies no fields.
+        expected = Sets.newHashSet("BAR", "BAZ", "FOO");
         checkEmptyDatatypeFilter(expected, script);
     }
     
