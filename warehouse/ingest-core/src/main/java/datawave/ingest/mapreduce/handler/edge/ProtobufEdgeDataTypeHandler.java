@@ -456,6 +456,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     protected BloomFilter<Key> activityLogBloom = null;
     protected BloomFilter<Key> durationLogBloom = null;
     
+    protected Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList;
+    
     @Override
     public long process(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)
@@ -474,11 +476,18 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         
         // get edge definitions for this event type
         Type dataType = event.getDataType();
+        
+        // allows us to request edges for only specific child types
         String typeName = dataType.typeName();
+        String outputName = dataType.outputName();
+        
+        typeName = edges.containsKey(outputName) ? outputName : typeName;
+        
         List<EdgeDefinition> edgeDefs = null;
         EdgeDefinitionConfigurationHelper edgeDefConfigs = null;
         if (!edges.containsKey(typeName)) {
             return edgesCreated; // short circuit, no edges defined for this type
+            
         }
         edgeDefConfigs = edges.get(typeName);
         edgeDefs = edgeDefConfigs.getEdges();
@@ -498,7 +507,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          * normalize field names with groups
          */
         Multimap<String,NormalizedContentInterface> normalizedFields = HashMultimap.create();
-        Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList = new HashMap<>();
+        depthFirstList = new HashMap<>();
         Multimap<String,NormalizedContentInterface> tmp = null;
         for (Entry<String,NormalizedContentInterface> e : fields.entries()) {
             NormalizedContentInterface value = e.getValue();
@@ -563,6 +572,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             Map<String,Set<String>> matchingGroups = new HashMap<>();
             String jexlPreconditions = null;
             
+            // don't bother evaluating preconditions if we know this event doesn't have the necessary fields for this edge
+            if (eventLacksEdgeFields(edgeDef)) {
+                continue;
+            }
+            
             /**
              * Fail fast for setting up precondition evaluations
              */
@@ -599,26 +613,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             
             String enrichmentFieldName = getEnrichmentFieldName(edgeDef);
             
-            Multimap<String,NormalizedContentInterface> mSource = null;
-            Multimap<String,NormalizedContentInterface> mSink = null;
+            Multimap<String,NormalizedContentInterface> mSource = depthFirstList.get(edgeDef.getSourceFieldName());
+            Multimap<String,NormalizedContentInterface> mSink = depthFirstList.get(edgeDef.getSinkFieldName());
             
             String sourceGroup = getGroup(edgeDef.getSourceFieldName());
             String sinkGroup = getGroup(edgeDef.getSinkFieldName());
-            
-            if (depthFirstList.containsKey(edgeDef.getSourceFieldName()) && depthFirstList.containsKey(edgeDef.getSinkFieldName())) {
-                mSource = depthFirstList.get(edgeDef.getSourceFieldName());
-                mSink = depthFirstList.get(edgeDef.getSinkFieldName());
-            } else {
-                continue;
-            }
-            
-            // bail if the event doesn't contain any values for the source or sink field
-            if (null == mSource || null == mSink) {
-                continue;
-            }
-            if (mSource.isEmpty() || mSink.isEmpty()) {
-                continue;
-            }
             
             // leave the old logic alone
             if (!edgeDef.hasJexlPrecondition() || !edgeDef.isGroupAware()
@@ -637,6 +636,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                     for (String subGroup : commonKeys) {
                         for (NormalizedContentInterface ifaceSource : mSource.get(subGroup)) {
                             for (NormalizedContentInterface ifaceSink : mSink.get(subGroup)) {
+                                if (ifaceSource.equals(ifaceSink)) {
+                                    continue;
+                                }
                                 EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, subGroup, ifaceSink, sinkGroup, subGroup,
                                                 edgeAttribute2, edgeAttribute3, normalizedFields, depthFirstList, loadDateStr, activityDate, validActivityDate);
                                 if (edgeValue != null) {
@@ -756,6 +758,29 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         }
     }
     
+    private boolean eventLacksEdgeFields(EdgeDefinition edgeDef) {
+        
+        Multimap<String,NormalizedContentInterface> mSource = null;
+        Multimap<String,NormalizedContentInterface> mSink = null;
+        
+        if (depthFirstList.containsKey(edgeDef.getSourceFieldName()) && depthFirstList.containsKey(edgeDef.getSinkFieldName())) {
+            mSource = depthFirstList.get(edgeDef.getSourceFieldName());
+            mSink = depthFirstList.get(edgeDef.getSinkFieldName());
+        } else {
+            return true;
+        }
+        
+        // bail if the event doesn't contain any values for the source or sink field
+        if (null == mSource || null == mSink) {
+            return true;
+        }
+        if (mSource.isEmpty() || mSink.isEmpty()) {
+            return true;
+        }
+        
+        return false;
+    }
+    
     // this could be moved to a more generic class
     private String getLoadDateString(Multimap<String,NormalizedContentInterface> fields) {
         String loadDateStr;
@@ -809,6 +834,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         }
         
         String typeName = event.getDataType().typeName();
+        String outputName = event.getDataType().outputName();
+        
+        typeName = edgeTypeLookup.containsKey(outputName) ? outputName : typeName;
         
         // if the edgeDef is an enrichment definition, fill in the enrichedValue
         if (edgeDef.isEnrichmentEdge()) {
@@ -972,7 +1000,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     private static final String NO_GROUP = "";
     
     protected String getGroup(String groupedFieldName) {
-        int index = groupedFieldName.lastIndexOf('.');
+        int index = groupedFieldName.indexOf('.');
         if (index >= 0) {
             return groupedFieldName.substring(index + 1);
         } else {

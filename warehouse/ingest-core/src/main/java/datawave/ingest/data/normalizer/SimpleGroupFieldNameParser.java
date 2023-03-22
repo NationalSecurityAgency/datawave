@@ -1,6 +1,7 @@
 package datawave.ingest.data.normalizer;
 
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
@@ -17,16 +18,10 @@ import com.google.common.collect.Multimap;
 public class SimpleGroupFieldNameParser {
     private static final long serialVersionUID = 1035918631638323565L;
     private static final Logger log = Logger.getLogger(SimpleGroupFieldNameParser.class);
-    private final boolean shouldIncludeDelimInGroupName;
+    private static final Pattern parentGroupingPattern = Pattern.compile("_\\d");
+    private static final Pattern parentGroupingMatch = Pattern.compile(".*_\\d\\..*");
     
-    /**
-     * 
-     * @param shouldIncludeDelimInGroupName
-     *            flag to set
-     */
-    public SimpleGroupFieldNameParser(boolean shouldIncludeDelimInGroupName) {
-        this.shouldIncludeDelimInGroupName = shouldIncludeDelimInGroupName;
-    }
+    public SimpleGroupFieldNameParser() {}
     
     /**
      * @param origField
@@ -35,26 +30,55 @@ public class SimpleGroupFieldNameParser {
      */
     public NormalizedContentInterface extractFieldNameComponents(NormalizedContentInterface origField) {
         String originalIndexedFieldName = origField.getIndexedFieldName();
-        String normParts[] = StringUtils.split(originalIndexedFieldName, '.');
+        String[] splits = StringUtils.split(originalIndexedFieldName, '.');
         int index = originalIndexedFieldName.indexOf('.');
         
-        if (index > -1) {
-            String baseFieldName = originalIndexedFieldName.substring(0, index);
-            String group = originalIndexedFieldName.substring(index + (shouldIncludeDelimInGroupName ? 0 : 1));
+        if (index > 1) {
+            // we are nested
             
             NormalizedFieldAndValue revisedField = new NormalizedFieldAndValue(origField);
             
-            // we are nested
+            String baseFieldName = null;
+            String group = null;
+            String subgroup = null;
+            
+            baseFieldName = splits[0];
+            group = originalIndexedFieldName.substring(index + 1);
+            
+            if (parentGroupingMatch.matcher(group).matches()) {
+                group = trimGroup(group);
+            } else {
+                // not every field has a group
+                if (splits.length == 2) {
+                    subgroup = splits[1];
+                } else if (splits.length >= 3) {
+                    group = splits[1];
+                    // last member is always the subgroup
+                    subgroup = splits[splits.length - 1];
+                }
+                revisedField.setSubGroup(subgroup);
+            }
+            
             revisedField.setGrouped(true);
-            // and the group is the atom
             revisedField.setGroup(group);
-            // reset the indexed origField name to be the base origField name
             revisedField.setIndexedFieldName(baseFieldName);
             
             return revisedField;
         } else {
             return origField;
         }
+    }
+    
+    private String trimGroup(String groupStr) {
+        int lastIndex = groupStr.lastIndexOf(".");
+        if (lastIndex > 0) {
+            groupStr = groupStr.substring(0, lastIndex);
+        }
+        // For fields where we previously needed to define configurations for all permutations of fields with parents P and their groups, (e.g.
+        // FIELD.P1_n.P2_m...FIELD_x for all real integers n, m, and x) we can now simplify to P1_P2.
+        groupStr = parentGroupingPattern.matcher(groupStr).replaceAll("");
+        
+        return groupStr;
     }
     
     /**
