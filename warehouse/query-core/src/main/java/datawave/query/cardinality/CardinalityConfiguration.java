@@ -101,46 +101,46 @@ public class CardinalityConfiguration {
         return finalProjectionFields;
     }
     
-    public Set<String> getRevisedDisallowedFields(QueryModel queryModel, Set<String> originalDisallowedFields) {
-        Set<String> revisedDisallowedFields = new HashSet<>(originalDisallowedFields);
-        if (!originalDisallowedFields.isEmpty()) {
-            Collection<String> storedDisallowedFieldsToRemove = getStoredDisallowedFieldsToRemove(queryModel, originalDisallowedFields);
+    public Set<String> getRevisedBlacklistFields(QueryModel queryModel, Set<String> originalBlacklistedFields) {
+        Set<String> revisedBlacklistFields = new HashSet<>(originalBlacklistedFields);
+        if (!originalBlacklistedFields.isEmpty()) {
+            Collection<String> storedBlacklistedFieldsToRemove = getStoredBlacklistedFieldsToRemove(queryModel, originalBlacklistedFields);
             if (queryModel != null) {
-                // the disallowed fields will be mapped to their stored values in the DefaultQueryPlanner, so we will remove
+                // the blacklisted fields will be mapped to their stored values in the DefaultQueryPlanner, so we will remove
                 // both the stored version and the model version of the must return field
                 
                 Multimap<String,String> queryMapping = invertMultimap(queryModel.getForwardQueryMapping());
-                for (String bl : storedDisallowedFieldsToRemove) {
+                for (String bl : storedBlacklistedFieldsToRemove) {
                     if (queryMapping.containsKey(bl)) {
-                        revisedDisallowedFields.removeAll(queryMapping.get(bl));
+                        revisedBlacklistFields.removeAll(queryMapping.get(bl));
                     }
                     if (cardinalityFieldReverseMapping.containsKey(bl)) {
-                        revisedDisallowedFields.remove(cardinalityFieldReverseMapping.get(bl));
+                        revisedBlacklistFields.remove(cardinalityFieldReverseMapping.get(bl));
                     }
-                    revisedDisallowedFields.remove(bl);
+                    revisedBlacklistFields.remove(bl);
                 }
             } else {
-                // if a disallowed list is being used with no model, then the disallowed fields will contain the stored names
-                revisedDisallowedFields.removeAll(storedDisallowedFieldsToRemove);
+                // if a blacklist is being used with no model, then the blacklist fields will contain the stored names
+                revisedBlacklistFields.removeAll(storedBlacklistedFieldsToRemove);
             }
         }
-        return revisedDisallowedFields;
+        return revisedBlacklistFields;
     }
     
-    public Set<String> getStoredDisallowedFieldsToRemove(QueryModel queryModel, Set<String> originalDisallowedFields) {
+    public Set<String> getStoredBlacklistedFieldsToRemove(QueryModel queryModel, Set<String> originalBlacklistedFields) {
         
-        if (!originalDisallowedFields.isEmpty()) {
-            Set<String> disallowedFieldsToRemove = getStoredProjectionFields();
+        if (!originalBlacklistedFields.isEmpty()) {
+            Set<String> blacklistedFieldsToRemove = getStoredProjectionFields();
             if (queryModel != null) {
                 // using the stored version of the cardinality fields, find out what they would be called in the model that's being used
-                Collection<String> storedOriginalDisallowedFields = queryModel.remapParameter(originalDisallowedFields, queryModel.getForwardQueryMapping());
-                // retain all fields that are both in the disallowed fields and being used for cardinalities
-                disallowedFieldsToRemove.retainAll(storedOriginalDisallowedFields);
+                Collection<String> storedOriginalBlacklistedFields = queryModel.remapParameter(originalBlacklistedFields, queryModel.getForwardQueryMapping());
+                // retain all fields that are both in the blacklisted fields and being used for cardinalities
+                blacklistedFieldsToRemove.retainAll(storedOriginalBlacklistedFields);
             } else {
-                // if disallowedFields is being used with no model, then the disallowedFields will contain the stored names
-                disallowedFieldsToRemove.retainAll(originalDisallowedFields);
+                // if blacklistedFields is being used with no model, then the blacklistedFields will contain the stored names
+                blacklistedFieldsToRemove.retainAll(originalBlacklistedFields);
             }
-            return disallowedFieldsToRemove;
+            return blacklistedFieldsToRemove;
         } else {
             return Collections.emptySet();
         }
@@ -181,7 +181,7 @@ public class CardinalityConfiguration {
                 // retain all fields that are both in the project fields and being used for cardinalities
                 projectFieldsToAdd.removeAll(storedOriginalProjectFields);
             } else {
-                // if disallowedFields is being used with no model, then the disallowedFields will contain the stored names
+                // if blacklistedFields is being used with no model, then the blacklistedFields will contain the stored names
                 projectFieldsToAdd.removeAll(originalProjectFields);
             }
             return projectFieldsToAdd;

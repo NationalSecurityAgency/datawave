@@ -283,10 +283,10 @@ public class QueryOptions implements OptionDescriber {
     protected JexlArithmetic arithmetic = new DefaultArithmetic();
     
     protected boolean projectResults = false;
-    protected boolean useAllowedFields = false;
-    protected Set<String> allowedFields = new HashSet<>();
-    protected boolean useDisallowedFields = false;
-    protected Set<String> disallowedFields = new HashSet<>();
+    protected boolean useWhiteListedFields = false;
+    protected Set<String> whiteListedFields = new HashSet<>();
+    protected boolean useBlackListedFields = false;
+    protected Set<String> blackListedFields = new HashSet<>();
     protected Map<String,Integer> limitFieldsMap = new HashMap<>();
     protected boolean limitFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
@@ -438,10 +438,10 @@ public class QueryOptions implements OptionDescriber {
         this.fullTableScanOnly = other.fullTableScanOnly;
         
         this.projectResults = other.projectResults;
-        this.useAllowedFields = other.useAllowedFields;
-        this.allowedFields = other.allowedFields;
-        this.useDisallowedFields = other.useDisallowedFields;
-        this.disallowedFields = other.disallowedFields;
+        this.useWhiteListedFields = other.useWhiteListedFields;
+        this.whiteListedFields = other.whiteListedFields;
+        this.useBlackListedFields = other.useBlackListedFields;
+        this.blackListedFields = other.blackListedFields;
         
         this.fiAggregator = other.fiAggregator;
         
@@ -1270,17 +1270,17 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(PROJECTION_FIELDS)) {
             this.projectResults = true;
-            this.useAllowedFields = true;
+            this.useWhiteListedFields = true;
             
             String fieldList = options.get(PROJECTION_FIELDS);
             if (fieldList != null && EVERYTHING.equals(fieldList)) {
-                this.allowedFields = UniversalSet.instance();
+                this.whiteListedFields = UniversalSet.instance();
             } else if (fieldList != null && !fieldList.trim().equals("")) {
-                this.allowedFields = new HashSet<>();
-                Collections.addAll(this.allowedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
+                this.whiteListedFields = new HashSet<>();
+                Collections.addAll(this.whiteListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
             if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
-                this.allowedFields.add(JexlEvaluation.HIT_TERM_FIELD);
+                this.whiteListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
             }
         }
         
@@ -1291,12 +1291,12 @@ public class QueryOptions implements OptionDescriber {
             }
             
             this.projectResults = true;
-            this.useDisallowedFields = true;
+            this.useBlackListedFields = true;
             
             String fieldList = options.get(DISALLOWED_FIELDS);
             if (fieldList != null && !fieldList.trim().equals("")) {
-                this.disallowedFields = new HashSet<>();
-                Collections.addAll(this.disallowedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
+                this.blackListedFields = new HashSet<>();
+                Collections.addAll(this.blackListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
         }
         

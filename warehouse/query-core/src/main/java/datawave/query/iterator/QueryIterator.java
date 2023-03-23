@@ -34,8 +34,8 @@ import datawave.query.function.KeyToDocumentData;
 import datawave.query.function.LimitFields;
 import datawave.query.function.MaskedValueFilterFactory;
 import datawave.query.function.MaskedValueFilterInterface;
-import datawave.query.function.RemoveGroupingContext;
 import datawave.query.function.RangeProvider;
+import datawave.query.function.RemoveGroupingContext;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
@@ -815,7 +815,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     /**
      * Returns the elements of {@code unfiltered} that satisfy a predicate. This is used instead of the google commons Iterators.filter to create a non-stateful
      * filtering iterator.
-     * 
+     *
      * @param unfiltered
      *            the unfiltered iterator
      * @param predicate
@@ -1332,11 +1332,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected DocumentProjection getProjection() {
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         
-        if (this.useAllowedFields) {
-            projection.setIncludes(this.allowedFields);
+        if (this.useWhiteListedFields) {
+            projection.setIncludes(this.whiteListedFields);
             return projection;
-        } else if (this.useDisallowedFields) {
-            projection.setExcludes(this.disallowedFields);
+        } else if (this.useBlackListedFields) {
+            projection.setExcludes(this.blackListedFields);
             return projection;
         } else {
             String msg = "Configured to use projection, but no whitelist or blacklist was provided";

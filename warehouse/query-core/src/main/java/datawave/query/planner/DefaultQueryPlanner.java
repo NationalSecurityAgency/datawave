@@ -1148,7 +1148,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * Loads expansion fields filtered by datatype. If an error occurs that error is rethrown as a {@link DatawaveFatalQueryException}
-     * 
+     *
      * @param config
      *            a configuration
      * @return list of expansion fields
@@ -1169,7 +1169,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * Handle case when input field value pairs are swapped
-     * 
+     *
      * @param script
      *            the jexl script
      * @param timers
@@ -1184,7 +1184,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * Handle special case where a regex node can be replaced with a 'not equals null' node
-     * 
+     *
      * @param script
      *            the jexl script
      * @param timers
@@ -1724,7 +1724,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Multimap<String,String> inverseReverseModel = invertMultimap(queryModel.getReverseQueryMapping());
         
         inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
-        Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getDisallowedFields(), limitFields = config.getLimitFields(), groupFields = config
+        Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields(), groupFields = config
                         .getGroupFields();
         
         if (projectFields != null && !projectFields.isEmpty()) {
@@ -1763,12 +1763,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setExcerptFields(excerptFields);
         }
         
-        if (config.getDisallowedFields() != null && !config.getDisallowedFields().isEmpty()) {
+        if (config.getBlacklistedFields() != null && !config.getBlacklistedFields().isEmpty()) {
             blacklistedFields = queryModel.remapParameter(blacklistedFields, inverseReverseModel);
             if (log.isTraceEnabled()) {
                 log.trace("Updated blacklist set using query model to: " + blacklistedFields);
             }
-            config.setDisallowedFields(Sets.newHashSet(blacklistedFields));
+            config.setBlacklistedFields(Sets.newHashSet(blacklistedFields));
         }
         
         if (config.getLimitFields() != null && !config.getLimitFields().isEmpty()) {
@@ -2224,7 +2224,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * Get the list of ivarator cache dirs, randomizing the order (while respecting priority) so that the tservers spread out the disk usage.
-     * 
+     *
      * @param config
      *            the shard config
      * @return a list of ivarator cache dirs
@@ -2376,12 +2376,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             
             addOption(cfg, QueryOptions.PROJECTION_FIELDS, config.getProjectFieldsAsString(), false);
-        } else if (null != config.getDisallowedFields() && !config.getDisallowedFields().isEmpty()) {
+        } else if (null != config.getBlacklistedFields() && !config.getBlacklistedFields().isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug("Setting scan option: " + QueryOptions.DISALLOWED_FIELDS + " to " + config.getDisallowedFieldsAsString());
+                log.debug("Setting scan option: " + QueryOptions.DISALLOWED_FIELDS + " to " + config.getBlacklistedFieldsAsString());
             }
             
-            addOption(cfg, QueryOptions.DISALLOWED_FIELDS, config.getDisallowedFieldsAsString(), false);
+            addOption(cfg, QueryOptions.DISALLOWED_FIELDS, config.getBlacklistedFieldsAsString(), false);
         }
         
         // We don't need to do any expansion of the start or end date/time

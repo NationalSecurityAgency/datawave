@@ -34,7 +34,7 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 
 /**
  * Performs query test where specific returned fields are specified setting the {@link QueryParameters#RETURN_FIELDS} and
- * {@link QueryParameters#DISALLOWED_FIELDS} parameter.
+ * {@link QueryParameters#BLACKLISTED_FIELDS} parameter.
  */
 public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     
@@ -404,7 +404,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             queryChecker.add(new ResponseFieldChecker(fields, otherFields));
         } else {
             // NOTE CityField.EVENT_ID CANNOT be included in blacklisted fields
-            options.put(QueryParameters.DISALLOWED_FIELDS, queryFields);
+            options.put(QueryParameters.BLACKLISTED_FIELDS, queryFields);
             queryChecker.add(new ResponseFieldChecker(otherFields, fields));
         }
         if (hitList) {
