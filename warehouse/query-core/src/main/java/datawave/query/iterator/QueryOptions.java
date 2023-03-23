@@ -152,6 +152,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String START_TIME = "start.time";
     public static final String END_TIME = "end.time";
     public static final String YIELD_THRESHOLD_MS = "yield.threshold.ms";
+    public static final String MAX_YIELDS = "max.yields";
 
     public static final String FILTER_MASKED_VALUES = "filter.masked.values";
     public static final String INCLUDE_DATATYPE = "include.datatype";
@@ -377,6 +378,7 @@ public class QueryOptions implements OptionDescriber {
     protected long maxIvaratorResults = -1;
 
     protected long yieldThresholdMs = Long.MAX_VALUE;
+    protected long maxYields = 10;
 
     protected Predicate<Key> fieldIndexKeyDataTypeFilter = KeyIdentity.Function;
     protected Predicate<Key> eventEntryKeyDataTypeFilter = KeyIdentity.Function;
@@ -517,6 +519,7 @@ public class QueryOptions implements OptionDescriber {
         this.maxIvaratorResults = other.maxIvaratorResults;
 
         this.yieldThresholdMs = other.yieldThresholdMs;
+        this.maxYields = other.maxYields;
 
         this.compressResults = other.compressResults;
         this.limitFieldsMap = other.limitFieldsMap;
@@ -1314,6 +1317,7 @@ public class QueryOptions implements OptionDescriber {
                         " The maximum number of sources to use for ivarators across all ivarated terms within the query.  Note the thread pool size is controlled via an accumulo property.");
         options.put(YIELD_THRESHOLD_MS,
                         "The threshold in milliseconds that the query iterator will evaluate consecutive documents to false before yielding the scan.");
+        options.put(MAX_YIELDS, "The maximum number of times to yield on the same startKey without making progress.");
         options.put(COMPRESS_SERVER_SIDE_RESULTS, "GZIP compress the serialized Documents before returning to the webserver");
         options.put(MAX_EVALUATION_PIPELINES, "The max number of evaluation pipelines");
         options.put(SERIAL_EVALUATION_PIPELINE, "Forces us to use the serial pipeline. Allows us to still have a single thread for evaluation");
@@ -1784,6 +1788,10 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(YIELD_THRESHOLD_MS)) {
             this.setYieldThresholdMs(Long.parseLong(options.get(YIELD_THRESHOLD_MS)));
+        }
+
+        if (options.containsKey(MAX_YIELDS)) {
+            this.setMaxYields(Long.parseLong(options.get(MAX_YIELDS)));
         }
 
         if (options.containsKey(COMPRESS_SERVER_SIDE_RESULTS)) {
@@ -2259,6 +2267,14 @@ public class QueryOptions implements OptionDescriber {
 
     public void setYieldThresholdMs(long yieldThresholdMs) {
         this.yieldThresholdMs = yieldThresholdMs;
+    }
+
+    public long getMaxYields() {
+        return maxYields;
+    }
+
+    public void setMaxYields(long maxYields) {
+        this.maxYields = maxYields;
     }
 
     public int getFiFieldSeek() {

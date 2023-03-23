@@ -91,6 +91,9 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                         .withTypeMetadata(typeMetadata)
                         .withIteratorEnv(env)
                         .withIvaratorSourcePool(ivaratorSourcePool)
+                        .withQueryId(queryId)
+                        .withScanId(scanId)
+                        .withWaitWindowObserver(waitWindowObserver)
                         .build();
                 // @formatter:on
 

@@ -76,7 +76,7 @@ public class PipelinePool {
                 }
             }
         } else if (checkedIn.size() + checkedOut.size() < maxPipelines) {
-            pipeline = new Pipeline(this.querySpanCollector, sourceForDeepCopy.deepCopy(env));
+            pipeline = new Pipeline();
             NestedQueryIterator<Key> nq = pipeline.getDocumentSpecificSource();
             if (null != nestedQuery) {
                 nq.setCurrentQuery(nestedQuery);
