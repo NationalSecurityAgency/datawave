@@ -128,33 +128,33 @@ public class TreeEqualityVisitor implements ParserVisitor {
      * Compare the given node and evaluate their equivalence. This visitor will be applied to each of the first node's children. The visitor will be accepted on
      * all the first node's children.
      *
-     * @param first
-     *            the first node
-     * @param second
-     *            the second node
-     * @return the comparison result
+     * @param node1
+     *            first node
+     * @param node2
+     *            second node
+     * @return result of visit
      **/
-    private Comparison checkEquality(SimpleNode first, SimpleNode second) {
+    private Comparison checkEquality(SimpleNode node1, SimpleNode node2) {
         // Compare the classes.
-        Comparison comparison = compareClasses(first, second);
+        Comparison comparison = compareClasses(node1, node2);
         if (!comparison.isEqual()) {
             return comparison;
         }
 
         // Compare the values.
-        comparison = compareValues(first, second);
+        comparison = compareValues(node1, node2);
         if (!comparison.isEqual()) {
             return comparison;
         }
 
         // Compare the images.
-        comparison = compareImages(first, second);
+        comparison = compareImages(node1, node2);
         if (!comparison.isEqual()) {
             return comparison;
         }
 
         // Compare the children.
-        return compareChildren(first, second);
+        return compareChildren(node1, node2);
     }
 
     /**
