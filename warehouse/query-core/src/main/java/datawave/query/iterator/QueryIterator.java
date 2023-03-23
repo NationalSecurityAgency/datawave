@@ -93,6 +93,8 @@ import datawave.query.iterator.profile.PipelineQuerySpanCollectionIterator;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
+import datawave.query.iterator.waitwindow.WaitWindowOverseerIterator;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
@@ -174,6 +176,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected Key key;
     protected Value value;
     protected YieldCallback<Key> yield;
+    protected WaitWindowObserver waitWindowObserver = new WaitWindowObserver();
 
     protected IteratorEnvironment myEnvironment;
 
@@ -219,6 +222,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         this.typeMetadata = other.typeMetadata;
         this.exceededOrEvaluationCache = other.exceededOrEvaluationCache;
         this.trackingSpan = other.trackingSpan;
+        this.waitWindowObserver = other.waitWindowObserver;
         // Defer to QueryOptions to re-set all of the query options
         super.deepCopy(other);
     }
@@ -236,6 +240,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (!validateOptions(new SourcedOptions<>(source, env, options))) {
             throw new IllegalArgumentException("Could not initialize QueryIterator with " + options);
         }
+
+        // affects the way waitWindowObserver creates some yieldKeys
+        this.waitWindowObserver.setSortedUIDs(sortedUIDs);
 
         // We want to add in spoofed dataTypes for Aggregation/Evaluation to
         // ensure proper numeric evaluation.
@@ -259,6 +266,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
         if (gatherTimingDetails()) {
             this.trackingSpan = new MultiThreadedQuerySpan(getStatsdClient());
+            this.waitWindowObserver.setTrackingSpan(trackingSpan);
             this.source = new SourceTrackingIterator(trackingSpan, source);
         } else {
             this.source = source;
@@ -314,10 +322,15 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     @Override
     public boolean hasTop() {
+        this.waitWindowObserver.yieldOnOverrun();
         boolean yielded = (this.yield != null) && this.yield.hasYielded();
         boolean result = (!yielded) && (this.key != null) && (this.value != null);
         if (log.isTraceEnabled()) {
             log.trace("hasTop() " + result);
+        }
+        if (result == false) {
+            // ensure that the timerTask is cancelled
+            this.waitWindowObserver.stop();
         }
         return result;
     }
@@ -325,10 +338,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     @Override
     public void enableYielding(YieldCallback<Key> yieldCallback) {
         this.yield = yieldCallback;
+        this.waitWindowObserver.setYieldCallback(yieldCallback);
     }
 
     @Override
     public void next() throws IOException {
+        // If collectTimingDetails, then we return an WAIT_WINDOW_OVERRUN first, then yield.
+        // In this case, we are ready to yield and the iterator stack is not in a state to iterate
+        if (this.waitWindowObserver.isReadyToYield()) {
+            return;
+        }
         getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.NEXT);
         try {
             if (log.isTraceEnabled()) {
@@ -355,6 +374,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // preserve the original range for use with the Final Document tracking iterator because it is placed after the ResultCountingIterator
         // so the FinalDocumentTracking iterator needs the start key with the count already appended
         originalRange = range;
+        waitWindowObserver.start(range, yieldThresholdMs);
         getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
 
@@ -397,11 +417,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
             // determine whether this is a document specific range
             Range documentRange = isDocumentSpecificRange(range) ? range : null;
-
-            // if we have a document specific range, but the key is not
-            // inclusive then we have already returned the document; this scan
-            // is done
-            if (documentRange != null && !documentRange.isStartKeyInclusive()) {
+            // if we have a non-inclusive document specific range and this isn't a re-seeked document
+            // range after a yield then we have already returned the document and this scan is done
+            if (documentRange != null && !documentRange.isStartKeyInclusive() && !WaitWindowObserver.hasBeginMarker(documentRange.getStartKey())) {
                 if (log.isTraceEnabled()) {
                     log.trace("Received non-inclusive event specific range: " + documentRange);
                 }
@@ -439,7 +457,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // evaluation within a thread pool
             PipelineIterator pipelineIter = PipelineFactory.createIterator(this.seekKeySource, getMaxEvaluationPipelines(), getMaxPipelineCachedResults(),
                             getSerialPipelineRequest(), querySpanCollector, trackingSpan, this, sourceForDeepCopies.deepCopy(myEnvironment), myEnvironment,
-                            yield, yieldThresholdMs, columnFamilies, inclusive);
+                            yield, yieldThresholdMs, waitWindowObserver, columnFamilies, inclusive);
 
             pipelineIter.setCollectTimingDetails(collectTimingDetails);
             // TODO pipelineIter.setStatsdHostAndPort(statsdHostAndPort);
@@ -491,17 +509,23 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // now add the result count to the keys (required when not sorting UIDs)
             // Cannot do this on document specific ranges as the count would place the keys outside the initial range
             if (!sortedUIDs && documentRange == null) {
-                this.documentIterator = new ResultCountingIterator(documentIterator, resultCount, yield);
+                ResultCountingIterator resultCountingIterator = new ResultCountingIterator(documentIterator, resultCount, yield);
+                // this is necessary to allow the waitWindowObserver to use the same logic and count
+                // when modifying the yieldKey
+                this.waitWindowObserver.setResultCountingIterator(resultCountingIterator);
+                this.documentIterator = resultCountingIterator;
+
             } else if (this.sortedUIDs) {
                 // we have sorted UIDs, so we can mask out the cq
-                this.documentIterator = new KeyAdjudicator<>(documentIterator, yield);
+                this.documentIterator = new KeyAdjudicator<>(documentIterator);
             }
 
             // only add the final document tracking iterator which sends stats back to the client if collectTimingDetails is true
             if (collectTimingDetails) {
                 // if there is no document to return, then add an empty document
                 // to store the timing metadata
-                this.documentIterator = new FinalDocumentTrackingIterator(querySpanCollector, trackingSpan, originalRange, documentIterator, yield);
+                this.documentIterator = new FinalDocumentTrackingIterator(querySpanCollector, trackingSpan, waitWindowObserver, originalRange, documentIterator,
+                                yield);
             }
             if (log.isTraceEnabled()) {
                 this.documentIterator = Iterators.filter(this.documentIterator, keyValueEntry -> {
@@ -1134,11 +1158,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
             this.key = entry.getKey();
             this.value = entry.getValue();
-
         } else {
-            if (log.isTraceEnabled()) {
+            if (log.isTraceEnabled() && (this.yield == null || !this.yield.hasYielded())) {
                 log.trace("Exhausted all keys");
             }
+            this.key = null;
+            this.value = null;
+        }
+        if (this.yield != null && this.yield.hasYielded()) {
+            // ensure that the timerTask is cancelled
+            this.waitWindowObserver.stop();
             this.key = null;
             this.value = null;
         }
@@ -1365,7 +1394,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             sourceIter = getEventDataNestedIterator(source);
         }
 
-        return sourceIter;
+        return new WaitWindowOverseerIterator(sourceIter, this.myEnvironment);
     }
 
     /**
@@ -1412,6 +1441,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setIvaratorCacheDirConfigs(this.getIvaratorCacheDirConfigs())
                 .setQueryId(this.getQueryId())
                 .setScanId(this.getScanId())
+                .setWaitWindowObserver(this.waitWindowObserver)
                 .setIvaratorCacheSubDirPrefix(this.getHdfsCacheSubDirPrefix())
                 .setHdfsFileCompressionCodec(this.getHdfsFileCompressionCodec())
                 .setIvaratorCacheBufferSize(this.getIvaratorCacheBufferSize())

@@ -34,6 +34,7 @@ import datawave.core.iterators.DatawaveFieldIndexRangeIteratorJexl;
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
 /**
  * Verify that a rebuild of an ivarator will reuse the files from after a tear-down/rebuild
@@ -115,6 +116,7 @@ public class IvaratorReloadTest {
                 .withTypeMetadata(null)
                 .withSubRanges(null)
                 .withIvaratorSourcePool(createIvaratorSourcePool(10))
+                .withWaitWindowObserver(new WaitWindowObserver())
                 .build();
         // @formatter:on
     }

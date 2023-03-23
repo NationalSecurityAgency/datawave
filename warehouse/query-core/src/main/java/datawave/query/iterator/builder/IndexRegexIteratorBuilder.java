@@ -74,6 +74,9 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                         .withTypeMetadata(typeMetadata)
                         .withIteratorEnv(env)
                         .withIvaratorSourcePool(ivaratorSourcePool)
+                        .withQueryId(queryId)
+                        .withScanId(scanId)
+                        .withWaitWindowObserver(waitWindowObserver)
                         .build();
                 // @formatter:on
                 if (collectTimingDetails) {

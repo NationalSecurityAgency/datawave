@@ -1,19 +1,14 @@
 package datawave.query.ancestor;
 
-import java.io.IOException;
-
-import org.junit.Before;
-
 import datawave.query.iterator.QueryIteratorIT;
 
 /**
  * AncestorQueryIterator integration tests. Ancestor Query should find any hits event query finds plus its own unique cases
  */
 public class AncestorQueryIteratorIT extends QueryIteratorIT {
-    @Before
-    public void setup() throws IOException {
-        super.setup();
-        iterator = new AncestorQueryIterator();
+
+    protected Class getIteratorClass() {
+        return AncestorQueryIterator.class;
     }
 
     /**
