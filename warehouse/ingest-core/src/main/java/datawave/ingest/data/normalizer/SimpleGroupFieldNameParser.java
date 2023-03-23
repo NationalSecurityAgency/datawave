@@ -18,8 +18,9 @@ import com.google.common.collect.Multimap;
 public class SimpleGroupFieldNameParser {
     private static final long serialVersionUID = 1035918631638323565L;
     private static final Logger log = Logger.getLogger(SimpleGroupFieldNameParser.class);
-    private static final Pattern parentGroupingPattern = Pattern.compile("_\\d");
-    private static final Pattern parentGroupingMatch = Pattern.compile(".*_\\d\\..*");
+    private static final String DOT = ".";
+    
+    private static boolean trimmed = false;
     
     public SimpleGroupFieldNameParser() {}
     
@@ -31,23 +32,27 @@ public class SimpleGroupFieldNameParser {
     public NormalizedContentInterface extractFieldNameComponents(NormalizedContentInterface origField) {
         String originalIndexedFieldName = origField.getIndexedFieldName();
         String[] splits = StringUtils.split(originalIndexedFieldName, '.');
-        int index = originalIndexedFieldName.indexOf('.');
+        trimmed = false;
         
-        if (index > 1) {
-            // we are nested
+        if (splits.length > 1) {
+            // we are nested, i.e. we have a field parent names in the event field name
             
             NormalizedFieldAndValue revisedField = new NormalizedFieldAndValue(origField);
             
             String baseFieldName = null;
+            String origGroup = null;
             String group = null;
             String subgroup = null;
             
             baseFieldName = splits[0];
-            group = originalIndexedFieldName.substring(index + 1);
+            origGroup = extractGroup(splits);
             
-            if (parentGroupingMatch.matcher(group).matches()) {
-                group = trimGroup(group);
-            } else {
+            group = trimGroup(origGroup);
+            
+            if (!trimmed) {
+                // we've not been trimmed. we don't have parent subgroups
+                group = null;
+                
                 // not every field has a group
                 if (splits.length == 2) {
                     subgroup = splits[1];
@@ -69,21 +74,67 @@ public class SimpleGroupFieldNameParser {
         }
     }
     
-    private String trimGroup(String groupStr) {
-        int lastIndex = groupStr.lastIndexOf(".");
-        if (lastIndex > 0) {
-            groupStr = groupStr.substring(0, lastIndex);
-        }
-        // For fields where we previously needed to define configurations for all permutations of fields with parents P and their groups, (e.g.
-        // FIELD.P1_n.P2_m...FIELD_x for all real integers n, m, and x) we can now simplify to P1_P2.
-        groupStr = parentGroupingPattern.matcher(groupStr).replaceAll("");
+    private String extractGroup(String[] splits) {
+        StringBuilder group = new StringBuilder();
+        group.append(splits[1]);
         
-        return groupStr;
+        for (int i = 2; i < splits.length; i++) {
+            group.append(DOT);
+            group.append(splits[i]);
+        }
+        return group.toString();
+    }
+    
+    // For fields where we previously needed to define configurations for all permutations of fields with parents P and their groups, (e.g.
+    // FIELD.P1_n.P2_m...FIELD_x for all real integers n, m, and x) we can now simplify to P1_P2.
+    public static String trimGroup(String groupStr) {
+        StringBuilder group = new StringBuilder();
+        boolean checkForSubgroup = false;
+        boolean sawDigit = false;
+        
+        int lastDotIndex = -1;
+        int groupStart = -1;
+        for (int i = 0; i < groupStr.length(); i++) {
+            char c = groupStr.charAt(i);
+            if (checkForSubgroup) {
+                if (c == '.') {
+                    if (sawDigit) {
+                        trimmed = true;
+                        sawDigit = false;
+                    }
+                    lastDotIndex = group.length();
+                    group.append(c);
+                    checkForSubgroup = false;
+                } else if (Character.isDigit(c)) {
+                    sawDigit = true;
+                } else if (c == '_') {
+                    // might be entering another subgroup candidate
+                    group.append(groupStr.substring(groupStart, i));
+                    groupStart = i;
+                } else {
+                    group.append(groupStr.substring(groupStart, i + 1));
+                    checkForSubgroup = false;
+                }
+            } else if (c == '_') {
+                checkForSubgroup = true;
+                groupStart = i;
+            } else if (c == '.') {
+                lastDotIndex = group.length();
+                group.append('.');
+            } else {
+                group.append(c);
+            }
+        }
+        if (lastDotIndex >= 0) {
+            return group.substring(0, lastDotIndex);
+        } else {
+            return group.toString();
+        }
     }
     
     /**
      * See {@link #extractFieldNameComponents(datawave.ingest.data.config.NormalizedContentInterface)}
-     * 
+     *
      * @param fields
      *            list of fields to extract from
      * @return map of field name components

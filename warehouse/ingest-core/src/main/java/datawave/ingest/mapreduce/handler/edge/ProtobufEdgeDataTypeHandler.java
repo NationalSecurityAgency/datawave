@@ -457,6 +457,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     protected BloomFilter<Key> durationLogBloom = null;
     
     protected Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList;
+    protected Multimap<String,NormalizedContentInterface> mSource = null;
+    protected Multimap<String,NormalizedContentInterface> mSink = null;
     
     @Override
     public long process(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields,
@@ -573,7 +575,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             String jexlPreconditions = null;
             
             // don't bother evaluating preconditions if we know this event doesn't have the necessary fields for this edge
-            if (eventLacksEdgeFields(edgeDef)) {
+            if (!eventContainsEdgeFields(edgeDef)) {
                 continue;
             }
             
@@ -612,9 +614,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             }
             
             String enrichmentFieldName = getEnrichmentFieldName(edgeDef);
-            
-            Multimap<String,NormalizedContentInterface> mSource = depthFirstList.get(edgeDef.getSourceFieldName());
-            Multimap<String,NormalizedContentInterface> mSink = depthFirstList.get(edgeDef.getSinkFieldName());
             
             String sourceGroup = getGroup(edgeDef.getSourceFieldName());
             String sinkGroup = getGroup(edgeDef.getSinkFieldName());
@@ -758,27 +757,24 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         }
     }
     
-    private boolean eventLacksEdgeFields(EdgeDefinition edgeDef) {
-        
-        Multimap<String,NormalizedContentInterface> mSource = null;
-        Multimap<String,NormalizedContentInterface> mSink = null;
+    private boolean eventContainsEdgeFields(EdgeDefinition edgeDef) {
         
         if (depthFirstList.containsKey(edgeDef.getSourceFieldName()) && depthFirstList.containsKey(edgeDef.getSinkFieldName())) {
             mSource = depthFirstList.get(edgeDef.getSourceFieldName());
             mSink = depthFirstList.get(edgeDef.getSinkFieldName());
         } else {
-            return true;
+            return false;
         }
         
         // bail if the event doesn't contain any values for the source or sink field
         if (null == mSource || null == mSink) {
-            return true;
+            return false;
         }
         if (mSource.isEmpty() || mSink.isEmpty()) {
-            return true;
+            return false;
         }
         
-        return false;
+        return true;
     }
     
     // this could be moved to a more generic class
