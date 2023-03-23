@@ -88,17 +88,18 @@ public class SimpleGroupFieldNameParserTest {
         verify(field, expectedFieldName, expectedGroup, expectedSubGroup);
         
     }
-
+    
     @Test
     public void test9() {
         String field = "BANANA";
         String expectedFieldName = "BANANA";
         String expectedGroup = null;
         String expectedSubGroup = null;
-
+        
         verify(field, expectedFieldName, expectedGroup, expectedSubGroup);
-
+        
     }
+    
     public void verify(String field, String expectedFieldName, String expectedGroup, String expectedSubGroup) {
         NormalizedContentInterface nci = new NormalizedFieldAndValue();
         ((NormalizedFieldAndValue) nci).setIndexedFieldName(field);

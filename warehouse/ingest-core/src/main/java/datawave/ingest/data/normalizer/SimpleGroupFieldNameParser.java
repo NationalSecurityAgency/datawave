@@ -99,6 +99,7 @@ public class SimpleGroupFieldNameParser {
             if (checkForSubgroup) {
                 if (c == '.') {
                     if (sawDigit) {
+                        // we've officially seen _{digit}.
                         trimmed = true;
                         sawDigit = false;
                     }
