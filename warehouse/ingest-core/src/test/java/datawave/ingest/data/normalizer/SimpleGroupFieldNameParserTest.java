@@ -18,42 +18,51 @@ public class SimpleGroupFieldNameParserTest {
     
     @Test
     public void test1() {
-        String field = "PET.0";
+        String field = "CANINE.PET.1";
+        String expectedField = "CANINE";
         String expectedGroup = "PET";
-        
-        Assert.assertEquals(expectedGroup, SimpleGroupFieldNameParser.trimGroup(field));
+        String expectedSubgroup = "1";
+        verify(field, expectedField, expectedGroup, expectedSubgroup);
     }
     
     @Test
     public void test2() {
-        String field = "PARENT1_0.PARENT2_0.FIELD_0";
+        String field = "MY_FIELD.PARENT1_0.PARENT2_0.FIELD_0";
+        String expectedField = "MY_FIELD";
         String expectedGroup = "PARENT1.PARENT2";
+        String expectedSubgroup = null;
         
-        Assert.assertEquals(expectedGroup, SimpleGroupFieldNameParser.trimGroup(field));
+        verify(field, expectedField, expectedGroup, expectedSubgroup);
     }
     
     @Test
     public void test3() {
-        String field = "PARENT_1_0.PARENT_2_0.FIELD_0";
+        String field = "MY_FIELD.PARENT_1_0.PARENT_2_0.FIELD_0";
+        String expectedField = "MY_FIELD";
         String expectedGroup = "PARENT_1.PARENT_2";
+        String expectedSubgroup = null;
         
-        Assert.assertEquals(expectedGroup, SimpleGroupFieldNameParser.trimGroup(field));
+        verify(field, expectedField, expectedGroup, expectedSubgroup);
     }
     
     @Test
     public void test4() {
-        String field = "PARENT__BANANA_123_0.FIELD_0";
+        String field = "MY_FIELD.PARENT__BANANA_123_0.FIELD_0";
+        String expectedField = "MY_FIELD";
         String expectedGroup = "PARENT__BANANA_123";
+        String expectedSubgroup = null;
         
-        Assert.assertEquals(expectedGroup, SimpleGroupFieldNameParser.trimGroup(field));
+        verify(field, expectedField, expectedGroup, expectedSubgroup);
     }
     
     @Test
     public void test5() {
-        String field = "12_34_5_0.FIELD_0";
+        String field = "SO_MANY_FIELD_PERMUTATIONS.12_34_5_0.FIELD_0";
+        String expectedField = "SO_MANY_FIELD_PERMUTATIONS";
         String expectedGroup = "12_34_5";
+        String expectedSubgroup = null;
         
-        Assert.assertEquals(expectedGroup, SimpleGroupFieldNameParser.trimGroup(field));
+        verify(field, expectedField, expectedGroup, expectedSubgroup);
     }
     
     @Test
@@ -69,17 +78,6 @@ public class SimpleGroupFieldNameParserTest {
     
     @Test
     public void test7() {
-        String field = "MY_FIELD_NAME.PARENT_1_1.PARENT_2_0.NAME_0";
-        String expectedFieldName = "MY_FIELD_NAME";
-        String expectedGroup = "PARENT_1.PARENT_2";
-        String expectedSubGroup = null;
-        
-        verify(field, expectedFieldName, expectedGroup, expectedSubGroup);
-        
-    }
-    
-    @Test
-    public void test8() {
         String field = "BANANA.0";
         String expectedFieldName = "BANANA";
         String expectedGroup = null;
@@ -90,7 +88,7 @@ public class SimpleGroupFieldNameParserTest {
     }
     
     @Test
-    public void test9() {
+    public void test8() {
         String field = "BANANA";
         String expectedFieldName = "BANANA";
         String expectedGroup = null;

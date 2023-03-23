@@ -20,8 +20,6 @@ public class SimpleGroupFieldNameParser {
     private static final Logger log = Logger.getLogger(SimpleGroupFieldNameParser.class);
     private static final String DOT = ".";
     
-    private static boolean trimmed = false;
-    
     public SimpleGroupFieldNameParser() {}
     
     /**
@@ -32,7 +30,6 @@ public class SimpleGroupFieldNameParser {
     public NormalizedContentInterface extractFieldNameComponents(NormalizedContentInterface origField) {
         String originalIndexedFieldName = origField.getIndexedFieldName();
         String[] splits = StringUtils.split(originalIndexedFieldName, '.');
-        trimmed = false;
         
         if (splits.length > 1) {
             // we are nested, i.e. we have a field parent names in the event field name
@@ -49,7 +46,7 @@ public class SimpleGroupFieldNameParser {
             
             group = trimGroup(origGroup);
             
-            if (!trimmed) {
+            if (group.equals(origGroup)) {
                 // we've not been trimmed. we don't have parent subgroups
                 group = null;
                 
@@ -78,7 +75,7 @@ public class SimpleGroupFieldNameParser {
         StringBuilder group = new StringBuilder();
         group.append(splits[1]);
         
-        for (int i = 2; i < splits.length; i++) {
+        for (int i = 2; i < splits.length - 1; i++) {
             group.append(DOT);
             group.append(splits[i]);
         }
@@ -90,24 +87,16 @@ public class SimpleGroupFieldNameParser {
     public static String trimGroup(String groupStr) {
         StringBuilder group = new StringBuilder();
         boolean checkForSubgroup = false;
-        boolean sawDigit = false;
         
-        int lastDotIndex = -1;
         int groupStart = -1;
         for (int i = 0; i < groupStr.length(); i++) {
             char c = groupStr.charAt(i);
             if (checkForSubgroup) {
                 if (c == '.') {
-                    if (sawDigit) {
-                        // we've officially seen _{digit}.
-                        trimmed = true;
-                        sawDigit = false;
-                    }
-                    lastDotIndex = group.length();
                     group.append(c);
                     checkForSubgroup = false;
                 } else if (Character.isDigit(c)) {
-                    sawDigit = true;
+                    // continue
                 } else if (c == '_') {
                     // might be entering another subgroup candidate
                     group.append(groupStr.substring(groupStart, i));
@@ -119,18 +108,13 @@ public class SimpleGroupFieldNameParser {
             } else if (c == '_') {
                 checkForSubgroup = true;
                 groupStart = i;
-            } else if (c == '.') {
-                lastDotIndex = group.length();
-                group.append('.');
             } else {
                 group.append(c);
             }
         }
-        if (lastDotIndex >= 0) {
-            return group.substring(0, lastDotIndex);
-        } else {
-            return group.toString();
-        }
+        
+        return group.toString();
+        
     }
     
     /**
