@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
@@ -290,7 +291,7 @@ public class UnfieldedIndexExpansionVisitorTest {
     }
     
     // regex term fails to expand fields, marked with an exceeded term threshold marker
-    @Test
+    @Test(expected = DatawaveFatalQueryException.class)
     public void testExceededTermThreshold() throws Exception {
         ShardQueryConfiguration config = createConfig();
         config.setMaxUnfieldedExpansionThreshold(2);

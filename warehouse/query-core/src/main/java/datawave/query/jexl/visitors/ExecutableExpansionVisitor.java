@@ -69,8 +69,10 @@ public class ExecutableExpansionVisitor extends BaseVisitor {
      * Track the current andNode and continue recursively down the tree
      *
      * @param node
+     *            a AND node
      * @param data
-     * @return
+     *            the node data
+     * @return a reference to the node
      */
     @Override
     public Object visit(ASTAndNode node, Object data) {
@@ -98,8 +100,10 @@ public class ExecutableExpansionVisitor extends BaseVisitor {
      * if a leaf-most orNode is non-executable evaluate it for expansion and fix the node if possible
      *
      * @param node
+     *            a OR node
      * @param data
-     * @return
+     *            the node data
+     * @return a reference to the node
      */
     @Override
     public Object visit(ASTOrNode node, Object data) {
@@ -135,6 +139,8 @@ public class ExecutableExpansionVisitor extends BaseVisitor {
      *            the node to test
      * @param tracker
      *            the tracker holding supplementary information about the expansion
+     * @param state
+     *            the visitor state
      * @return true if the expansion should occur, false otherwise
      */
     private boolean canExpand(JexlNode node, ExecutableDeterminationVisitor.STATE state, ExpansionTracker tracker) {

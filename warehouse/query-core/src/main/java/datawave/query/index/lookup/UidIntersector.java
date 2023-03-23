@@ -13,7 +13,9 @@ public interface UidIntersector {
      * Merge two index infos into one.
      * 
      * @param uids1
+     *            first set of uids
      * @param uids2
+     *            second set of uids
      * @param delayedNodes
      *            list of delayed nodes which is merged in with the node list maintained in the IndexMatches
      * @return A intersected IndexInfo

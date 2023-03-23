@@ -4,8 +4,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import datawave.data.type.NoOpType;
 import datawave.query.Constants;
-import datawave.query.attributes.Document;
-import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.iterator.builder.AbstractIteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
@@ -15,8 +13,6 @@ import datawave.query.jexl.functions.TLDEventFieldAggregator;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.predicate.TLDEventDataFilter;
 import datawave.query.predicate.TLDTermFrequencyEventDataQueryFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import org.apache.accumulo.core.data.Key;
@@ -29,9 +25,7 @@ import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
@@ -80,11 +74,6 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         return null;
     }
     
-    /**
-     * @param kvIter
-     * @param node
-     * @throws IOException
-     */
     @Override
     protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key,Value> kvIter, ASTEQNode node) throws IOException {
         if (null != rangeLimiter && limitLookup) {
@@ -191,7 +180,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     
     @Override
     protected EventFieldAggregator getEventFieldAggregator(String field, ChainableEventDataQueryFilter filter) {
-        return new TLDEventFieldAggregator(field, filter, attrFilter != null ? attrFilter.getMaxNextCount() : -1, typeMetadata, NoOpType.class.getName());
+        return new TLDEventFieldAggregator(field, filter, eventNextSeek, typeMetadata, NoOpType.class.getName());
     }
     
     /**
@@ -212,7 +201,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         
         Set<String> toAggregate = fieldsToAggregate.contains(identifier) ? Collections.singleton(identifier) : Collections.emptySet();
         
-        return new TLDTermFrequencyAggregator(toAggregate, filter, filter.getMaxNextCount());
+        return new TLDTermFrequencyAggregator(toAggregate, filter, tfNextSeek);
     }
     
     /**
@@ -220,7 +209,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
      * 
      * @param range
      *            non-null literal range to generate an FI range from
-     * @return
+     * @return a range
      */
     @Override
     protected Range getFiRangeForTF(LiteralRange<?> range) {

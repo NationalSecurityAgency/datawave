@@ -64,6 +64,7 @@ public class RegexTrie {
      * 
      * @param string
      *            A string
+     * @return if this trie contains a string
      */
     public boolean contains(final String string) {
         // starting with the root node
@@ -148,6 +149,7 @@ public class RegexTrie {
      * Does this character require escaping
      * 
      * @param c
+     *            a character
      * @return true if escaping is required
      */
     private boolean escape(char c) {

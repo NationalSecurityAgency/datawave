@@ -550,7 +550,8 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
      * allows a document specific range
      * 
      * @param in
-     * @return
+     *            set of string inputs
+     * @return a value
      */
     private static Value getValueForBuilderFor(String... in) {
         Uid.List.Builder builder = Uid.List.newBuilder();
@@ -562,11 +563,6 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         return new Value(builder.build().toByteArray());
     }
     
-    /**
-     * forces a shard range
-     * 
-     * @return
-     */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setCOUNT(50); // better not be zero!!!!

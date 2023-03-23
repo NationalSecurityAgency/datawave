@@ -27,6 +27,7 @@ public class SortedKeyValueIteratorToIterator implements Iterator<Map.Entry<Key,
      * Create an Iterator given a SortedKeyValueIterator. It is presumed that the SortedKeyValueIterator has been initialized.
      * 
      * @param iterator
+     *            a SortedKeyValueIterator
      */
     public SortedKeyValueIteratorToIterator(SortedKeyValueIterator<Key,Value> iterator) {
         this.iterator = iterator;

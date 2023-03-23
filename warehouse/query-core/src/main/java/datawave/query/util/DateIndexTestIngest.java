@@ -22,9 +22,6 @@ public class DateIndexTestIngest {
     
     protected String[] rowValues = {"20100704", "20100703"};
     
-    /**
-     *
-     */
     public static void writeItAll(Connector con) throws Exception {
         
         BatchWriter bw = null;

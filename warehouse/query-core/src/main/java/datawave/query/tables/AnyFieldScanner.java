@@ -24,12 +24,6 @@ public class AnyFieldScanner extends ScannerSession {
     
     private static final Logger log = Logger.getLogger(AnyFieldScanner.class);
     
-    /**
-     * @param tableName
-     * @param auths
-     * @param delegator
-     * @param maxResults
-     */
     public AnyFieldScanner(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, SessionOptions options,
                     Collection<Range> ranges) {
         super(tableName, auths, delegator, maxResults, settings, options, ranges);
@@ -53,7 +47,9 @@ public class AnyFieldScanner extends ScannerSession {
      * so we should append a null so that we we don't skip shards. similarly, an assumption is made of the key structure within this class.
      * 
      * @param lastKey
+     *            the last key
      * @param previousRange
+     *            the previous range
      */
     public Range buildNextRange(final Key lastKey, final Range previousRange) {
         

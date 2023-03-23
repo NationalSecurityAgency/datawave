@@ -18,6 +18,8 @@ public class IsNotNullIntentVisitor extends BaseVisitor {
      * 
      * @param node
      *            a JexlNode
+     * @param <T>
+     *            the type
      * @return the same node
      */
     public static <T extends JexlNode> T fixNotNullIntent(T node) {

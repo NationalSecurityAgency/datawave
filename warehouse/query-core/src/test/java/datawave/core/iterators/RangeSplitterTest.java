@@ -16,15 +16,9 @@ public class RangeSplitterTest {
     
     Logger log = Logger.getLogger(RangeSplitterTest.class);
     
-    /**
-     * @throws java.lang.Exception
-     */
     @Before
     public void setUp() throws Exception {}
     
-    /**
-     * @throws java.lang.Exception
-     */
     @After
     public void tearDown() throws Exception {}
     

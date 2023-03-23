@@ -10,8 +10,11 @@ public interface NodeTransformRule {
      * done, then rebuild the node with modifications and return. Returning null will remove this node from the tree altogether.
      * 
      * @param node
+     *            a node
      * @param config
+     *            the config
      * @param helper
+     *            the metadata helper
      * @return the replacement node
      */
     default JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
