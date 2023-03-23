@@ -1,8 +1,6 @@
 package datawave.query;
 
 import static datawave.query.iterator.QueryOptions.SORTED_UIDS;
-import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
-import static datawave.query.testframework.RawDataManager.RE_OP;
 
 import java.io.IOException;
 import java.net.URL;
@@ -20,7 +18,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
-import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -71,8 +68,6 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
     public void setup() throws IOException {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
 
-        logic.setCollectTimingDetails(true);
-
         logic.setFullTableScanEnabled(true);
         // this should force regex expansion into ivarators
         logic.setMaxValueExpansionThreshold(1);
@@ -87,28 +82,62 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
 
         logic.setYieldThresholdMs(1);
         logic.getQueryPlanner().setQueryIteratorClass(YieldingQueryIterator.class);
-
-        logic.setMaxEvaluationPipelines(1);
     }
 
     @Test
-    public void testIvaratorInterruptedAndYieldSorted() throws Exception {
+    public void testSerial_SortedUIDs_TimingDetails() throws Exception {
+        runTest(1, true, true);
+    }
+
+    @Test
+    public void testSerial_SortedUIDs_NoTimingDetails() throws Exception {
+        runTest(1, true, false);
+    }
+
+    @Test
+    public void testSerial_UnSortedUIDs_TimingDetails() throws Exception {
+        runTest(1, false, true);
+    }
+
+    @Test
+    public void testSerial_UnSortedUIDs_NoTimingDetails() throws Exception {
+        runTest(1, false, false);
+    }
+
+    @Test
+    public void testPipeline_SortedUIDs_TimingDetails() throws Exception {
+        runTest(4, true, true);
+    }
+
+    @Test
+    public void testPipeline_SortedUIDs_NoTimingDetails() throws Exception {
+        runTest(4, true, false);
+    }
+
+    @Test
+    public void testPipeline_UnSortedUIDs_TimingDetails() throws Exception {
+        runTest(4, false, true);
+    }
+
+    @Test
+    public void testPipeline_UnSortedUIDs_NoTimingDetails() throws Exception {
+        runTest(4, false, false);
+    }
+
+    public void runTest(int pipelines, boolean sortedUIDs, boolean timingDetails) throws Exception {
         Map<String,String> params = new HashMap<>();
-        // both required in order to force ivarator to call fillSets
-        params.put(SORTED_UIDS, "true");
-        logic.getConfig().setUnsortedUIDsEnabled(false);
+        if (sortedUIDs) {
+            // both required in order to force ivarator to call fillSets
+            params.put(SORTED_UIDS, "true");
+        }
+        logic.setUnsortedUIDsEnabled(!sortedUIDs);
+        logic.setCollectTimingDetails(timingDetails);
+        logic.setLogTimingDetails(timingDetails);
+        logic.setMaxEvaluationPipelines(pipelines);
 
-        String query = CitiesDataType.CityField.STATE.name() + "=~'.*[a-z].*' && filter:includeRegex(" + CitiesDataType.CityField.STATE.name() + ",'ma.*')";
-        String expected = CitiesDataType.CityField.STATE.name() + "=~'ma.*'";
+        String query = CitiesDataType.CityField.STATE.name() + "=~'.*[a-z].*' && filter:includeRegex(" + CitiesDataType.CityField.STATE.name() + ",'m.*')";
+        String expected = CitiesDataType.CityField.STATE.name() + "=~'m.*'";
         runTest(query, expected, params);
-    }
-
-    @Test
-    public void testIvaratorInterruptedAndYieldUnsorted() throws Exception {
-        String query = CitiesDataType.CityField.STATE.name() + RE_OP + "'.*[a-z].*'" + JEXL_AND_OP + "filter:includeRegex("
-                        + CitiesDataType.CityField.STATE.name() + ",'ma.*')";
-        String expected = CitiesDataType.CityField.STATE.name() + "=~'ma.*'";
-        runTest(query, expected);
     }
 
     public static class YieldingQueryIterator implements SortedKeyValueIterator<Key,Value> {
@@ -121,6 +150,7 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
         private Range __range;
         private Collection<ByteSequence> __columnFamilies;
         private boolean __inclusive;
+        private Key lastResultKey = null;
 
         public YieldingQueryIterator() {
             __delegate = new QueryIterator();
@@ -142,7 +172,18 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
 
         @Override
         public boolean hasTop() {
-            return __delegate.hasTop();
+            boolean hasTop = __delegate.hasTop();
+            while (__yield.hasYielded()) {
+                try {
+                    Key yieldKey = __yield.getPositionAndReset();
+                    checkYieldKey(yieldKey);
+                    createAndSeekNewQueryIterator(yieldKey);
+                    hasTop = __delegate.hasTop();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            return hasTop;
         }
 
         @Override
@@ -150,21 +191,28 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
             throw new UnsupportedOperationException("Yielding being handled internally");
         }
 
+        private void checkYieldKey(Key yieldKey) throws IOException {
+            if (!__range.contains(yieldKey)) {
+                throw new IllegalStateException("Yielded to key outside of range " + yieldKey + " not in " + __range);
+            }
+            if (lastResultKey != null && yieldKey.compareTo(lastResultKey) <= 0) {
+                throw new IOException(
+                                "Underlying iterator yielded to a position that does not follow the last key returned: " + yieldKey + " <= " + lastResultKey);
+            }
+        }
+
+        private void createAndSeekNewQueryIterator(Key yieldKey) throws IOException {
+            log.debug("Yielded at " + yieldKey + " after seeking range " + __range);
+            __delegate = new QueryIterator();
+            __delegate.init(__source, __options, __env);
+            __delegate.enableYielding(__yield);
+            __range = new Range(yieldKey, false, __range.getEndKey(), __range.isEndKeyInclusive());
+            __delegate.seek(__range, __columnFamilies, __inclusive);
+        }
+
         @Override
         public void next() throws IOException {
             __delegate.next();
-            while (__yield.hasYielded()) {
-                Key key = __yield.getPositionAndReset();
-                if (!__range.contains(key)) {
-                    throw new IllegalStateException("Yielded to key outside of range");
-                }
-                __delegate = new QueryIterator();
-                __delegate.init(__source, __options, __env);
-                __delegate.enableYielding(__yield);
-                __range = new Range(key, false, __range.getEndKey(), __range.isEndKeyInclusive());
-                log.info("Yielded at " + __range.getStartKey());
-                __delegate.seek(__range, __columnFamilies, __inclusive);
-            }
         }
 
         @Override
@@ -173,23 +221,17 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
             __columnFamilies = columnFamilies;
             __inclusive = inclusive;
             __delegate.seek(range, columnFamilies, inclusive);
-            while (__yield.hasYielded()) {
-                Key key = __yield.getPositionAndReset();
-                if (!__range.contains(key)) {
-                    throw new IllegalStateException("Yielded to key outside of range");
-                }
-                __delegate = new QueryIterator();
-                __delegate.init(__source, __options, __env);
-                __delegate.enableYielding(__yield);
-                __range = new Range(key, false, __range.getEndKey(), __range.isEndKeyInclusive());
-                log.info("Yielded at " + __range.getStartKey());
-                __delegate.seek(__range, __columnFamilies, __inclusive);
-            }
         }
 
         @Override
         public Key getTopKey() {
-            return __delegate.getTopKey();
+            Key resultKey = __delegate.getTopKey();
+            if (lastResultKey != null && resultKey != null && resultKey.compareTo(lastResultKey) < 0) {
+                throw new IllegalStateException(
+                                "Result key does not follow the last key returned -- results should be sorted: " + resultKey + " <= " + lastResultKey);
+            }
+            lastResultKey = resultKey;
+            return resultKey;
         }
 
         @Override

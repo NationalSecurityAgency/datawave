@@ -1,6 +1,8 @@
 package datawave.query.iterator.pipeline;
 
+import java.util.AbstractMap;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.accumulo.core.data.ByteSequence;
@@ -18,6 +20,7 @@ import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
 public class SerialIterator extends PipelineIterator {
 
@@ -25,13 +28,12 @@ public class SerialIterator extends PipelineIterator {
 
     protected Pipeline currentPipeline;
 
-    protected Entry<Key,Document> result = null;
-
     public SerialIterator(NestedIterator<Key> documents, int maxPipelines, int maxCachedResults, QuerySpanCollector querySpanCollector, QuerySpan querySpan,
                     QueryIterator sourceIterator, SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env,
-                    YieldCallback<Key> yieldCallback, long yieldThresholdMs, Collection<ByteSequence> columnFamilies, boolean include) {
+                    YieldCallback<Key> yieldCallback, long yieldThresholdMs, WaitWindowObserver waitWindowObserver, Collection<ByteSequence> columnFamilies,
+                    boolean include) {
         super(documents, maxPipelines, maxCachedResults, querySpanCollector, querySpan, sourceIterator, sourceForDeepCopy, env, yieldCallback, yieldThresholdMs,
-                        columnFamilies, include);
+                        waitWindowObserver, columnFamilies, include);
     }
 
     @Override
@@ -41,23 +43,16 @@ public class SerialIterator extends PipelineIterator {
             return false;
         }
 
-        if (null == result) {
-            long start = System.currentTimeMillis();
-            while (this.docSource.hasNext()) {
-                Key docKey = this.docSource.next();
-                Document doc = this.docSource.document();
+        while (result == null && this.docSource.hasNext()) {
+            Key docKey = this.docSource.next();
+            Document doc = this.docSource.document();
+            if (WaitWindowObserver.hasMarker(docKey) || waitWindowObserver.waitWindowOverrun()) {
+                result = handleWaitWindowOverrun(docKey, true);
+                break;
+            } else {
                 currentPipeline.setSource(Maps.immutableEntry(docKey, doc));
                 currentPipeline.run();
                 result = currentPipeline.getResult();
-                if (null != result)
-                    break;
-                if (yield != null && ((System.currentTimeMillis() - start) > yieldThresholdMs)) {
-                    yield.yield(docKey);
-                    if (log.isDebugEnabled()) {
-                        log.debug("Yielding at " + docKey);
-                    }
-                    break;
-                }
             }
         }
         return result != null;
@@ -83,14 +78,41 @@ public class SerialIterator extends PipelineIterator {
 
     public void startPipeline() {
         if (this.docSource.hasNext()) {
-            currentPipeline = pipelines.checkOut(this.docSource.next(), this.docSource.document(), null, columnFamilies, inclusive);
-            currentPipeline.run();
-            result = currentPipeline.getResult();
-            if (null == result) {
-                hasNext();
+            Key docKey = this.docSource.next();
+            Document doc = this.docSource.document();
+            if (WaitWindowObserver.hasMarker(docKey) || waitWindowObserver.waitWindowOverrun()) {
+                result = handleWaitWindowOverrun(docKey, true);
+            } else {
+                currentPipeline = pipelines.checkOut(docKey, doc, null, columnFamilies, inclusive);
+                currentPipeline.run();
+                result = currentPipeline.getResult();
+                if (null == result) {
+                    hasNext();
+                }
             }
         } else {
             result = null;
         }
+    }
+
+    // If collectTimingDetails == true, then we wil set the (future) yieldKey in waitWindowObserver and return
+    // an entry with the yield key and a WAIT_WINDOW_OVERRUN document to which the timing details can be added
+    // If collectTimingDetails == false, then we yield and return a null
+    private Map.Entry<Key,Document> handleWaitWindowOverrun(Key docKey, boolean yieldToBeginning) {
+        Map.Entry<Key,Document> result = null;
+        Key yieldKey = waitWindowObserver.createYieldKey(docKey, yieldToBeginning);
+        if (collectTimingDetails) {
+            waitWindowObserver.setYieldKey(yieldKey);
+            result = new AbstractMap.SimpleEntry<>(yieldKey, WaitWindowObserver.getWaitWindowOverrunDocument());
+            if (log.isDebugEnabled()) {
+                log.debug("WaitWindowOverrun at " + yieldKey);
+            }
+        } else {
+            yield.yield(yieldKey);
+            if (log.isDebugEnabled()) {
+                log.debug("Yielding at " + yieldKey);
+            }
+        }
+        return result;
     }
 }

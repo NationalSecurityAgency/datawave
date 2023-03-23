@@ -45,7 +45,7 @@ public class ResultCountingIterator implements Iterator<Entry<Key,Value>> {
         return next;
     }
 
-    private Key addKeyCount(Key key) {
+    public Key addKeyCount(Key key) {
         resultCount.getAndIncrement();
         return new Key(key.getRow(), new Text(NumericalEncoder.encode(Long.toString(resultCount.get())) + '\0' + key.getColumnFamily()),
                         key.getColumnQualifier(), key.getColumnVisibility(), key.getTimestamp());

@@ -180,7 +180,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
             logStop(keyRange.getStartKey());
             return Maps.immutableEntry(new DocumentData(from.getKey(), docKeys, attrs, false), from.getValue());
         } catch (IOException e) {
-            log.error("Unable to collection document attributes for evaluation: " + keyRange, e);
+            log.error("Unable to collect document attributes for evaluation: " + keyRange, e);
             QueryException qe = new QueryException(DatawaveErrorCode.DOCUMENT_EVALUATION_ERROR, e);
             throw new DatawaveFatalQueryException(qe);
         }

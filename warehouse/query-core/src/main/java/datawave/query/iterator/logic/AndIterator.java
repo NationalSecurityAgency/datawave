@@ -13,16 +13,19 @@ import java.util.Map;
 import java.util.SortedSet;
 
 import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.TreeMultimap;
 
 import datawave.query.attributes.Document;
+import datawave.query.exceptions.WaitWindowOverrunException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableIterator;
 import datawave.query.iterator.Util;
 import datawave.query.iterator.Util.Transformer;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
 /**
  * Performs a merge join of the child iterators. It is expected that all child iterators return values in sorted order.
@@ -31,6 +34,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     // temporary stores of uninitialized streams of iterators
     private List<NestedIterator<T>> includes, excludes, contextIncludes, contextExcludes;
 
+    private WaitWindowObserver waitWindowObserver;
     private Map<T,T> transforms;
     private Transformer<T> transformer;
 
@@ -45,10 +49,15 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     private static final Logger log = Logger.getLogger(AndIterator.class);
 
     public AndIterator(Iterable<NestedIterator<T>> sources) {
-        this(sources, null);
+        this(sources, null, null);
     }
 
     public AndIterator(Iterable<NestedIterator<T>> sources, Iterable<NestedIterator<T>> filters) {
+        this(sources, filters, null);
+    }
+
+    public AndIterator(Iterable<NestedIterator<T>> sources, Iterable<NestedIterator<T>> filters, WaitWindowObserver waitWindowObserver) {
+        this.waitWindowObserver = waitWindowObserver;
         includes = new LinkedList<>();
         contextIncludes = new LinkedList<>();
         for (NestedIterator<T> src : sources) {
@@ -80,31 +89,44 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
         // nestedIteratorComparator will keep a deterministic ordering, unlike hashCodeComparator
         Comparator<NestedIterator<T>> itrComp = Util.nestedIteratorComparator();
 
-        transformer = Util.keyTransformer();
-        transforms = new HashMap<>();
+        try {
 
-        includeHeads = TreeMultimap.create(keyComp, itrComp);
-        includeHeads = initSubtree(includeHeads, includes, transformer, transforms, true);
+            transformer = Util.keyTransformer();
+            transforms = new HashMap<>();
 
-        if (excludes.isEmpty()) {
-            excludeHeads = Util.getEmpty();
-        } else {
-            excludeHeads = TreeMultimap.create(keyComp, itrComp);
-            // pass null in for transforms as excludes are not returned
-            excludeHeads = initSubtree(excludeHeads, excludes, transformer, null, false);
+            includeHeads = TreeMultimap.create(keyComp, itrComp);
+            includeHeads = initSubtree(includeHeads, includes, transformer, transforms, true);
+
+            if (excludes.isEmpty()) {
+                excludeHeads = Util.getEmpty();
+            } else {
+                excludeHeads = TreeMultimap.create(keyComp, itrComp);
+                // pass null in for transforms as excludes are not returned
+                excludeHeads = initSubtree(excludeHeads, excludes, transformer, null, false);
+            }
+
+            if (!contextIncludes.isEmpty()) {
+                contextIncludeHeads = TreeMultimap.create(keyComp, itrComp);
+                contextIncludeNullHeads = TreeMultimap.create(keyComp, itrComp);
+            }
+
+            if (contextExcludes != null && !contextExcludes.isEmpty()) {
+                contextExcludeHeads = TreeMultimap.create(keyComp, itrComp);
+                contextExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
+            }
+
+            next();
+        } catch (WaitWindowOverrunException e) {
+            // if prev != null then it's a match that has not been returned
+            T highest = null;
+            if (!includeHeads.isEmpty()) {
+                highest = includeHeads.keySet().last();
+            }
+            Key possibleYieldKey = (prev != null) ? (Key) prev : (Key) highest;
+            // When comparing possible yield keys in the AndIterator, we choose the highest
+            // key because the uids of the sources need to be equal to return a match
+            this.waitWindowObserver.propagateException(possibleYieldKey, true, false, e);
         }
-
-        if (!contextIncludes.isEmpty()) {
-            contextIncludeHeads = TreeMultimap.create(keyComp, itrComp);
-            contextIncludeNullHeads = TreeMultimap.create(keyComp, itrComp);
-        }
-
-        if (contextExcludes != null && !contextExcludes.isEmpty()) {
-            contextExcludeHeads = TreeMultimap.create(keyComp, itrComp);
-            contextExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
-        }
-
-        next();
     }
 
     public boolean isInitialized() {
@@ -168,63 +190,75 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
 
         prev = next;
         prevDocument = document;
+        T lowest = null;
+        T highest = null;
 
-        // look through includes for candidates if there are any
-        while (!includeHeads.isEmpty()) {
-            SortedSet<T> topKeys = includeHeads.keySet();
-            T lowest = topKeys.first();
-            T highest = topKeys.last();
+        try {
+            // look through includes for candidates if there are any
+            while (!includeHeads.isEmpty()) {
+                SortedSet<T> topKeys = includeHeads.keySet();
+                lowest = topKeys.first();
+                highest = topKeys.last();
 
-            // short circuit if possible from a supplied evaluation context
-            if (evaluationContext != null) {
-                int lowestCompare = lowest.compareTo(evaluationContext);
-                int highestCompare = highest.compareTo(evaluationContext);
+                // short circuit if possible from a supplied evaluation context
+                if (evaluationContext != null) {
+                    checkWaitWindow(evaluationContext);
+                    int lowestCompare = lowest.compareTo(evaluationContext);
+                    int highestCompare = highest.compareTo(evaluationContext);
 
-                if (lowestCompare > 0 || highestCompare > 0) {
-                    // if any value is beyond the evaluationContext it's not possible to intersect
-                    break;
-                }
-
-                // advance anything less than the evaluation context to the evaluation context
-                SortedSet<T> toMove = topKeys.headSet(evaluationContext);
-                if (!toMove.isEmpty()) {
-                    includeHeads = moveIterators(toMove, evaluationContext);
-                    continue;
-                }
-            }
-
-            // if the highest and lowest are the same we are currently intersecting
-            if (lowest.equals(highest)) {
-                // make sure this value isn't filtered
-                if (!NegationFilter.isFiltered(lowest, excludeHeads, transformer)) {
-                    // use this value as a candidate against any includes/excludes that require context
-                    if (applyContextRequired(lowest)) {
-                        // found a match, set next/document and advance
-                        next = transforms.get(lowest);
-                        document = Util.buildNewDocument(includeHeads.values());
-                        includeHeads = advanceIterators(lowest);
+                    if (lowestCompare > 0 || highestCompare > 0) {
+                        // if any value is beyond the evaluationContext it's not possible to intersect
                         break;
                     }
-                } else {
-                    // filtered, advance the iterators (which are all currently pointing at the same point)
-                    includeHeads = advanceIterators(lowest);
-                }
-            } else {
-                // haven't converged yet, take the next highest and move it
-                T nextHighest = topKeys.headSet(highest).last();
-                includeHeads = moveIterators(nextHighest, highest);
-            }
-        }
 
-        // for cases where there are no sources the only source for a candidate is the evaluationContext.
-        if (isContextRequired()) {
-            // test exclude for the candidate in case there are excludes
-            if (!NegationFilter.isFiltered(evaluationContext, excludeHeads, transformer)) {
-                if (applyContextRequired(evaluationContext)) {
-                    next = evaluationContext;
-                    document = Util.buildNewDocument(Collections.emptyList());
+                    // advance anything less than the evaluation context to the evaluation context
+                    SortedSet<T> toMove = topKeys.headSet(evaluationContext);
+                    if (!toMove.isEmpty()) {
+                        includeHeads = moveIterators(toMove, evaluationContext);
+                        continue;
+                    }
+                }
+                checkWaitWindow(highest);
+                // if the highest and lowest are the same we are currently intersecting
+                if (lowest.equals(highest)) {
+                    // make sure this value isn't filtered
+                    if (!NegationFilter.isFiltered(lowest, excludeHeads, transformer)) {
+                        // use this value as a candidate against any includes/excludes that require context
+                        if (applyContextRequired(lowest)) {
+                            // found a match, set next/document and advance
+                            next = transforms.get(lowest);
+                            document = Util.buildNewDocument(includeHeads.values());
+                            includeHeads = advanceIterators(lowest);
+                            break;
+                        }
+                    } else {
+                        // filtered, advance the iterators (which are all currently pointing at the same point)
+                        includeHeads = advanceIterators(lowest);
+                    }
+                } else {
+                    // haven't converged yet, take the next highest and move it
+                    T nextHighest = topKeys.headSet(highest).last();
+                    includeHeads = moveIterators(nextHighest, highest);
                 }
             }
+
+            // for cases where there are no sources the only source for a candidate is the evaluationContext.
+            if (isContextRequired()) {
+                checkWaitWindow(evaluationContext);
+                // test exclude for the candidate in case there are excludes
+                if (!NegationFilter.isFiltered(evaluationContext, excludeHeads, transformer)) {
+                    if (applyContextRequired(evaluationContext)) {
+                        next = evaluationContext;
+                        document = Util.buildNewDocument(Collections.emptyList());
+                    }
+                }
+            }
+        } catch (WaitWindowOverrunException e) {
+            // if prev != null then it's a match that has not been returned
+            Key possibleYieldKey = (prev != null) ? (Key) prev : (Key) highest;
+            // When comparing possible yield keys in the AndIterator, we choose the highest
+            // key because the uids of the sources need to be equal to return a match
+            this.waitWindowObserver.propagateException(possibleYieldKey, true, false, e);
         }
 
         // if we didn't move after the loop, then we don't have a next after this
@@ -233,6 +267,16 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
         }
 
         return prev;
+    }
+
+    private void checkWaitWindow(T key) {
+        if (this.waitWindowObserver != null) {
+            Key yieldKey = (prev != null) ? (Key) prev : (Key) key;
+            if (yieldKey != null) {
+                // YIELD_AT_BEGIN because neither prev nor key have been returned yet
+                this.waitWindowObserver.checkWaitWindow(yieldKey, true);
+            }
+        }
     }
 
     public void remove() {
@@ -259,6 +303,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                         ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
                     }
                 }
+            } catch (WaitWindowOverrunException e) {
+                // When comparing possible yield keys in the AndIterator, we choose the highest
+                // key because the uids of the sources need to be equal to return a match
+                this.waitWindowObserver.propagateException(null, true, false, e);
             } catch (Exception e) {
                 include.remove();
                 if (includes.isEmpty()) {

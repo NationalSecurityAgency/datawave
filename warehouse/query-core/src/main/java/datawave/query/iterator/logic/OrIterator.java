@@ -13,11 +13,15 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.accumulo.core.data.Key;
+
 import com.google.common.collect.TreeMultimap;
 
 import datawave.query.attributes.Document;
+import datawave.query.exceptions.WaitWindowOverrunException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.Util;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
 /**
  * Performs a deduping merge of iterators.
@@ -38,15 +42,21 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     private T prev;
     private T next;
 
+    private WaitWindowObserver waitWindowObserver;
     private Document prevDocument, document;
 
     private T evaluationContext;
 
     public OrIterator(Iterable<NestedIterator<T>> sources) {
-        this(sources, null);
+        this(sources, null, null);
     }
 
     public OrIterator(Iterable<NestedIterator<T>> sources, Iterable<NestedIterator<T>> filters) {
+        this(sources, filters, null);
+    }
+
+    public OrIterator(Iterable<NestedIterator<T>> sources, Iterable<NestedIterator<T>> filters, WaitWindowObserver waitWindowObserver) {
+        this.waitWindowObserver = waitWindowObserver;
         includes = new LinkedList<>();
         contextIncludes = new LinkedList<>();
         for (NestedIterator<T> src : sources) {
@@ -79,20 +89,32 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         transformer = Util.keyTransformer();
         transforms = new HashMap<>();
 
-        includeHeads = TreeMultimap.create(keyComp, itrComp);
-        initSubtree(includeHeads, includes, transformer, transforms, false);
+        try {
+            includeHeads = TreeMultimap.create(keyComp, itrComp);
+            initSubtree(includeHeads, includes, transformer, transforms, false);
 
-        if (contextIncludes.size() > 0) {
-            contextIncludeHeads = TreeMultimap.create(keyComp, itrComp);
-            contextIncludeNullHeads = TreeMultimap.create(keyComp, itrComp);
+            if (contextIncludes.size() > 0) {
+                contextIncludeHeads = TreeMultimap.create(keyComp, itrComp);
+                contextIncludeNullHeads = TreeMultimap.create(keyComp, itrComp);
+            }
+
+            if (contextExcludes.size() > 0) {
+                contextExcludeHeads = TreeMultimap.create(keyComp, itrComp);
+                contextExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
+            }
+
+            next();
+        } catch (WaitWindowOverrunException e) {
+            // if prev != null then it's a match that has not been returned
+            T lowest = includeHeads.keySet().first();
+            Key possibleYieldKey = null;
+            if (prev != null || lowest != null) {
+                possibleYieldKey = (prev != null) ? (Key) prev : (Key) lowest;
+            }
+            // When comparing possible yield keys in the OrIterator, we choose the lowest
+            // key because a match in any source is a match
+            waitWindowObserver.propagateException(possibleYieldKey, true, true, e);
         }
-
-        if (contextExcludes.size() > 0) {
-            contextExcludeHeads = TreeMultimap.create(keyComp, itrComp);
-            contextExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
-        }
-
-        next();
     }
 
     public boolean hasNext() {
@@ -119,56 +141,68 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
         SortedSet<T> candidateSet = new TreeSet<>(Util.keyComparator());
         T lowest;
-        if (includeHeads.keySet().size() > 0) {
-            lowest = includeHeads.keySet().first();
-            candidateSet.add(lowest);
-        }
+        try {
+            if (includeHeads.keySet().size() > 0) {
+                lowest = includeHeads.keySet().first();
+                candidateSet.add(lowest);
+            }
 
-        T lowestContextInclude = null;
-        if (evaluationContext != null) {
-            if (contextIncludes.size() > 0) {
-                // get the lowest union and add it for contextRequiredIncludes
-                lowestContextInclude = NestedIteratorContextUtil.union(evaluationContext, contextIncludes, contextIncludeHeads, contextIncludeNullHeads,
-                                transformer);
-                if (lowestContextInclude != null) {
-                    candidateSet.add(lowestContextInclude);
+            T lowestContextInclude = null;
+            if (evaluationContext != null) {
+                if (contextIncludes.size() > 0) {
+                    // get the lowest union and add it for contextRequiredIncludes
+                    lowestContextInclude = NestedIteratorContextUtil.union(evaluationContext, contextIncludes, contextIncludeHeads, contextIncludeNullHeads,
+                                    transformer);
+                    if (lowestContextInclude != null) {
+                        candidateSet.add(lowestContextInclude);
+                    }
+                }
+
+                if (contextExcludes.size() > 0) {
+                    // DeMorgan's Law: (~A) OR (~B) == ~(A AND B)
+                    // for an exclude intersect the evaluation context with the set and then as long as the result doesn't match it is a candidate
+                    T intersectExclude = NestedIteratorContextUtil.intersect(evaluationContext, contextExcludes, contextExcludeHeads, contextExcludeNullHeads,
+                                    transformer);
+                    if (!evaluationContext.equals(intersectExclude)) {
+                        candidateSet.add(evaluationContext);
+                    }
                 }
             }
 
-            if (contextExcludes.size() > 0) {
-                // DeMorgan's Law: (~A) OR (~B) == ~(A AND B)
-                // for an exclude intersect the evaluation context with the set and then as long as the result doesn't match it is a candidate
-                T intersectExclude = NestedIteratorContextUtil.intersect(evaluationContext, contextExcludes, contextExcludeHeads, contextExcludeNullHeads,
-                                transformer);
-                if (!evaluationContext.equals(intersectExclude)) {
-                    candidateSet.add(evaluationContext);
+            // take the lowest of the candidates
+            if (candidateSet.size() > 0) {
+                lowest = candidateSet.first();
+                checkWaitWindow(lowest);
+
+                // decide how to construct the document
+                if (lowest.equals(lowestContextInclude)) {
+                    // build it from the contextIncludeHeads
+                    next = lowestContextInclude;
+                    document = Util.buildNewDocument(contextIncludeHeads.get(next));
+                } else if (includeHeads.keySet().size() > 0 && lowest.equals(includeHeads.keySet().first())) {
+                    // build it from the includeHeads
+                    next = transforms.get(lowest);
+                    document = Util.buildNewDocument(includeHeads.get(lowest));
+                } else {
+                    // nothing to build it from all we know is that it wasn't in the exclude set
+                    next = evaluationContext;
+                    document = Util.buildNewDocument(Collections.emptyList());
+                }
+
+                // regardless of where we hit make sure to advance includeHeads if it matches there
+                if (includeHeads != null && includeHeads.containsKey(lowest)) {
+                    includeHeads = advanceIterators(lowest);
                 }
             }
-        }
-
-        // take the lowest of the candidates
-        if (candidateSet.size() > 0) {
-            lowest = candidateSet.first();
-
-            // decide how to construct the document
-            if (lowest.equals(lowestContextInclude)) {
-                // build it from the contextIncludeHeads
-                next = lowestContextInclude;
-                document = Util.buildNewDocument(contextIncludeHeads.get(next));
-            } else if (includeHeads.keySet().size() > 0 && lowest.equals(includeHeads.keySet().first())) {
-                // build it from the includeHeads
-                next = transforms.get(lowest);
-                document = Util.buildNewDocument(includeHeads.get(lowest));
-            } else {
-                // nothing to build it from all we know is that it wasn't in the exclude set
-                next = evaluationContext;
-                document = Util.buildNewDocument(Collections.emptyList());
+        } catch (WaitWindowOverrunException e) {
+            // if prev != null then it's a match that has not been returned
+            Key possibleYieldKey = null;
+            if (prev != null || !candidateSet.isEmpty()) {
+                possibleYieldKey = (prev != null) ? (Key) prev : (Key) candidateSet.first();
             }
-
-            // regardless of where we hit make sure to advance includeHeads if it matches there
-            if (includeHeads != null && includeHeads.containsKey(lowest)) {
-                includeHeads = advanceIterators(lowest);
-            }
+            // When comparing possible yield keys in the OrIterator, we choose the lowest
+            // key because a match in any sources can return a match
+            waitWindowObserver.propagateException(possibleYieldKey, true, true, e);
         }
 
         // the loop couldn't find a new next, so set next to null because we're done after this
@@ -177,6 +211,16 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         }
 
         return prev;
+    }
+
+    private void checkWaitWindow(T key) {
+        if (this.waitWindowObserver != null) {
+            Key yieldKey = (prev != null) ? (Key) prev : (Key) key;
+            if (yieldKey != null) {
+                // YIELD_AT_BEGIN because neither prev nor key have been returned yet
+                this.waitWindowObserver.checkWaitWindow(yieldKey, true);
+            }
+        }
     }
 
     /**

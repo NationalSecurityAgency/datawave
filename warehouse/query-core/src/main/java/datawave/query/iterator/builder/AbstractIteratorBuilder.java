@@ -9,6 +9,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import com.google.common.collect.HashMultimap;
 
 import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
 /**
  * Provides semantics for adding sources to a nested iterator but deferring the creation of iterator. This is meant to be used in a visitor.
@@ -28,6 +29,10 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
     protected JexlNode node;
 
     protected String queryId;
+
+    protected String scanId;
+
+    protected WaitWindowObserver waitWindowObserver;
 
     public boolean isSortedUIDs() {
         return sortedUIDs;
@@ -113,6 +118,14 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
 
     public void setQueryId(String queryId) {
         this.queryId = queryId;
+    }
+
+    public void setScanId(String scanId) {
+        this.scanId = scanId;
+    }
+
+    public void setWaitWindowObserver(WaitWindowObserver waitWindowObserver) {
+        this.waitWindowObserver = waitWindowObserver;
     }
 
     /**

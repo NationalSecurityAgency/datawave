@@ -18,7 +18,6 @@ import static datawave.query.iterator.QueryOptions.START_TIME;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCIES_REQUIRED;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -34,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.conf.DefaultConfiguration;
@@ -62,9 +62,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
 
 /**
@@ -76,11 +74,10 @@ public class QueryIteratorIT extends EasyMockSupport {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    protected QueryIterator iterator;
+    protected TestLookupTask lookupTask;
     protected SortedListKeyValueIterator baseIterator;
     protected Map<String,String> options;
     protected IteratorEnvironment environment;
-    protected EventDataQueryFilter filter;
     protected TypeMetadata typeMetadata;
 
     // Default row is for day 20190314, shard 0
@@ -89,11 +86,18 @@ public class QueryIteratorIT extends EasyMockSupport {
     // Default if test does not specify a datatype
     protected static final String DEFAULT_DATATYPE = "dataType1";
 
+    // Event time
+    protected long eventTimestamp = 11;
+
     public Path tempPath;
+
+    protected Class getIteratorClass() {
+        return QueryIterator.class;
+    }
 
     @Before
     public void setup() throws IOException {
-        iterator = new QueryIterator();
+        lookupTask = new TestLookupTask(getIteratorClass());
         options = new HashMap<>();
         tempPath = temporaryFolder.newFolder().toPath();
 
@@ -117,7 +121,10 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(NON_INDEXED_DATATYPES, nonIndexedTypes);
 
         // set a query id
-        options.put(QUERY_ID, "000001");
+        options.put(QUERY_ID, UUID.randomUUID().toString());
+
+        // set a scanId
+        options.put(SCAN_ID, UUID.randomUUID().toString());
 
         // set a scanId
         options.put(SCAN_ID, "000002");
@@ -146,7 +153,6 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         environment = createMock(IteratorEnvironment.class);
         EasyMock.expect(environment.getConfig()).andReturn(DefaultConfiguration.getInstance()).anyTimes();
-        filter = createMock(EventDataQueryFilter.class);
     }
 
     @After
@@ -154,58 +160,58 @@ public class QueryIteratorIT extends EasyMockSupport {
         tempPath.toFile().deleteOnExit();
     }
 
-    private List<Map.Entry<Key,Value>> addEvent(long eventTime, String uid) {
-        return addEvent(DEFAULT_ROW, DEFAULT_DATATYPE, eventTime, uid);
+    protected List<Map.Entry<Key,Value>> addEvent(String uid) {
+        return addEvent(DEFAULT_ROW, DEFAULT_DATATYPE, uid);
     }
 
-    private List<Map.Entry<Key,Value>> addEvent(String row, String dataType, long eventTime, String uid) {
+    protected List<Map.Entry<Key,Value>> addEvent(String row, String dataType, String uid) {
         List<Map.Entry<Key,Value>> listSource = new ArrayList<>();
 
         // indexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD1", "a", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD1", "a", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD1", "a", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD1", "a", dataType, uid), new Value()));
         // unindexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD2", "b", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD3", "c", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD2", "b", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD3", "c", dataType, uid), new Value()));
         // indexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD4", "d", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD4", "d", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD4", "d", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD4", "d", dataType, uid), new Value()));
         // unindexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD5", "e", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD5", "e", dataType, uid), new Value()));
         // indexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD6", "f", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD6", "f", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD6", "f", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD6", "f", dataType, uid), new Value()));
 
         // add some indexed TF fields
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(DEFAULT_ROW, "TF_FIELD1", "a,, b,,, c,,", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a b c", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "b", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "c", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "a", dataType, uid, eventTime), getTFValue(0)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "b", dataType, uid, eventTime), getTFValue(1)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "c", dataType, uid, eventTime), getTFValue(2)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(DEFAULT_ROW, "TF_FIELD1", "a,, b,,, c,,", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a b c", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "b", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "c", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "a", dataType, uid), getTFValue(0)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "b", dataType, uid), getTFValue(1)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "c", dataType, uid), getTFValue(2)));
 
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "TF_FIELD2", ",x, ,y, ,z,", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x y z", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "y", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "z", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "x", dataType, uid, eventTime), getTFValue(23)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "y", dataType, uid, eventTime), getTFValue(24)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "z", dataType, uid, eventTime), getTFValue(25)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "TF_FIELD2", ",x, ,y, ,z,", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x y z", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "y", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "z", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "x", dataType, uid), getTFValue(23)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "y", dataType, uid), getTFValue(24)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "z", dataType, uid), getTFValue(25)));
 
         // add an index only TF
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD4", "d", dataType, uid, eventTime), getTFValue(3)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD4", "d", dataType, uid, eventTime), getTFValue(3)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD4", "d", dataType, uid), getTFValue(3)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD4", "d", dataType, uid), getTFValue(3)));
 
         // add some index only field data
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "apple", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "pear", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "orange", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "beef", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "chicken", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "pork", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "apple", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "pear", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "orange", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "beef", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "chicken", dataType, uid), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "pork", dataType, uid), new Value()));
 
         return listSource;
     }
@@ -213,7 +219,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     protected List<Map.Entry<Key,Value>> configureTestData(long eventTime) {
         List<Map.Entry<Key,Value>> listSource = new ArrayList<>();
 
-        listSource.addAll(addEvent(eventTime, "123.345.456"));
+        listSource.addAll(addEvent("123.345.456"));
 
         return listSource;
     }
@@ -296,7 +302,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "INDEX_ONLY_FIELD1 == 'apple'";
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, addEvent("123.345.457"), Collections.EMPTY_LIST);
     }
 
     @Test
@@ -306,7 +312,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         String query = "INDEX_ONLY_FIELD1 == 'apple'";
         Map.Entry<Key,Map<String,List<String>>> secondEvent = getBaseExpectedEvent("123.345.457");
         secondEvent.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(secondEvent));
+        indexOnly_test(seekRange, query, false, addEvent("123.345.457"), Arrays.asList(secondEvent));
     }
 
     @Test
@@ -346,7 +352,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))";
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, addEvent("123.345.457"), Collections.EMPTY_LIST);
     }
 
     @Test
@@ -356,7 +362,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))";
         Map.Entry<Key,Map<String,List<String>>> secondEvent = getBaseExpectedEvent("123.345.457");
         secondEvent.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(secondEvent));
+        indexOnly_test(seekRange, query, false, addEvent("123.345.457"), Arrays.asList(secondEvent));
     }
 
     @Test
@@ -396,7 +402,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))";
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, addEvent("123.345.457"), Collections.EMPTY_LIST);
     }
 
     @Test
@@ -406,7 +412,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))";
         Map.Entry<Key,Map<String,List<String>>> secondEvent = getBaseExpectedEvent("123.345.457");
         secondEvent.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(secondEvent));
+        indexOnly_test(seekRange, query, false, addEvent("123.345.457"), Arrays.asList(secondEvent));
     }
 
     @Test
@@ -464,7 +470,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 == 'b'";
-        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, addEvent("123.345.457"), Collections.EMPTY_LIST);
     }
 
     @Test
@@ -472,7 +478,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 == 'b'";
-        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        event_test(seekRange, query, false, null, addEvent("123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
 
     @Test
@@ -512,7 +518,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 =~ 'b.*'";
-        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, addEvent("123.345.457"), Collections.EMPTY_LIST);
     }
 
     @Test
@@ -520,7 +526,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 =~ 'b.*'";
-        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        event_test(seekRange, query, false, null, addEvent("123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
 
     @Test
@@ -560,7 +566,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 =~ '.*b'";
-        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        event_test(seekRange, query, false, null, addEvent("123.345.457"), Collections.EMPTY_LIST);
     }
 
     @Test
@@ -568,7 +574,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 =~ '.*b'";
-        event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        event_test(seekRange, query, false, null, addEvent("123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
 
     @Test(expected = IOException.class)
@@ -643,7 +649,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD4 == 'd'";
-        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, addEvent("123.345.457"), Collections.EMPTY_LIST);
     }
 
     /**
@@ -657,7 +663,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD4 == 'd'";
-        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        index_test(seekRange, query, false, addEvent("123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
 
     @Test
@@ -697,7 +703,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ 'd.*'))";
-        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, addEvent("123.345.457"), Collections.EMPTY_LIST);
     }
 
     @Test
@@ -705,7 +711,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ 'd.*'))";
-        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        index_test(seekRange, query, false, addEvent("123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
 
     @Test
@@ -745,7 +751,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ '.*d'))";
-        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        index_test(seekRange, query, false, addEvent("123.345.457"), Collections.EMPTY_LIST);
     }
 
     @Test
@@ -753,7 +759,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ '.*d'))";
-        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        index_test(seekRange, query, false, addEvent("123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
 
     @Test
@@ -1028,9 +1034,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
 
     protected void configureIterator() {
-        // configure iterator
-        iterator.setEvaluationFilter(filter);
-        iterator.setTypeMetadata(typeMetadata);
+        lookupTask.setTypeMetadata(typeMetadata);
     }
 
     /**
@@ -1058,8 +1062,7 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         replayAll();
 
-        iterator.init(baseIterator, options, environment);
-        iterator.seek(seekRange, Collections.EMPTY_LIST, true);
+        List<Map.Entry<Key,Document>> results = lookupTask.lookup(baseIterator, options, environment, Collections.singletonList(seekRange));
 
         verifyAll();
 
@@ -1074,7 +1077,7 @@ public class QueryIteratorIT extends EasyMockSupport {
             }
         }
         hits.addAll(otherHits);
-        eval(hits);
+        eval(results, hits);
     }
 
     /**
@@ -1102,8 +1105,7 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         replayAll();
 
-        iterator.init(baseIterator, options, environment);
-        iterator.seek(seekRange, Collections.EMPTY_LIST, true);
+        List<Map.Entry<Key,Document>> results = lookupTask.lookup(baseIterator, options, environment, Collections.singletonList(seekRange));
 
         verifyAll();
 
@@ -1114,7 +1116,7 @@ public class QueryIteratorIT extends EasyMockSupport {
             hits.add(getBaseExpectedEvent("123.345.456"));
         }
         hits.addAll(otherHits);
-        eval(hits);
+        eval(results, hits);
     }
 
     /**
@@ -1146,8 +1148,7 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         replayAll();
 
-        iterator.init(baseIterator, options, environment);
-        iterator.seek(seekRange, Collections.EMPTY_LIST, true);
+        List<Map.Entry<Key,Document>> results = lookupTask.lookup(baseIterator, options, environment, Collections.singletonList(seekRange));
 
         verifyAll();
 
@@ -1162,7 +1163,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         }
 
         hits.addAll(otherHits);
-        eval(hits);
+        eval(results, hits);
     }
 
     /**
@@ -1192,8 +1193,7 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         replayAll();
 
-        iterator.init(baseIterator, options, environment);
-        iterator.seek(seekRange, Collections.EMPTY_LIST, true);
+        List<Map.Entry<Key,Document>> results = lookupTask.lookup(baseIterator, options, environment, Collections.singletonList(seekRange));
 
         verifyAll();
 
@@ -1203,7 +1203,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         }
 
         hits.addAll(otherHits);
-        eval(hits);
+        eval(results, hits);
     }
 
     @Test
@@ -1239,7 +1239,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     public void indexOnly_lazy_documentSpecific_test() throws IOException {
         Range seekRange = getDocumentRange("123.345.456");
         String query = "INDEX_ONLY_FIELD1 == 'apple' && filter:isNotNull(TF_FIELD4@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION)";
-        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, false, addEvent("123.345.457"), Collections.EMPTY_LIST);
     }
 
     @Test
@@ -1264,7 +1264,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
 
     protected Map.Entry<Key,Map<String,List<String>>> getBaseExpectedEvent(String row, String dataType, String uid) {
-        Key hitKey = new Key(row, dataType + Constants.NULL + uid);
+        Key hitKey = new Key(row, dataType + Constants.NULL + uid, "", "", eventTimestamp);
         Map<String,List<String>> expectedDocument = new HashMap<>();
         expectedDocument.put("EVENT_FIELD1", Arrays.asList(new String[] {"a"}));
         expectedDocument.put("EVENT_FIELD2", Arrays.asList(new String[] {"b"}));
@@ -1284,13 +1284,14 @@ public class QueryIteratorIT extends EasyMockSupport {
         return options.get(HIT_LIST) != null && Boolean.parseBoolean(options.get(HIT_LIST));
     }
 
-    protected void eval(List<Map.Entry<Key,Map<String,List<String>>>> toEval) throws IOException {
+    protected void eval(List<Map.Entry<Key,Document>> results, List<Map.Entry<Key,Map<String,List<String>>>> toEval) throws IOException {
         Iterator<Map.Entry<Key,Map<String,List<String>>>> evalIterator = toEval.iterator();
         while (evalIterator.hasNext()) {
             Map.Entry<Key,Map<String,List<String>>> evalPair = evalIterator.next();
-            eval(evalPair.getKey(), evalPair.getValue());
+            eval(results, evalPair.getKey(), evalPair.getValue());
         }
-        assertFalse(iterator.hasTop());
+        // there should be no other hits
+        assertTrue("Should be no more results", results.isEmpty());
     }
 
     /**
@@ -1303,23 +1304,20 @@ public class QueryIteratorIT extends EasyMockSupport {
      * @throws IOException
      *             IOException for issues with read/write
      */
-    protected void eval(Key docKeyHit, Map<String,List<String>> docKeys) throws IOException {
+    protected void eval(List<Map.Entry<Key,Document>> results, Key docKeyHit, Map<String,List<String>> docKeys) throws IOException {
         // asserts for a hit or miss
         if (docKeyHit == null) {
-            assertFalse(iterator.hasTop());
+            assertTrue(results.isEmpty());
         } else {
-            assertTrue("Expected hit, but got none", iterator.hasTop());
-            Key next = iterator.getTopKey();
+            assertTrue("Expected hit, but got none", results.size() > 0);
+            Map.Entry<Key,Document> entry = results.remove(0);
+            Key next = entry.getKey();
             assertNotNull(next);
-            assertEquals(next.getRow().toString(), docKeyHit.getRow().toString());
-            assertEquals(next.getColumnFamily().toString(), docKeyHit.getColumnFamily().toString());
+            assertEquals(docKeyHit.getRow().toString(), next.getRow().toString());
+            assertEquals(docKeyHit.getColumnFamily().toString(), next.getColumnFamily().toString());
 
             // asserts for document build
-            Value topValue = iterator.getTopValue();
-            assertNotNull(topValue);
-            Map.Entry<Key,Document> deserializedValue = deserialize(topValue);
-            assertNotNull(deserializedValue.getValue());
-            Document d = deserializedValue.getValue();
+            Document d = entry.getValue();
             assertNotNull(d);
 
             // -1 is for RECORD_ID field and -1 for HIT_LIST if configured
@@ -1368,26 +1366,18 @@ public class QueryIteratorIT extends EasyMockSupport {
                     assertEquals(0, expected.size());
                 }
             }
-
-            // there should be no other hits
-            iterator.next();
         }
     }
 
-    private Map.Entry<Key,Document> deserialize(Value value) {
-        KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
-        return dser.apply(new AbstractMap.SimpleEntry(null, value));
-    }
-
     // support methods
-    protected Key getTF(String field, String value, String uid, long timestamp) {
-        return getTF(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid, timestamp);
+    protected Key getTF(String field, String value, String uid) {
+        return getTF(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid);
     }
 
-    protected Key getTF(String row, String field, String value, String dataType, String uid, long timestamp) {
+    protected Key getTF(String row, String field, String value, String dataType, String uid) {
         // CQ = dataType\0UID\0Normalized field value\0Field name
         return new Key(row, "tf", dataType + Constants.NULL_BYTE_STRING + uid + Constants.NULL_BYTE_STRING + value + Constants.NULL_BYTE_STRING + field,
-                        timestamp);
+                        eventTimestamp);
     }
 
     // Generate TermFrequencyOffsets from a key
@@ -1397,20 +1387,20 @@ public class QueryIteratorIT extends EasyMockSupport {
         return new Value(info.toByteArray());
     }
 
-    protected Key getFI(String field, String value, String uid, long timestamp) {
-        return getFI(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid, timestamp);
+    protected Key getFI(String field, String value, String uid) {
+        return getFI(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid);
     }
 
-    protected Key getFI(String row, String field, String value, String dataType, String uid, long timestamp) {
+    protected Key getFI(String row, String field, String value, String dataType, String uid) {
         return new Key(row, "fi" + Constants.NULL_BYTE_STRING + field.toUpperCase(),
-                        value + Constants.NULL_BYTE_STRING + dataType + Constants.NULL_BYTE_STRING + uid, timestamp);
+                        value + Constants.NULL_BYTE_STRING + dataType + Constants.NULL_BYTE_STRING + uid, eventTimestamp);
     }
 
-    protected Key getEvent(String field, String value, String uid, long timestamp) {
-        return getEvent(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid, timestamp);
+    protected Key getEvent(String field, String value, String uid) {
+        return getEvent(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid);
     }
 
-    protected Key getEvent(String row, String field, String value, String dataType, String uid, long timestamp) {
-        return new Key(row, dataType + Constants.NULL + uid, field + Constants.NULL + value, timestamp);
+    protected Key getEvent(String row, String field, String value, String dataType, String uid) {
+        return new Key(row, dataType + Constants.NULL + uid, field + Constants.NULL + value, eventTimestamp);
     }
 }
