@@ -207,7 +207,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             }
             fn = (documentName == null) ? data.getKey() : documentName;
             
-            // Some fields were added by the queryPlanner. This will ensure that the original projectFields and blacklistedFields are honored
+            // Some fields were added by the queryPlanner. This will ensure that the original projectFields and blacklistFields are honored
             // remove any grouping context (only return the field up until the first dot)
             if (!suppressFields.contains(JexlASTHelper.removeGroupingContext(fn))) {
                 // Apply the reverse mapping to make the field name human-readable again
@@ -595,8 +595,8 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         this.projectFields = projectFields;
     }
     
-    public void setBlacklistedFields(Set<String> disallowedFields) {
-        this.blacklistedFields = disallowedFields;
+    public void setBlacklistedFields(Set<String> blacklistedFields) {
+        this.blacklistedFields = blacklistedFields;
     }
     
     public void setPrimaryToSecondaryFieldMap(Map<String,List<String>> primaryToSecondaryFieldMap) {

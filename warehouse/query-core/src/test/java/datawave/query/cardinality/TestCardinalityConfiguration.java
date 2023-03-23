@@ -80,8 +80,8 @@ public class TestCardinalityConfiguration {
                 "FIELD_4B", "QUERY_USER|PROTOCOL"}));
         
         // FIELD_2B is only in the forward model for field FIELD_2
-        Set<String> originalBlacklistedFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_2B", "FIELD3"});
-        Set<String> revisedBlacklist = config.getRevisedBlacklistFields(QUERY_MODEL, originalBlacklistedFieldsSet);
+        Set<String> originalBlacklistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_2B", "FIELD3"});
+        Set<String> revisedBlacklist = config.getRevisedBlacklistFields(QUERY_MODEL, originalBlacklistFieldsSet);
         
         Assert.assertEquals(3, revisedBlacklist.size());
         Assert.assertFalse(revisedBlacklist.contains("FIELD_2B"));
@@ -99,8 +99,8 @@ public class TestCardinalityConfiguration {
         // FIELD_2B is only in the forward model for field FIELD_2
         // FIELD_3A is only in the forward model for FIELD_3
         // FIELD_3 included twice -- once directly and once by model
-        Set<String> originalBlacklistedFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_3", "FIELD_2B", "FIELD_3A", "FIELD3"});
-        Set<String> revisedBlacklist = config.getRevisedBlacklistFields(QUERY_MODEL, originalBlacklistedFieldsSet);
+        Set<String> originalBlacklistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_3", "FIELD_2B", "FIELD_3A", "FIELD3"});
+        Set<String> revisedBlacklist = config.getRevisedBlacklistFields(QUERY_MODEL, originalBlacklistFieldsSet);
         
         Assert.assertEquals(3, revisedBlacklist.size());
         Assert.assertFalse(revisedBlacklist.contains("FIELD_2B"));

@@ -426,7 +426,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         if (getCardinalityConfiguration() != null && (!config.getBlacklistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
             // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
-            // Modify the projectFields and blacklistedFields only for this stage, then return to the original values.
+            // Modify the projectFields and blacklistFields only for this stage, then return to the original values.
             // Not advisable to create a copy of the config object due to the embedded timers.
             Set<String> originalBlacklistedFields = new HashSet<>(config.getBlacklistedFields());
             Set<String> originalProjectFields = new HashSet<>(config.getProjectFields());
@@ -746,7 +746,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 config.setBlacklistedFields(new HashSet<>(blacklistedFieldsList));
                 
                 if (log.isDebugEnabled()) {
-                    log.debug("Blacklist fields: " + tBlacklistedFields);
+                    log.debug("Blacklisted fields: " + tBlacklistedFields);
                 }
             }
         }
