@@ -456,10 +456,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     protected BloomFilter<Key> activityLogBloom = null;
     protected BloomFilter<Key> durationLogBloom = null;
     
-    protected Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList;
-    protected Multimap<String,NormalizedContentInterface> mSource = null;
-    protected Multimap<String,NormalizedContentInterface> mSink = null;
-    
     @Override
     public long process(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)
@@ -477,13 +473,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         } // early short circuit return
         
         // get edge definitions for this event type
-        Type dataType = event.getDataType();
-        
-        // allows us to request edges for only specific child types
-        String typeName = dataType.typeName();
-        String outputName = dataType.outputName();
-        
-        typeName = edges.containsKey(outputName) ? outputName : typeName;
+        String typeName = getTypeName(event.getDataType());
         
         List<EdgeDefinition> edgeDefs = null;
         EdgeDefinitionConfigurationHelper edgeDefConfigs = null;
@@ -509,7 +499,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          * normalize field names with groups
          */
         Multimap<String,NormalizedContentInterface> normalizedFields = HashMultimap.create();
-        depthFirstList = new HashMap<>();
+        Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList = new HashMap<>();
         Multimap<String,NormalizedContentInterface> tmp = null;
         for (Entry<String,NormalizedContentInterface> e : fields.entries()) {
             NormalizedContentInterface value = e.getValue();
@@ -569,13 +559,28 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         /*
          * Create Edge Values from Edge Definitions
          */
+        
+        Multimap<String,NormalizedContentInterface> mSource = null;
+        Multimap<String,NormalizedContentInterface> mSink = null;
+        
         for (EdgeDefinition edgeDef : edgeDefs) {
             arithmetic.clearMatchingGroups();
             Map<String,Set<String>> matchingGroups = new HashMap<>();
             String jexlPreconditions = null;
             
             // don't bother evaluating preconditions if we know this event doesn't have the necessary fields for this edge
-            if (!eventContainsEdgeFields(edgeDef)) {
+            if (depthFirstList.containsKey(edgeDef.getSourceFieldName()) && depthFirstList.containsKey(edgeDef.getSinkFieldName())) {
+                mSource = depthFirstList.get(edgeDef.getSourceFieldName());
+                mSink = depthFirstList.get(edgeDef.getSinkFieldName());
+            } else {
+                continue;
+            }
+            
+            // bail if the event doesn't contain any values for the source or sink field
+            if (null == mSource || null == mSink) {
+                continue;
+            }
+            if (mSource.isEmpty() || mSink.isEmpty()) {
                 continue;
             }
             
@@ -635,7 +640,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                     for (String subGroup : commonKeys) {
                         for (NormalizedContentInterface ifaceSource : mSource.get(subGroup)) {
                             for (NormalizedContentInterface ifaceSink : mSink.get(subGroup)) {
-                                if (ifaceSource.equals(ifaceSink)) {
+                                if (ifaceSource == ifaceSink) {
                                     continue;
                                 }
                                 EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, subGroup, ifaceSink, sinkGroup, subGroup,
@@ -686,6 +691,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                     for (String subGroup : commonKeys) {
                         for (NormalizedContentInterface ifaceSource : mSource.get(subGroup)) {
                             for (NormalizedContentInterface ifaceSink : mSink.get(subGroup)) {
+                                if (ifaceSource == ifaceSink) {
+                                    continue;
+                                }
                                 EdgeDataBundle edgeValue = createEdge(edgeDef, event, ifaceSource, sourceGroup, subGroup, ifaceSink, sinkGroup, subGroup,
                                                 edgeAttribute2, edgeAttribute3, normalizedFields, depthFirstList, loadDateStr, activityDate, validActivityDate);
                                 if (edgeValue != null) {
@@ -742,6 +750,15 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         return edgesCreated;
     }
     
+    private String getTypeName(Type dataType) {
+        String typeName = dataType.typeName();
+        String outputName = dataType.outputName();
+        
+        typeName = edges.containsKey(outputName) ? outputName : typeName;
+        
+        return typeName;
+    }
+    
     private void setupPreconditionEvaluation(Multimap<String,NormalizedContentInterface> fields) {
         long start = System.currentTimeMillis();
         edgePreconditionContext.setFilteredContextForNormalizedContentInterface(fields);
@@ -755,26 +772,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 }
             }
         }
-    }
-    
-    private boolean eventContainsEdgeFields(EdgeDefinition edgeDef) {
-        
-        if (depthFirstList.containsKey(edgeDef.getSourceFieldName()) && depthFirstList.containsKey(edgeDef.getSinkFieldName())) {
-            mSource = depthFirstList.get(edgeDef.getSourceFieldName());
-            mSink = depthFirstList.get(edgeDef.getSinkFieldName());
-        } else {
-            return false;
-        }
-        
-        // bail if the event doesn't contain any values for the source or sink field
-        if (null == mSource || null == mSink) {
-            return false;
-        }
-        if (mSource.isEmpty() || mSink.isEmpty()) {
-            return false;
-        }
-        
-        return true;
     }
     
     // this could be moved to a more generic class
@@ -829,10 +826,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             }
         }
         
-        String typeName = event.getDataType().typeName();
-        String outputName = event.getDataType().outputName();
-        
-        typeName = edgeTypeLookup.containsKey(outputName) ? outputName : typeName;
+        String typeName = getTypeName(event.getDataType());
         
         // if the edgeDef is an enrichment definition, fill in the enrichedValue
         if (edgeDef.isEnrichmentEdge()) {

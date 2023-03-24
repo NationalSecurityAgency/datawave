@@ -71,6 +71,7 @@ public class SimpleGroupFieldNameParser {
         }
     }
     
+    // strips the first and last element of the fieldname to extract the group
     private String extractGroup(String[] splits) {
         StringBuilder group = new StringBuilder();
         group.append(splits[1]);

@@ -38,6 +38,11 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                                 <property name="relationship" value="ACTOR"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED.CAST.PERSON"/>
+                                <property name="relationship" value="ACTOR"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
 
                         </list>
                     </property>

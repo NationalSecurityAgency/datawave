@@ -143,7 +143,7 @@ public class ContentJsonColumnBasedHandlerTest {
         ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
         edgeHandler.setup(context);
         
-        ColumnBasedHandlerTestUtil.processEvent(jsonHandler, edgeHandler, event, 231, 90, 4, 22, PRINT_GENERATED_KEYS_ONLY_ON_FAIL);
+        ColumnBasedHandlerTestUtil.processEvent(jsonHandler, edgeHandler, event, 231, 90, 4, 38, PRINT_GENERATED_KEYS_ONLY_ON_FAIL);
         
         reader.close();
     }
