@@ -74,6 +74,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     }
     
     private GenericResponse<String> query(String endPoint, String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
+        init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         
         final List<NameValuePair> nameValuePairs = new ArrayList<>();
@@ -109,6 +110,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     
     @Override
     public BaseQueryResponse next(String id, Object callerObject) {
+        init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         
         final String suffix = String.format(NEXT, id);
@@ -123,6 +125,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     
     @Override
     public VoidResponse close(String id, Object callerObject) {
+        init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         
         final String suffix = String.format(CLOSE, id);
@@ -137,6 +140,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     
     @Override
     public GenericResponse<String> planQuery(String id, Object callerObject) {
+        init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         
         final String suffix = String.format(PLAN, id);
