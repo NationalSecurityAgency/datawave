@@ -13,9 +13,16 @@ class NegationFilter {
     
     /**
      * Checks the value <code>t</code> against the supplied filters. If necessary, the filters are advanced up to at least T before checking.
-     * 
+     *
      * @param t
-     * @return
+     *            a key
+     * @param <T>
+     *            type for the key
+     * @param filters
+     *            filters
+     * @param transformer
+     *            a transformer
+     * @return boolean
      */
     public static <T extends Comparable<T>> boolean isFiltered(T t, TreeMultimap<T,NestedIterator<T>> filters, Util.Transformer<T> transformer) {
         // quick check to see if we already know we're supposed to be filtered

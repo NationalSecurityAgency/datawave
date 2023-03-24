@@ -56,6 +56,8 @@ public class SetMembershipVisitor extends BaseVisitor {
      *            the fields of interest
      * @param tree
      *            the query tree
+     * @param config
+     *            the config
      * @return true if the query contains any of the fields present in the given fields set
      */
     

@@ -144,7 +144,8 @@ public class JexlRule extends AppliedRule {
     
     /**
      * @param topKey
-     * @return
+     *            the top key
+     * @return if this is a document
      */
     private static boolean isDocument(Key topKey) {
         String[] cfSplit = StringUtils.split(topKey.getColumnFamily().toString(), "\0");

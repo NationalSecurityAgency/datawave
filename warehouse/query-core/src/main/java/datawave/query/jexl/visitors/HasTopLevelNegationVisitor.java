@@ -19,7 +19,8 @@ public class HasTopLevelNegationVisitor {
      * Determine if a negation occurs at the root of the AST
      * 
      * @param script
-     * @return
+     *            a script
+     * @return if a negation occurs
      */
     public static Boolean hasTopLevelNegation(ASTJexlScript script) {
         HasTopLevelNegationVisitor visitor = new HasTopLevelNegationVisitor();

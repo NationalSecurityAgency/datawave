@@ -73,8 +73,14 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
      * Expand all nodes which have multiple dataTypes for the field.
      *
      * @param config
+     *            a config
      * @param script
-     * @return
+     *            a script
+     * @param <T>
+     *            type of node
+     * @param helper
+     *            the metadata helper
+     * @return a reference to the node
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T expandTerms(ShardQueryConfiguration config, MetadataHelper helper, T script) {
@@ -206,8 +212,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     
     /**
      * @param node
+     *            a jexl node
      * @param data
-     * @return
+     *            the node data
+     * @return a jexl node
      */
     protected JexlNode expandNodeForNormalizers(JexlNode node, Object data) {
         JexlNode nodeToReturn = node;

@@ -15,8 +15,14 @@ public class ValueTuple extends Tuple3<String,Object,Object> implements Comparab
     private Attribute<?> source = null;
     
     /**
+     * @param fieldname
+     *            the field name
      * @param value
+     *            the value
      * @param normalizedValue
+     *            the normalized value
+     * @param source
+     *            the source
      */
     public ValueTuple(String fieldname, Object value, Object normalizedValue, Attribute<?> source) {
         super(fieldname, value, normalizedValue);

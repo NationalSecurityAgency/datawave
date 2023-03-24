@@ -20,10 +20,15 @@ public interface RebuildingJexlArgumentDescriptor extends JexlArgumentDescriptor
      * the original node should be returned.
      *
      * @param settings
+     *            configuration settings
      * @param metadataHelper
+     *            the metadata helper
      * @param dateIndexHelper
+     *            the date index helper
      * @param datatypeFilter
+     *            the data type filter
      * @param node
+     *            the function node
      * @return A new JexlNode representing the rebuilt ASTFunctionNode, or if no change is required, returns the original ASTFunctionNode
      */
     JexlNode rebuildNode(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter,
