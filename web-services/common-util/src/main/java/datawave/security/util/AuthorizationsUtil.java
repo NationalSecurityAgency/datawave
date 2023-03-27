@@ -100,6 +100,8 @@ public class AuthorizationsUtil {
      *            auths. The auths of this principal must be a subset of the first principal argument.
      * @return A set of {@link Authorizations}, one per entity represented in {@code principal}. The user's auths are replaced by {@code requestedAuths} so long
      *         as the user actually had all of the auths. If {@code requestedAuths} is {@code null}, then the user's auths are returned as-is.
+     * @throws AuthorizationException
+     *             if the requested auths is not a subset of the {@code overallPrincipal} users's auths
      */
     public static Set<Authorizations> getDowngradedAuthorizations(String requestedAuths, Principal overallPrincipal, Principal queryPrincipal)
                     throws AuthorizationException {
@@ -157,6 +159,8 @@ public class AuthorizationsUtil {
      *            The principal from which to retrieve entity authorizations applicable to the query. The authorizations will be filtered by this prinipal's
      *            auths. The auths of this principal must be a subset of the first principal argument.
      * @return requested, unless the user represented by {@code overallPrincipal} does not have one or more of the auths in {@code requested}
+     * @throws AuthorizationException
+     *             if the requested auths is not a subset of the {@code overallPrincipal} users's auths
      */
     public static String downgradeUserAuths(String requestedAuths, DatawavePrincipal overallPrincipal, DatawavePrincipal queryPrincipal)
                     throws AuthorizationException {
@@ -169,6 +173,17 @@ public class AuthorizationsUtil {
     
     /**
      * Common functionality for the downgrading of user authorizations above.
+     * 
+     * @param overallPrincipal
+     *            The principal from which to retrieve entity authorizations overall. The authorizations will be validated against this principal's auths.
+     * @param queryPrincipal
+     *            The principal from which to retrieve entity authorizations applicable to the query. The authorizations will be filtered by this prinipal's *
+     *            auths. The auths of this principal must be a subset of the first principal argument.
+     * @param requestedAuths
+     *            the requested downgrade authorizations
+     * @return user authorizations
+     * @throws AuthorizationException
+     *             if the requested auths is not a subset of the {@code overallPrincipal} users's auths
      */
     private static Authorizations getUserAuthorizations(String requestedAuths, DatawavePrincipal overallPrincipal, DatawavePrincipal queryPrincipal)
                     throws AuthorizationException {
@@ -221,7 +236,7 @@ public class AuthorizationsUtil {
     }
     
     /**
-     * Build the authorization string for a prinbcipal.
+     * Build the authorization string for a principal.
      *
      * @param principal
      *            the principal representing the user from which to generate authorizations
@@ -249,6 +264,7 @@ public class AuthorizationsUtil {
      * Merge principals. This can be used to create a composite view of a principal when including remote systems
      * 
      * @param principals
+     *            the principals representing the users
      * @return The merge principal
      */
     public static DatawavePrincipal mergePrincipals(DatawavePrincipal... principals) {

@@ -39,6 +39,10 @@ public class ServerSecurityProducer {
     /**
      * Produces a {@link DatawavePrincipal} that is {@link RequestScoped}. This is the principal of the calling user--that is, the principal that is available
      * from the {@link javax.ejb.EJBContext} of an EJB.
+     * 
+     * @return the principal of the calling user
+     * @throws Exception
+     *             if there are issues
      */
     @Produces
     @CallerPrincipal
@@ -51,6 +55,10 @@ public class ServerSecurityProducer {
     /**
      * Produces a {@link DatawavePrincipal} that is {@link RequestScoped}. This is a principal that is filled in with the name and authorizations for the server
      * that is currently running DATAWAVE.
+     * 
+     * @return a datawave principal
+     * @throws Exception
+     *             if there are issues
      */
     @Produces
     @ServerPrincipal
