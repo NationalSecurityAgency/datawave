@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>3.40.5-SNAPSHOT</version>
+        <version>3.40.5</version>
     </parent>
     <artifactId>datawave-common-test</artifactId>
     <name>${project.artifactId}</name>
