@@ -175,11 +175,11 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 // ranges so we can remove GEOWAVE_POINT
                 indexTypes.remove(IndexType.GEOWAVE_POINT);
                 
-                indexNodes.add(generateGeoWaveRanges(fieldName, geometry, envs, config, GeometryNormalizer.index, config.getGeometryMaxExpansion()));
+                indexNodes.add(generateGeoWaveRanges(fieldName, geometry, envs, config, GeometryNormalizer.getGeometryIndex(), config.getGeometryMaxExpansion()));
             }
             // generate ranges for geowave points
             else if (indexTypes.remove(IndexType.GEOWAVE_POINT)) {
-                indexNodes.add(generateGeoWaveRanges(fieldName, geometry, envs, config, PointNormalizer.index, config.getPointMaxExpansion()));
+                indexNodes.add(generateGeoWaveRanges(fieldName, geometry, envs, config, PointNormalizer.getPointIndex(), config.getPointMaxExpansion()));
             }
             // generate ranges for geo points
             else if (indexTypes.remove(IndexType.GEO_POINT)) {
