@@ -2,6 +2,7 @@ package datawave.query.jexl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -111,7 +112,7 @@ public class JexlNodeFactoryTest {
         assertTrue(JexlASTHelper.validateLineage(node, false));
     }
     
-    @Test
+    @Test(expected = DatawaveFatalQueryException.class)
     public void testOrFromFieldsToValues_maxUnfieldedExpansion() throws ParseException {
         JexlNode original = JexlASTHelper.parseJexlQuery("_ANYFIELD_ =~ 'bar.*'");
         // and get the erNode...

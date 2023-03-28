@@ -30,13 +30,7 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
-    - uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-format-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-format-
-          ${{ runner.os }}-maven-
+        cache: 'maven'
     - name: Format code
       run: |
         mvn -V -B -e clean formatter:format sortpom:sort -Pautoformat
@@ -54,14 +48,7 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
-    - uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-build-
-          ${{ runner.os }}-maven-format-
-          ${{ runner.os }}-maven-
+        cache: 'maven'
     - name: Build and Run Unit Tests
       run: |
         RUN_TESTS="mvn -V -B -e -Pdev,examples,assemble,spotbugs -Ddeploy -Ddist -T1C clean verify"
@@ -79,6 +66,7 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
+        cache: 'maven'
     # Allow us to use the "--squash" option below
     - name: Turn on Docker experimental features and move Docker data root
       run: |
@@ -89,14 +77,6 @@ jobs:
         fi
         sudo systemctl restart docker
         echo Docker Experimental Features: $(docker version -f '{{.Server.Experimental}}')
-    - uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-build-
-          ${{ runner.os }}-maven-format-
-          ${{ runner.os }}-maven-
     # Builds the quickstart docker image and run the query tests
     - name: Quickstart Query Tests
       env:
