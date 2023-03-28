@@ -44,7 +44,7 @@
         <version.commons-compress>1.21</version.commons-compress>
         <version.commons-dbutils>1.7</version.commons-dbutils>
         <version.commons-digester>3.2</version.commons-digester>
-        <version.commons-net>3.6</version.commons-net>
+        <version.commons-net>3.9.0</version.commons-net>
         <version.commons-pool2>2.6.1</version.commons-pool2>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
