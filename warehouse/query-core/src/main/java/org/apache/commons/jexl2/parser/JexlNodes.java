@@ -80,17 +80,14 @@ public class JexlNodes {
     }
     
     /**
-     * Sets the supplied child array as the children member of {node} and sets the parent reference of each element in {children} to {node}.
+     * Creates a child array from {children} which is then set as the children of the {node}.
      *
      * @param node
      * @param children
      * @return
      */
     public static <T extends JexlNode> T children(T node, Collection<JexlNode> children) {
-        node.children = children.toArray(new JexlNode[0]);
-        for (JexlNode child : node.children)
-            newParent(child, node);
-        return node;
+        return children(node, children.toArray(new JexlNode[0]));
     }
     
     /**
