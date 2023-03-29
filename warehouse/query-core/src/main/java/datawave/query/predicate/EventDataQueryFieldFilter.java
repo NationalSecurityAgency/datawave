@@ -9,6 +9,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -16,15 +17,17 @@ import java.util.Set;
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query.
  */
-public class EventDataQueryFieldFilter extends KeyProjection implements EventDataQueryFilter {
+public class EventDataQueryFieldFilter implements EventDataQueryFilter {
     private Set<String> nonEventFields;
     
+    private KeyProjection keyProjection;
+    
     public EventDataQueryFieldFilter(EventDataQueryFieldFilter other) {
-        super(other);
         this.nonEventFields = other.nonEventFields;
         if (other.document != null) {
             document = new Key(other.document);
         }
+        this.keyProjection = other.getKeyProjection();
     }
     
     /**
@@ -33,7 +36,7 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
      * @param projections
      */
     public EventDataQueryFieldFilter(Set<String> projections, Projection.ProjectionType projectionType) {
-        super(projections, projectionType);
+        this.keyProjection = new KeyProjection(projections, projectionType);
     }
     
     /**
@@ -45,8 +48,6 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
      *            a set of non event fields
      */
     public EventDataQueryFieldFilter(ASTJexlScript script, Set<String> nonEventFields) {
-        // this is needed since there is no zero argument constructor, however we need to overwrite it below
-        super(Collections.emptySet(), Projection.ProjectionType.INCLUDES);
         
         this.nonEventFields = nonEventFields;
         
@@ -54,7 +55,7 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
         for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(script)) {
             queryFields.add(JexlASTHelper.deconstructIdentifier(identifier));
         }
-        this.projection = new Projection(queryFields, Projection.ProjectionType.INCLUDES);
+        this.keyProjection = new KeyProjection(queryFields, Projection.ProjectionType.INCLUDES);
     }
     
     protected Key document = null;
@@ -72,6 +73,20 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
     @Override
     public boolean keep(Key k) {
         return true;
+    }
+    
+    public KeyProjection getKeyProjection() {
+        return keyProjection;
+    }
+    
+    @Override
+    public boolean apply(@Nullable Map.Entry<Key,String> input) {
+        return keyProjection.apply(input);
+    }
+    
+    @Override
+    public boolean peek(@Nullable Map.Entry<Key,String> input) {
+        return keyProjection.peek(input);
     }
     
     @Override

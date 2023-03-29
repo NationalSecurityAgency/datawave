@@ -13,7 +13,7 @@ import org.apache.accumulo.core.data.Key;
  * <p>
  * The use of a {@link DatawaveKey} means this projection is applicable to any type of key (field index, event, tf, etc).
  */
-public class KeyProjection implements PeekingPredicate<Entry<Key,String>> {
+public final class KeyProjection implements PeekingPredicate<Entry<Key,String>> {
     
     protected Projection projection;
     

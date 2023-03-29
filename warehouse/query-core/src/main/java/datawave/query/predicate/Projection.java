@@ -14,12 +14,12 @@ import java.util.Set;
  * <p>
  * This class is <b>not thread safe</b>
  */
-public class Projection implements Predicate<String> {
+public final class Projection implements Predicate<String> {
     
     private Set<String> projections = null;
     private ProjectionType type = null;
     
-    public Projection(@Nonnull Set<String> items, ProjectionType type) {
+    public Projection(@Nonnull Set<String> items, @Nonnull ProjectionType type) {
         this.type = type;
         if (type == ProjectionType.INCLUDES) {
             // do not make a copy of the incoming include fields. It could be a UniversalSet
@@ -29,16 +29,8 @@ public class Projection implements Predicate<String> {
         }
     }
     
-    public Set<String> getIncludes() {
-        if (type == ProjectionType.INCLUDES) {
-            return Collections.unmodifiableSet(this.projections);
-        } else {
-            return Collections.emptySet();
-        }
-    }
-    
-    public Set<String> getExcludes() {
-        if (type == ProjectionType.EXCLUDES) {
+    public Set<String> getProjections(ProjectionType projectionType) {
+        if (this.type == projectionType) {
             return Collections.unmodifiableSet(this.projections);
         } else {
             return Collections.emptySet();
