@@ -46,6 +46,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
      * check for pushdown in indexed equalities
      *
      * @throws Exception
+     *             if there are issues
      */
     @Test
     public void testDelayEquality1() throws Exception {
@@ -59,6 +60,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
      * check for pushdown in indexed equalities
      *
      * @throws Exception
+     *             if there are issues
      */
     @Test
     public void testDelayEquality2() throws Exception {
@@ -72,6 +74,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
      * check for pushdown in indexed equalities
      *
      * @throws Exception
+     *             if there are issues
      */
     @Test
     public void testDelayEquality3() throws Exception {
@@ -85,6 +88,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
      * check for skipped pushdown in indexed equalities
      *
      * @throws Exception
+     *             if there are issues
      */
     @Test
     public void testDelayEquality4() throws Exception {
@@ -98,6 +102,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
      * check for skipped pushdown in indexed equalities, outside of min selectivity range
      *
      * @throws Exception
+     *             if there are issues
      */
     @Test
     public void testDelayEquality5() throws Exception {
@@ -113,6 +118,7 @@ public class PushdownLowSelectivityNodesVisitorTest {
      * check for pushdown in indexed equalities, mixed
      *
      * @throws Exception
+     *             if there are issues
      */
     @Test
     public void testDelayMultipleHoles() throws Exception {

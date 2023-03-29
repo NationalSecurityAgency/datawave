@@ -60,9 +60,8 @@ public class DatawaveKey {
     protected long ts;
     
     /**
-     * key
-     * 
      * @param key
+     *            the key
      */
     public DatawaveKey(Key key) {
         this.key = key;
@@ -227,7 +226,8 @@ public class DatawaveKey {
     
     /**
      * @param cq
-     * @return
+     *            column qualifier
+     * @return a keytype
      */
     private KeyType parseTermFrequency(byte[] cq) {
         

@@ -135,8 +135,15 @@ public class DateIndexHelper implements ApplicationContextAware {
      * Create and instance of a date index helper
      * 
      * @param connector
+     *            a connector
      * @param dateIndexTableName
+     *            the date index table name
      * @param auths
+     *            auths
+     * @param collapseDatePercentThreshold
+     *            collapseDatePercentThreshold
+     * @param numQueryThreads
+     *            numQueryThreads
      * @return the date index helper
      */
     public DateIndexHelper initialize(Connector connector, String dateIndexTableName, Set<Authorizations> auths, int numQueryThreads,
@@ -157,6 +164,13 @@ public class DateIndexHelper implements ApplicationContextAware {
      *            The name of the date index table
      * @param auths
      *            Any {@link Authorizations} to use
+     * @param numQueryThreads
+     *            number of query threads
+     * @param collapseDatePercentThreshold
+     *            the date percent threshold
+     * @param instance
+     *            an instance
+     * @return the instance
      */
     protected DateIndexHelper initialize(Connector connector, Instance instance, String dateIndexTableName, Set<Authorizations> auths, int numQueryThreads,
                     float collapseDatePercentThreshold) {
@@ -217,11 +231,16 @@ public class DateIndexHelper implements ApplicationContextAware {
      * Get the date type description which includes the fields and the mapped date range.
      * 
      * @param dateType
+     *            date type
      * @param begin
+     *            begin date
      * @param end
+     *            end date
      * @param datatypeFilter
+     *            data type filter
      * @return the date type description
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     @Cacheable(value = "getTypeDescription", key = "{#root.target.dateIndexTableName,#root.target.auths,#dateType,#begin,#end,#datatypeFilter}",
                     cacheManager = "dateIndexHelperCacheManager")
@@ -303,6 +322,7 @@ public class DateIndexHelper implements ApplicationContextAware {
      *            The data type filter
      * @return A string of comma delimited days and shards, order unspecified
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     @Cacheable(
                     value = "getShardsAndDaysHint",

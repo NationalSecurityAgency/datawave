@@ -100,7 +100,10 @@ public class ScannerStream extends BaseIndexStream {
      * Create a stream in the initialized state
      * 
      * @param itr
-     * @return
+     *            an iterator
+     * @param currNode
+     *            the current node
+     * @return a ScannerStream
      */
     public static ScannerStream initialized(Iterator<Tuple2<String,IndexInfo>> itr, JexlNode currNode) {
         return new ScannerStream(itr, StreamContext.INITIALIZED, currNode);

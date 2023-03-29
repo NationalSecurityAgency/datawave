@@ -622,6 +622,7 @@ public class QueryIteratorIT extends EasyMockSupport {
      * Doc specific range should not find the second document
      *
      * @throws IOException
+     *             for issues with read/write
      */
     @Test
     public void index_documentSpecific_secondEvent_test() throws IOException {
@@ -635,6 +636,7 @@ public class QueryIteratorIT extends EasyMockSupport {
      * Shard range should find the second document
      *
      * @throws IOException
+     *             for issues with read/write
      */
     @Test
     public void index_shardRange_secondEvent_test() throws IOException {
@@ -876,7 +878,9 @@ public class QueryIteratorIT extends EasyMockSupport {
      * Simulate a full table scan against an event data (only) query
      * 
      * @param seekRange
+     *            the seek range
      * @throws IOException
+     *             IOException for issues with read/write
      */
     protected void event_test(Range seekRange, String query, boolean miss, Map.Entry<Key,Map<String,List<String>>> hitOverride,
                     List<Map.Entry<Key,Value>> otherData, List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
@@ -920,7 +924,9 @@ public class QueryIteratorIT extends EasyMockSupport {
      * Simulate an indexed query
      * 
      * @param seekRange
+     *            the seek range
      * @throws IOException
+     *             IOException for issues with read/write
      */
     protected void index_test(Range seekRange, String query, boolean miss, List<Map.Entry<Key,Value>> otherData,
                     List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
@@ -958,7 +964,9 @@ public class QueryIteratorIT extends EasyMockSupport {
      * Simulate an index only query
      * 
      * @param seekRange
+     *            the seek range
      * @throws IOException
+     *             IOException for issues with read/write
      */
     protected void indexOnly_test(Range seekRange, String query, boolean miss, List<Map.Entry<Key,Value>> otherData,
                     List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
@@ -1004,6 +1012,7 @@ public class QueryIteratorIT extends EasyMockSupport {
      * Simulate a TF query
      *
      * @throws IOException
+     *             IOException for issues with read/write
      */
     protected void tf_test(Range seekRange, String query, Map.Entry<Key,Map<String,List<String>>> hit, List<Map.Entry<Key,Value>> otherData,
                     List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
@@ -1135,6 +1144,7 @@ public class QueryIteratorIT extends EasyMockSupport {
      * @param docKeys
      *            the expected values
      * @throws IOException
+     *             IOException for issues with read/write
      */
     protected void eval(Key docKeyHit, Map<String,List<String>> docKeys) throws IOException {
         // asserts for a hit or miss

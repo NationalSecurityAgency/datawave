@@ -560,6 +560,7 @@ public class QueryPruningVisitor extends BaseVisitor {
      * FALSE
      * 
      * @param node
+     *            the jexl node
      * @return TruthState.FALSE if the the sole identifier is _NOFIELD_, otherwise TruthState.UNKNOWN
      */
     private TruthState identifyAndReplace(JexlNode node) {

@@ -461,7 +461,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     /**
      * Validate that the configuration is in a consistent state
-     *
+     * 
+     * @param config
+     *            the config
      * @throws IllegalArgumentException
      *             when config constraints are violated
      */
@@ -1024,11 +1026,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * Loads a query Model
      *
      * @param helper
+     *            the metadata helper
      * @param config
+     *            the config
      * @throws InstantiationException
+     *             for problems with instantiation
      * @throws IllegalAccessException
+     *             for illegal access exceptions
      * @throws TableNotFoundException
+     *             if the table is not found
      * @throws ExecutionException
+     *             for execution exceptions
      */
     protected void loadQueryModel(MetadataHelper helper, ShardQueryConfiguration config) throws InstantiationException, IllegalAccessException,
                     TableNotFoundException, ExecutionException {
@@ -1316,6 +1324,54 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         } catch (Exception e) {
             throw new DatawaveFatalQueryException("Illegal term frequency excerpt iterator class", e);
         }
+    }
+    
+    public int getFiFieldSeek() {
+        return getConfig().getFiFieldSeek();
+    }
+    
+    public void setFiFieldSeek(int fiFieldSeek) {
+        getConfig().setFiFieldSeek(fiFieldSeek);
+    }
+    
+    public int getFiNextSeek() {
+        return getConfig().getFiNextSeek();
+    }
+    
+    public void setFiNextSeek(int fiNextSeek) {
+        getConfig().setFiNextSeek(fiNextSeek);
+    }
+    
+    public int getEventFieldSeek() {
+        return getConfig().getEventFieldSeek();
+    }
+    
+    public void setEventFieldSeek(int eventFieldSeek) {
+        getConfig().setEventFieldSeek(eventFieldSeek);
+    }
+    
+    public int getEventNextSeek() {
+        return getConfig().getEventNextSeek();
+    }
+    
+    public void setEventNextSeek(int eventNextSeek) {
+        getConfig().setEventNextSeek(eventNextSeek);
+    }
+    
+    public int getTfFieldSeek() {
+        return getConfig().getTfFieldSeek();
+    }
+    
+    public void setTfFieldSeek(int tfFieldSeek) {
+        getConfig().setTfFieldSeek(tfFieldSeek);
+    }
+    
+    public int getTfNextSeek() {
+        return getConfig().getTfNextSeek();
+    }
+    
+    public void setTfNextSeek(int tfNextSeek) {
+        getConfig().setTfNextSeek(tfNextSeek);
     }
     
     public String getBlacklistedFieldsString() {
@@ -2030,9 +2086,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
     }
     
-    /**
-     * @return
-     */
     public String getAccumuloPassword() {
         return getConfig().getAccumuloPassword();
     }

@@ -60,7 +60,7 @@ public class TLD {
         ArrayList<Integer> dots = instancesOf('.', id);
         int stop;
         if (dots.size() > 2) {
-            stop = dots.get(Math.max(2, dots.size() - 2));
+            stop = dots.get(Math.max(2, dots.size() - 1));
         } else {
             stop = id.length();
         }
@@ -172,7 +172,8 @@ public class TLD {
      * NOTE: This method is non-deterministic. If you require certainty when parsing out the root pointer use {@link #parseRootPointerFromId(ByteSequence)}
      *
      * @param id
-     * @return
+     *            the sequence id
+     * @return an estimated root pointer
      */
     public static ByteSequence estimateRootPointerFromId(ByteSequence id) {
         if (id.length() > 21) {
@@ -184,6 +185,25 @@ public class TLD {
             return id.subSequence(0, id.length());
         }
         return parseParentPointerFromId(id);
+    }
+    
+    /**
+     * Method to get the root pointer from an uid, if it exists.
+     *
+     * @param uid
+     *            a uid
+     * @return the root uid, or the original uid
+     */
+    public static String getRootUid(String uid) {
+        
+        int dotCount = 0;
+        for (int i = 0; i < uid.length(); i++) {
+            if (uid.charAt(i) == '.' && ++dotCount == 3) {
+                return uid.substring(0, i);
+            }
+        }
+        
+        return uid; // no root uid detected, return the original uid
     }
     
     /**

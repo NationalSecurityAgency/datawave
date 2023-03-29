@@ -146,6 +146,8 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
      * 
      * @param query
      *            JEXL query string
+     * @throws ParseException
+     *             for issues parsing
      */
     public static void printQuery(String query) throws ParseException {
         // Instantiate a parser and visitor
@@ -163,6 +165,7 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
      * Print a representation of this AST
      * 
      * @param query
+     *            a node
      */
     public static void printQuery(JexlNode query) {
         printQuery(query, 0);
@@ -172,7 +175,9 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
      * Print a representation of this AST
      *
      * @param query
+     *            a query node
      * @param maxChildNodes
+     *            maximum number of child nodes
      */
     public static void printQuery(JexlNode query, int maxChildNodes) {
         PrintingVisitor printer = new PrintingVisitor(maxChildNodes);
@@ -183,10 +188,12 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
     
     /**
      * Get a {@link java.lang.String} representation for this query string
-     * 
+     *
      * @param query
-     * @return
+     *            a query node
+     * @return formatted string
      * @throws ParseException
+     *             for parsing issues
      */
     public static String formattedQueryString(String query) throws ParseException {
         return formattedQueryString(query, 0);
@@ -196,9 +203,12 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
      * Get a {@link java.lang.String} representation for this query string
      *
      * @param query
+     *            a query node
      * @param maxChildNodes
-     * @return
+     *            maximum number of child nodes
+     * @return formatted string
      * @throws ParseException
+     *             for parsing issues
      */
     public static String formattedQueryString(String query, int maxChildNodes) throws ParseException {
         // Instantiate a parser and visitor
@@ -214,9 +224,10 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
     
     /**
      * Get a {@link java.lang.String} representation for this AST
-     * 
+     *
      * @param query
-     * @return
+     *            a query node
+     * @return formatted string
      */
     public static String formattedQueryString(JexlNode query) {
         return formattedQueryString(query, 0);
@@ -226,8 +237,10 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
      * Get a {@link java.lang.String} representation for this AST
      *
      * @param query
+     *            a query node
      * @param maxChildNodes
-     * @return
+     *            maximum number of child nodes
+     * @return a formatted string
      */
     public static String formattedQueryString(JexlNode query, int maxChildNodes) {
         if (query == null)
@@ -245,9 +258,10 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
     
     /**
      * Get a {@link java.util.List} of {@link java.lang.String} of each line that should be printed for this AST
-     * 
+     *
      * @param query
-     * @return
+     *            a query node
+     * @return list of the formatted strings
      */
     public static List<String> formattedQueryStringList(JexlNode query) {
         return formattedQueryStringList(query, 0);
@@ -257,8 +271,10 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
      * Get a {@link java.util.List} of {@link java.lang.String} of each line that should be printed for this AST
      *
      * @param query
+     *            a query node
      * @param maxChildNodes
-     * @return
+     *            maximum number of child nodes
+     * @return list of the formatted strings
      */
     public static List<String> formattedQueryStringList(JexlNode query, int maxChildNodes) {
         StringListOutput output = newStringListOutput();

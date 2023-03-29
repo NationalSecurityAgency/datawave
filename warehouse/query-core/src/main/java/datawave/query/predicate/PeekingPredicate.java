@@ -14,7 +14,8 @@ public interface PeekingPredicate<T> extends Predicate<T> {
      * @see datawave.query.predicate.TLDEventDataFilter#keep(Key)
      *
      * @param input
-     * @return
+     *            an input
+     * @return the potential result of applying the input
      */
     boolean peek(@Nullable T input);
 }

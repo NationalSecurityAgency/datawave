@@ -340,7 +340,12 @@ public class EvaluationPhaseFilterFunctions {
     
     /**
      * Functionally equivalent to {@link #includeRegex(Object, String)}.
-     *
+     * 
+     * @param fieldValue
+     *            field value string
+     * @param regex
+     *            the regex string
+     * @return a set of field value string tuple
      * @see EvaluationPhaseFilterFunctions#includeRegex(Object, String) additional documentation on expected result
      */
     public static FunctionalSet<ValueTuple> getAllMatches(Object fieldValue, String regex) {
@@ -1313,6 +1318,7 @@ public class EvaluationPhaseFilterFunctions {
      * Create a new simple date format, with a GMT time zone
      *
      * @param format
+     *            the format string
      * @return the DateFormat
      */
     protected static DateFormat newSimpleDateFormat(String format) {
@@ -1475,6 +1481,9 @@ public class EvaluationPhaseFilterFunctions {
      * example getNextUnit(x, DAY) would return {@code x+<ms/day>}.
      *
      * @param granularity
+     *            the granularity
+     * @param time
+     *            the timestmap
      * @return next date/time in milliseconds
      */
     public static long getNextTime(long time, int granularity) {

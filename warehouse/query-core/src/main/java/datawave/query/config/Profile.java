@@ -22,6 +22,7 @@ public interface Profile {
      * Tune the query logic
      * 
      * @param logic
+     *            the query logic
      */
     void configure(BaseQueryLogic<Entry<Key,Value>> logic);
     
@@ -29,6 +30,7 @@ public interface Profile {
      * Tune the query planner.
      * 
      * @param planner
+     *            the query planner.
      */
     void configure(QueryPlanner planner);
     
@@ -36,6 +38,7 @@ public interface Profile {
      * Tune the query configuration object
      * 
      * @param configuration
+     *            the query configuration object
      */
     void configure(GenericQueryConfiguration configuration);
 }
