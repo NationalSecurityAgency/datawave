@@ -1,6 +1,7 @@
 package datawave.query.jexl.functions;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
@@ -8,6 +9,7 @@ import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.predicate.Projection;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -24,9 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class TermFrequencyAggregatorTest {
     private TermFrequencyAggregator aggregator;
@@ -51,23 +51,20 @@ public class TermFrequencyAggregatorTest {
         Set<String> keepFields = new HashSet<>();
         keepFields.add("FIELD2");
         
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter();
-        Set<String> blacklist = new HashSet<>();
-        blacklist.add("FIELD1");
-        ((EventDataQueryFieldFilter) filter).setExcludes(blacklist);
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter(Sets.newHashSet("FIELD1"), Projection.ProjectionType.EXCLUDES);
         
         aggregator = new TermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
         
         // test result key
-        assertTrue(result == null);
+        assertNull(result);
         
         // test that the doc is empty
-        assertTrue(doc.size() == 0);
+        assertEquals(0, doc.size());
         
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().equals(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10)));
+        assertEquals(itr.getTopKey(), getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10));
     }
     
     @Test

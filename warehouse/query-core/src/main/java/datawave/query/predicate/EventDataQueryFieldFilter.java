@@ -9,6 +9,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,17 +19,21 @@ import java.util.Set;
 public class EventDataQueryFieldFilter extends KeyProjection implements EventDataQueryFilter {
     private Set<String> nonEventFields;
     
-    public EventDataQueryFieldFilter() {
-        super();
-        // empty white list and black list
-    }
-    
     public EventDataQueryFieldFilter(EventDataQueryFieldFilter other) {
         super(other);
         this.nonEventFields = other.nonEventFields;
         if (other.document != null) {
             document = new Key(other.document);
         }
+    }
+    
+    /**
+     * Initiate with a provided list of projections and projection type
+     * 
+     * @param projections
+     */
+    public EventDataQueryFieldFilter(Set<String> projections, Projection.ProjectionType projectionType) {
+        super(projections, projectionType);
     }
     
     /**
@@ -40,14 +45,16 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
      *            a set of non event fields
      */
     public EventDataQueryFieldFilter(ASTJexlScript script, Set<String> nonEventFields) {
+        // this is needed since there is no zero argument constructor, however we need to overwrite it below
+        super(Collections.emptySet(), Projection.ProjectionType.INCLUDES);
+        
         this.nonEventFields = nonEventFields;
         
         Set<String> queryFields = Sets.newHashSet();
         for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(script)) {
             queryFields.add(JexlASTHelper.deconstructIdentifier(identifier));
         }
-        
-        setIncludes(queryFields);
+        this.projection = new Projection(queryFields, Projection.ProjectionType.INCLUDES);
     }
     
     protected Key document = null;

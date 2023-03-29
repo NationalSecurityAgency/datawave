@@ -68,6 +68,7 @@ import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.predicate.EmptyDocumentFilter;
+import datawave.query.predicate.Projection;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
@@ -1331,23 +1332,21 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected DocumentProjection getProjection() {
-        DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         
         if (this.useWhiteListedFields) {
-            projection.setIncludes(this.whiteListedFields);
-            return projection;
+            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), this.whiteListedFields,
+                            Projection.ProjectionType.INCLUDES);
         } else if (this.useBlackListedFields) {
-            projection.setExcludes(this.blackListedFields);
-            return projection;
+            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), this.blackListedFields,
+                            Projection.ProjectionType.EXCLUDES);
         } else {
-            String msg = "Configured to use projection, but no whitelist or blacklist was provided";
+            String msg = "Configured to use projection, but no includes or excludes were provided";
             log.error(msg);
             throw new IllegalArgumentException(msg);
         }
     }
     
     protected DocumentProjection getCompositeProjection() {
-        DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         Set<String> composites = Sets.newHashSet();
         if (compositeMetadata != null) {
             for (Multimap<String,String> val : this.compositeMetadata.getCompositeFieldMapByType().values()) {
@@ -1358,7 +1357,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             }
         }
-        projection.setExcludes(composites);
+        DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), composites,
+                        Projection.ProjectionType.EXCLUDES);
         return projection;
     }
     

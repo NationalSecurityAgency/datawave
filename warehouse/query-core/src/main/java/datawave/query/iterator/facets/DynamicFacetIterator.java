@@ -13,6 +13,7 @@ import java.util.SortedSet;
 import javax.annotation.Nullable;
 
 import datawave.query.predicate.EventDataQueryFieldFilter;
+import datawave.query.predicate.Projection;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -169,8 +170,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         Iterator<Entry<Key,Document>> documents = null;
         
         if (!configuration.getFacetedFields().isEmpty()) {
-            projection = new EventDataQueryFieldFilter();
-            projection.setIncludes(configuration.getFacetedFields());
+            projection = new EventDataQueryFieldFilter(configuration.getFacetedFields(), Projection.ProjectionType.INCLUDES);
         }
         
         if (!configuration.hasFieldLimits() || projection != null) {

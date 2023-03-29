@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Set;
 
@@ -15,43 +16,41 @@ import java.util.Set;
  */
 public class Projection implements Predicate<String> {
     
-    private Set<String> includes = null;
-    private Set<String> excludes = null;
-    private boolean initialized = false;
+    private Set<String> projections = null;
+    private ProjectionType type = null;
     
-    public void setIncludes(Set<String> includes) {
-        if (this.initialized) {
-            throw new RuntimeException("This Projection instance was already initialized");
+    public Projection(@Nonnull Set<String> items, ProjectionType type) {
+        this.type = type;
+        if (type == ProjectionType.INCLUDES) {
+            // do not make a copy of the incoming include fields. It could be a UniversalSet
+            this.projections = items;
+        } else {
+            this.projections = Sets.newHashSet(items);
         }
-        
-        // do not make a copy of the incoming include fields. It could be a UniversalSet
-        this.includes = includes;
-        this.initialized = true;
-    }
-    
-    public void setExcludes(Set<String> excludes) {
-        if (this.initialized) {
-            throw new RuntimeException("This Projection instance was already initialized");
-        }
-        
-        this.excludes = Sets.newHashSet(excludes);
-        this.initialized = true;
     }
     
     public Set<String> getIncludes() {
-        return Collections.unmodifiableSet(this.includes);
+        if (type == ProjectionType.INCLUDES) {
+            return Collections.unmodifiableSet(this.projections);
+        } else {
+            return Collections.emptySet();
+        }
     }
     
     public Set<String> getExcludes() {
-        return Collections.unmodifiableSet(this.excludes);
+        if (type == ProjectionType.EXCLUDES) {
+            return Collections.unmodifiableSet(this.projections);
+        } else {
+            return Collections.emptySet();
+        }
     }
     
     public boolean isUseIncludes() {
-        return includes != null;
+        return type == ProjectionType.INCLUDES;
     }
     
     public boolean isUseExcludes() {
-        return excludes != null;
+        return type == ProjectionType.EXCLUDES;
     }
     
     /**
@@ -63,24 +62,21 @@ public class Projection implements Predicate<String> {
      */
     @Override
     public boolean apply(String inputFieldName) {
-        if (!this.initialized) {
-            throw new RuntimeException("This Projection must be initialized with a set of includes or excludes fields");
-        }
         
         String fieldName = JexlASTHelper.deconstructIdentifier(inputFieldName, false);
         
-        if (excludes != null) {
-            return !excludes.contains(fieldName);
+        if (type == ProjectionType.EXCLUDES) {
+            return !projections.contains(fieldName);
+        } else {
+            return projections.contains(fieldName);
         }
-        
-        if (includes != null) {
-            return includes.contains(fieldName);
-        }
-        
-        throw new RuntimeException("This Projection must be initialized with a set of includes or excludes fields");
     }
     
     public String toString() {
-        return new ToStringBuilder(this).append("includes", includes).append("excludes", excludes).toString();
+        return new ToStringBuilder(this).append("projections", projections).append("type", type.name()).toString();
+    }
+    
+    public enum ProjectionType {
+        INCLUDES, EXCLUDES;
     }
 }
