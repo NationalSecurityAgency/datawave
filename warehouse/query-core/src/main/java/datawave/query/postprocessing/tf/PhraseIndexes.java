@@ -244,9 +244,13 @@ public class PhraseIndexes implements Serializable {
      * Utility function to see if two offset ranges overlap
      * 
      * @param start1
+     *            start1
      * @param end1
+     *            end1
      * @param start2
+     *            start2
      * @param end2
+     *            end2
      * @return true if (start1 &lt;= end2 &amp;&amp; end1 &gt;= start2)
      */
     public static boolean overlaps(int start1, int end1, int start2, int end2) {
@@ -257,7 +261,9 @@ public class PhraseIndexes implements Serializable {
      * Utility function to see if a triplet overlaps with a term weight position
      * 
      * @param triplet
+     *            triplet
      * @param pos
+     *            pos
      * @return true if overlapping
      */
     public static boolean overlaps(Triplet<String,Integer,Integer> triplet, TermWeightPosition pos) {
@@ -268,8 +274,11 @@ public class PhraseIndexes implements Serializable {
      * Get the overlapping triplet if any
      *
      * @param fieldName
+     *            the field name
      * @param eventId
+     *            an event id
      * @param position
+     *            term weight position
      * @return the overlapping triplet
      */
     public Triplet<String,Integer,Integer> getOverlap(String fieldName, String eventId, TermWeightPosition position) {
@@ -294,8 +303,11 @@ public class PhraseIndexes implements Serializable {
      * Get the overlapping term weight position if any
      *
      * @param fieldName
+     *            the field name
      * @param eventId
+     *            an event id
      * @param twInfo
+     *            term weight info
      * @return An overlapping TermWeightPosition if any
      */
     public TermWeightPosition getOverlappingPosition(String fieldName, String eventId, TermWeight.Info twInfo) {
@@ -364,8 +376,11 @@ public class PhraseIndexes implements Serializable {
      * returned if none found.
      * 
      * @param twInfo
+     *            term weight info
      * @param startIndex
+     *            the start index
      * @param offset
+     *            the offset
      * @return the index of an offset equal or less than the specified offset
      */
     private static int findPrevOffset(TermWeight.Info twInfo, int startIndex, int offset) {

@@ -10,6 +10,7 @@ public class IteratorTimeoutException extends IOException {
     
     /**
      * @param message
+     *            the message
      */
     public IteratorTimeoutException(String message) {
         super(message);

@@ -84,6 +84,7 @@ public class JexlContextCreator implements Function<Tuple3<Key,Document,Map<Stri
          * {@code Comparator<Object>} is required
          * 
          * @param from
+         *            the from tuple
          * @return an object comparator
          */
         Comparator<Object> getValueComparator(final Tuple3<Key,Document,Map<String,Object>> from);

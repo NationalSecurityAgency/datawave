@@ -320,6 +320,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
      * Query should be throwing an InvalidFieldIndexQueryFatalException due to AND with a non-indexed field.
      *
      * @throws Exception
+     *             for any exceptions encountered
      */
     @Test
     public void testQuery018() throws Exception {

@@ -246,7 +246,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * Loads the query model specified by the current configuration, to be applied to the incoming query.
      * 
      * @param helper
+     *            the metadata helper
      * @param config
+     *            the edge query config
      */
     protected void loadQueryModel(MetadataHelper helper, EdgeQueryConfiguration config) {
         String model = config.getModelName() == null ? "" : config.getModelName();
@@ -264,8 +266,11 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * Get an instance of MetadataHelper for the given params
      * 
      * @param connection
+     *            the connector
      * @param metadataTableName
+     *            the metadata table name
      * @param auths
+     *            a set of auths
      * @return MetadataHelper
      */
     protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths) {
@@ -279,7 +284,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * translated ASTJexlScript back to a query string using JexlStringBuildingVisitor.
      * 
      * @param queryString
-     * @return
+     *            the query string
+     * @return the query string
      */
     protected String applyQueryModel(String queryString) {
         ASTJexlScript origScript = null;
@@ -309,6 +315,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * Set whether we are querying the protobuf edge format. Default is true.
      * 
      * @param protobufedge
+     *            the flag for the protobuf edge format
      */
     public void setProtobufEdgeFormat(boolean protobufedge) {
         this.protobufEdgeFormat = protobufedge;
@@ -319,6 +326,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      *
      * @param queryString
      *            jexl string for the query
+     * @throws ParseException
+     *             for issues with parsing
+     * @return QueryData
      */
     protected QueryData configureRanges(String queryString) throws ParseException {
         queryString = EdgeQueryLogic.fixQueryString(queryString);
@@ -346,7 +356,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * Method to expand the values supplied for SOURCE or SINK into all of the permutations after normalizing
      *
      * @param query
-     * @return
+     *            the query
+     * @param getFullNormalizedQuery
+     *            flag for getting the normalized query
+     * @return VisitationContext
      */
     protected VisitationContext normalizeJexlQuery(String query, boolean getFullNormalizedQuery) {
         if (visitationContext == null) {

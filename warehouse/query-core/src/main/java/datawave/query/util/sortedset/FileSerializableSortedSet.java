@@ -25,6 +25,7 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
      * Create a file sorted set from another one
      *
      * @param other
+     *            the other sorted set
      */
     public FileSerializableSortedSet(FileSerializableSortedSet other) {
         super(other);
@@ -34,8 +35,11 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
      * Create a file sorted subset from another one
      *
      * @param other
+     *            the other sorted set
      * @param from
+     *            the from file
      * @param to
+     *            the to file
      */
     public FileSerializableSortedSet(FileSerializableSortedSet other, E from, E to) {
         super(other, from, to);
@@ -45,7 +49,9 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
      * Create a persisted sorted set
      *
      * @param handler
+     *            a file handler
      * @param persisted
+     *            persisted boolean flag
      */
     public FileSerializableSortedSet(TypedSortedSetFileHandler handler, boolean persisted) {
         super(handler, new Factory(), persisted);
@@ -55,8 +61,11 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
      * Create a persistede sorted set
      *
      * @param comparator
+     *            a comparator
      * @param handler
+     *            a file handler
      * @param persisted
+     *            persisted boolean flag
      */
     public FileSerializableSortedSet(Comparator<? super E> comparator, TypedSortedSetFileHandler handler, boolean persisted) {
         super(comparator, handler, new Factory(), persisted);
@@ -66,7 +75,9 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
      * Create an unpersisted sorted set (still in memory)
      *
      * @param set
+     *            a sorted set
      * @param handler
+     *            a file handler
      */
     public FileSerializableSortedSet(SortedSet<E> set, TypedSortedSetFileHandler handler) {
         super(set, handler, new Factory());
@@ -77,7 +88,13 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
      * all of its entries into memory at once.
      *
      * @param set
+     *            a sorted set
      * @param handler
+     *            a file handler
+     * @param persist
+     *            a persist flag
+     * @throws IOException
+     *             for issues with read/write
      */
     public FileSerializableSortedSet(SortedSet<E> set, TypedSortedSetFileHandler handler, boolean persist) throws IOException {
         super(set, handler, new Factory(), persist);
@@ -85,9 +102,11 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
     
     /**
      * Persist a set using the specified handler
-     * 
+     *
      * @param handler
+     *            a file handler
      * @throws IOException
+     *             for issues with read/write
      */
     @Override
     public void persist(SortedSetFileHandler handler) throws IOException {

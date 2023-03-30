@@ -36,6 +36,7 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
      * Sets the tablet table name.
      * 
      * @param table
+     *            a table
      */
     public void setTable(String table) {
         this.table = table;
@@ -44,7 +45,7 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
     /**
      * Returns the table name, not the table Id.
      * 
-     * @return
+     * @return the string table name
      */
     public String getTable() {
         return table;
@@ -53,9 +54,12 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
     /**
      * Add an InputSplit to this collection.
      * 
+     * @param s
+     *            the input split
      * @throws IOException
      *             If capacity was not specified during construction or if capacity has been reached.
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     public void add(InputSplit s) throws IOException, InterruptedException {
         if (null == splits) {
@@ -71,6 +75,10 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
     
     /**
      * Get ith child InputSplit.
+     * 
+     * @param i
+     *            the index
+     * @return the inputsplit
      */
     public InputSplit get(int i) {
         return splits[i];
@@ -78,6 +86,10 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
     
     /**
      * Return the aggregate length of all child InputSplits currently added.
+     * 
+     * @return the length of the splits
+     * @throws IOException
+     *             for issues with read/write
      */
     public long getLength() throws IOException {
         return splits.length;
@@ -86,7 +98,13 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
     /**
      * Get the length of ith child InputSplit.
      * 
+     * @param i
+     *            the index
+     * @return length of the split
      * @throws InterruptedException
+     *             if the thread is interrupted
+     * @throws IOException
+     *             for problems with read/write
      */
     public long getLength(int i) throws IOException, InterruptedException {
         return splits[i].getLength();
@@ -95,7 +113,11 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
     /**
      * Collect a set of hosts from all child InputSplits.
      * 
+     * @return set of locations
      * @throws InterruptedException
+     *             if the thread is interrupted
+     * @throws IOException
+     *             for problems with read/write
      */
     public String[] getLocations() throws IOException, InterruptedException {
         HashSet<String> hosts = new HashSet<>();
@@ -111,7 +133,13 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
     /**
      * getLocations from ith InputSplit.
      * 
+     * @param i
+     *            the index
+     * @return the list of locations
      * @throws InterruptedException
+     *             if the thread is interrupted
+     * @throws IOException
+     *             for problems with read/write
      */
     public String[] getLocation(int i) throws IOException, InterruptedException {
         return splits[i].getLocations();
@@ -121,6 +149,11 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
      * Write splits in the following format. {@code
      * <count><class1><class2>...<classn><split1><split2>...<splitn>
     * }
+     * 
+     * @param out
+     *            output stream
+     * @throws IOException
+     *             for problems with read/write
      */
     public void write(DataOutput out) throws IOException {
         WritableUtils.writeString(out, table);
@@ -138,6 +171,8 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
     /**
      * {@inheritDoc}
      * 
+     * @param in
+     *            input stream
      * @throws IOException
      *             If the child InputSplit cannot be read, typically for failing access checks.
      */

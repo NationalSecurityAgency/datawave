@@ -97,7 +97,8 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
      * Helper method to return a copy of the tree denoted by the given root
      *
      * @param root
-     * @return
+     *            the root node
+     * @return a copy of the tree
      */
     public static JexlNode copy(JexlNode root) {
         RebuildingVisitor visitor = new RebuildingVisitor();
@@ -454,6 +455,10 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
     
     /**
      * Base setup so that we can eventually move to a more functional model
+     * 
+     * @param input
+     *            the input script
+     * @return the script with applied models
      */
     @Override
     public ASTJexlScript apply(final ASTJexlScript input) {

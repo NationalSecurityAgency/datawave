@@ -232,6 +232,14 @@
         <property name="rangeBufferPollMillis" value="100" />
         <property name="evaluationOnlyFields" value="_ANYFIELD_" />
 
+        <!--   variables that control when a seek is issued     -->
+        <property name="fiFieldSeek" value="-1" />
+        <property name="fiNextSeek" value="-1" />
+        <property name="eventFieldSeek" value="-1" />
+        <property name="eventNextSeek" value="-1" />
+        <property name="tfFieldSeek" value="-1" />
+        <property name="tfNextSeek" value="-1" />
+
         <!-- uncomment to test partial document evaluation -->
         <property name="usePartialInterpreter" value="true" />
         <property name="incompleteFields">
@@ -248,7 +256,6 @@
         <property name="collectQueryMetrics" value="false" />
 
         <property name="eventQueryDataDecoratorTransformer" ref="EventQueryDataDecoratorTransformer" />
-
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">

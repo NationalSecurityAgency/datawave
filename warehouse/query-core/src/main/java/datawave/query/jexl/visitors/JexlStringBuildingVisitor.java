@@ -76,7 +76,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
      * @param sortDedupeChildren
      *            Whether or not to sort the child nodes, and dedupe them. Note: Only siblings (children with the same parent node) will be deduped. Flatten
      *            beforehand for maximum 'dedupeage'.
-     * @return
+     * @return a string query
      */
     public static String buildQuery(JexlNode script, boolean sortDedupeChildren) {
         
@@ -113,7 +113,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
      *
      * @param script
      *            An ASTJexlScript
-     * @return
+     * @return a query string
      */
     public static String buildQuery(JexlNode script) {
         return buildQuery(script, false);
@@ -127,7 +127,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
      * @param sortDedupeChildren
      *            Whether or not to sort the child nodes, and dedupe them. Note: Only siblings (children with the same parent node) will be deduped. Flatten
      *            beforehand for maximum 'dedupeage'.
-     * @return
+     * @return a query string
      */
     public static String buildQueryWithoutParse(JexlNode script, boolean sortDedupeChildren) {
         JexlStringBuildingVisitor visitor = new JexlStringBuildingVisitor(sortDedupeChildren);
@@ -149,7 +149,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
      *
      * @param script
      *            An ASTJexlScript
-     * @return
+     * @return a query string
      */
     public static String buildQueryWithoutParse(JexlNode script) {
         return buildQueryWithoutParse(script, false);

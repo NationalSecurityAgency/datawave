@@ -65,11 +65,6 @@ public class CompositeTestingIngest {
         }
     }
     
-    /**
-     * gparent - parent - child -
-     * 
-     * @return
-     */
     public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
@@ -372,7 +367,7 @@ public class CompositeTestingIngest {
     /**
      * forces a shard range
      * 
-     * @return
+     * @return a value
      */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();

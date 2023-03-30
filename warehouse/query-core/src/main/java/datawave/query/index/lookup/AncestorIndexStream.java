@@ -49,7 +49,7 @@ public class AncestorIndexStream extends BaseIndexStream {
      * 
      * @param seekShard
      *            the seek target
-     * @return
+     * @return the shard string
      */
     @Override
     public String seek(String seekShard) {
@@ -81,7 +81,8 @@ public class AncestorIndexStream extends BaseIndexStream {
      * potentially returning duplicate documents
      * 
      * @param tuple
-     * @return
+     *            a tuple
+     * @return the tuple with overlapped matches removed
      */
     private Tuple2<String,IndexInfo> removeOverlappingRanges(Tuple2<String,IndexInfo> tuple) {
         return new Tuple2<>(tuple.first(), mergeRanges(tuple.second()));
