@@ -1,6 +1,7 @@
 package datawave.query.attributes;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.google.common.collect.Iterators;
@@ -27,14 +28,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.format.DateTimeParseException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
 
 public class Document extends AttributeBag<Document> implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -779,8 +774,13 @@ public class Document extends AttributeBag<Document> implements Serializable {
             output.writeString(entry.getKey());
             
             Attribute<?> attribute = entry.getValue();
-            output.writeString(attribute.getClass().getName());
-            attribute.write(kryo, output, reducedResponse);
+            // String attributeName = attribute.getClass().getName();
+            // FieldSerializer<?> serializer = classCache.getSerializer(kryo, attributeName, attribute.getClass());
+            // output.writeString(attribute.getClass().getName());
+            Registration attrRegistration = kryo.writeClass(output, attribute.getClass());
+            // kryo.writeObject(output, attribute, serializer);
+            // attribute.write(kryo, output, reducedResponse);
+            kryo.writeObject(output, attribute, attrRegistration.getSerializer());
         }
         
         output.writeLong(this.shardTimestamp);
@@ -788,6 +788,47 @@ public class Document extends AttributeBag<Document> implements Serializable {
     
     @Override
     public void read(Kryo kryo, Input input) {
+        this._count = input.readInt(true);
+        trackSizes = input.readBoolean();
+        this._bytes = input.readLong(true);
+        
+        int numAttrs = input.readInt(true);
+        
+        this.dict = new TreeMap<>();
+        
+        for (int i = 0; i < numAttrs; i++) {
+            // Get the fieldName
+            String fieldName = input.readString();
+            
+            // Get the class name for the concrete Attribute
+            // String attrClassName = input.readString();
+            Registration attrRegistration = kryo.readClass(input);
+            Attribute<? extends Comparable> attr = (Attribute<? extends Comparable>) kryo.readObject(input, attrRegistration.getType(),
+                            attrRegistration.getSerializer());
+            // FieldSerializer<?> serializer = cachedClass.getSerializer(kryo, attrClassName, clz);
+            
+            // attr = (Attribute<?>)kryo.readObject(input, clz, serializer);
+            // attr.setClassCache(classCache);
+            // try {
+            // attr = (Attribute<? extends Comparable>) attrRegistration.getType().newInstance();
+            // } catch (InstantiationException | IllegalAccessException e) {
+            // throw new RuntimeException(e);
+            // }
+            //
+            // // Reload the attribute
+            // attr.read(kryo, input);
+            
+            // Add the attribute back to the Map
+            this.dict.put(fieldName, attr);
+        }
+        
+        this.shardTimestamp = input.readLong();
+        
+        this.invalidateMetadata();
+    }
+    
+    // @Override
+    public void read0(Kryo kryo, Input input) {
         this._count = input.readInt(true);
         trackSizes = input.readBoolean();
         this._bytes = input.readLong(true);
@@ -857,5 +898,4 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public boolean isIntermediateResult() {
         return intermediateResult;
     }
-    
 }

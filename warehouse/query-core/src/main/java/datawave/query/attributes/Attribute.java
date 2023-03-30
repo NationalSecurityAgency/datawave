@@ -4,8 +4,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.Constants;
+import datawave.query.jexl.DatawaveJexlContext;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -19,12 +19,14 @@ import org.apache.log4j.Logger;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 
 public abstract class Attribute<T extends Comparable<T>> implements WritableComparable<T>, KryoSerializable {
     
     private static final Logger log = Logger.getLogger(Attribute.class);
     private static final Text EMPTY_TEXT = new Text();
+    private static final byte[] EMPTY_BYTES = new byte[] {};
     
     /**
      * The metadata for this attribute. Really only the column visibility and timestamp are preserved in this metadata when serializing and deserializing.
@@ -80,10 +82,22 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
      * Set the metadata. This should only be set here or from extended classes.
      */
     protected void setMetadata(ColumnVisibility vis, long ts) {
+        setMetadata(vis.getExpression(), ts, true);
+    }
+    
+    /*
+     * 
+     * Set the metadata. This should only be set here.
+     */
+    private void setMetadata(byte[] vis, long ts, boolean copyVisibilityBytes) {
         if (isMetadataSet()) {
-            metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), metadata.getColumnQualifier(), vis, ts);
+            byte[] keyVis = copyVisibilityBytes ? Arrays.copyOf(vis, vis.length) : vis;
+            Text row = metadata.getRow();
+            Text cf = metadata.getColumnFamily();
+            Text cq = metadata.getColumnQualifier();
+            metadata = new Key(row.copyBytes(), cf.copyBytes(), cq.copyBytes(), keyVis, ts, false, false);
         } else {
-            metadata = new Key(EMPTY_TEXT, EMPTY_TEXT, EMPTY_TEXT, vis, ts);
+            metadata = new Key(EMPTY_BYTES, EMPTY_BYTES, EMPTY_BYTES, vis, ts, false, copyVisibilityBytes);
         }
     }
     
@@ -195,8 +209,11 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     protected void readMetadata(Kryo kryo, Input input) {
         if (input.readBoolean()) {
             int size = input.readInt(true);
-            
-            this.setMetadata(new ColumnVisibility(input.readBytes(size)), input.readLong());
+            byte[] cv = input.readBytes(size);
+            // input.skip(size);
+            long ts = input.readLong();
+            this.setMetadata(cv, ts, false);
+            // this.setMetadata(new ColumnVisibility(cv), ts);
         } else {
             this.clearMetadata();
         }

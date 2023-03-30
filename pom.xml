@@ -71,6 +71,7 @@
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.11.2</version.jjwt>
+        <version.jmh>1.36</version.jmh>
         <version.jts>1.19.0</version.jts>
         <version.junit>4.13.2</version.junit>
         <version.kryo>2.20</version.kryo>
@@ -88,7 +89,7 @@
         <version.microservice.metadata-utils>1.12</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>1.2</version.microservice.metrics-reporter>
         <version.microservice.query-metric-api>1.5.7</version.microservice.query-metric-api>
-        <version.microservice.type-utils>1.11</version.microservice.type-utils>
+        <version.microservice.type-utils>1.13-SNAPSHOT</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>8.0.16</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
@@ -901,6 +902,16 @@
                 <groupId>org.locationtech.jts</groupId>
                 <artifactId>jts-core</artifactId>
                 <version>${version.jts}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-core</artifactId>
+                <version>${version.jmh}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-generator-annprocess</artifactId>
+                <version>${version.jmh}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>

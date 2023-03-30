@@ -1,15 +1,12 @@
 package datawave.query.function.serializer;
 
-import java.io.ByteArrayOutputStream;
-
-import datawave.query.attributes.Attribute;
+import com.esotericsoftware.kryo.io.Output;
 import datawave.query.attributes.Document;
-import datawave.query.function.KryoCVAwareSerializableSerializer;
-
+import datawave.query.function.util.KryoObjectPool;
+import datawave.query.function.util.KryoReference;
 import org.apache.log4j.Logger;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Output;
+import java.io.ByteArrayOutputStream;
 
 /**
  * Transform the Document into a Kryo-serialized version. Ordering of Attributes is <b>not</b> guaranteed across serialization.
@@ -19,7 +16,8 @@ import com.esotericsoftware.kryo.io.Output;
  */
 public class KryoDocumentSerializer extends DocumentSerializer {
     private static final Logger log = Logger.getLogger(KryoDocumentSerializer.class);
-    final Kryo kryo = new Kryo();
+    
+    private final static KryoObjectPool kryoPool = new KryoObjectPool();
     final ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
     
     public KryoDocumentSerializer() {
@@ -32,7 +30,6 @@ public class KryoDocumentSerializer extends DocumentSerializer {
     
     public KryoDocumentSerializer(boolean reducedResponse, boolean compress) {
         super(reducedResponse, compress);
-        kryo.addDefaultSerializer(Attribute.class, new KryoCVAwareSerializableSerializer(reducedResponse));
     }
     
     @Override
@@ -40,12 +37,11 @@ public class KryoDocumentSerializer extends DocumentSerializer {
         baos.reset();
         
         Output output = new Output(baos);
-        
-        kryo.writeObject(output, doc);
-        
-        output.close();
-        
-        return baos.toByteArray();
+        try (KryoReference ref = kryoPool.acquireObject()) {
+            ref.getKryo().writeObject(output, doc);
+            output.close();
+            return baos.toByteArray();
+        }
     }
     
 }

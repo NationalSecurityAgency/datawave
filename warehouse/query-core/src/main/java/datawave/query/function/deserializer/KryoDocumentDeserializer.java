@@ -1,14 +1,14 @@
 package datawave.query.function.deserializer;
 
-import java.io.InputStream;
-import java.io.Serializable;
-
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.function.KryoCVAwareSerializableSerializer;
-
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
+import datawave.query.attributes.Document;
+import datawave.query.function.util.KryoObjectPool;
+import datawave.query.function.util.KryoReference;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
 
 /**
  * Transform Kryo-serialized bytes back into a Document. Ordering of Attributes is <b>not</b> guaranteed across serialization.
@@ -19,24 +19,28 @@ import com.esotericsoftware.kryo.io.Input;
 public class KryoDocumentDeserializer extends DocumentDeserializer implements Serializable {
     private static final long serialVersionUID = 1L;
     
-    final transient Kryo kryo = new Kryo();
+    final static KryoObjectPool kryoPool = new KryoObjectPool();
     
-    public KryoDocumentDeserializer() {
-        kryo.addDefaultSerializer(Attribute.class, new KryoCVAwareSerializableSerializer(true));
-    }
+    final transient Input input = new Input(4096);
     
     @Override
     public Document deserialize(InputStream data) {
-        Input input = new Input(data);
-        Document document = kryo.readObject(input, Document.class);
-        
-        if (null == document) {
-            throw new RuntimeException("Deserialized null Document");
+        try (KryoReference ref = kryoPool.acquireObject()) {
+            input.setInputStream(data);
+            Kryo kryo = ref.getKryo();
+            Document document = kryo.readObject(input, Document.class);
+            
+            if (null == document) {
+                throw new RuntimeException("Deserialized null Document");
+            }
+            try {
+                data.close();
+            } catch (IOException e) {
+                // no code
+            }
+            
+            return document;
         }
-        
-        input.close();
-        
-        return document;
     }
     
 }

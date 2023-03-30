@@ -1,30 +1,33 @@
 package datawave.query.attributes;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Set;
-
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
+import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.InputChunked;
+import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.io.OutputChunked;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
-import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.collections.FunctionalSet;
-
+import datawave.query.function.util.KryoDocumentOptions;
+import datawave.query.jexl.DatawaveJexlContext;
 import datawave.webservice.query.data.ObjectSizeOf;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.Set;
 
 public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttribute<T>> implements Serializable {
-    
     private static final long serialVersionUID = 1L;
     
     private static final Logger log = Logger.getLogger(TypeAttribute.class);
@@ -133,8 +136,16 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         write(kryo, output, false);
     }
     
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
+    // @Override
+    public void write_(Kryo kryo, Output output, Boolean reducedResponse) {
+        output.writeString(datawaveType.getClass().getName());
+        super.writeMetadata(kryo, output, reducedResponse);
+        output.writeString(this.datawaveType.getDelegateAsString());
+        output.writeBoolean(this.toKeep);
+    }
+    
+    // @Override
+    public void writegen(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeString(datawaveType.getClass().getName());
         super.writeMetadata(kryo, output, reducedResponse);
         output.writeString(this.datawaveType.getDelegateAsString());
@@ -142,7 +153,35 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     }
     
     @Override
-    public void read(Kryo kryo, Input input) {
+    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
+        KryoDocumentOptions documentCache = (KryoDocumentOptions) kryo.getContext().get(KryoDocumentOptions.CACHE_KEY);
+        Class<? extends Type> typeClass = datawaveType.getClass();
+        super.writeMetadata(kryo, output, reducedResponse);
+        output.writeBoolean(toKeep);
+        output.writeString(datawaveType.getDelegateAsString());
+        kryo.writeClass(output, datawaveType.getClass());
+        
+        // Check if there is an explicit serializer for the Type
+        Optional<Serializer<Type<T>>> serializer = documentCache.getSerializer(typeClass);
+        boolean hasSerializer = serializer.isPresent();
+        
+        // Check if the type did not have an explicit serializer
+        // and if so serialize the type output
+        // save that we have a custom serializer attempt or not
+        output.writeBoolean(hasSerializer);
+        if (hasSerializer) {
+            OutputChunked outputChunked = new OutputChunked(output);
+            try {
+                kryo.writeObject(outputChunked, datawaveType, serializer.get());
+            } finally {
+                outputChunked.endChunks();
+                // outputChunked.flush();
+            }
+        }
+    }
+    
+    // @Override
+    public void read_(Kryo kryo, Input input) {
         try {
             setDatawaveType(input.readString());
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
@@ -151,6 +190,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         super.readMetadata(kryo, input);
         if (datawaveType == null)
             datawaveType = (Type) new NoOpType();
+        
         String delegateString = input.readString();
         try {
             datawaveType.setDelegateFromString(delegateString);
@@ -164,7 +204,70 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         this.toKeep = input.readBoolean();
     }
     
+    @Override
+    public void read(Kryo kryo, Input input) {
+        KryoDocumentOptions documentCache = (KryoDocumentOptions) kryo.getContext().get(KryoDocumentOptions.CACHE_KEY);
+        
+        super.readMetadata(kryo, input);
+        
+        toKeep = input.readBoolean();
+        String delegateString = input.readString();
+        Registration typeRegistration = kryo.readClass(input);
+        
+        if (typeRegistration == null) {
+            throw new IllegalStateException("Type registration was null");
+        }
+        
+        Class typeClass = typeRegistration.getType();
+        Optional<Serializer<Type<T>>> serializer = documentCache.getSerializer(typeClass);
+        boolean wasSerialized = input.readBoolean();
+        try {
+            if (wasSerialized) {
+                InputChunked inputChunked = new InputChunked(input);
+                try {
+                    if (serializer.isPresent()) {
+                        datawaveType = (Type<T>) kryo.readObject(inputChunked, typeClass, serializer.get());
+                    }
+                } catch (Exception serializeEx) {
+                    log.warn("Was unable to make a " + datawaveType + " to contain a delegate created from serializer:" + delegateString
+                                    + "  Will try to create from string itself.");
+                } finally {
+                    inputChunked.nextChunks();
+                }
+            }
+            if (datawaveType == null) {
+                datawaveType = tryReadTypeDelegateString(typeClass, delegateString);
+            }
+        } catch (Exception e) {
+            // there was some problem with setting the delegate as the declared type.
+            // Instead of letting this exception fail the query, make this a NoOpType containing the string value from the input
+            log.warn("Was unable to make a " + datawaveType + " to contain a delegate created from input:" + delegateString + "  Making a NoOpType instead.");
+            datawaveType = tryReadNoOpTypeDelegateString(delegateString);
+        }
+    }
+    
+    private Type<T> tryReadTypeDelegateString(String typeClassName, String delegateString) throws ClassNotFoundException, InstantiationException,
+                    IllegalAccessException {
+        Class<Type<T>> typeClass = (Class<Type<T>>) Class.forName(typeClassName);
+        return tryReadTypeDelegateString(typeClass, delegateString);
+    }
+    
+    private Type<T> tryReadTypeDelegateString(Class<Type<T>> typeClass, String delegateString) throws InstantiationException, IllegalAccessException {
+        Type<T> typeObj = typeClass.newInstance();
+        typeObj.setDelegateFromString(delegateString);
+        return typeObj;
+    }
+    
+    private Type<T> tryReadNoOpTypeDelegateString(String delegateString) {
+        Type<T> typeObj = (Type<T>) new NoOpType();
+        typeObj.setDelegateFromString(delegateString);
+        return typeObj;
+    }
+    
     private void setDatawaveType(String datawaveTypeString) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        if (datawaveTypeString.startsWith("class ")) {
+            datawaveTypeString = datawaveTypeString.substring("class ".length());
+        }
         this.datawaveType = (Type<T>) Class.forName(datawaveTypeString).newInstance();
     }
     

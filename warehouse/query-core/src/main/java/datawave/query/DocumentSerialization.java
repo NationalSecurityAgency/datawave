@@ -1,5 +1,20 @@
 package datawave.query;
 
+import datawave.query.exceptions.InvalidDocumentHeader;
+import datawave.query.exceptions.NoSuchDeserializerException;
+import datawave.query.function.deserializer.DocumentDeserializer;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.function.deserializer.WritableDocumentDeserializer;
+import datawave.query.function.serializer.DocumentSerializer;
+import datawave.query.function.serializer.KryoDocumentSerializer;
+import datawave.query.function.serializer.WritableDocumentSerializer;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NotFoundQueryException;
+import datawave.webservice.query.exception.QueryException;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -9,21 +24,6 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
-
-import datawave.query.function.deserializer.DocumentDeserializer;
-import datawave.query.function.serializer.KryoDocumentSerializer;
-import datawave.query.exceptions.InvalidDocumentHeader;
-import datawave.query.exceptions.NoSuchDeserializerException;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.function.deserializer.WritableDocumentDeserializer;
-import datawave.query.function.serializer.DocumentSerializer;
-import datawave.query.function.serializer.WritableDocumentSerializer;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.exception.BadRequestQueryException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.NotFoundQueryException;
-import datawave.webservice.query.exception.QueryException;
 
 /**
  *
@@ -142,7 +142,7 @@ public class DocumentSerialization {
             return new ByteArrayInputStream(data, 3, data.length - 3);
         } else if (GZIP == compression) {
             ByteArrayInputStream bytes = new ByteArrayInputStream(data, 3, data.length - 3);
-            return new InflaterInputStream(bytes, new Inflater(), 1024);
+            return new InflaterInputStream(bytes, new Inflater(), 4096);
         } else {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNKNOWN_COMPRESSION_SCHEME, MessageFormat.format("{0}", compression));
             throw new InvalidDocumentHeader(qe);
