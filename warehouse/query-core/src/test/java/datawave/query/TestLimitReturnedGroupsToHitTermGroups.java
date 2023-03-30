@@ -6,7 +6,6 @@ import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;

@@ -32,7 +32,7 @@ public class EvaluationFunction implements Function<Map.Entry<Key,Document>,Map.
     protected JexlEvaluation evaluation;
     
     // for lazy init
-    public boolean useHitListArithmetic = false;
+    private boolean useHitListArithmetic = false;
     
     /**
      * Use the config to access the JexlScript, query fields, and configured incompleteFields
