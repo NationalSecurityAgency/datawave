@@ -11,11 +11,6 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.postprocessing.tf.TermOffsetMap;
-import datawave.data.type.DateType;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.attributes.ValueTuple;
-import datawave.query.collections.FunctionalSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.DatawaveJexlScript;
 import org.apache.commons.jexl2.ExpressionImpl;
@@ -30,8 +25,6 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 

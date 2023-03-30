@@ -7,7 +7,6 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -62,8 +61,8 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         };
         //  @formatter:on
         
-        for (int i = 0; i < array.length; i++) {
-            test((String) array[i][0], (Boolean) array[i][1], (Boolean) array[i][2]);
+        for (Object[] o : array) {
+            test((String) o[0], (Boolean) o[1], (Boolean) o[2]);
         }
     }
     
@@ -84,8 +83,8 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         };
         //  @formatter:on
         
-        for (int i = 0; i < array.length; i++) {
-            test((String) array[i][0], (Boolean) array[i][1], (Boolean) array[i][2]);
+        for (Object[] o : array) {
+            test((String) o[0], (Boolean) o[1], (Boolean) o[2]);
         }
     }
     
@@ -105,8 +104,8 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         };
         //  @formatter:on
         
-        for (int i = 0; i < array.length; i++) {
-            test((String) array[i][0], (Boolean) array[i][1], (Boolean) array[i][2]);
+        for (Object[] o : array) {
+            test((String) o[0], (Boolean) o[1], (Boolean) o[2]);
         }
     }
     
@@ -121,8 +120,8 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         };
         //  @formatter:on
         
-        for (int i = 0; i < array.length; i++) {
-            test(buildIncompleteDateContext(), (String) array[i][0], (Boolean) array[i][1], (Boolean) array[i][2]);
+        for (Object[] o : array) {
+            test((String) o[0], (Boolean) o[1], (Boolean) o[2]);
         }
     }
     
@@ -186,8 +185,8 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         };
         //  @formatter:on
         
-        for (int i = 0; i < array.length; i++) {
-            test(buildIncompleteDateContext(), (String) array[i][0], (Boolean) array[i][1], (Boolean) array[i][2]);
+        for (Object[] o : array) {
+            test((String) o[0], (Boolean) o[1], (Boolean) o[2]);
         }
     }
     
@@ -288,8 +287,8 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         };
         //  @formatter:on
         
-        for (Object[] arr : array) {
-            test(buildIncompleteDateContext(), (String) arr[0], (Boolean) arr[1], (Boolean) arr[2]);
+        for (Object[] o : array) {
+            test((String) o[0], (Boolean) o[1], (Boolean) o[2]);
         }
     }
     
@@ -337,8 +336,8 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         };
         //  @formatter:on
         
-        for (Object[] arr : array) {
-            test(buildDefaultIncompleteContext(), (String) arr[0], (Boolean) arr[1], (Boolean) arr[2]);
+        for (Object[] o : array) {
+            test(buildDefaultIncompleteContext(), (String) o[0], (Boolean) o[1], (Boolean) o[2]);
         }
     }
     
@@ -362,8 +361,8 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         };
         //  @formatter:on
         
-        for (Object[] arr : array) {
-            test(buildDefaultIncompleteContext(), (String) arr[0], (Boolean) arr[1], (Boolean) arr[2]);
+        for (Object[] o : array) {
+            test(buildDefaultIncompleteContext(), (String) o[0], (Boolean) o[1], (Boolean) o[2]);
         }
     }
     
@@ -393,8 +392,8 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         };
         //  @formatter:on
         
-        for (Object[] arr : array) {
-            test(buildDefaultIncompleteContext(), (String) arr[0], (Boolean) arr[1], (Boolean) arr[2]);
+        for (Object[] o : array) {
+            test(buildDefaultIncompleteContext(), (String) o[0], (Boolean) o[1], (Boolean) o[2]);
         }
     }
     
@@ -409,8 +408,8 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         };
         //  @formatter:on
         
-        for (Object[] arr : array) {
-            test(buildDefaultIncompleteContext(), (String) arr[0], (Boolean) arr[1], (Boolean) arr[2]);
+        for (Object[] o : array) {
+            test(buildDefaultIncompleteContext(), (String) o[0], (Boolean) o[1], (Boolean) o[2]);
         }
     }
     
@@ -434,18 +433,9 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
     /**
      * Builds a JexlContext with some incomplete fields.
      *
-     * @return
+     * @return a JexlContext with incomplete fields
      */
     protected JexlContext buildDefaultIncompleteContext() {
-        JexlContext context = buildDefaultContext();
-        //@formatter:off
-        context.set(FIELD_A, new FunctionalSet(Collections.singletonList(
-                new ValueTuple(FIELD_A, "a1b2c3", "a1b2c3", new TypeAttribute<>(new LcNoDiacriticsType("a1b2c3"), docKey, true)))));
-        //@formatter:on
-        return context;
-    }
-    
-    protected JexlContext buildIncompleteDateContext() {
         JexlContext context = buildDefaultContext();
         //@formatter:off
         context.set(FIELD_A, new FunctionalSet(Collections.singletonList(

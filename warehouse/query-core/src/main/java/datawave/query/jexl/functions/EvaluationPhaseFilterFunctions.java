@@ -754,6 +754,26 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     /**
+     * An instance of the <code>afterDate</code> function that operates on a {@link State} object.
+     * <p>
+     * This method delegates to the correct <code>afterDate</code> function.
+     *
+     * @param state
+     *            a State object
+     * @param start
+     *            the start date
+     * @return a FunctionalSet of matches
+     */
+    public static FunctionalSet<ValueTuple> afterDate(State state, String start) {
+        if (state.isFunctionalSet()) {
+            return afterDate(state.getFunctionalSet(), start);
+        } else if (state.isValueTuple()) {
+            return afterDate(state.getValueTuple(), start);
+        }
+        return FunctionalSet.emptySet();
+    }
+    
+    /**
      * Searches for a date between start and end (inclusively)
      *
      * @param fieldValue
@@ -801,6 +821,28 @@ public class EvaluationPhaseFilterFunctions {
             }
         }
         return matches;
+    }
+    
+    /**
+     * An instance of the <code>afterDate</code> function that operates on a {@link State} object.
+     * <p>
+     * This method delegates to the correct <code>afterDate</code> function.
+     *
+     * @param state
+     *            a State object
+     * @param start
+     *            the start date
+     * @param rangePattern
+     *            a date format
+     * @return a FunctionalSet of matches
+     */
+    public static FunctionalSet<ValueTuple> afterDate(State state, String start, String rangePattern) {
+        if (state.isFunctionalSet()) {
+            return afterDate(state.getFunctionalSet(), start, rangePattern);
+        } else if (state.isValueTuple()) {
+            return afterDate(state.getValueTuple(), start, rangePattern);
+        }
+        return FunctionalSet.emptySet();
     }
     
     /**
@@ -933,6 +975,26 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     /**
+     * An instance of the <code>beforeDate</code> function that operates on a {@link State} object.
+     * <p>
+     * This method delegates to the correct <code>beforeDate</code> function.
+     *
+     * @param state
+     *            a State object
+     * @param end
+     *            the end date
+     * @return a FunctionalSet of matches
+     */
+    public static FunctionalSet<ValueTuple> beforeDate(State state, String end) {
+        if (state.isFunctionalSet()) {
+            return beforeDate(state.getFunctionalSet(), end);
+        } else if (state.isValueTuple()) {
+            return beforeDate(state.getValueTuple(), end);
+        }
+        return FunctionalSet.emptySet();
+    }
+    
+    /**
      * Searches for a date before end (exclusively)
      *
      * @param fieldValue
@@ -981,6 +1043,26 @@ public class EvaluationPhaseFilterFunctions {
             }
         }
         return matches;
+    }
+    
+    /**
+     * An instance of the <code>beforeDate</code> function that operates on a {@link State} object.
+     * <p>
+     * This method delegates to the correct <code>beforeDate</code> function.
+     *
+     * @param state
+     *            a State object
+     * @param end
+     *            the end date
+     * @return a FunctionalSet of matches
+     */
+    public static FunctionalSet<ValueTuple> beforeDate(State state, String end, String rangePattern) {
+        if (state.isFunctionalSet()) {
+            return beforeDate(state.getFunctionalSet(), end, rangePattern);
+        } else if (state.isValueTuple()) {
+            return beforeDate(state.getValueTuple(), end, rangePattern);
+        }
+        return FunctionalSet.emptySet();
     }
     
     /**
