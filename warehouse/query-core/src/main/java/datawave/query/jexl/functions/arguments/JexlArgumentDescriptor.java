@@ -86,7 +86,7 @@ public interface JexlArgumentDescriptor {
      *            the node argument
      * @return the set of fields referenced by the specified arg
      */
-    Set<String> fieldsForNormalization(MetadataHelper metadata, Set<String> datatypeFilter, int arg);
+    Set<String> fieldsForNormalization(MetadataHelper metadata, Set<String> datatypeFilter, int arg) throws TableNotFoundException;
     
     /**
      * Should expansions (e.g. from a model) use ORs or ANDs. For example isNull should use ANDs, but includeRegex should use ORs.

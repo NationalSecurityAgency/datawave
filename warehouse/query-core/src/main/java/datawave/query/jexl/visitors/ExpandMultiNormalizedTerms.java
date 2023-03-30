@@ -21,6 +21,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -49,12 +50,9 @@ import java.util.Set;
 /**
  * When more than one normalizer exists for a field, we want to transform the single term into a conjunction of the term with each normalizer applied to it. If
  * there is no difference between normalized versions of the term, only one term will be retained.
- *
+ * <p>
  * This class will also normalize terms that have only 1 normalizer associated with their fields. For instance, if `TEXT` is associated with the
  * `LcNoDiacriticsType`, then a subtree of the form `TEXT == 'goOfBAlL'` will be transformed into `TEXT == 'goofball'`.
- *
- * 
- *
  */
 public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ExpandMultiNormalizedTerms.class);
@@ -140,7 +138,11 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        return FunctionNormalizationRebuildingVisitor.normalize(node, config.getQueryFieldsDatatypes(), helper, config.getDatatypeFilter());
+        try {
+            return FunctionNormalizationRebuildingVisitor.normalize(node, config.getQueryFieldsDatatypes(), helper, config.getDatatypeFilter());
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     @Override
@@ -213,7 +215,6 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     }
     
     /**
-     * 
      * @param node
      *            a jexl node
      * @param data

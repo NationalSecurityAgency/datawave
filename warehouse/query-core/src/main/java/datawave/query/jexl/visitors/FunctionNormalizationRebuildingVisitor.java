@@ -10,6 +10,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.MetadataHelper;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -58,7 +59,8 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         this.datatypeFilter = datatypeFilter;
     }
     
-    public static JexlNode normalize(ASTFunctionNode function, Multimap<String,Type<?>> allNormalizers, MetadataHelper helper, Set<String> datatypeFilter) {
+    public static JexlNode normalize(ASTFunctionNode function, Multimap<String,Type<?>> allNormalizers, MetadataHelper helper, Set<String> datatypeFilter)
+                    throws TableNotFoundException {
         Preconditions.checkNotNull(function);
         Preconditions.checkNotNull(allNormalizers);
         Preconditions.checkNotNull(helper);
@@ -169,7 +171,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
      * @return the list of normalizer lists
      */
     private static List<List<Type<?>>> getNormalizerListsForArgs(ASTFunctionNode function, Multimap<String,Type<?>> allNormalizers,
-                    JexlArgumentDescriptor descriptor, MetadataHelper helper, Set<String> datatypeFilter) {
+                    JexlArgumentDescriptor descriptor, MetadataHelper helper, Set<String> datatypeFilter) throws TableNotFoundException {
         List<List<Type<?>>> lists = new ArrayList<>();
         
         lists.add(new ArrayList<>(Arrays.asList(new Type<?>[function.jjtGetNumChildren()])));
