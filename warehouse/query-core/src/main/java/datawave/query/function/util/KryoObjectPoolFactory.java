@@ -3,9 +3,12 @@ package datawave.query.function.util;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.serializers.DefaultSerializers;
 import datawave.data.type.*;
+import datawave.data.type.util.Geometry;
 import datawave.data.type.util.IpAddress;
+import datawave.data.type.util.Point;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.serialization.kryo.DelegateTypeSerializer;
+import datawave.query.attributes.serialization.kryo.GeometrySerializer;
 import datawave.query.attributes.serialization.kryo.IpAddressDynamicSerializer;
 import datawave.query.function.KryoCVAwareSerializableSerializer;
 import org.apache.commons.pool2.BasePooledObjectFactory;
@@ -21,7 +24,7 @@ class KryoObjectPoolFactory extends BasePooledObjectFactory<KryoEntry> {
     @Override
     public KryoEntry create() throws Exception {
         Kryo kryo = new Kryo();
-        //Log.set(Log.LEVEL_TRACE);
+        // Log.set(Log.LEVEL_TRACE);
         
         kryo.setReferences(false);
         
@@ -29,7 +32,7 @@ class KryoObjectPoolFactory extends BasePooledObjectFactory<KryoEntry> {
         map.put(DateType.class, new DelegateTypeSerializer<>(new DefaultSerializers.DateSerializer(), Date.class));
         map.put(GeoLatType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(GeoLonType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
-        //map.put(GeometryType.class, new DelegateTypeSerializer<>(new GeometrySerializer(Geometry.class), Geometry.class));
+        map.put(GeometryType.class, new DelegateTypeSerializer<>(new GeometrySerializer(Geometry.class, org.locationtech.jts.geom.Geometry.class), Geometry.class));
         map.put(GeoType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(HexStringType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(HitTermType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
@@ -39,7 +42,7 @@ class KryoObjectPoolFactory extends BasePooledObjectFactory<KryoEntry> {
         map.put(MacAddressType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(NoOpType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(NumberType.class, new DelegateTypeSerializer<>(new DefaultSerializers.BigDecimalSerializer(), BigDecimal.class));
-        //map.put(PointType.class, new DelegateTypeSerializer<>(new GeometrySerializer(Point.class), Point.class));
+        map.put(PointType.class, new DelegateTypeSerializer<>(new GeometrySerializer(Point.class, org.locationtech.jts.geom.Point.class), Point.class));
         map.put(RawDateType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(StringType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(RawDateType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));

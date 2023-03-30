@@ -19,7 +19,7 @@ public class KryoObjectPool implements AutoCloseable {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("Borrowing object: {}", System.identityHashCode(ke));
             }
-            return new KryoReference(this, pool.borrowObject());
+            return new KryoReference(this, ke);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
