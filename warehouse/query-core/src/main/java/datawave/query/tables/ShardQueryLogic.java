@@ -12,6 +12,7 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.function.ws.DocumentEvaluation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.attributes.ExcerptFields;
@@ -1040,6 +1041,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         stopwatch.stop();
     }
     
+    /**
+     * Constructs a replica of the document evaluation pipeline outside the tablet server
+     *
+     * @return a DocumentEvaluation function
+     */
     protected DocumentEvaluation buildDocumentEvaluation() {
         DocumentEvaluation documentEvaluation = new DocumentEvaluation();
         documentEvaluation.setSerDe(config.getReturnType());
@@ -1055,6 +1061,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             includeFields = UniversalSet.instance();
         } else {
             includeFields = getConfig().getProjectFields();
+            // this is convoluted. If we have projection fields, make sure HIT_TERM is on the list.
+            // otherwise, if no fields are configured leave the empty set as it is.
+            if (!includeFields.isEmpty() && config.isHitList()) {
+                includeFields.add(JexlEvaluation.HIT_TERM_FIELD);
+            }
         }
         Set<String> excludeFields = getBlacklistedFields();
         
@@ -1070,7 +1081,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                                 .getAuthorizations());
                 CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
                 Collection<Multimap<String,String>> compositeMaps = compositeMetadata.getCompositeFieldMapByType().values();
-                documentEvaluation.addFunction(new CompositeProjectionFunction(includeGroupingContext, isReducedResponse(), compositeMaps));
+                if (!compositeMaps.isEmpty()) {
+                    documentEvaluation.addFunction(new CompositeProjectionFunction(includeGroupingContext, isReducedResponse(), compositeMaps));
+                }
             }
         } catch (TableNotFoundException e) {
             throw new IllegalStateException("Could not add CompositeProjectionTransform, error was: ", e);

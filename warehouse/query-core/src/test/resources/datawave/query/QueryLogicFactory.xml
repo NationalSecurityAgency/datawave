@@ -243,9 +243,9 @@
             </set>
         </property>
 
-        <!-- uncomment to collect timing details -->
-        <property name="collectTimingDetails" value="true" />
-        <property name="collectQueryMetrics" value="true" />
+        <!-- set to collect timing details -->
+        <property name="collectTimingDetails" value="false" />
+        <property name="collectQueryMetrics" value="false" />
 
         <property name="eventQueryDataDecoratorTransformer" ref="EventQueryDataDecoratorTransformer" />
 

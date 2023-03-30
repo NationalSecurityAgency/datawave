@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public class LimitFieldsTransform implements Function<Map.Entry<Key,Document>,Map.Entry<Key,Document>> {
     
-    private LimitFields limitFields;
+    private final LimitFields limitFields;
     
     public LimitFieldsTransform(Map<String,Integer> limitFieldsMap) {
         this.limitFields = new LimitFields(limitFieldsMap);
