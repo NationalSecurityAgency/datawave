@@ -18,6 +18,10 @@ public interface SourcedFunction<A,B> extends com.google.common.base.Function<A,
      *            <tt>Map</tt> map of string option names to option values.
      * @param env
      *            <tt>IteratorEnvironment</tt> environment in which iterator is being run.
+     * @param <K>
+     *            type of the key
+     * @param <V>
+     *            type for the value
      * @throws IOException
      *             unused.
      * @exception IllegalArgumentException

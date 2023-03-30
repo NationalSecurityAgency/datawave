@@ -68,6 +68,12 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
     
     /**
      * This will flatten ands and ors.
+     * 
+     * @param node
+     *            the node to flatten
+     * @param <T>
+     *            type of the node
+     * @return the flattened copy
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T flatten(T node) {
@@ -77,6 +83,12 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
     /**
      * This will flatten ands, ors, and references and references expressions NOTE: If you remove reference expressions and references, this may adversely
      * affect the evaluation of the query (true in the index query logic case: bug?).
+     * 
+     * @param node
+     *            the node to flatten
+     * @param <T>
+     *            type of the node
+     * @return the flattened copy
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T flattenAll(T node) {

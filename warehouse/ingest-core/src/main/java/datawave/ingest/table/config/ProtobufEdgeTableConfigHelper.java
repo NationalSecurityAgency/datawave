@@ -40,12 +40,16 @@ public class ProtobufEdgeTableConfigHelper extends AbstractTableConfigHelper {
      * FInds the priority associated with versioning iterator. Assumes the name is "vers".
      * 
      * @param tops
+     *            the table operations
      * @param scope
      *            The scope of the iterator.
      * @return The priority of the versioning iterator, or 20 if not found.
      * @throws AccumuloSecurityException
+     *             if there is an issue with authentication
      * @throws AccumuloException
+     *             if there is a general accumulo issue
      * @throws TableNotFoundException
+     *             if the table could not be found
      */
     private int getVersionIteratorPriority(final TableOperations tops, final IteratorScope scope) throws AccumuloSecurityException, AccumuloException,
                     TableNotFoundException {

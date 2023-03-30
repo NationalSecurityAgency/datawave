@@ -67,6 +67,7 @@ public class ContentFunctionsTest {
     public void setup() {
         this.context = new MapContext();
         this.termOffSetMap = new TermOffsetMap();
+        this.termOffSetMap.setGatherPhraseOffsets(true);
     }
     
     /**
@@ -1823,5 +1824,26 @@ public class ContentFunctionsTest {
         
         // Ensure that we get the hit if we evaluate null zone
         Assert.assertEquals(Collections.singleton(zone2.getZone()), ContentFunctions.phrase((Object) null, termOffsetMap, terms));
+    }
+    
+    // Validate intersection of event ids is working properly
+    @Test
+    public void testAdjacentHitsAcrossChildDocuments() {
+        TreeMultimap<Zone,TermWeightPosition> multimap = TreeMultimap.create();
+        
+        TermOffsetMap termOffsetMap = new TermOffsetMap();
+        
+        multimap.put(new Zone("BODY", true, "shard\u0000dt\u0000uid0.1"), getPosition(5));
+        termOffsetMap.putTermFrequencyList("blue", new TermFrequencyList(multimap));
+        
+        multimap = TreeMultimap.create();
+        multimap.put(new Zone("BODY", true, "shard\u0000dt\u0000uid0.2"), getPosition(6));
+        termOffsetMap.putTermFrequencyList("fish", new TermFrequencyList(multimap));
+        
+        // full terms list
+        Assert.assertNotNull(termOffsetMap.getTermFrequencyList("blue"));
+        Assert.assertNotNull(termOffsetMap.getTermFrequencyList("fish"));
+        String[] terms = new String[] {"blue", "fish"};
+        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
     }
 }

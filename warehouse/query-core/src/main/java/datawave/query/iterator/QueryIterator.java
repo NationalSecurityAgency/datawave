@@ -25,6 +25,7 @@ import datawave.query.function.DataTypeAsField;
 import datawave.query.function.DocumentMetadata;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
+import datawave.query.function.DocumentRangeProvider;
 import datawave.query.function.IndexOnlyContextCreator;
 import datawave.query.function.IndexOnlyContextCreatorBuilder;
 import datawave.query.function.JexlContextCreator;
@@ -34,6 +35,7 @@ import datawave.query.function.LimitFields;
 import datawave.query.function.MaskedValueFilterFactory;
 import datawave.query.function.MaskedValueFilterInterface;
 import datawave.query.function.RemoveGroupingContext;
+import datawave.query.function.RangeProvider;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
@@ -64,6 +66,7 @@ import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
+import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
@@ -200,7 +203,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected ActiveQueryLog activeQueryLog;
     
     protected ExcerptTransform excerptTransform = null;
-    private Iterator<Entry<Key,Document>> entryIterator;
+    
+    protected RangeProvider rangeProvider;
     
     public QueryIterator() {}
     
@@ -249,7 +253,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // Parse the query
         try {
             this.script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
-            this.myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
+            this.myEvaluationFunction = getJexlEvaluation(this.getQuery(), arithmetic);
             
         } catch (Exception e) {
             throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
@@ -265,8 +269,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.source = source;
         }
         
-        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
-                        .getMaxNextCount() : -1);
+        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEventNextSeek());
         
         if (isDebugMultithreadedSources()) {
             this.source = new SourceThreadTrackingIterator(this.source);
@@ -596,6 +599,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * interrupted because the client is no longer listening.
      *
      * @param e
+     *            the exception to handle
+     * @throws IOException
+     *             for read/write issues
      */
     private void handleException(Exception e) throws IOException {
         Throwable reason = e;
@@ -655,11 +661,22 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * Build the document iterator
      *
      * @param documentRange
+     *            the document range
      * @param seekRange
+     *            the seek range
      * @param columnFamilies
+     *            a list of column families
      * @param inclusive
-     * @return
+     *            boolean marker for if this is inclusive
+     * @return the document iterator
      * @throws IOException
+     *             for read/write issues
+     * @throws ConfigException
+     *             for issues with the configuration
+     * @throws InstantiationException
+     *             for issues with class instantiation
+     * @throws IllegalAccessException
+     *             for issues with access
      */
     protected NestedIterator<Key> buildDocumentIterator(Range documentRange, Range seekRange, Collection<ByteSequence> columnFamilies, boolean inclusive)
                     throws IOException, ConfigException, InstantiationException, IllegalAccessException {
@@ -712,7 +729,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 try {
                     
                     myScript = JexlASTHelper.parseJexlQuery(queries.getValue());
-                    eval = new JexlEvaluation(queries.getValue(), myArithmetic);
+                    eval = getJexlEvaluation(queries.getValue(), myArithmetic);
                     
                 } catch (Exception e) {
                     throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
@@ -777,7 +794,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     /**
      * There was a request to create a serial pipeline. The factory may not choose to honor this.
      *
-     * @return
+     * @return the serial pipeline
      */
     private boolean getSerialPipelineRequest() {
         return serialEvaluationPipeline;
@@ -786,7 +803,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     /**
      * A routine which should always be used to create deep copies of the source. This ensures that we are thread safe when doing these copies.
      *
-     * @return
+     * @return the deep copy of the source
      */
     public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
         SortedKeyValueIterator<Key,Value> sourceDeepCopy;
@@ -799,6 +816,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     /**
      * Returns the elements of {@code unfiltered} that satisfy a predicate. This is used instead of the google commons Iterators.filter to create a non-stateful
      * filtering iterator.
+     * 
+     * @param unfiltered
+     *            the unfiltered iterator
+     * @param predicate
+     *            the predicate
+     * @param <T>
+     *            type for the iterator
+     * @return an iterator to elements that satisfy the predicate
      */
     public static <T> UnmodifiableIterator<T> statelessFilter(final Iterator<T> unfiltered, final Predicate<? super T> predicate) {
         checkNotNull(unfiltered);
@@ -840,7 +865,15 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * that maintains an iterator state (failed, ready, done); use statelessFilter above instead.
      *
      * @param deepSourceCopy
+     *            the deep source copy
      * @param documentSpecificSource
+     *            the document source
+     * @param columnFamilies
+     *            the column families
+     * @param inclusive
+     *            flag for inclusive range
+     * @param querySpanCollector
+     *            the query span collector
      * @return iterator of keys and values
      */
     public Iterator<Entry<Key,Document>> createDocumentPipeline(SortedKeyValueIterator<Key,Value> deepSourceCopy,
@@ -875,7 +908,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             };
         } else {
             docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, super.equality, getEvaluationFilter(),
-                            this.includeHierarchyFields, this.includeHierarchyFields);
+                            this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
         }
         
         Iterator<Entry<DocumentData,Document>> sourceIterator = Iterators.transform(documentSpecificSource, from -> {
@@ -983,6 +1016,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         
         if (!this.limitFieldsMap.isEmpty()) {
+            // note that we have already reduced the document to those attributes to keep. This will reduce the attributes further
+            // base on those fields we are limiting.
             if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents,
                                 new EvaluationTrackingFunction<>(QuerySpan.Stage.LimitFields, trackingSpan, new LimitFields(this.getLimitFieldsMap())));
@@ -1040,12 +1075,17 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext;
             if (this.isTermFrequenciesRequired()) {
                 
-                // The TFFunction can only prune non index-only fields
-                Set<String> tfIndexOnlyFields = Sets.intersection(getTermFrequencyFields(), getIndexOnlyFields());
+                TermFrequencyConfig tfConfig = new TermFrequencyConfig();
+                tfConfig.setScript(getScript(documentSource));
+                tfConfig.setIterEnv(myEnvironment);
+                tfConfig.setSource(sourceDeepCopy.deepCopy(myEnvironment));
+                tfConfig.setContentExpansionFields(getContentExpansionFields());
+                tfConfig.setTfFields(getTermFrequencyFields());
+                tfConfig.setTypeMetadata(getTypeMetadata());
+                tfConfig.setEquality(super.equality);
+                tfConfig.setEvaluationFilter(getEvaluationFilter());
                 
-                Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction;
-                tfFunction = TFFactory.getFunction(getScript(documentSource), getContentExpansionFields(), getTermFrequencyFields(), this.getTypeMetadata(),
-                                super.equality, getEvaluationFilter(), sourceDeepCopy.deepCopy(myEnvironment), tfIndexOnlyFields);
+                Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction = buildTfFunction(tfConfig);
                 
                 itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             } else {
@@ -1083,6 +1123,18 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return documents;
     }
     
+    /**
+     * This method exists so that extending classes can implement specific versions of the TFFunction. Specifically, so the
+     * {@link datawave.query.tld.TLDQueryIterator} can set the {@link TermFrequencyConfig#setTld(boolean)} option to true
+     *
+     * @param tfConfig
+     *            a TermFrequencyConfig
+     * @return a TFFunction
+     */
+    protected Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
+        return TFFactory.getFunction(tfConfig);
+    }
+    
     private Range getDocumentRange(NestedQueryIterator<Key> documentSource) {
         if (null == documentSource) {
             return range;
@@ -1096,20 +1148,47 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected JexlEvaluation getJexlEvaluation(NestedQueryIterator<Key> documentSource) {
+        return getJexlEvaluation(query, documentSource, getArithmetic());
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query) {
+        return getJexlEvaluation(query, null, getArithmetic());
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query, JexlArithmetic arithmetic) {
+        return getJexlEvaluation(query, null, arithmetic);
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query, NestedQueryIterator<Key> documentSource) {
+        return getJexlEvaluation(query, documentSource, getArithmetic());
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query, NestedQueryIterator<Key> documentSource, JexlArithmetic arithmetic) {
+        JexlEvaluation jexlEvaluationFunction = null;
+        
+        if (arithmetic == null) {
+            arithmetic = getArithmetic();
+        }
         
         if (null == documentSource) {
-            return new JexlEvaluation(query, getArithmetic());
-        }
-        JexlEvaluation jexlEvaluationFunction = null;
-        NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
-        if (null == nestedQuery) {
-            jexlEvaluationFunction = new JexlEvaluation(query, getArithmetic());
+            jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
         } else {
-            jexlEvaluationFunction = nestedQuery.getEvaluation();
-            if (null == jexlEvaluationFunction) {
-                return new JexlEvaluation(query, getArithmetic());
+            NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
+            if (null == nestedQuery) {
+                jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+            } else {
+                jexlEvaluationFunction = nestedQuery.getEvaluation();
+                if (null == jexlEvaluationFunction) {
+                    jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+                }
             }
         }
+        
+        // update the jexl evaluation to gather phrase offsets if required for excerpts
+        if (getExcerptFields() != null && !getExcerptFields().isEmpty()) {
+            jexlEvaluationFunction.setGatherPhraseOffsets(true);
+        }
+        
         return jexlEvaluationFunction;
     }
     
@@ -1146,7 +1225,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         if (fieldIndexSatisfiesQuery) {
             final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, super.equality,
-                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields);
+                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
+            
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(
                             documents,
                             new GetDocument(docMapper, new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata, this
@@ -1488,6 +1568,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setIndexOnlyFields(this.getAllIndexOnlyFields())
                 .setAllowTermFrequencyLookup(this.allowTermFrequencyLookup)
                 .setCompositeMetadata(compositeMetadata)
+                .setFiNextSeek(this.getFiNextSeek())
+                .setEventNextSeek(this.getEventNextSeek())
+                .setTfNextSeek(this.getTfNextSeek())
                 .setExceededOrEvaluationCache(exceededOrEvaluationCache);
         // @formatter:on
         // TODO: .setStatsPort(this.statsdHostAndPort);
@@ -1589,6 +1672,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * tuples were actually hit upon.
      * 
      * @param from
+     *            the from tuple
      * @return A comparator for values within the jexl context.
      */
     @Override
@@ -1612,7 +1696,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             synchronized (getGroupFields()) {
                 if (groupingIterator == null) {
                     groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(), getGroupFields(), this.groupFieldsBatchSize,
-                                    this.yield);
+                                    this.yield, this.getResultTimeout());
                 }
             }
         }
@@ -1630,10 +1714,27 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (excerptTransform == null && getExcerptFields() != null && !getExcerptFields().isEmpty()) {
             synchronized (getExcerptFields()) {
                 if (excerptTransform == null) {
-                    excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment));
+                    try {
+                        excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
+                                        excerptIterator.newInstance());
+                    } catch (Exception e) {
+                        throw new RuntimeException("Could not create excerpt transform", e);
+                    }
                 }
             }
         }
         return excerptTransform;
+    }
+    
+    /**
+     * Get a default implementation of a {@link RangeProvider}
+     *
+     * @return a {@link DocumentRangeProvider}
+     */
+    protected RangeProvider getRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new DocumentRangeProvider();
+        }
+        return rangeProvider;
     }
 }

@@ -316,6 +316,34 @@ public class RangeStreamTestX {
         }
         bw.addMutation(m);
         
+        // --------------- Data for nested pruning
+        
+        m = new Mutation("1"); // fully distributed
+        m.put(new Text("F1"), new Text("20200101_10\0datatype1"), valueForShard);
+        m.put(new Text("F1"), new Text("20200101_11\0datatype1"), valueForShard);
+        m.put(new Text("F1"), new Text("20200101_12\0datatype1"), valueForShard);
+        m.put(new Text("F1"), new Text("20200101_13\0datatype1"), valueForShard);
+        bw.addMutation(m);
+        
+        m = new Mutation("2"); // skips shard _11
+        m.put(new Text("F2"), new Text("20200101_10\0datatype1"), valueForShard);
+        m.put(new Text("F2"), new Text("20200101_12\0datatype1"), valueForShard);
+        m.put(new Text("F2"), new Text("20200101_13\0datatype1"), valueForShard);
+        bw.addMutation(m);
+        
+        m = new Mutation("3"); // skips shard _12
+        m.put(new Text("F3"), new Text("20200101_10\0datatype1"), valueForShard);
+        m.put(new Text("F3"), new Text("20200101_11\0datatype1"), valueForShard);
+        m.put(new Text("F3"), new Text("20200101_13\0datatype1"), valueForShard);
+        bw.addMutation(m);
+        
+        m = new Mutation("4"); // fully distributed
+        m.put(new Text("F4"), new Text("20200101_10\0datatype1"), valueForShard);
+        m.put(new Text("F4"), new Text("20200101_11\0datatype1"), valueForShard);
+        m.put(new Text("F4"), new Text("20200101_12\0datatype1"), valueForShard);
+        m.put(new Text("F4"), new Text("20200101_13\0datatype1"), valueForShard);
+        bw.addMutation(m);
+        
         // ---------------
         
         bw.flush();
@@ -486,7 +514,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 expectedQueryStrings.add("(B == 'all' && ((_Delayed_ = true) && (A == 'all_day')))");
             }
         }
@@ -504,7 +532,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 2; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 expectedQueryStrings.add("(A == 'unequal_start' && ((_Delayed_ = true) && (B == 'all_day')))");
             }
         }
@@ -522,7 +550,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 4; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 expectedQueryStrings.add("(A == 'unequal_stop' && ((_Delayed_ = true) && (B == 'all_day')))");
             }
         }
@@ -540,7 +568,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 1; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 expectedQueryStrings.add("(A == 'uneven_start' && ((_Delayed_ = true) && (B == 'all_day')))");
             }
         }
@@ -558,7 +586,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 9; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 expectedQueryStrings.add("(A == 'uneven_stop' && ((_Delayed_ = true) && (B == 'all_day')))");
             }
         }
@@ -578,7 +606,7 @@ public class RangeStreamTestX {
             if (ii == 3)
                 continue;
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 expectedQueryStrings.add("((_Delayed_ = true) && (A == 'all_day')) && B == 'missing_shards'");
             }
         }
@@ -598,7 +626,7 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
                 if (ii != 3) {
-                    expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                     expectedQueryStrings.add("(A == 'tick_tock' && ((_Delayed_ = true) && (B == 'tick_tock_day')))");
                 }
             }
@@ -1477,7 +1505,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && (B == 'all' || C == 'all'))");
             }
         }
@@ -1494,7 +1522,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 1) {
                     expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && B == 'all')");
                 } else {
@@ -1515,7 +1543,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 5) {
                     expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && B == 'all')");
                 } else {
@@ -1536,7 +1564,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (jj == 0) {
                     expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && B == 'all')");
                 } else {
@@ -1557,7 +1585,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (jj == 9) {
                     expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && B == 'all')");
                 } else {
@@ -1577,7 +1605,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 3) {
                     expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && B == 'all')");
                 } else {
@@ -1598,7 +1626,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii != 3 || jj == 2 || jj == 6) {
                     expectedQueryStrings.add("(((_Delayed_ = true) && (A == 'all_day')) && (B == 'all' || C == 'tick_tock'))");
                 } else {
@@ -1619,7 +1647,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'all_day')))");
             }
         }
@@ -1635,7 +1663,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 1) {
                     expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')))");
                 } else {
@@ -1655,7 +1683,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 5) {
                     expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')))");
                 } else {
@@ -1675,7 +1703,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'uneven_start_day')))");
             }
         }
@@ -1691,7 +1719,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')) || ((_Delayed_ = true) && (C == 'uneven_stop_day')))");
             }
         }
@@ -1707,7 +1735,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 3) {
                     expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')))");
                 } else {
@@ -1728,7 +1756,7 @@ public class RangeStreamTestX {
         
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 3) {
                     // Not enough shards to force rolling the C-term to a day range, thus no delay.
                     expectedQueryStrings.add("A == 'all' && (((_Delayed_ = true) && (B == 'all_day')) || (C == 'tick_tock_day'))");
@@ -2553,7 +2581,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 expectedQueryStrings
                                 .add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day'))) || (C == 'all' && ((_Delayed_ = true) && (D == 'all_day')))");
             }
@@ -2571,7 +2599,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 1) {
                     expectedQueryStrings.add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day')))");
                 } else {
@@ -2593,7 +2621,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 5) {
                     expectedQueryStrings.add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day')))");
                 } else {
@@ -2615,7 +2643,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 0) {
                     expectedQueryStrings.add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day')))");
                 } else {
@@ -2637,7 +2665,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 0) {
                     expectedQueryStrings.add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day')))");
                 } else {
@@ -2659,7 +2687,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii == 3) {
                     expectedQueryStrings.add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day')))");
                 } else {
@@ -2681,7 +2709,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii != 3 || jj == 3 || jj == 7) {
                     expectedQueryStrings.add("(A == 'all' && ((_Delayed_ = true) && (B == 'all_day'))) || (C == 'all' && D == 'tick_tock')");
                 } else {
@@ -2992,7 +3020,7 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             if (ii == 1) {
                 for (int jj = 0; jj < 10; jj++) {
-                    expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                     expectedQueryStrings.add("((A == 'all') || ((_Delayed_ = true) && (B == 'all_day'))) && ((C == 'all'))");
                 }
             } else {
@@ -3015,7 +3043,7 @@ public class RangeStreamTestX {
         for (int ii = 1; ii <= 5; ii++) {
             if (ii == 5) {
                 for (int jj = 0; jj < 10; jj++) {
-                    expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                    expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                     expectedQueryStrings.add("((A == 'all') || ((_Delayed_ = true) && (B == 'all_day'))) && ((C == 'all'))");
                 }
             } else {
@@ -3069,7 +3097,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 expectedQueryStrings.add("((A == 'all') || ((_Delayed_ = true) && (B == 'all_day'))) && ((C == 'all'))");
             }
         }
@@ -3086,7 +3114,7 @@ public class RangeStreamTestX {
         List<String> expectedQueryStrings = new ArrayList<>();
         for (int ii = 1; ii <= 5; ii++) {
             for (int jj = 0; jj < 10; jj++) {
-                expectedRanges.add(makeTestRange("2020010" + ii + "_" + jj, "datatype1\0a.b.c"));
+                expectedRanges.add(makeShardedRange("2020010" + ii + "_" + jj));
                 if (ii != 3 || jj == 3 || jj == 7) {
                     expectedQueryStrings.add("(A == 'all' || ((_Delayed_ = true) && (B == 'all_day'))) && (C == 'all' || D == 'tick_tock')");
                 } else {
@@ -3098,6 +3126,140 @@ public class RangeStreamTestX {
         runTest(query, expectedRanges, expectedQueryStrings);
     }
     
+    @Test
+    public void testNestedPruningWithTopLevelIntersection() throws Exception {
+        String query = "F1 == '1' && (F3 == '3' || F4 == '4')";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("F1 == '1' && (F3 == '3' || F4 == '4')");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || F4 == '4')");
+        expectedQueries.add("F1 == '1' && F4 == '4'"); // F3 skips shard _12
+        expectedQueries.add("F1 == '1' && (F3 == '3' || F4 == '4')");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
+    @Test
+    public void testDelayedNestedPruningWithTopLevelIntersection() throws Exception {
+        String query = "F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        // F3 skips shard _12, this forces the intersection into a shard range
+        expectedRanges.add(makeShardedRange("20200101_12"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        expectedQueries.add("F1 == '1' && ((_Delayed_ = true) && (F4 == '4'))"); // F3 skips shard _12
+        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
+    @Test
+    public void testIntersectionOfNestedUnions() throws Exception {
+        String query = "(F1 == '1' || F2 == '2') && (F3 == '3' || F4 == '4')";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || F4 == '4')");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || F4 == '4')"); // F2 skips shard _11
+        expectedQueries.add("(F1 == '1' || F2 == '2') && F4 == '4'"); // F3 skips shard _12
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || F4 == '4')");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
+    @Test
+    public void testIntersectionOfNestedUnionsOnHasDelayedTerm() throws Exception {
+        String query = "(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        expectedRanges.add(makeShardedRange("20200101_12"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))"); // F2 skips shard_11
+        expectedQueries.add("(F1 == '1' || F2 == '2') && ((_Delayed_ = true) && (F4 == '4'))"); // F3 skips shard _12
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
+    @Test
+    public void testIntersectionOfNestedUnionsOnHasDelayedTerm_flipped() throws Exception {
+        String query = "(F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))) && (F1 == '1' || F2 == '2')";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        expectedRanges.add(makeShardedRange("20200101_12"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        expectedQueries.add("F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))"); // F2 skips shard_11
+        expectedQueries.add("(F1 == '1' || F2 == '2') && ((_Delayed_ = true) && (F4 == '4'))"); // F3 skips shard _12
+        expectedQueries.add("(F1 == '1' || F2 == '2') && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4')))");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
+    @Test
+    public void testOrAndOr() throws Exception {
+        String query = "F2 == '2' || (F1 == '1' && (F3 == '3' || F4 == '4'))";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_12", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("F2 == '2' || (F1 == '1' && (F3 == '3' || F4 == '4'))");
+        expectedQueries.add("(F1 == '1' && (F3 == '3' || F4 == '4'))"); // F2 skips shard _11
+        expectedQueries.add("F2 == '2' || (F1 == '1' && F4 == '4')"); // F3 skips shard _12
+        expectedQueries.add("F2 == '2' || (F1 == '1' && (F3 == '3' || F4 == '4'))");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
+    @Test
+    public void testOrAndOrWithDeeplyNestedDelayedTerm() throws Exception {
+        String query = "F2 == '2' || (F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))))";
+        
+        List<Range> expectedRanges = new ArrayList<>();
+        expectedRanges.add(makeTestRange("20200101_10", "datatype1\0a.b.c"));
+        expectedRanges.add(makeTestRange("20200101_11", "datatype1\0a.b.c"));
+        expectedRanges.add(makeShardedRange("20200101_12"));
+        expectedRanges.add(makeTestRange("20200101_13", "datatype1\0a.b.c"));
+        
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("F2 == '2' || (F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))))");
+        expectedQueries.add("(F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))))"); // F2 skips shard _11
+        expectedQueries.add("F2 == '2' || (F1 == '1' && ((_Delayed_ = true) && (F4 == '4')))"); // F3 skips shard _12
+        expectedQueries.add("F2 == '2' || (F1 == '1' && (F3 == '3' || ((_Delayed_ = true) && (F4 == '4'))))");
+        
+        runTest(query, expectedRanges, expectedQueries);
+    }
+    
     private void runTest(String query, List<Range> expectedRanges, List<String> expectedQueries) throws Exception {
         
         assertEquals("Expected ranges and queries do not match, ranges: " + expectedRanges.size() + " queries: " + expectedQueries.size(),
@@ -3106,7 +3268,6 @@ public class RangeStreamTestX {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-        // config.setBeginDate(new Date(0));
         config.setBeginDate(sdf.parse("20200101"));
         config.setEndDate(sdf.parse("20200105"));
         
@@ -3117,6 +3278,10 @@ public class RangeStreamTestX {
         dataTypes.putAll("B", Sets.newHashSet(new LcNoDiacriticsType()));
         dataTypes.putAll("C", Sets.newHashSet(new LcNoDiacriticsType()));
         dataTypes.putAll("D", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("F1", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("F2", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("F3", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("F4", Sets.newHashSet(new LcNoDiacriticsType()));
         
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);
@@ -3134,6 +3299,8 @@ public class RangeStreamTestX {
         rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
         rangeStream.setLimitScanners(false);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
+        
+        rangeStream.close();
     }
     
     private void runTest(RangeStream rangeStream, ASTJexlScript script, List<Range> expectedRanges, List<String> expectedQueries) throws Exception {

@@ -47,6 +47,15 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
      * Expand functions to be AND'ed with their index query equivalents.
      *
      * @param script
+     *            script
+     * @param <T>
+     *            the type cast
+     * @param config
+     *            config
+     * @param dateIndexHelper
+     *            dateIndexHelper
+     * @param metadataHelper
+     *            metadataHelper
      * @return The tree with additional index query portions
      */
     @SuppressWarnings("unchecked")

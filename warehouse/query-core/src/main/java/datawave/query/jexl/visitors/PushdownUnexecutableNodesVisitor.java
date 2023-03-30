@@ -127,7 +127,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        if (!ExecutableDeterminationVisitor.isExecutable(node, data, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, data);
         }
         return node;
@@ -136,7 +136,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // if we have a non-executable and node, then we may be able to resolve this by pushing down the partial children
-        if (!ExecutableDeterminationVisitor.isExecutable(node, data, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             if (ExecutableDeterminationVisitor.isNegated(data)) {
                 super.visit(node, data);
             } else {
@@ -149,7 +149,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTOrNode node, Object data) {
         // if not executable, then we may be able to resolve this by fixing the children children
-        if (!ExecutableDeterminationVisitor.isExecutable(node, data, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             if (ExecutableDeterminationVisitor.isNegated(data)) {
                 // this is a negated Or so for executability needs to be treated like an AND
                 addDelays(node, data);
@@ -173,11 +173,11 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
         // first attempt to fix this by visiting the underlying nodes
         super.visit(node, data);
         // if still not executable, then we may be able to resolve this by pushing down the partial children
-        if (!ExecutableDeterminationVisitor.isExecutable(node, data, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             // push down any partial states
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 JexlNode child = node.jjtGetChild(i);
-                ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, data, config, indexedFields, indexOnlyFields,
+                ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
                                 nonEventFields, forFieldIndex, null, helper);
                 if (state == ExecutableDeterminationVisitor.STATE.PARTIAL) {
                     ASTDelayedPredicate.create(child);
@@ -189,7 +189,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         // if not executable, then visit all children
-        if (!ExecutableDeterminationVisitor.isExecutable(node, data, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, data);
         }
         return node;
@@ -200,8 +200,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
         // if a delayed predicate, then leave it alone
         if (QueryPropertyMarker.findInstance(node).isType(ASTDelayedPredicate.class)) {
             return node;
-        } else if (!ExecutableDeterminationVisitor
-                        .isExecutable(node, data, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
+        } else if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, data);
         }
         return node;
@@ -210,7 +209,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTNotNode node, Object data) {
         // if not executable, then visit all children
-        if (!ExecutableDeterminationVisitor.isExecutable(node, data, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, ExecutableDeterminationVisitor.negateData(data));
         }
         return node;
@@ -367,11 +366,13 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTIntegerLiteral node, Object data) {
         return node;
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTFloatLiteral node, Object data) {
         return node;
     }

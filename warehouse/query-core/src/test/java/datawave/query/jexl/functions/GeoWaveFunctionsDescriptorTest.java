@@ -5,6 +5,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -40,18 +41,21 @@ public class GeoWaveFunctionsDescriptorTest {
         
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.addField("GEO_FIELD", "datawave.data.type.GeometryType");
+        
         // DEFAULT, maxEnvelopes = 4
-        String defaultExpandedQuery = convertFunctionToIndexQuery(query, config);
+        String defaultExpandedQuery = convertFunctionToIndexQuery(query, config, helper);
         Assert.assertEquals(expandedWkt.get(0), defaultExpandedQuery);
         
         // maxEnvelopes = 1
         config.setGeoWaveMaxEnvelopes(1);
-        String oneEnvelopeExpandedQuery = convertFunctionToIndexQuery(query, config);
+        String oneEnvelopeExpandedQuery = convertFunctionToIndexQuery(query, config, helper);
         Assert.assertEquals(expandedWkt.get(1), oneEnvelopeExpandedQuery);
         
         // maxEnvelopes = 2
         config.setGeoWaveMaxEnvelopes(2);
-        String twoEnvelopesExpandedQuery = convertFunctionToIndexQuery(query, config);
+        String twoEnvelopesExpandedQuery = convertFunctionToIndexQuery(query, config, helper);
         Assert.assertEquals(expandedWkt.get(2), twoEnvelopesExpandedQuery);
         
         // Test the the default number of envelopes produces a different expanded query than the single envelope expansion
@@ -97,14 +101,12 @@ public class GeoWaveFunctionsDescriptorTest {
         }
     }
     
-    public static String convertFunctionToIndexQuery(String queryStr, ShardQueryConfiguration config) throws ParseException {
+    public static String convertFunctionToIndexQuery(String queryStr, ShardQueryConfiguration config, MetadataHelper metadataHelper) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryStr);
         ASTFunctionNode func = find(script);
         JexlArgumentDescriptor desc = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(func);
-        MockMetadataHelper helper = new MockMetadataHelper();
-        helper.addField("GEO_FIELD", "datawave.data.type.GeometryType");
         
-        JexlNode indexQuery = desc.getIndexQuery(config, helper, null, null);
+        JexlNode indexQuery = desc.getIndexQuery(config, metadataHelper, null, null);
         return JexlStringBuildingVisitor.buildQuery(indexQuery);
     }
     
@@ -112,7 +114,8 @@ public class GeoWaveFunctionsDescriptorTest {
      * Traverse the node graph to find the first function node in the iteration and returns it. Null is returned if no function node is found.
      *
      * @param root
-     * @return
+     *            root node
+     * @return an AST function node
      */
     public static ASTFunctionNode find(JexlNode root) {
         if (root instanceof ASTFunctionNode) {

@@ -964,7 +964,7 @@ public class EventDataQueryExpressionVisitorTest {
     
     @Test
     public void testUnknownFunctionQuery() throws Exception {
-        String originalQuery = "filter:occurence(FOO, '=', 3) && BAR == '123'";
+        String originalQuery = "filter:occurrence(FOO, '=', 3) && BAR == '123'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
         String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);

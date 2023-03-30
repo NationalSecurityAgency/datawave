@@ -223,6 +223,7 @@ public class AggregatingRecordReader extends LongLineEventRecordReader implement
          * Populates aggValue with the contents of the Text object.
          *
          * @param t
+         *            text object to populate
          * @return true if aggValue is complete, else false and needs more data.
          */
         private boolean process(Text t) {

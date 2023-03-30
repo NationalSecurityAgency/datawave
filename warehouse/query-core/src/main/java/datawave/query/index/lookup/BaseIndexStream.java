@@ -34,6 +34,20 @@ public abstract class BaseIndexStream implements IndexStream {
     protected Tuple2<String,IndexInfo> peekedElement;
     protected boolean hasPeeked = false;
     
+    /**
+     * This constructor is used by BaseIndexStreams that have a backing range stream scanner. I.e., this will actually scan the global index
+     *
+     * @param rangeStreamScanner
+     *            a range stream scanner
+     * @param entryParser
+     *            an entry parser
+     * @param node
+     *            the query node
+     * @param context
+     *            a stream context
+     * @param debugDelegate
+     *            a delegate used for debugging (not in use)
+     */
     public BaseIndexStream(RangeStreamScanner rangeStreamScanner, EntryParser entryParser, JexlNode node, StreamContext context, IndexStream debugDelegate) {
         this.rangeStreamScanner = Preconditions.checkNotNull(rangeStreamScanner);
         this.entryParser = Preconditions.checkNotNull(entryParser);
@@ -43,6 +57,20 @@ public abstract class BaseIndexStream implements IndexStream {
         this.debugDelegate = debugDelegate;
     }
     
+    /**
+     * This constructor is for terms that do not have a range stream scanner.
+     *
+     * This is used by the SHARDS_AND_DAYS hint and terms that do not hit anything in the global index (delayed terms)
+     *
+     * @param iterator
+     *            an iterator, usually empty
+     * @param node
+     *            the query node
+     * @param context
+     *            a stream context
+     * @param debugDelegate
+     *            delegate used for debugging (not in use)
+     */
     public BaseIndexStream(Iterator<Tuple2<String,IndexInfo>> iterator, JexlNode node, StreamContext context, IndexStream debugDelegate) {
         this.rangeStreamScanner = null;
         this.entryParser = null;
@@ -95,6 +123,11 @@ public abstract class BaseIndexStream implements IndexStream {
         hasPeeked = false;
         peekedElement = null;
         return result;
+    }
+    
+    @Override
+    public Tuple2<String,IndexInfo> next(String context) {
+        return next();
     }
     
     @Override

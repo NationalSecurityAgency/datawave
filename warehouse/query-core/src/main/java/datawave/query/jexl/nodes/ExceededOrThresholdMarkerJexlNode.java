@@ -102,8 +102,10 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
      * Get the parameters for this marker node (see constructors)
      * 
      * @param source
+     *            the source
      * @return The params associated with this ExceededOrThresholdMarker
      * @throws IOException
+     *             for problems with read/write
      */
     public static ExceededOrParams getParameters(JexlNode source) throws IOException {
         Map<String,Object> parameters = JexlASTHelper.getAssignments(source);
@@ -119,6 +121,7 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
      * Get the id for this marker node
      *
      * @param source
+     *            the source node
      * @return The id associated with this ExceededOrThresholdMarker
      */
     public static String getId(JexlNode source) {
@@ -134,6 +137,7 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
      * Get the field for this marker node
      *
      * @param source
+     *            the source node
      * @return The field associated with this ExceededOrThresholdMarker
      */
     public static String getField(JexlNode source) {

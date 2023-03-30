@@ -19,8 +19,10 @@ public class RangeFactory {
      * Example: Given shard 20190314_4 and document docId0, will return tld doc range [20190314_4 docId0, 20190314_4 docId0x00)
      *
      * @param shard
+     *            a shard
      * @param docId
-     * @return
+     *            a document id
+     * @return a document range
      */
     public static Range createDocumentSpecificRange(String shard, String docId) {
         Key start = new Key(shard, docId);
@@ -40,8 +42,10 @@ public class RangeFactory {
      * Example: Given shard 20190314_4 and document docId0, will return tld doc range [20190314_4 docId0, 20190314_4 docId0xff)
      *
      * @param shard
+     *            a shard
      * @param docId
-     * @return
+     *            a document id
+     * @return a tld document range
      */
     public static Range createTldDocumentSpecificRange(String shard, String docId) {
         Key start = new Key(shard, docId);

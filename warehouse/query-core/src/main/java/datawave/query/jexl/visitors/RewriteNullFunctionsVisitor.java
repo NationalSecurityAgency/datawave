@@ -72,7 +72,7 @@ import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescri
  * It is similar to the {@link IsNotNullIntentVisitor} in that it rewrites certain filter functions into their ASTEq equivalents.
  * <ul>
  * <li><code>filter:isNull(FIELD)</code> becomes <code>FIELD == null</code></li>
- * <li><code>filter:isNull(F1 || F2)</code> becomes <code>F1 == null || F2 == null</code></li>
+ * <li><code>filter:isNull(F1 || F2)</code> becomes <code>F1 == null &amp;&amp; F2 == null</code></li>
  * <li><code>filter:isNotNull(FIELD)</code> becomes <code>!(FIELD == null)</code></li>
  * <li><code>filter:isNotNull(F1 || F2)</code> becomes <code>!(F1 == null) || !(F2 == null)</code></li>
  * </ul>
@@ -82,7 +82,7 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
     // used to rebuild flattened unions
     private boolean rebuiltMultiFieldedFunction = false;
     
-    private final static String IS_NOT_NULL = "isNotNull";
+    private static final String IS_NOT_NULL = "isNotNull";
     
     private RewriteNullFunctionsVisitor() {}
     
@@ -90,42 +90,14 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
      *
      * @param node
      *            an arbitrary JexlNode
+     * @param <T>
+     *            type of node
      * @return the original query tree
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T rewriteNullFunctions(JexlNode node) {
         node.jjtAccept(new RewriteNullFunctionsVisitor(), null);
         return (T) node;
-    }
-    
-    /**
-     * This is required to produce a flattened query tree
-     *
-     * @param node
-     *            an ASTOrNode
-     * @param data
-     *            an object
-     * @return the same node
-     */
-    @Override
-    public Object visit(ASTOrNode node, Object data) {
-        node.childrenAccept(this, data);
-        
-        if (rebuiltMultiFieldedFunction) {
-            List<JexlNode> children = new ArrayList<>();
-            for (JexlNode child : JexlNodes.children(node)) {
-                JexlNode deref = JexlASTHelper.dereference(child);
-                if (deref instanceof ASTOrNode) {
-                    Collections.addAll(children, JexlNodes.children(deref));
-                } else {
-                    children.add(child);
-                }
-            }
-            JexlNodes.children(node, children.toArray(new JexlNode[0]));
-            rebuiltMultiFieldedFunction = false;
-        }
-        
-        return data;
     }
     
     /**
@@ -141,20 +113,12 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         
-        JexlNode copy = RebuildingVisitor.copy(node);
-        
         FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
-        copy.jjtAccept(visitor, null);
+        node.jjtAccept(visitor, null);
         
-        if (visitor.namespace().equals(EVAL_PHASE_FUNCTION_NAMESPACE)) {
-            JexlNode rewritten = null;
-            if (visitor.name().equals(IS_NULL) || visitor.name().equals(IS_NOT_NULL)) {
-                rewritten = rewriteFilterFunction(visitor);
-            }
-            
-            if (rewritten != null) {
-                JexlNodes.replaceChild(node.jjtGetParent(), node, rewritten);
-            }
+        if (visitor.namespace().equals(EVAL_PHASE_FUNCTION_NAMESPACE) && (visitor.name().equals(IS_NULL) || visitor.name().equals(IS_NOT_NULL))) {
+            JexlNode rewritten = rewriteFilterFunction(visitor);
+            JexlNodes.replaceChild(node.jjtGetParent(), node, rewritten);
         }
         
         return data;
@@ -190,7 +154,11 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
             default:
                 // multi fielded case
                 rebuiltMultiFieldedFunction = true;
-                return JexlNodeFactory.createOrNode(children);
+                if (visitor.name().equals(IS_NULL)) {
+                    return JexlNodeFactory.createAndNode(children);
+                } else {
+                    return JexlNodeFactory.createOrNode(children);
+                }
         }
     }
     
@@ -217,6 +185,64 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
         return JexlNodeFactory.buildNode(new ASTEQNode(ParserTreeConstants.JJTEQNODE), identifier.image, nullLiteral);
     }
     
+    /**
+     * This is required to produce a flattened query tree
+     *
+     * @param node
+     *            an ASTOrNode
+     * @param data
+     *            an object
+     * @return the same node
+     */
+    @Override
+    public Object visit(ASTAndNode node, Object data) {
+        return visitJunction(node, data);
+    }
+    
+    /**
+     * This is required to produce a flattened query tree
+     *
+     * @param node
+     *            an ASTOrNode
+     * @param data
+     *            an object
+     * @return the same node
+     */
+    @Override
+    public Object visit(ASTOrNode node, Object data) {
+        return visitJunction(node, data);
+    }
+    
+    private Object visitJunction(JexlNode node, Object data) {
+        node.childrenAccept(this, data);
+        
+        if (rebuiltMultiFieldedFunction) {
+            flattenJunction(node);
+            rebuiltMultiFieldedFunction = false;
+        }
+        
+        return data;
+    }
+    
+    private void flattenJunction(JexlNode node) {
+        boolean junctionType = node instanceof ASTAndNode;
+        List<JexlNode> children = new ArrayList<>();
+        for (JexlNode child : JexlNodes.children(node)) {
+            
+            if (QueryPropertyMarkerVisitor.getInstance(child).isAnyType()) {
+                children.add(child);
+            } else {
+                JexlNode deref = JexlASTHelper.dereference(child);
+                if (junctionType ? (deref instanceof ASTAndNode) : (deref instanceof ASTOrNode)) {
+                    Collections.addAll(children, JexlNodes.children(deref));
+                } else {
+                    children.add(child);
+                }
+            }
+        }
+        JexlNodes.children(node, children.toArray(new JexlNode[0]));
+    }
+    
     // +-----------------------------+
     // | Descend through these nodes |
     // +-----------------------------+
@@ -229,12 +255,6 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
     
     @Override
     public Object visit(SimpleNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTAndNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
@@ -407,11 +427,13 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTIntegerLiteral node, Object data) {
         return data;
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTFloatLiteral node, Object data) {
         return data;
     }

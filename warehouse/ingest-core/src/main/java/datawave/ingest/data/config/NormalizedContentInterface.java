@@ -25,6 +25,8 @@ public interface NormalizedContentInterface extends Cloneable {
     
     /**
      * Gets the event field name. Normally this is the same as getIndexedFieldName. but could be different
+     * 
+     * @return the event field name
      */
     String getEventFieldName();
     
@@ -62,6 +64,7 @@ public interface NormalizedContentInterface extends Cloneable {
      * Set the field specific markings
      *
      * @param markings
+     *            the markings to set
      */
     void setMarkings(Map<String,String> markings);
     
@@ -70,6 +73,7 @@ public interface NormalizedContentInterface extends Cloneable {
      * processing and sent over to the ErrorDataTypeHandler.
      * 
      * @param e
+     *            the error to throw
      */
     void setError(Throwable e);
     
@@ -90,7 +94,7 @@ public interface NormalizedContentInterface extends Cloneable {
     /**
      * Clone this object implementation
      * 
-     * @return
+     * @return the cloned object
      */
     Object clone();
     

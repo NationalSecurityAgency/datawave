@@ -35,6 +35,9 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     private JexlArithmetic arithmetic;
     private DatawaveJexlEngine engine;
     
+    // do we need to gather phrase offsets
+    private boolean gatherPhraseOffsets = false;
+    
     /**
      * Compiled and flattened jexl script
      */
@@ -74,8 +77,14 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     @Override
     public boolean apply(Tuple3<Key,Document,DatawaveJexlContext> input) {
         
-        Object o = script.execute(input.third());
+        // setup the term offset map to gather phrase indexes if requested.
+        TermOffsetMap termOffsetMap = (TermOffsetMap) input.third().get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
+        if (termOffsetMap != null && isGatherPhraseOffsets() && arithmetic instanceof HitListArithmetic) {
+            termOffsetMap.setGatherPhraseOffsets(true);
+        }
         
+        // now evaluate
+        Object o = script.execute(input.third());
         if (log.isTraceEnabled()) {
             log.trace("Evaluation of " + query + " against " + input.third() + " returned " + o);
         }
@@ -97,10 +106,12 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                 for (ValueTuple hitTuple : hitListArithmetic.getHitTuples()) {
                     
                     ColumnVisibility cv = null;
+                    Key metadata = null;
                     String term = hitTuple.getFieldName() + ':' + hitTuple.getValue();
                     
                     if (hitTuple.getSource() != null) {
                         cv = hitTuple.getSource().getColumnVisibility();
+                        metadata = hitTuple.getSource().getMetadata();
                     }
                     
                     // fall back to extracting column visibility from document
@@ -109,11 +120,15 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                         cv = HitListArithmetic.getColumnVisibilityForHit(document, term);
                         // if no visibility computed, then there were no hits that match fields still in the document......
                     }
+                    // fall back to the metadata from document
+                    if (metadata == null) {
+                        metadata = document.getMetadata();
+                    }
                     
                     if (cv != null) {
                         // unused
                         long timestamp = document.getTimestamp(); // will force an update to make the metadata valid
-                        Content content = new Content(term, document.getMetadata(), document.isToKeep());
+                        Content content = new Content(term, metadata, document.isToKeep());
                         content.setColumnVisibility(cv);
                         attributes.add(content);
                     }
@@ -123,20 +138,29 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                 }
                 
                 // Put the phrase indexes into the document so that we can add phrase excerpts if desired later.
-                TermOffsetMap termOffsetMap = (TermOffsetMap) input.third().get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
                 if (termOffsetMap != null) {
                     PhraseIndexes phraseIndexes = termOffsetMap.getPhraseIndexes();
-                    Content phraseIndexesAttribute = new Content(phraseIndexes.toString(), document.getMetadata(), false);
-                    document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, phraseIndexesAttribute);
-                    if (log.isTraceEnabled()) {
-                        log.trace("Added phrase-indexes " + phraseIndexes + " as attribute " + ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE + " to document "
-                                        + document.getMetadata());
+                    if (phraseIndexes != null) {
+                        Content phraseIndexesAttribute = new Content(phraseIndexes.toString(), document.getMetadata(), false);
+                        document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, phraseIndexesAttribute);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Added phrase-indexes " + phraseIndexes + " as attribute " + ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE + " to document "
+                                            + document.getMetadata());
+                        }
                     }
                 }
             }
             hitListArithmetic.clear();
         }
         return matched;
+    }
+    
+    public boolean isGatherPhraseOffsets() {
+        return gatherPhraseOffsets;
+    }
+    
+    public void setGatherPhraseOffsets(boolean gatherPhraseOffsets) {
+        this.gatherPhraseOffsets = gatherPhraseOffsets;
     }
     
 }

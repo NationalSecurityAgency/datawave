@@ -43,6 +43,10 @@ public class AccentFilter extends TokenFilter {
     
     /**
      * Return the token with accents/diactirics/vowelization stripped off
+     * 
+     * @param token
+     *            the token to strip
+     * @return the token with accents removed
      */
     public static String strip(String token) {
         char c[] = token.toCharArray();

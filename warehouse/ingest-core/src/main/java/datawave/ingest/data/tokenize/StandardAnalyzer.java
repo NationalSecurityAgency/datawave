@@ -48,6 +48,7 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
      * Lucene version.
      * 
      * @param stopWords
+     *            words to create analyzer with
      */
     public StandardAnalyzer(CharArraySet stopWords) {
         super(stopWords);
@@ -60,6 +61,7 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
     
     /**
      * @see #setMaxTokenLength
+     * @return max token length
      */
     public int getMaxTokenLength() {
         return maxTokenLength;
@@ -68,6 +70,9 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
     /**
      * Set maximum allowed token length. If a token is seen that exceeds this length then it is discarded. This setting only takes effect the next time
      * tokenStream or tokenStream is called.
+     * 
+     * @param length
+     *            length of the token
      */
     public void setMaxTokenLength(int length) {
         maxTokenLength = length;

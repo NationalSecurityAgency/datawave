@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * This utility class contains a variety of methods perform operations on GeoWave ranges.
+ * This utility class contains a variety of methods which can be used to perform operations on GeoWave ranges.
  *
  * These methods assume that a full incremental tiered index strategy is being used, with a maximum of 31 bits per dimension, and using the Hilbert
  * Space-Filling Curve. No guarantees are made as to the effectiveness or accuracy of these methods given any other configuration.
@@ -42,7 +42,8 @@ public class GeoWaveUtils {
      * Ensures that the byte buffer is the right size, and has been cleared.
      * 
      * @param longBuffer
-     * @return
+     *            the byte buffer
+     * @return the provided buffer
      */
     private static ByteBuffer initLongBuffer(ByteBuffer longBuffer) {
         longBuffer = (longBuffer != null && longBuffer.array().length == Long.BYTES) ? longBuffer : ByteBuffer.allocate(Long.BYTES);
@@ -363,7 +364,8 @@ public class GeoWaveUtils {
      * Extracts the tier from the GeoWave geohash
      *
      * @param geohash
-     * @return
+     *            a geohash string
+     * @return the tier from the GeoWave geohash
      */
     public static int decodeTier(String geohash) {
         return Integer.parseInt(geohash.substring(0, 2), 16);
@@ -373,7 +375,8 @@ public class GeoWaveUtils {
      * Extracts the tier from the byte array
      * 
      * @param byteArray
-     * @return
+     *            a byte array
+     * @return the tier from the byte array
      */
     public static int decodeTier(byte[] byteArray) {
         return byteArray[0];
@@ -383,7 +386,8 @@ public class GeoWaveUtils {
      * Extracts the position from the GeoWave geohash
      * 
      * @param geohash
-     * @return
+     *            a geohash string
+     * @return the position from the GeoWave geohash
      */
     public static long decodePosition(String geohash) {
         return geohash.equals("00") ? 0L : Long.parseLong(geohash.substring(2), 16);
@@ -393,7 +397,8 @@ public class GeoWaveUtils {
      * Extracts the position from the byte array
      * 
      * @param byteArray
-     * @return
+     *            a byte array
+     * @return position from the byte array
      */
     public static long decodePosition(byte[] byteArray) {
         return decodePosition(byteArray, null);
@@ -403,9 +408,10 @@ public class GeoWaveUtils {
      * Extracts the position from the byte array
      * 
      * @param byteArray
+     *            a byte array
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
-     * @return
+     * @return the position from the byte array
      */
     public static long decodePosition(byte[] byteArray, ByteBuffer longBuffer) {
         if (byteArray[0] != (byte) 0) {
@@ -425,7 +431,8 @@ public class GeoWaveUtils {
      * Determines the number of hex characters needed to represent a position at a given tier. This excludes the byte reserved for the tier identifier.
      * 
      * @param tier
-     * @return
+     *            the given tier
+     * @return number of hex characters needed to represent a position
      */
     public static int hexCharsPerTier(int tier) {
         String hexString = String.format("%X", ((long) Math.pow(2.0, tier) - 1));
@@ -439,7 +446,8 @@ public class GeoWaveUtils {
      * Creates a byte array from the given GeoWave geohash
      * 
      * @param geohash
-     * @return
+     *            a geowave geohash
+     * @return a byte array
      */
     public static byte[] createByteArray(String geohash) {
         return createByteArray(geohash, null);
@@ -449,8 +457,10 @@ public class GeoWaveUtils {
      * Creates a byte array from the given tier and position
      *
      * @param tier
+     *            a tier
      * @param position
-     * @return
+     *            a position
+     * @return a byte array
      */
     public static byte[] createByteArray(int tier, long position) {
         return createByteArray(tier, position, null);
@@ -460,9 +470,10 @@ public class GeoWaveUtils {
      * Creates a byte array from the given GeoWave geohash
      * 
      * @param geohash
+     *            a geohash string
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
-     * @return
+     * @return a byte array
      */
     public static byte[] createByteArray(String geohash, ByteBuffer longBuffer) {
         return createByteArray(decodeTier(geohash), decodePosition(geohash), longBuffer);
@@ -472,10 +483,12 @@ public class GeoWaveUtils {
      * Creates a byte array from the given tier and position
      * 
      * @param tier
+     *            a tier
      * @param position
+     *            a position
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
-     * @return
+     * @return a byte array
      */
     public static byte[] createByteArray(int tier, long position, ByteBuffer longBuffer) {
         if (tier != 0) {
@@ -496,8 +509,10 @@ public class GeoWaveUtils {
      * Creates a ByteArrayRange from the given start and end GeoWave geohashes
      * 
      * @param startGeohash
+     *            a start geohash
      * @param endGeohash
-     * @return
+     *            an end geohash
+     * @return a ByteArrayRange
      */
     public static ByteArrayRange createByteArrayRange(String startGeohash, String endGeohash) {
         return createByteArrayRange(startGeohash, endGeohash, null);
@@ -507,9 +522,12 @@ public class GeoWaveUtils {
      * Creates a ByteArrayRange from the given tier, and min and max positions
      * 
      * @param tier
+     *            a tier
      * @param min
+     *            min position
      * @param max
-     * @return
+     *            max position
+     * @return a ByteArrayRange
      */
     public static ByteArrayRange createByteArrayRange(int tier, long min, long max) {
         return createByteArrayRange(tier, min, max, null);
@@ -519,10 +537,12 @@ public class GeoWaveUtils {
      * Creates a ByteArrayRange from the given start and end GeoWave geohashes
      * 
      * @param startGeohash
+     *            a start geohash
      * @param endGeohash
+     *            an end geohash
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
-     * @return
+     * @return a ByteArrayRange
      */
     public static ByteArrayRange createByteArrayRange(String startGeohash, String endGeohash, ByteBuffer longBuffer) {
         return createByteArrayRange(decodeTier(startGeohash), decodePosition(startGeohash), decodePosition(endGeohash), longBuffer);
@@ -532,11 +552,14 @@ public class GeoWaveUtils {
      * Creates a ByteArrayRange from the given tier, and min and max positions
      * 
      * @param tier
+     *            a given tier
      * @param min
+     *            min position
      * @param max
+     *            max position
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
-     * @return
+     * @return a ByteArrayRange
      */
     public static ByteArrayRange createByteArrayRange(int tier, long min, long max, ByteBuffer longBuffer) {
         longBuffer = initLongBuffer(longBuffer);
@@ -548,7 +571,8 @@ public class GeoWaveUtils {
      * Determines whether the given bounds are within the bounds of the map.
      * 
      * @param bounds
-     * @return
+     *            the given bounds
+     * @return whether the given bounds are within the bounds of the map
      */
     private static boolean inBounds(MultiDimensionalNumericData bounds) {
         // @formatter:off
@@ -563,7 +587,8 @@ public class GeoWaveUtils {
      * Given a GeoWave geohash position, this will generate a Geometry which represents that position.
      * 
      * @param geohash
-     * @return
+     *            geohash position
+     * @return Geometry which represents that position
      */
     public static Geometry positionToGeometry(String geohash) {
         return positionToGeometry(geohash, null);
@@ -573,8 +598,10 @@ public class GeoWaveUtils {
      * Given a position at a given tier, this will generate a Geometry which represents that position.
      * 
      * @param tier
+     *            a tier
      * @param position
-     * @return
+     *            a position
+     * @return a Geometry
      */
     public static Geometry positionToGeometry(int tier, long position) {
         return positionToGeometry(tier, position, null);
@@ -584,9 +611,10 @@ public class GeoWaveUtils {
      * Given a GeoWave geohash position, this will generate a Geometry which represents that position.
      * 
      * @param geohash
+     *            a GeoWave geohash position
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
-     * @return
+     * @return a Geometry
      */
     public static Geometry positionToGeometry(String geohash, ByteBuffer longBuffer) {
         longBuffer = initLongBuffer(longBuffer);
@@ -596,12 +624,14 @@ public class GeoWaveUtils {
     
     /**
      * Given a position at a given tier, this will generate a Geometry which represents that position.
-     * 
+     *
      * @param tier
+     *            a tier
      * @param position
+     *            a position
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
-     * @return
+     * @return a Geometry
      */
     public static Geometry positionToGeometry(int tier, long position, ByteBuffer longBuffer) {
         longBuffer = initLongBuffer(longBuffer);
@@ -613,7 +643,8 @@ public class GeoWaveUtils {
      * Given a byte array, this will generate a Geometry which represents that position.
      * 
      * @param byteArray
-     * @return
+     *            a byte array
+     * @return a Geometry
      */
     public static Geometry positionToGeometry(byte[] byteArray) {
         MultiDimensionalNumericData bounds = GeometryNormalizer.indexStrategy.getRangeForId(null, byteArray);
@@ -622,10 +653,12 @@ public class GeoWaveUtils {
     
     /**
      * Given a range defined by the start and end geohashes, this will generate a Geometry which represents that range.
-     * 
+     *
      * @param startGeohash
+     *            a start geohash
      * @param endGeohash
-     * @return
+     *            an end geohash
+     * @return a Geometry
      */
     public static Geometry rangeToGeometry(String startGeohash, String endGeohash) {
         return rangeToGeometry(startGeohash, endGeohash, null);
@@ -635,7 +668,8 @@ public class GeoWaveUtils {
      * Given a range defined by the start and end geohashes, this will generate a Geometry which represents that range.
      * 
      * @param byteArrayRange
-     * @return
+     *            a range
+     * @return a Geometry
      */
     public static Geometry rangeToGeometry(ByteArrayRange byteArrayRange) {
         return rangeToGeometry(byteArrayRange, null);
@@ -645,9 +679,12 @@ public class GeoWaveUtils {
      * Given a range at a given tier, this will generate a Geometry which represents that range.
      *
      * @param tier
+     *            a tier
      * @param start
+     *            the start
      * @param end
-     * @return
+     *            the end
+     * @return a Geometry
      */
     public static Geometry rangeToGeometry(int tier, long start, long end) {
         return rangeToGeometry(tier, start, end, null);
@@ -655,12 +692,14 @@ public class GeoWaveUtils {
     
     /**
      * Given a range defined by the start and end geohashes, this will generate a Geometry which represents that range.
-     * 
+     *
      * @param startGeohash
+     *            a start geohash
      * @param endGeohash
+     *            an end geohash
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
-     * @return
+     * @return a Geometry
      */
     public static Geometry rangeToGeometry(String startGeohash, String endGeohash, ByteBuffer longBuffer) {
         return rangeToGeometry(decodeTier(startGeohash), decodePosition(startGeohash), decodePosition(endGeohash), longBuffer);
@@ -670,9 +709,10 @@ public class GeoWaveUtils {
      * Given a range defined by byteArrayRange, this will generate a Geometry which represents that range.
      * 
      * @param byteArrayRange
+     *            a range defined by byteArrayRange
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
-     * @return
+     * @return a Geometry
      */
     public static Geometry rangeToGeometry(ByteArrayRange byteArrayRange, ByteBuffer longBuffer) {
         return rangeToGeometry(decodeTier(byteArrayRange.getStart()), decodePosition(byteArrayRange.getStart()), decodePosition(byteArrayRange.getEnd()),
@@ -683,11 +723,14 @@ public class GeoWaveUtils {
      * Given a range at a given tier, this will generate a Geometry which represents that range.
      * 
      * @param tier
+     *            a given tier
      * @param start
+     *            a start
      * @param end
+     *            a end
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
-     * @return
+     * @return a Geometry
      */
     public static Geometry rangeToGeometry(int tier, long start, long end, ByteBuffer longBuffer) {
         longBuffer = initLongBuffer(longBuffer);
@@ -716,58 +759,68 @@ public class GeoWaveUtils {
     }
     
     /**
-     * This performs a sort of quad-tree decomposition on the given range. This algorithm searched for subranges within the original range which can be
+     * This performs a sort of quad-tree decomposition on the given range. This algorithm searches for subranges within the original range which can be
      * represented in a simplified fashion at a lower granularity tier. The resulting list of byte arrays will consist of an equivalent set of ids, spread out
      * across multiple tiers, which is topologically equivalent to the footprint of the original range.
      *
      * @param startGeohash
+     *            a start geohash
      * @param endGeohash
-     * @return
+     *            an end geohash
+     * @return equivalent set of ids
      */
     public static List<byte[]> decomposeRange(String startGeohash, String endGeohash) {
         return decomposeRange(startGeohash, endGeohash, null);
     }
     
     /**
-     * This performs a sort of quad-tree decomposition on the given range. This algorithm searched for subranges within the original range which can be
+     * This performs a sort of quad-tree decomposition on the given range. This algorithm searches for subranges within the original range which can be
      * represented in a simplified fashion at a lower granularity tier. The resulting list of byte arrays will consist of an equivalent set of ids, spread out
      * across multiple tiers, which is topologically equivalent to the footprint of the original range.
      *
      * @param tier
+     *            a tier
      * @param start
+     *            the start
      * @param end
-     * @return
+     *            the end
+     * @return equivalent set of ids
      */
     public static List<byte[]> decomposeRange(int tier, long start, long end) {
         return decomposeRange(tier, start, end, null);
     }
     
     /**
-     * This performs a sort of quad-tree decomposition on the given range. This algorithm searched for subranges within the original range which can be
+     * This performs a sort of quad-tree decomposition on the given range. This algorithm searches for subranges within the original range which can be
      * represented in a simplified fashion at a lower granularity tier. The resulting list of byte arrays will consist of an equivalent set of ids, spread out
      * across multiple tiers, which is topologically equivalent to the footprint of the original range.
      *
      * @param startGeohash
+     *            a start geohash
      * @param endGeohash
+     *            an end geohash
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
-     * @return
+     * @return equivalent set of ids
      */
     public static List<byte[]> decomposeRange(String startGeohash, String endGeohash, ByteBuffer longBuffer) {
         return decomposeRange(decodeTier(startGeohash), decodePosition(startGeohash), decodePosition(endGeohash), longBuffer);
     }
     
     /**
-     * This performs a sort of quad-tree decomposition on the given range. This algorithm searched for subranges within the original range which can be
+     * This performs a sort of quad-tree decomposition on the given range. This algorithm searches for subranges within the original range which can be
      * represented in a simplified fashion at a lower granularity tier. The resulting list of byte arrays will consist of an equivalent set of ids, spread out
      * across multiple tiers, which is topologically equivalent to the footprint of the original range.
-     * 
+     *
      * @param tier
+     *            a tier
      * @param start
+     *            the start
      * @param end
+     *            the end
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
-     * @return
+     * @return equivalent set of ids
      */
     public static List<byte[]> decomposeRange(int tier, long start, long end, ByteBuffer longBuffer) {
         longBuffer = initLongBuffer(longBuffer);

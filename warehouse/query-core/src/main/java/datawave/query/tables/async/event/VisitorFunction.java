@@ -3,7 +3,6 @@ package datawave.query.tables.async.event;
 import com.google.common.base.Function;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Lists;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -13,6 +12,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.DateIndexCleanupVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
+import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
@@ -50,6 +50,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -174,9 +175,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         madeChange = true;
                     }
                     
-                    List<String> debug = null;
+                    LinkedList<String> debug = null;
                     if (log.isTraceEnabled()) {
-                        debug = Lists.newArrayList();
+                        debug = new LinkedList<>();
                     }
                     
                     if (!config.isDisableWhindexFieldMappings() && !evaluatedPreviously) {
@@ -295,6 +296,14 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         newQuery = JexlStringBuildingVisitor.buildQuery(script);
                     }
                     
+                    pruneIvaratorConfigs(script, newIteratorSetting);
+                    
+                    pruneEmptyOptions(newIteratorSetting);
+                    
+                    if (config.getReduceQueryFields()) {
+                        reduceQueryFields(script, newIteratorSetting);
+                    }
+                    
                     try {
                         queryCache.put(query, newQuery);
                     } catch (NullPointerException npe) {
@@ -335,12 +344,83 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
      * Serializes the query iterator
      * 
      * @param newIteratorSetting
+     *            an instance of {@link IteratorSetting}
      */
     private void serializeQuery(IteratorSetting newIteratorSetting) {
         newIteratorSetting.addOption(QueryOptions.SERIAL_EVALUATION_PIPELINE, "true");
         newIteratorSetting.addOption(QueryOptions.MAX_EVALUATION_PIPELINES, "1");
         newIteratorSetting.addOption(QueryOptions.MAX_PIPELINE_CACHED_RESULTS, "1");
+    }
+    
+    /**
+     * Prune empty options from the iterator settings
+     *
+     * @param settings
+     *            an instance of {@link IteratorSetting}
+     */
+    protected void pruneEmptyOptions(IteratorSetting settings) {
+        Set<String> optionsToRemove = new HashSet<>();
+        for (Map.Entry<String,String> entry : settings.getOptions().entrySet()) {
+            switch (entry.getKey()) {
+                case QueryOptions.INDEX_ONLY_FIELDS:
+                case QueryOptions.INDEXED_FIELDS:
+                    // these options won't be blank in production, but will be blank for some unit tests.
+                    // leave this switch statement in until unit tests can be fixed to more accurately
+                    // represent a prod-like environment.
+                    continue;
+                default:
+                    if (org.apache.commons.lang3.StringUtils.isBlank(entry.getValue())) {
+                        optionsToRemove.add(entry.getKey());
+                    }
+            }
+        }
         
+        for (String option : optionsToRemove) {
+            settings.removeOption(option);
+        }
+    }
+    
+    /**
+     * If the query does not require an Ivarator, remove Ivarator options from the query settings
+     *
+     * @param script
+     *            the query script
+     * @param settings
+     *            an {@link IteratorSetting}
+     */
+    protected void pruneIvaratorConfigs(ASTJexlScript script, IteratorSetting settings) {
+        if (script != null && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
+            settings.removeOption(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE);
+            settings.removeOption(QueryOptions.IVARATOR_CACHE_DIR_CONFIG);
+            settings.removeOption(QueryOptions.IVARATOR_NUM_RETRIES);
+            settings.removeOption(QueryOptions.IVARATOR_PERSIST_VERIFY);
+            settings.removeOption(QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT);
+            settings.removeOption(QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD);
+            settings.removeOption(QueryOptions.IVARATOR_SCAN_TIMEOUT);
+            
+            settings.removeOption(QueryOptions.MAX_IVARATOR_OPEN_FILES);
+            settings.removeOption(QueryOptions.MAX_IVARATOR_RESULTS);
+            settings.removeOption(QueryOptions.MAX_IVARATOR_SOURCES);
+        }
+    }
+    
+    /**
+     * Reduce the serialized query fields via intersection with fields in the reduced script
+     *
+     * @param script
+     *            the query, potentially reduced via RangeStream pruning
+     * @param settings
+     *            the iterator settings
+     */
+    protected void reduceQueryFields(ASTJexlScript script, IteratorSetting settings) {
+        Set<String> queryFields = ReduceFields.getQueryFields(script);
+        
+        ReduceFields.reduceFieldsForOption(QueryOptions.CONTENT_EXPANSION_FIELDS, queryFields, settings);
+        ReduceFields.reduceFieldsForOption(QueryOptions.INDEXED_FIELDS, queryFields, settings);
+        ReduceFields.reduceFieldsForOption(QueryOptions.INDEX_ONLY_FIELDS, queryFields, settings);
+        ReduceFields.reduceFieldsForOption(QueryOptions.TERM_FREQUENCY_FIELDS, queryFields, settings);
+        
+        // might also look at COMPOSITE_FIELDS, EXCERPT_FIELDS, and GROUP_FIELDS
     }
     
     // push down large fielded lists. Assumes that the hdfs query cache uri and

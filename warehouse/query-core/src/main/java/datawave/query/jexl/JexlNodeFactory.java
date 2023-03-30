@@ -4,13 +4,11 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.query.Constants;
-import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ValueSet;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
@@ -55,8 +53,11 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import static datawave.query.jexl.visitors.RebuildingVisitor.copy;
 
 /**
  * Factory methods that can create JexlNodes
@@ -78,7 +79,10 @@ public class JexlNodeFactory {
      * 
      * @param containerType
      *            should we create OR nodes or AND nodes
-     * @param node
+     * @param isNegated
+     *            is this node negated?
+     * @param original
+     *            the original JexlNode
      * @param fieldsToValues
      *            A mapping of fields to values. If the values for a field is empty, then the original regex should be used.
      * @param expandFields
@@ -89,16 +93,16 @@ public class JexlNodeFactory {
      *            Keep the original node along with any expansions
      * @return A new sub query
      */
-    public static JexlNode createNodeTreeFromFieldsToValues(ContainerType containerType, JexlNode node, JexlNode orgNode, IndexLookupMap fieldsToValues,
+    public static JexlNode createNodeTreeFromFieldsToValues(ContainerType containerType, boolean isNegated, JexlNode original, IndexLookupMap fieldsToValues,
                     boolean expandFields, boolean expandValues, boolean keepOriginalNode) {
         // do nothing if not expanding fields or values
         if (!expandFields && !expandValues) {
-            return orgNode;
+            return original;
         }
         
-        // no expansions needed if the fieldname threshold is exceeded
+        // no expansions needed if the field name threshold is exceeded
         if (fieldsToValues.isKeyThresholdExceeded()) {
-            return new ExceededTermThresholdMarkerJexlNode(orgNode);
+            throw new DatawaveFatalQueryException("Failed to expand unfielded term");
         }
         
         // collapse the value sets if not expanding fields
@@ -108,142 +112,154 @@ public class JexlNodeFactory {
                 allValues.addAll(values);
             }
             fieldsToValues.clear();
-            for (String identifier : JexlASTHelper.getIdentifierNames(orgNode)) {
+            for (String identifier : JexlASTHelper.getIdentifierNames(original)) {
                 fieldsToValues.put(identifier, allValues);
             }
         }
         
+        List<JexlNode> children = new LinkedList<>();
         Set<String> fields = fieldsToValues.keySet();
-        
-        JexlNode parentNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE) : new ASTAndNode(
-                        ParserTreeConstants.JJTANDNODE));
-        int parentNodeChildCount = 0;
-        
         if (keepOriginalNode) {
-            JexlNodes.ensureCapacity(parentNode, fields.size() + 1);
-            JexlNode child = RebuildingVisitor.copy(orgNode);
-            parentNode.jjtAddChild(child, parentNodeChildCount);
-            child.jjtSetParent(parentNode);
-            parentNodeChildCount++;
+            JexlNode child = copy(original);
+            children.add(child);
             // remove this entry from the fieldsToValues to avoid duplication
-            for (String identifier : JexlASTHelper.getIdentifierNames(orgNode)) {
-                for (Object value : JexlASTHelper.getLiteralValues(orgNode)) {
-                    fieldsToValues.remove(identifier, value);
-                }
+            Set<String> identifiers = JexlASTHelper.getIdentifierNames(original);
+            for (Object value : JexlASTHelper.getLiteralValues(original)) {
+                identifiers.forEach((id) -> fieldsToValues.remove(id, value));
             }
-        } else {
-            JexlNodes.ensureCapacity(parentNode, fields.size());
         }
         
         for (String field : fields) {
-            ValueSet valuesForField = fieldsToValues.get(field);
-            
-            // if not expanding values, then reuse the original node with simply a new field name (anyfield only)
-            if (!expandValues) {
-                JexlNode child = RebuildingVisitor.copy(orgNode);
-                for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(child)) {
-                    if (identifier.image.equals(Constants.ANY_FIELD)) {
-                        identifier.image = field;
-                    }
-                }
-                parentNode.jjtAddChild(child, parentNodeChildCount);
-                child.jjtSetParent(parentNode);
-                
-                parentNodeChildCount++;
-            }
-            
-            // a threshold exceeded set of values requires using the original
-            // node with a new fieldname, wrapped with a marker node
-            else if (valuesForField.isThresholdExceeded()) {
-                // create a set of nodes wrapping each pattern
-                List<String> patterns = new ArrayList<>(fieldsToValues.getPatterns() == null ? new ArrayList<>() : fieldsToValues.getPatterns());
-                if (patterns.isEmpty()) {
-                    JexlNode child = new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(orgNode, field));
-                    
-                    parentNode.jjtAddChild(child, parentNodeChildCount);
-                    child.jjtSetParent(parentNode);
-                    
-                    parentNodeChildCount++;
-                } else if (patterns.size() == 1) {
-                    JexlNode child = new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(orgNode, field, patterns.get(0)));
-                    
-                    parentNode.jjtAddChild(child, parentNodeChildCount);
-                    child.jjtSetParent(parentNode);
-                    
-                    parentNodeChildCount++;
-                } else {
-                    int childNodeChildCount = 0;
-                    JexlNode childNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE) : new ASTAndNode(
-                                    ParserTreeConstants.JJTANDNODE));
-                    JexlNodes.ensureCapacity(childNode, patterns.size());
-                    for (String pattern : patterns) {
-                        JexlNode child = new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(orgNode, field, pattern));
-                        
-                        childNode.jjtAddChild(child, childNodeChildCount);
-                        child.jjtSetParent(childNode);
-                        
-                        childNodeChildCount++;
-                    }
-                    
-                    if (0 < childNodeChildCount) {
-                        JexlNode wrappedChildNode = wrap(childNode);
-                        childNode.jjtSetParent(wrappedChildNode);
-                        
-                        parentNode.jjtAddChild(wrappedChildNode, parentNodeChildCount);
-                        childNode.jjtSetParent(childNode);
-                        
-                        parentNodeChildCount++;
-                    }
-                }
-            }
-            
-            // Don't create an OR if we have only one value, directly attach it
-            else if (1 == valuesForField.size()) {
-                JexlNode child = buildUntypedNode(node, field, valuesForField.iterator().next());
-                
-                parentNode.jjtAddChild(child, parentNodeChildCount);
-                child.jjtSetParent(parentNode);
-                
-                parentNodeChildCount++;
-            } else {
-                int childNodeChildCount = 0;
-                JexlNode childNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE) : new ASTAndNode(
-                                ParserTreeConstants.JJTANDNODE));
-                JexlNodes.ensureCapacity(childNode, valuesForField.size());
-                
-                for (String value : valuesForField) {
-                    JexlNode child = buildUntypedNode(node, field, value);
-                    
-                    childNode.jjtAddChild(child, childNodeChildCount);
-                    child.jjtSetParent(childNode);
-                    
-                    childNodeChildCount++;
-                }
-                
-                if (0 < childNodeChildCount) {
-                    JexlNode wrappedChildNode = wrap(childNode);
-                    childNode.jjtSetParent(wrappedChildNode);
-                    
-                    parentNode.jjtAddChild(wrappedChildNode, parentNodeChildCount);
-                    childNode.jjtSetParent(childNode);
-                    
-                    parentNodeChildCount++;
-                }
+            JexlNode child = createNodeFromValuesForField(field, fieldsToValues, original, containerType, expandValues, isNegated);
+            if (child != null) {
+                children.add(child);
             }
         }
         
-        switch (parentNodeChildCount) {
+        switch (children.size()) {
             case 0:
-                // in this case we had no matches for the range, so this expression gets replaced with a FALSE node.
-                return new ASTFalseNode(ParserTreeConstants.JJTFALSENODE);
+                if (isNegated) {
+                    // retain negated regex nodes that find nothing in the global index
+                    return original;
+                } else {
+                    // a positive regex that found nothing gets pruned with a FALSE node.
+                    return new ASTFalseNode(ParserTreeConstants.JJTFALSENODE);
+                }
             case 1:
-                JexlNode child = parentNode.jjtGetChild(0);
-                JexlNodes.promote(parentNode, child);
-                return child;
+                // Only one child node was generated, just return that
+                return children.get(0);
             default:
-                JexlNode wrappedParentNode = wrap(parentNode);
-                parentNode.jjtSetParent(wrappedParentNode);
-                return wrappedParentNode;
+                // create the proper parent node and add children
+                JexlNode junction;
+                if (containerType.equals(ContainerType.OR_NODE)) {
+                    junction = new ASTOrNode(ParserTreeConstants.JJTORNODE);
+                } else {
+                    junction = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
+                }
+                return JexlNodes.children(junction, children.toArray(new JexlNode[0]));
+        }
+    }
+    
+    /**
+     * Helper method for {@link JexlNodeFactory#createNodeTreeFromFieldsToValues(ContainerType, boolean, JexlNode, IndexLookupMap, boolean, boolean, boolean)}
+     *
+     * @param field
+     *            create a node for this field
+     * @param fieldsToValues
+     *            an {@link datawave.query.jexl.lookups.IndexLookup}
+     * @param original
+     *            the original JexlNode
+     * @param type
+     *            create an ASTOrNode or an ASTAndNode
+     * @param expandValues
+     *            should we expand values
+     * @param isNegated
+     *            boolean indicating if the original node is negated
+     * @return a JexlNode
+     */
+    public static JexlNode createNodeFromValuesForField(String field, IndexLookupMap fieldsToValues, JexlNode original, ContainerType type,
+                    boolean expandValues, boolean isNegated) {
+        
+        ValueSet valuesForField = fieldsToValues.get(field);
+        
+        if (!expandValues) {
+            
+            // If not expanding values replace the original node's '_ANYFIELD_' with the specified field
+            JexlNode child = copy(original);
+            for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(child)) {
+                if (identifier.image.equals(Constants.ANY_FIELD)) {
+                    identifier.image = field;
+                }
+            }
+            return child;
+            
+        } else if (valuesForField.isThresholdExceeded()) {
+            
+            // a threshold exceeded set of values requires using the original
+            // node with a new field name, wrapped with a marker node
+            
+            // create a set of nodes wrapping each pattern
+            List<String> patterns = new ArrayList<>(fieldsToValues.getPatterns() == null ? new ArrayList<>() : fieldsToValues.getPatterns());
+            if (patterns.isEmpty()) {
+                return new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(copy(original), field));
+            } else if (patterns.size() == 1) {
+                return new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(copy(original), field, patterns.get(0)));
+            } else {
+                
+                JexlNode junction;
+                List<JexlNode> children = new LinkedList<>();
+                
+                if (type.equals(ContainerType.OR_NODE)) {
+                    junction = new ASTOrNode(ParserTreeConstants.JJTORNODE);
+                } else {
+                    junction = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
+                }
+                
+                for (String pattern : patterns) {
+                    JexlNode child = new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(copy(original), field, pattern));
+                    children.add(child);
+                }
+                
+                switch (children.size()) {
+                    case 0:
+                        return null;
+                    case 1:
+                        return children.get(0);
+                    default:
+                        return JexlNodes.children(junction, children.toArray(new JexlNode[0]));
+                }
+            }
+            
+        } else if (1 == valuesForField.size()) {
+            
+            // Don't create an OR if we have only one value, directly attach it
+            String value = valuesForField.iterator().next();
+            return isNegated ? JexlNodeFactory.buildNENode(field, value) : JexlNodeFactory.buildEQNode(field, value);
+            
+        } else {
+            
+            JexlNode junction;
+            List<JexlNode> children = new LinkedList<>();
+            
+            if (type.equals(ContainerType.OR_NODE)) {
+                junction = new ASTOrNode(ParserTreeConstants.JJTORNODE);
+            } else {
+                junction = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
+            }
+            
+            for (String value : valuesForField) {
+                JexlNode child = isNegated ? JexlNodeFactory.buildNENode(field, value) : JexlNodeFactory.buildEQNode(field, value);
+                children.add(child);
+            }
+            
+            switch (children.size()) {
+                case 0:
+                    return null;
+                case 1:
+                    return children.get(0);
+                default:
+                    return JexlNodes.children(junction, children.toArray(new JexlNode[0]));
+            }
         }
     }
     
@@ -325,9 +341,16 @@ public class JexlNodeFactory {
      * Returns an Or of the given fieldname and values, wrapping the JexlOrNode correctly in a Reference and ReferenceExpression (parens)
      * 
      * @param node
+     *            a node
+     * @param containerType
+     *            the container type
+     * @param orgNode
+     *            the org node
      * @param fieldName
+     *            the field name
      * @param fieldValues
-     * @return
+     *            the field values
+     * @return a node reference or for the fieldname and values
      */
     public static JexlNode createNodeTreeFromFieldValues(ContainerType containerType, JexlNode node, JexlNode orgNode, String fieldName,
                     Collection<String> fieldValues) {
@@ -405,7 +428,8 @@ public class JexlNodeFactory {
      * Wrap collection of JexlNodes into an ASTAndNode
      * 
      * @param children
-     * @return
+     *            collection of nodes
+     * @return a jexl node
      */
     public static JexlNode createAndNode(Iterable<? extends JexlNode> children) {
         return wrapChildren(new ASTAndNode(ParserTreeConstants.JJTANDNODE), children);
@@ -415,7 +439,8 @@ public class JexlNodeFactory {
      * Wrap collection of JexlNodes into an ASTAndNode
      * 
      * @param children
-     * @return
+     *            collection of nodes
+     * @return a jexl node
      */
     public static JexlNode createUnwrappedAndNode(Iterable<? extends JexlNode> children) {
         return setChildren(new ASTAndNode(ParserTreeConstants.JJTANDNODE), children);
@@ -425,7 +450,8 @@ public class JexlNodeFactory {
      * Wrap a collection of JexlNodes into an ASTOrNode
      * 
      * @param children
-     * @return
+     *            collection of nodes
+     * @return a jexl node
      */
     public static JexlNode createOrNode(Iterable<? extends JexlNode> children) {
         return wrapChildren(new ASTOrNode(ParserTreeConstants.JJTORNODE), children);
@@ -435,7 +461,8 @@ public class JexlNodeFactory {
      * Wrap a collection of JexlNodes into an ASTOrNode
      * 
      * @param children
-     * @return
+     *            collection of nodes
+     * @return a jexl node
      */
     public static JexlNode createUnwrappedOrNode(Iterable<? extends JexlNode> children) {
         return setChildren(new ASTOrNode(ParserTreeConstants.JJTORNODE), children);
@@ -445,8 +472,10 @@ public class JexlNodeFactory {
      * Add the children JexlNodes to the parent JexlNode, correctly setting parent pointers, parenthesis, and reference nodes.
      * 
      * @param parent
+     *            the parent node
      * @param children
-     * @return
+     *            collection of nodes
+     * @return a jexl node
      */
     public static JexlNode wrapChildren(JexlNode parent, Iterable<? extends JexlNode> children) {
         parent = setChildren(parent, children);
@@ -467,8 +496,10 @@ public class JexlNodeFactory {
      * Add the children JexlNodes to the parent JexlNode, correctly setting parent pointers, parenthesis, and reference nodes.
      * 
      * @param parent
+     *            the parent node
      * @param children
-     * @return
+     *            collection of nodes
+     * @return a jexl node
      */
     public static JexlNode setChildren(JexlNode parent, Iterable<? extends JexlNode> children) {
         int i = 0;
@@ -488,7 +519,8 @@ public class JexlNodeFactory {
      * Wrap an ASTAndNode or ASTOrNode in parenthesis if it has more than one child. Will return itself if wrapping is unnecessary.
      * 
      * @param toWrap
-     * @return
+     *            the node to wrap
+     * @return a wrapped node
      */
     public static JexlNode wrap(JexlNode toWrap) {
         if ((toWrap instanceof ASTAndNode || toWrap instanceof ASTOrNode) && toWrap.jjtGetNumChildren() > 1) {
@@ -511,7 +543,8 @@ public class JexlNodeFactory {
      * Create an ASTJexlScript with the provided child
      * 
      * @param child
-     * @return
+     *            a child node
+     * @return a jexl script
      */
     public static ASTJexlScript createScript(JexlNode child) {
         ASTJexlScript script = new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT);
@@ -555,12 +588,12 @@ public class JexlNodeFactory {
             return buildUntypedDblIdentifierNode(shallowCopy(original), left, right);
             
         } else if (left instanceof ASTMulNode || right instanceof ASTMulNode) {
-            return RebuildingVisitor.copy(original);
+            return copy(original);
         } else if (left instanceof ASTAdditiveNode || right instanceof ASTAdditiveNode) {
-            return RebuildingVisitor.copy(original);
+            return copy(original);
             
         } else if (left instanceof ASTModNode || right instanceof ASTModNode) {
-            return RebuildingVisitor.copy(original);
+            return copy(original);
             
         } else if (left instanceof ASTDivNode && JexlASTHelper.isLiteral(right)) {
             return buildUntypedDblLiteralNode(shallowCopy(original), left, right);
@@ -653,7 +686,9 @@ public class JexlNodeFactory {
                         || original instanceof ASTAssignment || original instanceof ASTIdentifier || original instanceof ASTTrueNode) {
             JexlNode newNode = shallowCopy(original);
             for (int i = 0; i < original.jjtGetNumChildren(); i++) {
-                newNode.jjtAddChild(buildUntypedNode(original.jjtGetChild(i), fieldName), i);
+                JexlNode newChild = buildUntypedNode(original.jjtGetChild(i), fieldName);
+                newNode.jjtAddChild(newChild, i);
+                newChild.jjtSetParent(newNode);
             }
             return newNode;
         }
@@ -744,6 +779,10 @@ public class JexlNodeFactory {
         return buildNode((ASTEQNode) null, fieldName, fieldValue);
     }
     
+    public static JexlNode buildNENode(String fieldName, String fieldValue) {
+        return buildNode((ASTNENode) null, fieldName, fieldValue);
+    }
+    
     public static JexlNode buildERNode(String fieldName, String fieldValue) {
         return buildNode((ASTERNode) null, fieldName, fieldValue);
     }
@@ -770,7 +809,8 @@ public class JexlNodeFactory {
      * A shallow copy of the given JexlNode, creates a new node of the same type with the same parent and image. Children are not copied
      * 
      * @param original
-     * @return
+     *            a jexl node
+     * @return a new jexl node
      */
     public static JexlNode shallowCopy(JexlNode original) {
         if (null == original) {
@@ -853,9 +893,12 @@ public class JexlNodeFactory {
      * Create a new ASTEQNode from the given field name and value
      * 
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTEQNode original, String fieldName, String fieldValue) {
         ASTEQNode newNode = new ASTEQNode(ParserTreeConstants.JJTEQNODE);
@@ -867,11 +910,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTEQNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTEQNode original, String fieldName, Number fieldValue) {
         ASTEQNode newNode = new ASTEQNode(ParserTreeConstants.JJTEQNODE);
@@ -922,11 +968,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTEQNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTEQNode original, String fieldName, JexlNode fieldValue) {
         ASTEQNode newNode = new ASTEQNode(ParserTreeConstants.JJTEQNODE);
@@ -938,11 +987,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTNENode original, String fieldName, String fieldValue) {
         ASTNENode newNode = new ASTNENode(ParserTreeConstants.JJTNENODE);
@@ -954,11 +1006,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTNENode original, String fieldName, Number fieldValue) {
         ASTNENode newNode = new ASTNENode(ParserTreeConstants.JJTNENODE);
@@ -970,11 +1025,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTNENode original, String fieldName, JexlNode fieldValue) {
         ASTNENode newNode = new ASTNENode(ParserTreeConstants.JJTNENODE);
@@ -986,11 +1044,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTERNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTERNode original, String fieldName, String fieldValue) {
         ASTERNode newNode = new ASTERNode(ParserTreeConstants.JJTERNODE);
@@ -1002,11 +1063,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTERNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTERNode original, String fieldName, Number fieldValue) {
         ASTERNode newNode = new ASTERNode(ParserTreeConstants.JJTERNODE);
@@ -1018,11 +1082,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTERNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTERNode original, String fieldName, JexlNode fieldValue) {
         ASTERNode newNode = new ASTERNode(ParserTreeConstants.JJTERNODE);
@@ -1034,11 +1101,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNRNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTNRNode original, String fieldName, String fieldValue) {
         ASTNRNode newNode = new ASTNRNode(ParserTreeConstants.JJTNRNODE);
@@ -1050,11 +1120,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNRNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTNRNode original, String fieldName, Number fieldValue) {
         ASTNRNode newNode = new ASTNRNode(ParserTreeConstants.JJTNRNODE);
@@ -1066,11 +1139,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNRNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTNRNode original, String fieldName, JexlNode fieldValue) {
         ASTNRNode newNode = new ASTNRNode(ParserTreeConstants.JJTNRNODE);
@@ -1082,11 +1158,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLTNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTLTNode original, String fieldName, String fieldValue) {
         ASTLTNode newNode = new ASTLTNode(ParserTreeConstants.JJTLTNODE);
@@ -1098,11 +1177,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLTNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTLTNode original, String fieldName, Number fieldValue) {
         ASTLTNode newNode = new ASTLTNode(ParserTreeConstants.JJTLTNODE);
@@ -1114,11 +1196,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLTNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTLTNode original, String fieldName, JexlNode fieldValue) {
         ASTLTNode newNode = new ASTLTNode(ParserTreeConstants.JJTLTNODE);
@@ -1130,11 +1215,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTLENode original, String fieldName, String fieldValue) {
         ASTLENode newNode = new ASTLENode(ParserTreeConstants.JJTLENODE);
@@ -1146,11 +1234,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLENOde from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTLENode original, String fieldName, Number fieldValue) {
         ASTLENode newNode = new ASTLENode(ParserTreeConstants.JJTLENODE);
@@ -1162,11 +1253,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLENOde from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTLENode original, String fieldName, JexlNode fieldValue) {
         ASTLENode newNode = new ASTLENode(ParserTreeConstants.JJTLENODE);
@@ -1178,11 +1272,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGTNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTGTNode original, String fieldName, String fieldValue) {
         ASTGTNode newNode = new ASTGTNode(ParserTreeConstants.JJTGTNODE);
@@ -1194,11 +1291,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGTNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTGTNode original, String fieldName, Number fieldValue) {
         ASTGTNode newNode = new ASTGTNode(ParserTreeConstants.JJTGTNODE);
@@ -1210,11 +1310,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGTNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTGTNode original, String fieldName, JexlNode fieldValue) {
         ASTGTNode newNode = new ASTGTNode(ParserTreeConstants.JJTGTNODE);
@@ -1226,11 +1329,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTGENode original, String fieldName, String fieldValue) {
         ASTGENode newNode = new ASTGENode(ParserTreeConstants.JJTGENODE);
@@ -1242,11 +1348,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTGENode original, String fieldName, Number fieldValue) {
         ASTGENode newNode = new ASTGENode(ParserTreeConstants.JJTGENODE);
@@ -1258,11 +1367,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTGENode original, String fieldName, JexlNode fieldValue) {
         ASTGENode newNode = new ASTGENode(ParserTreeConstants.JJTGENODE);
@@ -1276,9 +1388,12 @@ public class JexlNodeFactory {
      * Create a new JexlNode from the given node (possible an OR Node) and value
      *
      * @param original
+     *            the original node
      * @param node
+     *            a jexl node
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(JexlNode original, JexlNode node, String fieldValue) {
         List<JexlNode> list = Lists.newArrayList();
@@ -1303,9 +1418,12 @@ public class JexlNodeFactory {
      * Create a new JexlNode from the given node (possible an OR Node) and value
      *
      * @param original
+     *            the original node
      * @param node
+     *            a jexl node
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(JexlNode original, JexlNode node, Number fieldValue) {
         JexlNode newNode = JexlNodeFactory.shallowCopy(original);
@@ -1327,9 +1445,12 @@ public class JexlNodeFactory {
      * Create a new JexlNode from the given node (possible an OR Node) and value
      *
      * @param original
+     *            the original node
      * @param node
+     *            a jexl node
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(JexlNode original, ASTOrNode node, JexlNode fieldValue) {
         JexlNode newNode = JexlNodeFactory.shallowCopy(original);
@@ -1352,10 +1473,14 @@ public class JexlNodeFactory {
      * Create a new ASTGENode from the given field name and value
      * 
      * @param namespace
+     *            namespace string
      * @param function
+     *            function string
      * @param field
+     *            the field string
      * @param args
-     * @return
+     *            the arguments
+     * @return a new node
      */
     public static JexlNode buildFunctionNode(String namespace, String function, String field, Object... args) {
         ASTFunctionNode newNode = new ASTFunctionNode(ParserTreeConstants.JJTFUNCTIONNODE);
@@ -1386,9 +1511,12 @@ public class JexlNodeFactory {
      * Assign the field name and value to the given newNode
      * 
      * @param newNode
+     *            a new node
      * @param fieldName
+     *            the field name string
      * @param fieldValue
-     * @return
+     *            the field value string
+     * @return a untyped new node
      */
     protected static JexlNode buildUntypedNewNode(JexlNode newNode, ASTIdentifier fieldName, String fieldValue) {
         ASTStringLiteral literal = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
@@ -1400,9 +1528,13 @@ public class JexlNodeFactory {
     /**
      * Build a JexlNode with a Number literal
      * 
+     * @param newNode
+     *            the new node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a jexl node
      */
     protected static JexlNode buildUntypedNewNode(JexlNode newNode, ASTIdentifier fieldName, Number fieldValue) {
         ASTNumberLiteral literal = new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL);
@@ -1445,9 +1577,12 @@ public class JexlNodeFactory {
      * Given the provide newNode, add the fieldName (as an identifier) and the literal
      * 
      * @param newNode
+     *            the new node
      * @param identifier
+     *            the field name identifier
      * @param literal
-     * @return
+     *            the node literal
+     * @return a jexl node
      */
     protected static JexlNode buildUntypedNewNode(JexlNode newNode, ASTIdentifier identifier, JexlNode literal) {
         ASTReference literalReference = new ASTReference(ParserTreeConstants.JJTREFERENCE), identifierReference = new ASTReference(
@@ -1489,11 +1624,14 @@ public class JexlNodeFactory {
     
     /**
      * Like {@link #buildUntypedNewNode(JexlNode, ASTIdentifier, String)} except it does not wrap {@code literal} in an {@link ASTReference}
-     * 
+     *
      * @param newNode
+     *            the new node
      * @param identifier
+     *            the field name identifier
      * @param literal
-     * @return
+     *            the node literal
+     * @return a jexl node
      */
     protected static JexlNode buildUntypedNewLiteralNode(JexlNode newNode, ASTIdentifier identifier, JexlNode literal) {
         ASTReference identifierReference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
@@ -1613,7 +1751,8 @@ public class JexlNodeFactory {
      * Creates a reference expression fro a child node
      * 
      * @param child
-     * @return
+     *            a child node
+     * @return a jexl node
      */
     public static JexlNode createExpression(JexlNode child) {
         if (child instanceof ASTReference && child.jjtGetChild(0) instanceof ASTReferenceExpression) {
@@ -1643,8 +1782,10 @@ public class JexlNodeFactory {
      * Creates a reference expression fro a child node
      * 
      * @param childContainer
+     *            the child container node
      * @param wrappingContainer
-     * @return
+     *            the wrapping container
+     * @return a jexl node
      */
     public static JexlNode createExpression(JexlNode childContainer, JexlNode wrappingContainer) {
         
@@ -1675,7 +1816,9 @@ public class JexlNodeFactory {
      * Create an assignment node
      * 
      * @param name
+     *            the name string
      * @param value
+     *            the value string
      * @return the assignment node
      */
     public static ASTAssignment createAssignment(String name, boolean value) {
@@ -1705,9 +1848,11 @@ public class JexlNodeFactory {
     
     /**
      * Create an assignment node
-     * 
+     *
      * @param name
+     *            the name string
      * @param value
+     *            the value string
      * @return the assignment node
      */
     public static ASTAssignment createAssignment(String name, String value) {

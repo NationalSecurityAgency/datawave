@@ -230,9 +230,17 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     }
                 }
                 if (queryStream.context() == StreamContext.VARIABLE) {
-                    context = StreamContext.PRESENT;
-                } else
+                    if (queryStream instanceof Union) {
+                        context = StreamContext.ABSENT;
+                        queryStream = null;
+                        itr = Collections.emptyIterator();
+                        return itr;
+                    } else {
+                        context = StreamContext.PRESENT;
+                    }
+                } else {
                     context = queryStream.context();
+                }
                 
                 if (log.isDebugEnabled()) {
                     log.debug("Query returned a stream with a context of " + this.context);
@@ -327,9 +335,12 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     return ScannerStream.noData(union.currentNode(), union);
                 case IGNORED:
                     return ScannerStream.ignored(union.currentNode(), union);
+                case DELAYED_FIELD:
+                    return ScannerStream.delayedExpression(union.currentNode());
+                case PRESENT:
+                case VARIABLE:
                 case EXCEEDED_TERM_THRESHOLD:
                 case EXCEEDED_VALUE_THRESHOLD:
-                case PRESENT:
                     return union;
                 case UNINDEXED:
                     return ScannerStream.unindexed(union.currentNode(), union);
@@ -377,6 +388,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 case EXCEEDED_TERM_THRESHOLD:
                 case EXCEEDED_VALUE_THRESHOLD:
                 case PRESENT:
+                case VARIABLE:
                     return build;
                 case UNINDEXED:
                     return ScannerStream.unindexed(build.currentNode(), build);
@@ -683,7 +695,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             
             // create a list of tuples for each shard
             if (log.isDebugEnabled()) {
-                LiteralRange range = JexlASTHelper.findRange().indexedOnly(config.getDatatypeFilter(), metadataHelper).getRange(node);
+                LiteralRange<?> range = JexlASTHelper.findRange().indexedOnly(config.getDatatypeFilter(), metadataHelper).getRange(node);
                 if (range != null) {
                     log.debug("{\"" + range.getFieldName() + "\": \"" + range.getLower() + " - " + range.getUpper() + "\"} requires a full field index scan.");
                 } else {
@@ -813,6 +825,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
      * Setter for limit scanners
      * 
      * @param limitScanners
+     *            flag for the limit scanners
+     * @return the range stream
      */
     public RangeStream setLimitScanners(final boolean limitScanners) {
         this.limitScanners = limitScanners;

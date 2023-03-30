@@ -113,12 +113,29 @@ public class FunctionIndexQueryExpansionVisitorTest {
         
         // Execute the test.
         String original = "content:phrase(termOffsetMap, 'abc', 'abc')";
-        String expected = "((content:phrase(FOO, termOffsetMap, 'abc', 'abc') && FOO == 'abc') || (content:phrase(BAR, termOffsetMap, 'abc', 'abc') && BAR == 'abc'))";
+        String expected = "((content:phrase(BAR, termOffsetMap, 'abc', 'abc') && BAR == 'abc') || (content:phrase(FOO, termOffsetMap, 'abc', 'abc') && FOO == 'abc'))";
         runTest(original, expected);
         
         original = "content:phrase((FOO || BAR), termOffsetMap, 'abc', 'abc')";
-        expected = "((content:phrase(FOO, termOffsetMap, 'abc', 'abc') && FOO == 'abc') || (content:phrase(BAR, termOffsetMap, 'abc', 'abc') && BAR == 'abc'))";
-        runTest(original, expected, mockMetadataHelper);
+        expected = "((content:phrase(BAR, termOffsetMap, 'abc', 'abc') && BAR == 'abc') || (content:phrase(FOO, termOffsetMap, 'abc', 'abc') && FOO == 'abc'))";
+        runTest(original, expected);
+    }
+    
+    @Test
+    public void expandContentFunctionWithRepeatedValues() throws ParseException {
+        Set<String> fields = Sets.newHashSet("FOO");
+        
+        // Configure the mock metadata helper.
+        MockMetadataHelper mockMetadataHelper = new MockMetadataHelper();
+        mockMetadataHelper.setIndexedFields(fields);
+        mockMetadataHelper.addTermFrequencyFields(fields);
+        this.metadataHelper = mockMetadataHelper;
+        
+        // Execute the test.
+        String original = "content:phrase(termOffsetMap, 'run', 'spot', 'run')";
+        String expected = "(content:phrase(FOO, termOffsetMap, 'run', 'spot', 'run') && (FOO == 'run' && FOO == 'spot'))";
+        
+        runTest(original, expected);
     }
     
     @Test

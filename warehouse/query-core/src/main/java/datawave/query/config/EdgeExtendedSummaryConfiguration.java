@@ -52,7 +52,7 @@ public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration {
                 String paramVal = p.getParameterValue();
                 if (paramVal.equals(LIST)) {
                     summaryInputType = true;
-                } else if (paramVal.equals(LIMITED_JEXL)) {
+                } else {
                     summaryInputType = false;
                 }
                 overRideInput = true;

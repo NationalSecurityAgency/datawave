@@ -273,6 +273,7 @@ public class IndexMatchTest {
      *            the IndexMatch to be written to a byte array.
      * @return a new IndexMatch constructed from the byte array
      * @throws IOException
+     *             for IO Exceptions
      */
     private IndexMatch writeRead(IndexMatch match) throws IOException {
         // Write the IndexMatch to a byte array.

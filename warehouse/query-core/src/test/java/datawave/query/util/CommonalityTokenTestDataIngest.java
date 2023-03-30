@@ -37,11 +37,6 @@ public class CommonalityTokenTestDataIngest {
     protected static final Value emptyValue = new Value(new byte[0]);
     protected static final long timeStamp = 1356998400000l;
     
-    /**
-     *
-     * 
-     * @return
-     */
     public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
@@ -75,6 +70,16 @@ public class CommonalityTokenTestDataIngest {
             mutation.put(datatype + "\u0000" + myUID, "FISH.PET.3" + "\u0000" + "guppy", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "BIRD.PET.3" + "\u0000" + "budgie", columnVisibility, timeStamp, emptyValue);
             
+            mutation.put(datatype + "\u0000" + myUID, "CAT.PET.12" + "\u0000" + "himalayan", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "CANINE.PET.12" + "\u0000" + "bernese", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "FISH.PET.12" + "\u0000" + "swordtail", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "BIRD.PET.12" + "\u0000" + "cockatiel", columnVisibility, timeStamp, emptyValue);
+            
+            mutation.put(datatype + "\u0000" + myUID, "CAT.PET.13" + "\u0000" + "ragdoll", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "CANINE.PET.13" + "\u0000" + "shepherd", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "FISH.PET.13" + "\u0000" + "tetra", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "BIRD.PET.13" + "\u0000" + "lovebird", columnVisibility, timeStamp, emptyValue);
+            
             mutation.put(datatype + "\u0000" + myUID, "CAT.WILD.0" + "\u0000" + "cougar", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "CANINE.WILD.0" + "\u0000" + "wolf", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FISH.WILD.0" + "\u0000" + "shark", columnVisibility, timeStamp, emptyValue);
@@ -94,6 +99,10 @@ public class CommonalityTokenTestDataIngest {
             mutation.put(datatype + "\u0000" + myUID, "CANINE.WILD.3" + "\u0000" + "dingo", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FISH.WILD.3" + "\u0000" + "salmon", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "BIRD.WILD.3" + "\u0000" + "buzzard", columnVisibility, timeStamp, emptyValue);
+            
+            // need some single attribute instances as well
+            mutation.put(datatype + "\u0000" + myUID, "DOG.WILD.1" + "\u0000" + "coyote", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "REPTILE.PET.1" + "\u0000" + "snake", columnVisibility, timeStamp, emptyValue);
             
             bw.addMutation(mutation);
             
@@ -155,6 +164,14 @@ public class CommonalityTokenTestDataIngest {
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("dachshund"));
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
+            bw.addMutation(mutation);
+            mutation = new Mutation(lcNoDiacriticsType.normalize("bernese"));
+            mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
+            bw.addMutation(mutation);
+            mutation = new Mutation(lcNoDiacriticsType.normalize("shepherd"));
             mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
@@ -282,6 +299,10 @@ public class CommonalityTokenTestDataIngest {
                             timeStamp, emptyValue);
             mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("dachshund") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility,
                             timeStamp, emptyValue);
+            mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("bernese") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
+                            emptyValue);
+            mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("shepherd") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
+                            emptyValue);
             mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("wolf") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
                             emptyValue);
             mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("coyote") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
@@ -387,7 +408,7 @@ public class CommonalityTokenTestDataIngest {
     /**
      * forces a shard range
      * 
-     * @return
+     * @return a value
      */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();

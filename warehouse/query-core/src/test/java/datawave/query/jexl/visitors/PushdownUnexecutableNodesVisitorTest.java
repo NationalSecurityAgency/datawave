@@ -24,11 +24,6 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
     
-    /**
-     * Collection of tests
-     * 
-     * @return
-     */
     @Parameterized.Parameters(name = "{0}")
     public static Collection testCases() {
         // @formatter:off
@@ -40,10 +35,10 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                 "INDEXED_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b' && filter:includeRegex(INDEXED_FIELD, '.*'))",
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && ((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*'))))",
+                "INDEXED_FIELD == 'a' && (!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*')))",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && ((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*')))))"
+                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && (!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*'))))"
             },
             // executable against the global index
             // executable against the field index after adding a delay
@@ -52,10 +47,10 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                 "INDEXED_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b' && filter:includeRegex(INDEXED_FIELD, '.*')) && EVENT_FIELD == 'd'",
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && ((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*')))) && EVENT_FIELD == 'd'",
+                "INDEXED_FIELD == 'a' && (!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*'))) && EVENT_FIELD == 'd'",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && ((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*'))))) && EVENT_FIELD == 'd'",
+                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && (!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*')))) && EVENT_FIELD == 'd'",
             },
             // executable against the global index,
             // executable against the field index after adding a delay
@@ -64,10 +59,10 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                 "INDEXED_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b' && EVENT_FIELD == 'c')",
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && ((!(INDEX_ONLY_FIELD == 'b') || !(EVENT_FIELD == 'c')))",
+                "INDEXED_FIELD == 'a' && (!(INDEX_ONLY_FIELD == 'b') || !(EVENT_FIELD == 'c'))",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && ((!(INDEX_ONLY_FIELD == 'b') || !(EVENT_FIELD == 'c'))))"
+                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && (!(INDEX_ONLY_FIELD == 'b') || !(EVENT_FIELD == 'c')))"
             },
             // no action necessary, should be straight up executable
             {
@@ -123,10 +118,10 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                 "INDEXED_FIELD == 'a' || !(INDEX_ONLY_FIELD == 'b' || EVENT_FIELD == 'c')",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
-                "INDEXED_FIELD == 'a' || ((!(INDEX_ONLY_FIELD == 'b') && !(EVENT_FIELD == 'c')))",
+                "INDEXED_FIELD == 'a' || (!(INDEX_ONLY_FIELD == 'b') && !(EVENT_FIELD == 'c'))",
                 ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE,
                 ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE,
-                "INDEXED_FIELD == 'a' || ((!(INDEX_ONLY_FIELD == 'b') && !(EVENT_FIELD == 'c')))",
+                "INDEXED_FIELD == 'a' || (!(INDEX_ONLY_FIELD == 'b') && !(EVENT_FIELD == 'c'))",
             },
             // Both global and field can be run
             {
@@ -191,10 +186,10 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                 "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || !(INDEXED_FIELD == 'd' || EVENT_FIELD == 'c'))",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && (INDEXED_FIELD == 'b' || ((!(INDEXED_FIELD == 'd') && !(EVENT_FIELD == 'c')))))",
+                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && (INDEXED_FIELD == 'b' || (!(INDEXED_FIELD == 'd') && !(EVENT_FIELD == 'c'))))",
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || ((!(INDEXED_FIELD == 'd') && !(EVENT_FIELD == 'c'))))",
+                "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || (!(INDEXED_FIELD == 'd') && !(EVENT_FIELD == 'c')))",
             },
             // Global can be executed after adding a delay
             // Field index will allow this to be executed with no delay because the context of the negation, see above
@@ -203,10 +198,10 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                 "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || !(INDEX_ONLY_FIELD == 'd' || EVENT_FIELD == 'c'))",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && (INDEXED_FIELD == 'b' || ((!(INDEX_ONLY_FIELD == 'd') && !(EVENT_FIELD == 'c')))))",
+                "INDEXED_FIELD == 'a' && ((_Delayed_ = true) && (INDEXED_FIELD == 'b' || (!(INDEX_ONLY_FIELD == 'd') && !(EVENT_FIELD == 'c'))))",
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || ((!(INDEX_ONLY_FIELD == 'd') && !(EVENT_FIELD == 'c'))))",
+                "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || (!(INDEX_ONLY_FIELD == 'd') && !(EVENT_FIELD == 'c')))",
             },
         });
         // @formatter:on

@@ -34,13 +34,8 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
     
     private static final Logger log = Logger.getLogger(FacetedTransformer.class);
     
-    /**
+    /*
      * By default, assume each cell still has the visibility attached to it
-     * 
-     * @param logic
-     * @param settings
-     * @param markingFunctions
-     * @param responseObjectFactory
      */
     public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
@@ -61,8 +56,16 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
      * Accepts an attribute. The document data will be placed into the value of the Field.
      *
      * @param documentKey
+     *            the document key
+     * @param fieldName
+     *            a field name
+     * @param markingFunctions
+     *            marking functions
      * @param document
-     * @return
+     *            a document
+     * @param topLevelColumnVisibility
+     *            top level column vis
+     * @return list of facets
      */
     protected Collection<FieldCardinalityBase> buildFacets(Key documentKey, String fieldName, Document document, ColumnVisibility topLevelColumnVisibility,
                     MarkingFunctions markingFunctions) {
@@ -87,11 +90,16 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
      * Accepts an attribute. The document data will be placed into the value of the Field.
      *
      * @param documentKey
+     *            the document key
      * @param fieldName
+     *            a field name
      * @param attr
+     *            an attribute
      * @param topLevelColumnVisibility
+     *            the top level visibility
      * @param markingFunctions
-     * @return
+     *            marking functions
+     * @return list of facets
      */
     protected Collection<FieldCardinalityBase> buildFacets(Key documentKey, String fieldName, Attribute<?> attr, ColumnVisibility topLevelColumnVisibility,
                     MarkingFunctions markingFunctions) {

@@ -48,9 +48,6 @@ import datawave.query.tables.async.SessionArbiter;
 import datawave.query.tables.async.SpeculativeScan;
 import datawave.webservice.query.Query;
 
-/**
- * 
- */
 public class BatchScannerSession extends ScannerSession implements Iterator<Entry<Key,Value>>, FutureCallback<Scan>, SessionArbiter, UncaughtExceptionHandler {
     
     private static final int THIRTY_MINUTES = 108000000;
@@ -146,6 +143,13 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      * @param delegator
      *            scanner queue
      * @param maxResults
+     *            the max results
+     * @param settings
+     *            the query settings
+     * @param options
+     *            the scanner options
+     * @param ranges
+     *            list of ranges
      */
     public BatchScannerSession(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, ScannerOptions options,
                     Collection<Range> ranges) {
@@ -204,9 +208,8 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      * Sets the ranges for the given scannersession.
      * 
      * @param chunkIter
-     * @return
-     * 
-     * 
+     *            list of scanner chunks
+     * @return the scanner session
      */
     public synchronized BatchScannerSession setChunkIter(Iterator<List<ScannerChunk>> chunkIter) {
         
@@ -239,7 +242,9 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      * Override this for your specific implementation.
      * 
      * @param lastKey
+     *            the last key
      * @param previousRange
+     *            the previous range
      */
     public Range buildNextRange(final Key lastKey, final Range previousRange) {
         return new Range(lastKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME), true, previousRange.getEndKey(), previousRange.isEndKeyInclusive());
@@ -249,6 +254,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      * set the resource class.
      * 
      * @param clazz
+     *            a class
      */
     public void setResourceClass(Class<? extends AccumuloResource> clazz) {
         delegatedResourceInitializer = clazz;
@@ -341,9 +347,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         return 5;
     }
     
-    /**
-     * @param chunks
-     */
     protected void pushChunks(List<ScannerChunk> chunks) {
         currentBatch.addAll(chunks);
     }
@@ -465,6 +468,8 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      * Set the scanner options
      * 
      * @param options
+     *            options
+     * @return the scan session
      */
     public BatchScannerSession setOptions(SessionOptions options) {
         return this;
@@ -472,27 +477,22 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     }
     
     /**
-     * Returns the current range object for testing.
-     * 
-     * @return
+     * @return the current range object for testing.
      */
     protected Range getCurrentRange() {
         return null;
     }
     
     /**
-     * Get last Range.
-     * 
-     * @return
+     * @return last Range.
      */
     protected Range getLastRange() {
         return lastRange;
     }
     
     /**
-     * Get last key.
-     * 
-     * @return
+     * @return last key.
+     *
      */
     protected Key getLastKey() {
         return null;

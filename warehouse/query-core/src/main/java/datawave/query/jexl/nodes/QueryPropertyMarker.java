@@ -40,7 +40,7 @@ public abstract class QueryPropertyMarker extends ASTReference {
     /**
      * Create and return a new query property marker with the given source node. If the source has a parent, the source will be replaced with the new marker
      * node in the parent's children.
-     * 
+     *
      * @param source
      *            the source node
      * @param constructor
@@ -59,7 +59,8 @@ public abstract class QueryPropertyMarker extends ASTReference {
     }
     
     /**
-     * Create and return a new query property marker of the supplied marker type with the specified source via reflection.
+     * Create and return a new query property marker of the supplied marker type with the specified source via reflection. If the source node or one of its
+     * ancestors is already marked with the supplied marker type the original source node is returned instead of a new marker instance.
      * 
      * @param source
      *            the source node
@@ -67,10 +68,13 @@ public abstract class QueryPropertyMarker extends ASTReference {
      *            the marker type
      * @param <MARKER>
      *            the marker type
-     * @return the new query property marker instance
+     * @return the new query property marker instance, or the original source if the marker has already been applied
      */
-    public static <MARKER extends QueryPropertyMarker> MARKER create(JexlNode source, Class<MARKER> markerType) {
+    public static <MARKER extends QueryPropertyMarker> JexlNode create(JexlNode source, Class<MARKER> markerType) {
         try {
+            if (isSourceMarked(source, markerType) || isAncestorMarked(source, markerType)) {
+                return source;
+            }
             Constructor<MARKER> constructor = markerType.getConstructor(JexlNode.class);
             return constructor.newInstance(source);
         } catch (Exception e) {
@@ -140,7 +144,8 @@ public abstract class QueryPropertyMarker extends ASTReference {
     public abstract String getLabel();
     
     protected void setupSource(JexlNode source) {
-        this.jjtSetParent(source.jjtGetParent());
+        JexlNode parent = source.jjtGetParent();
+        this.jjtSetParent(parent);
         
         // create the assignment using the label wrapped in an expression
         JexlNode refNode1 = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(getLabel(), true));
@@ -159,6 +164,68 @@ public abstract class QueryPropertyMarker extends ASTReference {
         // and make a child of this
         refExpNode1.jjtSetParent(this);
         this.jjtAddChild(refExpNode1, 0);
+        
+        // inserts new marker node in place of the original source
+        if (parent != null) {
+            JexlNodes.replaceChild(parent, source, this);
+        }
+    }
+    
+    /**
+     * Determines if this source node is already marked with the provided marker class
+     *
+     * @param source
+     *            a JexlNode
+     * @param markerClass
+     *            an instance of a {@link QueryPropertyMarker}
+     * @return true if this node is already marked with the provided marker class
+     */
+    public static boolean isSourceMarked(JexlNode source, Class<? extends QueryPropertyMarker> markerClass) {
+        return QueryPropertyMarker.findInstance(source).isType(markerClass);
+    }
+    
+    /**
+     * Determine if one the source node's ancestors is already marked. This method does not check the source node for markers (see
+     * {@link #isSourceMarked(JexlNode, Class)}).
+     *
+     * Note: This method will recursively ascend the entire Jexl query tree to find a marked node. This imposes a non-zero cost for trees that are excessively
+     * deep or unflattened.
+     *
+     * @param node
+     *            a JexlNode
+     * @param markerClass
+     *            the marker class
+     * @return true
+     */
+    public static boolean isAncestorMarked(JexlNode node, Class<? extends QueryPropertyMarker> markerClass) {
+        JexlNode parent = node.jjtGetParent();
+        if (parent != null) {
+            // marker nodes are by definition the intersection of a marker and a source
+            if (parent instanceof ASTAndNode && parent.jjtGetNumChildren() == 2) {
+                if (QueryPropertyMarker.findInstance(parent).isType(markerClass)) {
+                    return true;
+                }
+            }
+            return isAncestorMarked(parent, markerClass);
+        }
+        return false;
+    }
+    
+    /**
+     * Unwrap a marker node, fully. Intended to handle the odd edge case when multiple instances of the same marker is applied to the same node
+     *
+     * @param node
+     *            an arbitrary jexl node
+     * @param marker
+     *            the property marker
+     * @return the source node, or the original node if the source node is not marked
+     */
+    public static JexlNode unwrapFully(JexlNode node, Class<? extends QueryPropertyMarker> marker) {
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+        if (instance.isType(marker)) {
+            return unwrapFully(instance.getSource(), marker);
+        }
+        return node;
     }
     
     /**

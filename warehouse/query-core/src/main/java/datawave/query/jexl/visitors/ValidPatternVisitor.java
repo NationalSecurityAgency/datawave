@@ -10,7 +10,6 @@ import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +19,7 @@ import java.util.regex.PatternSyntaxException;
 /**
  * Validates all patterns in a query tree. Uses a cache to avoid parsing the same pattern twice.
  */
-public class ValidPatternVisitor extends BaseVisitor {
+public class ValidPatternVisitor extends ShortCircuitBaseVisitor {
     
     private Map<String,Pattern> patternCache;
     
@@ -39,7 +38,7 @@ public class ValidPatternVisitor extends BaseVisitor {
      * @param node
      *            - an AST Regex Equals node
      * @param data
-     *            - data
+     *            the node data
      * @return the data
      */
     @Override
@@ -50,7 +49,7 @@ public class ValidPatternVisitor extends BaseVisitor {
     
     /**
      * Visit a Regex Not Equals node, catches the situation where a user might enter FIELD1 !~ VALUE1
-     * 
+     *
      * @param node
      *            - an AST Regex Not Equals node
      * @param data
@@ -65,12 +64,12 @@ public class ValidPatternVisitor extends BaseVisitor {
     
     /**
      * Visit an ASTFunctionNode to catch cases like #INCLUDE or #EXCLUDE that accept a regex as an argument
-     * 
+     *
      * @param node
      *            - an ASTFunctionNode
      * @param data
      *            - the data
-     * @return
+     * @return the data
      */
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
@@ -101,6 +100,7 @@ public class ValidPatternVisitor extends BaseVisitor {
      * Parse a literal value and put into the pattern cache if it does not exist.
      *
      * @param node
+     *            a jexl node
      */
     public void parseAndPutPattern(JexlNode node) {
         // Catch the situation where a user might enter FIELD1 !~ VALUE1
@@ -126,4 +126,5 @@ public class ValidPatternVisitor extends BaseVisitor {
             }
         }
     }
+    
 }

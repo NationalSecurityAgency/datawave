@@ -10,8 +10,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.collect.Lists;
@@ -64,11 +62,15 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     protected Map<Text,Boolean> useAggregators = new HashMap<>();
     protected HashSet<Text> noTSDedupTables = new HashSet<>();
     protected HashSet<Text> TSDedupTables = new HashSet<>();
+    TableConfigurationUtil tcu;
     
     private static final Logger log = Logger.getLogger(AggregatingReducer.class);
     
     /**
      * Setup the reducer. Delegates to setup(Configuration)
+     * 
+     * @param context
+     *            the context
      */
     @Override
     protected final void setup(Context context) throws IOException, InterruptedException {
@@ -80,14 +82,19 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      * Allow setup method that can be executed manually
      * 
      * @param conf
+     *            the configuration
+     * @throws IOException
+     *             if there is an issue with read or write
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
     public void setup(Configuration conf) throws IOException, InterruptedException {
-        // Get the list of tables that we are bulk ingesting into.
         
         /**
          * Grab the tables that do not require timestamp deduping, but require aggregating
          */
-        
+        tcu = new TableConfigurationUtil(conf);
+        tcu.setTableItersPrioritiesAndOpts();
         String[] tables = conf.getStrings(INGEST_VALUE_DEDUP_AGGREGATION_KEY);
         if (tables != null) {
             for (String table : tables) {
@@ -106,7 +113,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         configureReductionInterface(conf);
         
         // turn off aggregation for tables so configured
-        for (String table : TableConfigurationUtil.getTables(conf)) {
+        for (String table : TableConfigurationUtil.getJobOutputTableNames(conf)) {
             useAggregators.put(new Text(table), conf.getBoolean(table + USE_AGGREGATOR_PROPERTY, true));
         }
         
@@ -116,11 +123,13 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      * Reads information from the supplied job configuration ({@code conf}) and finds any configured aggregators. If any are found, the classes are instantiated
      * here and added to a list of lookups per table. If multiple aggregators are configured for a table, and they overlap in terms of which keys they accept,
      * then they will be applied in priority order.
+     * 
+     * @param conf
+     *            the configuration
      */
     private void configureReductionInterface(Configuration conf) {
         // Build a map of table => sorted sets of aggregator options (in increasing priority order for
         // each set of aggregator options).
-        
         configureAggregators(conf);
         
         configureCombiners(conf);
@@ -128,39 +137,14 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     }
     
     protected void configureCombiners(Configuration conf) {
-        Map<String,TreeMap<Integer,Map<String,String>>> allOptions = new HashMap<>();
-        Pattern p = Pattern.compile("combiner" + PROPERTY_REGEX_FOR_AGGREGATOR);
-        for (Entry<String,String> prop : conf) {
-            Matcher m = p.matcher(prop.getKey());
-            if (m.matches()) {
-                String tableName = m.group(1);
-                Integer priority = Integer.valueOf(m.group(2));
-                String option = m.group(3);
-                
-                TreeMap<Integer,Map<String,String>> priorityOptions = allOptions.get(tableName);
-                if (priorityOptions == null) {
-                    priorityOptions = new TreeMap<>();
-                    allOptions.put(tableName, priorityOptions);
-                }
-                
-                Map<String,String> options = priorityOptions.get(priority);
-                if (options == null) {
-                    options = new HashMap<>();
-                    priorityOptions.put(priority, options);
-                }
-                
-                options.put(option, prop.getValue());
-            }
-        }
         
         // Now construct the aggregator classes that are specified in the configuration, and add them
         // to a map of table => priority list of column=>class mappings. Users can just call the
         // method getAggregator with a key, and get back a list of aggregators that should be applied
         // to the corresponding value. The return list aggregators should be applied in order.
-        Set<String> tables = TableConfigurationUtil.getTables(conf);
+        Set<String> tables = tcu.getJobOutputTableNames(conf);
         for (String table : tables) {
-            
-            TreeMap<Integer,Map<String,String>> priorityOptions = allOptions.get(table);
+            Map<Integer,Map<String,String>> priorityOptions = tcu.getTableCombiners(table);
             if (priorityOptions != null) {
                 SortedSet<CustomColumnToClassMapping> list = Sets.newTreeSet();
                 for (Integer priority : priorityOptions.keySet()) {
@@ -168,13 +152,14 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     
                     options.putAll(priorityOptions.get(priority));
                     
-                    String clazz = options.get("iterClazz");
-                    
+                    String clazz = options.get(TableConfigurationUtil.ITERATOR_CLASS_MARKER);
                     if (null == clazz) {
-                        throw new RuntimeException("Unable to instantiate combiner class. Config item 'iterClazz' not present ");
+                        throw new RuntimeException("Unable to instantiate combiner class. Config item 'iterclass' not present " + priority + " "
+                                        + options.entrySet());
                     }
+                    log.info("configuring iterator (combiner) " + clazz + " for table " + table);
                     
-                    options.remove("iterClazz");
+                    options.remove(TableConfigurationUtil.ITERATOR_CLASS_MARKER);
                     
                     CustomColumnToClassMapping mapping;
                     try {
@@ -215,42 +200,20 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     }
     
     protected void configureAggregators(Configuration conf) {
-        Map<String,TreeMap<Integer,Map<String,String>>> allOptions = new HashMap<>();
-        Pattern p = Pattern.compile("aggregator" + PROPERTY_REGEX_FOR_AGGREGATOR);
-        for (Entry<String,String> prop : conf) {
-            Matcher m = p.matcher(prop.getKey());
-            if (m.matches()) {
-                String tableName = m.group(1);
-                Integer priority = Integer.valueOf(m.group(2));
-                String option = m.group(3);
-                
-                TreeMap<Integer,Map<String,String>> priorityOptions = allOptions.get(tableName);
-                if (priorityOptions == null) {
-                    priorityOptions = new TreeMap<>();
-                    allOptions.put(tableName, priorityOptions);
-                }
-                
-                Map<String,String> options = priorityOptions.get(priority);
-                if (options == null) {
-                    options = new HashMap<>();
-                    priorityOptions.put(priority, options);
-                }
-                
-                options.put(option, prop.getValue());
-            }
-        }
         
         // Now construct the aggregator classes that are specified in the configuration, and add them
         // to a map of table => priority list of column=>class mappings. Users can just call the
         // method getAggregator with a key, and get back a list of aggregators that should be applied
         // to the corresponding value. The return list aggregators should be applied in order.
-        Set<String> tables = TableConfigurationUtil.getTables(conf);
+        Set<String> tables = tcu.getJobOutputTableNames(conf);
         for (String table : tables) {
+            log.info(table);
             
-            TreeMap<Integer,Map<String,String>> priorityOptions = allOptions.get(table);
+            Map<Integer,Map<String,String>> priorityOptions = tcu.getTableAggregators(table);
             if (priorityOptions != null) {
                 SortedSet<CustomColumnToClassMapping> list = Sets.newTreeSet();
                 for (Entry<Integer,Map<String,String>> entry : priorityOptions.entrySet()) {
+                    
                     Map<String,String> options = entry.getValue();
                     CustomColumnToClassMapping mapping = new CustomColumnToClassMapping(entry.getKey(), options);
                     list.add(mapping);
@@ -263,6 +226,13 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * Cleanup method which delegates to finish
+     * 
+     * @param context
+     *            the context
+     * @throws IOException
+     *             if there is an issue with read or write
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
     @Override
     protected final void cleanup(Context context) throws IOException, InterruptedException {
@@ -272,10 +242,13 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * A cleanup method that can be executed manually. Default implementation does nothing.
-     * 
+     *
      * @param context
+     *            the context
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     public void finish(TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException {
         // NOOP
@@ -283,6 +256,13 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * This method is called once for each key. This method delegates to the doReduce method.
+     * 
+     * @param key
+     *            the key
+     * @param values
+     *            a set of values
+     * @param context
+     *            the context
      */
     @Override
     protected final void reduce(IK key, Iterable<IV> values, Context context) throws IOException, InterruptedException {
@@ -292,6 +272,17 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     /**
      * This method is called once for each key. Most applications will define their reduce class by overriding this method. The default implementation is an
      * identity function.
+     * 
+     * @param key
+     *            the key
+     * @param values
+     *            list of values
+     * @param context
+     *            the context
+     * @throws IOException
+     *             if there is an issue with read or write
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
     @SuppressWarnings("unchecked")
     public void doReduce(IK key, Iterable<IV> values, TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException {
@@ -302,11 +293,15 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * Can be used to execute this process manually
-     * 
+     *
      * @param entries
+     *            the map of entries
      * @param ctx
+     *            the context
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     public void reduce(Multimap<IK,IV> entries, TaskInputOutputContext<?,?,OK,OV> ctx) throws IOException, InterruptedException {
         for (IK key : entries.keySet()) {
@@ -317,12 +312,17 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * Write the output to the context
-     * 
+     *
      * @param key
+     *            the event key
      * @param value
+     *            the value
      * @param ctx
+     *            the context
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected void writeToContext(OK key, OV value, TaskInputOutputContext<?,?,OK,OV> ctx) throws IOException, InterruptedException {
         ctx.write(key, value);
@@ -330,8 +330,9 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * Determines whether aggregation should be performed, regardless whether any aggregators are configured.
-     * 
+     *
      * @param table
+     *            the table
      * @return true if aggregation should be performed, false otherwise
      */
     protected boolean useAggregators(Text table) {
@@ -340,7 +341,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     
     /**
      * Gets the aggregators that should be applied to the value(s) associated with {@code key}. The aggregators in the list should be applied in order.
-     * 
+     *
      * @param table
      *            the table name from which {@code key} was retrieved
      * @param key
@@ -389,6 +390,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 
                 try {
                     Class<? extends Combiner> clazz = Class.forName(className).asSubclass(Combiner.class);
+                    log.info("configuring iterator (aggregator) " + clazz);
                     
                     agg = clazz.newInstance();
                     

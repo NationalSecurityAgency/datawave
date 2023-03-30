@@ -1,16 +1,14 @@
 package datawave.query.jexl.visitors;
 
-import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.function.IndexOnlyContextCreator;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.IndexOnlyJexlContext;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.DateIndexHelper;
-import datawave.query.util.MetadataHelper;
 
+import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -29,10 +27,12 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 
-/** 
- *
+/**
+ * This visitor provides methods for determining if a query tree contains any of the provided fields, and retrieving those matching fields if desired.
+ * Optionally, this visitor will also tag index-only fields within filter functions for lazily-handled fetching and evaluation if specified.
  */
 public class SetMembershipVisitor extends BaseVisitor {
+    
     /**
      * A suffix appended to an index-only node's "image" value if found as a child of an ASTFunctionNode. The added suffix causes the field to be temporarily
      * renamed and specially handled for fetching and evaluation via the {@link IndexOnlyJexlContext}.
@@ -41,404 +41,293 @@ public class SetMembershipVisitor extends BaseVisitor {
      * dev branch was merged into version2.x. It has since been reapplied in conjunction with the two internal helper classes.
      */
     public static final String INDEX_ONLY_FUNCTION_SUFFIX = "@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION";
-    public static final String FILTER = "filter";
-    protected final Set<String> expectedFields;
-    protected final MetadataHelper metadataHelper;
-    protected final DateIndexHelper dateIndexHelper;
-    protected final ShardQueryConfiguration config;
-    protected final Set<String> discoveredFields;
-    protected final boolean fullTraversal;
+    private static final int FUNCTION_SEARCH_DEPTH_LIMIT = 7;
+    
+    private final Set<String> fields;
+    private final ShardQueryConfiguration config;
+    private final Set<String> discoveredFields;
+    private final boolean fullTraversal;
+    private final boolean tagIndexOnlyFields;
     
     /**
-     * Create a SetMembershopVisitor that will visit the query in search of the specified fields
+     * Return true if the query contains any of the given fields.
      * 
-     * @param expectedFields
-     * @param config
-     * @param metadataHelper
-     * @param dateIndexHelper
-     * @param fullTraversal
-     */
-    public SetMembershipVisitor(Set<String> expectedFields, ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    boolean fullTraversal) {
-        this.config = config;
-        this.expectedFields = expectedFields;
-        this.metadataHelper = metadataHelper;
-        this.dateIndexHelper = dateIndexHelper;
-        this.discoveredFields = new TreeSet<>();
-        this.fullTraversal = fullTraversal;
-    }
-    
-    /**
-     * Return true if the query contains fields that are present in the expectedFields set for the specified datatypes.
-     * 
-     * @param expectedFields
-     * @param metadataHelper
-     * @param dateIndexHelper
+     * @param fields
+     *            the fields of interest
      * @param tree
-     * @return true if the query contains fields that are present in the expectedFields set for the specified datatypes
+     *            the query tree
+     * @param config
+     *            the config
+     * @return true if the query contains any of the fields present in the given fields set
      */
     
-    public static Boolean contains(Set<String> expectedFields, ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    JexlNode tree) {
-        SetMembershipVisitor visitor = new SetMembershipVisitor(expectedFields, config, metadataHelper, dateIndexHelper, false);
+    public static Boolean contains(Set<String> fields, ShardQueryConfiguration config, JexlNode tree) {
+        SetMembershipVisitor visitor = new SetMembershipVisitor(fields, config, false, false);
         return (Boolean) tree.jjtAccept(visitor, false);
     }
     
     /**
-     * Return a set of field names that are present in the expectedFields set for the specified datatypes.
+     * Return the intersection of fields found in the given query tree and the given set of fields.
      * 
-     * @param expectedFields
+     * @param fields
+     *            the fields of interest
      * @param config
-     * @param metadataHelper
-     * @param dateIndexHelper
+     *            the configuration
      * @param tree
-     * @return a set of field names that are present in the expectedFields set for the specified datatypes
+     *            the query tree
+     * @return the set of fields found in the query that were in the given set of fields
      */
-    public static Set<String> getMembers(Set<String> expectedFields, ShardQueryConfiguration config, MetadataHelper metadataHelper,
-                    DateIndexHelper dateIndexHelper, JexlNode tree) {
-        return getMembers(expectedFields, config, metadataHelper, dateIndexHelper, tree, false);
+    public static Set<String> getMembers(Set<String> fields, ShardQueryConfiguration config, JexlNode tree) {
+        return getMembers(fields, config, tree, false);
     }
     
     /**
-     * Return a set of field names that are present in the expectedFields set for the specified datatypes.
+     * Return the intersection of fields found in the given query tree and the given set of fields. If tagIndexOnlyFields is true, the provided query tree will
+     * be modified such that matching fields will be tagged with {@value #INDEX_ONLY_FUNCTION_SUFFIX} where they are found in filter functions.
+     * <b>IMPORTANT:</b> ONLY specify true for tagIndexOnlyFields if the set of provided fields consists only of index-only fields.
      * 
-     * @param expectedFields
+     * @param fields
+     *            the fields of interest
      * @param config
-     * @param metadataHelper
-     * @param dateIndexHelper
+     *            the configuration
      * @param tree
-     * @param indexOnlyFieldTaggingEnabled
-     *            If true, allow tagging to occur for index-only fields
-     * @return a set of field names that are present in the expectedFields set for the specified datatypes
+     *            the query tree
+     * @param tagIndexOnlyFields
+     *            If true, tag any matching fields found in filter functions, supported only for index-only fields
+     * @return the set of fields found in the query that were in the given set of fields
+     * @throws DatawaveFatalQueryException
+     *             if tagIndexOnlyFields is true, but lazySetMechanism in the given config is false and an index-only field was encountered. Note, in this case,
+     *             it is assumed that the given set of fields consists of index-only fields.
      */
-    public static Set<String> getMembers(Set<String> expectedFields, ShardQueryConfiguration config, MetadataHelper metadataHelper,
-                    DateIndexHelper dateIndexHelper, JexlNode tree, boolean indexOnlyFieldTaggingEnabled) {
-        final SetMembershipVisitor visitor = new SetMembershipVisitor(expectedFields, config, metadataHelper, dateIndexHelper, true);
-        final Boolean contains = (Boolean) tree.jjtAccept(visitor, false);
-        if (indexOnlyFieldTaggingEnabled && (null != contains) && contains) {
-            final IndexOnlyTaggingVisitor fieldTagger = new IndexOnlyTaggingVisitor(expectedFields, visitor.fullTraversal);
-            fieldTagger.visit(tree, null);
-        }
-        
+    public static Set<String> getMembers(Set<String> fields, ShardQueryConfiguration config, JexlNode tree, boolean tagIndexOnlyFields) {
+        final SetMembershipVisitor visitor = new SetMembershipVisitor(fields, config, true, tagIndexOnlyFields);
+        tree.jjtAccept(visitor, false);
         return visitor.discoveredFields;
     }
     
-    /*
-     * Search for a parent filter function, limiting the search depth to prevent the possibility of infinite recursion
-     * 
-     * @param node an identifier node
-     * 
-     * @return true, if the node is associated with a filter function
-     */
-    private static boolean isParentAFilterFunction(final ASTIdentifier node) {
-        JexlNode parent = node.jjtGetParent();
-        boolean isParentAFilterFunction = false;
-        for (int i = 0; (null != parent) && (i < 7); i++) {
-            if (parent instanceof ASTFunctionNode) {
-                final ASTFunctionNode function = (ASTFunctionNode) parent;
-                int children = function.jjtGetNumChildren();
-                if (children > 0) {
-                    final JexlNode child = function.jjtGetChild(0);
-                    if ((null != child) && FILTER.equals(child.image)) {
-                        isParentAFilterFunction = true;
-                        parent = null;
-                    } else {
-                        parent = parent.jjtGetParent();
-                    }
-                } else {
-                    parent = parent.jjtGetParent();
-                }
-            } else {
-                parent = parent.jjtGetParent();
-            }
-        }
-        
-        return isParentAFilterFunction;
-    }
-    
-    private static final boolean traverse(Object data, boolean fullTraversal) {
-        if (fullTraversal)
-            return true;
-        return !(Boolean) data;
+    private SetMembershipVisitor(Set<String> fields, ShardQueryConfiguration config, boolean fullTraversal, boolean tagIndexOnlyFields) {
+        this.config = config;
+        this.fields = fields;
+        this.discoveredFields = new TreeSet<>();
+        this.fullTraversal = fullTraversal;
+        this.tagIndexOnlyFields = tagIndexOnlyFields;
     }
     
     @Override
     public Object visit(ASTIdentifier node, Object data) {
-        final Object intermediateResult = visit(node, data, fullTraversal, expectedFields);
-        final Object finalResult;
-        if (intermediateResult instanceof DiscoveredField) {
-            discoveredFields.add(((DiscoveredField) intermediateResult).getFieldName());
-            finalResult = true;
-        } else if (intermediateResult instanceof Boolean) {
-            finalResult = intermediateResult;
-        } else {
-            finalResult = data;
-        }
-        
-        return finalResult;
-    }
-    
-    private static Object visit(final ASTIdentifier node, final Object data, boolean fullTraversal, final Collection<String> expectedFields) {
-        // Declare a return value
-        final Object result;
-        
-        // Evaluate and process the parameters to assign a return value
-        if ((data instanceof IndexOnlyTaggingVisitor) || (traverse(data, fullTraversal))) {
-            final String fieldName = JexlASTHelper.deconstructIdentifier(node);
-            if (expectedFields.contains(fieldName)) {
-                // If the parent is a function, append a specially recognized suffix that
-                // will be used for lazy fetching downstream in the processing operation.
-                // See the IndexOnlyJexlContext for more details.
-                if (data instanceof IndexOnlyTaggingVisitor) { // Verify we are purposely renaming index-only function nodes
-                    if ((!node.image.endsWith(INDEX_ONLY_FUNCTION_SUFFIX)) && // Verify the node is not already renamed
-                                    (isParentAFilterFunction(node))) { // Verify the node is part of a function
-                        node.image = node.image + INDEX_ONLY_FUNCTION_SUFFIX;
-                    }
-                    result = true;
+        if (tagIndexOnlyFields || traverse(data)) {
+            String field = JexlASTHelper.deconstructIdentifier(node);
+            
+            // If this is a previously-tagged field, strip the tag to check if the field itself is a match.
+            if (isTagged(field)) {
+                // Ensure we fail any queries with the LAZY_SET mechanism if it's not explicitly enabled, even if tagIndexOnlyFields is false.
+                if (!config.isLazySetMechanismEnabled()) {
+                    throw new DatawaveFatalQueryException("LAZY_SET mechanism is disabled for index-only fields");
                 }
-                // Otherwise, return a value that can be added to the set of discovered fields
-                else {
-                    result = new DiscoveredField(fieldName);
+                int endPos = field.length() - INDEX_ONLY_FUNCTION_SUFFIX.length();
+                field = field.substring(0, endPos);
+            }
+            
+            // If this is a matching field, add it to discovered field, and tag it if specified.
+            if (fields.contains(field)) {
+                if (tagIndexOnlyFields) {
+                    tagField(node);
                 }
-            } else {
-                result = data;
+                discoveredFields.add(field);
+                return true;
+            }
+        }
+        return data;
+    }
+    
+    /**
+     * Tag the field in the given node with {@value #INDEX_ONLY_FUNCTION_SUFFIX} if it is part of a filter function.
+     * 
+     * @param node
+     *            the node to tag
+     * @throws DatawaveFatalQueryException
+     *             if the LAZY_SET mechanism is not enabled in the config
+     */
+    private void tagField(ASTIdentifier node) {
+        // Tag the field only if the LAZY_SET mechanism is explicitly enabled.
+        if (config.isLazySetMechanismEnabled()) {
+            // Only tag index-only fields within filter functions.
+            if (!isTagged(node) && parentFilterFunction(node)) {
+                node.image = node.image + INDEX_ONLY_FUNCTION_SUFFIX;
             }
         } else {
-            result = data;
-        }
-        
-        return result;
-    }
-    
-    @Override
-    public Object visit(ASTJexlScript node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
+            // Otherwise, throw a fatal exception.
+            if (isTagged(node) || parentFilterFunction(node)) {
+                throw new DatawaveFatalQueryException("LAZY_SET mechanism is disabled for index-only fields");
             }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTOrNode node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTAndNode node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTEQNode node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTNENode node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTLTNode node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTGTNode node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTLENode node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTGENode node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTERNode node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTNRNode node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTNotNode node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTFunctionNode node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTReferenceExpression node, Object data) {
-        if (traverse(data, fullTraversal)) {
-            int i = 0;
-            while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
-                data = node.jjtGetChild(i).jjtAccept(this, data);
-                i++;
-            }
-        }
-        
-        return data;
-    }
-    
-    private static class DiscoveredField {
-        private final String fieldName;
-        
-        public DiscoveredField(String fieldName) {
-            this.fieldName = fieldName;
-        }
-        
-        public String getFieldName() {
-            return fieldName;
         }
     }
     
     /**
-     * Appends a tag to index-only field names for specialized recognition and handling by JEXL components, such as the IndexOnlyContextCreator
+     * Returns whether the node's image ends with {@value #INDEX_ONLY_FUNCTION_SUFFIX}.
      * 
-     * @see IndexOnlyContextCreator
+     * @param node
+     *            the node
+     * @return true if the node has a tagged field, or false otherwise
      */
-    private static class IndexOnlyTaggingVisitor extends BaseVisitor {
-        private final Collection<String> indexOnlyFields;
-        private final boolean fullTraversal;
-        
-        public IndexOnlyTaggingVisitor(final Collection<String> indexOnlyFields, boolean fullTraversal) {
-            this.indexOnlyFields = indexOnlyFields;
-            this.fullTraversal = fullTraversal;
-        }
-        
-        @Override
-        public Object visit(final ASTIdentifier node, final Object data) {
-            // Visit the node and tag index-only field names belonging to a top-level function
-            SetMembershipVisitor.visit(node, this, this.fullTraversal, this.indexOnlyFields);
-            
-            // Always returns false since this visitor's only job is to tag index-only field names belonging to a top-level function
-            return false;
-        }
+    private boolean isTagged(ASTIdentifier node) {
+        return isTagged(node.image);
     }
     
+    /**
+     * Returns whether the field ends with {@value #INDEX_ONLY_FUNCTION_SUFFIX}.
+     * 
+     * @param field
+     *            the field
+     * @return true if the field is tagged, or false otherwise
+     */
+    private boolean isTagged(String field) {
+        return field.endsWith(INDEX_ONLY_FUNCTION_SUFFIX);
+    }
+    
+    /**
+     * Searches for a parent filter function, limiting the search depth to {@value #FUNCTION_SEARCH_DEPTH_LIMIT} to prevent the possibility of infinite
+     * recursion.
+     *
+     * @param node
+     *            an identifier node
+     *
+     * @return true, if the node is associated with a filter function
+     */
+    private boolean parentFilterFunction(final ASTIdentifier node) {
+        JexlNode parent = node.jjtGetParent();
+        for (int i = 0; i < FUNCTION_SEARCH_DEPTH_LIMIT; i++) {
+            if (parent != null) {
+                if (filterFunction(parent)) {
+                    return true;
+                } else {
+                    parent = parent.jjtGetParent();
+                }
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Return whether the node is a function node whose first child has the image {@value EvaluationPhaseFilterFunctions#EVAL_PHASE_FUNCTION_NAMESPACE}.
+     * 
+     * @param node
+     *            the node
+     * @return true if the node is a filter function or false otherwise
+     */
+    private boolean filterFunction(JexlNode node) {
+        return node instanceof ASTFunctionNode && node.jjtGetNumChildren() > 0
+                        && node.jjtGetChild(0).image.equals(EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE);
+    }
+    
+    @Override
+    public Object visit(ASTJexlScript node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTOrNode node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTAndNode node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTEQNode node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTNENode node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTLTNode node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTGTNode node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTLENode node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTGENode node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTERNode node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTNRNode node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTNotNode node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTFunctionNode node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTReferenceExpression node, Object data) {
+        return traverseChildren(node, data);
+    }
+    
+    /**
+     * Returns true if {@link SetMembershipVisitor#fullTraversal} is true, otherwise return the inverse of matchFound. This allows us to stop traversing the
+     * query tree as soon as a match has been found for {@link SetMembershipVisitor#contains(Set, ShardQueryConfiguration, JexlNode)} where a full traversal may
+     * not be required.
+     * 
+     * @param matchFound
+     *            whether a match has been found yet
+     * @return whether a node's children should be traversed by this visitor
+     */
+    private boolean traverse(Object matchFound) {
+        if (fullTraversal)
+            return true;
+        return !(Boolean) matchFound;
+    }
+    
+    /**
+     * Will visit each child of the given node given {@link #traverse(Object)} returns true.
+     * 
+     * @param node
+     *            the node
+     * @param data
+     *            the data
+     * @return the traversal result
+     */
+    private Object traverseChildren(JexlNode node, Object data) {
+        if (traverse(data)) {
+            int i = 0;
+            while (traverse(data) && i < node.jjtGetNumChildren()) {
+                data = node.jjtGetChild(i).jjtAccept(this, data);
+                i++;
+            }
+        }
+        
+        return data;
+    }
 }

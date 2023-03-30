@@ -69,6 +69,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
      * Get the aliases for the field, and retain only those in the "validFields" set.
      * 
      * @param field
+     *            string field
      * @return the list of field aliases
      */
     protected Collection<String> getAliasesForField(String field) {
@@ -188,7 +189,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
         
         for (String alias : aliases) {
             if (alias != null) {
-                BoundedRange rangeNode = BoundedRange.create(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE),
+                BoundedRange rangeNode = (BoundedRange) BoundedRange.create(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE),
                                 JexlASTHelper.setField(RebuildingVisitor.copy(range.getLowerNode()), alias),
                                 JexlASTHelper.setField(RebuildingVisitor.copy(range.getUpperNode()), alias)));
                 aliasedBounds.add(rangeNode);
@@ -209,10 +210,12 @@ public class QueryModelVisitor extends RebuildingVisitor {
     
     /**
      * Applies the forward mapping from the QueryModel to a node, expanding the node into an Or if needed.
-     * 
+     *
      * @param node
+     *            the node
      * @param data
-     * @return
+     *            the data
+     * @return a jexlnode
      */
     protected JexlNode expandBinaryNodeFromModel(JexlNode node, Object data) {
         
@@ -395,6 +398,9 @@ public class QueryModelVisitor extends RebuildingVisitor {
     
     public void setNoExpansionFields(Set<String> noExpansionFields) {
         this.noExpansionFields = noExpansionFields;
+        if (this.simpleQueryModelVisitor != null) {
+            this.simpleQueryModelVisitor.setNoExpansionFields(noExpansionFields);
+        }
     }
     
     /**
@@ -405,16 +411,25 @@ public class QueryModelVisitor extends RebuildingVisitor {
         
         private final QueryModel queryModel;
         private final Set<String> validFields;
+        private Set<String> noExpansionFields;
         
         public SimpleQueryModelVisitor(QueryModel queryModel, Set<String> validFields) {
             this.queryModel = queryModel;
             this.validFields = validFields;
         }
         
+        public void setNoExpansionFields(Set<String> noExpansionFields) {
+            this.noExpansionFields = noExpansionFields;
+        }
+        
         @Override
         public Object visit(ASTIdentifier node, Object data) {
             JexlNode newNode;
             String fieldName = JexlASTHelper.getIdentifier(node);
+            
+            if (noExpansionFields != null && noExpansionFields.contains(fieldName)) {
+                return node;
+            }
             
             Collection<String> aliases = Sets.newLinkedHashSet(getAliasesForField(fieldName)); // de-dupe
             
@@ -445,6 +460,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
          * Get the aliases for the field, and retain only those in the "validFields" set.
          *
          * @param field
+         *            the field string
          * @return the list of field aliases
          */
         protected Collection<String> getAliasesForField(String field) {

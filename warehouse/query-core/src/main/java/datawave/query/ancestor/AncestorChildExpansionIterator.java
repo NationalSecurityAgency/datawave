@@ -256,11 +256,16 @@ public class AncestorChildExpansionIterator implements SortedKeyValueIterator<Ke
      * Generate an accurate key for use in the equality tests
      * 
      * @param key
+     *            a key
      * @param dataType
+     *            a data type
      * @param uid
+     *            the uid
      * @param field
+     *            the field
      * @param value
-     * @return
+     *            the value
+     * @return a key
      */
     protected Key getPartOfKey(Key key, String dataType, String uid, String field, String value) {
         return new Key(key.getRow().toString(), dataType + Constants.NULL_BYTE_STRING + uid, field + Constants.NULL_BYTE_STRING + value);

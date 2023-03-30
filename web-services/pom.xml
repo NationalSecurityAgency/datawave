@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>3.23.0-SNAPSHOT</version>
+        <version>3.42.0-SNAPSHOT</version>
     </parent>
     <groupId>gov.nsa.datawave.webservices</groupId>
     <artifactId>datawave-ws-parent</artifactId>
@@ -466,6 +466,18 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>ch.qos.reload4j</groupId>
+                <artifactId>reload4j</artifactId>
+                <version>${version.reload4j}</version>
+                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
                 <groupId>javax.jms</groupId>
                 <artifactId>jms</artifactId>
                 <version>${version.jms}</version>
@@ -481,18 +493,6 @@
                 <groupId>log4j</groupId>
                 <artifactId>apache-log4j-extras</artifactId>
                 <version>${version.log4j-extras}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>${version.log4j}</version>
                 <scope>provided</scope>
                 <exclusions>
                     <exclusion>
@@ -529,6 +529,16 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-common-test</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
     <build>
@@ -605,6 +615,24 @@
                                         <exclude>org.apache.commons:commons-vfs2</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>enforce-banned-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>log4j:log4j</exclude>
+                                        <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                    </excludes>
+                                    <includes />
+                                </bannedDependencies>
                             </rules>
                             <fail>true</fail>
                         </configuration>

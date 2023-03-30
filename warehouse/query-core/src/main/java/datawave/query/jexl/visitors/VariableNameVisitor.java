@@ -27,6 +27,9 @@ public class VariableNameVisitor extends BaseVisitor {
      * 
      * @param query
      *            JEXL query string
+     * @return the parsed query set
+     * @throws ParseException
+     *             for issues with parsing
      */
     public static Set<String> parseQuery(String query) throws ParseException {
         // Instantiate a parser and visitor
@@ -44,6 +47,8 @@ public class VariableNameVisitor extends BaseVisitor {
      * Print a representation of this AST
      * 
      * @param query
+     *            a jexl node
+     * @return the parsed query set
      */
     public static Set<String> parseQuery(JexlNode query) {
         VariableNameVisitor printer = new VariableNameVisitor();
@@ -53,6 +58,7 @@ public class VariableNameVisitor extends BaseVisitor {
         return printer.variableNames;
     }
     
+    @Override
     public Object visit(ASTIdentifier node, Object data) {
         this.variableNames.add(node.image);
         return super.visit(node, data);

@@ -15,6 +15,7 @@ import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.user.UserOperationsBean;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
@@ -88,7 +89,6 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
-import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 import javax.sql.DataSource;
@@ -193,13 +193,13 @@ public class CachedResultsBean {
     private QueryCache runningQueryCache;
     
     @Inject
+    private UserOperationsBean userOperationsBean;
+    
+    @Inject
     private AuditBean auditor;
     
     @Inject
     private CreatedQueryLogicCacheBean qlCache;
-    
-    @Resource
-    private ManagedExecutorService executor;
     
     @Inject
     private QueryPredictor predictor;
@@ -207,6 +207,7 @@ public class CachedResultsBean {
     protected static final String BASE_COLUMNS = StringUtils.join(CacheableQueryRow.getFixedColumnSet(), ",");
     
     @Inject
+    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
     
     // reference "datawave/query/CachedResults.xml"
@@ -429,7 +430,7 @@ public class CachedResultsBean {
             // Get a accumulo connection
             priority = logic.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            addQueryToTrackingMap(trackingMap, q);
+            q.populateTrackingMap(trackingMap);
             accumuloConnectionRequestBean.requestBegin(queryId);
             try {
                 connector = connectionFactory.getConnection(priority, trackingMap);
@@ -479,7 +480,7 @@ public class CachedResultsBean {
                 
                 try {
                     query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(
-                                    queryExpirationConf, q.getPageTimeout()), executor, predictor, metricFactory);
+                                    queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
                     query.setActiveCall(true);
                     // queryMetric was duplicated from the original earlier
                     query.setMetric(queryMetric);
@@ -2178,7 +2179,7 @@ public class CachedResultsBean {
                 QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), p);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(queryExpirationConf,
-                                q.getPageTimeout()), executor, predictor, metricFactory);
+                                q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
                 query.setActiveCall(true);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 runningQueryCache.put(q.getId().toString(), query);
@@ -2510,23 +2511,6 @@ public class CachedResultsBean {
             throw e;
         }
         return viewCreated;
-    }
-    
-    private void addQueryToTrackingMap(Map<String,String> trackingMap, Query q) {
-        
-        if (trackingMap == null || q == null) {
-            return;
-        }
-        
-        if (q.getOwner() != null) {
-            trackingMap.put("query.user", q.getOwner());
-        }
-        if (q.getId() != null) {
-            trackingMap.put("query.id", q.getId().toString());
-        }
-        if (q.getId() != null) {
-            trackingMap.put("query.query", q.getQuery());
-        }
     }
     
     public QueryPredictor getPredictor() {

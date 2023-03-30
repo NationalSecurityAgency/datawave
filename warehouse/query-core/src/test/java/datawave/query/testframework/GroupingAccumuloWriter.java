@@ -78,7 +78,9 @@ class GroupingAccumuloWriter {
      * @param data
      *            raw data (NOTE: the key values in the multimap are expected to be uppercase)
      * @throws MutationsRejectedException
+     *             if the mutations were rejected
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     void addData(final List<Map.Entry<Multimap<String,String>,UID>> data) throws MutationsRejectedException, TableNotFoundException {
         final BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);

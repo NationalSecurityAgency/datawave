@@ -19,6 +19,7 @@ import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.zookeeper.ZooUtil;
 import org.apache.accumulo.tracer.AsyncSpanReceiver;
 import org.apache.accumulo.tracer.ZooTraceClient;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
@@ -262,7 +263,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
             
             final Collection<String> proxyServers = getCurrentProxyServers();
             if (proxyServers != null)
-                trackingMap.put("proxyServers", proxyServers.toString());
+                trackingMap.put("proxyServers", StringUtils.join(proxyServers, " -> "));
         }
         AccumuloConnectionPool pool = pools.get(poolName).get(priority);
         Connector c = pool.borrowObject(trackingMap);

@@ -111,9 +111,10 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         for (final Object o : elements) {
             // normalize the element
             Object normalizedO = ValueTuple.getNormalizedValue(o);
+            Object unnormalizedO = ValueTuple.getValue(o);
             
             for (Pattern p : patterns) {
-                if (p.matcher(normalizedO.toString()).matches()) {
+                if (p.matcher(normalizedO.toString()).matches() || p.matcher(unnormalizedO.toString()).matches()) {
                     this.hitSet.add(ValueTuple.toValueTuple(o));
                     if (!exhaustiveHits) {
                         return true;
@@ -506,7 +507,9 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
      * Convert the left hand object if required to the same numberic class as the right hand side.
      * 
      * @param left
+     *            the left
      * @param right
+     *            the right
      * @return the fixed left hand object
      */
     protected Object fixLeft(Object left, Object right) {
@@ -560,7 +563,15 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
     }
     
     public static ColumnVisibility getColumnVisibilityForHit(Document document, String hitTerm) {
-        // get the visibility for the record with this hit
+        Attribute attr = getAttributeForHit(document, hitTerm);
+        if (attr != null) {
+            return attr.getColumnVisibility();
+        }
+        return null;
+    }
+    
+    public static Attribute getAttributeForHit(Document document, String hitTerm) {
+        // get the attribute for the record with this hit
         // split the term:
         int idx = hitTerm.indexOf(':');
         if (idx == -1)
@@ -579,11 +590,11 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                     Collection<String> expansions = Sets.newHashSet(type.getNormalizedValue(), type.getDelegate().toString());
                     for (String expansion : expansions) {
                         if (expansion.equals(hitValue)) {
-                            return documentAttr.getColumnVisibility();
+                            return documentAttr;
                         }
                     }
                 } else if (hitValue.equals(documentAttr.getData())) {
-                    return documentAttr.getColumnVisibility();
+                    return documentAttr;
                 }
             }
         } else {
@@ -593,11 +604,11 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                 Collection<String> expansions = Sets.newHashSet(type.getNormalizedValue(), type.getDelegate().toString());
                 for (String expansion : expansions) {
                     if (expansion.equals(hitValue)) {
-                        return documentAttribute.getColumnVisibility();
+                        return documentAttribute;
                     }
                 }
             } else if (hitValue.equals(documentAttribute.getData())) {
-                return documentAttribute.getColumnVisibility();
+                return documentAttribute;
             }
         }
         return null; // hitTerm not in Document

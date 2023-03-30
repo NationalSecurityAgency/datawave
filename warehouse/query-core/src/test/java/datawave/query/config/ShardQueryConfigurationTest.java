@@ -20,6 +20,7 @@ import datawave.query.attributes.UniqueGranularity;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.model.QueryModel;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import org.junit.Assert;
@@ -62,6 +63,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Long.MAX_VALUE, config.getMaxIndexScanTimeMillis());
         Assert.assertFalse(config.getCollapseUids());
         Assert.assertFalse(config.getParseTldUids());
+        Assert.assertFalse(config.getReduceQueryFields());
         Assert.assertFalse(config.getSequentialScheduler());
         Assert.assertFalse(config.getCollectTimingDetails());
         Assert.assertFalse(config.getLogTimingDetails());
@@ -204,6 +206,14 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Collections.emptySet(), config.getNoExpansionFields());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         Assert.assertEquals(5000000L, config.getVisitorFunctionMaxWeight());
+        
+        // seeks
+        Assert.assertEquals(-1, config.getFiFieldSeek());
+        Assert.assertEquals(-1, config.getFiNextSeek());
+        Assert.assertEquals(-1, config.getEventFieldSeek());
+        Assert.assertEquals(-1, config.getEventNextSeek());
+        Assert.assertEquals(-1, config.getTfFieldSeek());
+        Assert.assertEquals(-1, config.getTfNextSeek());
     }
     
     /**
@@ -293,6 +303,15 @@ public class ShardQueryConfigurationTest {
         other.setNoExpansionFields(noExpansionFields);
         other.setDisallowedRegexPatterns(disallowedRegexPatterns);
         other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
+        other.setAccumuloPassword("ChangeIt");
+        other.setReduceQueryFields(true);
+        // seeks
+        other.setFiFieldSeek(12);
+        other.setFiNextSeek(13);
+        other.setEventFieldSeek(14);
+        other.setEventNextSeek(15);
+        other.setTfFieldSeek(16);
+        other.setTfNextSeek(17);
         
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
@@ -374,9 +393,10 @@ public class ShardQueryConfigurationTest {
         QueryModel expectedQueryModel = new QueryModel();
         Assert.assertEquals(expectedQueryModel.getForwardQueryMapping(), config.getQueryModel().getForwardQueryMapping());
         Assert.assertEquals(expectedQueryModel.getReverseQueryMapping(), config.getQueryModel().getReverseQueryMapping());
-        Assert.assertEquals(expectedQueryModel.getUnevaluatedFields(), config.getQueryModel().getUnevaluatedFields());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
+        Assert.assertEquals("ChangeIt", config.getAccumuloPassword());
+        Assert.assertTrue(config.getReduceQueryFields());
         
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
@@ -388,6 +408,14 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(expectedUniqueFields, config.getUniqueFields());
         Assert.assertEquals(Lists.newArrayList("fieldA"), config.getContentFieldNames());
         Assert.assertEquals(Sets.newHashSet("NoExpansionFieldA"), config.getNoExpansionFields());
+        
+        // assert seeks
+        Assert.assertEquals(12, other.getFiFieldSeek());
+        Assert.assertEquals(13, other.getFiNextSeek());
+        Assert.assertEquals(14, other.getEventFieldSeek());
+        Assert.assertEquals(15, other.getEventNextSeek());
+        Assert.assertEquals(16, other.getTfFieldSeek());
+        Assert.assertEquals(17, other.getTfNextSeek());
     }
     
     @Test
@@ -404,6 +432,22 @@ public class ShardQueryConfigurationTest {
         Set<String> projectFields = Sets.newHashSet("projectA", "projectB");
         config.setProjectFields(projectFields);
         Assert.assertEquals(expected, config.getProjectFieldsAsString());
+    }
+    
+    @Test
+    public void testGetSetConjunctionsWithinExpression() {
+        ShardQueryLogic logic = new ShardQueryLogic();
+        boolean expected = true; // Set ordering.
+        logic.setEnforceUniqueConjunctionsWithinExpression(true);
+        Assert.assertEquals(expected, logic.getEnforceUniqueConjunctionsWithinExpression());
+    }
+    
+    @Test
+    public void testGetSetDisjunctionsWithinExpression() {
+        ShardQueryLogic logic = new ShardQueryLogic();
+        boolean expected = true; // Set ordering.
+        logic.setEnforceUniqueDisjunctionsWithinExpression(true);
+        Assert.assertEquals(expected, logic.getEnforceUniqueDisjunctionsWithinExpression());
     }
     
     @Test
@@ -458,10 +502,11 @@ public class ShardQueryConfigurationTest {
      * This test will fail if a new variable is added improperly to the ShardQueryConfiguration
      *
      * @throws IOException
+     *             if something went wrong
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 186;
+        int expectedObjectCount = 197;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

@@ -25,6 +25,7 @@ public class Unique extends JexlQueryFunction {
      * query options contain a list of fields. Cannot be the empty list.
      * 
      * @throws IllegalArgumentException
+     *             for illegal arguments
      */
     @Override
     public void validate() throws IllegalArgumentException {

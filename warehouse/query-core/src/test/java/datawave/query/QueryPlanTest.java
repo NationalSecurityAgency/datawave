@@ -122,7 +122,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterFTSDException() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
-        String expectedPlan = "(((!(_ANYFIELD_ == 'london') && !(CITY == 'london') && !(STATE == 'london'))))";
+        String expectedPlan = "(!(_ANYFIELD_ == 'london') && !(CITY == 'london') && !(STATE == 'london'))";
         try {
             runTest(query, query);
             fail("Expected FullTableScanDisallowedException.");

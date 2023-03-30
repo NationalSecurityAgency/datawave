@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import datawave.query.table.parser.TermFrequencyKeyValueFactory;
-import datawave.webservice.query.result.event.DefaultEvent;
-import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
-import datawave.webservice.result.DefaultEventQueryResponse;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -23,32 +23,35 @@ import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.result.BaseQueryResponse;
 
-public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,DefaultEvent> {
+@SuppressWarnings("rawtypes")
+public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,EventBase> {
     
-    private Query query = null;
-    private Authorizations auths = null;
+    private final Query query;
+    private final Authorizations auths;
+    private final ResponseObjectFactory responseObjectFactory;
     
-    public TermFrequencyQueryTransformer(Query query, MarkingFunctions markingFunctions) {
+    public TermFrequencyQueryTransformer(Query query, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.query = query;
+        this.responseObjectFactory = responseObjectFactory;
         this.auths = new Authorizations(StringUtils.split(this.query.getQueryAuthorizations(), ','));
     }
     
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
-        DefaultEventQueryResponse response = new DefaultEventQueryResponse();
+        EventQueryResponseBase response = responseObjectFactory.getEventQueryResponse();
         List<EventBase> eventList = new ArrayList<>();
         for (Object o : resultList) {
             EventBase result = (EventBase) o;
             eventList.add(result);
         }
         response.setEvents(eventList);
-        response.setReturnedEvents(new Long(eventList.size()));
+        response.setReturnedEvents((long) eventList.size());
         return response;
     }
     
     @Override
-    public DefaultEvent transform(Entry<Key,Value> entry) throws EmptyObjectException {
+    public EventBase transform(Entry<Key,Value> entry) throws EmptyObjectException {
         if (entry.getKey() == null && entry.getValue() == null) {
             return null;
         }
@@ -63,17 +66,17 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         } catch (Exception e) {
             throw new IllegalArgumentException("Unable to parse visibility", e);
         }
-        DefaultEvent e = new DefaultEvent();
+        EventBase e = responseObjectFactory.getEvent();
         
         e.setMarkings(tfkv.getMarkings());
         
         Metadata m = new Metadata();
         m.setRow(tfkv.getShardId());
-        m.setDataType(tfkv.getShardId());
+        m.setDataType(tfkv.getDatatype());
         m.setInternalId(tfkv.getUid());
         e.setMetadata(m);
         
-        List<DefaultField> fields = ImmutableList.of(createField(tfkv, entry, "FIELD_NAME", tfkv.getFieldName()),
+        List<FieldBase> fields = ImmutableList.of(createField(tfkv, entry, "FIELD_NAME", tfkv.getFieldName()),
                         createField(tfkv, entry, "FIELD_VALUE", tfkv.getFieldValue()),
                         createField(tfkv, entry, "OFFSET_COUNT", String.valueOf(tfkv.getCount())),
                         createField(tfkv, entry, "OFFSETS", tfkv.getOffsets().toString()));
@@ -82,8 +85,8 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         return e;
     }
     
-    protected DefaultField createField(TermFrequencyKeyValue tfkv, Entry<Key,Value> e, String name, String value) {
-        DefaultField field = new DefaultField();
+    protected FieldBase createField(TermFrequencyKeyValue tfkv, Entry<Key,Value> e, String name, String value) {
+        FieldBase field = responseObjectFactory.getField();
         field.setMarkings(tfkv.getMarkings());
         field.setName(name);
         field.setValue(value);

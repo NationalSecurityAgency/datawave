@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -57,11 +58,15 @@ import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.ASTVar;
 import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
 import java.util.Set;
+
+import static org.apache.commons.jexl2.parser.JexlNodes.findNegatedParent;
+import static org.apache.commons.jexl2.parser.JexlNodes.makeRef;
+import static org.apache.commons.jexl2.parser.JexlNodes.swap;
+import static org.apache.commons.jexl2.parser.JexlNodes.wrap;
 
 /**
  * Visitor meant to 'pull up' delayed predicates for expressions that are not executable. Essentially if we have an OR of nodes in which some of the nodes are
@@ -128,7 +133,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        if (!ExecutableDeterminationVisitor.isExecutable(node, forFieldIndex, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, data);
         }
         return node;
@@ -137,8 +142,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     private boolean containsChild(JexlNode node, ExecutableDeterminationVisitor.STATE state) {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
-            if (state == ExecutableDeterminationVisitor.getState(child, forFieldIndex, config, indexedFields, indexOnlyFields, nonEventFields, false, null,
-                            helper)) {
+            if (state == ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
                 return true;
             }
         }
@@ -244,11 +248,30 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
         // if a delayed predicate, then change it to a regular reference
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         if (instance.isType(ASTDelayedPredicate.class)) {
-            JexlNode source = instance.getSource();
-            JexlNodes.swap(node.jjtGetParent(), node, source);
+            JexlNode source = ASTDelayedPredicate.unwrapFully(node, ASTDelayedPredicate.class);
+            
+            // when pulling up a delayed marker that is negated, a reference expression must be persisted
+            source = wrapIfNeeded(source);
+            
+            swap(node.jjtGetParent(), node, source);
             return source;
         } else if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, data);
+        }
+        return node;
+    }
+    
+    /**
+     * When pulling up a delayed marker that is negated a reference expression must be persisted for correct query evaluation
+     *
+     * @param node
+     *            a JexlNode
+     * @return the node, possible wrapped in a reference expression
+     */
+    private JexlNode wrapIfNeeded(JexlNode node) {
+        node = JexlASTHelper.dereference(node);
+        if (node instanceof ASTOrNode || node instanceof ASTAndNode || findNegatedParent(node)) {
+            node = makeRef(wrap(node));
         }
         return node;
     }

@@ -10,6 +10,8 @@ import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 
@@ -100,8 +102,10 @@ public class PushdownNegationVisitor extends BaseVisitor {
     
     /**
      * @param node
+     *            a and node
      * @param data
-     * @return
+     *            the node's data
+     * @return result of visiting the node
      */
     @Override
     public Object visit(ASTAndNode node, Object data) {
@@ -210,6 +214,7 @@ public class PushdownNegationVisitor extends BaseVisitor {
         // flip the root operator and finish validating the root
         JexlNode newRoot;
         if (root instanceof ASTAndNode) {
+            // may need to create an unwrapped or node
             newRoot = JexlNodeFactory.createOrNode(negatedChildren);
         } else if (root instanceof ASTOrNode) {
             newRoot = JexlNodeFactory.createAndNode(negatedChildren);
@@ -231,19 +236,47 @@ public class PushdownNegationVisitor extends BaseVisitor {
         return newRoot;
     }
     
+    /**
+     * Negations take several forms in the query tree. Thus, some work needs to be done in order to drop all constituent parts of the negation.
+     *
+     * @param toDrop
+     *            an ASTNotNode
+     * @param state
+     *            the current negation state
+     * @return the replacement node
+     */
     private JexlNode dropNot(ASTNotNode toDrop, NegationState state) {
-        JexlNode newNode = toDrop.jjtGetChild(0);
+        JexlNode child = toDrop.jjtGetChild(0);
         
         // no need to swap nodes if toDrop is the root
         if (toDrop.jjtGetParent() != null) {
+            
+            // check for adjacent not nodes
+            if (child instanceof ASTNotNode || QueryPropertyMarker.findInstance(child).isAnyType()) {
+                JexlNodes.swap(toDrop.jjtGetParent(), toDrop, child);
+                state.setNegated(false);
+                return child;
+            }
+            
+            // check for and remove full node chain of 'NotNode - Ref - RefExpr'
+            JexlNode grandChild = child.jjtGetChild(0);
+            if (grandChild.jjtGetNumChildren() > 0) {
+                JexlNode greatGrandChild = grandChild.jjtGetChild(0);
+                if (child instanceof ASTReference && grandChild instanceof ASTReferenceExpression) {
+                    JexlNodes.swap(toDrop.jjtGetParent(), toDrop, greatGrandChild);
+                    state.setNegated(false);
+                    return greatGrandChild;
+                }
+            }
+            
             // connect the child to the parent cutting this node out
-            JexlNodes.swap(toDrop.jjtGetParent(), toDrop, newNode);
+            JexlNodes.swap(toDrop.jjtGetParent(), toDrop, child);
         }
         
         // negate the data so the parent Not knows it was successfully pushed down
         state.setNegated(false);
         
-        return newNode;
+        return child;
     }
     
     private static class NegationState {

@@ -36,6 +36,12 @@ public class FunctionJexlNodeVisitor extends BaseVisitor {
         return name;
     }
     
+    public static FunctionJexlNodeVisitor eval(JexlNode node) {
+        FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
+        node.jjtAccept(visitor, null);
+        return visitor;
+    }
+    
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         int childN = 0;

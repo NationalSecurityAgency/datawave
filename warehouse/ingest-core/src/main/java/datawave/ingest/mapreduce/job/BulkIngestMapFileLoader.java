@@ -560,6 +560,9 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Listens for connections on {@code serverSocket}. Upon receipt of a connection, listens for a shutdown command which must be sent within 30 seconds. If
      * the shutdown command is received, then the map file loader will shut down.
+     * 
+     * @param serverSocket
+     *            the server socket
      */
     protected void listenForShutdownCommand(ServerSocket serverSocket) {
         log.info("Listening for shutdown commands on port " + serverSocket.getLocalPort());
@@ -659,6 +662,12 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Determines whether or not it is safe to bring map files online. This asks Accumulo for its stats for major compaction (running and queued), and will
      * return false if either "too many" compactions are running/queued.
+     * 
+     * @param lastOnlineTime
+     *            the last online time
+     * @param logInfo
+     *            log info
+     * @return boolean flag
      */
     public boolean canBringMapFilesOnline(long lastOnlineTime, boolean logInfo) {
         Level level = (logInfo ? Level.INFO : Level.DEBUG);
@@ -702,7 +711,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Gets a list of job directories that are marked with pathPattern.
      * 
+     * @param hdfs
+     *            the HDFS URI
      * @param pathPattern
+     *            the path pattern
+     * @throws IOException
+     *             for issues reading/writing with the file system.
+     * @return a path array
      */
     private Path[] getJobDirectories(URI hdfs, Path pathPattern) throws IOException {
         log.debug("Checking for completed job directories.");
@@ -730,6 +745,17 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Brings all map files in {@code mapFilesDir} online in accumulo. Note that {@code mapFilesDir} is assumed to have subdirectories that are the names of the
      * tables for which map files are to be loaded. Under those directories should be "part-XXXXX" directories which in turn contain the map/index files.
+     * 
+     * @param mapFilesDir
+     *            the map files directory
+     * @throws IOException
+     *             for IO related issues
+     * @throws AccumuloException
+     *             for accumulo issues
+     * @throws AccumuloSecurityException
+     *             for accumulo auth issues
+     * @throws TableNotFoundException
+     *             if the table is not found
      */
     public void bringMapFilesOnline(Path mapFilesDir) throws IOException, AccumuloException, AccumuloSecurityException, TableNotFoundException {
         log.info("Bringing all mapFiles under " + mapFilesDir + " online.");
@@ -958,6 +984,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
          * Return a rfile with .1 appended before the extension. {@code foo.ext -> foo.1.ext foo -> foo.1}
          *
          * @param rfile
+         *            the rfile string
          * @return a rfile with .1 appended before the extension
          */
         private String getNextName(String rfile) {
@@ -981,6 +1008,11 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Verify there are no RFiles left behind. If there are, then we need to throw an exception to ensure we fail this bulk load and the directory is not
      * removed.
+     * 
+     * @param mapFilesDir
+     *            the map files directory
+     * @throws IOException
+     *             if there is an issue accessing the filesystem
      */
     public void verifyNothingLeftBehind(Path mapFilesDir) throws IOException {
         verifyNothingLeftBehind(getFileSystem(destHdfs), mapFilesDir.getParent());
@@ -999,6 +1031,11 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Cleans up a job directory. If the process to bring map files online was successful, then the job directory and map files directory are removed.
      * Otherwise, they are just marked as failed.
+     * 
+     * @param mapFilesDir
+     *            the map files directory
+     * @throws IOException
+     *             if there is an issue accessing the filesystem
      */
     public void cleanUpJobDirectory(Path mapFilesDir) throws IOException {
         Path jobDirectory = mapFilesDir.getParent();
@@ -1033,6 +1070,10 @@ public final class BulkIngestMapFileLoader implements Runnable {
     
     /**
      * Marks {@code jobDirectory} as failed (in the source filesystem) so that the loader won't try again to load the map files in this job directory.
+     * 
+     * @param jobDirectory
+     *            the job directory
+     * @return if the action succeeded or not
      */
     public boolean takeOwnershipJobDirectory(Path jobDirectory) {
         boolean success = false;
@@ -1086,6 +1127,12 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Marks {@code jobDirectory} as failed (in the source filesystem) so that the loader won't try again to load the map files in this job directory. If we
      * were successfully distCped over, then this will fail but that is OK because it no longer in the source filesystem.
+     * 
+     * @param workingHdfs
+     *            the working hdfs directory
+     * @param jobDirectory
+     *            the job directory
+     * @return if the action succeeded or not
      */
     public boolean markJobDirectoryFailed(URI workingHdfs, Path jobDirectory) {
         boolean success = false;

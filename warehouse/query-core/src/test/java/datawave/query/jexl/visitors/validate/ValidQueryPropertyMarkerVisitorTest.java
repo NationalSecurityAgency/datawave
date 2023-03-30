@@ -7,10 +7,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ValidQueryPropertyMarkerVisitorTest {
     
-    private boolean isValid;
+    private ValidQueryPropertyMarkerVisitor.Validation validation;
     
     // Verify that a query with no markers is not invalid.
     @Test
@@ -54,16 +55,24 @@ public class ValidQueryPropertyMarkerVisitorTest {
         assertIsInvalid();
     }
     
+    @Test
+    public void testUnwrappedMarker() throws ParseException {
+        givenQuery("(_Bounded_ = true) && (FOO > 5 && FOO < 10)");
+        assertIsInvalid();
+    }
+    
     private void givenQuery(String query) throws ParseException {
         ASTJexlScript queryScript = JexlASTHelper.parseJexlQuery(query);
-        isValid = ValidQueryPropertyMarkerVisitor.validate(queryScript);
+        validation = ValidQueryPropertyMarkerVisitor.validate(queryScript);
     }
     
     private void assertIsValid() {
-        assertTrue(isValid);
+        if (!validation.isValid()) {
+            fail("Expected validation to pass, but failed for reason: " + validation.getReason());
+        }
     }
     
     private void assertIsInvalid() {
-        assertFalse(isValid);
+        assertFalse(validation.isValid());
     }
 }

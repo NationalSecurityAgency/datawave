@@ -57,6 +57,7 @@ public class ShardIndexKeyFunctor implements KeyFunctor {
      * Determine whether this range should be considered by the bloom filter.
      * 
      * @param range
+     *            the range to check
      * @return true if it is to be considered, false otherwise
      */
     static boolean isRangeInBloomFilter(Range range) {
@@ -93,6 +94,8 @@ public class ShardIndexKeyFunctor implements KeyFunctor {
      * A key is to be considered by the bloom filter if the field name and field value are supplied.
      * 
      * @param cbKey
+     *            the key to check
+     * @return if the key is in the filter
      */
     static boolean isKeyInBloomFilter(org.apache.accumulo.core.data.Key cbKey) {
         // if we have a row with the field name and a column familiy with the field value, then

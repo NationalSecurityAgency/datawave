@@ -170,6 +170,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
      * Sets the Type for this raw record container.
      * 
      * @param dataType
+     *            - datatype to set
      * @see Type
      */
     @Override
@@ -306,6 +307,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
      * Stores the name of the raw file that this event came from.
      * 
      * @param rawFileName
+     *            - name of the raw file
      */
     @Override
     public void setRawFileName(String rawFileName) {
@@ -315,7 +317,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     /**
      * Get the raw record number
      * 
-     * @return
+     * @return the raw record number
      */
     @Override
     public long getRawRecordNumber() {
@@ -326,6 +328,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
      * Stores the record number in the raw file that this raw record container came from.
      * 
      * @param rawRecordNumber
+     *            - the record number to store
      */
     @Override
     public void setRawRecordNumber(long rawRecordNumber) {
@@ -345,6 +348,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
      * Stores the timestamp of the raw input file that this raw record container came from.
      * 
      * @param rawRecordTimestamp
+     *            - the record timestamp
      */
     @Override
     public void setRawFileTimestamp(long rawRecordTimestamp) {
@@ -455,7 +459,8 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
      * Copy this RawRecordConatiner into another RawRecordContainer
      * 
      * @param rrci
-     * @return e
+     *            - the record container to copy
+     * @return a copied raw record container
      */
     protected RawRecordContainerImpl copyInto(RawRecordContainerImpl rrci) {
         copyConfiguration(rrci);
@@ -481,6 +486,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
      * Since the configuration has already been loaded, there is no need to re-load it. We can simply copy the built objects
      * 
      * @param rrci
+     *            - the record container from which to pull a configuration
      */
     private void copyConfiguration(RawRecordContainerImpl rrci) {
         rrci.conf = conf;
@@ -491,7 +497,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     
     @Override
     /**
-     * This will report the number of bytes taken by the RawRecordContainer object when written out. Note that write(DataOutput) must have been called
+     * This will report the number of bytes taken by the RawRecordContainer object when written out. Note that write(DataOutput) or readFields(DataInput) must have been called
      * previously otherwise this will return -1.
      */
     public long getDataOutputSize() {
@@ -668,6 +674,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     public void readFields(DataInput in) throws IOException {
         clear();
         int length = in.readInt();
+        this.dataOutputSize = length;
         byte[] buf = new byte[length];
         in.readFully(buf);
         Data data = Data.parseFrom(buf);

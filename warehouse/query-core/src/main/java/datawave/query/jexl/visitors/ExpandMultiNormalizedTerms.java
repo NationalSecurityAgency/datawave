@@ -24,6 +24,7 @@ import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -75,8 +76,14 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
      * Expand all nodes which have multiple dataTypes for the field.
      *
      * @param config
+     *            a config
      * @param script
-     * @return
+     *            a script
+     * @param <T>
+     *            type of node
+     * @param helper
+     *            the metadata helper
+     * @return a reference to the node
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T expandTerms(ShardQueryConfiguration config, MetadataHelper helper, T script) {
@@ -208,8 +215,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     /**
      * 
      * @param node
+     *            a jexl node
      * @param data
-     * @return
+     *            the node data
+     * @return a jexl node
      */
     protected JexlNode expandNodeForNormalizers(JexlNode node, Object data) {
         JexlNode nodeToReturn = node;
@@ -229,6 +238,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                 try {
                     String term = literal.toString();
                     Set<String> normalizedTerms = Sets.newHashSet();
+                    boolean evaluationOnlyRegex = false;
                     
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
@@ -259,12 +269,24 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                             if (log.isTraceEnabled()) {
                                 log.trace("Could not normalize " + term + " using " + normalizer.getClass());
                             }
+                            // if this was a regex, then lets assume that the regex could not be decoded enough to determine how to match against the index.
+                            // in this case we need to force this term to be evaluation only (i.e. cannot be done against an index)
+                            if (node instanceof ASTNRNode || node instanceof ASTERNode) {
+                                log.info("Pushing regex down to be evaluation only as it could not be normalized");
+                                evaluationOnlyRegex = true;
+                                // make sure we include the original form of the regex for this
+                                normalizedTerms.add(term);
+                            }
                         }
                     }
                     
                     if (normalizedTerms.size() > 1) {
-                        
-                        nodeToReturn = JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.OR_NODE, node, node, fieldName, normalizedTerms);
+                        // if it is a negated node, then and the possibilities
+                        if (node instanceof ASTNRNode || node instanceof ASTNENode) {
+                            nodeToReturn = JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.AND_NODE, node, node, fieldName, normalizedTerms);
+                        } else {
+                            nodeToReturn = JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.OR_NODE, node, node, fieldName, normalizedTerms);
+                        }
                         
                     } else if (1 == normalizedTerms.size()) {
                         // If there is only one term, we don't need to make an OR
@@ -274,6 +296,13 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                         nodeToReturn = JexlNodeFactory.buildUntypedNewLiteralNode(node, fieldName, literal);
                     }
                     
+                    // if we have an unnormalizable regex in the mix, then wrap with evaluation only
+                    // this is ok even if we have a mix of normalizations that worked vs not because
+                    // if one of a union is evaluation only, then they all must be (see executability
+                    // visitor for more understanding)
+                    if (evaluationOnlyRegex) {
+                        nodeToReturn = ASTEvaluationOnly.create(nodeToReturn);
+                    }
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.NODE_EXPANSION_ERROR, e, MessageFormat.format("Node: {0}, Datatypes: {1}",
                                     PrintingVisitor.formattedQueryString(node), dataTypes));

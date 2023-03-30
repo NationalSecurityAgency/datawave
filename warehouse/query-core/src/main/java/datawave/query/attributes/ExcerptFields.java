@@ -92,6 +92,17 @@ public class ExcerptFields implements Serializable {
     }
     
     /**
+     * Do we have this field in the list of excerpt fields.
+     * 
+     * @param field
+     *            the field
+     * @return true if we have configuration for this field, false otherwise
+     */
+    public boolean containsField(String field) {
+        return fieldMap.containsKey(field);
+    }
+    
+    /**
      * Return the offset to use when retrieving excerpts for the specified field.
      * 
      * @param field

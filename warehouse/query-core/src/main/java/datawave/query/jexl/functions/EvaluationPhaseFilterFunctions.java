@@ -4,8 +4,8 @@ import com.google.common.base.CharMatcher;
 import com.google.common.collect.Sets;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
-import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.JexlPatternCache;
 import datawave.util.OperationEvaluator;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.log4j.Logger;
@@ -17,15 +17,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
@@ -135,7 +136,6 @@ public class EvaluationPhaseFilterFunctions {
      * @return the {@link FunctionalSet} of hit terms found
      */
     public static FunctionalSet<ValueTuple> isNotNull(Object fieldValue) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null) {
             if (fieldValue instanceof Collection) {
                 Collection<?> values = (Collection<?>) fieldValue;
@@ -311,24 +311,41 @@ public class EvaluationPhaseFilterFunctions {
      * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
      */
     public static FunctionalSet<ValueTuple> getAllMatches(Iterable<?> values, String regex) {
+        return getAllMatchesStream(values, regex).collect(Collectors.toCollection(FunctionalSet::new));
+    }
+    
+    /**
+     * Return a stream for getAllMatches (@see getAllMatches)
+     * 
+     * @param values
+     *            the values to evaluate
+     * @param regex
+     *            the regex
+     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
+     */
+    static Stream<ValueTuple> getAllMatchesStream(Iterable<?> values, String regex) {
         if (values != null) {
             final Pattern pattern = JexlPatternCache.getPattern(regex);
             final boolean caseInsensitive = regex.matches(CASE_INSENSITIVE);
             // @formatter:off
-            FunctionalSet<ValueTuple> matches = StreamSupport.stream(values.spliterator(), false)
+            Stream<ValueTuple> matches = StreamSupport.stream(values.spliterator(), false)
                             .filter(Objects::nonNull)
                             .filter((value) -> isMatchForPattern(pattern, caseInsensitive, value))
-                            .map(EvaluationPhaseFilterFunctions::getHitTerm)
-                            .collect(Collectors.toCollection(FunctionalSet::new));
+                            .map(EvaluationPhaseFilterFunctions::getHitTerm);
             // @formatter:on
-            return FunctionalSet.unmodifiableSet(matches);
+            return matches;
         }
-        return FunctionalSet.emptySet();
+        return Collections.EMPTY_LIST.stream();
     }
     
     /**
      * Functionally equivalent to {@link #includeRegex(Object, String)}.
-     *
+     * 
+     * @param fieldValue
+     *            field value string
+     * @param regex
+     *            the regex string
+     * @return a set of field value string tuple
      * @see EvaluationPhaseFilterFunctions#includeRegex(Object, String) additional documentation on expected result
      */
     public static FunctionalSet<ValueTuple> getAllMatches(Object fieldValue, String regex) {
@@ -342,46 +359,6 @@ public class EvaluationPhaseFilterFunctions {
             matcher.reset(ValueTuple.getNormalizedStringValue(value));
         }
         return matcher.matches();
-    }
-    
-    /**
-     * Returns a set that contains the hit term if the non-normalized value of the field value matches the given string.
-     *
-     * @param fieldValue
-     *            the field value to evaluate
-     * @param valueToMatch
-     *            the string to match
-     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
-     */
-    public static FunctionalSet<ValueTuple> includeText(Object fieldValue, String valueToMatch) {
-        if (fieldValue != null && ValueTuple.getStringValue(fieldValue).equals(valueToMatch)) {
-            return FunctionalSet.singleton(getHitTerm(fieldValue));
-        }
-        return FunctionalSet.emptySet();
-    }
-    
-    /**
-     * Returns a set that contains the hit term for the first field value where the non-normalized value matches the given string.
-     *
-     * @param values
-     *            the values to evaluate
-     * @param valueToMatch
-     *            the string to match
-     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
-     */
-    public static FunctionalSet<ValueTuple> includeText(Iterable<?> values, String valueToMatch) {
-        if (values != null) {
-            // @formatter:off
-            return StreamSupport.stream(values.spliterator(), false)
-                            .filter(Objects::nonNull)
-                            .filter((value) -> ValueTuple.getStringValue(value).equals(valueToMatch))
-                            .findFirst()
-                            .map(EvaluationPhaseFilterFunctions::getHitTerm)
-                            .map(FunctionalSet::singleton)
-                            .orElseGet(FunctionalSet::emptySet);
-            // @formatter:on
-        }
-        return FunctionalSet.emptySet();
     }
     
     /**
@@ -773,8 +750,9 @@ public class EvaluationPhaseFilterFunctions {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null) {
             try {
+                long startDate = getTime(start, true);
                 for (Object o : fieldValue) {
-                    if (betweenInclusive(getTime(o), getTime(start, true), Long.MAX_VALUE)) {
+                    if (betweenInclusive(getTime(o), startDate, Long.MAX_VALUE)) {
                         matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
@@ -830,8 +808,9 @@ public class EvaluationPhaseFilterFunctions {
             try {
                 DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
                 int granularity = getGranularity(rangePattern);
+                long startDate = getNextTime(start, rangeFormat, granularity);
                 for (Object o : fieldValue) {
-                    if (betweenInclusive(getTime(o), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
+                    if (betweenInclusive(getTime(o), startDate, Long.MAX_VALUE)) {
                         matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
@@ -927,7 +906,7 @@ public class EvaluationPhaseFilterFunctions {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null) {
             try {
-                if (betweenInclusive(getTime(fieldValue), 0, getTime(end) - 1)) {
+                if (betweenInclusive(getTime(fieldValue), Long.MIN_VALUE, getTime(end) - 1)) {
                     matches = FunctionalSet.singleton(getHitTerm(fieldValue));
                 }
             } catch (ParseException pe) {
@@ -950,8 +929,10 @@ public class EvaluationPhaseFilterFunctions {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null) {
             try {
+                long endDate = getTime(end) - 1; // calculate once outside the loop
                 for (Object o : fieldValue) {
-                    if (betweenInclusive(getTime(o), 0, getTime(end) - 1)) {
+                    long date = getTime(o);
+                    if (betweenInclusive(date, Long.MIN_VALUE, endDate)) {
                         matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
@@ -979,7 +960,7 @@ public class EvaluationPhaseFilterFunctions {
         if (fieldValue != null) {
             try {
                 DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-                if (betweenInclusive(getTime(fieldValue), 0, getTime(end, rangeFormat) - 1)) {
+                if (betweenInclusive(getTime(fieldValue), Long.MIN_VALUE, getTime(end, rangeFormat) - 1)) {
                     matches = FunctionalSet.singleton(getHitTerm(fieldValue));
                 }
             } catch (ParseException pe) {
@@ -1005,8 +986,10 @@ public class EvaluationPhaseFilterFunctions {
         if (fieldValue != null) {
             try {
                 DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                long endDate = getTime(end, rangeFormat) - 1;
                 for (Object o : fieldValue) {
-                    if (betweenInclusive(getTime(o), 0, getTime(end, rangeFormat) - 1)) {
+                    long date = getTime(o);
+                    if (betweenInclusive(date, Long.MIN_VALUE, endDate)) {
                         matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
@@ -1038,9 +1021,8 @@ public class EvaluationPhaseFilterFunctions {
             try {
                 DateFormat format = newSimpleDateFormat(pattern);
                 DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-                long lStart = 0;
                 long lEnd = getTime(end, rangeFormat) - 1;
-                if (betweenInclusive(getTime(fieldValue, format), lStart, lEnd)) {
+                if (betweenInclusive(getTime(fieldValue, format), Long.MIN_VALUE, lEnd)) {
                     matches = FunctionalSet.singleton(getHitTerm(fieldValue));
                 }
             } catch (ParseException pe) {
@@ -1071,10 +1053,9 @@ public class EvaluationPhaseFilterFunctions {
             try {
                 DateFormat format = newSimpleDateFormat(pattern);
                 DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-                long lStart = 0;
                 long lEnd = getTime(end, rangeFormat) - 1;
                 for (Object o : fieldValue) {
-                    if (betweenInclusive(getTime(o, format), lStart, lEnd)) {
+                    if (betweenInclusive(getTime(o, format), Long.MIN_VALUE, lEnd)) {
                         matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
@@ -1337,6 +1318,7 @@ public class EvaluationPhaseFilterFunctions {
      * Create a new simple date format, with a GMT time zone
      *
      * @param format
+     *            the format string
      * @return the DateFormat
      */
     protected static DateFormat newSimpleDateFormat(String format) {
@@ -1499,6 +1481,9 @@ public class EvaluationPhaseFilterFunctions {
      * example getNextUnit(x, DAY) would return {@code x+<ms/day>}.
      *
      * @param granularity
+     *            the granularity
+     * @param time
+     *            the timestmap
      * @return next date/time in milliseconds
      */
     public static long getNextTime(long time, int granularity) {

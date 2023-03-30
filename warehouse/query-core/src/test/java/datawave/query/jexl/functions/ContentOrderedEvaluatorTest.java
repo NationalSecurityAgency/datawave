@@ -29,6 +29,7 @@ public class ContentOrderedEvaluatorTest {
     @Before
     public void setup() {
         termOffsetMap = new TermOffsetMap();
+        termOffsetMap.setGatherPhraseOffsets(true);
     }
     
     @After

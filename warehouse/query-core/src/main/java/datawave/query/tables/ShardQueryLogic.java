@@ -3,7 +3,6 @@ package datawave.query.tables;
 import com.google.common.base.Function;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -22,6 +21,7 @@ import datawave.query.config.Profile;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.enrich.DataEnricher;
 import datawave.query.enrich.EnrichingMaster;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.index.lookup.CreateUidsIterator;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.UidIntersector;
@@ -222,7 +222,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setQueryModel(other.getQueryModel());
         this.setScannerFactory(other.getScannerFactory());
         this.setScheduler(other.getScheduler());
-        this.setEventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer());
         
         log.trace("copy CTOR setting metadataHelperFactory to " + other.getMetadataHelperFactory());
         this.setMetadataHelperFactory(other.getMetadataHelperFactory());
@@ -234,7 +233,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setPrimaryToSecondaryFieldMap(other.getPrimaryToSecondaryFieldMap());
         
         if (other.eventQueryDataDecoratorTransformer != null) {
-            this.eventQueryDataDecoratorTransformer = new EventQueryDataDecoratorTransformer(other.eventQueryDataDecoratorTransformer);
+            this.setEventQueryDataDecoratorTransformer(new EventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer()));
         }
     }
     
@@ -462,7 +461,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     /**
      * Validate that the configuration is in a consistent state
-     *
+     * 
+     * @param config
+     *            the config
      * @throws IllegalArgumentException
      *             when config constraints are violated
      */
@@ -603,11 +604,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         transformer.setQm(queryModel);
         this.transformerInstance = transformer;
         addConfigBasedTransformers();
+        
         return this.transformerInstance;
     }
     
     public boolean isLongRunningQuery() {
-        return !getConfig().getUniqueFields().isEmpty() || !getConfig().getGroupFields().isEmpty();
+        return !getConfig().getGroupFields().isEmpty();
     }
     
     /**
@@ -721,9 +723,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
         }
         
-        // if the TRANFORM_CONTENT_TO_UID is false, then unset the list of content field names preventing the DocumentTransformer from
+        // if the TRANSFORM_CONTENT_TO_UID is false, then unset the list of content field names preventing the DocumentTransformer from
         // transforming them.
-        String transformContentStr = settings.findParameter(QueryParameters.TRANFORM_CONTENT_TO_UID).getParameterValue().trim();
+        String transformContentStr = settings.findParameter(QueryParameters.TRANSFORM_CONTENT_TO_UID).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(transformContentStr)) {
             if (!Boolean.valueOf(transformContentStr)) {
                 setContentFieldNames(Collections.EMPTY_LIST);
@@ -913,6 +915,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                             + " is missing. Both are required to use a model");
         }
         
+        String noExpansion = settings.findParameter(QueryParameters.NO_EXPANSION_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(noExpansion)) {
+            Set<String> noExpansionFields = new HashSet<>(Arrays.asList(org.apache.commons.lang3.StringUtils.split(noExpansion, ',')));
+            config.setNoExpansionFields(noExpansionFields);
+            setNoExpansionFields(noExpansionFields);
+        }
+        
         configureDocumentAggregation(settings);
         
         config.setLimitTermExpansionToModel(this.isExpansionLimitedToModelContents());
@@ -970,6 +979,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         // Set the ReturnType for Documents coming out of the iterator stack
         config.setReturnType(DocumentSerialization.getReturnType(settings));
         
+        // this needs to be configured first in order for FieldMappingTransform to work properly for profiles
+        if (null != selectedProfile) {
+            selectedProfile.configure(this);
+            selectedProfile.configure(config);
+            selectedProfile.configure(planner);
+        }
+        
         QueryLogicTransformer transformer = getTransformer(settings);
         if (transformer instanceof WritesQueryMetrics) {
             String logTimingDetailsStr = settings.findParameter(QueryOptions.LOG_TIMING_DETAILS).getParameterValue().trim();
@@ -993,12 +1009,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         
         stopwatch.stop();
-        
-        if (null != selectedProfile) {
-            selectedProfile.configure(this);
-            selectedProfile.configure(config);
-            selectedProfile.configure(planner);
-        }
     }
     
     void configureDocumentAggregation(Query settings) {
@@ -1016,11 +1026,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * Loads a query Model
      *
      * @param helper
+     *            the metadata helper
      * @param config
+     *            the config
      * @throws InstantiationException
+     *             for problems with instantiation
      * @throws IllegalAccessException
+     *             for illegal access exceptions
      * @throws TableNotFoundException
+     *             if the table is not found
      * @throws ExecutionException
+     *             for execution exceptions
      */
     protected void loadQueryModel(MetadataHelper helper, ShardQueryConfiguration config) throws InstantiationException, IllegalAccessException,
                     TableNotFoundException, ExecutionException {
@@ -1082,7 +1098,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             try {
                 int nClosed = 0;
                 scannerFactory.lockdown();
-                for (ScannerBase bs : Lists.newArrayList(scannerFactory.currentScanners())) {
+                for (ScannerBase bs : scannerFactory.currentScanners()) {
                     scannerFactory.close(bs);
                     ++nClosed;
                 }
@@ -1092,7 +1108,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 
                 nClosed = 0;
                 
-                for (ScannerSession bs : Lists.newArrayList(scannerFactory.currentSessions())) {
+                for (ScannerSession bs : scannerFactory.currentSessions()) {
                     scannerFactory.close(bs);
                     ++nClosed;
                 }
@@ -1194,6 +1210,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setIncludeHierarchyFields(includeHierarchyFields);
     }
     
+    public boolean getEnforceUniqueConjunctionsWithinExpression() {
+        return getConfig().getEnforceUniqueConjunctionsWithinExpression();
+    }
+    
+    public void setEnforceUniqueConjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
+        getConfig().setEnforceUniqueConjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
+    }
+    
+    public boolean getEnforceUniqueDisjunctionsWithinExpression() {
+        return getConfig().getEnforceUniqueDisjunctionsWithinExpression();
+    }
+    
+    public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
+        getConfig().setEnforceUniqueDisjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
+    }
+    
     public List<String> getDocumentPermutations() {
         return getConfig().getDocumentPermutations();
     }
@@ -1266,12 +1298,80 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setUniqueFields(uniqueFields);
     }
     
+    public Set<String> getNoExpansionFields() {
+        return getConfig().getNoExpansionFields();
+    }
+    
+    public void setNoExpansionFields(Set<String> noExpansionFields) {
+        getConfig().setNoExpansionFields(noExpansionFields);
+    }
+    
     public ExcerptFields getExcerptFields() {
         return getConfig().getExcerptFields();
     }
     
     public void setExcerptFields(ExcerptFields excerptFields) {
         getConfig().setExcerptFields(excerptFields);
+    }
+    
+    public String getExcerptIterator() {
+        return getConfig().getExcerptIterator().getName();
+    }
+    
+    public void setExcerptIterator(String iteratorClass) {
+        try {
+            getConfig().setExcerptIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(iteratorClass));
+        } catch (Exception e) {
+            throw new DatawaveFatalQueryException("Illegal term frequency excerpt iterator class", e);
+        }
+    }
+    
+    public int getFiFieldSeek() {
+        return getConfig().getFiFieldSeek();
+    }
+    
+    public void setFiFieldSeek(int fiFieldSeek) {
+        getConfig().setFiFieldSeek(fiFieldSeek);
+    }
+    
+    public int getFiNextSeek() {
+        return getConfig().getFiNextSeek();
+    }
+    
+    public void setFiNextSeek(int fiNextSeek) {
+        getConfig().setFiNextSeek(fiNextSeek);
+    }
+    
+    public int getEventFieldSeek() {
+        return getConfig().getEventFieldSeek();
+    }
+    
+    public void setEventFieldSeek(int eventFieldSeek) {
+        getConfig().setEventFieldSeek(eventFieldSeek);
+    }
+    
+    public int getEventNextSeek() {
+        return getConfig().getEventNextSeek();
+    }
+    
+    public void setEventNextSeek(int eventNextSeek) {
+        getConfig().setEventNextSeek(eventNextSeek);
+    }
+    
+    public int getTfFieldSeek() {
+        return getConfig().getTfFieldSeek();
+    }
+    
+    public void setTfFieldSeek(int tfFieldSeek) {
+        getConfig().setTfFieldSeek(tfFieldSeek);
+    }
+    
+    public int getTfNextSeek() {
+        return getConfig().getTfNextSeek();
+    }
+    
+    public void setTfNextSeek(int tfNextSeek) {
+        getConfig().setTfNextSeek(tfNextSeek);
     }
     
     public String getBlacklistedFieldsString() {
@@ -1936,7 +2036,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(QueryParameters.INCLUDE_DATATYPE_AS_FIELD);
         optionalParams.add(QueryParameters.INCLUDE_GROUPING_CONTEXT);
         optionalParams.add(QueryParameters.RAW_DATA_ONLY);
-        optionalParams.add(QueryParameters.TRANFORM_CONTENT_TO_UID);
+        optionalParams.add(QueryParameters.TRANSFORM_CONTENT_TO_UID);
         optionalParams.add(QueryOptions.REDUCED_RESPONSE);
         optionalParams.add(QueryOptions.POSTPROCESSING_CLASSES);
         optionalParams.add(QueryOptions.COMPRESS_SERVER_SIDE_RESULTS);
@@ -1946,6 +2046,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(QueryParameters.GROUP_FIELDS);
         optionalParams.add(QueryParameters.UNIQUE_FIELDS);
         optionalParams.add(QueryOptions.LOG_TIMING_DETAILS);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGESIZE);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGETIMEOUT);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_EXPIRATION);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE);
         return optionalParams;
     }
     
@@ -1982,9 +2086,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
     }
     
-    /**
-     * @return
-     */
     public String getAccumuloPassword() {
         return getConfig().getAccumuloPassword();
     }
@@ -2039,6 +2140,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
         this.getConfig().setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
+    }
+    
+    public boolean getReduceQueryFields() {
+        return this.getConfig().getReduceQueryFields();
+    }
+    
+    public void setReduceQueryFields(boolean reduceQueryFields) {
+        this.getConfig().setReduceQueryFields(reduceQueryFields);
     }
     
     public long getMaxIndexScanTimeMillis() {
@@ -2265,6 +2374,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setPointMaxExpansion(pointMaxExpansion);
     }
     
+    public int getGeoMaxExpansion() {
+        return getConfig().getGeoMaxExpansion();
+    }
+    
+    public void setGeoMaxExpansion(int geoMaxExpansion) {
+        getConfig().setGeoMaxExpansion(geoMaxExpansion);
+    }
+    
     public int getGeoWaveRangeSplitThreshold() {
         return getConfig().getGeoWaveRangeSplitThreshold();
     }
@@ -2383,6 +2500,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
+    }
+    
+    public boolean isLazySetMechanismEnabled() {
+        return getConfig().isLazySetMechanismEnabled();
+    }
+    
+    public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
+        getConfig().setLazySetMechanismEnabled(lazySetMechanismEnabled);
     }
     
     public long getVisitorFunctionMaxWeight() {

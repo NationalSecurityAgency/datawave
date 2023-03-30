@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import datawave.ingest.protobuf.TermWeightPosition;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 
 import com.google.common.base.Predicate;
@@ -25,10 +26,10 @@ public class TermFrequencyList {
      * A zone is actually a combination of the zone and the event id (uid or record id)
      */
     public static class Zone implements Comparable<Zone> {
-        private String eventId;
-        private String zone;
+        private final String eventId;
+        private final String zone;
         // is this field a content expansion field meaning it is used for unfielded content functions
-        private boolean contentExpansionField;
+        private final boolean contentExpansionField;
         
         public Zone(String zone, boolean contentExpansionField, String eventId) {
             this.zone = zone;
@@ -69,7 +70,7 @@ public class TermFrequencyList {
                 comparison = eventId.compareTo(o.getEventId());
             }
             if (comparison == 0) {
-                comparison = Boolean.valueOf(contentExpansionField).compareTo(Boolean.valueOf(o.isContentExpansionField()));
+                comparison = Boolean.compare(contentExpansionField, o.isContentExpansionField());
             }
             return comparison;
         }
@@ -84,14 +85,27 @@ public class TermFrequencyList {
      * Get an event id from the term frequency key
      * 
      * @param key
+     *            a TermFrequency key
+     * @return an event id
      */
     public static String getEventId(Key key) {
         StringBuilder eventId = new StringBuilder();
         eventId.append(key.getRow()).append('\0');
-        String cq = key.getColumnQualifier().toString();
-        int index = cq.indexOf('\0');
-        index = cq.indexOf('\0', index + 1);
-        eventId.append(cq, 0, index);
+        
+        int index = 0;
+        ByteSequence backing = key.getColumnQualifierData();
+        for (int i = backing.offset(); i < backing.length(); i++) {
+            if (backing.byteAt(i) == '\u0000') {
+                if (index == 0) {
+                    index = i; // first null byte
+                } else {
+                    index = i; // second null byte
+                    break;
+                }
+            }
+        }
+        
+        eventId.append(new String(backing.getBackingArray(), backing.offset(), (index - backing.offset())));
         return eventId.toString();
     }
     
@@ -158,7 +172,7 @@ public class TermFrequencyList {
     /**
      * Return an <code>Immutable</code> copy of the entire mapping
      * 
-     * @return
+     * @return a copy of all offsets
      */
     public TreeMultimap<Zone,TermWeightPosition> fetchOffsets() {
         return this.offsetsPerField;
@@ -168,7 +182,8 @@ public class TermFrequencyList {
      * Return only offsets for a limited set of fields
      * 
      * @param fields
-     * @return
+     *            a set of fields
+     * @return offsets filtered by the provided fields
      */
     public TreeMultimap<Zone,TermWeightPosition> fetchOffsets(Set<Zone> fields) {
         checkNotNull(fields);
@@ -178,6 +193,8 @@ public class TermFrequencyList {
     
     /**
      * Let clients ask what fields we are currently tracking.
+     * 
+     * @return a set of fields
      */
     public Set<String> fields() {
         if (this.offsetsPerField.isEmpty()) {
@@ -193,6 +210,8 @@ public class TermFrequencyList {
     
     /**
      * Let clients ask what event ids we are currently tracking.
+     * 
+     * @return a set of ids
      */
     public Set<String> eventIds() {
         if (this.offsetsPerField.isEmpty()) {
@@ -208,6 +227,8 @@ public class TermFrequencyList {
     
     /**
      * Let clients ask what zones we are currently tracking.
+     * 
+     * @return a set of zones
      */
     public Set<Zone> zones() {
         return this.offsetsPerField.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(this.offsetsPerField.keySet());

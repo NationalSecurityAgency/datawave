@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 import javax.inject.Inject;
 import java.io.File;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -438,13 +439,10 @@ public abstract class CompositeFunctionsTest {
                 "UUID =~ '^[CS].*' AND filter:isNull(BOTH_NULL)", // expands to NULL1||NULL2, neither are in any events
                 "filter:isNull(NULL2||NULL1)",
                 "filter:isNull(BOTH_NULL)",
-                // following two are not equivalent:
                 "filter:isNull(UUID||NULL1)",
                 "filter:isNull(UUID) && filter:isNull(NULL1)",
-                // following two are not equivalent
                 "filter:isNull(NULL1||NULL2)",
                 "filter:isNull(NULL1) && filter:isNull(NULL2)",
-                // following three are not equivalent
                 "UUID =~ '^[CS].*' AND filter:isNull(ONE_NULL)",
                 "UUID =~ '^[CS].*' AND filter:isNull(UUID||NULL1)",
                 "UUID =~ '^[CS].*' AND filter:isNull(UUID) && filter:isNull(NULL1)"
@@ -458,16 +456,17 @@ public abstract class CompositeFunctionsTest {
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Collections.emptyList(),
                 Collections.emptyList(),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
-                Collections.emptyList(),};
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Collections.emptyList()};
         //  @formatter:on
         
         for (int i = 0; i < queryStrings.length; i++) {
+            System.out.println("query: " + i);
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
@@ -484,17 +483,14 @@ public abstract class CompositeFunctionsTest {
         String[] queryStrings = {
                 "filter:isNotNull(UUID)",
                 "filter:isNotNull(NULL1)",
-                
                 // these are equivalent:
                 "filter:isNotNull(NULL1||NULL2)",
                 "filter:isNotNull(NULL1) || filter:isNotNull(NULL2)",
                 "filter:isNotNull(BOTH_NULL)",
-                
                 // these are equivalent:
                 "filter:isNotNull(UUID||NULL1)",
                 "filter:isNotNull(UUID) || filter:isNotNull(NULL1)",
                 "filter:isNotNull(ONE_NULL)",
-                
                 "UUID =~ '^[CS].*' AND filter:isNotNull(UUID)",
                 "UUID =~ '^[CS].*' AND filter:isNotNull(NULL1)",
                 "UUID =~ '^[CS].*' AND filter:isNotNull(NULL1||NULL2)",
@@ -502,14 +498,26 @@ public abstract class CompositeFunctionsTest {
                 "UUID =~ '^[CS].*' AND filter:isNotNull(UUID||NULL1)",
                 "UUID =~ '^[CS].*' AND filter:isNotNull(ONE_NULL)"
         };
-        
+
+        //  @formatter:off
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"), Collections.emptyList(), Collections.emptyList(),
-                Collections.emptyList(), Collections.emptyList(), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),};
+        List<String>[] expectedLists = new List[] {
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO")};
+        //  @formatter:on
+        
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -712,4 +720,88 @@ public abstract class CompositeFunctionsTest {
         }
     }
     
+    // filter functions cannot be run against index-only fields
+    // in some cases the filter function is rewritten into an appropriate term
+    // this tests the cases when a filter function cannot be rewritten
+    @Test
+    public void testFilterFunctionsInvalidatedByIndexOnlyFields() throws ParseException {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        
+        if (log.isDebugEnabled()) {
+            log.debug("testCompositeFunctions");
+        }
+        // @formatter:off
+        String[] queries = {
+                //  isNull
+                "UUID == 'SOPRANO' && filter:isNull(LOCATION)",
+                "UUID == 'SOPRANO' && filter:isNull(POSIZIONE)",
+                "UUID == 'SOPRANO' && filter:isNull(NAM||LOCATION)",
+                "UUID == 'SOPRANO' && filter:isNull((NAME||POSIZIONE))",
+
+                //  isNotNull
+                "UUID == 'SOPRANO' && filter:isNotNull(LOCATION)",  //  index-only field
+                "UUID == 'SOPRANO' && filter:isNotNull(POSIZIONE)", //  alternate index-only field
+                "UUID == 'SOPRANO' && filter:isNotNull(LOCATION||POSIZIONE)",   //  both index-only fields
+                "UUID == 'SOPRANO' && filter:isNotNull(NAM||LOCATION)", //  one index-only field still fails validation
+                "UUID == 'SOPRANO' && filter:isNotNull((NAME||POSIZIONE))",
+
+                //  matchesAtLeastCountOf
+                "UUID == 'SOPRANO' && filter:matchesAtLeastCountOf(2, LOCATION, 'chicago', 'newyork')",
+
+                //  compare
+                "UUID == 'SOPRANO' && filter:compare(LOCATION, '==', ANY, POSIZIONE)",
+                "UUID == 'SOPRANO' && filter:compare(LOCATION, '==', ANY, NAME)",
+                "UUID == 'SOPRANO' && filter:compare(NAME, '==', ANY, POSIZIONE)"
+
+                //  includeRegex and excludeRegex handled by RegexFunctionVisitor
+
+                //  includeText can handle index-only fields and should be a query function (see pr #1534)
+        };
+        //  @formatter:on
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        for (String query : queries) {
+            try {
+                runTestQuery(Collections.emptyList(), query, startDate, endDate, extraParameters);
+                Assert.fail("query should not have run without throwing an exception: " + query);
+            } catch (DatawaveFatalQueryException e) {
+                String correctErrMsg = "datawave.webservice.query.exception.BadRequestQueryException: Invalid arguments to function. Filter function cannot evaluate against index-only field";
+                Assert.assertTrue("Expected query to fail: " + query, e.getMessage().startsWith(correctErrMsg));
+            } catch (Exception e) {
+                Assert.fail("Expected filter function with index-only fields to fail validation: " + query);
+            }
+            
+        }
+    }
+    
+    @Test
+    public void testDelayedExceededValueThresholdRegexTFField() throws Exception {
+        Map<String,String> extraParameters = new HashMap();
+        
+        tldEventQueryLogic.setMaxDepthThreshold(9);
+        tldEventQueryLogic.setMaxValueExpansionThreshold(1);
+        
+        if (log.isDebugEnabled()) {
+            log.debug("testDelayedExceededValueThresholdRegexTFField");
+        }
+        
+        // @formatter:off
+        String[] queryStrings =  {
+                "UUID == 'CORLEONE' && ((_Delayed_ = true) && ((((_Value_ = true) && (QUOTE =~ 'h.*?')))))"
+        };
+
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {
+                Arrays.asList("CORLEONE")
+        };
+        // @formatter:on
+        
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters, tldEventQueryLogic);
+        }
+    }
 }

@@ -29,7 +29,11 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
+/**
+ * Evaluation phase filter functions cannot be evaluated against index-only fields
+ */
 public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
+    
     public static final String EXCLUDE_REGEX = "excludeRegex";
     public static final String INCLUDE_REGEX = "includeRegex";
     public static final String IS_NULL = "isNull";
@@ -37,9 +41,8 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
     public static final String BETWEEN_LOAD_DATES = "betweenLoadDates";
     public static final String MATCHES_AT_LEAST_COUNT_OF = "matchesAtLeastCountOf";
     public static final String TIME_FUNCTION = "timeFunction";
-    public static final String INCLUDE_TEXT = "includeText";
     public static final String COMPARE = "compare";
-    public static final String NO_EXPANSION = "noExpansion";
+    public static final String GET_ALL_MATCHES = "getAllMatches";
     
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
@@ -50,12 +53,11 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
     public static class EvaluationPhaseFilterJexlArgumentDescriptor implements JexlArgumentDescriptor {
         private static final Logger log = Logger.getLogger(EvaluationPhaseFilterJexlArgumentDescriptor.class);
         
-        public static final ImmutableSet<String> regexFunctions = ImmutableSet.of(EXCLUDE_REGEX, INCLUDE_REGEX);
+        public static final ImmutableSet<String> regexFunctions = ImmutableSet.of(EXCLUDE_REGEX, INCLUDE_REGEX, GET_ALL_MATCHES);
         public static final ImmutableSet<String> andExpansionFunctions = ImmutableSet.of(IS_NULL);
         public static final ImmutableSet<String> dateBetweenFunctions = ImmutableSet.of(BETWEEN_DATES, BETWEEN_LOAD_DATES);
         public static final String MATCHCOUNTOF = MATCHES_AT_LEAST_COUNT_OF;
         public static final String TIMEFUNCTION = TIME_FUNCTION;
-        public static final String TEXT = INCLUDE_TEXT;
         private final ASTFunctionNode node;
         
         public EvaluationPhaseFilterJexlArgumentDescriptor(ASTFunctionNode node) {
@@ -71,51 +73,14 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
-            // in the special case of the text function, add an index query.
             // in the special case of date functions and then only with the between methods,
             // we want to add a range stream hint in terms of SHARDS_AND_DAYS
-            if (TEXT.equals(functionMetadata.name())) {
-                return getTextIndexQuery(functionMetadata, config);
-            } else if (dateBetweenFunctions.contains(functionMetadata.name()) && dateIndexHelper != null) {
+            if (dateBetweenFunctions.contains(functionMetadata.name()) && dateIndexHelper != null) {
                 return getShardsAndDaysQuery(functionMetadata, config, helper, dateIndexHelper, datatypeFilter);
             }
             
             // 'true' is returned to imply that there is no range lookup possible for this function
             return TRUE_NODE;
-        }
-        
-        private JexlNode getTextIndexQuery(FunctionJexlNodeVisitor functionMetadata, ShardQueryConfiguration config) {
-            List<JexlNode> arguments = functionMetadata.args();
-            JexlNode node0 = arguments.get(0);
-            final String value = arguments.get(1).image;
-            if (node0 instanceof ASTIdentifier) {
-                
-                final String field = JexlASTHelper.deconstructIdentifier(node0.image);
-                
-                if (log.isDebugEnabled()) {
-                    log.debug("Evaluating text with " + field + ", " + value);
-                }
-                
-                return JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
-            } else {
-                // node0 is an Or node or an And node
-                // copy it
-                JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
-                int i = 0;
-                for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
-                    String field = JexlASTHelper.deconstructIdentifier(identifier.image);
-                    
-                    if (log.isDebugEnabled()) {
-                        log.debug("Evaluating text with " + field + ", " + value);
-                    }
-                    
-                    JexlNode kid = JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
-                    
-                    kid.jjtSetParent(newParent);
-                    newParent.jjtAddChild(kid, i++);
-                }
-                return newParent;
-            }
         }
         
         private JexlNode getShardsAndDaysQuery(FunctionJexlNodeVisitor functionMetadata, ShardQueryConfiguration config, MetadataHelper helper,
@@ -201,11 +166,6 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         
         @Override
         public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
-            // only the text function actually returns an index query, so ignore this one
-            if (TEXT.equals(node.jjtGetChild(2).image)) {
-                return;
-            }
-            
             // Since the getIndexQuery does not supply actual filters on the fields, we need to add those filters here
             Set<String> queryFields = fields(null, null);
             // argument 0 (child 2) is the fieldname, argument 1 (child 3) is the regex

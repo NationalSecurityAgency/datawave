@@ -101,6 +101,9 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.mapreduce.securitydomain.trustStoreType:add(value="${TRUSTSTORE_TYPE}")
 /system-property=dw.mapreduce.securitydomain.trustStorePassword:add(value="${TRUSTSTORE_PASSWORD}")
 
+# proxied entities to be pruned from credentials
+/system-property=dw.trusted.proxied.entities:add(value="${trusted.proxied.entities}")
+
 # Enable/disable the test authorization service (enable for development use only)
 /system-property=dw.security.use.testuserservice:add(value=${security.use.testauthservice})
 
@@ -227,13 +230,14 @@ jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 /subsystem=logging/periodic-rotating-file-handler=RESTEASY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"RestEasy.log"})
 
 /subsystem=logging/logger=datawave.query:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.webservice.common.cache.SharedCacheCoordinator:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.webservice.query.factory:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.iterator:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.logic:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.metric:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.runner:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.util:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
-/subsystem=logging/logger=datawave.webservice.query.cache.QueryExpirationBean:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.webservice.query.cache.QueryExpirationBean:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.query.tables:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.query.parser:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.query.metrics.AccumuloRecordWriter:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)

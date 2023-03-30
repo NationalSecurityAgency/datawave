@@ -11,6 +11,7 @@ import com.google.common.collect.TreeMultimap;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -76,120 +77,137 @@ import org.apache.log4j.Logger;
  * </ul>
  */
 public class Intersection extends BaseIndexStream {
-    private TreeMultimap<String,IndexStream> children;
+    
     private final StreamContext context;
     private final String contextDebug;
+    
+    private TreeMultimap<String,IndexStream> children;
     private final List<String> childrenContextDebug = new ArrayList<>();
     
-    private JexlNodeSet nodeSet = new JexlNodeSet();
+    private final JexlNodeSet nodeSet = new JexlNodeSet(); // populated via active index streams
+    private final JexlNodeSet delayedNodes = new JexlNodeSet(); // populated via delayed index streams
+    
+    private JexlNode currNode; // current query
     private Tuple2<String,IndexInfo> next;
-    private JexlNode currNode;
-    protected JexlNodeSet delayedNodes;
-    protected boolean isVariable;
+    
     protected UidIntersector uidIntersector;
+    private static final IndexStreamComparator streamComparator = new IndexStreamComparator();
     
     private static final Logger log = Logger.getLogger(Intersection.class);
     
-    public Intersection(Iterable<? extends IndexStream> children, UidIntersector uidIntersector) {
-        this.children = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+    public Intersection(Collection<? extends IndexStream> streams, UidIntersector uidIntersector) {
+        this.children = TreeMultimap.create(Ordering.natural(), streamComparator);
         this.uidIntersector = uidIntersector;
-        this.delayedNodes = new JexlNodeSet();
-        Iterator<? extends IndexStream> childrenItr = children.iterator();
-        
-        boolean allExceededValueThreshold = true;
         
         if (log.isTraceEnabled()) {
-            log.trace("Constructor -- has children? " + childrenItr.hasNext());
+            log.trace("Constructor -- has children? " + streams.isEmpty());
         }
-        isVariable = false;
-        if (childrenItr.hasNext()) {
-            boolean absent = false;
-            boolean delayedField = false;
-            while (childrenItr.hasNext()) {
-                IndexStream stream = childrenItr.next();
-                if (log.isDebugEnabled()) {
-                    childrenContextDebug.add(stream.getContextDebug());
-                }
-                
-                if (StreamContext.NO_OP == stream.context())
-                    continue;
-                
-                boolean exceededValueThreshold = false;
-                
-                if (stream.hasNext()) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Stream has next, so adding it to children " + stream.peek().second().getNode() + " " + key(stream));
-                    }
-                    
-                    if (StreamContext.VARIABLE == stream.context()) {
-                        if (log.isTraceEnabled())
-                            log.trace("Setting variable nodes");
-                        isVariable = true;
-                        JexlNode node = stream.peek().second().getNode();
-                        this.nodeSet.add(node);
-                        this.children.put(key(stream), stream);
-                    } else {
-                        
-                        if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context())
-                            exceededValueThreshold = true;
-                        
-                        this.nodeSet.add(stream.currentNode());
-                        this.children.put(key(stream), stream);
-                    }
-                } else {
-                    if (StreamContext.EXCEEDED_TERM_THRESHOLD == stream.context()) {
-                        this.delayedNodes.add(stream.currentNode());
-                    } else if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context()) {
-                        exceededValueThreshold = true;
-                        absent = true;
-                    } else if (StreamContext.ABSENT == stream.context()) {
-                        absent = true;
-                    } else if (StreamContext.UNINDEXED == stream.context() || StreamContext.UNKNOWN_FIELD == stream.context()
-                                    || StreamContext.DELAYED_FIELD == stream.context() || StreamContext.IGNORED == stream.context()) {
-                        if (StreamContext.DELAYED_FIELD == stream.context())
-                            delayedField = true;
-                        this.delayedNodes.add(stream.currentNode());
-                        this.nodeSet.add(stream.currentNode());
-                    } else {
-                        QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_RANGE_STREAM, MessageFormat.format("{0}", stream.context()));
-                        throw new DatawaveFatalQueryException(qe);
-                    }
-                }
-                
-                if (!exceededValueThreshold)
-                    allExceededValueThreshold = false;
-            }
-            if (log.isTraceEnabled())
-                log.trace("size is " + this.children.size());
-            
-            currNode = JexlNodeFactory.createAndNode(nodeSet.getNodes());
-            
-            Preconditions.checkNotNull(currNode);
-            
-            if (absent) {
-                this.context = StreamContext.ABSENT;
-                this.contextDebug = "found absent child";
-            } else if (allChildrenAreUnindexed(this.children.values())) {
-                this.context = StreamContext.UNINDEXED;
-                this.contextDebug = "all children unindexed";
-            } else if (this.children.isEmpty() && delayedField) {
-                this.context = StreamContext.DELAYED_FIELD;
-                this.contextDebug = "delayed field";
-            } else if (allExceededValueThreshold) {
-                this.context = StreamContext.EXCEEDED_VALUE_THRESHOLD;
-                this.contextDebug = "all children exceeded value threshold";
-                next();
-            } else {
-                this.context = StreamContext.PRESENT;
-                this.contextDebug = "children may intersect";
-                next();
-            }
-        } else {
+        
+        if (streams.isEmpty()) {
             this.context = StreamContext.ABSENT;
             this.contextDebug = "no children";
+            return;
+        }
+        
+        // flag tells us to short circuit
+        boolean absent = false;
+        
+        for (IndexStream stream : streams) {
+            if (log.isDebugEnabled()) {
+                childrenContextDebug.add(stream.getContextDebug());
+            }
+            
+            if (stream.hasNext()) {
+                switch (stream.context()) {
+                    case PRESENT:
+                    case VARIABLE:
+                    case EXCEEDED_VALUE_THRESHOLD:
+                        if (log.isTraceEnabled()) {
+                            log.trace("Stream has next, so adding it to children " + stream.peek().second().getNode() + " " + key(stream));
+                        }
+                        this.nodeSet.add(stream.currentNode());
+                        this.children.put(key(stream), stream);
+                        break;
+                    default:
+                        throw new IllegalStateException("Unexpected stream context " + stream.context());
+                }
+            } else {
+                switch (stream.context()) {
+                    case ABSENT:
+                    case EXCEEDED_VALUE_THRESHOLD:
+                        // one or more index streams terminated early, no intersection possible
+                        absent = true;
+                        break;
+                    case IGNORED:
+                    case UNINDEXED:
+                    case DELAYED_FIELD:
+                    case UNKNOWN_FIELD:
+                    case EXCEEDED_TERM_THRESHOLD:
+                        this.delayedNodes.add(stream.currentNode());
+                        break;
+                    case NO_OP:
+                        // this intersection is going to be merged with a parent intersection, do nothing
+                        continue;
+                    default:
+                        QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_RANGE_STREAM, MessageFormat.format("{0}", stream.context()));
+                        throw new DatawaveFatalQueryException(qe);
+                }
+            }
         }
         if (log.isTraceEnabled())
-            log.trace("Stream context " + this.context);
+            log.trace("size is " + this.children.size());
+        
+        JexlNodeSet allNodes = new JexlNodeSet();
+        allNodes.addAll(nodeSet);
+        allNodes.addAll(delayedNodes);
+        
+        currNode = JexlNodeFactory.createAndNode(allNodes);
+        Preconditions.checkNotNull(currNode);
+        
+        // three cases 1) absent in which case no intersection exists, 2) some form of delayed, 3) valid intersect
+        
+        if (absent) {
+            this.context = StreamContext.ABSENT;
+            this.contextDebug = "found absent child";
+        } else if (areAllChildrenSameContext(streams, StreamContext.DELAYED_FIELD)) {
+            this.context = StreamContext.DELAYED_FIELD;
+            this.contextDebug = "delayed field";
+        } else if (areAllChildrenSameContext(streams, StreamContext.UNINDEXED)) {
+            this.context = StreamContext.UNINDEXED;
+            this.contextDebug = "all children unindexed";
+        } else if (areAllChildrenSameContext(streams, StreamContext.IGNORED)) {
+            this.context = StreamContext.IGNORED;
+            this.contextDebug = "all children ignored";
+        } else if (areAllChildrenSameContext(streams, StreamContext.EXCEEDED_TERM_THRESHOLD)) {
+            this.context = StreamContext.EXCEEDED_TERM_THRESHOLD;
+            this.contextDebug = "all children exceeded term threshold";
+        } else if (areAllChildrenSameContext(streams, StreamContext.EXCEEDED_VALUE_THRESHOLD)) {
+            this.context = StreamContext.EXCEEDED_VALUE_THRESHOLD;
+            this.contextDebug = "all children exceeded value threshold";
+            next(); // call next to populate the top key. this is a stream of days generated by the range stream
+        } else if (this.children.isEmpty() && !delayedNodes.isEmpty()) {
+            // we have a mix of delayed marker nodes
+            this.context = StreamContext.DELAYED_FIELD;
+            this.contextDebug = "children are a mix of delayed marker nodes";
+        } else {
+            // just because index streams are present, does not mean they actually intersect
+            next();
+            if (next != null) {
+                if (delayedNodes.isEmpty()) {
+                    this.context = StreamContext.PRESENT;
+                    this.contextDebug = "children intersect";
+                } else {
+                    this.context = StreamContext.VARIABLE;
+                    this.contextDebug = "children are a mix of delayed and non-delayed terms";
+                }
+            } else {
+                this.context = StreamContext.ABSENT;
+                this.contextDebug = "children did not intersect";
+            }
+        }
+        
+        if (log.isTraceEnabled())
+            log.trace("Stream context " + context());
     }
     
     @Override
@@ -217,6 +235,24 @@ public class Intersection extends BaseIndexStream {
             }
         }
         return ret;
+    }
+    
+    /**
+     * Find the next result at or beyond the provided context.
+     * <p>
+     * Calls {@link #advanceStream(IndexStream, String)} before called {@link #next()}
+     *
+     * @param context
+     *            a shard context
+     * @return the result of calling {@link #next()}
+     */
+    @Override
+    public Tuple2<String,IndexInfo> next(String context) {
+        
+        // advance all streams to the provided context
+        children = advanceStreams(children, context);
+        
+        return next();
     }
     
     /**
@@ -266,7 +302,7 @@ public class Intersection extends BaseIndexStream {
      *
      * @param iterators
      *            an iterator of child IndexStreams
-     * @return
+     * @return the top indexinfo elements
      */
     public IndexInfo intersect(Iterable<? extends PeekingIterator<Tuple2<String,IndexInfo>>> iterators) {
         Iterator<IndexInfo> infos = convert(iterators).iterator();
@@ -282,59 +318,76 @@ public class Intersection extends BaseIndexStream {
             IndexInfo next = infos.next();
             
             nodeSet.add(next.getNode());
-            merged = merged.intersect(next, Lists.newArrayList(delayedNodes.getNodes()), uidIntersector);
+            merged = merged.intersect(next, Collections.emptyList(), uidIntersector);
             childrenAdded = true;
+        }
+        
+        // add in delayed nodes after we're done intersecting the viable index streams
+        if (!childrenAdded || !delayedNodes.isEmpty()) {
+            childrenAdded = merged.intersect(Lists.newArrayList(delayedNodes.getNodes()));
         }
         
         if (log.isTraceEnabled())
             log.trace("intersect " + childrenAdded);
         
-        // Add all delayed nodes.
+        // Add all delayed nodes back into the nodeSet
         nodeSet.addAll(delayedNodes);
-        
         currNode = JexlNodeFactory.createAndNode(nodeSet.getNodes());
         
         if (!childrenAdded) {
-            if (!delayedNodes.isEmpty())
-                childrenAdded = merged.intersect(Lists.newArrayList(delayedNodes.getNodes()));
-        }
-        
-        if (!childrenAdded) {
-            log.trace("can't add children");
+            if (log.isTraceEnabled()) {
+                log.trace("can't add children");
+            }
             merged.setNode(currNode);
         }
         return merged;
     }
     
-    public static boolean allChildrenAreUnindexed(Iterable<IndexStream> stuff) {
-        for (IndexStream is : stuff) {
-            if (StreamContext.UNINDEXED != is.context()) {
-                return false;
+    /**
+     * Checks all child index streams in this intersection against the provided context
+     *
+     * @param streams
+     *            a collection of IndexStream
+     * @param context
+     *            a {@link datawave.query.index.lookup.IndexStream.StreamContext}
+     * @return true if all child index streams have the specified context
+     */
+    public static boolean areAllChildrenSameContext(Collection<? extends IndexStream> streams, StreamContext context) {
+        if (!streams.isEmpty()) {
+            for (IndexStream stream : streams) {
+                if (!stream.context().equals(context)) {
+                    return false;
+                }
             }
+            return true;
         }
-        return true;
+        return false; // no index streams
     }
     
     /*
-     * This method will advance all of the streams except for those returning a day. However if the key is a day then they are all advanced anyway. The reason
-     * for the special handling of "day" ranges is that multiple shards from a separate stream may match the day range and we need to ensure all of them get a
-     * chance. If the key is a "day" range, then all of the streams matched that day so we can safely advance them all. If the iterator `hasNext` after that,
-     * then it is added into the returned multimap with the next key it will return. If an iterator ever does not have a have a next, an empty multimap is
-     * returned, signifying the exhaustion of this intersection.
+     * This method will advance all streams except for those returning a day. However, if the key is a day then they are all advanced anyway. The reason for the
+     * special handling of "day" ranges is that multiple shards from a separate stream may match the day range and we need to ensure all of them get a chance.
+     * If the key is a "day" range, then all streams matched that day so we can safely advance them all. If the iterator `hasNext` after that, then it is added
+     * into the returned multimap with the next key it will return. If an iterator ever does not have a next, an empty multimap is returned, signifying the
+     * exhaustion of this intersection.
      */
     public static TreeMultimap<String,IndexStream> nextAll(String key, Collection<IndexStream> streams) {
-        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), streamComparator);
         for (IndexStream itr : streams) {
             
             // If we are next'ing based on a shard and this is a day, keep the day.
             if (!ShardEquality.isDay(key) && ShardEquality.isDay(key(itr.peek()))) {
                 newChildren.put(itr.peek().first(), itr);
             } else {
-                itr.next();
+                
+                //
+                String context = !newChildren.keySet().isEmpty() ? newChildren.keySet().first() : key;
+                itr.next(context);
+                
                 if (itr.hasNext()) {
                     newChildren.put(itr.peek().first(), itr);
                 } else {
-                    return TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+                    return TreeMultimap.create(Ordering.natural(), streamComparator);
                 }
             }
         }
@@ -358,7 +411,7 @@ public class Intersection extends BaseIndexStream {
      */
     @Deprecated
     public static TreeMultimap<String,IndexStream> pivot(TreeMultimap<String,IndexStream> children) {
-        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), streamComparator);
         final String max = children.keySet().last();
         newChildren.putAll(max, children.removeAll(max));
         for (IndexStream itr : children.values()) {
@@ -382,7 +435,7 @@ public class Intersection extends BaseIndexStream {
                 newChildren.put(dayOrShard, itr);
             } else {
                 // nobody has anything past max, so no intersection
-                return TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+                return TreeMultimap.create(Ordering.natural(), streamComparator);
             }
         }
         return newChildren;
@@ -401,19 +454,21 @@ public class Intersection extends BaseIndexStream {
      * @return a new sorted multi-map of {@link IndexStream}, or an empty multi-map if the intersection is exhausted
      */
     public static TreeMultimap<String,IndexStream> advanceStreams(TreeMultimap<String,IndexStream> children, String max) {
-        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), streamComparator);
         
-        // Remove all IndexStreams already mapped to the highest key.
-        newChildren.putAll(max, children.removeAll(max));
+        // Remove all IndexStreams already mapped to the highest key, if they exist
+        if (children.containsKey(max)) {
+            newChildren.putAll(max, children.removeAll(max));
+        }
         
         for (IndexStream stream : children.values()) {
             
             // Advance the IndexStream to the high key.
             String dayOrShard = advanceStream(stream, max);
             
-            // Cannot intersect with an empty IndexStream, return empty multi-map to signify end of intersection.
+            // Cannot intersect with an empty IndexStream, return empty multimap to signify end of intersection.
             if (dayOrShard == null || !stream.hasNext()) {
-                return TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+                return TreeMultimap.create(Ordering.natural(), streamComparator);
             } else {
                 // add the item into our map
                 newChildren.put(dayOrShard, stream);

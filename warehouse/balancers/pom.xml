@@ -4,11 +4,15 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>3.23.0-SNAPSHOT</version>
+        <version>3.42.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-balancers</artifactId>
     <name>${project.artifactId}</name>
     <dependencies>
+        <dependency>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>

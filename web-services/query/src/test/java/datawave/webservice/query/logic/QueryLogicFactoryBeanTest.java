@@ -4,6 +4,7 @@ import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -156,11 +157,35 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
     
     @Test
     public void testQueryLogicList() throws Exception {
+        // Run the test
+        replayAll();
+        List<QueryLogic<?>> result1 = bean.getQueryLogicList();
+        verifyAll();
+        
+        // Verify results
+        assertNotNull("Query logic list should not return null", result1);
+        assertEquals("Query logic list should return with 2 items", 2, result1.size());
+        for (QueryLogic logic : result1) {
+            if (logic.getLogicName().equals("TestQuery")) {
+                assertEquals(12345, logic.getMaxResults());
+                assertEquals(98765, logic.getMaxWork());
+            } else if (logic.getLogicName().equals("TestQuery2")) {
+                assertEquals(123456, logic.getMaxResults());
+                assertEquals(987654, logic.getMaxWork());
+            } else {
+                fail("Unexpected query logic name " + logic.getLogicName());
+            }
+        }
+    }
+    
+    @Test
+    public void testAltQueryLogicList() throws Exception {
         // Set expectations
         Map<String,QueryLogic> logicClasses = new TreeMap<>();
         logicClasses.put("TestQuery", this.logic);
         expect(this.applicationContext.getBeansOfType(QueryLogic.class)).andReturn(logicClasses);
         this.logic.setLogicName("TestQuery");
+        expect(this.altFactoryConfig.hasLogicMap()).andReturn(false);
         
         // Run the test
         replayAll();
@@ -174,4 +199,5 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         assertNotNull("Query logic list should not return null", result1);
         assertEquals("Query logic list should return with 1 item", 1, result1.size());
     }
+    
 }

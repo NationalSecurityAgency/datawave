@@ -22,6 +22,7 @@ undeploy datawave-web-service.ear
 
 /subsystem=logging/logger=org.jboss.jca.core.connectionmanager.listener.TxConnectionListener:remove
 /subsystem=logging/logger=datawave.query:remove
+/subsystem=logging/logger=datawave.webservice.common.cache.SharedCacheCoordinator:remove
 /subsystem=logging/logger=datawave.webservice.query.factory:remove
 /subsystem=logging/logger=datawave.webservice.query.iterator:remove
 /subsystem=logging/logger=datawave.webservice.query.logic:remove

@@ -75,8 +75,14 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
     
     Map.Entry<Key,Document> next;
     
+    /**
+     * Length of time in milliseconds that a client will wait for a results to be returned. If a result is not collected before the timeout, a key with an
+     * "intermediate" document will be returned.
+     */
+    private final long resultTimeout;
+    
     public GroupingIterator(Iterator<Map.Entry<Key,Document>> previousIterators, MarkingFunctions markingFunctions, Collection<String> groupFieldsSet,
-                    int groupFieldsBatchSize, YieldCallback<Key> yieldCallback) {
+                    int groupFieldsBatchSize, YieldCallback<Key> yieldCallback, long resultTimeout) {
         this.previousIterators = previousIterators;
         this.markingFunctions = markingFunctions;
         this.groupFieldsSet = groupFieldsSet.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
@@ -84,6 +90,8 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
         this.yieldCallback = yieldCallback;
         
         this.countingMap = new GroupCountingHashMap(this.markingFunctions);
+        
+        this.resultTimeout = resultTimeout;
     }
     
     @Override
@@ -216,6 +224,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
      *
      * @param documents
      *            the list of documents to flatten into a single document
+     * @return a flattened document
      */
     private Document flatten(List<Document> documents) {
         log.trace("flatten {}", documents);

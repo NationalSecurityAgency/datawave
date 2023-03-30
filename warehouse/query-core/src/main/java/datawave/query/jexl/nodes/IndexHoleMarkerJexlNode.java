@@ -1,7 +1,6 @@
 package datawave.query.jexl.nodes;
 
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
 
 import java.util.function.Function;
 

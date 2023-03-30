@@ -9,7 +9,6 @@ import java.util.ArrayList;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -98,7 +97,8 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
      * Helper method to return a copy of the tree denoted by the given root
      *
      * @param root
-     * @return
+     *            the root node
+     * @return a copy of the tree
      */
     public static JexlNode copy(JexlNode root) {
         RebuildingVisitor visitor = new RebuildingVisitor();
@@ -455,6 +455,10 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
     
     /**
      * Base setup so that we can eventually move to a more functional model
+     * 
+     * @param input
+     *            the input script
+     * @return the script with applied models
      */
     @Override
     public ASTJexlScript apply(final ASTJexlScript input) {

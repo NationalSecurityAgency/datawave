@@ -1,11 +1,13 @@
 package datawave.query.index.lookup;
 
 import com.google.common.collect.ImmutableSortedSet;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -77,15 +79,12 @@ public class IndexInfoTest {
         
         List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
         IndexInfo right = new IndexInfo(rightMatches);
+        right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         
         IndexInfo merged = left.intersect(right);
         
-        // The intersection of left and right should be a set of 3 document ids
-        List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
-        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
-        
-        assertEquals(3, merged.uids().size());
-        assertEquals(expectedSorted, merged.uids());
+        // intersection of uids and a countable shard range is a shard range
+        assertTrue(merged.uids().isEmpty());
     }
     
     @Test
@@ -100,6 +99,7 @@ public class IndexInfoTest {
         
         List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1");
         IndexInfo right = new IndexInfo(rightMatches);
+        right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         
         // build the query string before
         List<JexlNode> andChildren = new ArrayList<>();
@@ -111,12 +111,9 @@ public class IndexInfoTest {
         IndexInfo merged = left.intersect(right);
         
         // The intersection of left and right should be a set of 1 document ids
-        List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc1");
-        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
         
-        assertEquals(1, merged.uids().size());
-        assertEquals(expectedSorted, merged.uids());
-        
+        // the intersection of uids and an infinite shard range is a shard range
+        assertTrue(merged.uids().isEmpty());
         assertTrue(TreeEqualityVisitor.isEqual(JexlNodeFactory.createScript(origQueryTree), JexlNodeFactory.createScript(merged.getNode())));
     }
     
@@ -132,6 +129,7 @@ public class IndexInfoTest {
         
         List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1");
         IndexInfo right = new IndexInfo(rightMatches);
+        right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         
         // build the query string before
         List<JexlNode> andChildren = new ArrayList<>();
@@ -142,12 +140,8 @@ public class IndexInfoTest {
         
         IndexInfo merged = right.intersect(left);
         
-        // The intersection of left and right should be a set of 1 document ids
-        List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc1");
-        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
-        
-        assertEquals(1, merged.uids().size());
-        assertEquals(expectedSorted, merged.uids());
+        // intersection of uid and infinite shard range is a shard range
+        assertTrue(merged.uids().isEmpty());
         assertTrue(TreeEqualityVisitor.isEqual(JexlNodeFactory.createScript(origQueryTree), JexlNodeFactory.createScript(merged.getNode())));
     }
     
@@ -163,6 +157,7 @@ public class IndexInfoTest {
         
         List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1");
         IndexInfo right = new IndexInfo(rightMatches);
+        right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         
         JexlNode delayed = JexlNodeFactory.buildEQNode("DELAYED_FIELD", "DELAYED_VALUE");
         
@@ -180,8 +175,7 @@ public class IndexInfoTest {
         List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc1");
         ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
         
-        assertEquals(1, merged.uids().size());
-        assertEquals(expectedSorted, merged.uids());
+        assertTrue(merged.uids().isEmpty());
         assertTrue(TreeEqualityVisitor.isEqual(JexlNodeFactory.createScript(origQueryTree), JexlNodeFactory.createScript(merged.getNode())));
     }
     
@@ -197,6 +191,7 @@ public class IndexInfoTest {
         
         List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1");
         IndexInfo right = new IndexInfo(rightMatches);
+        right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         
         JexlNode delayed = JexlNodeFactory.buildEQNode("DELAYED_FIELD", "DELAYED_VALUE");
         
@@ -210,12 +205,8 @@ public class IndexInfoTest {
         
         IndexInfo merged = right.intersect(left, Arrays.asList(delayed), right);
         
-        // The intersection of left and right should be a set of 1 document ids
-        List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc1");
-        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
-        
-        assertEquals(1, merged.uids().size());
-        assertEquals(expectedSorted, merged.uids());
+        // intersection of uid and infinite shard range is a shard range
+        assertTrue(merged.uids().isEmpty());
         assertTrue(TreeEqualityVisitor.isEqual(JexlNodeFactory.createScript(origQueryTree), JexlNodeFactory.createScript(merged.getNode())));
     }
     
@@ -245,9 +236,11 @@ public class IndexInfoTest {
         
         List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
         IndexInfo right = new IndexInfo(rightMatches);
+        right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         
-        List<IndexMatch> expectedMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
-        IndexInfo expectedMerged = new IndexInfo(expectedMatches);
+        IndexInfo expectedMerged = new IndexInfo(-1);
+        expectedMerged.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        
         assertEquals(expectedMerged, left.intersect(right));
         assertEquals(expectedMerged, right.intersect(left));
     }
@@ -277,7 +270,7 @@ public class IndexInfoTest {
      */
     @Test
     public void testUnion_OneTermIsDelayedPredicate() {
-        ASTDelayedPredicate delayedPredicate = ASTDelayedPredicate.create(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        ASTDelayedPredicate delayedPredicate = (ASTDelayedPredicate) ASTDelayedPredicate.create(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         
         IndexInfo left = new IndexInfo(50);
         left.applyNode(delayedPredicate);
@@ -324,5 +317,26 @@ public class IndexInfoTest {
         IndexInfo expectedMerged = new IndexInfo(-1L);
         assertEquals(expectedMerged, left.union(right));
         assertEquals(expectedMerged, right.union(left));
+    }
+    
+    @Test
+    public void testIntersectCaseEF() throws ParseException {
+        List<IndexMatch> leftMatches = buildIndexMatches("F", "v", "uid5", "uid6");
+        IndexInfo left = new IndexInfo(leftMatches);
+        left.applyNode(JexlNodeFactory.buildEQNode("F", "v"));
+        
+        IndexInfo right = new IndexInfo(345);
+        right.applyNode(JexlNodeFactory.buildEQNode("F2", "v2"));
+        
+        JexlNode expected = JexlASTHelper.parseJexlQuery("(F == 'v' && F2 == 'v2')").jjtGetChild(0);
+        
+        IndexInfo merged = left.intersect(right);
+        assertTrue(merged.uids().isEmpty());
+        assertTrue(TreeEqualityVisitor.isEqual(expected, merged.getNode()));
+        
+        // and the inverse
+        merged = right.intersect(left);
+        assertTrue(merged.uids().isEmpty());
+        assertTrue(TreeEqualityVisitor.isEqual(expected, merged.getNode()));
     }
 }

@@ -21,10 +21,12 @@ import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import org.apache.accumulo.core.client.Connector;
@@ -134,14 +136,19 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
-        
+        // basically this is avoiding WELD exceptions for beans that cannot be created because of various injection points
+        // that would be null in this environment. For example the QueryMetricQueryLogic would fail to be created because
+        // we do not have a caller principal, and the io.astefunutti.metrics.cdi classes are not available to this test case.
+        // Also we are adding the beans.xml to enable resolving some beans. The MockAlternative is a placeholder for any
+        // mock bean alternatives we may use if annotated as such.
         return ShrinkWrap
                         .create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "nsa.datawave.query", "org.jboss.logging",
+                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
+                        .deleteClass(DefaultEdgeEventQueryLogic.class)
+                        .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .deleteClass(datawave.query.tables.edge.DefaultEdgeEventQueryLogic.class)
                         .addAsManifestResource(
                                         new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
                                                         + "</alternatives>"), "beans.xml");
@@ -241,7 +248,7 @@ public abstract class ExecutableExpansionVisitorTest {
         List<String>[] expectedLists = new List[] {Arrays.asList(), Arrays.asList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
-            Assert.assertTrue("should not have gotten here", 1 == 2);
+            Assert.fail("should not have gotten here");
         }
     }
     
@@ -281,7 +288,17 @@ public abstract class ExecutableExpansionVisitorTest {
         logic.setInitialMaxTermThreshold(10000);
         logic.setFinalMaxTermThreshold(10000);
         
-        String query = "( (((_Bounded_ = true) && (NUMBER >= 0 && NUMBER <= 1000)) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')) || (((_Bounded_ = true) && (NUMBER >= 0 && NUMBER <= 1000)) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')) ) && (GENDER == 'MALE') && (NOME == 'THIS' || NOME == 'THAT') && !filter:includeRegex(ETA, 'blah') && ( LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey' )";
+        //  @formatter:off
+        String query =
+                "( " +
+                   "(((_Bounded_ = true) && (NUMBER >= 0 && NUMBER <= 1000)) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')) || " +
+                   "(((_Bounded_ = true) && (NUMBER >= 0 && NUMBER <= 1000)) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')) " +
+                ") " +
+                "&& GENDER == 'MALE' " +
+                "&& (NOME == 'THIS' || NOME == 'THAT') " +
+                "&& !filter:includeRegex(ETA, 'blah') " +
+                "&& ( LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey' )";
+        //  @formatter:on
         String expandedQuery = JexlStringBuildingVisitor.buildQuery(FunctionIndexQueryExpansionVisitor.expandFunctions(logic.getConfig(), helper, null,
                         JexlASTHelper.parseJexlQuery(query)));
         String[] queryStrings = {expandedQuery};
@@ -293,11 +310,11 @@ public abstract class ExecutableExpansionVisitorTest {
         
         String finalQuery = JexlStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
         Assert.assertNotEquals(
-                        "(GENDER == 'male') && (NOME == 'this' || NOME == 'that') && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey')",
+                        "GENDER == 'male' && (NOME == 'this' || NOME == 'that') && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey')",
                         finalQuery);
         
         ASTJexlScript expectedQuery = JexlASTHelper
-                        .parseJexlQuery("((((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a')) || (((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a'))) && (GENDER == 'male') && (NOME == 'this' || NOME == 'that') && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey')");
+                        .parseJexlQuery("((((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a')) || (((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a'))) && GENDER == 'male' && (NOME == 'this' || NOME == 'that') && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey')");
         Assert.assertTrue(TreeEqualityVisitor.isEqual(expectedQuery, logic.getConfig().getQueryTree()));
     }
     

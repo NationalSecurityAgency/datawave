@@ -405,6 +405,8 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
     /**
      * Since this helper may be used in the RecordReader during ingest, all configs will be loaded which means that the data.name value is actually random. We
      * need to override getType to return the correct one.
+     * 
+     * @return the data type
      */
     @Override
     public Type getType() {
@@ -414,8 +416,11 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
     /**
      * Lowercase MD5,SHA1,SHA256 but do *not* remove any whitespace
      * 
+     * @param fieldName
+     *            the field name
      * @param fieldValue
-     * @return
+     *            the field value
+     * @return a string of the field value
      */
     public String clean(String fieldName, String fieldValue) {
         if (StringUtils.isEmpty(fieldValue)) {
