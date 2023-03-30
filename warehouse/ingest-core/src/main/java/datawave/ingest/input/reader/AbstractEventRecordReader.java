@@ -193,7 +193,9 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
      * entire record, so that the csv records and bud file content are merged into one event in the shard table. For the enrichment data, we want to base the
      * UID off of the MD5 hash and some other metadata, but not the dates in the record. This is because we will have to reload the enrichment data on a regular
      * basis and we want the same hashes to merge.
-     *
+     * 
+     * @param event
+     *            the event container to examine
      * @return the UID for the event
      */
     protected UID uidOverride(final RawRecordContainer event) {

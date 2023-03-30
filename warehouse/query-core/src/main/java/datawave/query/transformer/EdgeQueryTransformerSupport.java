@@ -8,7 +8,6 @@ import datawave.marking.MarkingFunctions;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
-import datawave.webservice.query.cachedresults.CacheableQueryRowImpl;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
@@ -20,7 +19,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.log4j.Logger;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -72,8 +70,10 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
      * Returns a boolean array with the decoded hourly activity from the Value's bitmask.
      * 
      * @param value
+     *            a value
      * @return the hourly activity
      * @throws InvalidProtocolBufferException
+     *             if the buffer is invalid
      */
     public static boolean[] decodeHourlyActivityToBooleanArray(Value value) throws InvalidProtocolBufferException {
         boolean[] hourlyActivity = new boolean[24];
@@ -117,7 +117,7 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         List<CacheableQueryRow> cqoList = new ArrayList<>();
         EdgeBase edge = (EdgeBase) o;
         
-        CacheableQueryRow cqo = new CacheableQueryRowImpl();
+        CacheableQueryRow cqo = responseObjectFactory.getCacheableQueryRow();
         cqo.setColFam("");
         cqo.setDataType("");
         cqo.setEventId(generateEventId(edge));

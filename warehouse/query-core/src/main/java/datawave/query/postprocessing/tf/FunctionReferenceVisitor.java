@@ -25,17 +25,28 @@ public class FunctionReferenceVisitor extends BaseVisitor {
         functions = ArrayListMultimap.create();
     }
     
+    /**
+     * Accessor for the map of functions
+     *
+     * @return a Multimap of functions
+     */
     public Multimap<String,Function> functions() {
         return functions;
     }
     
     /**
      * This method attempts to build a Function object and map it to a namespace.
-     * 
+     * <p>
      * The supplied node must have at least three children- a namespace, a function name and at least one argument. The namespace and function name are readily
      * available as the image values of the first two children.
-     * 
+     * <p>
      * The arguments are accessed and aggregated by passing a linked list onto the children via their visit method.
+     *
+     * @param node
+     *            an {@link ASTFunctionNode}
+     * @param data
+     *            an Object, unused
+     * @return null
      */
     @Override
     public Object visit(ASTFunctionNode node, Object data) {

@@ -129,6 +129,7 @@ public class PushdownNegationVisitorTest {
      * Same as testNestedAnd but validate that the original is not modified
      *
      * @throws ParseException
+     *             if the query does not parse
      */
     @Test
     public void testGuarantees() throws ParseException {
@@ -311,6 +312,13 @@ public class PushdownNegationVisitorTest {
         JexlNode or = JexlNodeFactory.createUnwrappedOrNode(children);
         JexlNode result = PushdownNegationVisitor.applyDeMorgans(or, true);
         assertEquals("!((!(f1 == 'v1') && !(f2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(result));
+    }
+    
+    @Test
+    public void testPushdownNegationIntoContentFunction() {
+        String query = "FOO == 'few' && !(content:phrase('TEXT', termOffsetMap, 'bar', 'baz') && (TEXT == 'bar' && TEXT == 'baz'))";
+        String expected = "FOO == 'few' && (!(content:phrase('TEXT', termOffsetMap, 'bar', 'baz')) || !(TEXT == 'bar') || !(TEXT == 'baz'))";
+        test(query, expected);
     }
     
     private void test(String query, String expected) {

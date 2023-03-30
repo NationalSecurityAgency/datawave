@@ -65,7 +65,11 @@ public class LoadModelFromXml {
     /**
      * Simple factory method to load a query model from the specified classpath resource
      * 
+     * @param queryModelXml
+     *            the model xml
      * @return QueryModel instance
+     * @throws Exception
+     *             if there are issues
      */
     public static QueryModel loadModel(String queryModelXml) throws Exception {
         QueryModel model = null;

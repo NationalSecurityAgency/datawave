@@ -22,6 +22,7 @@ public class ShardIdFactory {
      * Calculates the shard id of the event
      * 
      * @param record
+     *            the record container
      * @return Shard id
      */
     public byte[] getShardIdBytes(RawRecordContainer record) {
@@ -32,7 +33,8 @@ public class ShardIdFactory {
      * this method will return numShards based on date in epoch millis
      * 
      * @param date
-     * @return
+     *            the date in epoch
+     * @return the number of shards
      */
     public int getNumShards(long date) {
         return numShards.getNumShards(date);
@@ -42,7 +44,8 @@ public class ShardIdFactory {
      * this method will return numShards based on date string 'yyyyMMdd'
      * 
      * @param date
-     * @return
+     *            the date in string format
+     * @return the number of shards
      */
     public int getNumShards(String date) {
         return numShards.getNumShards(date);
@@ -52,6 +55,7 @@ public class ShardIdFactory {
      * Calculates the shard id of the event
      * 
      * @param record
+     *            the event record
      * @return Shard id
      */
     public String getShardId(RawRecordContainer record) {
@@ -67,6 +71,7 @@ public class ShardIdFactory {
      * Get the date portion of the shard id
      * 
      * @param shardId
+     *            the shard id
      * @return the date yyyyMMdd
      */
     public static String getDateString(String shardId) {
@@ -77,7 +82,10 @@ public class ShardIdFactory {
      * Get the date portion of the shard id
      * 
      * @param shardId
+     *            the shard id
      * @return the date
+     * @throws ParseException
+     *             if there is an issue parsing
      */
     public static Date getDate(String shardId) throws ParseException {
         return new SimpleDateFormat("yyyyMMdd").parse(getDateString(shardId));

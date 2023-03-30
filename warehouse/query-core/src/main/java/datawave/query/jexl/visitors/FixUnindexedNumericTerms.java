@@ -20,7 +20,6 @@ import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.lang.math.NumberUtils;
 
 import com.google.common.base.Preconditions;
@@ -42,8 +41,12 @@ public class FixUnindexedNumericTerms extends RebuildingVisitor {
      * Change string literals to numeric literals for comparisons with unindexed fields (where possible)
      *
      * @param config
+     *            a config
      * @param script
-     * @return
+     *            a script
+     * @param <T>
+     *            type of node
+     * @return a jexl node
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T fixNumerics(ShardQueryConfiguration config, T script) {

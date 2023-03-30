@@ -1,5 +1,6 @@
 package datawave.query.tables;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -27,9 +28,6 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
-/**
- * 
- */
 public class ScannerFactory {
     
     protected int maxQueue = 1000;
@@ -136,9 +134,14 @@ public class ScannerFactory {
      * is hardcoded, below, to 1000, but can be changed
      * 
      * @param tableName
+     *            the table string
      * @param auths
-     * @return
+     *            a set of auths
+     * @param settings
+     *            query settings
+     * @return a new scanner session
      * @throws Exception
+     *             if there are issues
      */
     public synchronized BatchScannerSession newQueryScanner(final String tableName, final Set<Authorizations> auths, Query settings) throws Exception {
         
@@ -148,11 +151,21 @@ public class ScannerFactory {
     /**
      * Builds a new scanner session using a finalized table name and set of authorizations using the previously defined queue. Note that the number of entries
      * is hardcoded, below, to 1000, but can be changed
-     * 
+     *
      * @param tableName
+     *            the table string
      * @param auths
-     * @return
+     *            a set of auths
+     * @param settings
+     *            query settings
+     * @param <T>
+     *            type of the wrapper
+     * @param wrapper
+     *            a wrapper class
+     * @return a new scanner session
      * @throws Exception
+     *             if there are issues
+     *
      */
     public synchronized <T extends ScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths,
                     final Query settings) throws Exception {
@@ -187,11 +200,16 @@ public class ScannerFactory {
     /**
      * Builds a new scanner session using a finalized table name and set of authorizations using the previously defined queue. Note that the number of entries
      * is hardcoded, below, to 1000, but can be changed
-     * 
+     *
      * @param tableName
+     *            the table string
      * @param auths
-     * @return
+     *            a set of auths
+     * @param settings
+     *            query settings
+     * @return a new scanner session
      * @throws Exception
+     *             if there are issues
      */
     public synchronized RangeStreamScanner newRangeScanner(final String tableName, final Set<Authorizations> auths, final Query settings) throws Exception {
         return newRangeScanner(tableName, auths, settings, Integer.MAX_VALUE);
@@ -213,12 +231,22 @@ public class ScannerFactory {
         return removed;
     }
     
+    /**
+     * Returns a NEW collection of scanner instances to the caller.
+     * 
+     * @return a NEW collection of scanners
+     */
     public synchronized Collection<ScannerBase> currentScanners() {
-        return Collections.unmodifiableSet(instances);
+        return new ArrayList<>(instances);
     }
     
+    /**
+     * Returns a NEW collection of scanner session instances to the caller.
+     * 
+     * @return a NEW collection of scanner session instances
+     */
     public synchronized Collection<ScannerSession> currentSessions() {
-        return Collections.unmodifiableSet(sessionInstances);
+        return new ArrayList<>(sessionInstances);
     }
     
     public synchronized boolean lockdown() {
@@ -231,10 +259,7 @@ public class ScannerFactory {
         return open;
     }
     
-    /**
-     * @param bs
-     */
-    public void close(ScannerSession bs) {
+    public synchronized void close(ScannerSession bs) {
         try {
             log.debug("Closed session " + System.identityHashCode(bs));
             sessionInstances.remove(bs);

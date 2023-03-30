@@ -32,7 +32,8 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
      * Returns a pair containing the set of literals and the set of patterns in this script.
      * 
      * @param root
-     * @return
+     *            the root node
+     * @return a set of literals and patterns
      */
     public static QueryValues find(JexlNode root) {
         root = TreeFlatteningRebuildingVisitor.flatten(root);

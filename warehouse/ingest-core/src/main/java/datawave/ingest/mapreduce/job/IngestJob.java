@@ -1,11 +1,13 @@
 package datawave.ingest.mapreduce.job;
 
 import datawave.ingest.config.TableConfigCache;
+import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
 import datawave.ingest.mapreduce.EventMapper;
+import datawave.ingest.mapreduce.handler.JobSetupHandler;
 import datawave.ingest.mapreduce.handler.shard.NumShards;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
@@ -324,6 +326,9 @@ public class IngestJob implements Tool {
         // Job copies the configuration, so any changes made after this point don't get captured in the job.
         // Use the job's configuration from this point.
         conf = job.getConfiguration();
+        
+        setupHandlers(conf);
+        
         if (!useMapOnly || !outputMutations) {
             // Calculate the sampled splits, splits file, and set up the partitioner, but not if only doing only a map phase and outputting mutations
             // if not outputting mutations and only doing a map phase, we still need to go through this logic as the MultiRFileOutputFormatter
@@ -531,6 +536,25 @@ public class IngestJob implements Tool {
         return 0;
     }
     
+    private void setupHandlers(Configuration conf) {
+        for (Type t : TypeRegistry.getTypes()) {
+            String[] handlers = t.getDefaultDataTypeHandlers();
+            if (handlers != null) {
+                for (String handler : handlers) {
+                    try {
+                        Object o = Class.forName(handler).newInstance();
+                        if (o instanceof JobSetupHandler) {
+                            JobSetupHandler setupHandler = (JobSetupHandler) o;
+                            setupHandler.setup(conf);
+                        }
+                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                        log.warn("Could not setup handler: " + handler, e);
+                    }
+                }
+            }
+        }
+    }
+    
     protected Configuration interpolateEnvironment(Configuration conf) {
         // We have set up the Configuration, now replace all instances of ${DATAWAVE_INGEST_HOME} with
         // the value that is set in the environment.
@@ -548,9 +572,14 @@ public class IngestJob implements Tool {
      * Parse the arguments and update the configuration as needed
      *
      * @param args
+     *            the args
      * @param conf
+     *            the config
      * @throws ClassNotFoundException
+     *             if class is not found
      * @throws URISyntaxException
+     *             if there are issues with URI syntax
+     * @return the configuration
      */
     protected Configuration parseArguments(String[] args, Configuration conf) throws ClassNotFoundException, URISyntaxException, IllegalArgumentException {
         List<String> activeResources = new ArrayList<>();
@@ -771,15 +800,25 @@ public class IngestJob implements Tool {
      * Configure the partitioner and the output formatter.
      *
      * @param job
+     *            the job
      * @param cbHelper
+     *            the accumulo helper
      * @param conf
+     *            the config
      * @param outputFs
+     *            the file system
      * @throws AccumuloSecurityException
+     *             for issues with accumulo security
      * @throws AccumuloException
+     *             for general accumulo issues
      * @throws IOException
+     *             for issues with read or write
      * @throws URISyntaxException
+     *             for issues with URI syntax
      * @throws TableExistsException
+     *             if the table already exists
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     protected void configureBulkPartitionerAndOutputFormatter(Job job, AccumuloHelper cbHelper, Configuration conf, FileSystem outputFs)
                     throws AccumuloSecurityException, AccumuloException, IOException, URISyntaxException, TableExistsException, TableNotFoundException {
@@ -1085,10 +1124,14 @@ public class IngestJob implements Tool {
      * @param fs
      *            used by extending classes such as MapFileMergeJob
      * @param inputFileLists
+     *            the input file lists
      * @param inputFileListMarker
+     *            the input file list marker
      * @param inputPaths
-     * @return
+     *            the input paths
+     * @return a list of paths
      * @throws IOException
+     *             if there is an issue with read or write
      */
     protected Path[] getFilesToProcess(FileSystem fs, boolean inputFileLists, String inputFileListMarker, String inputPaths) throws IOException {
         String[] paths = StringUtils.trimAndRemoveEmptyStrings(StringUtils.split(inputPaths, ','));
@@ -1130,6 +1173,15 @@ public class IngestJob implements Tool {
     
     /**
      * Writes the input paths for this job into the work directory in a file named "job.paths"
+     * 
+     * @param fs
+     *            the filesystem
+     * @param workDir
+     *            the work directory
+     * @param inputPaths
+     *            the input paths
+     * @throws IOException
+     *             for issues with read or write
      */
     protected void writeInputPathsFile(FileSystem fs, Path workDir, Path[] inputPaths) throws IOException {
         FSDataOutputStream os = fs.create(new Path(workDir, "job.paths"));
@@ -1142,7 +1194,17 @@ public class IngestJob implements Tool {
     
     /**
      * Writes the flag file for this job into the work directory in a file with the same name
+     * 
+     * @param fs
+     *            the file system
+     * @param workDir
+     *            the work directory
+     * @param flagFileName
+     *            the flag file name
+     * @throws IOException
+     *             for read or write related issues
      */
+    
     protected void writeFlagFile(FileSystem fs, Path workDir, String flagFileName) throws IOException {
         File flagFile = new File(flagFileName);
         if (!flagFile.exists() || !flagFile.isFile() || !flagFile.canRead()) {
@@ -1185,6 +1247,15 @@ public class IngestJob implements Tool {
     
     /**
      * Marks the input files given to this job as loaded by moving them from the "flagged" directory to the "loaded" directory.
+     * 
+     * @param fs
+     *            the filesystem
+     * @param inputPaths
+     *            the input paths
+     * @param jobID
+     *            the job id
+     * @throws IOException
+     *             if there is an issue with read or write
      */
     protected void markFilesLoaded(FileSystem fs, Path[] inputPaths, JobID jobID) throws IOException {
         for (Path src : inputPaths) {
@@ -1211,6 +1282,11 @@ public class IngestJob implements Tool {
      * Some properties cannot be set using the new API. However, we know internally that the configuration Hadoop uses is really just the old JobConf which
      * exposes the methods we want. In particular, we have to turn off speculative execution since we are loading data and don't want Hadoop to spawn many
      * speculative tasks that will load duplicate data.
+     * 
+     * @param conf
+     *            the configuration
+     * @param value
+     *            a boolean value
      */
     protected void setMapSpeculativeExecution(Configuration conf, boolean value) {
         if (conf instanceof org.apache.hadoop.mapred.JobConf) {
@@ -1223,6 +1299,11 @@ public class IngestJob implements Tool {
      * Some properties cannot be set using the new API. However, we know internally that the configuration Hadoop uses is really just the old JobConf which
      * exposes the methods we want. In particular, we have to turn off speculative execution since we are loading data and don't want Hadoop to spawn many
      * speculative tasks that will load duplicate data.
+     * 
+     * @param conf
+     *            the configuration
+     * @param value
+     *            a boolean value
      */
     protected void setReduceSpeculativeExecution(Configuration conf, boolean value) {
         if (conf instanceof org.apache.hadoop.mapred.JobConf) {
@@ -1240,6 +1321,10 @@ public class IngestJob implements Tool {
      *            type of compression to use for the output format
      * @param compressionTableBlackList
      *            a set of table names for which we will not compress the rfile output
+     * @param maxEntries
+     *            the max entries
+     * @param maxSize
+     *            the max size
      */
     public static void configureMultiRFileOutputFormatter(Configuration config, String compressionType, Set<String> compressionTableBlackList, int maxEntries,
                     long maxSize) {
@@ -1420,6 +1505,8 @@ public class IngestJob implements Tool {
      *            the table name to write in the counter
      * @param mutation
      *            a Mutation containing the key-value pairs to log to counters
+     * @param location
+     *            the location
      */
     @SuppressWarnings("rawtypes")
     public static void verboseCounters(TaskInputOutputContext context, String location, Text tableName, Mutation mutation) {
@@ -1433,8 +1520,14 @@ public class IngestJob implements Tool {
      * Output some verbose counters. Since the input is an iterable, this will cache the values in a list and return the new iterable.
      *
      * @param context
+     *            the task context
      * @param key
+     *            the ingest key
+     * @param location
+     *            the location
      * @param values
+     *            the value
+     * @return the iterable for the value list
      */
     @SuppressWarnings("rawtypes")
     public static Iterable<Value> verboseCounters(TaskInputOutputContext context, String location, BulkIngestKey key, Iterable<Value> values) {
@@ -1451,6 +1544,8 @@ public class IngestJob implements Tool {
      *
      * @param context
      *            hadoop task context for writing counter values
+     * @param location
+     *            the location
      * @param key
      *            hadoop key to log all key-value pairs to counters
      * @param value
@@ -1467,6 +1562,8 @@ public class IngestJob implements Tool {
      *
      * @param context
      *            hadoop task context for writing counter values
+     * @param location
+     *            the location string
      * @param tableName
      *            the table name to write in the counter
      * @param row

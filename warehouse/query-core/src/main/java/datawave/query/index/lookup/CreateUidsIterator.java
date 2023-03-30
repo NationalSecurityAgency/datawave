@@ -159,6 +159,8 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
      * Method that ensures if we have to skip the current key, we do so with the contract provided by the create UID iterator.
      * 
      * @param range
+     *            the range
+     * @return a range
      */
     protected Range skipKey(Range range) {
         Key startKey = range.getStartKey();
@@ -229,7 +231,8 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
      * When skipKey is true, we will produce a key producing a skipkey from the root key. This will be helpful when we are being torn down.
      * 
      * @param k
-     * @return
+     *            a key
+     * @return a key
      */
     public static Key makeRootKey(Key k) {
         ByteSequence cq = k.getColumnQualifierData();

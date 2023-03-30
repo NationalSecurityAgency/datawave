@@ -5,6 +5,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.spring.SpringBean;
 import datawave.marking.SecurityMarking;
 import datawave.query.iterator.QueriesTableAgeOffIterator;
 import datawave.security.authorization.DatawavePrincipal;
@@ -100,6 +101,7 @@ public class Persister {
     protected EJBContext ctx;
     
     @Inject
+    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
     
     public Query create(String userDN, List<String> dnList, SecurityMarking marking, String queryLogicName, QueryParameters qp,

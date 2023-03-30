@@ -3,6 +3,7 @@ package datawave.webservice.query.logic;
 import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
@@ -14,7 +15,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.springframework.beans.factory.annotation.Required;
 
-import javax.inject.Inject;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Iterator;
@@ -41,7 +41,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected Principal principal;
     protected RoleManager roleManager;
     protected MarkingFunctions markingFunctions;
-    @Inject
     protected ResponseObjectFactory responseObjectFactory;
     protected SelectorExtractor selectorExtractor;
     protected ResponseEnricherBuilder responseEnricherBuilder = null;
@@ -396,5 +395,11 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     public void setResponseEnricherBuilder(ResponseEnricherBuilder responseEnricherBuilder) {
         this.responseEnricherBuilder = responseEnricherBuilder;
+    }
+    
+    @Override
+    public UserOperations getUserOperations() {
+        // null implies that the local user operations/principal is to be used for auths.
+        return null;
     }
 }

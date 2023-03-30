@@ -20,6 +20,7 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
      * Create a file sorted set from another one
      * 
      * @param other
+     *            the other sorted set
      */
     public FileKeySortedSet(FileKeySortedSet other) {
         super(other);
@@ -29,8 +30,11 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
      * Create a file sorted subset from another one
      * 
      * @param other
+     *            the other sorted set
      * @param from
+     *            the from key
      * @param to
+     *            the to key
      */
     public FileKeySortedSet(FileKeySortedSet other, Key from, Key to) {
         super(other, from, to);
@@ -40,18 +44,23 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
      * Create a persisted sorted set
      * 
      * @param handler
+     *            the sorted set file handler
      * @param persisted
+     *            a persisted boolean flag
      */
     public FileKeySortedSet(SortedSetFileHandler handler, boolean persisted) {
         super(new KeyFileHandler(handler), new FileKeySortedSet.Factory(), persisted);
     }
     
     /**
-     * Create a persistede sorted set
+     * Create a persisted sorted set
      * 
      * @param comparator
+     *            the key comparator
      * @param handler
+     *            the sorted set file handler
      * @param persisted
+     *            a persisted boolean flag
      */
     public FileKeySortedSet(Comparator<? super Key> comparator, SortedSetFileHandler handler, boolean persisted) {
         this(handler, persisted);
@@ -64,7 +73,9 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
      * Create an unpersisted sorted set (still in memory)
      * 
      * @param set
+     *            the sorted set
      * @param handler
+     *            the sorted set file handler
      */
     public FileKeySortedSet(SortedSet<Key> set, SortedSetFileHandler handler) {
         super(set, new KeyFileHandler(handler), new FileKeySortedSet.Factory());
@@ -75,7 +86,13 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
      * all of its entries into memory at once.
      *
      * @param set
+     *            the sorted set
      * @param handler
+     *            the sorted set file handler
+     * @param persist
+     *            boolean flag for persist
+     * @throws IOException
+     *             for issues with read/write
      */
     public FileKeySortedSet(SortedSet<Key> set, SortedSetFileHandler handler, boolean persist) throws IOException {
         super(set, new KeyFileHandler(handler), new FileKeySortedSet.Factory(), persist);
@@ -83,8 +100,11 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
     
     /**
      * This will dump the set to the file, making the set "persisted"
-     *
+     * 
+     * @param handler
+     *            the sorted set file handler
      * @throws IOException
+     *             for issues with read/write
      */
     public void persist(SortedSetFileHandler handler) throws IOException {
         // ensure this handler is wrapped with our handler

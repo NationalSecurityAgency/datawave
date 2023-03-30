@@ -87,6 +87,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      *            Configuration parameters relevant to our query
      * @param script
      *            The jexl node representing the query
+     * @param <T>
+     *            type of node
      * @return An expanded version of the passed-in script containing composite nodes
      */
     @SuppressWarnings("unchecked")
@@ -555,7 +557,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * @return Returns a composite node if one can be made, otherwise returns the original node
      */
     private JexlNode visitLeafNode(JexlNode node, ExpandData eData) {
-        LiteralRange range = JexlASTHelper.findRange().getRange(node);
+        LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
         String fieldName = (range != null) ? range.getFieldName() : JexlASTHelper.getIdentifier(node);
         
         Multimap<String,JexlNode> leafNodes = LinkedHashMultimap.create();
@@ -904,7 +906,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             JexlNode leafKid = getLeafNode(rootNode);
             if (leafKid != null) {
                 String kidFieldName;
-                LiteralRange range = JexlASTHelper.findRange().getRange(leafKid);
+                LiteralRange<?> range = JexlASTHelper.findRange().getRange(leafKid);
                 kidFieldName = (range != null) ? range.getFieldName() : JexlASTHelper.getIdentifier(leafKid);
                 childrenLeafNodes.put(kidFieldName, rootNode);
             }
@@ -915,7 +917,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
                 JexlNode leafKid = getLeafNode(child);
                 if (leafKid != null) {
                     String kidFieldName;
-                    LiteralRange range = JexlASTHelper.findRange().getRange(leafKid);
+                    LiteralRange<?> range = JexlASTHelper.findRange().getRange(leafKid);
                     kidFieldName = (range != null) ? range.getFieldName() : JexlASTHelper.getIdentifier(leafKid);
                     // note: we save the actual direct sibling of the and node, including
                     // any reference nodes. those will be trimmed off later
@@ -967,12 +969,10 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTReference node) {
         // ignore marked nodes
-        if (!QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BoundedRange.class)) {
-            if (node.jjtGetNumChildren() == 1) {
-                JexlNode kid = node.jjtGetChild(0);
-                if (kid instanceof ASTReferenceExpression) {
-                    return getLeafNode((ASTReferenceExpression) kid);
-                }
+        if (node.jjtGetNumChildren() == 1 && !QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BoundedRange.class)) {
+            JexlNode kid = node.jjtGetChild(0);
+            if (kid instanceof ASTReferenceExpression) {
+                return getLeafNode((ASTReferenceExpression) kid);
             }
         }
         return null;
@@ -988,16 +988,14 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTReferenceExpression node) {
         // ignore marked nodes
-        if (!QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BoundedRange.class)) {
-            if (node != null && node.jjtGetNumChildren() == 1) {
-                JexlNode kid = node.jjtGetChild(0);
-                if (kid instanceof ASTAndNode) {
-                    return getLeafNode((ASTAndNode) kid);
-                } else if (CompositeUtils.ALL_VALID_LEAF_NODE_CLASSES.contains(kid.getClass())) {
-                    return kid;
-                } else {
-                    return getLeafNode(kid);
-                }
+        if (node != null && node.jjtGetNumChildren() == 1 && !QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BoundedRange.class)) {
+            JexlNode kid = node.jjtGetChild(0);
+            if (kid instanceof ASTAndNode) {
+                return getLeafNode((ASTAndNode) kid);
+            } else if (CompositeUtils.ALL_VALID_LEAF_NODE_CLASSES.contains(kid.getClass())) {
+                return kid;
+            } else {
+                return getLeafNode(kid);
             }
         }
         
@@ -1074,6 +1072,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * arises.
      * 
      * @param fieldName
+     *            the field name
      * @return true if fieldName is a fixed length field
      */
     private boolean isFixedLengthField(String fieldName) {

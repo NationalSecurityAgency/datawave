@@ -17,9 +17,6 @@ import org.apache.accumulo.core.data.Value;
 
 import com.google.common.collect.Lists;
 
-/**
- * 
- */
 public abstract class Scheduler implements CloseableIterable<Entry<Key,Value>> {
     
     protected Collection<IteratorSetting> settings = Lists.newArrayList();
@@ -29,7 +26,7 @@ public abstract class Scheduler implements CloseableIterable<Entry<Key,Value>> {
     /**
      * Returns the scan session stats provided by this scheduler
      * 
-     * @return
+     * @return the scan session stats
      */
     public abstract ScanSessionStats getSchedulerStats();
     

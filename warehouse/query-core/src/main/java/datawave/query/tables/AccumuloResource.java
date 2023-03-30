@@ -69,7 +69,8 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
      * Sets the option on this currently running resource.
      * 
      * @param options
-     * @return
+     *            options to set
+     * @return the resource
      */
     public AccumuloResource setOptions(SessionOptions options) {
         
@@ -92,12 +93,20 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
          * Initializes a resource after it was delegated.
          * 
          * @param clazz
+         *            a class
          * @param baseResource
+         *            a base resource
          * @param tableName
+         *            the table name
          * @param auths
+         *            set of auths
          * @param currentRange
-         * @return
+         *            a current range
+         * @return the set resource
          * @throws TableNotFoundException
+         *             if the table was not found
+         * @param <T>
+         *            type of the class
          */
         public static <T> AccumuloResource initializeResource(Class<T> clazz, AccumuloResource baseResource, final String tableName,
                         final Set<Authorizations> auths, Range currentRange) throws TableNotFoundException {

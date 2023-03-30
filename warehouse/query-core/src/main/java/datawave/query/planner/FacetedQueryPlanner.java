@@ -27,9 +27,6 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-/**
- *
- */
 public class FacetedQueryPlanner extends IndexQueryPlanner {
     
     protected FacetedConfiguration facetedConfig;
@@ -38,9 +35,6 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
     
     boolean usePrecomputedFacets = false;
     
-    /**
-     * @param type
-     */
     public FacetedQueryPlanner(FacetedSearchType type) {
         facetedConfig = new FacetedConfiguration();
         facetedConfig.setType(type);
@@ -56,14 +50,14 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
     
     @Override
     public IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
-                    Boolean isFullTable) throws DatawaveQueryException {
+                    Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
         
         if (isFullTable) {
             QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_DISALLOWED);
             throw new FullTableScansDisallowedException(qe);
         }
         
-        IteratorSetting cfg = super.getQueryIterator(metadataHelper, config, settings, queryString, isFullTable);
+        IteratorSetting cfg = super.getQueryIterator(metadataHelper, config, settings, queryString, isFullTable, isPreload);
         if (!usePrecomputedFacets)
             cfg.setIteratorClass(DynamicFacetIterator.class.getName());
         else {
@@ -141,9 +135,6 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
         return false;
     }
     
-    /**
-     * @param facetedConfig
-     */
     public void setConfiguration(FacetedConfiguration facetedConfig) {
         this.facetedConfig = facetedConfig;
     }

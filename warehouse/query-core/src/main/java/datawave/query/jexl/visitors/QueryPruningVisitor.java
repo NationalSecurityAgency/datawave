@@ -233,6 +233,9 @@ public class QueryPruningVisitor extends BaseVisitor {
                 return TruthState.TRUE;
             } else if (state == TruthState.FALSE) {
                 // drop this node from the OR it can never be satisfied
+                // if the child was a junction that was pruned, then the child object is a ref node but the child
+                // at index i is not. reassign for consistency.
+                child = node.jjtGetChild(i);
                 replaceAndAssign(child, null, null);
                 if (debugPrune) {
                     log.debug("Pruning " + originalChild + " from " + originalString);
@@ -272,6 +275,9 @@ public class QueryPruningVisitor extends BaseVisitor {
                 return TruthState.FALSE;
             } else if (state == TruthState.TRUE) {
                 // drop this node from the AND it will always be satisfied
+                // if the child was a junction that was pruned, then the child object is a ref node but the child
+                // at index i is not. reassign for consistency.
+                child = node.jjtGetChild(i);
                 replaceAndAssign(child, null, null);
                 if (debugPrune) {
                     log.debug("Pruning " + originalChild + " from " + originalString);
@@ -313,7 +319,38 @@ public class QueryPruningVisitor extends BaseVisitor {
         if (node.jjtGetNumChildren() != 1) {
             throw new IllegalStateException("ASTReference must only have one child: " + node);
         }
-        return node.jjtGetChild(0).jjtAccept(this, data);
+        Object o = node.jjtGetChild(0).jjtAccept(this, data);
+        
+        pruneJunctionWithSingleChild(node);
+        
+        return o;
+    }
+    
+    /**
+     * When a junction is pruned to a single child also prune that junction and the surrounding reference expression
+     * <p>
+     * <code>parent - ref - refExpr - and/or - single child</code>
+     * <p>
+     * prunes to
+     * <p>
+     * <code>parent - single child</code>
+     *
+     * @param node
+     *            a JexlNode
+     */
+    private void pruneJunctionWithSingleChild(JexlNode node) {
+        boolean isRef = node.getClass().isAssignableFrom(ASTReference.class);
+        if (isRef && node.jjtGetNumChildren() == 1 && node.jjtGetChild(0) instanceof ASTReferenceExpression) {
+            JexlNode refExpr = node.jjtGetChild(0);
+            if (refExpr.jjtGetNumChildren() > 0) {
+                JexlNode junction = refExpr.jjtGetChild(0);
+                if (junction.jjtGetNumChildren() == 1 && (junction instanceof ASTOrNode || junction instanceof ASTAndNode)) {
+                    JexlNode parent = node.jjtGetParent();
+                    JexlNode source = junction.jjtGetChild(0);
+                    JexlNodes.swap(parent, node, source);
+                }
+            }
+        }
     }
     
     @Override
@@ -523,6 +560,7 @@ public class QueryPruningVisitor extends BaseVisitor {
      * FALSE
      * 
      * @param node
+     *            the jexl node
      * @return TruthState.FALSE if the the sole identifier is _NOFIELD_, otherwise TruthState.UNKNOWN
      */
     private TruthState identifyAndReplace(JexlNode node) {
@@ -552,10 +590,8 @@ public class QueryPruningVisitor extends BaseVisitor {
         if (rewrite && toReplace != null) {
             JexlNode parent = toReplace.jjtGetParent();
             if (parent != null && parent != toReplace) {
-                if (queryString != null && log.isDebugEnabled()) {
-                    if (this.debugPrune && baseReplacement != null) {
-                        log.debug("Pruning " + queryString + " to " + (baseReplacement instanceof ASTTrueNode ? "true" : "false"));
-                    }
+                if (queryString != null && log.isDebugEnabled() && this.debugPrune && baseReplacement != null) {
+                    log.debug("Pruning " + queryString + " to " + (baseReplacement instanceof ASTTrueNode ? "true" : "false"));
                 }
                 
                 if (baseReplacement != null) {
@@ -574,6 +610,18 @@ public class QueryPruningVisitor extends BaseVisitor {
                     }
                     
                     JexlNodes.children(parent, children.toArray(new JexlNode[children.size()]));
+                }
+            }
+            
+            // if a junction was completely pruned it is replaced with the last child. In this case, also check
+            // for extra reference expressions and prune those.
+            if ((toReplace instanceof ASTOrNode || toReplace instanceof ASTAndNode) && (parent != null && parent.jjtGetNumChildren() == 1)) {
+                if (parent instanceof ASTReferenceExpression && parent.jjtGetParent() != null) {
+                    JexlNode grandparent = parent.jjtGetParent();
+                    if (grandparent instanceof ASTReference && grandparent.jjtGetParent() != null) {
+                        JexlNode greatGrandParent = grandparent.jjtGetParent();
+                        JexlNodes.swap(greatGrandParent, grandparent, parent.jjtGetChild(0));
+                    }
                 }
             }
         }

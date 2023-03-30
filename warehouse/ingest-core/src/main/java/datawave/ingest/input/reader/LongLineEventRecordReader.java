@@ -88,8 +88,11 @@ public class LongLineEventRecordReader extends AbstractEventRecordReader<Text> i
     
     /**
      * @param genericSplit
+     *            the split to examine
      * @param context
+     *            the context containing the configuration
      * @throws IOException
+     *             if there is an issue reading the file
      */
     public void initializeLineReader(InputSplit genericSplit, TaskAttemptContext context) throws IOException {
         FileSplit split = (FileSplit) genericSplit;
@@ -141,6 +144,7 @@ public class LongLineEventRecordReader extends AbstractEventRecordReader<Text> i
     
     /**
      * @param conf
+     *            Configuration to update
      */
     public void initializeNewLineIncluded(Configuration conf) {
         this.newLineIncluded = conf.getBoolean(LineReader.Properties.LONGLINE_NEWLINE_INCLUDED, false);
@@ -148,6 +152,7 @@ public class LongLineEventRecordReader extends AbstractEventRecordReader<Text> i
     
     /**
      * @param conf
+     *            Configuration to update
      */
     public void initializeMaxLineLength(Configuration conf) {
         this.maxLineLength = conf.getInt("mapred.linerecordreader.maxlength", Integer.MAX_VALUE);

@@ -52,6 +52,8 @@ public class AccumuloHelper {
     }
     
     /**
+     * @throws AccumuloSecurityException
+     *             if an issue is discovered with authentication or connecting to obtain credentials
      * @return Accumulo authorization info based on username and password set in this object.
      */
     public Credentials getCredentials() throws AccumuloSecurityException {
@@ -81,7 +83,9 @@ public class AccumuloHelper {
     /**
      * @return Connector to Accumulo given this objects settings.
      * @throws AccumuloSecurityException
+     *             if there are problems with the login or connection authentication
      * @throws AccumuloException
+     *             for other accumulo exceptions
      */
     public Connector getConnector() throws AccumuloSecurityException, AccumuloException {
         return getInstance().getConnector(username, password);

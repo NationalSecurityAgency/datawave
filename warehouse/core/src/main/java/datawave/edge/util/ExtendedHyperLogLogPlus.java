@@ -69,7 +69,7 @@ public class ExtendedHyperLogLogPlus {
      * 
      * @param object
      *            Object to be added to the HyperLogLog
-     * @return
+     * @return the result of the offer attempt
      */
     public boolean offer(final Object object) {
         final boolean result = hllp.offer(object);

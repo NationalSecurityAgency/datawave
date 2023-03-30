@@ -12,8 +12,6 @@ import datawave.query.attributes.Document;
 
 /**
  * Allows an arbitrary nesting of nested iterators
- *
- * @param <T>
  */
 public class NestedQueryIterator<T> implements NestedIterator<T> {
     
@@ -115,11 +113,6 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
         return currentNest.document();
     }
     
-    /**
-     * Return the nested query.
-     * 
-     * @return
-     */
     public NestedQuery<T> getNestedQuery() {
         return currentQuery;
     }

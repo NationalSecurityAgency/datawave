@@ -14,6 +14,7 @@ import java.util.TreeMap;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
@@ -43,13 +44,19 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
         return new TreeMap<String,Collection<String>>(authMapping);
     }
     
+    @XmlElementWrapper(name = "messages")
+    @XmlElement(name = "message")
+    public List<String> getMessages() {
+        return messages;
+    }
+    
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("userAuths=").append(userAuths);
         sb.append(", entityAuths=").append("[");
         for (Entry<SubjectIssuerDNPair,Set<String>> e : auths.entrySet()) {
-            sb.append(e.getKey()).append('=').append(e.getValue());
+            sb.append(e.getKey()).append('=').append(e.getValue()).append(", ");
         }
         sb.append("]");
         sb.append(", authMapping=[");
@@ -59,6 +66,11 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
                 sb.append(value).append(",");
             }
             sb.append("), ");
+        }
+        sb.append("]");
+        sb.append(", messages=[");
+        for (String msg : messages) {
+            sb.append(msg).append(", ");
         }
         sb.append("]");
         return sb.toString();

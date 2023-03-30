@@ -8,7 +8,8 @@ public interface CardinalityEstimator<T> {
      * Estimate the cardinality of a given input. The concrete class shall know the method for producing the cardinality of this object.
      * 
      * @param input
-     * @return
+     *            the input
+     * @return a cardinality
      */
     ICardinality estimate(T input);
 }

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
 
 import datawave.core.iterators.TermFrequencyIterator;
 import datawave.data.type.NoOpType;
@@ -26,6 +27,7 @@ import datawave.query.jexl.visitors.LiteralNodeSubsetVisitor;
 
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
@@ -42,6 +44,8 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
 
 public class TermOffsetPopulator {
     private static final Logger log = Logger.getLogger(TermOffsetPopulator.class);
@@ -90,8 +94,8 @@ public class TermOffsetPopulator {
         }
         Collections.sort(dataTypeUids);
         
-        Key startKey = new Key(row, Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(dataTypeUids.get(0)));
-        Key endKey = new Key(row, Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(dataTypeUids.get(dataTypeUids.size() - 1) + '\1'));
+        Key startKey = new Key(row, TERM_FREQUENCY_COLUMN_FAMILY, new Text(dataTypeUids.get(0)));
+        Key endKey = new Key(row, TERM_FREQUENCY_COLUMN_FAMILY, new Text(dataTypeUids.get(dataTypeUids.size() - 1) + '\1'));
         return new Range(startKey, true, endKey, true);
     }
     
@@ -108,7 +112,7 @@ public class TermOffsetPopulator {
      *            set of keys that map to hits on tf fields
      * @param fields
      *            set of fields to remove from the search space
-     * @return
+     * @return TermOffset map
      */
     public Map<String,Object> getContextMap(Key docKey, Set<Key> keys, Set<String> fields) {
         document = new Document();
@@ -205,12 +209,31 @@ public class TermOffsetPopulator {
         return map;
     }
     
+    /**
+     * Build a range from the search space.
+     *
+     * @param row
+     *            the shard
+     * @param searchSpace
+     *            a sorted set of TF column qualifiers
+     * @return a range encompassing the full search space
+     */
+    public static Range getRangeFromSearchSpace(Text row, SortedSet<Text> searchSpace) {
+        Key start = new Key(row, TERM_FREQUENCY_COLUMN_FAMILY, searchSpace.first());
+        Key end = new Key(row, TERM_FREQUENCY_COLUMN_FAMILY, searchSpace.last());
+        return new Range(start, true, end.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false);
+    }
+    
     public static boolean isContentFunctionTerm(String functionName) {
         return phraseFunctions.contains(functionName);
     }
     
     /**
      * Finds all the content functions and returns a map indexed by function name to the function.
+     * 
+     * @param query
+     *            the query node
+     * @return a map indexed by function name to the function
      */
     public static Multimap<String,Function> getContentFunctions(JexlNode query) {
         FunctionReferenceVisitor visitor = new FunctionReferenceVisitor();
@@ -223,6 +246,14 @@ public class TermOffsetPopulator {
     
     /**
      * Get the list of content function fields to normalized values
+     * 
+     * @param contentExpansionFields
+     *            set of content expansion fields
+     * @param dataTypes
+     *            map of datatypes
+     * @param functions
+     *            map of functions
+     * @return list of content function fields to normalized values
      */
     public static Multimap<String,String> getContentFieldValues(Set<String> contentExpansionFields, Multimap<String,Class<? extends Type<?>>> dataTypes,
                     Multimap<String,Function> functions) {
@@ -319,6 +350,16 @@ public class TermOffsetPopulator {
      * to those values actually in the index The query is scraped for content functions from which a list of zones to normalized values is determined (the
      * contentExpansionFields are used for unfielded content functions). The list of fields to values as a subset of the term frequency fields is gathered. The
      * intersection of those two sets are returned.
+     * 
+     * @param dataTypes
+     *            map of datatypes
+     * @param contentExpansionFields
+     *            set of content expansion fields
+     * @param query
+     *            the query script
+     * @param termFrequencyFields
+     *            set of term frequency fields
+     * @return list of fields and values for which term frequencies need to be gathered
      */
     public static Multimap<String,String> getTermFrequencyFieldValues(ASTJexlScript query, Set<String> contentExpansionFields, Set<String> termFrequencyFields,
                     Multimap<String,Class<? extends Type<?>>> dataTypes) {
@@ -374,6 +415,7 @@ public class TermOffsetPopulator {
          * Essentially we want the inverse of the number of bytes that match. document.
          *
          * @param fv
+         *            a field value
          * @return a distance between here and there (negative means there is before here)
          */
         public double distance(FieldValue fv) {

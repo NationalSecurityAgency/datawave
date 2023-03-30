@@ -31,6 +31,11 @@ public class LookupUUIDTune implements Profile {
     protected boolean speculativeScanning = false;
     protected int maxFieldHitsBeforeSeek = -1;
     protected int maxKeysBeforeSeek = -1;
+    // lookup uuid profiles can override seeking configs for field index and event keys
+    protected int fiFieldSeek = -1;
+    protected int fiNextSeek = -1;
+    protected int eventFieldSeek = -1;
+    protected int eventNextSeek = -1;
     protected String queryIteratorClass = TLDQueryIterator.class.getCanonicalName();
     protected int maxShardsPerDayThreshold = -1;
     protected int pageByteTrigger = -1;
@@ -43,6 +48,7 @@ public class LookupUUIDTune implements Profile {
     protected String limitFieldsField = null;
     protected boolean reduceQuery = false;
     private boolean enforceUniqueTermsWithinExpressions = false;
+    private boolean reduceQueryFields = false;
     protected List<NodeTransformRule> transforms = null;
     protected Map<String,QueryParser> querySyntaxParsers = null;
     
@@ -55,6 +61,12 @@ public class LookupUUIDTune implements Profile {
             rsq.setCacheModel(enableCaching);
             rsq.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
             rsq.setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
+            rsq.setReduceQueryFields(reduceQueryFields);
+            
+            rsq.setFiFieldSeek(getFiFieldSeek());
+            rsq.setFiNextSeek(getFiNextSeek());
+            rsq.setEventFieldSeek(getEventFieldSeek());
+            rsq.setEventNextSeek(getEventNextSeek());
             
             if (querySyntaxParsers != null) {
                 rsq.setQuerySyntaxParsers(querySyntaxParsers);
@@ -123,6 +135,11 @@ public class LookupUUIDTune implements Profile {
             if (maxShardsPerDayThreshold != -1) {
                 rsqc.setShardsPerDayThreshold(maxShardsPerDayThreshold);
             }
+            
+            rsqc.setFiFieldSeek(getFiFieldSeek());
+            rsqc.setFiNextSeek(getFiNextSeek());
+            rsqc.setEventFieldSeek(getEventFieldSeek());
+            rsqc.setEventNextSeek(getEventNextSeek());
             
             // we need this since we've finished the deep copy already
             rsqc.setSpeculativeScanning(speculativeScanning);
@@ -202,6 +219,38 @@ public class LookupUUIDTune implements Profile {
     
     public int getMaxKeysBeforeSeek() {
         return maxKeysBeforeSeek;
+    }
+    
+    public int getFiFieldSeek() {
+        return fiFieldSeek;
+    }
+    
+    public void setFiFieldSeek(int fiFieldSeek) {
+        this.fiFieldSeek = fiFieldSeek;
+    }
+    
+    public int getFiNextSeek() {
+        return fiNextSeek;
+    }
+    
+    public void setFiNextSeek(int fiNextSeek) {
+        this.fiNextSeek = fiNextSeek;
+    }
+    
+    public int getEventFieldSeek() {
+        return eventFieldSeek;
+    }
+    
+    public void setEventFieldSeek(int eventFieldSeek) {
+        this.eventFieldSeek = eventFieldSeek;
+    }
+    
+    public int getEventNextSeek() {
+        return eventNextSeek;
+    }
+    
+    public void setEventNextSeek(int eventNextSeek) {
+        this.eventNextSeek = eventNextSeek;
     }
     
     public void setQueryIteratorClass(String queryIteratorClass) {
@@ -298,6 +347,14 @@ public class LookupUUIDTune implements Profile {
     
     public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
         this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
+    }
+    
+    public boolean getReduceQueryFields() {
+        return this.reduceQueryFields;
+    }
+    
+    public void setReduceQueryFields(boolean reduceQueryFields) {
+        this.reduceQueryFields = reduceQueryFields;
     }
     
     public List<NodeTransformRule> getTransforms() {

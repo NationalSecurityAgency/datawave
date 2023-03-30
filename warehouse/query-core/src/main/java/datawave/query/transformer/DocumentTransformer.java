@@ -10,7 +10,6 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.Flushable;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.logic.WritesResultCardinalities;
-import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -41,8 +40,13 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
      * By default, assume each cell still has the visibility attached to it
      *
      * @param logic
+     *            the query logic
      * @param settings
+     *            query settings
      * @param responseObjectFactory
+     *            the response object factory
+     * @param markingFunctions
+     *            the marking functions
      */
     public DocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
@@ -108,7 +112,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         }
         
         if (documentEntry.getValue().isIntermediateResult()) {
-            DefaultEvent output = new DefaultEvent();
+            EventBase output = responseObjectFactory.getEvent();
             output.setIntermediateResult(true);
             return output;
         }

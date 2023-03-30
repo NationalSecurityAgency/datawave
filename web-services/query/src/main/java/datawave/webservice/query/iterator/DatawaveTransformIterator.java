@@ -2,7 +2,6 @@ package datawave.webservice.query.iterator;
 
 import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.Flushable;
-import datawave.webservice.query.result.event.DefaultEvent;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;

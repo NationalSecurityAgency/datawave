@@ -3,7 +3,6 @@ package datawave.query.tables;
 import com.google.common.base.Function;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -462,7 +461,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     /**
      * Validate that the configuration is in a consistent state
-     *
+     * 
+     * @param config
+     *            the config
      * @throws IllegalArgumentException
      *             when config constraints are violated
      */
@@ -978,6 +979,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         // Set the ReturnType for Documents coming out of the iterator stack
         config.setReturnType(DocumentSerialization.getReturnType(settings));
         
+        // this needs to be configured first in order for FieldMappingTransform to work properly for profiles
+        if (null != selectedProfile) {
+            selectedProfile.configure(this);
+            selectedProfile.configure(config);
+            selectedProfile.configure(planner);
+        }
+        
         QueryLogicTransformer transformer = getTransformer(settings);
         if (transformer instanceof WritesQueryMetrics) {
             String logTimingDetailsStr = settings.findParameter(QueryOptions.LOG_TIMING_DETAILS).getParameterValue().trim();
@@ -1001,12 +1009,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         
         stopwatch.stop();
-        
-        if (null != selectedProfile) {
-            selectedProfile.configure(this);
-            selectedProfile.configure(config);
-            selectedProfile.configure(planner);
-        }
     }
     
     void configureDocumentAggregation(Query settings) {
@@ -1024,11 +1026,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * Loads a query Model
      *
      * @param helper
+     *            the metadata helper
      * @param config
+     *            the config
      * @throws InstantiationException
+     *             for problems with instantiation
      * @throws IllegalAccessException
+     *             for illegal access exceptions
      * @throws TableNotFoundException
+     *             if the table is not found
      * @throws ExecutionException
+     *             for execution exceptions
      */
     protected void loadQueryModel(MetadataHelper helper, ShardQueryConfiguration config) throws InstantiationException, IllegalAccessException,
                     TableNotFoundException, ExecutionException {
@@ -1090,7 +1098,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             try {
                 int nClosed = 0;
                 scannerFactory.lockdown();
-                for (ScannerBase bs : Lists.newArrayList(scannerFactory.currentScanners())) {
+                for (ScannerBase bs : scannerFactory.currentScanners()) {
                     scannerFactory.close(bs);
                     ++nClosed;
                 }
@@ -1100,7 +1108,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 
                 nClosed = 0;
                 
-                for (ScannerSession bs : Lists.newArrayList(scannerFactory.currentSessions())) {
+                for (ScannerSession bs : scannerFactory.currentSessions()) {
                     scannerFactory.close(bs);
                     ++nClosed;
                 }
@@ -1316,6 +1324,54 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         } catch (Exception e) {
             throw new DatawaveFatalQueryException("Illegal term frequency excerpt iterator class", e);
         }
+    }
+    
+    public int getFiFieldSeek() {
+        return getConfig().getFiFieldSeek();
+    }
+    
+    public void setFiFieldSeek(int fiFieldSeek) {
+        getConfig().setFiFieldSeek(fiFieldSeek);
+    }
+    
+    public int getFiNextSeek() {
+        return getConfig().getFiNextSeek();
+    }
+    
+    public void setFiNextSeek(int fiNextSeek) {
+        getConfig().setFiNextSeek(fiNextSeek);
+    }
+    
+    public int getEventFieldSeek() {
+        return getConfig().getEventFieldSeek();
+    }
+    
+    public void setEventFieldSeek(int eventFieldSeek) {
+        getConfig().setEventFieldSeek(eventFieldSeek);
+    }
+    
+    public int getEventNextSeek() {
+        return getConfig().getEventNextSeek();
+    }
+    
+    public void setEventNextSeek(int eventNextSeek) {
+        getConfig().setEventNextSeek(eventNextSeek);
+    }
+    
+    public int getTfFieldSeek() {
+        return getConfig().getTfFieldSeek();
+    }
+    
+    public void setTfFieldSeek(int tfFieldSeek) {
+        getConfig().setTfFieldSeek(tfFieldSeek);
+    }
+    
+    public int getTfNextSeek() {
+        return getConfig().getTfNextSeek();
+    }
+    
+    public void setTfNextSeek(int tfNextSeek) {
+        getConfig().setTfNextSeek(tfNextSeek);
     }
     
     public String getBlacklistedFieldsString() {
@@ -2030,9 +2086,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
     }
     
-    /**
-     * @return
-     */
     public String getAccumuloPassword() {
         return getConfig().getAccumuloPassword();
     }
@@ -2087,6 +2140,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
         this.getConfig().setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
+    }
+    
+    public boolean getReduceQueryFields() {
+        return this.getConfig().getReduceQueryFields();
+    }
+    
+    public void setReduceQueryFields(boolean reduceQueryFields) {
+        this.getConfig().setReduceQueryFields(reduceQueryFields);
     }
     
     public long getMaxIndexScanTimeMillis() {
@@ -2311,6 +2372,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setPointMaxExpansion(int pointMaxExpansion) {
         getConfig().setPointMaxExpansion(pointMaxExpansion);
+    }
+    
+    public int getGeoMaxExpansion() {
+        return getConfig().getGeoMaxExpansion();
+    }
+    
+    public void setGeoMaxExpansion(int geoMaxExpansion) {
+        getConfig().setGeoMaxExpansion(geoMaxExpansion);
     }
     
     public int getGeoWaveRangeSplitThreshold() {

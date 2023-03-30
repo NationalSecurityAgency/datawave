@@ -2466,6 +2466,10 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
     
     /**
      * Compare the current token with the specified byte array.
+     * 
+     * @param b
+     *            byte array
+     * @return if the boolean matches
      */
     final boolean bufferMatches(byte[] b) {
         int i = 0, j = zzStartRead;
@@ -2478,6 +2482,9 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
     
     /**
      * Sets the scanner buffer size in chars
+     * 
+     * @param numChars
+     *            the number of characters
      */
     public final void setBufferSize(int numChars) {
         updateBufferSize(numChars);
@@ -2584,6 +2591,9 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
     
     /**
      * Closes the input stream.
+     * 
+     * @throws java.io.IOException
+     *             for issues with file read/write
      */
     public final void yyclose() throws java.io.IOException {
         zzAtEOF = true; /* indicate end of file */
@@ -2620,6 +2630,8 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
     
     /**
      * Returns the current lexical state.
+     * 
+     * @return lexical state
      */
     public final int yystate() {
         return zzLexicalState;
@@ -2637,6 +2649,8 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
     
     /**
      * Returns the text matched by the current regular expression.
+     * 
+     * @return text matched by the current regular expression
      */
     public final String yytext() {
         return new String(zzBuffer, zzStartRead, zzMarkedPos - zzStartRead);

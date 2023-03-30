@@ -131,40 +131,57 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
          * Write a line to the output, and potentially add it to the summary contributors
          * 
          * @param prefix
+         *            the prefix
          * @param node
+         *            the node
          * @param state
+         *            the state
          * @param partOfSummary
+         *            flag for the partOfSummary
          */
         void writeLine(Object prefix, JexlNode node, STATE state, boolean partOfSummary);
         
         /**
          * Write a line to the output, and potentially add it to the summary contributors
-         * 
+         *
          * @param prefix
+         *            the prefix
          * @param node
-         * @param extra
+         *            the node
          * @param state
+         *            the state
+         * @param extra
+         *            an extra string
          * @param partOfSummary
+         *            flag for the partOfSummary
          */
         void writeLine(Object prefix, JexlNode node, String extra, STATE state, boolean partOfSummary);
         
         /**
          * Write a formatted query string for the node to the output, and potentially add it to the summary contributors
-         * 
+         *
          * @param prefix
+         *            the prefix
          * @param node
+         *            the node
          * @param state
+         *            the state
          * @param partOfSummary
+         *            flag for the partOfSummary
          */
         void writeNode(Object prefix, JexlNode node, STATE state, boolean partOfSummary);
         
         /**
          * Write a line to the output, and potentially add it to the summary contributors
-         * 
+         *
          * @param prefix
+         *            the prefix
          * @param value
+         *            the value
          * @param state
+         *            the state
          * @param partOfSummary
+         *            flag for the partOfSummary
          */
         void writeLine(Object prefix, String value, STATE state, boolean partOfSummary);
         
@@ -183,6 +200,8 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         /**
          * Pop a map of summary contributors off the stack, adding contained states to the new top-of-stack.
          * 
+         * @param states
+         *            set of states
          * @return the popped off summary contributer map
          */
         Multimap<STATE,String> pop(Set<STATE> states);
@@ -191,7 +210,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
          * Move contributors from one state to another
          * 
          * @param state
+         *            the first state
          * @param newState
+         *            the new state
          */
         void move(STATE state, STATE newState);
         
@@ -409,11 +430,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             }
             
             // odd number of nots apply negation
-            if (notCount % 2 == 1) {
-                return true;
-            } else {
-                return false;
-            }
+            return notCount % 2 == 1;
         }
     }
     
@@ -493,6 +510,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     
     /**
      * allOrNone means that all contained children must be executable for this node to be executable. Used for expressions, scripts, and or nodes.
+     * 
+     * @param node
+     *            the node
+     * @param data
+     *            data object
+     * @return a state
      */
     protected STATE allOrNone(JexlNode node, Object data) {
         STATE state;
@@ -508,7 +531,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             log.trace("node:" + PrintingVisitor.formattedQueryString(node));
             log.trace("states are:" + states);
         }
-        if (states.size() == 0) {
+        if (states.isEmpty()) {
             // no child states, so nothing to evaluate
             state = STATE.IGNORABLE;
         } else if (states.size() == 1) {
@@ -570,6 +593,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     /**
      * allOrSome means that some of the nodes must be executable for this to be executable. Any partial state results in a partial state however. Used for and
      * nodes.
+     * 
+     * @param node
+     *            the node
+     * @param data
+     *            data object
+     * @return a state
      */
     protected STATE allOrSome(JexlNode node, Object data) {
         STATE state;
@@ -580,7 +609,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             states.add((STATE) (node.jjtGetChild(i).jjtAccept(this, data + PREFIX)));
         }
-        if (states.size() == 0) {
+        if (states.isEmpty()) {
             // no child states, so nothing to evaluate
             state = STATE.IGNORABLE;
         } else if (states.size() == 1) {
@@ -637,10 +666,8 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         } else {
             state = unlessAnyNonExecutable(node, data + PREFIX);
             // the only non-executable case here would be with a null literal, which only cannot be computed if index only
-            if (state == STATE.NON_EXECUTABLE) {
-                if (isIndexOnly(node)) {
-                    state = STATE.ERROR;
-                }
+            if (state == STATE.NON_EXECUTABLE && isIndexOnly(node)) {
+                state = STATE.ERROR;
             }
         }
         if (output != null) {
@@ -815,7 +842,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
                         }
                     }
                 }
-                if (this.indexedFields.contains(JexlASTHelper.deconstructIdentifier(identifier)) == false) {
+                if (!this.indexedFields.contains(JexlASTHelper.deconstructIdentifier(identifier))) {
                     return true;
                 }
             }
@@ -1193,6 +1220,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTIntegerLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
@@ -1202,6 +1230,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
     
     @Override
+    @SuppressWarnings("deprecation")
     public Object visit(ASTFloatLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {

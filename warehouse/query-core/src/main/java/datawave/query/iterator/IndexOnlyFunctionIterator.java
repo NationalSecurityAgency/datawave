@@ -37,8 +37,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Inserted into the iterator and JEXL evaluation "stacks" to allow functions to operate on index-only fields, such as HEAD, FOOT, BODY, and META.
- * 
- * @param <T>
  */
 public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
     /**
@@ -231,6 +229,8 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
      * 
      * @param fieldName
      *            The field to fetch
+     * @param <E>
+     *            type for the iterator
      * @return An iterator that will allow for lazy, incremental fetching of index-only values
      */
     @SuppressWarnings("unchecked")

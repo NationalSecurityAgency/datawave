@@ -84,8 +84,15 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
      * as Text, Mutation
      * 
      * @param key
+     *            a key
      * @param value
+     *            a value
      * @param ctx
+     *            the context
+     * @throws IOException
+     *             if there is an issue with read or write
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected void writeBulkIngestKey(BulkIngestKey key, Value value, TaskInputOutputContext<?,?,K2,V2> ctx) throws IOException, InterruptedException {
         contextWriter.write(key, value, ctx);

@@ -102,7 +102,7 @@ public class JexlNodeFactory {
         
         // no expansions needed if the field name threshold is exceeded
         if (fieldsToValues.isKeyThresholdExceeded()) {
-            return new ExceededTermThresholdMarkerJexlNode(copy(original));
+            throw new DatawaveFatalQueryException("Failed to expand unfielded term");
         }
         
         // collapse the value sets if not expanding fields
@@ -341,9 +341,16 @@ public class JexlNodeFactory {
      * Returns an Or of the given fieldname and values, wrapping the JexlOrNode correctly in a Reference and ReferenceExpression (parens)
      * 
      * @param node
+     *            a node
+     * @param containerType
+     *            the container type
+     * @param orgNode
+     *            the org node
      * @param fieldName
+     *            the field name
      * @param fieldValues
-     * @return
+     *            the field values
+     * @return a node reference or for the fieldname and values
      */
     public static JexlNode createNodeTreeFromFieldValues(ContainerType containerType, JexlNode node, JexlNode orgNode, String fieldName,
                     Collection<String> fieldValues) {
@@ -421,7 +428,8 @@ public class JexlNodeFactory {
      * Wrap collection of JexlNodes into an ASTAndNode
      * 
      * @param children
-     * @return
+     *            collection of nodes
+     * @return a jexl node
      */
     public static JexlNode createAndNode(Iterable<? extends JexlNode> children) {
         return wrapChildren(new ASTAndNode(ParserTreeConstants.JJTANDNODE), children);
@@ -431,7 +439,8 @@ public class JexlNodeFactory {
      * Wrap collection of JexlNodes into an ASTAndNode
      * 
      * @param children
-     * @return
+     *            collection of nodes
+     * @return a jexl node
      */
     public static JexlNode createUnwrappedAndNode(Iterable<? extends JexlNode> children) {
         return setChildren(new ASTAndNode(ParserTreeConstants.JJTANDNODE), children);
@@ -441,7 +450,8 @@ public class JexlNodeFactory {
      * Wrap a collection of JexlNodes into an ASTOrNode
      * 
      * @param children
-     * @return
+     *            collection of nodes
+     * @return a jexl node
      */
     public static JexlNode createOrNode(Iterable<? extends JexlNode> children) {
         return wrapChildren(new ASTOrNode(ParserTreeConstants.JJTORNODE), children);
@@ -451,7 +461,8 @@ public class JexlNodeFactory {
      * Wrap a collection of JexlNodes into an ASTOrNode
      * 
      * @param children
-     * @return
+     *            collection of nodes
+     * @return a jexl node
      */
     public static JexlNode createUnwrappedOrNode(Iterable<? extends JexlNode> children) {
         return setChildren(new ASTOrNode(ParserTreeConstants.JJTORNODE), children);
@@ -461,8 +472,10 @@ public class JexlNodeFactory {
      * Add the children JexlNodes to the parent JexlNode, correctly setting parent pointers, parenthesis, and reference nodes.
      * 
      * @param parent
+     *            the parent node
      * @param children
-     * @return
+     *            collection of nodes
+     * @return a jexl node
      */
     public static JexlNode wrapChildren(JexlNode parent, Iterable<? extends JexlNode> children) {
         parent = setChildren(parent, children);
@@ -483,8 +496,10 @@ public class JexlNodeFactory {
      * Add the children JexlNodes to the parent JexlNode, correctly setting parent pointers, parenthesis, and reference nodes.
      * 
      * @param parent
+     *            the parent node
      * @param children
-     * @return
+     *            collection of nodes
+     * @return a jexl node
      */
     public static JexlNode setChildren(JexlNode parent, Iterable<? extends JexlNode> children) {
         int i = 0;
@@ -504,7 +519,8 @@ public class JexlNodeFactory {
      * Wrap an ASTAndNode or ASTOrNode in parenthesis if it has more than one child. Will return itself if wrapping is unnecessary.
      * 
      * @param toWrap
-     * @return
+     *            the node to wrap
+     * @return a wrapped node
      */
     public static JexlNode wrap(JexlNode toWrap) {
         if ((toWrap instanceof ASTAndNode || toWrap instanceof ASTOrNode) && toWrap.jjtGetNumChildren() > 1) {
@@ -527,7 +543,8 @@ public class JexlNodeFactory {
      * Create an ASTJexlScript with the provided child
      * 
      * @param child
-     * @return
+     *            a child node
+     * @return a jexl script
      */
     public static ASTJexlScript createScript(JexlNode child) {
         ASTJexlScript script = new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT);
@@ -792,7 +809,8 @@ public class JexlNodeFactory {
      * A shallow copy of the given JexlNode, creates a new node of the same type with the same parent and image. Children are not copied
      * 
      * @param original
-     * @return
+     *            a jexl node
+     * @return a new jexl node
      */
     public static JexlNode shallowCopy(JexlNode original) {
         if (null == original) {
@@ -875,9 +893,12 @@ public class JexlNodeFactory {
      * Create a new ASTEQNode from the given field name and value
      * 
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTEQNode original, String fieldName, String fieldValue) {
         ASTEQNode newNode = new ASTEQNode(ParserTreeConstants.JJTEQNODE);
@@ -889,11 +910,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTEQNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTEQNode original, String fieldName, Number fieldValue) {
         ASTEQNode newNode = new ASTEQNode(ParserTreeConstants.JJTEQNODE);
@@ -944,11 +968,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTEQNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTEQNode original, String fieldName, JexlNode fieldValue) {
         ASTEQNode newNode = new ASTEQNode(ParserTreeConstants.JJTEQNODE);
@@ -960,11 +987,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTNENode original, String fieldName, String fieldValue) {
         ASTNENode newNode = new ASTNENode(ParserTreeConstants.JJTNENODE);
@@ -976,11 +1006,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTNENode original, String fieldName, Number fieldValue) {
         ASTNENode newNode = new ASTNENode(ParserTreeConstants.JJTNENODE);
@@ -992,11 +1025,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTNENode original, String fieldName, JexlNode fieldValue) {
         ASTNENode newNode = new ASTNENode(ParserTreeConstants.JJTNENODE);
@@ -1008,11 +1044,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTERNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTERNode original, String fieldName, String fieldValue) {
         ASTERNode newNode = new ASTERNode(ParserTreeConstants.JJTERNODE);
@@ -1024,11 +1063,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTERNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTERNode original, String fieldName, Number fieldValue) {
         ASTERNode newNode = new ASTERNode(ParserTreeConstants.JJTERNODE);
@@ -1040,11 +1082,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTERNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTERNode original, String fieldName, JexlNode fieldValue) {
         ASTERNode newNode = new ASTERNode(ParserTreeConstants.JJTERNODE);
@@ -1056,11 +1101,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNRNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTNRNode original, String fieldName, String fieldValue) {
         ASTNRNode newNode = new ASTNRNode(ParserTreeConstants.JJTNRNODE);
@@ -1072,11 +1120,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNRNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTNRNode original, String fieldName, Number fieldValue) {
         ASTNRNode newNode = new ASTNRNode(ParserTreeConstants.JJTNRNODE);
@@ -1088,11 +1139,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNRNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTNRNode original, String fieldName, JexlNode fieldValue) {
         ASTNRNode newNode = new ASTNRNode(ParserTreeConstants.JJTNRNODE);
@@ -1104,11 +1158,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLTNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTLTNode original, String fieldName, String fieldValue) {
         ASTLTNode newNode = new ASTLTNode(ParserTreeConstants.JJTLTNODE);
@@ -1120,11 +1177,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLTNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTLTNode original, String fieldName, Number fieldValue) {
         ASTLTNode newNode = new ASTLTNode(ParserTreeConstants.JJTLTNODE);
@@ -1136,11 +1196,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLTNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTLTNode original, String fieldName, JexlNode fieldValue) {
         ASTLTNode newNode = new ASTLTNode(ParserTreeConstants.JJTLTNODE);
@@ -1152,11 +1215,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTLENode original, String fieldName, String fieldValue) {
         ASTLENode newNode = new ASTLENode(ParserTreeConstants.JJTLENODE);
@@ -1168,11 +1234,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLENOde from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTLENode original, String fieldName, Number fieldValue) {
         ASTLENode newNode = new ASTLENode(ParserTreeConstants.JJTLENODE);
@@ -1184,11 +1253,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLENOde from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTLENode original, String fieldName, JexlNode fieldValue) {
         ASTLENode newNode = new ASTLENode(ParserTreeConstants.JJTLENODE);
@@ -1200,11 +1272,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGTNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTGTNode original, String fieldName, String fieldValue) {
         ASTGTNode newNode = new ASTGTNode(ParserTreeConstants.JJTGTNODE);
@@ -1216,11 +1291,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGTNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTGTNode original, String fieldName, Number fieldValue) {
         ASTGTNode newNode = new ASTGTNode(ParserTreeConstants.JJTGTNODE);
@@ -1232,11 +1310,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGTNode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTGTNode original, String fieldName, JexlNode fieldValue) {
         ASTGTNode newNode = new ASTGTNode(ParserTreeConstants.JJTGTNODE);
@@ -1248,11 +1329,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTGENode original, String fieldName, String fieldValue) {
         ASTGENode newNode = new ASTGENode(ParserTreeConstants.JJTGENODE);
@@ -1264,11 +1348,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTGENode original, String fieldName, Number fieldValue) {
         ASTGENode newNode = new ASTGENode(ParserTreeConstants.JJTGENODE);
@@ -1280,11 +1367,14 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGENode from the given field name and value
-     * 
+     *
      * @param original
+     *            the original node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(ASTGENode original, String fieldName, JexlNode fieldValue) {
         ASTGENode newNode = new ASTGENode(ParserTreeConstants.JJTGENODE);
@@ -1298,9 +1388,12 @@ public class JexlNodeFactory {
      * Create a new JexlNode from the given node (possible an OR Node) and value
      *
      * @param original
+     *            the original node
      * @param node
+     *            a jexl node
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(JexlNode original, JexlNode node, String fieldValue) {
         List<JexlNode> list = Lists.newArrayList();
@@ -1325,9 +1418,12 @@ public class JexlNodeFactory {
      * Create a new JexlNode from the given node (possible an OR Node) and value
      *
      * @param original
+     *            the original node
      * @param node
+     *            a jexl node
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(JexlNode original, JexlNode node, Number fieldValue) {
         JexlNode newNode = JexlNodeFactory.shallowCopy(original);
@@ -1349,9 +1445,12 @@ public class JexlNodeFactory {
      * Create a new JexlNode from the given node (possible an OR Node) and value
      *
      * @param original
+     *            the original node
      * @param node
+     *            a jexl node
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a new node
      */
     public static JexlNode buildNode(JexlNode original, ASTOrNode node, JexlNode fieldValue) {
         JexlNode newNode = JexlNodeFactory.shallowCopy(original);
@@ -1374,10 +1473,14 @@ public class JexlNodeFactory {
      * Create a new ASTGENode from the given field name and value
      * 
      * @param namespace
+     *            namespace string
      * @param function
+     *            function string
      * @param field
+     *            the field string
      * @param args
-     * @return
+     *            the arguments
+     * @return a new node
      */
     public static JexlNode buildFunctionNode(String namespace, String function, String field, Object... args) {
         ASTFunctionNode newNode = new ASTFunctionNode(ParserTreeConstants.JJTFUNCTIONNODE);
@@ -1408,9 +1511,12 @@ public class JexlNodeFactory {
      * Assign the field name and value to the given newNode
      * 
      * @param newNode
+     *            a new node
      * @param fieldName
+     *            the field name string
      * @param fieldValue
-     * @return
+     *            the field value string
+     * @return a untyped new node
      */
     protected static JexlNode buildUntypedNewNode(JexlNode newNode, ASTIdentifier fieldName, String fieldValue) {
         ASTStringLiteral literal = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
@@ -1422,9 +1528,13 @@ public class JexlNodeFactory {
     /**
      * Build a JexlNode with a Number literal
      * 
+     * @param newNode
+     *            the new node
      * @param fieldName
+     *            a field name
      * @param fieldValue
-     * @return
+     *            a field value
+     * @return a jexl node
      */
     protected static JexlNode buildUntypedNewNode(JexlNode newNode, ASTIdentifier fieldName, Number fieldValue) {
         ASTNumberLiteral literal = new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL);
@@ -1467,9 +1577,12 @@ public class JexlNodeFactory {
      * Given the provide newNode, add the fieldName (as an identifier) and the literal
      * 
      * @param newNode
+     *            the new node
      * @param identifier
+     *            the field name identifier
      * @param literal
-     * @return
+     *            the node literal
+     * @return a jexl node
      */
     protected static JexlNode buildUntypedNewNode(JexlNode newNode, ASTIdentifier identifier, JexlNode literal) {
         ASTReference literalReference = new ASTReference(ParserTreeConstants.JJTREFERENCE), identifierReference = new ASTReference(
@@ -1511,11 +1624,14 @@ public class JexlNodeFactory {
     
     /**
      * Like {@link #buildUntypedNewNode(JexlNode, ASTIdentifier, String)} except it does not wrap {@code literal} in an {@link ASTReference}
-     * 
+     *
      * @param newNode
+     *            the new node
      * @param identifier
+     *            the field name identifier
      * @param literal
-     * @return
+     *            the node literal
+     * @return a jexl node
      */
     protected static JexlNode buildUntypedNewLiteralNode(JexlNode newNode, ASTIdentifier identifier, JexlNode literal) {
         ASTReference identifierReference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
@@ -1635,7 +1751,8 @@ public class JexlNodeFactory {
      * Creates a reference expression fro a child node
      * 
      * @param child
-     * @return
+     *            a child node
+     * @return a jexl node
      */
     public static JexlNode createExpression(JexlNode child) {
         if (child instanceof ASTReference && child.jjtGetChild(0) instanceof ASTReferenceExpression) {
@@ -1665,8 +1782,10 @@ public class JexlNodeFactory {
      * Creates a reference expression fro a child node
      * 
      * @param childContainer
+     *            the child container node
      * @param wrappingContainer
-     * @return
+     *            the wrapping container
+     * @return a jexl node
      */
     public static JexlNode createExpression(JexlNode childContainer, JexlNode wrappingContainer) {
         
@@ -1697,7 +1816,9 @@ public class JexlNodeFactory {
      * Create an assignment node
      * 
      * @param name
+     *            the name string
      * @param value
+     *            the value string
      * @return the assignment node
      */
     public static ASTAssignment createAssignment(String name, boolean value) {
@@ -1727,9 +1848,11 @@ public class JexlNodeFactory {
     
     /**
      * Create an assignment node
-     * 
+     *
      * @param name
+     *            the name string
      * @param value
+     *            the value string
      * @return the assignment node
      */
     public static ASTAssignment createAssignment(String name, String value) {

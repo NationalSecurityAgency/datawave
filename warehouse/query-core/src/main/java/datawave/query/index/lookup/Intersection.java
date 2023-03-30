@@ -302,7 +302,7 @@ public class Intersection extends BaseIndexStream {
      *
      * @param iterators
      *            an iterator of child IndexStreams
-     * @return
+     * @return the top indexinfo elements
      */
     public IndexInfo intersect(Iterable<? extends PeekingIterator<Tuple2<String,IndexInfo>>> iterators) {
         Iterator<IndexInfo> infos = convert(iterators).iterator();

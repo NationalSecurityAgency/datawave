@@ -121,6 +121,12 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
      * 
      * This method will return <code>true</code> if the mapping has been observed before. It will return <code>false</code> if not and update the internal
      * mapping so that future calls with the same arguments return <code>true</code>.
+     * 
+     * @param field
+     *            a field
+     * @param value
+     *            a value
+     * @return if the mapping has been seen
      */
     public boolean hasSeen(String field, String value) {
         if (observedFieldValues.containsEntry(field, value)) {

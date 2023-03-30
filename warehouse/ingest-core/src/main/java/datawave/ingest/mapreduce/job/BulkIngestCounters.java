@@ -26,6 +26,11 @@ public class BulkIngestCounters {
     /**
      * Creates a new counter for a table. Any {@link BulkIngestKey} passed to {@link #incrementCounter(BulkIngestKey)} or
      * {@link #incrementCounter(BulkIngestKey, int)} later will use the counter created here if the table name in the key matches the table name.
+     * 
+     * @param tableName
+     *            the table name
+     * @param deleteMode
+     *            deletion flag to set
      */
     public void createCounter(String tableName, boolean deleteMode) {
         if (shardedTableName.equals(tableName)) {
@@ -56,6 +61,8 @@ public class BulkIngestCounters {
      *            the {@link BulkIngestKey} containing the information necessary to determine which counter to increment. In the case of a key for a sharded
      *            table, the column family will be used to determine the counter name (e.g., a column family starting with "e" will use the counter named
      *            Event).
+     * @param count
+     *            the count to increment by
      */
     public void incrementCounter(BulkIngestKey key, int count) {
         BulkIngestCounter counter = counters.get(key.getTableName());
@@ -67,6 +74,7 @@ public class BulkIngestCounters {
      * Flush the counters out the the provided context
      * 
      * @param context
+     *            the context provided
      */
     public void flush(TaskAttemptContext context) {
         for (BulkIngestCounter counter : counters.values()) {
