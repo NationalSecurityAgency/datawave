@@ -31,7 +31,7 @@ public class GeometrySerializer<G extends Geometry,T extends AbstractGeometry<G>
         org.locationtech.jts.geom.Geometry jtsGeometry = geom.getJTSGeometry();
         
         // WKBWriter writer = new WKBWriter(jtsGeometry.getDimension(), INCLUDE_SRID);
-        WKBWriter writer = new WKBWriter();
+        WKBWriter writer = getCache(kryo).writer;
         OutputStreamOutStream writerOut = new OutputStreamOutStream(output);
         try {
             writer.write(jtsGeometry, writerOut);
@@ -42,7 +42,7 @@ public class GeometrySerializer<G extends Geometry,T extends AbstractGeometry<G>
     
     @Override
     public T read(Kryo kryo, Input input, Class<T> geometryClass) {
-        WKBReader reader = new WKBReader();
+        WKBReader reader = getCache(kryo).reader;
         InStream readerIn = new InputStreamInStream(input);
         org.locationtech.jts.geom.Geometry jtsGeometry;
         try {
@@ -56,9 +56,18 @@ public class GeometrySerializer<G extends Geometry,T extends AbstractGeometry<G>
             throw new KryoException(e);
         }
     }
+
+    private GeometrySerializerCache getCache(Kryo kryo) {
+        GeometrySerializerCache cache = (GeometrySerializerCache)kryo.getContext().get(this);
+        if (cache == null) {
+            cache = new GeometrySerializerCache();
+            kryo.getContext().put(this, cache);
+        }
+        return cache;
+    }
     
     private static class GeometrySerializerCache {
-        private WKBReader reader;
-        private WKBWriter writer;
+        private WKBReader reader = new WKBReader();
+        private WKBWriter writer = new WKBWriter();
     }
 }
