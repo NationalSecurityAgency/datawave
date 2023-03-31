@@ -32,7 +32,8 @@ class KryoObjectPoolFactory extends BasePooledObjectFactory<KryoEntry> {
         map.put(DateType.class, new DelegateTypeSerializer<>(new DefaultSerializers.DateSerializer(), Date.class));
         map.put(GeoLatType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(GeoLonType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
-        map.put(GeometryType.class, new DelegateTypeSerializer<>(new GeometrySerializer(Geometry.class, org.locationtech.jts.geom.Geometry.class), Geometry.class));
+        map.put(GeometryType.class, new DelegateTypeSerializer<>(new GeometrySerializer(Geometry.class, org.locationtech.jts.geom.Geometry.class),
+                        Geometry.class));
         map.put(GeoType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(HexStringType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(HitTermType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));

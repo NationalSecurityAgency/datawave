@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class DocumentSerializationTimingIT {
-    @State(Scope.Benchmark)
+    @State(Scope.Thread)
     public static class SerializationState {
         private final static int DOCUMENT_SAMPLES = 1000;
         private final static int ATTRIBUTE_COUNT = 50;
@@ -124,9 +124,10 @@ public class DocumentSerializationTimingIT {
                 .warmupIterations(3)
                 .measurementIterations(3)
                 .operationsPerInvocation(SerializationState.DOCUMENT_SAMPLES)
-                .forks(1)
+                .threads(3)
+                .forks(3)
                 .shouldFailOnError(true)
-                .shouldDoGC(false)
+                .shouldDoGC(true)
                 .build();
         // formatter:on
         new Runner(options).run();

@@ -15,9 +15,9 @@ import java.lang.reflect.InvocationTargetException;
 
 public class GeometrySerializer<G extends Geometry,T extends AbstractGeometry<G>> extends Serializer<T> {
     private final static boolean INCLUDE_SRID = true;
-
+    
     private final Constructor<T> geometryConstructor;
-
+    
     public GeometrySerializer(Class<T> typeClass, Class<G> geometryClass) {
         try {
             this.geometryConstructor = typeClass.getConstructor(geometryClass);
@@ -25,11 +25,11 @@ public class GeometrySerializer<G extends Geometry,T extends AbstractGeometry<G>
             throw new IllegalStateException(e);
         }
     }
-
+    
     @Override
     public void write(Kryo kryo, Output output, T geom) {
         org.locationtech.jts.geom.Geometry jtsGeometry = geom.getJTSGeometry();
-
+        
         // WKBWriter writer = new WKBWriter(jtsGeometry.getDimension(), INCLUDE_SRID);
         WKBWriter writer = new WKBWriter();
         OutputStreamOutStream writerOut = new OutputStreamOutStream(output);
@@ -39,7 +39,7 @@ public class GeometrySerializer<G extends Geometry,T extends AbstractGeometry<G>
             throw new KryoException(e);
         }
     }
-
+    
     @Override
     public T read(Kryo kryo, Input input, Class<T> geometryClass) {
         WKBReader reader = new WKBReader();
@@ -56,7 +56,7 @@ public class GeometrySerializer<G extends Geometry,T extends AbstractGeometry<G>
             throw new KryoException(e);
         }
     }
-
+    
     private static class GeometrySerializerCache {
         private WKBReader reader;
         private WKBWriter writer;
