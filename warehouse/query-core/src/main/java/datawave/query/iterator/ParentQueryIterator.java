@@ -67,7 +67,7 @@ public class ParentQueryIterator extends QueryIterator {
         Aggregation aggregation = new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata, this.isIncludeGroupingContext(),
                         this.includeRecordId, this.parentDisableIndexOnlyDocuments, null);
         
-        KeyToDocumentData k2d = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, this.equality, null,
+        KeyToDocumentData k2d = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(), null,
                         this.includeHierarchyFields, this.includeHierarchyFields);
         k2d.withRangeProvider(getRangeProvider());
         
