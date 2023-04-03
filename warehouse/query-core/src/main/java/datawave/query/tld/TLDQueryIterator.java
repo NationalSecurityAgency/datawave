@@ -4,6 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import datawave.query.attributes.Document;
+import datawave.query.function.Equality;
 import datawave.query.function.RangeProvider;
 import datawave.query.function.TLDEquality;
 import datawave.query.function.TLDRangeProvider;
@@ -63,7 +64,6 @@ public class TLDQueryIterator extends QueryIterator {
     @Override
     public boolean validateOptions(Map<String,String> options) {
         boolean success = super.validateOptions(options);
-        super.equality = new TLDEquality();
         super.getDocumentKey = GetStartKeyForRoot.instance();
         return success;
     }
@@ -227,4 +227,16 @@ public class TLDQueryIterator extends QueryIterator {
         return rangeProvider;
     }
     
+    /**
+     * Get a {@link TLDEquality} implementation of an {@link Equality}
+     *
+     * @return a TLDEquality
+     */
+    @Override
+    public Equality getEquality() {
+        if (equality == null) {
+            equality = new TLDEquality();
+        }
+        return equality;
+    }
 }
