@@ -1300,7 +1300,6 @@ public class QueryOptions implements OptionDescriber {
             }
         }
         
-        this.equality = new PrefixEquality(PartialKey.ROW_COLFAM);
         this.evaluationFilter = null;
         this.getDocumentKey = GetStartKey.instance();
         this.mustUseFieldIndex = false;
@@ -2120,5 +2119,17 @@ public class QueryOptions implements OptionDescriber {
     
     public void setTfNextSeek(int tfNextSeek) {
         this.tfNextSeek = tfNextSeek;
+    }
+    
+    /**
+     * Get an {@link Equality}
+     *
+     * @return an Equality
+     */
+    public Equality getEquality() {
+        if (equality == null) {
+            equality = new PrefixEquality(PartialKey.ROW_COLFAM);
+        }
+        return equality;
     }
 }
