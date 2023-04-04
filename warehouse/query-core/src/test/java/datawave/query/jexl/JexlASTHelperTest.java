@@ -717,37 +717,37 @@ public class JexlASTHelperTest {
         query = "content:phrase(FOO, termOffsetMap, 'bar', 'baz')";
         testIdentifierParse(query, Sets.newHashSet("FOO", "termOffsetMap"));
     }
-
+    
     @Test
     public void testAddUnfieldedQueriesToList() throws ParseException {
         ArrayList<String> unfieldedList = new ArrayList<>();
-
+        
         String q1 = "('M1')";
         String q2 = "'A' || 'B'";
         String q3 = "A == 'B'";
         String q4 = "(A == 'B') && 'C'";
-
+        
         List<String> expectedList = Arrays.asList("M1");
         JexlASTHelper.addUnfieldedQueriesToList(unfieldedList, JexlASTHelper.parseJexlQuery(q1));
         assertEquals(expectedList, unfieldedList);
         unfieldedList.clear();
-
-        expectedList = Arrays.asList("A","B");
+        
+        expectedList = Arrays.asList("A", "B");
         JexlASTHelper.addUnfieldedQueriesToList(unfieldedList, JexlASTHelper.parseJexlQuery(q2));
         assertEquals(expectedList, unfieldedList);
         unfieldedList.clear();
-
+        
         expectedList = Arrays.asList();
         JexlASTHelper.addUnfieldedQueriesToList(unfieldedList, JexlASTHelper.parseJexlQuery(q3));
         assertEquals(expectedList, unfieldedList);
         unfieldedList.clear();
-
+        
         expectedList = Arrays.asList("C");
         JexlASTHelper.addUnfieldedQueriesToList(unfieldedList, JexlASTHelper.parseJexlQuery(q4));
         assertEquals(expectedList, unfieldedList);
         unfieldedList.clear();
     }
-
+    
     private void testIdentifierParse(String query, Set<String> expectedIdentifiers) {
         try {
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);

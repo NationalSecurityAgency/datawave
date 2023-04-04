@@ -156,7 +156,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         cfg.setBeginDate(settings.getBeginDate());
         cfg.setEndDate(settings.getEndDate());
-
+        
         scannerFactory = new ScannerFactory(connection);
         
         return cfg;
@@ -227,7 +227,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (log.isTraceEnabled()) {
             log.trace(querySyntax + originalQuery + " --> jexlQueryString: " + queryString);
         }
-
+        
         // Validate that the query is fielded
         if (querySyntax.equalsIgnoreCase("jexl") || querySyntax.equalsIgnoreCase("lucene")) {
             ArrayList<String> unfieldedQueries = new ArrayList<>();
@@ -239,7 +239,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         return queryString;
     }
-
+    
     protected String expandQueryMacros(String query) throws datawave.query.language.parser.ParseException {
         log.trace("query macros are :" + this.queryMacroFunction);
         if (this.queryMacroFunction != null) {
