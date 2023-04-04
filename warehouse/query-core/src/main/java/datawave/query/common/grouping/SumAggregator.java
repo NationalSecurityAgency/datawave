@@ -80,12 +80,11 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
      */
     @Override
     public void aggregate(Attribute<?> value) {
-        Type<?> type = (Type<?>) value.getData();
         BigDecimal number;
         try {
-            number = new BigDecimal(type.getDelegateAsString());
+            number = new BigDecimal(value.getData().toString());
         } catch (Exception e) {
-            throw new IllegalArgumentException("Unable to calculate a sum with non-numerical value " + type.getDelegateAsString(), e);
+            throw new IllegalArgumentException("Unable to calculate a sum with non-numerical value '" + value.getData() + "'", e);
         }
         if (sum == null) {
             sum = number;

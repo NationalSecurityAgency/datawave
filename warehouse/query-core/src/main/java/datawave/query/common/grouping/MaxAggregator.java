@@ -72,20 +72,20 @@ public class MaxAggregator extends AbstractAggregator<Attribute<?>> {
      * @throws IllegalArgumentException
      *             if a value of a different {@link Attribute} than that of the current max is provided
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public void aggregate(Attribute<?> value) {
         if (this.max == null) {
             this.max = value;
         } else {
-            if (max.getClass().equals(value.getClass())) {
-                Type maxType = (Type) this.max.getData();
-                Type valueMax = (Type) value.getData();
-                int compare = maxType.compareTo(valueMax);
+            try {
+                Comparable maxCopy = this.max.copy();
+                int compare = maxCopy.compareTo(value.copy());
                 if (compare < 0) {
                     this.max = value;
                 }
-            } else {
-                throw new IllegalArgumentException("Unable to compare value of type " + max.getClass() + " to max of type " + value.getClass());
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Failed to compare current max '" + this.max.getData() + "' to new value '" + value.getData() + "'", e);
             }
         }
     }

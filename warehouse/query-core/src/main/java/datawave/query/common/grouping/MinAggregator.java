@@ -72,20 +72,20 @@ public class MinAggregator extends AbstractAggregator<Attribute<?>> {
      * @throws IllegalArgumentException
      *             if a value of a different {@link Attribute} than that of the current min is provided
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public void aggregate(Attribute<?> value) {
         if (this.min == null) {
             this.min = value;
         } else {
-            if (min.getClass().equals(value.getClass())) {
-                Type maxType = (Type<?>) this.min.getData();
-                Type valueMax = (Type<?>) value.getData();
-                int compare = maxType.compareTo(valueMax);
+            try {
+                Comparable minCopy = this.min.copy();
+                int compare = minCopy.compareTo(value.copy());
                 if (compare > 0) {
                     this.min = value;
                 }
-            } else {
-                throw new IllegalArgumentException("Unable to compare value of type " + min.getClass() + " to min of type " + value.getClass());
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Failed to compare current min '" + this.min.getData() + "' to new value '" + value.getData() + "'", e);
             }
         }
     }

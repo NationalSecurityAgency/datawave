@@ -1,11 +1,17 @@
 package datawave.query.common.grouping;
 
+import datawave.data.type.NumberType;
+import datawave.data.type.Type;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Numeric;
+import datawave.query.attributes.TypeAttribute;
 import org.apache.accumulo.core.data.Key;
+import org.apache.hadoop.thirdparty.org.checkerframework.checker.units.qual.K;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.math.BigDecimal;
 
 import static org.junit.Assert.assertEquals;
 
@@ -26,7 +32,7 @@ public class SumAggregatorTest {
      */
     @Test
     public void testInitialSum() {
-        assertSum(0d);
+        assertSum(null);
     }
     
     /**
@@ -37,7 +43,7 @@ public class SumAggregatorTest {
         Content content = new Content("i am content", new Key(), true);
         
         IllegalArgumentException exception = Assert.assertThrows(IllegalArgumentException.class, () -> aggregator.aggregate(content));
-        assertEquals("Unable to calculate a sum for an attribute of type datawave.query.attributes.Content", exception.getMessage());
+        assertEquals("Unable to calculate a sum with non-numerical value 'i am content'", exception.getMessage());
     }
     
     /**
@@ -46,21 +52,22 @@ public class SumAggregatorTest {
     @Test
     public void testAggregation() {
         aggregator.aggregate(createNumeric("4"));
-        assertSum(4d);
+        assertSum(new BigDecimal("4"));
         
         aggregator.aggregate(createNumeric("1"));
         aggregator.aggregate(createNumeric("1"));
-        assertSum(6d);
+        assertSum(new BigDecimal("6"));
         
         aggregator.aggregate(createNumeric("4.5"));
-        assertSum(10.5d);
+        assertSum(new BigDecimal("10.5"));
     }
     
-    private Numeric createNumeric(String number) {
-        return new Numeric(number, new Key(), true);
+    private TypeAttribute<BigDecimal> createNumeric(String number) {
+        Type<BigDecimal> type = new NumberType(number);
+        return new TypeAttribute<>(type, new Key(), true);
     }
     
-    private void assertSum(Double sum) {
+    private void assertSum(BigDecimal sum) {
         assertEquals(sum, aggregator.getAggregation());
     }
 }

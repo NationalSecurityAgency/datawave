@@ -1,11 +1,16 @@
 package datawave.query.common.grouping;
 
+import datawave.data.type.NumberType;
+import datawave.data.type.Type;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Numeric;
+import datawave.query.attributes.TypeAttribute;
 import org.apache.accumulo.core.data.Key;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.math.BigDecimal;
 
 import static org.junit.Assert.assertEquals;
 
@@ -26,7 +31,7 @@ public class AverageAggregatorTest {
      */
     @Test
     public void testInitialAverage() {
-        assertAverage(0d);
+        assertAverage(null);
     }
     
     /**
@@ -37,7 +42,7 @@ public class AverageAggregatorTest {
         Content content = new Content("i am content", new Key(), true);
         
         IllegalArgumentException exception = Assert.assertThrows(IllegalArgumentException.class, () -> aggregator.aggregate(content));
-        assertEquals("Unable to calculate an average for an attribute of type datawave.query.attributes.Content", exception.getMessage());
+        assertEquals("Unable to calculate an average with non-numerical value 'i am content'", exception.getMessage());
     }
     
     /**
@@ -46,21 +51,22 @@ public class AverageAggregatorTest {
     @Test
     public void testAggregation() {
         aggregator.aggregate(createNumeric("4"));
-        assertAverage(4d);
+        assertAverage(new BigDecimal("4"));
         
         aggregator.aggregate(createNumeric("1"));
         aggregator.aggregate(createNumeric("1")); // Sum 6, count 3
-        assertAverage(2d);
+        assertAverage(new BigDecimal("2"));
         
         aggregator.aggregate(createNumeric("4.5"));
-        assertAverage(2.625d);
+        assertAverage(new BigDecimal("2.625"));
     }
     
-    private Numeric createNumeric(String number) {
-        return new Numeric(number, new Key(), true);
+    private TypeAttribute<BigDecimal> createNumeric(String number) {
+        Type<BigDecimal> type = new NumberType(number);
+        return new TypeAttribute<>(type, new Key(), true);
     }
     
-    private void assertAverage(Double average) {
+    private void assertAverage(BigDecimal average) {
         assertEquals(average, aggregator.getAggregation());
     }
 }

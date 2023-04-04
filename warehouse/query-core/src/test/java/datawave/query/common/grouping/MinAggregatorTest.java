@@ -40,8 +40,7 @@ public class MinAggregatorTest {
         
         DiacriticContent diacriticContent = new DiacriticContent("different content type", new Key(), true);
         IllegalArgumentException exception = Assert.assertThrows(IllegalArgumentException.class, () -> aggregator.aggregate(diacriticContent));
-        assertEquals("Unable to compare value of type class datawave.query.attributes.Content to min of type class datawave.query.attributes.DiacriticContent",
-                        exception.getMessage());
+        assertEquals("Failed to compare current min 'aaa' to new value 'different content type'", exception.getMessage());
     }
     
     /**

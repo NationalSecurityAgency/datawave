@@ -1,7 +1,5 @@
 package datawave.query.common.grouping;
 
-import datawave.data.type.NumberType;
-import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Numeric;
 import datawave.query.attributes.TypeAttribute;
@@ -105,12 +103,11 @@ public class AverageAggregator extends AbstractAggregator<BigDecimal> {
      */
     @Override
     public void aggregate(Attribute<?> value) {
-        Type<?> type = (Type<?>) value.getData();
         BigDecimal number;
         try {
-            number = new BigDecimal(type.getDelegateAsString());
+            number = new BigDecimal(value.getData().toString());
         } catch (Exception e) {
-            throw new IllegalArgumentException("Unable to calculate an average with non-numerical value " + type.getDelegateAsString(), e);
+            throw new IllegalArgumentException("Unable to calculate an average with non-numerical value '" + value.getData() + "'", e);
         }
         if (numerator == null) {
             numerator = number;

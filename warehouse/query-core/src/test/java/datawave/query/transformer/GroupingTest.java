@@ -985,7 +985,7 @@ public abstract class GroupingTest {
         givenQueryParameter(QueryParameters.GROUP_FIELDS, "RECORD");
         
         Assertions.assertThatIllegalArgumentException().isThrownBy(this::collectQueryResults)
-                        .withMessage("Unable to calculate a sum with non-numerical value MALE");
+                        .withMessage("Unable to calculate a sum with non-numerical value 'MALE'");
     }
     
     /**
@@ -1000,6 +1000,6 @@ public abstract class GroupingTest {
         givenQueryParameter(QueryParameters.GROUP_FIELDS, "RECORD");
         
         Assertions.assertThatIllegalArgumentException().isThrownBy(this::collectQueryResults)
-                        .withMessage("Unable to calculate an average with non-numerical value MALE");
+                        .withMessage("Unable to calculate an average with non-numerical value 'MALE'");
     }
 }
