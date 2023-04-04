@@ -149,6 +149,16 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         String jexlQueryString = getJexlQueryString(settings);
         
+        String querySyntax = settings.findParameter(QueryParameters.QUERY_SYNTAX).getParameterValue();
+        // Validate that the query is fielded
+        if (querySyntax.equalsIgnoreCase("jexl") || querySyntax.equalsIgnoreCase("lucene")) {
+            ArrayList<String> unfieldedQueries = new ArrayList<>();
+            JexlASTHelper.addUnfieldedQueriesToList(unfieldedQueries, JexlASTHelper.parseJexlQuery(jexlQueryString));
+            if (unfieldedQueries.size() > 0) {
+                throw new IllegalArgumentException("Query cannot be contain unfielded terms: " + unfieldedQueries);
+            }
+        }
+        
         if (null == jexlQueryString) {
             throw new IllegalArgumentException("Query cannot be null");
         } else {
@@ -226,15 +236,6 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         queryString = node.getOriginalQuery();
         if (log.isTraceEnabled()) {
             log.trace(querySyntax + originalQuery + " --> jexlQueryString: " + queryString);
-        }
-        
-        // Validate that the query is fielded
-        if (querySyntax.equalsIgnoreCase("jexl") || querySyntax.equalsIgnoreCase("lucene")) {
-            ArrayList<String> unfieldedQueries = new ArrayList<>();
-            JexlASTHelper.addUnfieldedQueriesToList(unfieldedQueries, JexlASTHelper.parseJexlQuery(queryString));
-            if (unfieldedQueries.size() > 0) {
-                throw new IllegalArgumentException("Query cannot be contain unfielded terms: " + unfieldedQueries);
-            }
         }
         
         return queryString;

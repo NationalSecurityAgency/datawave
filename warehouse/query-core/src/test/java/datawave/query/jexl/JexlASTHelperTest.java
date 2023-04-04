@@ -726,6 +726,7 @@ public class JexlASTHelperTest {
         String q2 = "'A' || 'B'";
         String q3 = "A == 'B'";
         String q4 = "(A == 'B') && 'C'";
+        String q5 = "(_Delayed_ = true)";
         
         List<String> expectedList = Arrays.asList("M1");
         JexlASTHelper.addUnfieldedQueriesToList(unfieldedList, JexlASTHelper.parseJexlQuery(q1));
@@ -744,6 +745,11 @@ public class JexlASTHelperTest {
         
         expectedList = Arrays.asList("C");
         JexlASTHelper.addUnfieldedQueriesToList(unfieldedList, JexlASTHelper.parseJexlQuery(q4));
+        assertEquals(expectedList, unfieldedList);
+        unfieldedList.clear();
+        
+        expectedList = Arrays.asList();
+        JexlASTHelper.addUnfieldedQueriesToList(unfieldedList, JexlASTHelper.parseJexlQuery(q5));
         assertEquals(expectedList, unfieldedList);
         unfieldedList.clear();
     }
