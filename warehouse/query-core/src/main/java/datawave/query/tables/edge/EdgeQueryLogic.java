@@ -55,16 +55,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.StringReader;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
 
 public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
@@ -155,13 +147,13 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         cfg.setBeginDate(settings.getBeginDate());
         cfg.setEndDate(settings.getEndDate());
-        
+
         scannerFactory = new ScannerFactory(connection);
         
         return cfg;
     }
     
-    public String getJexlQueryString(Query settings) throws datawave.query.language.parser.ParseException {
+    public String getJexlQueryString(Query settings) throws datawave.query.language.parser.ParseException, ParseException {
         // queryString should be JEXl after all query parsers are applied
         String queryString;
         String originalQuery = settings.getQuery();
@@ -226,10 +218,19 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (log.isTraceEnabled()) {
             log.trace(querySyntax + originalQuery + " --> jexlQueryString: " + queryString);
         }
+
+        // Validate that the query is fielded
+        if (querySyntax.equalsIgnoreCase("jexl") || querySyntax.equalsIgnoreCase("lucene")) {
+            ArrayList<String> unfieldedQueries = new ArrayList<>();
+            JexlASTHelper.addUnfieldedQueriesToList(unfieldedQueries, JexlASTHelper.parseJexlQuery(queryString));
+            if (unfieldedQueries.size() > 0) {
+                throw new IllegalArgumentException("Query cannot be contain unfielded terms: " + unfieldedQueries);
+            }
+        }
         
         return queryString;
     }
-    
+
     protected String expandQueryMacros(String query) throws datawave.query.language.parser.ParseException {
         log.trace("query macros are :" + this.queryMacroFunction);
         if (this.queryMacroFunction != null) {
