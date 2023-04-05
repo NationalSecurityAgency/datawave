@@ -908,7 +908,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             };
         } else {
-            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, super.equality, getEvaluationFilter(),
+            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEvaluationFilter(),
                             this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
         }
         
@@ -1083,7 +1083,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 tfConfig.setContentExpansionFields(getContentExpansionFields());
                 tfConfig.setTfFields(getTermFrequencyFields());
                 tfConfig.setTypeMetadata(getTypeMetadata());
-                tfConfig.setEquality(super.equality);
+                tfConfig.setEquality(getEquality());
                 tfConfig.setEvaluationFilter(getEvaluationFilter());
                 
                 Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction = buildTfFunction(tfConfig);
@@ -1101,7 +1101,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 IndexOnlyContextCreatorBuilder contextCreatorBuilder = new IndexOnlyContextCreatorBuilder().setSource(sourceDeepCopy)
                                 .setRange(getDocumentRange(documentSource)).setTypeMetadata(typeMetadataForEval).setCompositeMetadata(compositeMetadata)
                                 .setOptions(this).setVariables(variables).setIteratorBuildingVisitor(iteratorBuildingVisitor)
-                                .setDelayedNonEventFieldMap(delayedNonEventFieldMap).setEquality(equality).setColumnFamilies(columnFamilies)
+                                .setDelayedNonEventFieldMap(delayedNonEventFieldMap).setEquality(getEquality()).setColumnFamilies(columnFamilies)
                                 .setInclusive(inclusive).setComparatorFactory(this);
                 final IndexOnlyContextCreator contextCreator = contextCreatorBuilder.build();
                 
@@ -1225,7 +1225,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             log.trace("mapDocument " + fieldIndexSatisfiesQuery);
         }
         if (fieldIndexSatisfiesQuery) {
-            final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, super.equality,
+            final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(),
                             getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
             
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(
