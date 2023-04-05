@@ -71,21 +71,6 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
         return true;
     }
     
-    @Override
-    public Key getStartKey(Key from) {
-        return new Key(from.getRow(), from.getColumnFamily());
-    }
-    
-    @Override
-    public Key getStopKey(Key from) {
-        return from.followingKey(PartialKey.ROW_COLFAM);
-    }
-    
-    @Override
-    public Range getKeyRange(Map.Entry<Key,Document> from) {
-        return new Range(getStartKey(from.getKey()), true, getStopKey(from.getKey()), false);
-    }
-    
     protected void setFilters(Map<String,? extends PeekingPredicate<Key>> fieldFilters) {
         if (this.initialized) {
             throw new RuntimeException("This Projection instance was already initialized");
