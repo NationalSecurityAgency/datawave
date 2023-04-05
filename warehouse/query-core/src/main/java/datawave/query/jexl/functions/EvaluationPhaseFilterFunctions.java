@@ -127,6 +127,24 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     /**
+     * An instance of the <code>isNotNull</code> function that handles a State object
+     *
+     * @param state
+     *            a State object
+     * @return a functional set of hit terms
+     */
+    public static FunctionalSet<ValueTuple> isNotNull(State state) {
+        if (state != null) {
+            if (state.isFunctionalSet()) {
+                return isNotNull(state.getFunctionalSet());
+            } else if (state.isValueTuple()) {
+                return isNotNull(state.getValueTuple());
+            }
+        }
+        return FunctionalSet.emptySet();
+    }
+    
+    /**
      * Returns a {@link FunctionalSet} of hit terms found for {@code fieldValue}. If {@code fieldValue} is a singular value tuple, a singleton
      * {@link FunctionalSet} with the hit term from it will be returned. If {@code fieldValue} is a non-empty collection of value tuples, a
      * {@link FunctionalSet} containing the hit terms from each value in the collection will be returned. Otherwise, an empty {@link FunctionalSet} will be
@@ -141,12 +159,6 @@ public class EvaluationPhaseFilterFunctions {
             if (fieldValue instanceof Collection) {
                 Collection<?> values = (Collection<?>) fieldValue;
                 if (!values.isEmpty()) {
-                    return values.stream().map(EvaluationPhaseFilterFunctions::getHitTerm).collect(Collectors.toCollection(FunctionalSet::new));
-                }
-            } else if (fieldValue instanceof State) {
-                State state = (State) fieldValue;
-                if (state.isFunctionalSet() && !state.getFunctionalSet().isEmpty()) {
-                    Collection<?> values = (Collection<?>) state.getFunctionalSet();
                     return values.stream().map(EvaluationPhaseFilterFunctions::getHitTerm).collect(Collectors.toCollection(FunctionalSet::new));
                 }
             } else {
@@ -211,7 +223,7 @@ public class EvaluationPhaseFilterFunctions {
      * minimum parsed from the given minimum number of required matches. If the minimum was not met, then an empty {@link FunctionalSet} will be returned.
      *
      * <p>
-     *
+     * <p>
      * Note: the {@code args} array must have the following elements in the indicated indices:
      * <ul>
      * <li>
@@ -225,7 +237,6 @@ public class EvaluationPhaseFilterFunctions {
      *
      * @param args
      *            the arguments array
-     *
      * @return the {@link FunctionalSet} of matches.
      */
     public static FunctionalSet<ValueTuple> matchesAtLeastCountOf(Object[] args) {
