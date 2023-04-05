@@ -73,6 +73,8 @@ public abstract class AbstractQueryCache<T extends AbstractRunningQuery> impleme
     
     /**
      * Retrieve an {@link java.util.Iterator} to iterate over all stored {@link AbstractRunningQuery}s stored in the cache.
+     * 
+     * @return an iterator for the cache
      */
     @Override
     public Iterator<T> iterator() {
@@ -81,6 +83,8 @@ public abstract class AbstractQueryCache<T extends AbstractRunningQuery> impleme
     
     /**
      * Retrieve a {@link java.util.Set} of String vs {@link AbstractRunningQuery} entries stored in the cache.
+     * 
+     * @return a set of string vs query entries stored in the cache
      */
     public Set<Map.Entry<String,T>> entrySet() {
         return cache.asMap().entrySet();

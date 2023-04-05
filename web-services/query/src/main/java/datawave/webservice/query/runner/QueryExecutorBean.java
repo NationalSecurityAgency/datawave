@@ -398,6 +398,11 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * Helper to throw Response Error for create/define Query
+     * 
+     * @param ec
+     *            the error code
+     * @param response
+     *            generic response
      */
     private void throwBadRequest(DatawaveErrorCode ec, GenericResponse<String> response) {
         BadRequestQueryException qe = new BadRequestQueryException(ec);
@@ -413,6 +418,14 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * This method will provide some initial query validation for the define and create query calls.
+     * 
+     * @param httpHeaders
+     *            the http headers
+     * @param queryParameters
+     *            the query parameters
+     * @param queryLogicName
+     *            the logic name
+     * @return QueryData
      */
     private QueryData validateQuery(String queryLogicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
         
@@ -564,8 +577,12 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param queryLogicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            the query parameters
+     * @param httpHeaders
+     *            the headers
+     * @return the generic response
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -658,8 +675,12 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param queryLogicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            the query parameters
+     * @param httpHeaders
+     *            the headers
+     * @return the generic response
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -841,8 +862,10 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param queryLogicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            the query parameters
+     * @return the generic response
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -981,7 +1004,9 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param queryLogicName
+     *            the logic name
      * @param queryParameters
+     *            the query parameters
      * @return query predictions
      */
     @POST
@@ -1349,9 +1374,13 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     /**
+     * @param httpHeaders
+     *            headers
      * @param logicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            the query parameters
+     * @return BaseQueryResponse
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -1444,9 +1473,13 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      *
      * @param uuid
+     *            the uuid
      * @param uuidType
+     *            the uuid type
      * @param uriInfo
+     *            the uri
      * @param httpHeaders
+     *            the headers
      * @return content results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1515,7 +1548,9 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      *
      * @param queryParameters
+     *            the query parameters
      * @param httpHeaders
+     *            the headers
      * @return content results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1575,11 +1610,14 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      *
-     * @param uuidType
      * @param uuid
+     *            the uuid
+     * @param uuidType
+     *            the uuid type
      * @param uriInfo
+     *            the uri
      * @param httpHeaders
-     * @return
+     *            the headers
      * @return event results, either as a paged BaseQueryResponse (automatically closed upon return) or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1648,7 +1686,9 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      *
      * @param queryParameters
+     *            the parameters
      * @param httpHeaders
+     *            the headers
      * @return event results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1898,6 +1938,10 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      * Asynchronous version of {@link #next(String)}.
      * 
+     * @param id
+     *            an id
+     * @param asyncResponse
+     *            an async response
      * @see #next(String)
      */
     @GET
@@ -2152,6 +2196,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * after a 'close' will start over at page 1.
      * 
      * @param id
+     *            the id
      *
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2235,7 +2280,8 @@ public class QueryExecutorBean implements QueryExecutor {
      * <strong>JBossAdministrator or Administrator credentials required.</strong>
      *
      * @param id
-     * @return
+     *            the id
+     * @return a void response
      */
     @PUT
     @POST
@@ -2326,6 +2372,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * will start over at page 1.
      * 
      * @param id
+     *            the id
      *
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2402,7 +2449,8 @@ public class QueryExecutorBean implements QueryExecutor {
      * <strong>JBossAdministrator or Administrator credentials required.</strong>
      *
      * @param id
-     * @return
+     *            the id
+     * @return a void response
      */
     @PUT
     @POST
@@ -2594,6 +2642,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * remove (delete) the query
      * 
      * @param id
+     *            the id
      *
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2998,7 +3047,9 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * <strong>Administrator credentials required.</strong> Returns list of queries for some other user
-     *
+     * 
+     * @param userId
+     *            the user id
      * @return datawave.webservice.result.QueryImplListResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -3216,7 +3267,9 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param logicName
+     *            the logic name
      * @param queryParameters
+     *            the parameters
      *
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -3362,6 +3415,14 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      * Asynchronous version of {@link #execute(String, MultivaluedMap, HttpHeaders)}
      * 
+     * @param asyncResponse
+     *            the async response
+     * @param logicName
+     *            the logic name
+     * @param httpHeaders
+     *            the headers
+     * @param queryParameters
+     *            parameters
      * @see #execute(String, MultivaluedMap, HttpHeaders)
      */
     @POST

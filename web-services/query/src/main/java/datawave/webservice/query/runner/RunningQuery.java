@@ -290,8 +290,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      * This method is used to determine if we have a next result. This will throw a timeout exception if the page short circuit limit is reached.
      * 
      * @param pageStartTime
+     *            the page start time
      * @return true if hasNext()
      * @throws TimeoutException
+     *             if there is a timeout
      */
     private boolean hasNext(long pageStartTime) throws TimeoutException {
         if (allowShortCircuitTimeouts) {
@@ -331,8 +333,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      * the page short circuit timeout has been reached.
      * 
      * @param pageStartTime
+     *            the page start time
      * @return the next object (could be null)
      * @throws TimeoutException
+     *             if there is a timeout
      */
     private Object getNext(long pageStartTime) throws TimeoutException {
         if (allowShortCircuitTimeouts) {
@@ -385,6 +389,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      * 
      * @return a results page.
      * @throws Exception
+     *             if there are issues
      */
     public ResultsPage next() throws Exception {
         // update AbstractRunningQuery.lastUsed
@@ -699,6 +704,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     /**
      * Sets {@link TInfo} for this query as an indication that the query is being traced. This trace info is also used to continue a trace across different
      * thread boundaries.
+     * 
+     * @param traceInfo
+     *            the traceinfo
      */
     public void setTraceInfo(TInfo traceInfo) {
         this.traceInfo = traceInfo;
