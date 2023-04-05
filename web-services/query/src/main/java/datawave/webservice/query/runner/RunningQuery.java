@@ -130,7 +130,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
         this.timing = timing;
         this.executor = Executors.newSingleThreadExecutor();
-        this.allowShortCircuitTimeouts = logic.isLongRunningQuery();
         this.predictor = predictor;
         // set the metric information
         this.getMetric().populate(this.settings);
@@ -190,6 +189,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.lastPageNumber = 0;
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
+            this.allowShortCircuitTimeouts = logic.isLongRunningQuery();
             // the configuration query string should now hold the planned query
             this.getMetric().setPlan(configuration.getQueryString());
             this.getMetric().setSetupTime((System.currentTimeMillis() - start));
