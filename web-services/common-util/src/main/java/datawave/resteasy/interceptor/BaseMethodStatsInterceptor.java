@@ -181,6 +181,15 @@ public abstract class BaseMethodStatsInterceptor implements ContainerRequestFilt
     
     /**
      * Puts all entries in {@code newMap} into {@code existingMap}, unless there is already an existing entry in {@code existingMap}.
+     * 
+     * @param newMap
+     *            - a newmap
+     * @param existingMap
+     *            - existingmap
+     * @param <K>
+     *            - key type
+     * @param <V>
+     *            - value type
      */
     private static <K,V> void putNew(MultivaluedMap<K,V> existingMap, MultivaluedMap<K,V> newMap) {
         for (Entry<K,List<V>> entry : newMap.entrySet()) {
