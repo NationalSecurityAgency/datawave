@@ -14,6 +14,9 @@ import java.util.Set;
  */
 public abstract class AbstractAggregator<AGGREGATE> implements Aggregator<AGGREGATE> {
     
+    /**
+     * The name of the field being aggregated.
+     */
     protected final String field;
     
     protected AbstractAggregator(String field) {

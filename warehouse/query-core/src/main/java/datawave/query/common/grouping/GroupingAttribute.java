@@ -38,18 +38,21 @@ public class GroupingAttribute<T extends Comparable<T>> extends TypeAttribute<T>
         return false;
     }
     
-    // Return whether the field is equal.
+    /**
+     * Return whether the metadata row of this attribute is considered equal to the row of the other attribute.
+     * 
+     * @param other
+     *            the other attribute
+     * @return true if the metadata row is equal, or false otherwise
+     */
     private boolean isMetadataRowEqual(Attribute<?> other) {
-        if (this.isMetadataSet() == other.isMetadataSet()) {
-            if (this.isMetadataSet()) {
-                return this.metadata.compareRow(other.getMetadata().getRow()) == 0;
-            }
-        }
-        return false;
+        return this.isMetadataSet() == other.isMetadataSet() && (!this.isMetadataSet() || (this.getMetadata().getRow().equals(other.getMetadata().getRow())));
     }
     
     /**
-     * Returns a hashcode of the attribute's value.
+     * Returns the hashcode of the attribute's value.
+     * 
+     * @return the hashcode of the attribute's value
      */
     @Override
     public int hashCode() {

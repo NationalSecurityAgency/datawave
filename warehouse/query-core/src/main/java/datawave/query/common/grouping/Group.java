@@ -5,18 +5,40 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.hadoop.thirdparty.org.checkerframework.checker.units.qual.A;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Represents a grouping of values for fields specified via the #GROUP_BY functionality, with information about the total number of times the grouping was seen,
+ * values for target aggregation fields that were matched to this group, and the different column visibilities seen.
+ */
 public class Group {
     
+    /**
+     * The distinct set of values that represent this grouping.
+     */
     private final Set<GroupingAttribute<?>> attributes;
+    
+    /**
+     * The different column visibilities seen for each attribute that makes up the grouping.
+     */
     private final Multimap<GroupingAttribute<?>,ColumnVisibility> attributeVisibilities = HashMultimap.create();
+    
+    /**
+     * The column visibilities for each document that contributed entries to this grouping.
+     */
     private final Set<ColumnVisibility> documentVisibilities = new HashSet<>();
+    
+    /**
+     * The total number of times the distinct grouping was seen.
+     */
     private int count;
+    
+    /**
+     * The aggregated values for any specified fields to aggregate.
+     */
     private AggregatedFields aggregatedFields = new AggregatedFields();
     
     public Group(Collection<GroupingAttribute<?>> attributes) {
@@ -29,54 +51,110 @@ public class Group {
         this.count = count;
     }
     
+    /**
+     * Returns the distinct set of values that represent this grouping.
+     * 
+     * @return the grouping
+     */
     public Set<GroupingAttribute<?>> getAttributes() {
         return attributes;
     }
     
-    public void addAttributeVisibilities(Set<GroupingAttribute<?>> newAttributes) {
-        for (GroupingAttribute<?> attribute : newAttributes) {
+    /**
+     * Add the column visibilities from each of the given attributes to the set of attribute visibilities for this group.
+     * 
+     * @param attributes
+     *            the attributes to add visibilities from
+     */
+    public void addAttributeVisibilities(Set<GroupingAttribute<?>> attributes) {
+        for (GroupingAttribute<?> attribute : attributes) {
             attributeVisibilities.put(attribute, attribute.getColumnVisibility());
         }
     }
     
+    /**
+     * Return the set of column visibilities seen for the given attribute.
+     * 
+     * @param attribute
+     *            the attribute
+     * @return the column visibilities seen for the given attributes
+     */
     public Collection<ColumnVisibility> getVisibilitiesForAttribute(GroupingAttribute<?> attribute) {
         return attributeVisibilities.get(attribute);
     }
     
+    /**
+     * Add the column visibility to the set of visibilities of documents for which we have seen the grouping of this group in.
+     * 
+     * @param columnVisibility
+     *            the visibility to add
+     */
     public void addDocumentVisibility(ColumnVisibility columnVisibility) {
         this.documentVisibilities.add(columnVisibility);
     }
     
+    /**
+     * Return the set of all distinct column visibilities from documents that we have seen this group in.
+     * 
+     * @return the document column visibilities
+     */
     public Set<ColumnVisibility> getDocumentVisibilities() {
         return documentVisibilities;
     }
     
+    /**
+     * Increment the number of times we have seen this grouping by one.
+     */
     public void incrementCount() {
         this.count++;
     }
     
+    /**
+     * Returns the number of times we have seen this grouping.
+     * 
+     * @return the number of times we've seen this group.
+     */
     public int getCount() {
         return count;
     }
     
+    /**
+     * Returns the aggregated fields for this group.
+     * 
+     * @return the aggregated fields.
+     */
     public AggregatedFields getAggregatedFields() {
         return aggregatedFields;
     }
     
+    /**
+     * Set the aggregated fields for this group.
+     * 
+     * @param aggregatedFields
+     *            the aggregated fields to set
+     */
     public void setAggregatedFields(AggregatedFields aggregatedFields) {
         this.aggregatedFields = aggregatedFields;
+    }
+    
+    /**
+     * Merge the given group into this group. The attribute visibilities and document visibilities from the other group will be added into this group. The count
+     * for this group will be incremented by the count of the other group. The aggregated fields of the other group will be merged into the aggregated fields of
+     * this group.
+     * 
+     * @param other
+     *            the group to merge
+     */
+    public void merge(Group other) {
+        this.attributeVisibilities.putAll(other.attributeVisibilities);
+        this.documentVisibilities.addAll(other.documentVisibilities);
+        this.count += other.count;
+        this.aggregatedFields.merge(other.aggregatedFields);
     }
     
     @Override
     public String toString() {
         return new ToStringBuilder(this).append("attributes", attributes).append("attributeVisibilities", attributeVisibilities)
                         .append("documentVisibilities", documentVisibilities).append("count", count).append("aggregatedFields", aggregatedFields).toString();
-    }
-    
-    public void merge(Group other) {
-        this.attributeVisibilities.putAll(other.attributeVisibilities);
-        this.documentVisibilities.addAll(other.documentVisibilities);
-        this.count += other.count;
-        this.aggregatedFields.merge(other.aggregatedFields);
     }
 }

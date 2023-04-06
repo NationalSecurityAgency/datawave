@@ -29,10 +29,9 @@ public interface Aggregator<AGGREGATE> {
     String getField();
     
     /**
-     * Return the distinct column visibilities that collectively represent the column visibility of the aggregated result. This is required to establish a final
-     * column visibility when adding the aggregated information to a document.
-     * 
-     * @return the column visibilities
+     * Returns an unmodifiable set of all distinct column visibilities for each attribute aggregated into this aggregator. Possibly empty, but never null.
+     *
+     * @return a set of the column visibilities
      */
     Set<ColumnVisibility> getColumnVisibilities();
     
@@ -59,5 +58,13 @@ public interface Aggregator<AGGREGATE> {
      */
     void aggregateAll(Collection<Attribute<?>> values);
     
-    void merge(Aggregator<?> otherAggregator);
+    /**
+     * Merges the given aggregator into this aggregator
+     *
+     * @param other
+     *            the aggregator to merge
+     * @throws IllegalArgumentException
+     *             if the other aggregator is not the same type as this aggregator
+     */
+    void merge(Aggregator<?> other);
 }

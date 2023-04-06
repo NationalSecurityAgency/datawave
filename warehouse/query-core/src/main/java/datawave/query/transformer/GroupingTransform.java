@@ -121,7 +121,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             keys.add(keyDocumentEntry.getKey());
             log.trace("{} get list key counts for: {}", "web-server", keyDocumentEntry);
-            DocumentGrouper.getGroups(keyDocumentEntry, groupFieldsSet, aggregateFieldsFactory, reverseModelMapping, groups);
+            DocumentGrouper.group(keyDocumentEntry, groupFieldsSet, aggregateFieldsFactory, groups, reverseModelMapping);
         }
         
         long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;

@@ -1,10 +1,8 @@
 package datawave.query.common.grouping;
 
-import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.ToStringBuilder;
-import org.w3c.dom.Attr;
 
 import java.util.Collections;
 import java.util.Set;
@@ -15,6 +13,9 @@ import java.util.Set;
  */
 public class MaxAggregator extends AbstractAggregator<Attribute<?>> {
     
+    /**
+     * The current max attribute.
+     */
     private Attribute<?> max;
     
     public static MaxAggregator of(String field, Attribute<?> max) {

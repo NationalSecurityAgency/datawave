@@ -1,10 +1,8 @@
 package datawave.query.common.grouping;
 
-import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.ToStringBuilder;
-import org.w3c.dom.Attr;
 
 import java.util.Collections;
 import java.util.Set;
@@ -15,6 +13,9 @@ import java.util.Set;
  */
 public class MinAggregator extends AbstractAggregator<Attribute<?>> {
     
+    /**
+     * The current min attribute.
+     */
     private Attribute<?> min;
     
     public static MinAggregator of(String field, Attribute<?> min) {

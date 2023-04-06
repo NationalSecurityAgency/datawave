@@ -1,11 +1,8 @@
 package datawave.query.common.grouping;
 
-import datawave.data.type.NumberType;
-import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Numeric;
 import datawave.query.attributes.TypeAttribute;
-import datawave.query.language.functions.jexl.Sum;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
@@ -15,11 +12,18 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Calculates the sum of aggregated field values. This is limited to fields that have {@link Numeric} values.
+ * Calculates the sum of aggregated field values. This is limited to fields for which their values can be parsed as {@link BigDecimal} instances.
  */
 public class SumAggregator extends AbstractAggregator<BigDecimal> {
     
+    /**
+     * The current sum.
+     */
     private BigDecimal sum;
+    
+    /**
+     * The column visibilities of all attributes aggregated.
+     */
     private final Set<ColumnVisibility> columnVisibilities;
     
     public static SumAggregator of(String field, TypeAttribute<BigDecimal> attribute) {
@@ -50,11 +54,6 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
         return AggregateOperation.SUM;
     }
     
-    /**
-     * Returns an unmodifiable set of all distinct column visibilities for each attribute aggregated into this aggregator. Possibly empty, but never null.
-     * 
-     * @return a set of the column visibilities
-     */
     @Override
     public Set<ColumnVisibility> getColumnVisibilities() {
         return Collections.unmodifiableSet(columnVisibilities);

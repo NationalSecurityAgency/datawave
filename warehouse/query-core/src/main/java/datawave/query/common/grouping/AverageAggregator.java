@@ -14,15 +14,30 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Calculates the average value of aggregated field values. This is limited to fields that have {@link Numeric} values.
+ * Calculates the average value of aggregated field values. This is limited to fields for which their values can be parsed as {@link BigDecimal} instances.
  */
 public class AverageAggregator extends AbstractAggregator<BigDecimal> {
     
     private static final MathContext MATH_CONTEXT = new MathContext(10, RoundingMode.HALF_UP);
     
+    /**
+     * The current numerator value of the average.
+     */
     private BigDecimal numerator;
+    
+    /**
+     * The current divisor value of the average.
+     */
     private BigDecimal divisor;
+    
+    /**
+     * The current average value.
+     */
     private BigDecimal average;
+    
+    /**
+     * The column visibilities of all attributes aggregated.
+     */
     private final Set<ColumnVisibility> columnVisibilities;
     
     public static AverageAggregator of(String field, TypeAttribute<BigDecimal> numerator, TypeAttribute<BigDecimal> divisor) {
@@ -54,11 +69,6 @@ public class AverageAggregator extends AbstractAggregator<BigDecimal> {
         return AggregateOperation.AVERAGE;
     }
     
-    /**
-     * Returns an unmodifiable set of all distinct column visibilities for each attribute aggregated into this aggregator. Possibly empty, but never null.
-     * 
-     * @return a set of the column visibilities
-     */
     @Override
     public Set<ColumnVisibility> getColumnVisibilities() {
         return Collections.unmodifiableSet(columnVisibilities);

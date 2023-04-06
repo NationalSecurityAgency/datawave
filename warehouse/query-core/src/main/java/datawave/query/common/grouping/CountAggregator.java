@@ -15,7 +15,14 @@ import java.util.Set;
  */
 public class CountAggregator extends AbstractAggregator<Integer> {
     
+    /**
+     * The total number of times the field was seen.
+     */
     private int count;
+    
+    /**
+     * The column visibilities of all attributes aggregated.
+     */
     private final Set<ColumnVisibility> columnVisibilities;
     
     public static CountAggregator of(String field, TypeAttribute<BigDecimal> attribute) {
@@ -45,11 +52,6 @@ public class CountAggregator extends AbstractAggregator<Integer> {
         return AggregateOperation.COUNT;
     }
     
-    /**
-     * Returns an unmodifiable set of all distinct column visibilities for each attribute aggregated into this aggregator. Possibly empty, but never null.
-     * 
-     * @return a set of the column visibilities
-     */
     @Override
     public Set<ColumnVisibility> getColumnVisibilities() {
         return Collections.unmodifiableSet(columnVisibilities);

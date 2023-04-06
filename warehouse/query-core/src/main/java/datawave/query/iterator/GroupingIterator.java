@@ -96,7 +96,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
                 if (entry != null) {
                     log.trace("t-server get list key counts for: {}", entry);
                     keys.add(entry.getKey());
-                    DocumentGrouper.getGroups(entry, groupFields, aggregateFieldsFactory, groups);
+                    DocumentGrouper.group(entry, groupFields, aggregateFieldsFactory, groups);
                 }
             } else if (yieldCallback != null && yieldCallback.hasYielded()) {
                 log.trace("hasNext is false because yield was called");
