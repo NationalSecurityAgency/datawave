@@ -149,16 +149,6 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         String jexlQueryString = getJexlQueryString(settings);
         
-        String querySyntax = settings.findParameter(QueryParameters.QUERY_SYNTAX).getParameterValue();
-        // Validate that the query is fielded
-        if (querySyntax.equalsIgnoreCase("jexl") || querySyntax.equalsIgnoreCase("lucene")) {
-            ArrayList<String> unfieldedQueries = new ArrayList<>();
-            JexlASTHelper.addUnfieldedQueriesToList(unfieldedQueries, JexlASTHelper.parseJexlQuery(jexlQueryString));
-            if (unfieldedQueries.size() > 0) {
-                throw new IllegalArgumentException("Query cannot be contain unfielded terms: " + unfieldedQueries);
-            }
-        }
-        
         if (null == jexlQueryString) {
             throw new IllegalArgumentException("Query cannot be null");
         } else {
@@ -172,7 +162,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return cfg;
     }
     
-    public String getJexlQueryString(Query settings) throws datawave.query.language.parser.ParseException, ParseException {
+    public String getJexlQueryString(Query settings) throws datawave.query.language.parser.ParseException {
         // queryString should be JEXl after all query parsers are applied
         String queryString;
         String originalQuery = settings.getQuery();
@@ -208,6 +198,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
         }
         if (querySyntax.equals("JEXL")) {
+            validateQuery(originalQuery, querySyntax);
             return originalQuery;
         }
         
@@ -217,6 +208,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         if (querySyntaxParsers.containsKey(querySyntax) && querySyntaxParsers.get(querySyntax) == null) {
             // The querySyntax does not need to be parsed
+            validateQuery(originalQuery, querySyntax);
             return originalQuery;
         }
         
@@ -238,7 +230,24 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             log.trace(querySyntax + originalQuery + " --> jexlQueryString: " + queryString);
         }
         
+        validateQuery(queryString, querySyntax);
+        
         return queryString;
+    }
+    
+    private void validateQuery(String queryString, String querySyntax) {
+        // Validate that the query is fielded
+        if (querySyntax.equalsIgnoreCase("jexl") || querySyntax.equalsIgnoreCase("lucene")) {
+            ArrayList<String> unfieldedQueries = new ArrayList<>();
+            try {
+                JexlASTHelper.addUnfieldedQueriesToList(unfieldedQueries, JexlASTHelper.parseJexlQuery(queryString));
+            } catch (ParseException e) {
+                throw new IllegalArgumentException("Unable to load query: " + queryString);
+            }
+            if (unfieldedQueries.size() > 0) {
+                throw new IllegalArgumentException("Query cannot be contain unfielded terms: " + unfieldedQueries);
+            }
+        }
     }
     
     protected String expandQueryMacros(String query) throws datawave.query.language.parser.ParseException {
