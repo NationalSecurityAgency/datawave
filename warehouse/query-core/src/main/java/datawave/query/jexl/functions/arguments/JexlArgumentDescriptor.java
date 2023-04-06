@@ -34,7 +34,8 @@ public interface JexlArgumentDescriptor {
      *            the config settings
      * @return The query which will be used against the global index
      */
-    JexlNode getIndexQuery(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter);
+    JexlNode getIndexQuery(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter)
+                    throws TableNotFoundException;
     
     /**
      * Get the expression filters for this function. NOTE NOTE NOTE: This only needs to add expression filters IFF the getIndexQuery does not add appropriate
