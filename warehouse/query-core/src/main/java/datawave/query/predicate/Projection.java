@@ -16,8 +16,8 @@ import java.util.Set;
  */
 public final class Projection implements Predicate<String> {
     
-    private Set<String> projections = null;
-    private ProjectionType type = null;
+    private final Set<String> projections;
+    private final ProjectionType type;
     
     public Projection(@Nonnull Set<String> items, @Nonnull ProjectionType type) {
         this.type = type;

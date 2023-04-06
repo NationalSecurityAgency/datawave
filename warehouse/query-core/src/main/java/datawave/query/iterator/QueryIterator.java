@@ -1357,9 +1357,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             }
         }
-        DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), composites,
-                        Projection.ProjectionType.EXCLUDES);
-        return projection;
+        return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), composites, Projection.ProjectionType.EXCLUDES);
     }
     
     /**
