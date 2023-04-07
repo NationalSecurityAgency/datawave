@@ -110,6 +110,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     protected final String field;
     protected final String value;
     
+    protected Key limitKey;
+    
     protected PreNormalizedAttributeFactory attributeFactory;
     protected Document document;
     protected boolean buildDocument = false;
@@ -321,7 +323,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
             }
             
             // restrict the aggregation to the current target value within the document
-            limitedSource.setLimit(new Key(top.getRow(), columnFamily, new Text(valueMinPrefix + Constants.MAX_UNICODE_STRING)));
+            limitedSource.setLimit(getLimitKey(top.getRow()));
             
             // Aggregate the document. NOTE: This will advance the source iterator
             if (buildDocument) {
@@ -454,6 +456,22 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         }
         
         return key;
+    }
+    
+    /**
+     * Get a key to limit the scan range of this iterator.
+     * <p>
+     * Practically the row will not change, so this 'get or build' pattern is safe.
+     *
+     * @param row
+     *            the row a shard index key (the partition in YYYYmmdd_n format)
+     * @return the limit key
+     */
+    public Key getLimitKey(Text row) {
+        if (limitKey == null) {
+            limitKey = new Key(row, columnFamily, new Text(valueMinPrefix + Constants.MAX_UNICODE_STRING));
+        }
+        return limitKey;
     }
     
     @Override
