@@ -9,6 +9,7 @@ import datawave.query.jexl.functions.arguments.RebuildingJexlArgumentDescriptor;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
@@ -29,7 +30,6 @@ import static datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJe
 /**
  * Visits an JexlNode tree, and expand the functions to be AND'ed with their index query equivalents. Note that the functions are left in the final query to
  * provide potentially additional filtering after applying the index query.
- *
  */
 public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
     
@@ -114,7 +114,14 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
         }
         
         if (!evaluationOnly) {
-            JexlNode indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
+            JexlNode indexQuery = null;
+            try {
+                if (desc != null) {
+                    indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
+                }
+            } catch (TableNotFoundException e) {
+                throw new RuntimeException(e);
+            }
             if (indexQuery != null && !(indexQuery instanceof ASTTrueNode)) {
                 if (desc instanceof ContentFunctionsDescriptor.ContentJexlArgumentDescriptor) {
                     return distributeFunctionIntoIndexQuery(node, indexQuery);

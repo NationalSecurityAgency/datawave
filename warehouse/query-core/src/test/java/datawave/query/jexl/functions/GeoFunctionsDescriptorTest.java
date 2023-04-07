@@ -5,8 +5,10 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -46,7 +48,7 @@ public class GeoFunctionsDescriptorTest {
     }
     
     @Test
-    public void antiMeridianTest1() throws Exception {
+    public void antiMeridianTest1() throws ParseException, TableNotFoundException {
         String query = "geo:within_bounding_box(GEO_FIELD, '40_170', '50_-170')";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         JexlArgumentDescriptor argDesc = new GeoFunctionsDescriptor().getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0).jjtGetChild(0));

@@ -6,6 +6,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
@@ -30,7 +31,7 @@ public class GeoWavePruningVisitorTest {
     }
     
     @Test
-    public void testNonIntersectingTermIsPruned() throws ParseException {
+    public void testNonIntersectingTermIsPruned() throws ParseException, TableNotFoundException {
         String function = "geowave:intersects(GEO_FIELD, 'POLYGON((10 10, 20 10, 20 20, 10 20, 10 10))')";
         // Get the expanded geowave terms.
         String indexQuery = convertFunctionToIndexQuery(function, new ShardQueryConfiguration(), metadataHelper);
@@ -46,7 +47,7 @@ public class GeoWavePruningVisitorTest {
     }
     
     @Test
-    public void testPrunedWrappedTermDoesNotLeaveEmptyWrappedTerm() throws ParseException {
+    public void testPrunedWrappedTermDoesNotLeaveEmptyWrappedTerm() throws ParseException, TableNotFoundException {
         String function = "geowave:intersects(GEO_FIELD, 'POLYGON((10 10, 20 10, 20 20, 10 20, 10 10))')";
         // Get the expanded geowave terms.
         String indexQuery = convertFunctionToIndexQuery(function, new ShardQueryConfiguration(), metadataHelper);
@@ -62,7 +63,7 @@ public class GeoWavePruningVisitorTest {
     }
     
     @Test
-    public void testNonGeometryTermsNotPruned() throws ParseException {
+    public void testNonGeometryTermsNotPruned() throws ParseException, TableNotFoundException {
         String function = "geowave:intersects(LEGACY_GEO_FIELD, 'POLYGON((10 10, 20 10, 20 20, 10 20, 10 10))')";
         // Get the expanded geowave terms.
         String indexQuery = convertFunctionToIndexQuery(function, new ShardQueryConfiguration(), metadataHelper);
@@ -76,7 +77,7 @@ public class GeoWavePruningVisitorTest {
     }
     
     @Test
-    public void testIgnoreImproperlyFormattedTerms() throws ParseException {
+    public void testIgnoreImproperlyFormattedTerms() throws ParseException, TableNotFoundException {
         String function = "geowave:intersects(GEO_FIELD, 'POLYGON((10 10, 20 10, 20 20, 10 20, 10 10))')";
         // Get the expanded geowave terms.
         String indexQuery = convertFunctionToIndexQuery(function, new ShardQueryConfiguration(), metadataHelper);
