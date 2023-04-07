@@ -3,6 +3,7 @@ package datawave.ingest.data.normalizer;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 
@@ -29,20 +30,69 @@ public class SimpleGroupFieldNameParser {
      */
     public NormalizedContentInterface extractFieldNameComponents(NormalizedContentInterface origField) {
         String originalIndexedFieldName = origField.getIndexedFieldName();
-        String[] splits = StringUtils.split(originalIndexedFieldName, '.');
+        int index = originalIndexedFieldName.indexOf('.');
         
-        if (splits.length > 1) {
-            // we are nested, i.e. we have a field parent names in the event field name
+        if (index > -1) {
+            // this field name has a group component
+            String baseFieldName = originalIndexedFieldName.substring(0, index);
+            String group = originalIndexedFieldName.substring(index + 1);
             
             NormalizedFieldAndValue revisedField = new NormalizedFieldAndValue(origField);
             
-            String baseFieldName = null;
-            String origGroup = null;
-            String group = null;
-            String subgroup = null;
+            revisedField.setGrouped(true);
+            revisedField.setGroup(group);
+            revisedField.setIndexedFieldName(baseFieldName);
             
-            baseFieldName = splits[0];
-            origGroup = extractGroup(splits);
+            return revisedField;
+        } else {
+            return origField;
+        }
+    }
+    
+    /**
+     * @param origField
+     *            the NormalizedContentInterface potentially containing a composite field name
+     * @return a NormalizedContentInterface that contains a modified indexedFieldName and group, extracted from the original indexed field name with parent
+     *         offsets trimmed
+     */
+    public NormalizedContentInterface extractAndTrimFieldNameComponents(NormalizedContentInterface origField) {
+        String originalIndexedFieldName = origField.getIndexedFieldName();
+        String[] components = extractTrimmedGroupAndSubGroup(originalIndexedFieldName);
+        
+        String baseFieldName = components[0];
+        String group = components[1];
+        String subgroup = components[2];
+        
+        if (null != group || null != subgroup) {
+            
+            NormalizedFieldAndValue revisedField = new NormalizedFieldAndValue(origField);
+            
+            revisedField.setGrouped(true);
+            revisedField.setGroup(group);
+            revisedField.setSubGroup(subgroup);
+            revisedField.setIndexedFieldName(baseFieldName);
+            
+            return revisedField;
+        } else {
+            return origField;
+        }
+    }
+    
+    /**
+     *
+     * @param fullFieldName
+     *            the complete event field name of the form FIELD_NAME.GROUP.{IntermediateGroups}.{Context or Field}
+     * @return the component array. base field name : FIELD_NAME, groups: GROUP.{IntermediateGroups} with offsets removed, and subgroup {Context}
+     */
+    public String[] extractTrimmedGroupAndSubGroup(String fullFieldName) {
+        String[] splits = StringUtils.split(fullFieldName, '.');
+        String baseFieldName = splits[0];
+        String group = null;
+        String subgroup = null;
+        
+        if (splits.length > 1) {
+            // we are nested, i.e. we have a field parent names in the event field name
+            String origGroup = extractGroup(splits);
             
             group = trimGroup(origGroup);
             
@@ -58,20 +108,41 @@ public class SimpleGroupFieldNameParser {
                     // last member is always the subgroup
                     subgroup = splits[splits.length - 1];
                 }
-                revisedField.setSubGroup(subgroup);
             }
             
-            revisedField.setGrouped(true);
-            revisedField.setGroup(group);
-            revisedField.setIndexedFieldName(baseFieldName);
-            
-            return revisedField;
-        } else {
-            return origField;
         }
+        
+        return new String[] {baseFieldName, group, subgroup};
     }
     
-    // strips the first and last element of the fieldname to extract the group
+    /**
+     *
+     * @param origGroup
+     *            the group and context GROUP.{IntermediateGroups}.{Context or Field}
+     * @return GROUP.{IntermediateGroups} with parent offsets removed
+     */
+    public String getTrimmedGroup(String origGroup) {
+        String[] splits = StringUtils.split(origGroup, '.');
+        
+        origGroup = removeLastGroup(splits);
+        String group = trimGroup(origGroup);
+        
+        if (group.equals(origGroup)) {
+            // we've not been trimmed. we don't have parent subgroups
+            group = null;
+            
+            // not every field has a group
+            if (splits.length == 1) {
+                group = null;
+            } else if (splits.length >= 2) {
+                group = splits[0];
+                
+            }
+        }
+        return group;
+    }
+    
+    // strips the first and last element of the full fieldname to extract the group
     private String extractGroup(String[] splits) {
         StringBuilder group = new StringBuilder();
         group.append(splits[1]);
@@ -83,9 +154,21 @@ public class SimpleGroupFieldNameParser {
         return group.toString();
     }
     
+    // removes the last group
+    private String removeLastGroup(String[] splits) {
+        StringBuilder group = new StringBuilder();
+        group.append(splits[0]);
+        
+        for (int i = 1; i < splits.length - 1; i++) {
+            group.append(DOT);
+            group.append(splits[i]);
+        }
+        return group.toString();
+    }
+    
     // For fields where we previously needed to define configurations for all permutations of fields with parents P and their groups, (e.g.
     // FIELD.P1_n.P2_m...FIELD_x for all real integers n, m, and x) we can now simplify to P1_P2.
-    public static String trimGroup(String groupStr) {
+    public String trimGroup(String groupStr) {
         StringBuilder group = new StringBuilder();
         boolean checkForSubgroup = false;
         
@@ -100,10 +183,10 @@ public class SimpleGroupFieldNameParser {
                     // continue
                 } else if (c == '_') {
                     // might be entering another subgroup candidate
-                    group.append(groupStr.substring(groupStart, i));
+                    group.append(groupStr, groupStart, i);
                     groupStart = i;
                 } else {
-                    group.append(groupStr.substring(groupStart, i + 1));
+                    group.append(groupStr, groupStart, i + 1);
                     checkForSubgroup = false;
                 }
             } else if (c == '_') {

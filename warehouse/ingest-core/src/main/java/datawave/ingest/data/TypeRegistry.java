@@ -247,7 +247,7 @@ public class TypeRegistry extends HashMap<String,Type> {
                     
                     if (null != config.get(typeName + DataTypeOverrideHelper.Properties.DATA_TYPE_VALUES)) {
                         for (String type : config.getStrings(typeName + DataTypeOverrideHelper.Properties.DATA_TYPE_VALUES)) {
-                            outputName = config.get(type + OUTPUT_NAME, typeName);
+                            outputName = config.get(type + OUTPUT_NAME, outputName);
                             t = new Type(type, outputName, helperClass, readerClass, handlerClassNames, filterPriority, filterClassNames);
                             log.debug("Registered child type:" + type);
                             this.put(type, t);

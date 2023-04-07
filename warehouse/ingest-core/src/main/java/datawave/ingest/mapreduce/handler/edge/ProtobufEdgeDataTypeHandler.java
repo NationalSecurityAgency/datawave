@@ -20,6 +20,7 @@ import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
+import datawave.ingest.data.normalizer.SimpleGroupFieldNameParser;
 import datawave.ingest.mapreduce.EventMapper;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDataBundle;
@@ -114,6 +115,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     public static final String INCLUDE_ALL_EDGES = "protobufedge.include.all.edges";
     
+    public static final String TRIM_FIELD_GROUP = ".trim.field.group";
+    protected boolean trimFieldGroup = false;
+    
     protected static final long ONE_DAY = 1000 * 60 * 60 * 24;
     private static final Now now = Now.getInstance();
     
@@ -150,6 +154,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     long futureDelta, pastDelta;
     long newFormatStartDate;
+    
+    SimpleGroupFieldNameParser fieldParser = new SimpleGroupFieldNameParser();
     
     public enum FailurePolicy {
         CONTINUE, FAIL_JOB
@@ -484,6 +490,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         edgeDefConfigs = edges.get(typeName);
         edgeDefs = edgeDefConfigs.getEdges();
         
+        trimFieldGroup = context.getConfiguration().getBoolean(typeName + TRIM_FIELD_GROUP, false);
+        
         /**
          * If enabled, set the filtered context from the NormalizedContentInterface and create the script cache
          */
@@ -620,8 +628,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             
             String enrichmentFieldName = getEnrichmentFieldName(edgeDef);
             
-            String sourceGroup = getGroup(edgeDef.getSourceFieldName());
-            String sinkGroup = getGroup(edgeDef.getSinkFieldName());
+            String sourceGroup = getEdgeDefGroup(edgeDef.getSourceFieldName());
+            String sinkGroup = getEdgeDefGroup(edgeDef.getSinkFieldName());
             
             // leave the old logic alone
             if (!edgeDef.hasJexlPrecondition() || !edgeDef.isGroupAware()
@@ -835,7 +843,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 // then ensure we use the correct subgroup, otherwise we will enrich with the first value found
                 Collection<NormalizedContentInterface> ifaceEnrichs = normalizedFields.get(edgeDef.getEnrichmentField());
                 if (null != ifaceEnrichs && !ifaceEnrichs.isEmpty()) {
-                    String enrichGroup = getGroup(edgeDef.getEnrichmentField());
+                    String enrichGroup = getEdgeDefGroup(edgeDef.getEnrichmentField());
                     if (enrichGroup != NO_GROUP) {
                         if (enrichGroup.equals(sourceGroup)) {
                             ifaceEnrichs = depthFirstList.get(edgeDef.getEnrichmentField()).get(sourceSubGroup);
@@ -974,13 +982,18 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     protected String getGroupedFieldName(NormalizedContentInterface value) {
         String fieldName = value.getIndexedFieldName();
+        String group;
         if (value instanceof GroupedNormalizedContentInterface) {
             GroupedNormalizedContentInterface grouped = (GroupedNormalizedContentInterface) value;
             if (grouped.isGrouped() && grouped.getGroup() != null) {
-                if (!grouped.getGroup().isEmpty() && grouped.getGroup().charAt(0) == '.') {
-                    fieldName = fieldName + grouped.getGroup();
-                } else {
-                    fieldName = fieldName + '.' + grouped.getGroup();
+                if (!grouped.getGroup().isEmpty()) {
+                    if (trimFieldGroup) {
+                        group = fieldParser.getTrimmedGroup(grouped.getGroup());
+                    } else {
+                        group = grouped.getGroup();
+                    }
+                    fieldName = fieldName + '.' + group;
+                    
                 }
             }
         }
@@ -989,7 +1002,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     private static final String NO_GROUP = "";
     
-    protected String getGroup(String groupedFieldName) {
+    protected String getEdgeDefGroup(String groupedFieldName) {
         int index = groupedFieldName.indexOf('.');
         if (index >= 0) {
             return groupedFieldName.substring(index + 1);

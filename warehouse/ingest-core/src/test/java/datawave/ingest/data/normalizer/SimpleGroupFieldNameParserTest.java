@@ -22,7 +22,7 @@ public class SimpleGroupFieldNameParserTest {
         String expectedField = "CANINE";
         String expectedGroup = "PET";
         String expectedSubgroup = "1";
-        verify(field, expectedField, expectedGroup, expectedSubgroup);
+        verifyTrim(field, expectedField, expectedGroup, expectedSubgroup);
     }
     
     @Test
@@ -32,7 +32,7 @@ public class SimpleGroupFieldNameParserTest {
         String expectedGroup = "PARENT1.PARENT2";
         String expectedSubgroup = null;
         
-        verify(field, expectedField, expectedGroup, expectedSubgroup);
+        verifyTrim(field, expectedField, expectedGroup, expectedSubgroup);
     }
     
     @Test
@@ -40,9 +40,11 @@ public class SimpleGroupFieldNameParserTest {
         String field = "MY_FIELD.PARENT_1_0.PARENT_2_0.FIELD_0";
         String expectedField = "MY_FIELD";
         String expectedGroup = "PARENT_1.PARENT_2";
+        String expectedUntrimmedGroup = "PARENT_1_0.PARENT_2_0.FIELD_0";
         String expectedSubgroup = null;
         
-        verify(field, expectedField, expectedGroup, expectedSubgroup);
+        verifyTrim(field, expectedField, expectedGroup, expectedSubgroup);
+        verify(field, expectedField, expectedUntrimmedGroup, expectedSubgroup);
     }
     
     @Test
@@ -52,7 +54,7 @@ public class SimpleGroupFieldNameParserTest {
         String expectedGroup = "PARENT__BANANA_123";
         String expectedSubgroup = null;
         
-        verify(field, expectedField, expectedGroup, expectedSubgroup);
+        verifyTrim(field, expectedField, expectedGroup, expectedSubgroup);
     }
     
     @Test
@@ -62,7 +64,7 @@ public class SimpleGroupFieldNameParserTest {
         String expectedGroup = "12_34_5";
         String expectedSubgroup = null;
         
-        verify(field, expectedField, expectedGroup, expectedSubgroup);
+        verifyTrim(field, expectedField, expectedGroup, expectedSubgroup);
     }
     
     @Test
@@ -70,9 +72,11 @@ public class SimpleGroupFieldNameParserTest {
         String field = "CANINE.PET.2.0";
         String expectedFieldName = "CANINE";
         String expectedGroup = "PET";
+        String expectedUntrimmedGroup = "PET.2.0";
         String expectedSubGroup = "0";
         
-        verify(field, expectedFieldName, expectedGroup, expectedSubGroup);
+        verifyTrim(field, expectedFieldName, expectedGroup, expectedSubGroup);
+        verify(field, expectedFieldName, expectedUntrimmedGroup, null);
         
     }
     
@@ -83,7 +87,7 @@ public class SimpleGroupFieldNameParserTest {
         String expectedGroup = null;
         String expectedSubGroup = "0";
         
-        verify(field, expectedFieldName, expectedGroup, expectedSubGroup);
+        verifyTrim(field, expectedFieldName, expectedGroup, expectedSubGroup);
         
     }
     
@@ -94,8 +98,19 @@ public class SimpleGroupFieldNameParserTest {
         String expectedGroup = null;
         String expectedSubGroup = null;
         
-        verify(field, expectedFieldName, expectedGroup, expectedSubGroup);
+        verifyTrim(field, expectedFieldName, expectedGroup, expectedSubGroup);
         
+    }
+    
+    public void verifyTrim(String field, String expectedFieldName, String expectedGroup, String expectedSubGroup) {
+        NormalizedContentInterface nci = new NormalizedFieldAndValue();
+        ((NormalizedFieldAndValue) nci).setIndexedFieldName(field);
+        
+        GroupedNormalizedContentInterface newNci = (GroupedNormalizedContentInterface) parser.extractAndTrimFieldNameComponents(nci);
+        
+        Assert.assertEquals(expectedFieldName, newNci.getIndexedFieldName());
+        Assert.assertEquals(expectedGroup, newNci.getGroup());
+        Assert.assertEquals(expectedSubGroup, newNci.getSubGroup());
     }
     
     public void verify(String field, String expectedFieldName, String expectedGroup, String expectedSubGroup) {

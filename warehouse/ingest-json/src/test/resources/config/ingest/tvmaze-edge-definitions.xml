@@ -11,7 +11,7 @@ http://www.springframework.org/schema/util
 http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
 
-    <bean id="myjson" class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper"
+    <bean id="tvmaze" class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper"
           scope="prototype">
         <property name="edgeAttribute2" value="NAME"/>
         <property name="edgeAttribute3" value="ID"/>
@@ -84,9 +84,6 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
             </list>
         </property>
     </bean>
-
-    <bean id="tvmaze" class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper"
-          parent="myjson" scope="prototype"/>
 
     <bean id="default.protobufedge.table.blacklist.values" class="org.springframework.beans.factory.config.SetFactoryBean">
         <property name="targetSetClass" value="java.util.HashSet"/>
