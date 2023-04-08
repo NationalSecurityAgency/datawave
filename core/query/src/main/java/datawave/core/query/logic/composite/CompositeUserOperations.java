@@ -114,7 +114,7 @@ public class CompositeUserOperations implements UserOperations {
         }
         
         if (currentUser instanceof DatawaveUserDetails) {
-            return AuthorizationsUtil.mergeDatawaveUserDetails((DatawaveUserDetails[]) userDetails.toArray(new ProxiedUserDetails[0]));
+            return AuthorizationsUtil.mergeProxiedUserDetails(DatawaveUserDetails::new, userDetails.toArray(new ProxiedUserDetails[0]));
         } else {
             return AuthorizationsUtil.mergeProxiedUserDetails(DatawavePrincipal::new, userDetails.toArray(new ProxiedUserDetails[0]));
         }
