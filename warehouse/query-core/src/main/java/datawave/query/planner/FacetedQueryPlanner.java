@@ -27,9 +27,6 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-/**
- *
- */
 public class FacetedQueryPlanner extends IndexQueryPlanner {
     
     protected FacetedConfiguration facetedConfig;
@@ -38,9 +35,6 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
     
     boolean usePrecomputedFacets = false;
     
-    /**
-     * @param type
-     */
     public FacetedQueryPlanner(FacetedSearchType type) {
         facetedConfig = new FacetedConfiguration();
         facetedConfig.setType(type);
@@ -141,9 +135,6 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
         return false;
     }
     
-    /**
-     * @param facetedConfig
-     */
     public void setConfiguration(FacetedConfiguration facetedConfig) {
         this.facetedConfig = facetedConfig;
     }

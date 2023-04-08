@@ -14,6 +14,7 @@ import datawave.query.util.QueryScannerHelper;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -78,9 +79,9 @@ public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         TermFrequencyQueryConfiguration config = new TermFrequencyQueryConfiguration(this, settings);
-        config.setConnector(connection);
+        config.setClient(client);
         config.setAuthorizations(auths);
         
         int pos = settings.getQuery().indexOf(':');
@@ -133,7 +134,7 @@ public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
         TermFrequencyQueryConfiguration tfConfig = (TermFrequencyQueryConfiguration) configuration;
         
         try {
-            Scanner scanner = QueryScannerHelper.createScanner(tfConfig.getConnector(), tfConfig.getTableName(), tfConfig.getAuthorizations(),
+            Scanner scanner = QueryScannerHelper.createScanner(tfConfig.getClient(), tfConfig.getTableName(), tfConfig.getAuthorizations(),
                             tfConfig.getQuery());
             scanner.setRange(tfConfig.getRange());
             

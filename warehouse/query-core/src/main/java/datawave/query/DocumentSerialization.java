@@ -47,7 +47,8 @@ public class DocumentSerialization {
      * If a user-supplied ReturnType is specified, use it; otherwise, use the default ReturnType of {@link #DEFAULT_RETURN_TYPE}
      *
      * @param settings
-     * @return
+     *            query settings
+     * @return a return type
      */
     public static ReturnType getReturnType(Query settings) {
         Parameter returnType = settings.findParameter(Constants.RETURN_TYPE);

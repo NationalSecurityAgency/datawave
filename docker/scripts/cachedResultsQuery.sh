@@ -154,7 +154,7 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
         -H "Accept: application/xml" \
         "${CACHEDRESULTS_ENDPOINT}/$VIEW_NAME/getRows?rowBegin=$((TOTAL_PAGES * PAGE_SIZE + 1))&rowEnd=$(((TOTAL_PAGES + 1) * PAGE_SIZE))" -o getRowsResponse_$i.xml -w '%{http_code}\n' >> querySummary.txt
 
-    CONTINUE=`grep 'HTTP/1.1 200 OK' headers_$((i + 3)).txt`
+    CONTINUE=`grep 'HTTP/2 200' headers_$((i + 3)).txt`
 
     if [ -z "$CONTINUE" ]; then
         i=-1

@@ -39,8 +39,8 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.Query;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -130,13 +130,13 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         
         currentIteratorPriority = super.getBaseIteratorPriority() + 30;
         
         EdgeQueryConfiguration config = getConfig().parseParameters(settings);
         
-        config.setConnector(connection);
+        config.setClient(client);
         config.setAuthorizations(auths);
         
         String queryString = getJexlQueryString(settings);
@@ -149,7 +149,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         config.setBeginDate(settings.getBeginDate());
         config.setEndDate(settings.getEndDate());
         
-        scannerFactory = new ScannerFactory(connection);
+        scannerFactory = new ScannerFactory(client);
         
         prefilterValues = null;
         EdgeQueryConfiguration.dateType dateFilterType = config.getDateRangeType();
@@ -158,7 +158,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         
         boolean includeStats = config.includeStats();
         
-        MetadataHelper metadataHelper = prepareMetadataHelper(config.getConnector(), config.getMetadataTableName(), config.getAuthorizations());
+        MetadataHelper metadataHelper = prepareMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations());
         
         loadQueryModel(metadataHelper, config);
         
@@ -311,7 +311,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      * Loads the query model specified by the current configuration, to be applied to the incoming query.
      * 
      * @param helper
+     *            the metadata helper
      * @param config
+     *            the edge query config
      */
     protected void loadQueryModel(MetadataHelper helper, EdgeQueryConfiguration config) {
         String model = config.getModelName() == null ? "" : config.getModelName();
@@ -328,15 +330,18 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     /**
      * Get an instance of MetadataHelper for the given params
      * 
-     * @param connection
+     * @param client
+     *            the client
      * @param metadataTableName
+     *            the metadata table name
      * @param auths
+     *            a set of auths
      * @return MetadataHelper
      */
-    protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths) {
+    protected MetadataHelper prepareMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths) {
         if (log.isTraceEnabled())
-            log.trace("prepareMetadataHelper with " + connection);
-        return metadataHelperFactory.createMetadataHelper(connection, metadataTableName, auths);
+            log.trace("prepareMetadataHelper with " + client);
+        return metadataHelperFactory.createMetadataHelper(client, metadataTableName, auths);
     }
     
     /**
@@ -344,7 +349,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      * translated ASTJexlScript back to a query string using JexlStringBuildingVisitor.
      * 
      * @param queryString
-     * @return
+     *            the query string
+     * @return the query string
      */
     protected String applyQueryModel(String queryString) {
         ASTJexlScript origScript = null;
@@ -366,6 +372,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      *
      * @param queryString
      *            jexl string for the query
+     * @throws ParseException
+     *             for issues with parsing
+     * @return QueryData
      */
     protected Set<Range> configureRanges(String queryString) throws ParseException {
         queryString = EdgeQueryLogic.fixQueryString(queryString);
@@ -391,7 +400,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      * Method to expand the values supplied for SOURCE or SINK into all of the permutations after normalizing
      *
      * @param query
-     * @return
+     *            the query
+     * @param getFullNormalizedQuery
+     *            flag for getting the normalized query
+     * @return VisitationContext
      */
     protected VisitationContext normalizeJexlQuery(String query, boolean getFullNormalizedQuery) {
         if (visitationContext == null) {
@@ -714,12 +726,12 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     }
     
     @Override
-    public void setupQuery(Connector connection, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {
+    public void setupQuery(AccumuloClient client, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {
         EdgeQueryConfiguration config = (EdgeQueryConfiguration) baseConfig;
         baseConfig.setQueries(checkpoint.getQueries());
-        config.setConnector(connection);
+        config.setClient(client);
         
-        scannerFactory = new ScannerFactory(connection);
+        scannerFactory = new ScannerFactory(client);
         
         setupQuery(config);
     }

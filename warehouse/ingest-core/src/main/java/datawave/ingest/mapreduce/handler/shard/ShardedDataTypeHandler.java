@@ -28,6 +28,7 @@ import datawave.ingest.util.BloomFilterUtil;
 import datawave.ingest.util.BloomFilterWrapper;
 import datawave.ingest.util.DiskSpaceStarvationStrategy;
 import datawave.marking.MarkingFunctions;
+import datawave.query.model.Direction;
 import datawave.util.TextUtil;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -55,7 +56,8 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * This class creates the following Mutations or Key/Values: <br>
  * <br>
- * <table border="1" summary="">
+ * <table border="1">
+ * <caption></caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -607,8 +609,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             
             try {
                 // Create and start the stopwatch
-                final Stopwatch stopWatch = Stopwatch.createUnstarted();
-                stopWatch.start();
+                final Stopwatch stopWatch = Stopwatch.createStarted();
                 
                 // Create the bloom filter, which may involve NGram expansion
                 final BloomFilterWrapper result = this.createBloomFilter(fields);

@@ -24,6 +24,7 @@ public class ArithmeticJexlEngines {
      * This convenience method can be used to interpret the result of the script.execute() result.
      * 
      * @param scriptExecuteResult
+     *            the script result
      * @return true if we matched, false otherwise.
      */
     public static boolean isMatched(Object scriptExecuteResult) {
@@ -67,6 +68,8 @@ public class ArithmeticJexlEngines {
     
     /**
      * Returns an modifiable view of the current namespace to function class mappings.
+     * 
+     * @return view of the current namespace
      */
     public static Map<String,Object> functions() {
         return Collections.unmodifiableMap(registeredFunctions);

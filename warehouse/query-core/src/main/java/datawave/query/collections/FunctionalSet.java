@@ -166,6 +166,12 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
     
     /**
      * Returns true if the specified arguments are equal, or both null.
+     * 
+     * @param o1
+     *            the first object
+     * @param o2
+     *            the second object
+     * @return a boolean if the objects are equal
      */
     static boolean eq(Object o1, Object o2) {
         return o1 == null ? o2 == null : o1.equals(o2);

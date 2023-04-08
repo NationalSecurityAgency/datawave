@@ -1,9 +1,9 @@
 package datawave.query.util;
 
 import datawave.util.TableName;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -22,10 +22,7 @@ public class DateIndexTestIngest {
     
     protected String[] rowValues = {"20100704", "20100703"};
     
-    /**
-     *
-     */
-    public static void writeItAll(Connector con) throws Exception {
+    public static void writeItAll(AccumuloClient client) throws Exception {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
@@ -33,7 +30,7 @@ public class DateIndexTestIngest {
         
         try {
             // write the date index table :
-            bw = con.createBatchWriter(TableName.DATE_INDEX, bwConfig);
+            bw = client.createBatchWriter(TableName.DATE_INDEX, bwConfig);
             
             BitSet zeroOne = new BitSet();
             zeroOne.set(0);

@@ -26,8 +26,8 @@ import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.conf.ColumnSet;
-import org.apache.accumulo.core.iterators.conf.ColumnToClassMapping;
+import org.apache.accumulo.core.iteratorsImpl.conf.ColumnSet;
+import org.apache.accumulo.core.iteratorsImpl.conf.ColumnToClassMapping;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.hadoop.conf.Configuration;
@@ -477,6 +477,10 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         }
         
         private static class StubbedIteratorEnvironment implements IteratorEnvironment {
+            
+            // Need this ctor for testing, to overcome javassist.CannotCompileException issue on Java 11
+            StubbedIteratorEnvironment() {}
+            
             @Override
             public AccumuloConfiguration getConfig() {
                 return null;

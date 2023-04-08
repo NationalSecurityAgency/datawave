@@ -2,7 +2,7 @@ FROM centos:centos7
 
 ARG DATAWAVE_COMMIT_ID
 ARG DATAWAVE_BRANCH_NAME
-ARG DATAWAVE_JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
+ARG DATAWAVE_JAVA_HOME
 ARG DATAWAVE_BUILD_PROFILE
 ARG DATAWAVE_SKIP_INGEST=false
 ARG DATAWAVE_SKIP_TESTS=false
@@ -10,7 +10,7 @@ ARG DATAWAVE_SKIP_TESTS=false
 USER root
 
 ENV USER=root
-ENV YARN_IDENT_STRING=root HADOOP_MAPRED_IDENT_STRING=root
+ENV HADOOP_IDENT_STRING=root
 ENV HDFS_NAMENODE_USER=root HDFS_DATANODE_USER=root
 ENV HDFS_SECONDARYNAMENODE_USER=root YARN_RESOURCEMANAGER_USER=root
 ENV YARN_NODEMANAGER_USER=root
@@ -28,7 +28,7 @@ COPY . /opt/datawave
 
 # Install dependencies, configure password-less/zero-prompt SSH...
 
-RUN yum -y install openssl openssh openssh-server openssh-clients openssl-libs which bc wget git java-1.8.0-openjdk-devel  && \
+RUN yum -y install gcc-c++ openssl openssh openssh-server openssh-clients openssl-libs which bc wget git java-11-openjdk-devel iproute  && \
     yum clean all && \
     ssh-keygen -q -N "" -t rsa -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
@@ -66,7 +66,6 @@ RUN rm -f .dockerignore .maven-dockerignore && \
 
 RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
     /bin/bash -c "source ~/.bashrc && allInstall && [ $DATAWAVE_SKIP_TESTS == true ] || (datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop)" && \
-    echo "0.0.0.0" > contrib/datawave-quickstart/accumulo/conf/monitor && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \
     rm -rf contrib/datawave-quickstart/accumulo/logs/* && \

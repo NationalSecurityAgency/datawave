@@ -23,7 +23,6 @@ import datawave.query.function.LogTiming;
 import datawave.query.iterator.profile.EvaluationTrackingFunction;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
-import datawave.query.planner.SeekingQueryPlanner;
 import datawave.util.StringUtils;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.attributes.Document;
@@ -151,9 +150,8 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             if (filterCsv != null && !filterCsv.isEmpty()) {
                 HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
-                if (options.containsKey(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)) {
-                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed,
-                                    Integer.parseInt(options.get(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)));
+                if (options.containsKey(FI_NEXT_SEEK)) {
+                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, getFiNextSeek());
                 } else {
                     this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed);
                 }

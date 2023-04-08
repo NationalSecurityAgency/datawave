@@ -14,6 +14,7 @@ import java.util.Set;
 
 import datawave.ingest.config.BaseHdfsFileCacheUtil;
 import datawave.util.StringUtils;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -141,14 +142,10 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     public void writeCacheFile(FileSystem fs, Path tmpSplitsFile) throws IOException {
         TableOperations tops = null;
         initAccumuloHelper();
-        try {
-            tops = this.accumuloHelper.getConnector().tableOperations();
-        } catch (AccumuloSecurityException | AccumuloException ex) {
-            throw new IOException("Could not get TableOperations", ex);
-        }
-        Set<String> tableNames = getIngestTableNames();
-        Map<String,Integer> splitsPerTable = new HashMap<>();
-        if (tops != null) {
+        try (AccumuloClient client = this.accumuloHelper.newClient()) {
+            tops = client.tableOperations();
+            Set<String> tableNames = getIngestTableNames();
+            Map<String,Integer> splitsPerTable = new HashMap<>();
             try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpSplitsFile)))) {
                 this.splits = new HashMap<>();
                 // gather the splits and write to PrintStream

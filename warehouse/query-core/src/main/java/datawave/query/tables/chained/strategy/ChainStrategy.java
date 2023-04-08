@@ -2,7 +2,7 @@ package datawave.query.tables.chained.strategy;
 
 import datawave.core.query.logic.QueryLogic;
 import datawave.webservice.query.Query;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
 import java.util.Iterator;
@@ -16,6 +16,6 @@ import java.util.Set;
  * 
  */
 public interface ChainStrategy<T1,T2> {
-    Iterator<T2> runChainedQuery(Connector connection, Query initialQuery, Set<Authorizations> auths, Iterator<T1> initialQueryResults,
+    Iterator<T2> runChainedQuery(AccumuloClient client, Query initialQuery, Set<Authorizations> auths, Iterator<T1> initialQueryResults,
                     QueryLogic<T2> latterQueryLogic) throws Exception;
 }

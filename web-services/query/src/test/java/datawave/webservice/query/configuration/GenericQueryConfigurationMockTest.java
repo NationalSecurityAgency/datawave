@@ -3,7 +3,7 @@ package datawave.webservice.query.configuration;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
 import datawave.core.query.logic.BaseQueryLogic;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +32,7 @@ public class GenericQueryConfigurationMockTest {
     BaseQueryLogic<?> baseQueryLogic;
     
     @Mock
-    Connector connector;
+    AccumuloClient client;
     
     @Mock
     GenericQueryConfiguration config;
@@ -74,7 +74,7 @@ public class GenericQueryConfigurationMockTest {
         // Run the test
         PowerMock.replayAll();
         GenericQueryConfiguration subject = new GenericQueryConfiguration() {};
-        subject.setConnector(this.connector);
+        subject.setClient(this.client);
         subject.setAuthorizations(new HashSet<>(Collections.singletonList(this.authorizations)));
         subject.setBeginDate(new Date());
         subject.setEndDate(new Date());

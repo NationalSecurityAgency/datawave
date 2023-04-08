@@ -60,6 +60,9 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     
     private EventDataQueryFilter filter;
     
+    // default implementation
+    protected RangeProvider rangeProvider = new DocumentRangeProvider();
+    
     private boolean includeParent = false;
     
     public KeyToDocumentData(SortedKeyValueIterator<Key,Value> source) {
@@ -100,6 +103,18 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     }
     
     /**
+     * Builder-style method for setting a non-default implementation of a {@link RangeProvider}
+     *
+     * @param rangeProvider
+     *            a {@link RangeProvider}
+     * @return this object
+     */
+    public KeyToDocumentData withRangeProvider(RangeProvider rangeProvider) {
+        this.rangeProvider = rangeProvider;
+        return this;
+    }
+    
+    /**
      * Append hierarchy fields, including parent and descendant counts, based on the specified range and key
      * 
      * @param documentAttributes
@@ -110,6 +125,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      *            the reference event for generating hierarchical fields
      * @return the modified list of document attributes
      * @throws IOException
+     *             for issues with read/write
      */
     public List<Entry<Key,Value>> appendHierarchyFields(final List<Entry<Key,Value>> documentAttributes, final Range range, final Key key) throws IOException {
         return appendHierarchyFields(documentAttributes, key, source, range, countFunction, includeParent);
@@ -120,7 +136,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         // We want to ensure that we have a non-empty colqual
         if (null == from || null == from.getKey() || null == from.getValue())
             return null;
-        Range keyRange = getKeyRange(from);
+        Range keyRange = rangeProvider.getRange(from.getKey());
         
         try {
             
@@ -158,7 +174,9 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      *            the names of generated generated attributes
      * @param keyRange
      *            the Range used to initialize source with seek()
-     * @return
+     * @return list of entries
+     * @throws IOException
+     *             for issues with read/write
      */
     public List<Entry<Key,Value>> collectDocumentAttributes(final Key documentStartKey, final Set<Key> docKeys, final Range keyRange) throws IOException {
         return collectAttributesForDocumentKey(documentStartKey, source, equality, filter, docKeys, keyRange);
@@ -172,7 +190,17 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      *            A Key of the form "bucket type\x00uid: "
      * @param keyRange
      *            the Range used to initialize source with seek()
+     * @param source
+     *            a source
+     * @param equality
+     *            an equality
+     * @param docKeys
+     *            set of keys
+     * @param filter
+     *            a query filter
      * @return the attributes
+     * @throws IOException
+     *             for issues with read/write
      */
     private static List<Entry<Key,Value>> collectAttributesForDocumentKey(Key documentStartKey, SortedKeyValueIterator<Key,Value> source, Equality equality,
                     EventDataQueryFilter filter, Set<Key> docKeys, Range keyRange) throws IOException {
@@ -336,38 +364,5 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         }
         
         return basicChildCount;
-    }
-    
-    /**
-     * Define the start key given the from condition.
-     *
-     * @param from
-     * @return
-     */
-    protected Key getStartKey(Map.Entry<Key,Document> from) {
-        return new Key(from.getKey().getRow(), from.getKey().getColumnFamily());
-    }
-    
-    /**
-     * Define the end key given the from condition.
-     *
-     * @param from
-     * @return
-     */
-    protected Key getStopKey(Map.Entry<Key,Document> from) {
-        return filter == null ? from.getKey().followingKey(PartialKey.ROW_COLFAM) : filter.getStopKey(from.getKey());
-    }
-    
-    /**
-     * Get the key range that covers the complete document specified by the input key range
-     *
-     * @param from
-     * @return
-     */
-    protected Range getKeyRange(Map.Entry<Key,Document> from) {
-        if (filter != null) {
-            return filter.getKeyRange(from);
-        }
-        return new Range(getStartKey(from), true, getStopKey(from), false);
     }
 }

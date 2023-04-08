@@ -12,7 +12,7 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.system.AuthorizationCache;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.security.CacheableManager;
@@ -52,7 +52,7 @@ public class CredentialsCacheBeanTest {
     private Cache<Principal,Principal> cache;
     
     @Deployment
-    public static JavaArchive createDeployment() throws Exception {
+    public static JavaArchive createDeployment() {
         System.setProperty("cdi.bean.context", "springFrameworkBeanRefContext.xml");
         // @formatter:off
         return ShrinkWrap
@@ -64,7 +64,7 @@ public class CredentialsCacheBeanTest {
     }
     
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         // With Arquillian we would normally inject this bean into the test class. However there seems to be
         // an incompatibility with Arquillian and the @Singleton annotation on the bean where any method
         // invoked on the bean throws a NullPointerException. Instead, we instantiate the bean manually and
@@ -90,7 +90,7 @@ public class CredentialsCacheBeanTest {
     }
     
     @After
-    public void tearDown() throws Exception {}
+    public void tearDown() {}
     
     @Test
     public void testFlushAll() {
@@ -102,7 +102,7 @@ public class CredentialsCacheBeanTest {
     }
     
     @Test
-    public void testEvict() throws Exception {
+    public void testEvict() {
         Principal expected = cache.asMap().keySet().stream().filter(p -> p.getName().startsWith("user2")).findFirst().orElse(null);
         assertNotNull(expected);
         assertEquals(3, cache.size());
@@ -112,7 +112,7 @@ public class CredentialsCacheBeanTest {
     }
     
     @Test
-    public void testListDNs() throws Exception {
+    public void testListDNs() {
         ArrayList<String> expectedDns = Lists.newArrayList("user2<issuer2>", "server1<issuer1>", "user1<issuer1>");
         DnList dnList = ccb.listDNs(false);
         assertEquals(3, dnList.getDns().size());
@@ -120,7 +120,7 @@ public class CredentialsCacheBeanTest {
     }
     
     @Test
-    public void testListMatching() throws Exception {
+    public void testListMatching() {
         ArrayList<String> expectedDns = Lists.newArrayList("server1<issuer1>", "user1<issuer1>");
         DnList dnList = ccb.listDNsMatching("issuer1");
         assertEquals(2, dnList.getDns().size());
@@ -128,7 +128,7 @@ public class CredentialsCacheBeanTest {
     }
     
     @Test
-    public void testList() throws Exception {
+    public void testList() {
         DatawaveUser u = ccb.list("user2<issuer2>");
         assertNotNull(u);
         assertEquals("user2<issuer2>", u.getName());
@@ -170,18 +170,17 @@ public class CredentialsCacheBeanTest {
     
     private static class MockAccumuloConnectionFactory implements AccumuloConnectionFactory {
         @Override
-        public Connector getConnection(String userDN, Collection<String> proxiedDNs, Priority priority, Map<String,String> trackingMap) throws Exception {
+        public AccumuloClient getClient(String userDN, Collection<String> proxiedDNs, Priority priority, Map<String,String> trackingMap) {
             return null;
         }
         
         @Override
-        public Connector getConnection(String userDN, Collection<String> proxiedDNs, String poolName, Priority priority, Map<String,String> trackingMap)
-                        throws Exception {
+        public AccumuloClient getClient(String userDN, Collection<String> proxiedDNs, String poolName, Priority priority, Map<String,String> trackingMap) {
             return null;
         }
         
         @Override
-        public void returnConnection(Connector connection) throws Exception {
+        public void returnClient(AccumuloClient client) {
             
         }
         

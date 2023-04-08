@@ -17,9 +17,6 @@ import datawave.webservice.query.map.QueryGeometryResponse;
 import datawave.webservice.result.VoidResponse;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 
 import javax.annotation.PostConstruct;
@@ -29,14 +26,10 @@ import javax.inject.Inject;
 import javax.interceptor.Interceptor;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * Sends query metric updates to a remote microservice.
@@ -54,7 +47,6 @@ public class RemoteQueryMetricService extends RemoteHttpService {
     private static final String SUMMARY_ALL_SUFFIX = "summary/all";
     private static final String SUMMARY_USER_SUFFIX = "summary/user";
     private static final String AUTH_HEADER_NAME = "Authorization";
-    private ObjectReader voidResponseReader;
     private ObjectReader baseQueryMetricListResponseReader;
     private ObjectReader queryGeometryResponseReader;
     private ObjectReader queryMetricsSummaryResponseReader;
@@ -120,7 +112,6 @@ public class RemoteQueryMetricService extends RemoteHttpService {
     public void init() {
         super.init();
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        voidResponseReader = objectMapper.readerFor(VoidResponse.class);
         baseQueryMetricListResponseReader = objectMapper.readerFor(BaseQueryMetricListResponse.class);
         queryGeometryResponseReader = objectMapper.readerFor(QueryGeometryResponse.class);
         queryMetricsSummaryResponseReader = objectMapper.readerFor(QueryMetricsSummaryResponse.class);
@@ -234,30 +225,6 @@ public class RemoteQueryMetricService extends RemoteHttpService {
         return "Bearer " + jwtTokenHandler.createTokenFromUsers(callerPrincipal.getName(), callerPrincipal.getProxiedUsers());
     }
     
-    private <T> T executePostMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        try {
-            return executePostMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
-        } catch (IOException e) {
-            failureCounter.inc();
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-    
-    private <T> T executeGetMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        try {
-            return executeGetMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
-        } catch (IOException e) {
-            failureCounter.inc();
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-    
     @Override
     protected String serviceHost() {
         return serviceHost;
@@ -316,5 +283,10 @@ public class RemoteQueryMetricService extends RemoteHttpService {
     @Override
     protected Counter retryCounter() {
         return retryCounter;
+    }
+    
+    @Override
+    protected Counter failureCounter() {
+        return failureCounter;
     }
 }

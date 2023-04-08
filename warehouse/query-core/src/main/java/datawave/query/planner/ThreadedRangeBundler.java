@@ -103,7 +103,7 @@ public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
      * 
      * @return the new {@link ThreadedRangeBundlerIterator}
      * @throws IllegalStateException
-     *             if {@link ThreadedRangeBundler#iterator()} has already been called once
+     *             if ThreadedRangeBundler has already been called once
      */
     @Override
     public ThreadedRangeBundlerIterator iterator() {

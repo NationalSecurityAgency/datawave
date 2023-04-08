@@ -8,9 +8,11 @@ import datawave.core.query.logic.CheckpointableQueryLogic;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -47,8 +49,8 @@ public abstract class LookupQueryLogic<T> extends BaseQueryLogic<T> implements C
     public abstract Set<String> getContentLookupTerms(MultiValueMap<String,String> lookupTerms);
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
-        return delegateQueryLogic.initialize(connection, settings, runtimeQueryAuthorizations);
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+        return delegateQueryLogic.initialize(client, settings, runtimeQueryAuthorizations);
     }
     
     @Override
@@ -66,9 +68,9 @@ public abstract class LookupQueryLogic<T> extends BaseQueryLogic<T> implements C
     }
     
     @Override
-    public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+    public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception {
-        return delegateQueryLogic.getPlan(connection, settings, runtimeQueryAuthorizations, expandFields, expandValues);
+        return delegateQueryLogic.getPlan(client, settings, runtimeQueryAuthorizations, expandFields, expandValues);
     }
     
     @Override
@@ -334,6 +336,18 @@ public abstract class LookupQueryLogic<T> extends BaseQueryLogic<T> implements C
         return delegateQueryLogic.getLogicDescription();
     }
     
+    @Override
+    public void setCurrentUser(ProxiedUserDetails currentUser) {
+        super.setCurrentUser(currentUser);
+        delegateQueryLogic.setCurrentUser(currentUser);
+    }
+    
+    @Override
+    public void setServerUser(ProxiedUserDetails serverUser) {
+        super.setServerUser(serverUser);
+        delegateQueryLogic.setServerUser(currentUser);
+    }
+    
     public BaseQueryLogic<T> getDelegateQueryLogic() {
         return delegateQueryLogic;
     }
@@ -372,11 +386,11 @@ public abstract class LookupQueryLogic<T> extends BaseQueryLogic<T> implements C
     }
     
     @Override
-    public void setupQuery(Connector connection, GenericQueryConfiguration config, QueryCheckpoint checkpoint) throws Exception {
+    public void setupQuery(AccumuloClient client, GenericQueryConfiguration config, QueryCheckpoint checkpoint) throws Exception {
         if (!isCheckpointable()) {
             throw new UnsupportedOperationException("Cannot setup a query checkpoint because the query logic is not checkpointable.");
         }
         
-        ((CheckpointableQueryLogic) delegateQueryLogic).setupQuery(connection, config, checkpoint);
+        ((CheckpointableQueryLogic) delegateQueryLogic).setupQuery(client, config, checkpoint);
     }
 }

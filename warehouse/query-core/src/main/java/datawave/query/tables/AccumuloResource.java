@@ -1,7 +1,7 @@
 package datawave.query.tables;
 
 import com.google.common.base.Preconditions;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -33,20 +33,20 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
     /**
      * Our connector.
      */
-    private Connector connector;
+    private AccumuloClient client;
     
-    public AccumuloResource(final Connector cxn) {
-        Preconditions.checkNotNull(cxn);
+    public AccumuloResource(final AccumuloClient client) {
+        Preconditions.checkNotNull(client);
         
-        connector = cxn;
+        this.client = client;
     }
     
     public AccumuloResource(final AccumuloResource other) {
         // deep copy
     }
     
-    protected Connector getConnector() {
-        return connector;
+    protected AccumuloClient getClient() {
+        return client;
     }
     
     /*
@@ -67,7 +67,8 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
      * Sets the option on this currently running resource.
      * 
      * @param options
-     * @return
+     *            options to set
+     * @return the resource
      */
     public AccumuloResource setOptions(SessionOptions options) {
         
@@ -90,12 +91,20 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
          * Initializes a resource after it was delegated.
          * 
          * @param clazz
+         *            a class
          * @param baseResource
+         *            a base resource
          * @param tableName
+         *            the table name
          * @param auths
+         *            set of auths
          * @param currentRange
-         * @return
+         *            a current range
+         * @return the set resource
          * @throws TableNotFoundException
+         *             if the table was not found
+         * @param <T>
+         *            type of the class
          */
         public static <T> AccumuloResource initializeResource(Class<T> clazz, AccumuloResource baseResource, final String tableName,
                         final Set<Authorizations> auths, Range currentRange) throws TableNotFoundException {

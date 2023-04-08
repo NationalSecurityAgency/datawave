@@ -20,6 +20,7 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -28,7 +29,9 @@ import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.accumulo.core.file.FileSKVWriter;
 import org.apache.accumulo.core.file.rfile.RFile;
-import org.apache.accumulo.core.file.rfile.bcfile.Compression;
+import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
+import org.apache.accumulo.core.spi.crypto.CryptoService;
+import org.apache.accumulo.core.spi.file.rfile.compression.NoCompression;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -47,6 +50,8 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+
+import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
 public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
     
@@ -245,7 +250,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     
     protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf) throws IOException {
         startWriteTime = System.currentTimeMillis();
-        return new SizeTrackingWriter(FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf).withTableConfiguration(tableConf).build());
+        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, tableConf.getAllCryptoProperties());
+        return new SizeTrackingWriter(
+                        FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf, cs).withTableConfiguration(tableConf).build());
     }
     
     /**
@@ -359,8 +366,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     // get the sequence file block file size to use
     protected int getSeqFileBlockSize() {
         if (!tableConfigs.isEmpty()) {
-            return (int) tableConfigs.values().iterator().next().getMemoryInBytes(Property.TABLE_FILE_COMPRESSED_BLOCK_SIZE);
-            
+            return (int) tableConfigs.values().iterator().next().getAsBytes(Property.TABLE_FILE_COMPRESSED_BLOCK_SIZE);
         } else {
             return 0;
         }
@@ -402,7 +408,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             } else {
                 ConfigurationCopy tableConfig = new ConfigurationCopy(properties);
                 tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(),
-                                (compressionTableBlackList.contains(tableName) ? Compression.COMPRESSION_NONE : compressionType));
+                                (compressionTableBlackList.contains(tableName) ? new NoCompression().getName() : compressionType));
                 
                 // the locality groups feature is broken and will be removed in a future MR
                 if (Iterables.contains(localityGroupTables, tableName)) {
@@ -566,8 +572,10 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     Path path = entry.getValue();
                     String table = writerTableNames.get(entry.getKey());
                     try {
-                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf).withTableConfiguration(tableConfigs.get(table))
-                                        .build();
+                        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
+                                        context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
+                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf, cs)
+                                        .withTableConfiguration(tableConfigs.get(table)).build();
                         FileStatus fileStatus = fs.getFileStatus(path);
                         long fileSize = fileStatus.getLen();
                         openReader.close();
@@ -647,7 +655,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     /**
      * Read in the sequence file (that was created at job startup) for the given table that contains a list of shard IDs and the corresponding tablet server to
      * which that shard is assigned.
-     * 
+     *
      * @param tableName
      *            the table name
      * @return a mapping of the shard ids and tablet server

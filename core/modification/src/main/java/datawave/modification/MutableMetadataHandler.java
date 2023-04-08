@@ -33,11 +33,11 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
@@ -302,12 +302,12 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     
     // Default the insert history option to true so that the call remains backwards compatible.
     @Override
-    public void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
+    public void process(AccumuloClient client, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
                     Collection<? extends DatawaveUser> proxiedUsers) throws Exception {
-        this.process(con, request, mutableFieldList, userAuths, proxiedUsers, false, true);
+        this.process(client, request, mutableFieldList, userAuths, proxiedUsers, false, true);
     }
     
-    public void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
+    public void process(AccumuloClient client, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
                     Collection<? extends DatawaveUser> proxiedUsers, boolean purgeIndex, boolean insertHistory) throws Exception {
         
         DatawavePrincipal principal = new DatawavePrincipal(proxiedUsers, System.currentTimeMillis());
@@ -320,9 +320,9 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         }
         
         String fieldName = mr.getFieldName();
-        MetadataHelper helper = getMetadataHelper(con);
+        MetadataHelper helper = getMetadataHelper(client);
         MODE mode = mr.getMode();
-        MultiTableBatchWriter writer = con
+        MultiTableBatchWriter writer = client
                         .createMultiTableBatchWriter(new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1048576L).setMaxWriteThreads(4));
         try {
             for (EventIdentifier e : mr.getEvents()) {
@@ -352,11 +352,11 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 if ((isIndexed || isReverseIndexed || isIndexOnly) && (null == dataTypes || dataTypes.isEmpty()))
                     throw new IllegalStateException("Field " + fieldName + " is marked index only but has no dataTypes");
                 
-                long origTimestamp = getOriginalEventTimestamp(con, userAuths, shardId, datatype, eventUid);
+                long origTimestamp = getOriginalEventTimestamp(client, userAuths, shardId, datatype, eventUid);
                 
                 // Count the history entries if history is going to be inserted.
                 if (insertHistory && (MODE.INSERT.equals(mode) || MODE.UPDATE.equals(mode))) {
-                    List<Pair<Key,Value>> fieldHistoryList = getField(con, userAuths, shardId, datatype, eventUid, "HISTORY_" + fieldName, null,
+                    List<Pair<Key,Value>> fieldHistoryList = getField(client, userAuths, shardId, datatype, eventUid, "HISTORY_" + fieldName, null,
                                     new HashMap<>(), null);
                     
                     for (Pair<Key,Value> p : fieldHistoryList) {
@@ -386,7 +386,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     }
                     
                     // find the current values
-                    currentEntryList = getField(con, userAuths, shardId, datatype, eventUid, fieldName, oldFieldValue, oldFieldMarkings, oldViz);
+                    currentEntryList = getField(client, userAuths, shardId, datatype, eventUid, fieldName, oldFieldValue, oldFieldMarkings, oldViz);
                     if (oldFieldValue != null && currentEntryList.isEmpty()) {
                         throw new IllegalArgumentException("Modification request rejected. Current value of " + fieldName + " does not match submitted value.");
                     }
@@ -406,10 +406,10 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     insert(writer, shardId, datatype, eventUid, fieldMarkings, colviz, fieldName, fieldValue, isIndexOnly, isIndexed, isReverseIndexed,
                                     dataTypes, user, MODE.INSERT, origTimestamp + valHistoryCount, insertHistory);
                 } else if (MODE.DELETE.equals(mode)) {
-                    delete(writer, con, userAuths, currentEntryList, isIndexOnly, isIndexed, isReverseIndexed, isContent, dataTypes, user, MODE.DELETE,
+                    delete(writer, client, userAuths, currentEntryList, isIndexOnly, isIndexed, isReverseIndexed, isContent, dataTypes, user, MODE.DELETE,
                                     origTimestamp + valHistoryCount, purgeIndex, insertHistory);
                 } else {
-                    delete(writer, con, userAuths, currentEntryList, isIndexOnly, isIndexed, isReverseIndexed, isContent, dataTypes, user, MODE.UPDATE,
+                    delete(writer, client, userAuths, currentEntryList, isIndexOnly, isIndexed, isReverseIndexed, isContent, dataTypes, user, MODE.UPDATE,
                                     origTimestamp + valHistoryCount, purgeIndex, insertHistory);
                     String fieldValue = mr.getFieldValue();
                     Map<String,String> fieldMarkings = mr.getFieldMarkings();
@@ -431,21 +431,39 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * Insert new field value with provided timestamp
      * 
      * @param writer
+     *            the batch writer
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
      * @param viz
+     *            the column visibility
      * @param fieldName
+     *            field name string
      * @param fieldValue
+     *            field value string
      * @param timestamp
+     *            timestamp
      * @param isIndexed
+     *            boolean flag for isIndexed
      * @param isReverseIndexed
+     *            boolean flag for isReverseIndexed
      * @param dataTypes
+     *            set of datatypes
      * @param historicalValue
+     *            historical value flag
      * @param insertHistory
+     *            flag for insertHistory
      * @param user
+     *            the user string
      * @param mode
+     *            the mode
+     * @param isIndexOnlyField
+     *            isIndexOnlyField
      * @throws Exception
+     *             if there are issues
      */
     protected void insert(MultiTableBatchWriter writer, String shardId, String datatype, String eventUid, ColumnVisibility viz, String fieldName,
                     String fieldValue, long timestamp, boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed, Set<Type<?>> dataTypes,
@@ -520,22 +538,37 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     
     /**
      * Prepares the value to be inserted as history, then calls insert
-     * 
+     *
      * @param writer
+     *            the batch writer
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
      * @param viz
+     *            the column visibility
      * @param fieldName
+     *            field name string
      * @param fieldValue
+     *            field value string
      * @param timestamp
-     * @param isIndexOnlyField
+     *            timestamp
      * @param isIndexed
+     *            boolean flag for isIndexed
      * @param isReverseIndexed
+     *            boolean flag for isReverseIndexed
      * @param dataTypes
+     *            set of datatypes
      * @param user
+     *            the user string
      * @param mode
+     *            the mode
+     * @param isIndexOnlyField
+     *            isIndexOnlyField
      * @throws Exception
+     *             if there are issues
      */
     protected void insertHistory(MultiTableBatchWriter writer, String shardId, String datatype, String eventUid, ColumnVisibility viz, String fieldName,
                     String fieldValue, long timestamp, boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed, Set<Type<?>> dataTypes,
@@ -565,19 +598,41 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     
     /**
      * Insert new field value with original event timestamp
-     * 
+     *
      * @param writer
+     *            the batch writer
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
+     * @param viz
+     *            the column visibility
      * @param fieldName
+     *            field name string
      * @param fieldValue
+     *            field value string
+     * @param isIndexOnlyField
+     *            isIndexOnlyField
+     * @param insertHistory
+     *            insert history flag
+     * @param markings
+     *            markings
+     * @param ts
+     *            timestamp
      * @param isIndexed
+     *            boolean flag for isIndexed
      * @param isReverseIndexed
+     *            boolean flag for isReverseIndexed
      * @param dataTypes
+     *            set of datatypes
      * @param user
+     *            the user string
      * @param mode
+     *            the mode
      * @throws Exception
+     *             if there are issues
      */
     protected void insert(MultiTableBatchWriter writer, String shardId, String datatype, String eventUid, Map<String,String> markings, ColumnVisibility viz,
                     String fieldName, String fieldValue, boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed, Set<Type<?>> dataTypes,
@@ -598,20 +653,37 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * Delete the current K,V from the event, put in a history element
      *
      * @param writer
+     *            the batch writer
      * @param currentEntryList
+     *            the current entry list
      * @param isIndexed
+     *            boolean flag for isIndexed
      * @param isReverseIndexed
+     *            boolean flag for isReverseIndexed
      * @param isContentField
+     *            boolean flag for isContentField
      * @param dataTypes
+     *            set of datatypes
      * @param user
+     *            the user string
      * @param mode
+     *            the mode
+     * @param isIndexOnlyField
+     *            isIndexOnlyField
+     * @param client
+     *            a client
+     * @param userAuths
+     *            userAuths
      * @param ts
+     *            the timestamp
      * @param purgeTokens
      *            If set true, then this will delete all tokens for a field as well.
      * @param insertHistory
+     *            flag to insert history
      * @throws Exception
+     *             if there are issues
      */
-    protected void delete(MultiTableBatchWriter writer, Connector con, Set<Authorizations> userAuths, List<Pair<Key,Value>> currentEntryList,
+    protected void delete(MultiTableBatchWriter writer, AccumuloClient client, Set<Authorizations> userAuths, List<Pair<Key,Value>> currentEntryList,
                     boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed, boolean isContentField, Set<Type<?>> dataTypes, String user,
                     MODE mode, long ts, boolean purgeTokens, boolean insertHistory) throws Exception {
         
@@ -645,7 +717,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 
                 // Remove the content column
                 if (isContentField) {
-                    ContentIterable dKeys = getContentKeys(con, this.getEventTableName(), userAuths, shardId, key.getDataType(), key.getUid());
+                    ContentIterable dKeys = getContentKeys(client, this.getEventTableName(), userAuths, shardId, key.getDataType(), key.getUid());
                     try {
                         for (Key dKey : dKeys) {
                             e.putDelete(dKey.getColumnFamily(), dKey.getColumnQualifier(), dKey.getColumnVisibilityParsed(), dKey.getTimestamp());
@@ -657,7 +729,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 
                 long tsToDay = (ts / MS_PER_DAY) * MS_PER_DAY;
                 
-                FieldIndexIterable fiKeys = getFieldIndexKeys(con, this.getEventTableName(), userAuths, shardId, key.getDataType(), key.getUid(),
+                FieldIndexIterable fiKeys = getFieldIndexKeys(client, this.getEventTableName(), userAuths, shardId, key.getDataType(), key.getUid(),
                                 key.getFieldName(), key.getFieldValue(), dataTypes, purgeTokens);
                 try {
                     for (Key fiKey : fiKeys) {
@@ -717,20 +789,30 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     /**
      * Get the Key,Value pair for the field to be updated/deleted from the event table
      * 
-     * @param con
+     * @param client
+     *            the client
      * @param userAuths
+     *            set of user auths
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
      * @param fieldName
+     *            field name string
      * @param oldFieldValue
+     *            old field value
      * @param oldFieldMarkings
+     *            the old field markings
      * @param oldColumnVisibility
-     * @return
+     *            the old column visibility
+     * @return the Key,Value pair for the field to be updated/deleted from the event table
      * @throws Exception
+     *             if there are issues
      */
-    protected List<Pair<Key,Value>> getField(Connector con, Set<Authorizations> userAuths, String shardId, String datatype, String eventUid, String fieldName,
-                    String oldFieldValue, Map<String,String> oldFieldMarkings, ColumnVisibility oldColumnVisibility) throws Exception {
+    protected List<Pair<Key,Value>> getField(AccumuloClient client, Set<Authorizations> userAuths, String shardId, String datatype, String eventUid,
+                    String fieldName, String oldFieldValue, Map<String,String> oldFieldMarkings, ColumnVisibility oldColumnVisibility) throws Exception {
         
         Text family = new Text(datatype);
         TextUtil.textAppend(family, eventUid);
@@ -744,7 +826,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         
         List<Pair<Key,Value>> results = new ArrayList<>();
         
-        Scanner s = ScannerHelper.createScanner(con, this.getEventTableName(), userAuths);
+        Scanner s = ScannerHelper.createScanner(client, this.getEventTableName(), userAuths);
         try {
             s.setRange(new Range(shardId));
             if (qualifier == null) {
@@ -786,16 +868,23 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     /**
      * Pulls the entire event and returns the most common timestamp for the event. This *assumes* the most common timestamp is the original one. If this is not
      * the case, then it needs to change. Another option could be to return the earliest timestamp, which is also an assumption.
-     * 
-     * @param con
+     *
+     * @param client
+     *            the client
      * @param userAuths
+     *            set of user auths
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
      * @return long - highestOccurrenceTimestamp - most common timestamp in the event
      * @throws Exception
+     *             if there are issues
      */
-    protected long getOriginalEventTimestamp(Connector con, Set<Authorizations> userAuths, String shardId, String datatype, String eventUid) throws Exception {
+    protected long getOriginalEventTimestamp(AccumuloClient client, Set<Authorizations> userAuths, String shardId, String datatype, String eventUid)
+                    throws Exception {
         
         Text family = new Text(datatype);
         TextUtil.textAppend(family, eventUid);
@@ -806,7 +895,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         int highestOccurrences = -1;
         
         // Pull the entire event
-        Scanner s = ScannerHelper.createScanner(con, this.getEventTableName(), userAuths);
+        Scanner s = ScannerHelper.createScanner(client, this.getEventTableName(), userAuths);
         try {
             s.setRange(new Range(shardId));
             s.fetchColumnFamily(family);
@@ -845,25 +934,34 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     /**
      * Get an instance of a MetadataHelper object
      * 
-     * @param con
-     * @return
+     * @param client
+     *            the client
+     * @return instance of a MetadataHelper object
      * @throws AccumuloException
+     *             for issues with accumulo
      * @throws AccumuloSecurityException
-     * @throws ExecutionException
+     *             for accumulo authentication issues
      * @throws TableNotFoundException
+     *             if the table is not found
+     * @throws ExecutionException
+     *             for execution exceptions
      */
-    protected MetadataHelper getMetadataHelper(Connector con) throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
-        Authorizations auths = con.securityOperations().getUserAuthorizations(con.whoami());
-        return metadataHelperFactory.createMetadataHelper(con, this.getMetadataTableName(), Collections.singleton(auths));
+    protected MetadataHelper getMetadataHelper(AccumuloClient client)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
+        Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
+        return metadataHelperFactory.createMetadataHelper(client, this.getMetadataTableName(), Collections.singleton(auths));
     }
     
     /**
      * Check to see if a field is mutable
      * 
      * @param mutableFieldList
+     *            a mutable field list map
      * @param datatype
+     *            the datatype
      * @param fieldName
-     * @return
+     *            field name string
+     * @return if a field is mutable
      */
     protected boolean isFieldMutable(Map<String,Set<String>> mutableFieldList, String datatype, String fieldName) {
         if (null == mutableFieldList)
@@ -885,10 +983,16 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * Finds the event by creating a query by UUID from the keys and values in the runtime parameters.
      * 
      * @param uuid
+     *            the uuid
      * @param uuidType
+     *            type of uuid
+     * @param operation
+     *            operation
      * @param userAuths
+     *            set of user auths
      * @return Event
      * @throws Exception
+     *             if there are issues
      */
     protected EventBase<?,?> findMatchingEventUuid(String uuid, String uuidType, Set<Authorizations> userAuths, ModificationOperation operation,
                     Collection<? extends DatawaveUser> proxiedUsers) throws Exception {
@@ -956,21 +1060,31 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * Find the field index keys associated with a specified field and a specified event. Note that this will return all keys for that field and configured
      * token fields if includeTokens is true.
      *
-     * @param con
+     * @param client
+     *            the connector
      * @param shardTable
+     *            shard table name
      * @param userAuths
+     *            set of user auths
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
      * @param fieldName
+     *            the field name string
      * @param fieldValue
+     *            field value string
      * @param dataTypes
+     *            set of datatypes
      * @param includeTokens
      *            If true then this will return all associated token fields as well
      * @return An iterable of Keys
      * @throws Exception
+     *             if there are issues
      */
-    protected FieldIndexIterable getFieldIndexKeys(Connector con, String shardTable, Set<Authorizations> userAuths, String shardId, String datatype,
+    protected FieldIndexIterable getFieldIndexKeys(AccumuloClient client, String shardTable, Set<Authorizations> userAuths, String shardId, String datatype,
                     String eventUid, String fieldName, String fieldValue, Set<Type<?>> dataTypes, boolean includeTokens) throws Exception {
         
         List<Range> ranges = new ArrayList();
@@ -1002,16 +1116,16 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 ranges.add(range);
             }
         }
-        return new FieldIndexIterable(con, shardTable, eventUid, datatype, userAuths, ranges);
+        return new FieldIndexIterable(client, shardTable, eventUid, datatype, userAuths, ranges);
     }
     
     protected static class FieldIndexIterable implements Iterable<Key>, AutoCloseable {
         private BatchScanner scanner;
         
-        public FieldIndexIterable(Connector con, String shardTable, String eventUid, String datatype, Set<Authorizations> userAuths, List<Range> ranges)
+        public FieldIndexIterable(AccumuloClient client, String shardTable, String eventUid, String datatype, Set<Authorizations> userAuths, List<Range> ranges)
                         throws TableNotFoundException {
             if (!ranges.isEmpty()) {
-                scanner = ScannerHelper.createBatchScanner(con, shardTable, userAuths, ranges.size());
+                scanner = ScannerHelper.createBatchScanner(client, shardTable, userAuths, ranges.size());
                 scanner.setRanges(ranges);
                 Map<String,String> options = new HashMap();
                 options.put(FieldIndexDocumentFilter.DATA_TYPE_OPT, datatype);
@@ -1057,30 +1171,37 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     /**
      * Find the index only keys associated with a specified field and a specified event
      *
-     * @param con
+     * @param client
+     *            the client
      * @param shardTable
+     *            shard table name
      * @param userAuths
+     *            set of user auths
      * @param shardId
+     *            the shard id
      * @param datatype
+     *            the datatype
      * @param eventUid
+     *            the event uid
      * @return An iterable of Keys
      * @throws Exception
+     *             if there are issues
      */
-    protected ContentIterable getContentKeys(Connector con, String shardTable, Set<Authorizations> userAuths, String shardId, String datatype, String eventUid)
-                    throws Exception {
+    protected ContentIterable getContentKeys(AccumuloClient client, String shardTable, Set<Authorizations> userAuths, String shardId, String datatype,
+                    String eventUid) throws Exception {
         
         Key startKey = new Key(shardId, "d", datatype + NULL_BYTE + eventUid + NULL_BYTE);
         Key endKey = new Key(shardId, "d", datatype + NULL_BYTE + eventUid + NULL_BYTE + MAX_CHAR);
         Range range = new Range(startKey, true, endKey, false);
-        return new ContentIterable(con, shardTable, eventUid, datatype, userAuths, range);
+        return new ContentIterable(client, shardTable, eventUid, datatype, userAuths, range);
     }
     
     protected static class ContentIterable implements Iterable<Key>, AutoCloseable {
         private Scanner scanner;
         
-        public ContentIterable(Connector con, String shardTable, String eventUid, String datatype, Set<Authorizations> userAuths, Range range)
+        public ContentIterable(AccumuloClient client, String shardTable, String eventUid, String datatype, Set<Authorizations> userAuths, Range range)
                         throws TableNotFoundException {
-            scanner = ScannerHelper.createScanner(con, shardTable, userAuths);
+            scanner = ScannerHelper.createScanner(client, shardTable, userAuths);
             scanner.setRange(range);
         }
         

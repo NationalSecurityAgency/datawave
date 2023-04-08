@@ -107,7 +107,7 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
         -H "Accept: application/xml" \
         ${DATAWAVE_ENDPOINT}/$QUERY_ID/next -o nextResponse_$i.xml -w '%{http_code}\n' >> querySummary.txt
 
-    CONTINUE=`grep 'HTTP/1.1 200 OK' headers_$i.txt`
+    CONTINUE=`grep 'HTTP/2 200' headers_$i.txt`
 
     if [ -z "$CONTINUE" ]; then
         i=-1

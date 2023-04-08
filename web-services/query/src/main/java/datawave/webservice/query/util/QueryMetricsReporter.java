@@ -15,14 +15,11 @@ import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.util.cli.PasswordConverter;
 
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -157,23 +154,9 @@ public class QueryMetricsReporter {
             return 2;
         }
         
-        // Connect to Accumulo
-        ZooKeeperInstance zkInstance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zookeepers));
-        Connector connector;
-        try {
-            connector = zkInstance.getConnector(username, new PasswordToken(password));
-        } catch (AccumuloException e) {
-            log.error("Could not obtain connector to Accumulo due to AccumuloException: " + e.getMessage(), e);
-            
-            return 1;
-        } catch (AccumuloSecurityException e) {
-            log.error("Could not obtain connector to Accumulo due to AccumuloSecurityException: " + e.getMessage(), e);
-            
-            return 1;
-        }
-        
         // Open up a BatchScanner to the QueryMetrics table
-        try (BatchScanner bs = connector.createBatchScanner(tableName, Authorizations.EMPTY, 8)) {
+        try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, new PasswordToken(password)).build();
+                        BatchScanner bs = client.createBatchScanner(tableName, Authorizations.EMPTY, 8)) {
             // Set a range for the entire table
             Range r = null;
             if (null == queryUser)

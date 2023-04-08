@@ -1,7 +1,7 @@
 package datawave.core.query.logic;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 
 import java.util.List;
 
@@ -45,7 +45,7 @@ public interface CheckpointableQueryLogic {
      * Implementations use the configuration to setup execution of a portion of their query. getTransformIterator should be used to get the partial results if
      * any.
      *
-     * @param connection
+     * @param client
      *            - The accumulo connector
      * @param config
      *            - The query configuration
@@ -54,6 +54,6 @@ public interface CheckpointableQueryLogic {
      * @throws Exception
      *             on failure
      */
-    void setupQuery(Connector connection, GenericQueryConfiguration config, QueryCheckpoint checkpoint) throws Exception;
+    void setupQuery(AccumuloClient client, GenericQueryConfiguration config, QueryCheckpoint checkpoint) throws Exception;
     
 }

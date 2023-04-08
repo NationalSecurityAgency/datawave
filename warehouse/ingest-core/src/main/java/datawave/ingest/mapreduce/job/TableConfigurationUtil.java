@@ -10,6 +10,7 @@ import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.iterators.PropogatingIterator;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.NamespaceExistsException;
@@ -219,11 +220,12 @@ public class TableConfigurationUtil {
      * @return boolean of if the tables were configured
      */
     public boolean configureTables(Configuration conf) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-        // Check to see if the tables exist
-        TableOperations tops = accumuloHelper.getConnector().tableOperations();
-        NamespaceOperations namespaceOperations = accumuloHelper.getConnector().namespaceOperations();
-        createAndConfigureTablesIfNecessary(getJobOutputTableNames(conf), tops, namespaceOperations, conf, log, false);
-        
+        try (AccumuloClient client = accumuloHelper.newClient()) {
+            // Check to see if the tables exist
+            TableOperations tops = client.tableOperations();
+            NamespaceOperations namespaceOperations = client.namespaceOperations();
+            createAndConfigureTablesIfNecessary(getJobOutputTableNames(conf), tops, namespaceOperations, conf, log, false);
+        }
         return true;
     }
     
@@ -462,42 +464,45 @@ public class TableConfigurationUtil {
         String propertyRegex = null;
         Pattern pattern = null;
         Map<String,Map<String,String>> configMap = new HashMap<>();
-        TableOperations tops = accumuloHelper.getConnector().tableOperations();
         
-        String[] propertiesToCache = getTablePropertiesToCache(conf);
-        Set<String> tableNames = getTablesToAddToCache(conf);
-        
-        if (null != propertiesToCache && propertiesToCache.length > 0) {
-            propertyRegex = String.join("|", propertiesToCache);
-            pattern = Pattern.compile(propertyRegex);
-        }
-        
-        // if no table names are specified, assume we should cache properties for all of them
-        if (null == tableNames || tableNames.isEmpty()) {
-            tableNames = tops.tableIdMap().keySet();
-        }
-        
-        for (String table : tableNames) {
-            Map<String,String> tempmap = new HashMap<>();
-            Iterator it = tops.getProperties(table).iterator();
+        try (AccumuloClient client = accumuloHelper.newClient()) {
+            TableOperations tops = client.tableOperations();
             
-            while (it.hasNext()) {
-                Map.Entry<String,String> entry = (Map.Entry) it.next();
-                if (null != entry.getValue() && !entry.getValue().isEmpty()) {
-                    if (null != pattern) {
-                        Matcher m = pattern.matcher(entry.getKey());
-                        if (m.find()) {
+            String[] propertiesToCache = getTablePropertiesToCache(conf);
+            Set<String> tableNames = getTablesToAddToCache(conf);
+            
+            if (null != propertiesToCache && propertiesToCache.length > 0) {
+                propertyRegex = String.join("|", propertiesToCache);
+                pattern = Pattern.compile(propertyRegex);
+            }
+            
+            // if no table names are specified, assume we should cache properties for all of them
+            if (null == tableNames || tableNames.isEmpty()) {
+                tableNames = tops.tableIdMap().keySet();
+            }
+            
+            for (String table : tableNames) {
+                Map<String,String> tempmap = new HashMap<>();
+                Iterator it = tops.getProperties(table).iterator();
+                
+                while (it.hasNext()) {
+                    Map.Entry<String,String> entry = (Map.Entry) it.next();
+                    if (null != entry.getValue() && !entry.getValue().isEmpty()) {
+                        if (null != pattern) {
+                            Matcher m = pattern.matcher(entry.getKey());
+                            if (m.find()) {
+                                tempmap.put(entry.getKey(), entry.getValue().replaceAll("\n|\r", ""));
+                            }
+                        }
+                        // if we haven't limited the properties we want to cache, add them all
+                        else {
                             tempmap.put(entry.getKey(), entry.getValue().replaceAll("\n|\r", ""));
                         }
                     }
-                    // if we haven't limited the properties we want to cache, add them all
-                    else {
-                        tempmap.put(entry.getKey(), entry.getValue().replaceAll("\n|\r", ""));
-                    }
+                    
                 }
-                
+                configMap.put(table, tempmap);
             }
-            configMap.put(table, tempmap);
         }
         
         return configMap;

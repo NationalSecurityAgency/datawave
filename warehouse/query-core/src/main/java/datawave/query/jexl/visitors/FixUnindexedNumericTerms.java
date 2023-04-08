@@ -39,8 +39,12 @@ public class FixUnindexedNumericTerms extends RebuildingVisitor {
      * Change string literals to numeric literals for comparisons with unindexed fields (where possible)
      *
      * @param config
+     *            a config
      * @param script
-     * @return
+     *            a script
+     * @param <T>
+     *            type of node
+     * @return a jexl node
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T fixNumerics(ShardQueryConfiguration config, T script) {

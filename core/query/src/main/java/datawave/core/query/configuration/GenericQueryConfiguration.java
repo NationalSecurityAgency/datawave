@@ -3,13 +3,12 @@ package datawave.core.query.configuration;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.Iterators;
+import datawave.core.common.util.EnvProvider;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.util.TableName;
 import datawave.webservice.query.Query;
-
-import datawave.core.common.util.EnvProvider;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 
 import javax.xml.bind.annotation.XmlTransient;
@@ -39,7 +38,7 @@ public abstract class GenericQueryConfiguration implements Serializable {
     // is this execution expected to be checkpointable (changes how we allocate ranges to scanners)
     private boolean checkpointable = false;
     
-    private transient Connector connector = null;
+    private transient AccumuloClient client = null;
     
     // This is just used for (de)serialization
     private Set<String> auths = Collections.emptySet();
@@ -97,7 +96,7 @@ public abstract class GenericQueryConfiguration implements Serializable {
         this.setAccumuloPassword(genericConfig.getAccumuloPassword());
         this.setAuthorizations(genericConfig.getAuthorizations());
         this.setBeginDate(genericConfig.getBeginDate());
-        this.setConnector(genericConfig.getConnector());
+        this.setClient(genericConfig.getClient());
         this.setEndDate(genericConfig.getEndDate());
         this.setMaxWork(genericConfig.getMaxWork());
         this.setQueries(genericConfig.getQueries());
@@ -147,12 +146,12 @@ public abstract class GenericQueryConfiguration implements Serializable {
     
     @JsonIgnore
     @XmlTransient
-    public Connector getConnector() {
-        return connector;
+    public AccumuloClient getClient() {
+        return client;
     }
     
-    public void setConnector(Connector connector) {
-        this.connector = connector;
+    public void setClient(AccumuloClient client) {
+        this.client = client;
     }
     
     public Query getQuery() {
@@ -272,7 +271,7 @@ public abstract class GenericQueryConfiguration implements Serializable {
      */
     public boolean canRunQuery() {
         // Ensure we were given connector and authorizations
-        if (null == this.getConnector() || null == this.getAuthorizations()) {
+        if (null == this.getClient() || null == this.getAuthorizations()) {
             return false;
         }
         

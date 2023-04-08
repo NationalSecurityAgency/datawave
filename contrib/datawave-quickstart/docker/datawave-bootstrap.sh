@@ -5,11 +5,7 @@ source ~/.bashrc
 # If DW_CONTAINER_HOST is defined update Accumulo and Hadoop bind hosts
 if [ ! -z "${DW_CONTAINER_HOST}" ] && [ "${DW_CONTAINER_HOST}" != "localhost" ] ; then
    # Update Accumulo bind hosts
-   sed -i'' -e "s/localhost/${DW_CONTAINER_HOST}/g" ${ACCUMULO_HOME}/conf/gc
-   sed -i'' -e "s/localhost/${DW_CONTAINER_HOST}/g" ${ACCUMULO_HOME}/conf/masters
-   sed -i'' -e "s/localhost/${DW_CONTAINER_HOST}/g" ${ACCUMULO_HOME}/conf/monitor
-   sed -i'' -e "s/localhost/${DW_CONTAINER_HOST}/g" ${ACCUMULO_HOME}/conf/slaves
-   sed -i'' -e "s/localhost/${DW_CONTAINER_HOST}/g" ${ACCUMULO_HOME}/conf/tracers
+   sed -i'' -e "s/localhost/${DW_CONTAINER_HOST}/g" ${ACCUMULO_HOME}/conf/cluster.yaml
 
    # Create hadoop client configs
    mkdir -p ${HADOOP_HOME}/client/conf

@@ -151,6 +151,20 @@
         <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
 
+    <!-- Here is an example of configuring a remote user operations service if needed for a remote event query -->
+    <bean id="MyRemoteUserOps" class="datawave.security.authorization.remote.RemoteUserOperationsImpl">
+        <property name="queryServiceScheme" value="https" />
+        <property name="queryServiceHost" value="localhost" />
+        <property name="queryServicePort" value="8443" />
+        <property name="queryServiceURI" value="/DataWave/Security/User/" />
+        <property name="responseObjectFactory" ref="responseObjectFactory" />
+    </bean>
+
+    <!-- Configure the remote operation here for use by the local UserOperationsBean -->
+    <util:list id="RemoteUserOperationsList" value-type="datawave.security.authorization.UserOperations">
+        <!--ref bean="MyRemoteUserOps"/-->
+    </util:list>
+
     <!-- Here is an example of configuring a remote query service and a remote event query -->
     <bean id="RemoteQueryService" class="datawave.webservice.query.remote.RemoteQueryServiceImpl">
         <property name="queryServiceScheme" value="https" />
@@ -169,6 +183,7 @@
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
         <property name="remoteQueryService" ref="RemoteQueryService" />
         <property name="remoteQueryLogic" value="EventQuery" />
+        <property name="userOperations" ref="MyRemoteUserOps" />
     </bean>
 
     <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.tables.ShardQueryLogic" abstract="true">
@@ -545,6 +560,7 @@
         <property name="facetTableName" value="${table.name.facet}" />
         <property name="facetMetadataTableName" value="${table.name.facet.metadata}" />
         <property name="facetHashTableName" value="${table.name.facet.hashes}" />
+        <property name="fullTableScanEnabled" value="false" />
         <property name="maximumFacetGrouping" value="200" />
         <property name="minimumFacet" value="1" />
         <property name="streaming" value="true" />

@@ -9,8 +9,6 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.MaxExpandCityFields;
-
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -53,7 +51,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     public MaxExpansionRegexQueryTest() {
@@ -124,6 +122,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
      * </ul>
      * 
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testMaxValueAnyField() throws Exception {
@@ -250,6 +249,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
      * This tests a query without an intersection such that when we force the ivarators to fail with a maxResults setting of 1, the query will fail.
      *
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testMaxIvaratorResultsFailsQuery() throws Exception {
@@ -306,6 +306,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
      * still complete.
      *
      * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testMaxIvaratorResults() throws Exception {

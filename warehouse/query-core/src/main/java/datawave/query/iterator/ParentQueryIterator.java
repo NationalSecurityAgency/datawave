@@ -7,8 +7,10 @@ import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.Aggregation;
 import datawave.query.function.KeyToDocumentData;
+import datawave.query.function.RangeProvider;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ParentEventDataFilter;
+import datawave.query.predicate.ParentRangeProvider;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TupleToEntry;
 import org.apache.accumulo.core.data.Key;
@@ -59,12 +61,17 @@ public class ParentQueryIterator extends QueryIterator {
     @Override
     public Iterator<Entry<Key,Document>> mapDocument(SortedKeyValueIterator<Key,Value> deepSourceCopy, Iterator<Entry<Key,Document>> documents,
                     CompositeMetadata compositeMetadata) {
-        Iterator<Tuple2<Key,Document>> parentDocuments = Iterators.transform(documents, new GetParentDocument(
-                        // no evaluation filter here as this is post evaluation
-                        new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, this.equality, null, this.includeHierarchyFields,
-                                        this.includeHierarchyFields),
-                        new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata, this.isIncludeGroupingContext(),
-                                        this.includeRecordId, this.parentDisableIndexOnlyDocuments, null)));
+        
+        // no evaluation filter here as this is post evaluation
+        
+        Aggregation aggregation = new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata, this.isIncludeGroupingContext(),
+                        this.includeRecordId, this.parentDisableIndexOnlyDocuments, null);
+        
+        KeyToDocumentData k2d = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, this.equality, null,
+                        this.includeHierarchyFields, this.includeHierarchyFields);
+        k2d.withRangeProvider(getRangeProvider());
+        
+        Iterator<Tuple2<Key,Document>> parentDocuments = Iterators.transform(documents, new GetParentDocument(k2d, aggregation));
         
         Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(parentDocuments, new TupleToEntry<>());
         retDocuments = Iterators.transform(retDocuments, new ParentQueryIterator.KeepAllFlagSetter());
@@ -91,5 +98,18 @@ public class ParentQueryIterator extends QueryIterator {
         public boolean equals(@Nullable Object object) {
             throw new UnsupportedOperationException();
         }
+    }
+    
+    /**
+     * Get a {@link ParentRangeProvider}
+     *
+     * @return a {@link ParentRangeProvider}
+     */
+    @Override
+    public RangeProvider getRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new ParentRangeProvider();
+        }
+        return rangeProvider;
     }
 }

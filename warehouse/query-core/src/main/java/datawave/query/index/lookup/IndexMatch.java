@@ -128,6 +128,7 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
     
     /**
      * @param node
+     *            a node
      */
     public void set(JexlNode node) {
         this.nodeSet.clear();
@@ -136,6 +137,7 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
     
     /**
      * @param node
+     *            a node
      */
     public void add(JexlNode node) {
         nodeSet.add(node);

@@ -166,6 +166,7 @@ public class FairIterator extends WrappingIterator {
         
         /**
          * @param message
+         *            a message
          */
         public FairnessHaltException(String message) {
             super(message);

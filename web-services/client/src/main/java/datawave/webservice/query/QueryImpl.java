@@ -11,6 +11,8 @@ import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
 import io.protostuff.UninitializedMessageException;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -429,6 +431,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         this.optionalQueryParameters = optionalQueryParameters;
     }
     
+    @Override
     public QueryImpl duplicate(String newQueryName) {
         QueryImpl query = new QueryImpl();
         query.setQueryLogicName(this.getQueryLogicName());
@@ -447,9 +450,15 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         query.setBeginDate(this.getBeginDate());
         query.setEndDate(this.getEndDate());
         query.setPool(this.getPool());
-        if (null != this.parameters && !this.parameters.isEmpty())
+        if (CollectionUtils.isNotEmpty(this.parameters))
             query.setParameters(new HashSet<Parameter>(this.parameters));
         query.setDnList(this.dnList);
+        if (MapUtils.isNotEmpty(this.optionalQueryParameters)) {
+            Map<String,List<String>> optionalDuplicate = new HashMap<>();
+            this.optionalQueryParameters.entrySet().stream().forEach(e -> optionalDuplicate.put(e.getKey(), new ArrayList(e.getValue())));
+            query.setOptionalQueryParameters(optionalDuplicate);
+        }
+        query.setUncaughtExceptionHandler(this.getUncaughtExceptionHandler());
         return query;
     }
     
@@ -800,7 +809,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         return this.owner;
     }
     
-    public MultiValueMap<String,String> toMap() {
+    public Map<String,List<String>> toMap() {
         // TODO: missing variables uuid and owner -- not going into map
         MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         if (this.id != null) {
@@ -867,7 +876,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     }
     
     @Override
-    public void readMap(MultiValueMap<String,String> map) throws ParseException {
+    public void readMap(Map<String,List<String>> map) throws ParseException {
         for (String key : map.keySet()) {
             switch (key) {
                 case QUERY_ID:

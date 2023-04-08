@@ -5,7 +5,7 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.Query;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Ignore;
 
@@ -15,7 +15,7 @@ import java.util.Set;
 public class TestQueryLogic<T> extends BaseQueryLogic<T> {
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
         return null;
     }
     
@@ -23,7 +23,7 @@ public class TestQueryLogic<T> extends BaseQueryLogic<T> {
     public void setupQuery(GenericQueryConfiguration configuration) throws Exception {}
     
     @Override
-    public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+    public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception {
         return "";
     }

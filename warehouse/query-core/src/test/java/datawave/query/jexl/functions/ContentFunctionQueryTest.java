@@ -2,6 +2,7 @@ package datawave.query.jexl.functions;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.ingest.config.RawRecordContainerImpl;
@@ -16,7 +17,6 @@ import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexDataTypeHandler;
-import datawave.ingest.mapreduce.handler.shard.Direction;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
@@ -30,6 +30,7 @@ import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.model.Direction;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -40,9 +41,9 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -104,7 +105,6 @@ public class ContentFunctionQueryTest {
     private static final String DATA_TYPE_NAME = "test";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
     
-    private static final String PASSWORD = "";
     private static final String AUTHS = "ALL";
     
     private static final String formatPattern = "yyyyMMdd HHmmss.SSS";
@@ -181,10 +181,11 @@ public class ContentFunctionQueryTest {
         
         // write these values to their respective tables
         instance = new InMemoryInstance();
-        Connector connector = instance.getConnector("root", PASSWORD);
-        connector.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
         
-        writeKeyValues(connector, keyValues);
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
+        client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
+        
+        writeKeyValues(client, keyValues);
         
         ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
     }
@@ -213,8 +214,8 @@ public class ContentFunctionQueryTest {
         
     }
     
-    private static void writeKeyValues(Connector connector, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
-        final TableOperations tops = connector.tableOperations();
+    private static void writeKeyValues(AccumuloClient client, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
+        final TableOperations tops = client.tableOperations();
         final Set<BulkIngestKey> biKeys = keyValues.keySet();
         tops.create(TableName.DATE_INDEX);
         for (final BulkIngestKey biKey : biKeys) {
@@ -222,7 +223,7 @@ public class ContentFunctionQueryTest {
             if (!tops.exists(tableName))
                 tops.create(tableName);
             
-            final BatchWriter writer = connector.createBatchWriter(tableName, new BatchWriterConfig());
+            final BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig());
             for (final Value val : keyValues.get(biKey)) {
                 final Mutation mutation = new Mutation(biKey.getKey().getRow());
                 mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(),
@@ -348,7 +349,7 @@ public class ContentFunctionQueryTest {
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
-        logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
+        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
         
         logic.setupQuery(config);
         

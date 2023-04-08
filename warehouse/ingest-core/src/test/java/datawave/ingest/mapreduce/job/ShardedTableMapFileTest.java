@@ -5,13 +5,14 @@ import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import datawave.accumulo.minicluster.MiniAccumuloClusterForPostZoo34;
+import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -96,7 +97,7 @@ public class ShardedTableMapFileTest {
         conf.setInt(ShardedTableMapFile.SHARDS_BALANCED_DAYS_TO_VERIFY, 1);
         String today = formatDay(0) + "_1";
         
-        MiniAccumuloClusterForPostZoo34 accumuloCluster = null;
+        MiniAccumuloCluster accumuloCluster = null;
         try {
             SortedSet<Text> sortedSet = new TreeSet<>();
             sortedSet.add(new Text(today));
@@ -120,23 +121,24 @@ public class ShardedTableMapFileTest {
         Assert.assertEquals(1, result.size());
     }
     
-    private MiniAccumuloClusterForPostZoo34 createMiniAccumuloWithTestTableAndSplits(SortedSet<Text> sortedSet)
+    private MiniAccumuloCluster createMiniAccumuloWithTestTableAndSplits(SortedSet<Text> sortedSet)
                     throws IOException, InterruptedException, AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
-        MiniAccumuloClusterForPostZoo34 accumuloCluster;
+        MiniAccumuloCluster accumuloCluster;
         File clusterDir = temporaryFolder.newFolder();
         LOG.info("Created local directory for MiniAccumuloCluster: " + clusterDir.getAbsolutePath());
-        accumuloCluster = new MiniAccumuloClusterForPostZoo34(clusterDir, PASSWORD);
+        accumuloCluster = new MiniAccumuloCluster(clusterDir, PASSWORD);
         accumuloCluster.start();
         
-        Connector connector = accumuloCluster.getConnector(USERNAME, PASSWORD);
-        TableOperations tableOperations = connector.tableOperations();
-        tableOperations.create(TABLE_NAME);
-        tableOperations.addSplits(TABLE_NAME, sortedSet);
+        try (AccumuloClient client = Accumulo.newClient().from(accumuloCluster.getClientProperties()).build()) {
+            TableOperations tableOperations = client.tableOperations();
+            tableOperations.create(TABLE_NAME);
+            tableOperations.addSplits(TABLE_NAME, sortedSet);
+        }
         
         return accumuloCluster;
     }
     
-    private void configureAccumuloHelper(Configuration conf, MiniAccumuloClusterForPostZoo34 accumuloCluster) {
+    private void configureAccumuloHelper(Configuration conf, MiniAccumuloCluster accumuloCluster) {
         AccumuloHelper.setInstanceName(conf, accumuloCluster.getInstanceName());
         AccumuloHelper.setPassword(conf, PASSWORD.getBytes());
         AccumuloHelper.setUsername(conf, USERNAME);

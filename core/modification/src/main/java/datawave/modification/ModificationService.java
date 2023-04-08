@@ -14,7 +14,7 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.results.modification.ModificationConfigurationResponse;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
@@ -89,7 +89,7 @@ public class ModificationService {
         Collection<String> userRoles = primaryUser.getRoles();
         Set<Authorizations> cbAuths = proxiedUsers.stream().map(u -> new Authorizations(u.getAuths().toArray(new String[0]))).collect(Collectors.toSet());
         
-        Connector con = null;
+        AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
         try {
             // Get the Modification Service from the configuration
@@ -115,10 +115,10 @@ public class ModificationService {
             
             // Process the modification
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            con = connectionFactory.getConnection(userDn, proxyServers, modificationConfiguration.getPoolName(), priority, trackingMap);
+            client = connectionFactory.getClient(userDn, proxyServers, modificationConfiguration.getPoolName(), priority, trackingMap);
             service.setQueryServiceFactory(queryServiceFactory);
             log.info("Processing modification request from user=" + dp.getShortName() + ": \n" + request);
-            service.process(con, request, cache.getCachedMutableFieldList(), cbAuths, proxiedUsers);
+            service.process(client, request, cache.getCachedMutableFieldList(), cbAuths, proxiedUsers);
         } catch (DatawaveModificationException e) {
             throw e;
         } catch (Exception e) {
@@ -126,9 +126,9 @@ public class ModificationService {
             log.error(qe);
             throw new DatawaveModificationException(qe);
         } finally {
-            if (null != con) {
+            if (null != client) {
                 try {
-                    connectionFactory.returnConnection(con);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection", e);
                 }

@@ -3,6 +3,7 @@ package datawave.query.iterator;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -25,6 +26,7 @@ import datawave.query.function.DataTypeAsField;
 import datawave.query.function.DocumentMetadata;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
+import datawave.query.function.DocumentRangeProvider;
 import datawave.query.function.IndexOnlyContextCreator;
 import datawave.query.function.IndexOnlyContextCreatorBuilder;
 import datawave.query.function.JexlContextCreator;
@@ -34,6 +36,7 @@ import datawave.query.function.LimitFields;
 import datawave.query.function.MaskedValueFilterFactory;
 import datawave.query.function.MaskedValueFilterInterface;
 import datawave.query.function.RemoveGroupingContext;
+import datawave.query.function.RangeProvider;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
@@ -83,13 +86,11 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IterationInterruptedException;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
-import org.apache.accumulo.core.trace.Span;
-import org.apache.accumulo.core.trace.Trace;
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl2.JexlArithmetic;
@@ -159,8 +160,8 @@ import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOC
  * </ol>
  *
  */
-public class QueryIterator extends QueryOptions
-                implements YieldingKeyValueIterator<Key,Value>, JexlContextCreator.JexlContextValueComparator, SourceFactory<Key,Value> {
+public class QueryIterator extends QueryOptions implements YieldingKeyValueIterator<Key,Value>, JexlContextCreator.JexlContextValueComparator,
+                SourceFactory<Key,Value>, SortedKeyValueIterator<Key,Value> {
     
     private static final Logger log = Logger.getLogger(QueryIterator.class);
     
@@ -201,6 +202,8 @@ public class QueryIterator extends QueryOptions
     protected ActiveQueryLog activeQueryLog;
     
     protected ExcerptTransform excerptTransform = null;
+    
+    protected RangeProvider rangeProvider;
     
     public QueryIterator() {}
     
@@ -265,8 +268,7 @@ public class QueryIterator extends QueryOptions
             this.source = source;
         }
         
-        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(),
-                        getEvaluationFilter() != null ? getEvaluationFilter().getMaxNextCount() : -1);
+        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEventNextSeek());
         
         if (isDebugMultithreadedSources()) {
             this.source = new SourceThreadTrackingIterator(this.source);
@@ -361,19 +363,14 @@ public class QueryIterator extends QueryOptions
     @Override
     public void next() throws IOException {
         getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.NEXT);
-        Span s = Trace.start("QueryIterator.next()");
-        if (log.isTraceEnabled()) {
-            log.trace("next");
-        }
-        
         try {
-            prepareKeyValue(s);
+            if (log.isTraceEnabled()) {
+                log.trace("next");
+            }
+            prepareKeyValue();
         } catch (Exception e) {
             handleException(e);
         } finally {
-            if (null != s) {
-                s.stop();
-            }
             QueryStatsDClient client = getStatsdClient();
             if (client != null) {
                 client.flush();
@@ -392,17 +389,17 @@ public class QueryIterator extends QueryOptions
         // so the FinalDocumentTracking iterator needs the start key with the count already appended
         originalRange = range;
         getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
-        Span span = Trace.start("QueryIterator.seek");
-        
-        if (!this.isIncludeGroupingContext() && (this.query.contains("grouping:") || this.query.contains("matchesInGroup")
-                        || this.query.contains("MatchesInGroup") || this.query.contains("atomValuesMatch"))) {
-            this.setIncludeGroupingContext(true);
-            this.groupingContextAddedByMe = true;
-        } else {
-            this.groupingContextAddedByMe = false;
-        }
+        ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         
         try {
+            if (!this.isIncludeGroupingContext() && (this.query.contains("grouping:") || this.query.contains("matchesInGroup")
+                            || this.query.contains("MatchesInGroup") || this.query.contains("atomValuesMatch"))) {
+                this.setIncludeGroupingContext(true);
+                this.groupingContextAddedByMe = true;
+            } else {
+                this.groupingContextAddedByMe = false;
+            }
+            
             if (log.isDebugEnabled()) {
                 log.debug("Seek range: " + range + " " + query);
             }
@@ -415,7 +412,7 @@ public class QueryIterator extends QueryOptions
                 if (collectTimingDetails && FinalDocumentTrackingIterator.isFinalDocumentKey(range.getStartKey())) {
                     this.seekKeySource = new EmptyTreeIterable();
                     this.serializedDocuments = EmptyIterator.emptyIterator();
-                    prepareKeyValue(span);
+                    prepareKeyValue();
                     return;
                 }
                 
@@ -454,7 +451,7 @@ public class QueryIterator extends QueryOptions
                     log.trace("Received event specific range: " + documentRange);
                 }
                 // We can take a shortcut to the directly to the event
-                Map.Entry<Key,Document> documentKey = Maps.immutableEntry(super.getDocumentKey.apply(documentRange), new Document());
+                Entry<Key,Document> documentKey = Maps.immutableEntry(super.getDocumentKey.apply(documentRange), new Document());
                 if (log.isTraceEnabled()) {
                     log.trace("Transformed document key: " + documentKey);
                 }
@@ -568,15 +565,12 @@ public class QueryIterator extends QueryOptions
             }
             
             // Determine if we have items to return
-            prepareKeyValue(span);
+            prepareKeyValue();
         } catch (Exception e) {
             handleException(e);
         } finally {
             if (gatherTimingDetails() && trackingSpan != null && querySpanCollector != null) {
                 querySpanCollector.addQuerySpan(trackingSpan);
-            }
-            if (null != span) {
-                span.stop();
             }
             QueryStatsDClient client = getStatsdClient();
             if (client != null) {
@@ -595,6 +589,9 @@ public class QueryIterator extends QueryOptions
      * interrupted because the client is no longer listening.
      *
      * @param e
+     *            the exception to handle
+     * @throws IOException
+     *             for read/write issues
      */
     private void handleException(Exception e) throws IOException {
         Throwable reason = e;
@@ -654,11 +651,22 @@ public class QueryIterator extends QueryOptions
      * Build the document iterator
      *
      * @param documentRange
+     *            the document range
      * @param seekRange
+     *            the seek range
      * @param columnFamilies
+     *            a list of column families
      * @param inclusive
-     * @return
+     *            boolean marker for if this is inclusive
+     * @return the document iterator
      * @throws IOException
+     *             for read/write issues
+     * @throws ConfigException
+     *             for issues with the configuration
+     * @throws InstantiationException
+     *             for issues with class instantiation
+     * @throws IllegalAccessException
+     *             for issues with access
      */
     protected NestedIterator<Key> buildDocumentIterator(Range documentRange, Range seekRange, Collection<ByteSequence> columnFamilies, boolean inclusive)
                     throws IOException, ConfigException, InstantiationException, IllegalAccessException {
@@ -776,7 +784,7 @@ public class QueryIterator extends QueryOptions
     /**
      * There was a request to create a serial pipeline. The factory may not choose to honor this.
      *
-     * @return
+     * @return the serial pipeline
      */
     private boolean getSerialPipelineRequest() {
         return serialEvaluationPipeline;
@@ -785,7 +793,7 @@ public class QueryIterator extends QueryOptions
     /**
      * A routine which should always be used to create deep copies of the source. This ensures that we are thread safe when doing these copies.
      *
-     * @return
+     * @return the deep copy of the source
      */
     public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
         SortedKeyValueIterator<Key,Value> sourceDeepCopy;
@@ -798,6 +806,14 @@ public class QueryIterator extends QueryOptions
     /**
      * Returns the elements of {@code unfiltered} that satisfy a predicate. This is used instead of the google commons Iterators.filter to create a non-stateful
      * filtering iterator.
+     *
+     * @param unfiltered
+     *            the unfiltered iterator
+     * @param predicate
+     *            the predicate
+     * @param <T>
+     *            type for the iterator
+     * @return an iterator to elements that satisfy the predicate
      */
     public static <T> UnmodifiableIterator<T> statelessFilter(final Iterator<T> unfiltered, final Predicate<? super T> predicate) {
         checkNotNull(unfiltered);
@@ -839,7 +855,15 @@ public class QueryIterator extends QueryOptions
      * that maintains an iterator state (failed, ready, done); use statelessFilter above instead.
      *
      * @param deepSourceCopy
+     *            the deep source copy
      * @param documentSpecificSource
+     *            the document source
+     * @param columnFamilies
+     *            the column families
+     * @param inclusive
+     *            flag for inclusive range
+     * @param querySpanCollector
+     *            the query span collector
      * @return iterator of keys and values
      */
     public Iterator<Entry<Key,Document>> createDocumentPipeline(SortedKeyValueIterator<Key,Value> deepSourceCopy,
@@ -874,7 +898,7 @@ public class QueryIterator extends QueryOptions
             };
         } else {
             docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, super.equality, getEvaluationFilter(),
-                            this.includeHierarchyFields, this.includeHierarchyFields);
+                            this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
         }
         
         Iterator<Entry<DocumentData,Document>> sourceIterator = Iterators.transform(documentSpecificSource, from -> {
@@ -1191,7 +1215,8 @@ public class QueryIterator extends QueryOptions
         }
         if (fieldIndexSatisfiesQuery) {
             final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, super.equality,
-                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields);
+                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
+            
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(documents,
                             new GetDocument(docMapper,
                                             new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata,
@@ -1230,7 +1255,7 @@ public class QueryIterator extends QueryOptions
         }
     }
     
-    private void prepareKeyValue(Span span) {
+    private void prepareKeyValue() {
         if (this.serializedDocuments.hasNext()) {
             Entry<Key,Value> entry = this.serializedDocuments.next();
             
@@ -1241,9 +1266,6 @@ public class QueryIterator extends QueryOptions
             this.key = entry.getKey();
             this.value = entry.getValue();
             
-            if (Trace.isTracing()) {
-                span.data("Key", rowColFamToString(this.key));
-            }
         } else {
             if (log.isTraceEnabled()) {
                 log.trace("Exhausted all keys");
@@ -1533,6 +1555,9 @@ public class QueryIterator extends QueryOptions
                 .setIndexOnlyFields(this.getAllIndexOnlyFields())
                 .setAllowTermFrequencyLookup(this.allowTermFrequencyLookup)
                 .setCompositeMetadata(compositeMetadata)
+                .setFiNextSeek(this.getFiNextSeek())
+                .setEventNextSeek(this.getEventNextSeek())
+                .setTfNextSeek(this.getTfNextSeek())
                 .setExceededOrEvaluationCache(exceededOrEvaluationCache);
         // @formatter:on
         // TODO: .setStatsPort(this.statsdHostAndPort);
@@ -1634,6 +1659,7 @@ public class QueryIterator extends QueryOptions
      * tuples were actually hit upon.
      * 
      * @param from
+     *            the from tuple
      * @return A comparator for values within the jexl context.
      */
     @Override
@@ -1685,5 +1711,17 @@ public class QueryIterator extends QueryOptions
             }
         }
         return excerptTransform;
+    }
+    
+    /**
+     * Get a default implementation of a {@link RangeProvider}
+     *
+     * @return a {@link DocumentRangeProvider}
+     */
+    protected RangeProvider getRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new DocumentRangeProvider();
+        }
+        return rangeProvider;
     }
 }

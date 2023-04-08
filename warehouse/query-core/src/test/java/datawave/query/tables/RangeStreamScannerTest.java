@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.configuration.Result;
 import datawave.data.type.LcNoDiacriticsType;
@@ -22,11 +23,10 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
 import datawave.util.time.DateHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -64,7 +64,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class RangeStreamScannerTest {
     
-    private static Connector connector;
+    private static AccumuloClient client;
     
     private static ScannerFactory scannerFactory;
     
@@ -100,13 +100,13 @@ public class RangeStreamScannerTest {
     @BeforeClass
     public static void beforeClass() throws Exception {
         InMemoryInstance instance = new InMemoryInstance();
-        connector = instance.getConnector("", new PasswordToken(new byte[0]));
-        connector.tableOperations().create(SHARD_INDEX);
+        client = new InMemoryAccumuloClient("", instance);
+        client.tableOperations().create(SHARD_INDEX);
         
-        scannerFactory = new ScannerFactory(connector, 1);
+        scannerFactory = new ScannerFactory(client, 1);
         
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1024L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        BatchWriter bw = connector.createBatchWriter(SHARD_INDEX, bwConfig);
+        BatchWriter bw = client.createBatchWriter(SHARD_INDEX, bwConfig);
         
         // FOO == 'bar' hits day 20190314 with 1 shard, each shard has 2 document ids.
         // This remains under the shards/day limit and under the documents/shard limit.
@@ -366,7 +366,7 @@ public class RangeStreamScannerTest {
     @Test
     public void testGetDay() throws Exception {
         // Build RangeStreamScanner
-        ScannerFactory scanners = new ScannerFactory(connector, 1);
+        ScannerFactory scanners = new ScannerFactory(client, 1);
         RangeStreamScanner rangeStreamScanner = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
                         config.getShardsPerDayThreshold());
         

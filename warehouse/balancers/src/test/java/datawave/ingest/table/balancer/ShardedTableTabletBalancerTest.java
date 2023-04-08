@@ -1,30 +1,25 @@
 package datawave.ingest.table.balancer;
 
-import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import datawave.common.test.integration.IntegrationTest;
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
-import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.conf.Property;
-import org.apache.accumulo.core.data.impl.KeyExtent;
+import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.data.TabletId;
+import org.apache.accumulo.core.dataImpl.KeyExtent;
+import org.apache.accumulo.core.dataImpl.TabletIdImpl;
+import org.apache.accumulo.core.manager.balancer.AssignmentParamsImpl;
+import org.apache.accumulo.core.manager.balancer.BalanceParamsImpl;
+import org.apache.accumulo.core.manager.balancer.TServerStatusImpl;
+import org.apache.accumulo.core.manager.balancer.TabletServerIdImpl;
 import org.apache.accumulo.core.master.thrift.TabletServerStatus;
+import org.apache.accumulo.core.metadata.TServerInstance;
+import org.apache.accumulo.core.spi.balancer.data.TServerStatus;
+import org.apache.accumulo.core.spi.balancer.data.TabletServerId;
 import org.apache.accumulo.core.util.MapCounter;
-import org.apache.accumulo.core.util.Pair;
-import org.apache.accumulo.server.conf.NamespaceConfiguration;
-import org.apache.accumulo.server.conf.ServerConfigurationFactory;
-import org.apache.accumulo.server.conf.TableConfiguration;
-import org.apache.accumulo.server.master.balancer.GroupBalancer.Location;
-import org.apache.accumulo.server.master.state.TServerInstance;
-import org.apache.accumulo.server.master.state.TabletMigration;
+import org.apache.accumulo.core.spi.balancer.data.TabletMigration;
 import org.apache.hadoop.io.Text;
 import org.junit.Before;
 import org.junit.Rule;
@@ -33,7 +28,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -47,22 +41,20 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class ShardedTableTabletBalancerTest {
-    private static final String TNAME = "s";
+    private static final TableId TNAME = TableId.of("s");
     
     private TestTServers testTServers;
-    private TestInstance instance = new TestInstance();
-    private TestTableConfiguration config = new TestTableConfiguration(instance, TNAME, null);
     private TestShardedTableTabletBalancer testBalancer;
     private long randomSeed = new Random().nextLong();
     
@@ -77,16 +69,12 @@ public class ShardedTableTabletBalancerTest {
     @Before
     public void setUp() throws Exception {
         testTServers = new TestTServers(new Random(randomSeed));
-        testBalancer = new TestShardedTableTabletBalancer(testTServers, config);
+        testBalancer = new TestShardedTableTabletBalancer(testTServers);
     }
     
     @Test
     public void testMaxMigrations() {
         assertEquals(ShardedTableTabletBalancer.MAX_MIGRATIONS_DEFAULT, testBalancer.getMaxMigrations());
-        config.set(ShardedTableTabletBalancer.SHARDED_MAX_MIGRATIONS, "10");
-        assertEquals(10, testBalancer.getMaxMigrations());
-        config.set(ShardedTableTabletBalancer.SHARDED_MAX_MIGRATIONS, "42");
-        assertEquals(42, testBalancer.getMaxMigrations());
     }
     
     @Test
@@ -94,7 +82,7 @@ public class ShardedTableTabletBalancerTest {
         testTServers.addTServers("127.0.0.1", "127.0.0.1", "127.0.0.1");
         
         // Two extents per server, but no overlap of any given day.
-        Map<KeyExtent,TServerInstance> unassigned = new HashMap<>();
+        Map<TabletId,TabletServerId> unassigned = new HashMap<>();
         unassigned.put(makeExtent(TNAME, "20100123_1", null), null);
         unassigned.put(makeExtent(TNAME, "20100123_2", "20100123_1"), null);
         unassigned.put(makeExtent(TNAME, "20100123_3", "20100123_2"), null);
@@ -102,10 +90,10 @@ public class ShardedTableTabletBalancerTest {
         unassigned.put(makeExtent(TNAME, "20100124_2", "20100124_1"), null);
         unassigned.put(makeExtent(TNAME, "20100124_3", "20100124_2"), null);
         
-        Map<KeyExtent,TServerInstance> assignments = new HashMap<>();
+        Map<TabletId,TabletServerId> assignments = new HashMap<>();
         
         // Apply the assignments and make sure we're balanced.
-        testBalancer.getAssignments(testTServers.getCurrent(), unassigned, assignments);
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
         testTServers.checkBalance(testBalancer.getPartitioner());
         
@@ -115,7 +103,7 @@ public class ShardedTableTabletBalancerTest {
         unassigned.put(makeExtent(TNAME, "20100124_4", "20100124_3"), null);
         
         assignments.clear();
-        testBalancer.getAssignments(testTServers.getCurrent(), unassigned, assignments);
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
         
         // Run the balancer. It should balance once after the additional assignment, and then everything should be balanced.
@@ -127,7 +115,7 @@ public class ShardedTableTabletBalancerTest {
         testTServers.addTServers("127.0.0.1", "127.0.0.1", "127.0.0.1");
         
         // Double the number of extents as tablet servers. Two should go on each.
-        Map<KeyExtent,TServerInstance> unassigned = new HashMap<>();
+        Map<TabletId,TabletServerId> unassigned = new HashMap<>();
         unassigned.put(makeExtent(TNAME, "20100123_1", null), null);
         unassigned.put(makeExtent(TNAME, "20100123_2", "20100123_1"), null);
         unassigned.put(makeExtent(TNAME, "20100123_3", "20100123_2"), null);
@@ -135,10 +123,10 @@ public class ShardedTableTabletBalancerTest {
         unassigned.put(makeExtent(TNAME, "20100123_5", "20100123_4"), null);
         unassigned.put(makeExtent(TNAME, "20100123_6", "20100123_5"), null);
         
-        Map<KeyExtent,TServerInstance> assignments = new HashMap<>();
+        Map<TabletId,TabletServerId> assignments = new HashMap<>();
         
         // Apply the assignments and make sure we're balanced.
-        testBalancer.getAssignments(testTServers.getCurrent(), unassigned, assignments);
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
         testTServers.checkBalance(testBalancer.getPartitioner());
     }
@@ -146,8 +134,7 @@ public class ShardedTableTabletBalancerTest {
     @Test
     public void testBalanceShardDays() {
         
-        TServerInstance tsi;
-        
+        TabletServerId tsi;
         tsi = testTServers.addTServer("127.0.0.1");
         testTServers.addTablet(makeExtent(TNAME, "20100123_1", null), tsi);
         testTServers.addTablet(makeExtent(TNAME, "20100123_2", "20100123_1"), tsi);
@@ -162,17 +149,17 @@ public class ShardedTableTabletBalancerTest {
     @Test
     public void testRecognizeSplit() {
         testTServers.addTServer("127.0.0.1");
-        TServerInstance server2 = testTServers.addTServer("127.0.0.1");
+        TabletServerId server2 = testTServers.addTServer("127.0.0.1");
         
-        Map<KeyExtent,TServerInstance> assignments = new HashMap<>();
-        Map<KeyExtent,TServerInstance> unassigned = new HashMap<>();
+        Map<TabletId,TabletServerId> assignments = new HashMap<>();
+        Map<TabletId,TabletServerId> unassigned = new HashMap<>();
         unassigned.put(makeExtent(TNAME, "20100123_1", null), null);
         unassigned.put(makeExtent(TNAME, "20100123_2", "20100123_1"), null);
         unassigned.put(makeExtent(TNAME, "20100124_1", "20100123_2"), null);
         unassigned.put(makeExtent(TNAME, "20100124_2", "20100124_1"), null);
         
         // Make the initial assignments. There should be one piece of each day on each server
-        testBalancer.getAssignments(testTServers.getCurrent(), unassigned, assignments);
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
         testTServers.checkBalance(testBalancer.getPartitioner());
         
@@ -190,7 +177,7 @@ public class ShardedTableTabletBalancerTest {
         testTServers.addTServer("127.0.0.1");
         
         // In the end, we want 3 tablet servers with one piece of each day on each.
-        Map<KeyExtent,TServerInstance> unassigned = new HashMap<>();
+        Map<TabletId,TabletServerId> unassigned = new HashMap<>();
         unassigned.put(makeExtent(TNAME, "20100123_1", null), null);
         unassigned.put(makeExtent(TNAME, "20100123_2", "20100123_1"), null);
         unassigned.put(makeExtent(TNAME, "20100123_3", "20100123_2"), null);
@@ -199,8 +186,8 @@ public class ShardedTableTabletBalancerTest {
         unassigned.put(makeExtent(TNAME, "20100124_3", "20100124_2"), null);
         
         // Do initial assignments. Everything will get assigned to one tablet server.
-        Map<KeyExtent,TServerInstance> assignments = new HashMap<>();
-        testBalancer.getAssignments(testTServers.getCurrent(), unassigned, assignments);
+        Map<TabletId,TabletServerId> assignments = new HashMap<>();
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
         assertEquals(6, assignments.size());
         testTServers.applyAssignments(assignments);
         testTServers.checkBalance(testBalancer.getPartitioner());
@@ -217,8 +204,8 @@ public class ShardedTableTabletBalancerTest {
     
     @Test
     public void testFlipFlopBalance() {
-        TServerInstance server1 = testTServers.addTServer("127.0.0.1");
-        TServerInstance server2 = testTServers.addTServer("127.0.0.1");
+        TabletServerId server1 = testTServers.addTServer("127.0.0.1");
+        TabletServerId server2 = testTServers.addTServer("127.0.0.1");
         
         // Make assignments (all shards on a single server)
         testTServers.addTablet(makeExtent(TNAME, "20100123_1", null), server1);
@@ -236,7 +223,7 @@ public class ShardedTableTabletBalancerTest {
         testTServers.addTServer("127.0.0.1");
         
         // In the end, we want 3 tablet servers with one piece of each day on each.
-        Map<KeyExtent,TServerInstance> unassigned = new HashMap<>();
+        Map<TabletId,TabletServerId> unassigned = new HashMap<>();
         unassigned.put(makeExtent(TNAME, "20100123_1", null), null);
         unassigned.put(makeExtent(TNAME, "20100123_2", "20100123_1"), null);
         unassigned.put(makeExtent(TNAME, "20100123_3", "20100123_2"), null);
@@ -245,8 +232,8 @@ public class ShardedTableTabletBalancerTest {
         unassigned.put(makeExtent(TNAME, "20100124_3", "20100124_2"), null);
         
         // Do initial assignments. Everything will get assigned to one tablet server.
-        Map<KeyExtent,TServerInstance> assignments = new HashMap<>();
-        testBalancer.getAssignments(testTServers.getCurrent(), unassigned, assignments);
+        Map<TabletId,TabletServerId> assignments = new HashMap<>();
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
         assertEquals(6, assignments.size());
         testTServers.applyAssignments(assignments);
         testTServers.checkBalance(testBalancer.getPartitioner());
@@ -260,15 +247,25 @@ public class ShardedTableTabletBalancerTest {
         
         // Balance first with pending migrations w/ our table name in them and make sure no balancing happens
         ArrayList<TabletMigration> migrationsOut = new ArrayList<>();
-        HashSet<KeyExtent> migrations = Sets.newHashSet(new KeyExtent("foo", new Text("2"), new Text("1")), new KeyExtent("bar", new Text("2"), new Text("1")),
-                        new KeyExtent(TNAME, new Text("2"), new Text("1")));
-        long balanceWaitTime = testBalancer.balance(testTServers.getCurrent(), migrations, migrationsOut);
+        TableId foo = TableId.of("foo");
+        TableId bar = TableId.of("bar");
+        //@formatter:off
+        HashSet<TabletId> migrations = Sets.newHashSet(
+                new TabletIdImpl(new KeyExtent(foo, new Text("2"), new Text("1"))),
+                new TabletIdImpl(new KeyExtent(bar, new Text("2"), new Text("1"))),
+                new TabletIdImpl(new KeyExtent(TNAME, new Text("2"), new Text("1"))));
+        //@formatter:on
+        long balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), migrations, migrationsOut));
         assertEquals("Incorrect balance wait time reported", 5000, balanceWaitTime);
         assertTrue("Generated migrations when we had pending migrations for our table! [" + migrationsOut + "]", migrationsOut.isEmpty());
         
         // Now balance with pending migrations w/o our table name and make sure everything balances.
-        migrations = Sets.newHashSet(new KeyExtent("foo", new Text("2"), new Text("1")), new KeyExtent("bar", new Text("2"), new Text("1")));
-        balanceWaitTime = testBalancer.balance(testTServers.getCurrent(), migrations, migrationsOut);
+        //@formatter:off
+        migrations = Sets.newHashSet(
+                new TabletIdImpl(new KeyExtent(foo, new Text("2"), new Text("1"))),
+                new TabletIdImpl(new KeyExtent(bar, new Text("2"), new Text("1"))));
+        //@formatter:on
+        balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), migrations, migrationsOut));
         assertEquals("Incorrect balance wait time reported", 5000, balanceWaitTime);
         ensureUniqueMigrations(migrationsOut);
         testTServers.applyMigrations(migrationsOut);
@@ -287,7 +284,7 @@ public class ShardedTableTabletBalancerTest {
         }
         
         // Come up with extents for 2 months at 241 shards per day.
-        Map<KeyExtent,TServerInstance> unassigned = new HashMap<>();
+        Map<TabletId,TabletServerId> unassigned = new HashMap<>();
         SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd");
         GregorianCalendar cal = new GregorianCalendar();
         String[] shardPartitions = new String[NUM_SHARDS];
@@ -309,8 +306,8 @@ public class ShardedTableTabletBalancerTest {
         
         // Assign the initial extents and make sure they're balanced.
         int totalExtents = unassigned.size();
-        Map<KeyExtent,TServerInstance> assignments = new HashMap<>();
-        testBalancer.getAssignments(testTServers.getCurrent(), unassigned, assignments);
+        Map<TabletId,TabletServerId> assignments = new HashMap<>();
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
         
         assertEquals(totalExtents, assignments.size());
@@ -341,7 +338,7 @@ public class ShardedTableTabletBalancerTest {
         }
         
         // Come up with extents for 2 months at 241 shards per day.
-        Map<KeyExtent,TServerInstance> unassigned = new HashMap<>();
+        Map<TabletId,TabletServerId> unassigned = new HashMap<>();
         SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd");
         GregorianCalendar cal = new GregorianCalendar();
         String[] shardPartitions = new String[241];
@@ -363,8 +360,8 @@ public class ShardedTableTabletBalancerTest {
         
         // Assign the initial extents and make sure they're balanced.
         int totalExtents = unassigned.size();
-        Map<KeyExtent,TServerInstance> assignments = new HashMap<>();
-        testBalancer.getAssignments(testTServers.getCurrent(), unassigned, assignments);
+        Map<TabletId,TabletServerId> assignments = new HashMap<>();
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
         
         assertEquals(totalExtents, assignments.size());
@@ -396,13 +393,13 @@ public class ShardedTableTabletBalancerTest {
     public void testLopsidedBalance() {
         // Start out with 255 tablet servers. Later, we'll add more
         final int NUM_TSERVERS = 255;
-        TServerInstance tsi = null;
+        TabletServerId tsi = null;
         for (int i = 0; i < NUM_TSERVERS; ++i) {
             tsi = testTServers.addTServer("127.0.0.1");
         }
         
         // Come up with extents for 2 months at 241 shards per day.
-        Map<KeyExtent,TServerInstance> unassigned = new HashMap<>();
+        Map<TabletId,TabletServerId> unassigned = new HashMap<>();
         SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd");
         GregorianCalendar cal = new GregorianCalendar();
         String[] shardPartitions = new String[241];
@@ -423,8 +420,8 @@ public class ShardedTableTabletBalancerTest {
         }
         
         int totalExtents = unassigned.size();
-        Map<KeyExtent,TServerInstance> assignments = new HashMap<>();
-        testBalancer.getAssignments(testTServers.getCurrent(), unassigned, assignments);
+        Map<TabletId,TabletServerId> assignments = new HashMap<>();
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
         
         assertEquals(totalExtents, assignments.size());
@@ -439,7 +436,7 @@ public class ShardedTableTabletBalancerTest {
         // now create an addition day of shards
         String date = fmt.format(cal.getTime());
         cal.add(Calendar.DAY_OF_YEAR, 1);
-        LinkedList<KeyExtent> dayExtents = new LinkedList<>();
+        LinkedList<TabletId> dayExtents = new LinkedList<>();
         for (String shardPartition : shardPartitions) {
             String endRow = date + shardPartition;
             dayExtents.add(makeExtent(TNAME, endRow, prevRow));
@@ -471,7 +468,7 @@ public class ShardedTableTabletBalancerTest {
         }
         
         // Come up with extents for NUM_DAYS days at NUM_SHARDS shards per day.
-        Map<KeyExtent,TServerInstance> unassigned = new HashMap<>();
+        Map<TabletId,TabletServerId> unassigned = new HashMap<>();
         SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd");
         GregorianCalendar cal = new GregorianCalendar();
         String[] shardPartitions = new String[NUM_SHARDS];
@@ -493,8 +490,8 @@ public class ShardedTableTabletBalancerTest {
         
         // Assign the initial extents and make sure they're balanced.
         int totalExtents = unassigned.size();
-        Map<KeyExtent,TServerInstance> assignments = new HashMap<>();
-        testBalancer.getAssignments(testTServers.getCurrent(), unassigned, assignments);
+        Map<TabletId,TabletServerId> assignments = new HashMap<>();
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
         
         assertEquals(totalExtents, assignments.size());
@@ -519,7 +516,7 @@ public class ShardedTableTabletBalancerTest {
     @Test
     public void testSingleTablet() {
         
-        TServerInstance tsi;
+        TabletServerId tsi;
         
         tsi = testTServers.addTServer("127.0.0.1");
         testTServers.addTablet(makeExtent(TNAME, null, null), tsi);
@@ -530,7 +527,7 @@ public class ShardedTableTabletBalancerTest {
     @Test
     public void testInvalidDateFormat() {
         
-        TServerInstance server1 = testTServers.addTServer("127.0.0.1");
+        TabletServerId server1 = testTServers.addTServer("127.0.0.1");
         testTServers.addTServer("127.0.0.1");
         
         // Make assignments (all shards on a single server)
@@ -548,7 +545,7 @@ public class ShardedTableTabletBalancerTest {
         ArrayList<TabletMigration> migrationsOut = new ArrayList<>();
         for (int i = 1; i <= numPasses; i++) {
             migrationsOut.clear();
-            testBalancer.balance(testTServers.getCurrent(), new HashSet<>(), migrationsOut);
+            testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), new HashSet<>(), migrationsOut));
             ensureUniqueMigrations(migrationsOut);
             testTServers.applyMigrations(migrationsOut);
             
@@ -557,13 +554,13 @@ public class ShardedTableTabletBalancerTest {
         }
         // Then balance one more time to make sure no migrations are returned.
         migrationsOut.clear();
-        testBalancer.balance(testTServers.getCurrent(), new HashSet<>(), migrationsOut);
+        testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), new HashSet<>(), migrationsOut));
         assertEquals("Left with " + migrationsOut.size() + " migrations after " + numPasses + " balance attempts.", 0, migrationsOut.size());
         testTServers.checkBalance(testBalancer.getPartitioner());
     }
     
-    private static KeyExtent makeExtent(String table, String end, String prev) {
-        return new KeyExtent(table, toText(end), toText(prev));
+    private static TabletId makeExtent(TableId table, String end, String prev) {
+        return new TabletIdImpl(new KeyExtent(table, toText(end), toText(prev)));
     }
     
     private static Text toText(String value) {
@@ -573,16 +570,16 @@ public class ShardedTableTabletBalancerTest {
     }
     
     private void ensureUniqueMigrations(ArrayList<TabletMigration> migrations) {
-        Set<KeyExtent> migrated = new HashSet<>();
+        Set<TabletId> migrated = new HashSet<>();
         for (TabletMigration m : migrations) {
-            assertFalse("Found multiple migrations for the same tablet: " + m.tablet, migrated.contains(m.tablet));
-            migrated.add(m.tablet);
+            assertFalse("Found multiple migrations for the same tablet: " + m.getTablet(), migrated.contains(m.getTablet()));
+            migrated.add(m.getTablet());
         }
     }
     
     private static class TestTServers {
-        private final Set<TServerInstance> tservers = new HashSet<>();
-        private final SortedMap<KeyExtent,TServerInstance> tabletLocs = new TreeMap<>();
+        private final Set<TabletServerId> tservers = new HashSet<>();
+        private final SortedMap<TabletId,TabletServerId> tabletLocs = new TreeMap<>();
         private int portNumber = 1000;
         private Random random;
         
@@ -596,20 +593,20 @@ public class ShardedTableTabletBalancerTest {
             }
         }
         
-        public TServerInstance addTServer(String location) {
+        public TabletServerId addTServer(String location) {
             return addTServer(location, portNumber++);
         }
         
-        public TServerInstance addTServer(String location, int port) {
-            TServerInstance tsi = new TServerInstance(location + ":" + port, 6);
+        public TabletServerId addTServer(String location, int port) {
+            TabletServerId tsi = new TabletServerIdImpl(new TServerInstance(location + ":" + port, 6));
             tservers.add(tsi);
             return tsi;
         }
         
-        public void addTablet(KeyExtent extent, String location) {
-            TServerInstance tsi = null;
-            for (TServerInstance candidate : tservers) {
-                if (candidate.getLocation().toString().equals(location)) {
+        public void addTablet(TabletId extent, String location) {
+            TabletServerId tsi = null;
+            for (TabletServerId candidate : tservers) {
+                if (candidate.toString().equals(location)) {
                     tsi = candidate;
                     break;
                 }
@@ -619,14 +616,14 @@ public class ShardedTableTabletBalancerTest {
             addTablet(extent, tsi);
         }
         
-        public void addTablet(KeyExtent extent, TServerInstance tsi) {
+        public void addTablet(TabletId extent, TabletServerId tsi) {
             tabletLocs.put(extent, tsi);
         }
         
-        public void applyAssignments(Map<KeyExtent,TServerInstance> assignments) {
-            for (Entry<KeyExtent,TServerInstance> entry : assignments.entrySet()) {
-                KeyExtent extentToAssign = entry.getKey();
-                TServerInstance assignedServer = entry.getValue();
+        public void applyAssignments(Map<TabletId,TabletServerId> assignments) {
+            for (Map.Entry<TabletId,TabletServerId> entry : assignments.entrySet()) {
+                TabletId extentToAssign = entry.getKey();
+                TabletServerId assignedServer = entry.getValue();
                 assertTrue("Assignments list has server instance " + entry.getValue() + " that isn't in our servers list.", tservers.contains(assignedServer));
                 tabletLocs.put(extentToAssign, assignedServer);
             }
@@ -634,19 +631,19 @@ public class ShardedTableTabletBalancerTest {
         
         public void applyMigrations(List<TabletMigration> migrationsOut) {
             for (TabletMigration migration : migrationsOut) {
-                tabletLocs.put(migration.tablet, migration.newServer);
+                tabletLocs.put(migration.getTablet(), migration.getNewTabletServer());
             }
         }
         
-        public void checkBalance(Function<KeyExtent,String> partitioner) {
+        public void checkBalance(Function<TabletId,String> partitioner) {
             checkPartitioning(partitioner);
             
             MapCounter<String> groupCounts = new MapCounter<>();
-            Map<TServerInstance,MapCounter<String>> tserverGroupCounts = new HashMap<>(tservers.size());
+            Map<TabletServerId,MapCounter<String>> tserverGroupCounts = new HashMap<>(tservers.size());
             
-            for (Entry<KeyExtent,TServerInstance> entry : tabletLocs.entrySet()) {
+            for (Map.Entry<TabletId,TabletServerId> entry : tabletLocs.entrySet()) {
                 String group = partitioner.apply(entry.getKey());
-                TServerInstance loc = entry.getValue();
+                TabletServerId loc = entry.getValue();
                 
                 groupCounts.increment(group, 1);
                 MapCounter<String> tgc = tserverGroupCounts.get(loc);
@@ -671,7 +668,7 @@ public class ShardedTableTabletBalancerTest {
             int expectedExtra = totalExtra / tservers.size();
             int maxExtraGroups = expectedExtra + ((totalExtra % tservers.size() > 0) ? 1 : 0);
             
-            for (Entry<TServerInstance,MapCounter<String>> entry : tserverGroupCounts.entrySet()) {
+            for (Map.Entry<TabletServerId,MapCounter<String>> entry : tserverGroupCounts.entrySet()) {
                 MapCounter<String> tgc = entry.getValue();
                 int tserverExtra = 0;
                 for (String group : groupCounts.keySet()) {
@@ -688,10 +685,10 @@ public class ShardedTableTabletBalancerTest {
             }
         }
         
-        public void checkPartitioning(Function<KeyExtent,String> partitioner) {
+        public void checkPartitioning(Function<TabletId,String> partitioner) {
             Map<String,String> partitions = new HashMap<>();
-            for (Entry<KeyExtent,TServerInstance> entry : tabletLocs.entrySet()) {
-                KeyExtent extent = entry.getKey();
+            for (Map.Entry<TabletId,TabletServerId> entry : tabletLocs.entrySet()) {
+                TabletId extent = entry.getKey();
                 String date = "null";
                 if (extent.getEndRow() != null) {
                     String er = extent.getEndRow().toString();
@@ -712,17 +709,17 @@ public class ShardedTableTabletBalancerTest {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
             
             // Accumulate tservers per day, per week, per month
-            HashMap<LocalDate,Set<TServerInstance>> dayCounts = new HashMap<>();
-            HashMap<Integer,Set<TServerInstance>> weekCounts = new HashMap<>();
-            HashMap<Integer,Set<TServerInstance>> monthCounts = new HashMap<>();
+            HashMap<LocalDate,Set<TabletServerId>> dayCounts = new HashMap<>();
+            HashMap<Integer,Set<TabletServerId>> weekCounts = new HashMap<>();
+            HashMap<Integer,Set<TabletServerId>> monthCounts = new HashMap<>();
             MapCounter<LocalDate> shardsPerDay = new MapCounter<>();
             MapCounter<Integer> shardsPerWeek = new MapCounter<>();
             MapCounter<Integer> shardsPerMonth = new MapCounter<>();
-            for (Entry<KeyExtent,TServerInstance> entry : tabletLocs.entrySet()) {
+            for (Map.Entry<TabletId,TabletServerId> entry : tabletLocs.entrySet()) {
                 String ds = entry.getKey().getEndRow().toString().substring(0, 8);
                 LocalDate date = LocalDate.parse(ds, formatter);
                 
-                Set<TServerInstance> set;
+                Set<TabletServerId> set;
                 
                 set = dayCounts.computeIfAbsent(date, k -> new HashSet<>());
                 set.add(entry.getValue());
@@ -778,9 +775,9 @@ public class ShardedTableTabletBalancerTest {
         }
         
         public void checkShardsPerDay(int evenMin, int evenMax) {
-            Map<TServerInstance,Multiset<String>> shardsPerServer = new HashMap<>();
-            for (Entry<KeyExtent,TServerInstance> entry : tabletLocs.entrySet()) {
-                TServerInstance tserver = entry.getValue();
+            Map<TabletServerId,Multiset<String>> shardsPerServer = new HashMap<>();
+            for (Map.Entry<TabletId,TabletServerId> entry : tabletLocs.entrySet()) {
+                TabletServerId tserver = entry.getValue();
                 Multiset<String> set = shardsPerServer.get(tserver);
                 if (set == null) {
                     set = HashMultiset.create();
@@ -790,7 +787,7 @@ public class ShardedTableTabletBalancerTest {
                 set.add(group);
             }
             
-            for (Entry<TServerInstance,Multiset<String>> entry : shardsPerServer.entrySet()) {
+            for (Map.Entry<TabletServerId,Multiset<String>> entry : shardsPerServer.entrySet()) {
                 Multiset<String> entries = entry.getValue();
                 for (String date : entries.elementSet()) {
                     assertTrue(entries.count(date) + " less than minimum of " + evenMin, entries.count(date) >= evenMin);
@@ -800,28 +797,28 @@ public class ShardedTableTabletBalancerTest {
         }
         
         public void peturbBalance() {
-            Multimap<TServerInstance,KeyExtent> serverTablets = HashMultimap.create();
-            for (Entry<KeyExtent,TServerInstance> entry : tabletLocs.entrySet()) {
+            Multimap<TabletServerId,TabletId> serverTablets = HashMultimap.create();
+            for (Map.Entry<TabletId,TabletServerId> entry : tabletLocs.entrySet()) {
                 serverTablets.put(entry.getValue(), entry.getKey());
             }
             
-            ArrayList<TServerInstance> serversArray = new ArrayList<>(tservers);
+            ArrayList<TabletServerId> serversArray = new ArrayList<>(tservers);
             for (int i = 0; i < 101; i++) {
                 // Find a random source server that has at least some tablets assigned to it.
-                TServerInstance fromServer = serversArray.get(random.nextInt(serversArray.size()));
+                TabletServerId fromServer = serversArray.get(random.nextInt(serversArray.size()));
                 while (!serverTablets.containsKey(fromServer)) {
                     fromServer = serversArray.get(random.nextInt(serversArray.size()));
                 }
                 // Find a random destination server that's different.
-                TServerInstance toServer;
+                TabletServerId toServer;
                 do {
                     toServer = serversArray.get(random.nextInt(serversArray.size()));
                 } while (fromServer.equals(toServer));
                 
-                ArrayList<KeyExtent> fromExtents = new ArrayList<>(serverTablets.get(fromServer));
+                ArrayList<TabletId> fromExtents = new ArrayList<>(serverTablets.get(fromServer));
                 int migrationsToMove = random.nextInt(fromExtents.size());
                 for (int j = 0; j < migrationsToMove; j++) {
-                    KeyExtent extent = fromExtents.get(random.nextInt(fromExtents.size()));
+                    TabletId extent = fromExtents.get(random.nextInt(fromExtents.size()));
                     fromExtents.remove(extent); // we have a local copy
                     assertTrue("Couldn't remove extent " + extent + " from server " + fromServer, serverTablets.remove(fromServer, extent));
                     assertTrue("Couldn't add extent " + extent + " to server " + toServer, serverTablets.put(toServer, extent));
@@ -830,147 +827,41 @@ public class ShardedTableTabletBalancerTest {
             }
         }
         
-        public SortedMap<TServerInstance,TabletServerStatus> getCurrent() {
-            SortedMap<TServerInstance,TabletServerStatus> current = new TreeMap<>();
-            for (TServerInstance tserver : tservers) {
-                current.put(tserver, new TabletServerStatus());
+        public SortedMap<TabletServerId,TServerStatus> getCurrent() {
+            SortedMap<TabletServerId,TServerStatus> current = new TreeMap<>();
+            for (TabletServerId tserver : tservers) {
+                current.put(tserver, new TServerStatusImpl(new TabletServerStatus()));
             }
             return current;
         }
         
-        public Iterable<Pair<KeyExtent,Location>> getLocationProvider() {
-            return Iterables.transform(tabletLocs.entrySet(), input -> new Pair<>(input.getKey(), new Location(input.getValue())));
-        }
-    }
-    
-    private class TestInstance implements Instance {
-        
-        @Override
-        public String getRootTabletLocation() {
-            return null;
-        }
-        
-        @Override
-        public List<String> getMasterLocations() {
-            return null;
-        }
-        
-        @Override
-        public String getInstanceID() {
-            return "test-id";
-        }
-        
-        @Override
-        public String getInstanceName() {
-            return "test-name";
-        }
-        
-        @Override
-        public String getZooKeepers() {
-            return null;
-        }
-        
-        @Override
-        public int getZooKeepersSessionTimeOut() {
-            return 0;
-        }
-        
-        @Override
-        public Connector getConnector(String user, byte[] pass) throws AccumuloException, AccumuloSecurityException {
-            return null;
-        }
-        
-        @Override
-        public Connector getConnector(String user, ByteBuffer pass) throws AccumuloException, AccumuloSecurityException {
-            return null;
-        }
-        
-        @Override
-        public Connector getConnector(String user, CharSequence pass) throws AccumuloException, AccumuloSecurityException {
-            return null;
-        }
-        
-        @Override
-        public AccumuloConfiguration getConfiguration() {
-            return null;
-        }
-        
-        @Override
-        public void setConfiguration(AccumuloConfiguration conf) {
-            
-        }
-        
-        @Override
-        public Connector getConnector(String principal, AuthenticationToken token) throws AccumuloException, AccumuloSecurityException {
-            return null;
-        }
-    }
-    
-    private class TestServerConfigurationFactory extends ServerConfigurationFactory {
-        private final TableConfiguration config;
-        
-        public TestServerConfigurationFactory(TableConfiguration config) {
-            super(new TestInstance());
-            this.config = config;
-        }
-        
-        @Override
-        public TableConfiguration getTableConfiguration(String tableId) {
-            return config;
+        public Map<TabletId,TabletServerId> getLocationProvider() {
+            return tabletLocs;
         }
     }
     
     private class TestShardedTableTabletBalancer extends ShardedTableTabletBalancer {
         private TestTServers testTServers;
         
-        public TestShardedTableTabletBalancer(TestTServers testTServers, TableConfiguration config) {
+        public TestShardedTableTabletBalancer(TestTServers testTServers) {
             super(TNAME);
             this.testTServers = testTServers;
-            this.configuration = new TestServerConfigurationFactory(config);
         }
         
         @Override
-        protected Iterable<Pair<KeyExtent,Location>> getRawLocationProvider() {
+        protected Map<TabletId,TabletServerId> getRawLocationProvider() {
             return testTServers.getLocationProvider();
         }
         
         // Overridden to make it public
         @Override
-        public Function<KeyExtent,String> getPartitioner() {
+        public Function<TabletId,String> getPartitioner() {
             return super.getPartitioner();
         }
         
         @Override
         protected long getWaitTime() {
             return 0;
-        }
-    }
-    
-    public class TestTableConfiguration extends TableConfiguration {
-        
-        private Map<String,String> properties = new HashMap<>();
-        
-        public TestTableConfiguration(Instance instance, String tableId, NamespaceConfiguration parent) {
-            super(instance, tableId, parent);
-        }
-        
-        public void set(String key, String value) {
-            this.properties.put(key, value);
-        }
-        
-        @Override
-        public String get(String property) {
-            return properties.get(property);
-        }
-        
-        @Override
-        public String get(Property property) {
-            return properties.get(property.getKey());
-        }
-        
-        @Override
-        public int getCount(Property property) {
-            return Integer.parseInt(properties.get(property.getKey()));
         }
     }
     

@@ -1,7 +1,9 @@
 package datawave.core.common.connection;
 
 import datawave.core.common.result.ConnectionPool;
-import org.apache.accumulo.core.client.Connector;
+import datawave.webservice.common.connection.WrappedAccumuloClient;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.clientImpl.ClientContext;
 
 import java.util.Collection;
 import java.util.List;
@@ -32,7 +34,7 @@ public interface AccumuloConnectionFactory extends AutoCloseable {
     /**
      * Gets a connection from the pool with the assigned priority
      *
-     * Deprecated in 2.2.3, use {@link #getConnection(String, Collection, String, Priority, Map)}
+     * Deprecated in 2.2.3, use {@link #getClient(String, Collection, String, Priority, Map)}
      *
      * @param priority
      *            the connection's Priority
@@ -42,7 +44,7 @@ public interface AccumuloConnectionFactory extends AutoCloseable {
      * @throws Exception
      *             on failure
      */
-    Connector getConnection(String userDN, Collection<String> proxyServers, Priority priority, Map<String,String> trackingMap) throws Exception;
+    AccumuloClient getClient(String userDN, Collection<String> proxyServers, Priority priority, Map<String,String> trackingMap) throws Exception;
     
     /**
      * Gets a connection from the named pool with the assigned priority
@@ -57,18 +59,18 @@ public interface AccumuloConnectionFactory extends AutoCloseable {
      * @throws Exception
      *             on failure
      */
-    Connector getConnection(String userDN, Collection<String> proxyServers, String poolName, Priority priority, Map<String,String> trackingMap)
+    AccumuloClient getClient(String userDN, Collection<String> proxyServers, String poolName, Priority priority, Map<String,String> trackingMap)
                     throws Exception;
     
     /**
      * Returns the connection to the pool with the associated priority.
      *
-     * @param connection
+     * @param client
      *            The connection to return
      * @throws Exception
      *             on failure
      */
-    void returnConnection(Connector connection) throws Exception;
+    void returnClient(AccumuloClient client) throws Exception;
     
     /**
      * Return a report of the current connection factory usage
@@ -98,4 +100,20 @@ public interface AccumuloConnectionFactory extends AutoCloseable {
      */
     Map<String,String> getTrackingMap(StackTraceElement[] stackTrace);
     
+    /**
+     * Utility method to unwrap the ClientContext instance within {@link WrappedAccumuloClient} as needed
+     *
+     * @param accumuloClient
+     *            {@link AccumuloClient} instance
+     * @return {@link WrappedAccumuloClient#getReal()}, if applicable; accumuloClient itself, if it implements {@link ClientContext}; otherwise returns null
+     */
+    static ClientContext getClientContext(AccumuloClient accumuloClient) {
+        ClientContext cc = null;
+        if (accumuloClient instanceof WrappedAccumuloClient) {
+            cc = (ClientContext) ((WrappedAccumuloClient) accumuloClient).getReal();
+        } else if (accumuloClient instanceof ClientContext) {
+            cc = (ClientContext) accumuloClient;
+        }
+        return cc;
+    }
 }

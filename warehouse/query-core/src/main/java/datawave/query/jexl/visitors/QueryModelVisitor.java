@@ -69,6 +69,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
      * Get the aliases for the field, and retain only those in the "validFields" set.
      * 
      * @param field
+     *            string field
      * @return the list of field aliases
      */
     protected Collection<String> getAliasesForField(String field) {
@@ -209,10 +210,12 @@ public class QueryModelVisitor extends RebuildingVisitor {
     
     /**
      * Applies the forward mapping from the QueryModel to a node, expanding the node into an Or if needed.
-     * 
+     *
      * @param node
+     *            the node
      * @param data
-     * @return
+     *            the data
+     * @return a jexlnode
      */
     protected JexlNode expandBinaryNodeFromModel(JexlNode node, Object data) {
         
@@ -457,6 +460,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
          * Get the aliases for the field, and retain only those in the "validFields" set.
          *
          * @param field
+         *            the field string
          * @return the list of field aliases
          */
         protected Collection<String> getAliasesForField(String field) {

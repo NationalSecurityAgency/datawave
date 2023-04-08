@@ -99,6 +99,8 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
      *            the old character sequence in lowercase
      * @param escapeChar
      *            the new character to prefix sequence1 in return string.
+     * @param locale
+     *            the locale
      * @return the new String
      */
     private static CharSequence replaceIgnoreCase(CharSequence string, CharSequence sequence1, CharSequence escapeChar, Locale locale) {
@@ -198,6 +200,15 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
      * 
      * Supports escaped unicode characters, e. g. translates <code>A</code> to <code>A</code>.
      * 
+     * @param input
+     *            the input
+     * @param allowUnicodeEscape
+     *            flag for unicode escape
+     * @param escapedCharacters
+     *            escaped characters array
+     * @return the string with the escape character removed
+     * @throws ParseException
+     *             for issues with parsing
      */
     public static UnescapedCharSequence discardEscapeChar(CharSequence input, char[] escapedCharacters, boolean allowUnicodeEscape) throws ParseException {
         Set<Character> escapedCharSet = new HashSet<>();
@@ -282,6 +293,11 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
      * 
      * Supports escaped unicode characters, e. g. translates <code>A</code> to <code>A</code>.
      * 
+     * @param input
+     *            the string input
+     * @return the string with the escape character removed
+     * @throws ParseException
+     *             for issues with parsing
      */
     public static UnescapedCharSequence discardEscapeChar(CharSequence input) throws ParseException {
         // Create char array to hold unescaped char sequence
@@ -346,7 +362,15 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
         return new UnescapedCharSequence(output, wasEscaped, 0, length);
     }
     
-    /** Returns the numeric value of the hexadecimal character */
+    /**
+     * Returns the numeric value of the hexadecimal character
+     * 
+     * @param c
+     *            a char
+     * @throws ParseException
+     *             for issues parsing
+     * @return numeric value of the hexadecimal character
+     */
     private static final int hexToInt(char c) throws ParseException {
         if ('0' <= c && c <= '9') {
             return c - '0';

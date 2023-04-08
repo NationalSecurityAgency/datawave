@@ -40,9 +40,6 @@ public class EntryParser implements Function<Result,Tuple2<String,IndexInfo>> {
     private Set<String> indexOnlyFields = null;
     private static final Logger log = Logger.getLogger(EntryParser.class);
     
-    /**
-     * @param node
-     */
     public EntryParser(ASTEQNode node, String fieldName, String literal) {
         currNode = node;
         this.fieldName = fieldName;

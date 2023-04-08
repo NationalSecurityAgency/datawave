@@ -3,8 +3,8 @@ package datawave.modification.cache;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.modification.configuration.ModificationConfiguration;
 import datawave.security.util.ScannerHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -46,16 +46,16 @@ public class ModificationCache {
      */
     public void reloadMutableFieldCache() {
         Map<String,Set<String>> cache = new HashMap<>();
-        Connector con = null;
+        AccumuloClient client = null;
         BatchScanner s = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             log.trace("getting mutable list from table " + this.modificationConfiguration.getTableName());
             log.trace("modificationConfiguration.getPoolName() = " + modificationConfiguration.getPoolName());
-            con = connectionFactory.getConnection(null, null, modificationConfiguration.getPoolName(), Priority.ADMIN, trackingMap);
+            client = connectionFactory.getClient(null, null, modificationConfiguration.getPoolName(), Priority.ADMIN, trackingMap);
             log.trace("got connection");
-            s = ScannerHelper.createBatchScanner(con, this.modificationConfiguration.getTableName(),
-                            Collections.singleton(con.securityOperations().getUserAuthorizations(con.whoami())), 8);
+            s = ScannerHelper.createBatchScanner(client, this.modificationConfiguration.getTableName(),
+                            Collections.singleton(client.securityOperations().getUserAuthorizations(client.whoami())), 8);
             s.setRanges(Collections.singleton(new Range()));
             s.fetchColumnFamily(MODIFICATION_COLUMN);
             for (Entry<Key,Value> e : s) {
@@ -81,7 +81,7 @@ public class ModificationCache {
             if (null != s)
                 s.close();
             try {
-                connectionFactory.returnConnection(con);
+                connectionFactory.returnClient(client);
             } catch (Exception e) {
                 log.error("Error returning connection to pool", e);
             }

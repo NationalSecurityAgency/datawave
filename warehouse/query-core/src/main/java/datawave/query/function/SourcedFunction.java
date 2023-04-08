@@ -13,11 +13,15 @@ public interface SourcedFunction<A,B> extends com.google.common.base.Function<A,
      * Initializes the iterator. Data should not be read from the source in this method.
      * 
      * @param source
-     *            <tt>SortedKeyValueIterator</tt> source to read data from.
+     *            <code>SortedKeyValueIterator</code> source to read data from.
      * @param options
-     *            <tt>Map</tt> map of string option names to option values.
+     *            <code>Map</code> map of string option names to option values.
      * @param env
-     *            <tt>IteratorEnvironment</tt> environment in which iterator is being run.
+     *            <code>IteratorEnvironment</code> environment in which iterator is being run.
+     * @param <K>
+     *            type of the key
+     * @param <V>
+     *            type for the value
      * @throws IOException
      *             unused.
      * @exception IllegalArgumentException

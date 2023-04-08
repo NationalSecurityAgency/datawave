@@ -28,8 +28,8 @@ import datawave.query.tables.ShardIndexQueryTable;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -94,12 +94,12 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         this.config = new DiscoveryQueryConfiguration(this, settings);
         
-        this.scannerFactory = new ScannerFactory(connection);
+        this.scannerFactory = new ScannerFactory(client);
         
-        this.metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
+        this.metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), auths);
         
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -145,7 +145,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         }
         
         // Set the connector
-        getConfig().setConnector(connection);
+        getConfig().setClient(client);
         
         // Set the auths
         getConfig().setAuthorizations(auths);
@@ -182,8 +182,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         script = QueryModelVisitor.applyModel(script, getQueryModel(), allFields);
         
         QueryValues literalsAndPatterns = FindLiteralsAndPatternsVisitor.find(script);
-        Stopwatch timer = Stopwatch.createUnstarted();
-        timer.start();
+        Stopwatch timer = Stopwatch.createStarted();
         // no caching for getAllNormalizers, so try some magic with getFields...
         Multimap<String,Type<?>> dataTypeMap = ArrayListMultimap.create(metadataHelper.getFieldsToDatatypes(getConfig().getDatatypeFilter()));
         /*
@@ -362,7 +361,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      * Takes in a batch scanner and returns an iterator over the DiscoveredThing objects contained in the value.
      *
      * @param scanner
-     * @return
+     *            a batch scanner
+     * @return iterator for discoveredthings
      */
     public static Iterator<DiscoveredThing> transformScanner(final BatchScanner scanner, final QueryData queryData) {
         return concat(transform(scanner.iterator(), new Function<Entry<Key,Value>,Iterator<DiscoveredThing>>() {
@@ -396,9 +396,16 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      * created.
      *
      * @param config
-     * @return
+     *            the discovery config
+     * @param familiesToSeek
+     *            the families to seek
+     * @param metadataHelper
+     *            a metadata helper
+     * @return a pair of ranges
      * @throws TableNotFoundException
+     *             if the table is not found
      * @throws ExecutionException
+     *             for execution exceptions
      */
     @SuppressWarnings("unchecked")
     public static Pair<Set<Range>,Set<Range>> makeRanges(DiscoveryQueryConfiguration config, Set<String> familiesToSeek, MetadataHelper metadataHelper)
@@ -459,9 +466,12 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      * See the {@link PatternNormalization} and {@link LiteralNormalization} implementations.
      *
      * @param normalization
+     *            the normalizer object
      * @param valuesToFields
+     *            mapping of values to fields
      * @param dataTypeMap
-     * @return
+     *            the data type map
+     * @return a mapping of the noramlized tuples
      */
     public static Multimap<String,String> normalize(Normalization normalization, Multimap<String,String> valuesToFields, Multimap<String,Type<?>> dataTypeMap) {
         Multimap<String,String> normalizedValuesToFields = HashMultimap.create();
@@ -488,9 +498,12 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      * See the {@link PatternNormalization} and {@link LiteralNormalization} implementations.
      *
      * @param normalization
+     *            the normalizer object
      * @param valuesToFields
+     *            mapping of values to fields
      * @param dataTypeMap
-     * @return
+     *            the data type map
+     * @return a mapping of the normalized ranges
      */
     public static Multimap<String,LiteralRange<String>> normalizeRanges(Normalization normalization, Multimap<String,LiteralRange<?>> valuesToFields,
                     Multimap<String,Type<?>> dataTypeMap) {
@@ -519,7 +532,10 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      * instances by their type, so that we only get 1 instance per type of normalizer.
      *
      * @param things
-     * @return
+     *            iterable list of objects
+     * @param <T>
+     *            type of the objects
+     * @return an object for each type passed in
      */
     public static <T> Collection<T> uniqueByType(Iterable<T> things) {
         Map<Class<?>,T> map = Maps.newHashMap();

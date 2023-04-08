@@ -2,6 +2,7 @@ package datawave.core.iterators;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -12,8 +13,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.util.NamingThreadFactory;
-import org.apache.accumulo.server.util.time.SimpleTimer;
+import org.apache.accumulo.core.util.threads.ThreadPools;
 import org.apache.log4j.Logger;
 
 /**
@@ -48,25 +48,24 @@ public class IteratorThreadPoolManager {
         }
         final ThreadPoolExecutor service = createExecutorService(getMaxThreads(prop, accumuloConfiguration), name + " (" + instanceId + ')');
         threadPools.put(name, service);
-        SimpleTimer.getInstance(accumuloConfiguration).schedule(() -> {
+        ThreadPools.getServerThreadPools().createGeneralScheduledExecutorService(accumuloConfiguration).scheduleWithFixedDelay(() -> {
             try {
-                
                 int max = getMaxThreads(prop, accumuloConfiguration);
                 if (service.getMaximumPoolSize() != max) {
                     log.info("Changing " + prop + " to " + max);
-                    service.setCorePoolSize(max);
                     service.setMaximumPoolSize(max);
+                    service.setCorePoolSize(max);
                 }
             } catch (Throwable t) {
                 log.error(t, t);
             }
-        }, 1000, 10 * 1000);
+        }, 1, 10, TimeUnit.SECONDS);
         return service;
     }
     
     private ThreadPoolExecutor createExecutorService(int maxThreads, String name) {
-        ThreadPoolExecutor pool = new ThreadPoolExecutor(maxThreads, maxThreads, 5 * 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
-                        new NamingThreadFactory(name));
+        ThreadPoolExecutor pool = ThreadPools.getServerThreadPools().createThreadPool(maxThreads, maxThreads, 5 * 60, TimeUnit.SECONDS, name,
+                        new LinkedBlockingQueue<>(), false);
         pool.allowCoreThreadTimeOut(true);
         return pool;
     }

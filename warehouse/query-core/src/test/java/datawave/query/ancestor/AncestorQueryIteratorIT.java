@@ -19,7 +19,7 @@ public class AncestorQueryIteratorIT extends QueryIteratorIT {
      * ancestor query will always use HitListArithmetic which will add the HIT_TERM field to all results regardless of the option, overload all test to expect
      * and include this
      * 
-     * @return
+     * @return true
      */
     @Override
     protected boolean isExpectHitTerm() {

@@ -2580,7 +2580,7 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
      * Resets the scanner to read from a new input stream. Does not close the old reader.
      *
      * All internal variables are reset, the old input stream <b>cannot</b> be reused (internal buffer is discarded and lost). Lexical state is set to
-     * <tt>ZZ_INITIAL</tt>.
+     * <code>ZZ_INITIAL</code>.
      *
      * Internal scan buffer is resized down to its initial length, if it has grown.
      *
@@ -2626,7 +2626,7 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
     }
     
     /**
-     * Returns the character at position <tt>pos</tt> from the matched text.
+     * Returns the character at position <code>pos</code> from the matched text.
      * 
      * It is equivalent to yytext().charAt(pos), but faster
      *

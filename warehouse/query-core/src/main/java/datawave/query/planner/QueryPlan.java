@@ -74,9 +74,6 @@ public class QueryPlan {
         buildHashCode();
     }
     
-    /**
-     * 
-     */
     private void buildHashCode() {
         
         HashCodeBuilder builder = new HashCodeBuilder();
@@ -101,9 +98,6 @@ public class QueryPlan {
         
     }
     
-    /**
-     * @param currentQueryData
-     */
     public QueryPlan(QueryData currentQueryData) throws ParseException {
         this.tableName = currentQueryData.getTableName();
         this.queryTreeString = currentQueryData.getQuery();

@@ -11,6 +11,7 @@ import datawave.microservice.query.QueryParameters;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.DnUtils;
 import datawave.webservice.common.json.DefaultMapperDecorator;
+import datawave.webservice.common.remote.TestJSSESecurityDomain;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
@@ -30,33 +31,22 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.jboss.security.JSSESecurityDomain;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509KeyManager;
 import javax.ws.rs.core.MediaType;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.nio.charset.Charset;
-import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -67,7 +57,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -208,125 +197,7 @@ public class RemoteEventQueryLogicHttpTest {
         remote.setExecutorService(null);
         remote.setObjectMapperDecorator(new DefaultMapperDecorator());
         remote.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        remote.setJsseSecurityDomain(new JSSESecurityDomain() {
-            @Override
-            public KeyStore getKeyStore() throws SecurityException {
-                try {
-                    KeyStore keyStore = KeyStore.getInstance("JKS");
-                    keyStore.load(null, null);
-                    keyStore.setKeyEntry(alias, privKey, keyPass, chain);
-                    keyStore.store(new FileOutputStream(".keystore"), keyPass);
-                    return keyStore;
-                } catch (Exception e) {
-                    throw new SecurityException(e);
-                }
-            }
-            
-            @Override
-            public KeyManager[] getKeyManagers() throws SecurityException {
-                KeyManager[] managers = new KeyManager[1];
-                managers[0] = new X509KeyManager() {
-                    @Override
-                    public String[] getClientAliases(String keyType, Principal[] issuers) {
-                        return new String[0];
-                    }
-                    
-                    @Override
-                    public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
-                        return null;
-                    }
-                    
-                    @Override
-                    public String[] getServerAliases(String keyType, Principal[] issuers) {
-                        return new String[0];
-                    }
-                    
-                    @Override
-                    public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
-                        return null;
-                    }
-                    
-                    @Override
-                    public X509Certificate[] getCertificateChain(String alias) {
-                        return chain;
-                    }
-                    
-                    @Override
-                    public PrivateKey getPrivateKey(String alias) {
-                        return privKey;
-                    }
-                };
-                return managers;
-            }
-            
-            @Override
-            public KeyStore getTrustStore() throws SecurityException {
-                try {
-                    KeyStore keyStore = KeyStore.getInstance("JKS");
-                    keyStore.load(null, null);
-                    keyStore.setKeyEntry(alias, privKey, keyPass, chain);
-                    keyStore.store(new FileOutputStream(".keystore"), keyPass);
-                    return keyStore;
-                } catch (Exception e) {
-                    throw new SecurityException(e);
-                }
-            }
-            
-            @Override
-            public TrustManager[] getTrustManagers() throws SecurityException {
-                return new TrustManager[0];
-            }
-            
-            @Override
-            public void reloadKeyAndTrustStore() throws Exception {
-                
-            }
-            
-            @Override
-            public String getServerAlias() {
-                return null;
-            }
-            
-            @Override
-            public String getClientAlias() {
-                return null;
-            }
-            
-            @Override
-            public boolean isClientAuth() {
-                return false;
-            }
-            
-            @Override
-            public Key getKey(String s, String s1) throws Exception {
-                return null;
-            }
-            
-            @Override
-            public Certificate getCertificate(String s) throws Exception {
-                return null;
-            }
-            
-            @Override
-            public String[] getCipherSuites() {
-                return new String[0];
-            }
-            
-            @Override
-            public String[] getProtocols() {
-                return new String[0];
-            }
-            
-            @Override
-            public Properties getAdditionalProperties() {
-                return null;
-            }
-            
-            @Override
-            public String getSecurityDomain() {
-                return null;
-            }
-        });
+        remote.setJsseSecurityDomain(new TestJSSESecurityDomain(alias, privKey, keyPass, chain));
         
         logic.setRemoteQueryService(remote);
         logic.setRemoteQueryLogic("TestQuery");

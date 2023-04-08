@@ -28,7 +28,7 @@ public abstract class Scheduler implements CloseableIterable<Result> {
     /**
      * Returns the scan session stats provided by this scheduler
      * 
-     * @return
+     * @return the scan session stats
      */
     public abstract ScanSessionStats getSchedulerStats();
     

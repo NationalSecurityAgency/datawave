@@ -6,10 +6,10 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
 import datawave.util.TableName;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -37,12 +37,7 @@ public class CommonalityTokenTestDataIngest {
     protected static final Value emptyValue = new Value(new byte[0]);
     protected static final long timeStamp = 1356998400000l;
     
-    /**
-     *
-     * 
-     * @return
-     */
-    public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
+    public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
@@ -52,7 +47,7 @@ public class CommonalityTokenTestDataIngest {
         
         try {
             // write the shard table :
-            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             mutation = new Mutation(shard);
             
             mutation.put(datatype + "\u0000" + myUID, "CAT.PET.0" + "\u0000" + "tabby", columnVisibility, timeStamp, emptyValue);
@@ -119,7 +114,7 @@ public class CommonalityTokenTestDataIngest {
         
         try {
             // write shard index table:
-            bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
             
             // all the cats
             mutation = new Mutation(lcNoDiacriticsType.normalize("tabby"));
@@ -275,7 +270,7 @@ public class CommonalityTokenTestDataIngest {
             
             // write the field index table:
             
-            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             
             mutation = new Mutation(shard);
             // cats
@@ -363,7 +358,7 @@ public class CommonalityTokenTestDataIngest {
         
         try {
             // write metadata table:
-            bw = con.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
             
             mutation = new Mutation("CAT");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
@@ -413,7 +408,7 @@ public class CommonalityTokenTestDataIngest {
     /**
      * forces a shard range
      * 
-     * @return
+     * @return a value
      */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();

@@ -31,6 +31,12 @@ public class GeoWaveFunctions {
     
     /**
      * Test intersection of a set of geometry with a field value
+     * 
+     * @param fieldValue
+     *            the field value
+     * @param geometries
+     *            group of geometries
+     * @return true if there is an intersection, false otherwise
      */
     private static boolean intersectsGeometries(Object fieldValue, Geometry[] geometries) {
         if (fieldValue != null) {

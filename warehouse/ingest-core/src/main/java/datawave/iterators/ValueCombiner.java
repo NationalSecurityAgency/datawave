@@ -44,7 +44,7 @@ public class ValueCombiner implements Iterator<Value> {
     }
     
     /**
-     * @return <tt>true</tt> if there is another Value
+     * @return <code>true</code> if there is another Value
      * 
      * @see java.util.Iterator#hasNext()
      */

@@ -16,9 +16,9 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
@@ -213,14 +213,14 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
     }
     
     @Override
-    public void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
+    public void process(AccumuloClient client, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
                     Collection<? extends DatawaveUser> proxiedUsers)
                     throws DatawaveModificationException, AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
         DatawavePrincipal principal = new DatawavePrincipal(proxiedUsers, System.currentTimeMillis());
         String user = principal.getShortName();
         
         ArrayList<Exception> exceptions = new ArrayList<>();
-        MetadataHelper mHelper = getMetadataHelper(con);
+        MetadataHelper mHelper = getMetadataHelper(client);
         
         // Receive DefaultUUIDModificationRequest
         DefaultUUIDModificationRequest uuidModReq = DefaultUUIDModificationRequest.class.cast(request);
@@ -332,7 +332,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                                         log.trace("Submitting request to MutableMetadataHandler from MutableMetadataUUIDHandler: " + modReq);
                                     
                                     // make sure user isn't null or empty
-                                    super.process(con, modReq, mutableFieldList, userAuths, proxiedUsers);
+                                    super.process(client, modReq, mutableFieldList, userAuths, proxiedUsers);
                                 }
                             }
                             // log exceptions that occur for each modification request. Let as many requests work as possible before returning

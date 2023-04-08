@@ -12,9 +12,9 @@ import datawave.helpers.PrintUtility;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Mutation;
@@ -47,7 +47,7 @@ class GroupingAccumuloWriter {
     
     private final String shardField;
     private final String dataType;
-    private final Connector conn;
+    private final AccumuloClient client;
     private final ConfigData cfgData;
     private final FieldConfig fieldConfig;
     
@@ -55,7 +55,7 @@ class GroupingAccumuloWriter {
      *
      * @param type
      *            datatype name
-     * @param accConn
+     * @param client
      *            accumulo connection object
      * @param field
      *            field name that contains the shard date
@@ -64,9 +64,9 @@ class GroupingAccumuloWriter {
      * @param data
      *            raw data to be written into accumulo
      */
-    GroupingAccumuloWriter(final String type, final Connector accConn, final String field, final FieldConfig idx, final ConfigData data) {
+    GroupingAccumuloWriter(final String type, final AccumuloClient client, final String field, final FieldConfig idx, final ConfigData data) {
         this.dataType = type;
-        this.conn = accConn;
+        this.client = client;
         this.fieldConfig = idx;
         this.cfgData = data;
         this.shardField = field;
@@ -78,7 +78,9 @@ class GroupingAccumuloWriter {
      * @param data
      *            raw data (NOTE: the key values in the multimap are expected to be uppercase)
      * @throws MutationsRejectedException
+     *             if the mutations were rejected
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     void addData(final List<Map.Entry<Multimap<String,String>,UID>> data) throws MutationsRejectedException, TableNotFoundException {
         final BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
@@ -88,17 +90,17 @@ class GroupingAccumuloWriter {
         writeShardIndexKeys(bwConfig, data, TableName.SHARD_INDEX, false);
         writeShardIndexKeys(bwConfig, data, TableName.SHARD_RINDEX, true);
         
-        PrintUtility.printTable(this.conn, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printTable(this.conn, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_INDEX);
-        PrintUtility.printTable(this.conn, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD);
-        PrintUtility.printTable(this.conn, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_RINDEX);
+        PrintUtility.printTable(this.client, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
+        PrintUtility.printTable(this.client, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_INDEX);
+        PrintUtility.printTable(this.client, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD);
+        PrintUtility.printTable(this.client, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_RINDEX);
     }
     
     private void writeMetaData(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data)
                     throws MutationsRejectedException, TableNotFoundException {
         Text dtText = new Text(this.dataType);
         Map<String,RawMetaData> meta = this.cfgData.getMetadata();
-        try (BatchWriter bw = this.conn.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, bwConfig)) {
+        try (BatchWriter bw = this.client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, bwConfig)) {
             for (Map.Entry<Multimap<String,String>,UID> entry : data) {
                 Multimap<String,String> rawData = entry.getKey();
                 String shardDate = extractShard(rawData);
@@ -131,7 +133,7 @@ class GroupingAccumuloWriter {
     private void writeShardKeys(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data)
                     throws MutationsRejectedException, TableNotFoundException {
         Map<String,RawMetaData> meta = this.cfgData.getMetadata();
-        try (BatchWriter bw = this.conn.createBatchWriter(TableName.SHARD, bwConfig)) {
+        try (BatchWriter bw = this.client.createBatchWriter(TableName.SHARD, bwConfig)) {
             for (Map.Entry<Multimap<String,String>,UID> entry : data) {
                 UID uid = entry.getValue();
                 Multimap<String,String> rawData = entry.getKey();
@@ -173,7 +175,7 @@ class GroupingAccumuloWriter {
         } else {
             fields = this.fieldConfig.getIndexFields();
         }
-        try (BatchWriter bw = this.conn.createBatchWriter(table, bwConfig)) {
+        try (BatchWriter bw = this.client.createBatchWriter(table, bwConfig)) {
             for (Map.Entry<Multimap<String,String>,UID> rawEntries : data) {
                 UID uid = rawEntries.getValue();
                 Multimap<String,String> rawData = rawEntries.getKey();

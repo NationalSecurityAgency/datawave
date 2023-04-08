@@ -12,11 +12,11 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils.NpeUtils;
+import datawave.security.util.DnUtils;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.functors.NOPTransformer;
@@ -50,7 +50,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(PowerMockRunner.class)
 public class ExtendedRunningQueryTest {
     @Mock
-    Connector connector;
+    AccumuloClient client;
     
     @Mock
     AccumuloConnectionFactory connectionFactory;
@@ -77,7 +77,7 @@ public class ExtendedRunningQueryTest {
     
     @Before
     public void setup() {
-        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
     }
     
@@ -92,7 +92,7 @@ public class ExtendedRunningQueryTest {
         } catch (NullPointerException e) {
             result1 = e;
         }
-        Connector result2 = subject.getConnection();
+        AccumuloClient result2 = subject.getClient();
         Priority result3 = subject.getConnectionPriority();
         QueryLogic<?> result4 = subject.getLogic();
         Query result5 = subject.getSettings();
@@ -162,7 +162,7 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getColumnVisibility()).andReturn(columnVisibility);
         expect(this.query.getUserDN()).andReturn(userDN).times(3);
         expect(this.query.getDnList()).andReturn(dnList);
-        expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
+        expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
         Iterator<Object> iterator = resultObjects.iterator();
@@ -179,11 +179,12 @@ public class ExtendedRunningQueryTest {
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
+        expect(this.queryLogic.getUserOperations()).andReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
-        RunningQuery subject = new RunningQuery(this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
+        RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
         
         ResultsPage result1 = subject.next();
@@ -248,7 +249,7 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getUserDN()).andReturn(userDN).times(3);
         expect(this.query.getColumnVisibility()).andReturn(columnVisibility);
         expect(this.query.getDnList()).andReturn(dnList);
-        expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
+        expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
@@ -269,12 +270,13 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
+        expect(this.queryLogic.getUserOperations()).andReturn(null);
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
-        RunningQuery subject = new RunningQuery(this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
+        RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
         
         ResultsPage result1 = subject.next();
@@ -328,7 +330,7 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getParameters()).andReturn(new HashSet<>());
         expect(this.query.getQueryAuthorizations()).andReturn(methodAuths);
         expect(this.query.getColumnVisibility()).andReturn(columnVisibility);
-        expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
+        expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         this.queryMetrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(3);
@@ -338,11 +340,12 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
+        expect(this.queryLogic.getUserOperations()).andReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
-        RunningQuery subject = new RunningQuery(this.queryMetrics, this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
+        RunningQuery subject = new RunningQuery(this.queryMetrics, this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
         subject.cancel();
         boolean result1 = subject.isCanceled();
@@ -387,21 +390,22 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getParameters()).andReturn(new HashSet<>());
         expect(this.query.getQueryAuthorizations()).andReturn(null);
         expect(this.query.getColumnVisibility()).andReturn(null);
-        expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
+        expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         expect(this.genericConfiguration.getQueryString()).andReturn("query").once();
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
+        expect(this.queryLogic.getUserOperations()).andReturn(null);
         this.queryLogic.setupQuery(this.genericConfiguration);
         this.queryMetrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(3);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
-        this.connectionFactory.returnConnection(this.connector);
+        this.connectionFactory.returnClient(this.client);
         this.queryLogic.close();
         
         // Run the test
         PowerMock.replayAll();
-        RunningQuery subject = new RunningQuery(this.queryMetrics, this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
+        RunningQuery subject = new RunningQuery(this.queryMetrics, this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
         subject.closeConnection(this.connectionFactory);
         QueryMetric.Lifecycle status = subject.getMetric().getLifecycle();
@@ -456,7 +460,7 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getUserDN()).andReturn(userDN).times(4);
         expect(this.query.getColumnVisibility()).andReturn(columnVisibility);
         expect(this.query.getDnList()).andReturn(dnList);
-        expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
+        expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
@@ -480,12 +484,13 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
+        expect(this.queryLogic.getUserOperations()).andReturn(null);
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
-        RunningQuery subject = new RunningQuery(this.connector, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
+        RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
         
         ResultsPage result1 = subject.next();

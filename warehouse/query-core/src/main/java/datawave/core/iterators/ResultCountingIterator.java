@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -170,9 +171,9 @@ public class ResultCountingIterator extends WrappingIterator {
         }
         
         if (log.isTraceEnabled()) {
-            log.trace(threadName + ": Total consume() time: " + consumeSW.elapsed().toMillis());
-            log.trace(threadName + ": Total next()/hasNext() time: " + ioWaitSW.elapsed().toMillis());
-            log.trace(threadName + ": Total internal time: " + processResultSW.elapsed().toMillis());
+            log.trace(threadName + ": Total consume() time: " + consumeSW.elapsed(TimeUnit.MILLISECONDS));
+            log.trace(threadName + ": Total next()/hasNext() time: " + ioWaitSW.elapsed(TimeUnit.MILLISECONDS));
+            log.trace(threadName + ": Total internal time: " + processResultSW.elapsed(TimeUnit.MILLISECONDS));
         }
     }
     
@@ -220,7 +221,7 @@ public class ResultCountingIterator extends WrappingIterator {
         
         sw.stop();
         if (log.isTraceEnabled()) {
-            log.trace(threadName + ": Elapsed getTopValue(): " + sw.elapsed().toMillis());
+            log.trace(threadName + ": Elapsed getTopValue(): " + sw.elapsed(TimeUnit.MILLISECONDS));
         }
         
         return new Value(baos.toByteArray());

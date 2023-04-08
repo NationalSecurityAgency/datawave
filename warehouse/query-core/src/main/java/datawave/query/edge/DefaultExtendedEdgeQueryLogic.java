@@ -16,6 +16,7 @@ import datawave.query.transformer.EdgeQueryTransformer;
 import datawave.query.util.MetadataHelper;
 import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Range;
@@ -73,12 +74,12 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         currentIteratorPriority = super.getBaseIteratorPriority() + 30;
         
         EdgeExtendedSummaryConfiguration config = getConfig().parseParameters(settings);
         
-        config.setConnector(connection);
+        config.setClient(client);
         config.setAuthorizations(auths);
         
         String queryString = getJexlQueryString(settings);
@@ -91,7 +92,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
         config.setBeginDate(settings.getBeginDate());
         config.setEndDate(settings.getEndDate());
         
-        scannerFactory = new ScannerFactory(connection);
+        scannerFactory = new ScannerFactory(client);
         
         prefilterValues = null;
         EdgeExtendedSummaryConfiguration.dateType dateFilterType = config.getDateRangeType();
@@ -108,7 +109,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
         
         boolean includeStats = config.includeStats();
         
-        MetadataHelper metadataHelper = super.prepareMetadataHelper(config.getConnector(), config.getMetadataTableName(), config.getAuthorizations());
+        MetadataHelper metadataHelper = super.prepareMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations());
         
         loadQueryModel(metadataHelper, config);
         

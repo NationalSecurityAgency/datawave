@@ -11,16 +11,10 @@ import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.metadata.MetadataFieldBase;
 import datawave.webservice.dictionary.data.DataDictionaryBase;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * Retrieves an {@link DataDictionaryBase} from the remote edge dictionary service.
@@ -101,7 +95,7 @@ public class RemoteDataDictionary extends RemoteHttpService {
                     String auths) {
         final String bearerHeader = "Bearer " + jwtTokenHandler.createTokenFromUsers(callerPrincipal.getName(), callerPrincipal.getProxiedUsers());
         // @formatter:off
-        return executeGetMethodWithRuntimeException(
+        return executeGetMethodWithRuntimeException("",
                 uriBuilder -> {
                     uriBuilder.addParameter("modelName", modelName);
                     uriBuilder.addParameter("modelTableName", modelTableName);
@@ -112,18 +106,6 @@ public class RemoteDataDictionary extends RemoteHttpService {
                 entity -> dataDictReader.readValue(entity.getContent()),
                 () -> "getDataDictionary [" + modelName + ", " + modelTableName + ", " + metadataTableName + ", " + auths + "]");
         // @formatter:on
-    }
-    
-    protected <T> T executeGetMethodWithRuntimeException(Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
-                    Supplier<String> errorSupplier) {
-        try {
-            return executeGetMethod(uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
-        } catch (IOException e) {
-            failureCounter.inc();
-            throw new RuntimeException(e.getMessage(), e);
-        }
     }
     
     @Override
@@ -185,4 +167,10 @@ public class RemoteDataDictionary extends RemoteHttpService {
     protected Counter retryCounter() {
         return retryCounter;
     }
+    
+    @Override
+    protected Counter failureCounter() {
+        return failureCounter;
+    }
+    
 }

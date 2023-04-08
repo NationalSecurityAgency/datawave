@@ -1,9 +1,9 @@
 package datawave.core.common.cache;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.result.TableCacheDescription;
-import org.apache.accumulo.core.util.NamingThreadFactory;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
 import org.apache.curator.framework.recipes.shared.SharedCountReader;
@@ -51,7 +51,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
     private static ExecutorService getThreadPoolExecutor(AccumuloTableCacheProperties accumuloTableCacheProperties) {
         return new ThreadPoolExecutor(Math.max(accumuloTableCacheProperties.getTableNames().size() / 2, 1),
                         Math.max(accumuloTableCacheProperties.getTableNames().size(), 1), 5, TimeUnit.MINUTES, new LinkedBlockingDeque<>(),
-                        new NamingThreadFactory("TableCacheReloader"));
+                        new ThreadFactoryBuilder().setNameFormat("TableCacheReloader %d").build());
     }
     
     public void setup() {

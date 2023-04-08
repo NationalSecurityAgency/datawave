@@ -13,7 +13,7 @@ import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 
@@ -203,8 +203,8 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
     
     protected List<String> readAccumuloAuthorizations() {
         try {
-            Connector connector = accumuloConnectionFactory.getConnection(null, null, null, AccumuloConnectionFactory.Priority.ADMIN, new HashMap<>());
-            Authorizations auths = connector.securityOperations().getUserAuthorizations(connector.whoami());
+            AccumuloClient client = accumuloConnectionFactory.getClient(null, null, AccumuloConnectionFactory.Priority.ADMIN, new HashMap<>());
+            Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
             return Arrays.asList(auths.toString().split("\\s*,\\s*"));
         } catch (Exception e) {
             throw new RuntimeException("Unable to acquire accumulo connector: " + e.getMessage(), e);

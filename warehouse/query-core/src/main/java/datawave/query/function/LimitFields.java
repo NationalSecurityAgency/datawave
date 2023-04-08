@@ -185,8 +185,11 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * allows us to keep all attributes that are part of the same group.
      * 
      * @param keyWithGrouping
+     *            the string key
      * @param attr
+     *            the attribute
      * @param hitTermMap
+     *            the hit term map
      * @return true if a hit
      */
     private boolean isHit(String keyWithGrouping, Attribute<?> attr, Multimap<String,String> hitTermMap) {

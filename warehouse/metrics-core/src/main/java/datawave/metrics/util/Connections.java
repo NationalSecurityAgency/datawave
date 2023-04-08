@@ -2,13 +2,11 @@ package datawave.metrics.util;
 
 import datawave.ingest.table.config.AbstractTableConfigHelper;
 import datawave.metrics.config.MetricsConfig;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.conf.Configuration;
@@ -41,27 +39,31 @@ public class Connections {
         tables.add(conf.get(MetricsConfig.BAD_SELECTOR_TABLE, MetricsConfig.DEFAULT_BAD_SELECTOR_TABLE));
         String hourlyTableName = conf.get(MetricsConfig.METRICS_HOURLY_SUMMARY_TABLE, MetricsConfig.DEFAULT_HOURLY_METRICS_SUMMARY_TABLE);
         
-        TableOperations tops = metricsConnection(conf).tableOperations();
-        for (String table : tables) {
-            if (!tops.exists(table)) {
-                createTable(tops, table);
+        try (AccumuloClient client = metricsClient(conf)) {
+            TableOperations tops = client.tableOperations();
+            for (String table : tables) {
+                if (!tops.exists(table)) {
+                    createTable(tops, table);
+                }
+            }
+            
+            if (!tops.exists(hourlyTableName)) {
+                createTable(tops, hourlyTableName);
+                configureClasspathContext(tops, hourlyTableName);
+                configureAgeOff(tops, hourlyTableName, 30);
             }
         }
         
-        if (!tops.exists(hourlyTableName)) {
-            createTable(tops, hourlyTableName);
-            configureClasspathContext(tops, hourlyTableName);
-            configureAgeOff(tops, hourlyTableName, 30);
-        }
-        
-        tops = warehouseConnection(conf).tableOperations();
-        
-        tables = new LinkedList<>();
-        tables.add(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE));
-        
-        for (String table : tables) {
-            if (!tops.exists(table)) {
-                createTable(tops, table);
+        try (AccumuloClient client = warehouseClient(conf)) {
+            TableOperations tops = client.tableOperations();
+            
+            tables = new LinkedList<>();
+            tables.add(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE));
+            
+            for (String table : tables) {
+                if (!tops.exists(table)) {
+                    createTable(tops, table);
+                }
             }
         }
     }
@@ -94,16 +96,15 @@ public class Connections {
         }
     }
     
-    public static Connector metricsConnection(Configuration c) throws AccumuloException, AccumuloSecurityException {
+    public static AccumuloClient metricsClient(Configuration c) throws AccumuloException, AccumuloSecurityException {
         final String mtxZk = c.get(MetricsConfig.ZOOKEEPERS), mtxInst = c.get(MetricsConfig.INSTANCE), mtxUser = c.get(MetricsConfig.USER),
                         mtxPass = c.get(MetricsConfig.PASS);
-        return new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(mtxInst).withZkHosts(mtxZk)).getConnector(mtxUser,
-                        new PasswordToken(mtxPass));
+        return Accumulo.newClient().to(mtxInst, mtxZk).as(mtxUser, mtxPass).build();
     }
     
-    public static Connector warehouseConnection(Configuration c) throws AccumuloException, AccumuloSecurityException {
+    public static AccumuloClient warehouseClient(Configuration c) throws AccumuloException, AccumuloSecurityException {
         final String whZk = c.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS), whInst = c.get(MetricsConfig.WAREHOUSE_INSTANCE),
                         whUser = c.get(MetricsConfig.WAREHOUSE_USERNAME), whPass = c.get(MetricsConfig.WAREHOUSE_PASSWORD);
-        return new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(whInst).withZkHosts(whZk)).getConnector(whUser, new PasswordToken(whPass));
+        return Accumulo.newClient().to(whInst, whZk).as(whUser, whPass).build();
     }
 }

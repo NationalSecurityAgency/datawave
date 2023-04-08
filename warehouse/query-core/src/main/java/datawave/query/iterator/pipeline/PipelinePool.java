@@ -49,8 +49,15 @@ public class PipelinePool {
      * Checkout a pipeline initialized with the specified document, creating a new pipeline if needed
      * 
      * @param key
+     *            a key
      * @param doc
+     *            the document
      * @param nestedQuery
+     *            the nested query
+     * @param inclusive
+     *            inclusive boolean flag
+     * @param columnFamilies
+     *            the column families
      * @return a new pipeline initialized and ready to execute
      */
     public Pipeline checkOut(Key key, Document doc, NestedQuery<Key> nestedQuery, Collection<ByteSequence> columnFamilies, boolean inclusive) {

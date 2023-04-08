@@ -4,7 +4,7 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.logic.DelegatingQueryLogic;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
 import java.util.Collections;
@@ -41,7 +41,7 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
     }
     
     @Override
-    public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+    public String getPlan(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception {
         if (!filtered && filter.canRunQuery(settings, runtimeQueryAuthorizations)) {
             return super.getPlan(connection, settings, runtimeQueryAuthorizations, expandFields, expandValues);
@@ -52,13 +52,13 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
         if (!filtered && filter.canRunQuery(settings, runtimeQueryAuthorizations)) {
             return super.initialize(connection, settings, runtimeQueryAuthorizations);
         } else {
             filtered = true;
             GenericQueryConfiguration config = new GenericQueryConfiguration() {};
-            config.setConnector(connection);
+            config.setClient(connection);
             config.setQueryString("");
             config.setAuthorizations(runtimeQueryAuthorizations);
             config.setBeginDate(settings.getBeginDate());

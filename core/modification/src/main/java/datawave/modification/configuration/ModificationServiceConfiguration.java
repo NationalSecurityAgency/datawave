@@ -4,7 +4,7 @@ import datawave.modification.query.ModificationQueryService;
 import datawave.security.authorization.DatawaveUser;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.ModificationRequestBase;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
 import java.util.Collection;
@@ -65,13 +65,13 @@ public abstract class ModificationServiceConfiguration {
     /**
      * The actual object type required for this service
      * 
-     * @return
+     * @return the request class
      */
     public abstract Class<? extends ModificationRequestBase> getRequestClass();
     
     /**
      * 
-     * @param con
+     * @param client
      *            Accumulo Connector
      * @param request
      *            the modification request to process
@@ -82,9 +82,10 @@ public abstract class ModificationServiceConfiguration {
      * @param proxiedUsers
      *            user proxy chain
      * @throws Exception
+     *             if there is an issue
      */
-    public abstract void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
-                    Collection<? extends DatawaveUser> proxiedUsers) throws Exception;
+    public abstract void process(AccumuloClient client, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList,
+                    Set<Authorizations> userAuths, Collection<? extends DatawaveUser> proxiedUsers) throws Exception;
     
     /**
      * 

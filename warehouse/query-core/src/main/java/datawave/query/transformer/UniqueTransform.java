@@ -106,6 +106,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * Apply uniqueness to a document.
      *
      * @param keyDocumentEntry
+     *            document entry
      * @return The document if unique per the configured fields, null otherwise.
      */
     @Nullable
@@ -131,8 +132,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * Determine if a document is unique per the fields specified. If we have seen this set of fields and values before, then it is not unique.
      *
      * @param document
-     * @return
+     *            a document
+     * @return if a document is unique per the fields specified
      * @throws IOException
+     *             for issues with read/write
      */
     private boolean isDuplicate(Document document) throws IOException {
         byte[] bytes = getBytes(document);
@@ -149,6 +152,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * Get a sequence of bytes that uniquely identifies this document using the configured unique fields.
      *
      * @param document
+     *            a document
      * @return A document signature
      * @throws IOException
      *             if we failed to generate the byte array
@@ -165,8 +169,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * Take the fields from the document configured for the unique transform and output them to the data output stream.
      * 
      * @param document
+     *            a document
      * @param output
+     *            the output stream
      * @throws IOException
+     *             if we failed to generate the byte array
      */
     private void outputSortedFieldValues(Document document, DataOutputStream output) throws IOException {
         int count = 0;
@@ -190,11 +197,16 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * Dump a list of values, sorted, to the data output stream
      * 
      * @param count
+     *            value count
      * @param field
+     *            a field
      * @param values
+     *            the list of values
      * @param output
+     *            the output stream
      * @return The next field count
      * @throws IOException
+     *             for issues with read/write
      */
     private int dumpValues(int count, String field, List<String> values, DataOutputStream output) throws IOException {
         if (!values.isEmpty()) {

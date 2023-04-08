@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import datawave.query.function.AncestorRangeProvider;
+import datawave.query.function.RangeProvider;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
@@ -238,6 +240,7 @@ public class AncestorQueryIterator extends QueryIterator {
      * Create a comparator used to order values within lists in the JexlContext.
      * 
      * @param from
+     *            the tuple to create the comparator
      * @return a ValueComparator
      */
     @Override
@@ -272,6 +275,19 @@ public class AncestorQueryIterator extends QueryIterator {
                 }
             }
         }
+    }
+    
+    /**
+     * Get a {@link AncestorRangeProvider}
+     *
+     * @return a {@link AncestorRangeProvider}
+     */
+    @Override
+    public RangeProvider getRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new AncestorRangeProvider();
+        }
+        return rangeProvider;
     }
     
 }

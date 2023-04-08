@@ -7,8 +7,8 @@ import datawave.core.query.remote.RemoteQueryService;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
@@ -91,13 +91,13 @@ public class RemoteEventQueryLogicTest {
         DatawavePrincipal proxiedServerPrincipal1 = new DatawavePrincipal(Lists.newArrayList(p3, p1));
         DatawavePrincipal proxiedServerPrincipal2 = new DatawavePrincipal(Lists.newArrayList(p2, p3, p1));
         
-        Assert.assertEquals("<userdn><entity1userdn><entity2userdn>", RemoteQueryServiceImpl.getEntities(proxiedUserPrincipal));
-        Assert.assertEquals("<entity3userdn><entity1userdn>", RemoteQueryServiceImpl.getEntities(proxiedServerPrincipal1));
-        Assert.assertEquals("<entity2userdn><entity3userdn><entity1userdn>", RemoteQueryServiceImpl.getEntities(proxiedServerPrincipal2));
+        Assert.assertEquals("<userdn><entity1userdn><entity2userdn>", RemoteHttpService.getProxiedEntities(proxiedUserPrincipal));
+        Assert.assertEquals("<entity3userdn><entity1userdn>", RemoteHttpService.getProxiedEntities(proxiedServerPrincipal1));
+        Assert.assertEquals("<entity2userdn><entity3userdn><entity1userdn>", RemoteHttpService.getProxiedEntities(proxiedServerPrincipal2));
         
-        Assert.assertEquals("<issuerdn><entity1issuerdn><entity2issuerdn>", RemoteQueryServiceImpl.getIssuers(proxiedUserPrincipal));
-        Assert.assertEquals("<entity3issuerdn><entity1issuerdn>", RemoteQueryServiceImpl.getIssuers(proxiedServerPrincipal1));
-        Assert.assertEquals("<entity2issuerdn><entity3issuerdn><entity1issuerdn>", RemoteQueryServiceImpl.getIssuers(proxiedServerPrincipal2));
+        Assert.assertEquals("<issuerdn><entity1issuerdn><entity2issuerdn>", RemoteHttpService.getProxiedIssuers(proxiedUserPrincipal));
+        Assert.assertEquals("<entity3issuerdn><entity1issuerdn>", RemoteHttpService.getProxiedIssuers(proxiedServerPrincipal1));
+        Assert.assertEquals("<entity2issuerdn><entity3issuerdn><entity1issuerdn>", RemoteHttpService.getProxiedIssuers(proxiedServerPrincipal2));
     }
     
     public static class TestRemoteQueryService implements RemoteQueryService {

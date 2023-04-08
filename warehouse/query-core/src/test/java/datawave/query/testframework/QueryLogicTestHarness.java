@@ -17,6 +17,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -102,7 +103,7 @@ public class QueryLogicTestHarness {
         if (!disableCheckpoint && logic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) logic).isCheckpointable() && factory != null) {
             Queue<QueryCheckpoint> cps = new LinkedList<>();
             GenericQueryConfiguration config = logic.getConfig();
-            Connector connection = config.getConnector();
+            AccumuloClient client = config.getClient();
             QueryKey queryKey = new QueryKey("default", logic.getConfig().getQuery().getId().toString(), logic.getLogicName());
             // replace the config with that which would have been stored
             if (config instanceof CheckpointableQueryConfiguration && ((CheckpointableQueryLogic) logic).isCheckpointable()) {
@@ -120,7 +121,7 @@ public class QueryLogicTestHarness {
                 }
                 // now reset the logic given the checkpoint
                 try {
-                    ((CheckpointableQueryLogic) logic).setupQuery(connection, config, cp);
+                    ((CheckpointableQueryLogic) logic).setupQuery(client, config, cp);
                 } catch (Exception e) {
                     log.error("Failed to setup query given last checkpoint", e);
                     Assert.fail("Failed to setup query given last checkpoint: " + e.getMessage());

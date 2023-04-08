@@ -40,11 +40,11 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -108,7 +108,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     static {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", StandardCharsets.UTF_8.name());
-        System.setProperty(DnUtils.NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         try {
             File dir = new File(ClassLoader.getSystemClassLoader().getResource(".").toURI());
             File targetDir = dir.getParentFile();
@@ -129,14 +129,14 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     public enum TestCities {
         // any city entries can be added; these exist in the current set of data
-        london, paris, rome;
+        london, paris, rome
     }
     
     private static final SimpleDateFormat YMD_DateFormat = new SimpleDateFormat("yyyyMMdd");
     
     // ============================================
     // static members
-    protected static Connector connector;
+    protected static AccumuloClient client;
     
     // ============================================
     // instance members
@@ -385,7 +385,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      *             test error condition
      */
     protected void runTest(final String query, final String expectQuery) throws Exception {
-        runTest(query, expectQuery, (Map<String,String>) Collections.EMPTY_MAP);
+        runTest(query, expectQuery, Collections.emptyMap());
     }
     
     protected void runTest(final String query, final Collection<String> expectResp) throws Exception {
@@ -510,9 +510,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         q.setQueryAuthorizations(auths.toString());
         if (useRunningQuery) {
             QueryMetricFactory queryMetricFactory = (metricFactory == null) ? new QueryMetricFactoryImpl() : metricFactory;
-            new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, this.logic, q, "", principal, queryMetricFactory);
+            new RunningQuery(client, AccumuloConnectionFactory.Priority.NORMAL, this.logic, q, "", principal, queryMetricFactory);
         } else {
-            GenericQueryConfiguration config = this.logic.initialize(connector, q, authSet);
+            GenericQueryConfiguration config = this.logic.initialize(client, q, authSet);
             this.logic.setupQuery(config);
             if (log.isDebugEnabled()) {
                 log.debug("Plan: " + config.getQueryString());
@@ -545,7 +545,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         q.setPagesize(Integer.MAX_VALUE);
         q.setQueryAuthorizations(auths.toString());
         
-        RunningQuery runner = new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, this.countLogic, q, "", principal,
+        RunningQuery runner = new RunningQuery(client, AccumuloConnectionFactory.Priority.NORMAL, this.countLogic, q, "", principal,
                         new QueryMetricFactoryImpl());
         TransformIterator it = runner.getTransformIterator();
         ShardQueryCountTableTransformer ctt = (ShardQueryCountTableTransformer) it.getTransformer();
@@ -590,7 +590,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         q.setPagesize(Integer.MAX_VALUE);
         q.setQueryAuthorizations(auths.toString());
         
-        return this.logic.initialize(connector, q, this.authSet);
+        return this.logic.initialize(client, q, this.authSet);
     }
     
     /**
@@ -621,7 +621,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         q.setPagesize(Integer.MAX_VALUE);
         q.setQueryAuthorizations(auths.toString());
         
-        return this.logic.getPlan(connector, q, this.authSet, expandFields, expandValues);
+        return this.logic.getPlan(client, q, this.authSet, expandFields, expandValues);
     }
     
     /**
@@ -708,11 +708,11 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected Multimap<String,Key> removeMetadataEntries(Set<String> fields, Text cf)
                     throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         Multimap<String,Key> metadataEntries = HashMultimap.create();
-        MultiTableBatchWriter multiTableWriter = connector.createMultiTableBatchWriter(new BatchWriterConfig());
+        MultiTableBatchWriter multiTableWriter = client.createMultiTableBatchWriter(new BatchWriterConfig());
         BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME);
         for (String field : fields) {
             Mutation mutation = new Mutation(new Text(field));
-            Scanner scanner = connector.createScanner(QueryTestTableHelper.METADATA_TABLE_NAME, new Authorizations());
+            Scanner scanner = client.createScanner(QueryTestTableHelper.METADATA_TABLE_NAME, new Authorizations());
             scanner.fetchColumnFamily(cf);
             scanner.setRange(new Range(new Text(field)));
             boolean foundEntries = false;
@@ -727,12 +727,12 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             }
         }
         writer.close();
-        connector.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
+        client.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
         return metadataEntries;
     }
     
     protected void addMetadataEntries(Multimap<String,Key> metadataEntries) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-        MultiTableBatchWriter multiTableWriter = connector.createMultiTableBatchWriter(new BatchWriterConfig());
+        MultiTableBatchWriter multiTableWriter = client.createMultiTableBatchWriter(new BatchWriterConfig());
         BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME);
         for (String field : metadataEntries.keySet()) {
             Mutation mutation = new Mutation(new Text(field));
@@ -743,7 +743,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             writer.addMutation(mutation);
         }
         writer.close();
-        connector.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
+        client.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
     }
     
     /**
@@ -756,8 +756,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     /**
      * When provided, the QueryMetric object will be used for running the query and so can be later inspected. Also see #useRunningQuery()
-     * 
+     *
      * @param metric
+     *            the base metric
      */
     protected void withMetric(BaseQueryMetric metric) {
         this.metricFactory = new QueryMetricFactory() {

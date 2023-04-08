@@ -25,6 +25,7 @@ import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.user.UserOperationsBean;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
@@ -60,10 +61,8 @@ import datawave.webservice.result.CachedResultsResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.TotalResultsAware;
 import datawave.webservice.result.VoidResponse;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.trace.Span;
-import org.apache.accumulo.core.trace.Trace;
-import org.apache.accumulo.core.trace.thrift.TInfo;
+
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.jexl2.parser.TokenMgrError;
@@ -71,9 +70,11 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import javax.annotation.PostConstruct;
@@ -192,6 +193,9 @@ public class CachedResultsBean {
     
     @Inject
     private QueryCache runningQueryCache;
+    
+    @Inject
+    private UserOperationsBean userOperationsBean;
     
     @Inject
     private AuditBean auditor;
@@ -350,7 +354,7 @@ public class CachedResultsBean {
         }
         
         AccumuloConnectionFactory.Priority priority;
-        Connector connector = null;
+        AccumuloClient client = null;
         RunningQuery query = null;
         String tableName = "t" + nameBase;
         String viewName = "v" + nameBase;
@@ -359,7 +363,6 @@ public class CachedResultsBean {
         boolean tableCreated = false;
         boolean viewCreated = false;
         CachedRunningQuery crq = null;
-        Span span = null;
         boolean queryLockedException = false;
         int rowsPerBatch = cachedResultsConfiguration.getRowsPerBatch();
         try {
@@ -370,7 +373,6 @@ public class CachedResultsBean {
             QueryLogic<?> logic = null;
             Query q = null;
             BaseQueryMetric queryMetric = null;
-            TInfo traceInfo = null;
             try {
                 rq = getQueryById(queryId);
                 
@@ -401,17 +403,14 @@ public class CachedResultsBean {
                 // rq and RunningQuery.close will call close on the logic. This is causing the batch scanner to
                 // be closed after 15 minutes
                 logic = (QueryLogic<?>) logic.clone();
-                if (rq.getTraceInfo() != null) {
-                    traceInfo = rq.getTraceInfo().deepCopy();
-                }
             } finally {
                 if (rq != null) {
                     // the original query was cloned including the queryId
                     // remove original query from the cache to avoid duplicate metrics
                     // when it is expired by the QueryExpirationBean
                     rq.setActiveCall(false);
-                    if (rq.getConnection() != null) {
-                        connectionFactory.returnConnection(rq.getConnection());
+                    if (rq.getClient() != null) {
+                        connectionFactory.returnClient(rq.getClient());
                     }
                     runningQueryCache.remove(queryId);
                 }
@@ -432,7 +431,7 @@ public class CachedResultsBean {
             q.populateTrackingMap(trackingMap);
             accumuloConnectionRequestBean.requestBegin(queryId, userDn, trackingMap);
             try {
-                connector = connectionFactory.getConnection(userDn, proxyServers, priority, trackingMap);
+                client = connectionFactory.getClient(userDn, proxyServers, priority, trackingMap);
             } finally {
                 accumuloConnectionRequestBean.requestEnd(queryId);
             }
@@ -445,7 +444,7 @@ public class CachedResultsBean {
             AuditType auditType = logic.getAuditType(q);
             if (!auditType.equals(AuditType.NONE)) {
                 try {
-                    MultiValueMap<String,String> queryMap = q.toMap();
+                    MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(q.toMap());
                     marking.validate(queryMap);
                     queryMap.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
                     queryMap.set(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
@@ -474,18 +473,16 @@ public class CachedResultsBean {
             
             if (t instanceof CacheableLogic) {
                 // hold on to a reference of the query logic so we cancel it if need be.
-                qlCache.add(q.getId().toString(), owner, logic, connector);
+                qlCache.add(q.getId().toString(), owner, logic, client);
                 
                 try {
                     query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p,
-                                    new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, metricFactory);
+                                    new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
                     query.setActiveCall(true);
                     // queryMetric was duplicated from the original earlier
                     query.setMetric(queryMetric);
                     query.setQueryMetrics(metrics);
-                    query.setConnection(connector);
-                    // Copy trace info from a clone of the original query
-                    query.setTraceInfo(traceInfo);
+                    query.setClient(client);
                 } finally {
                     qlCache.poll(q.getId().toString());
                 }
@@ -521,11 +518,6 @@ public class CachedResultsBean {
             // Loop over the results and put them into the database.
             ResultsPage results = null;
             
-            // If we're tracing this query, then continue the trace for the next call.
-            if (traceInfo != null) {
-                span = Trace.trace(traceInfo, "cachedresults:load");
-            }
-            
             int rowsWritten = 0;
             boolean go = true;
             while (go) {
@@ -534,16 +526,7 @@ public class CachedResultsBean {
                     throw new QueryCanceledQueryException(DatawaveErrorCode.QUERY_CANCELED);
                 }
                 
-                Span nextSpan = (span == null) ? null : Trace.start("cachedresults:next");
-                try {
-                    if (nextSpan != null)
-                        nextSpan.data("pageNumber", Long.toString(query.getLastPageNumber() + 1));
-                    
-                    results = query.next();
-                } finally {
-                    if (nextSpan != null)
-                        nextSpan.stop();
-                }
+                results = query.next();
                 if (results.getResults().isEmpty()) {
                     go = false;
                     break;
@@ -728,23 +711,6 @@ public class CachedResultsBean {
                 CachedResultsBean.loadingQueries.remove(queryId);
             }
             
-            if (span != null) {
-                span.stop();
-                
-                span = Trace.trace(query.getTraceInfo(), "query:close");
-                span.data("closedAt", new Date().toString());
-                // Spans aren't recorded if they take no time, so sleep for a
-                // couple milliseconds just to ensure we get something saved.
-                try {
-                    Thread.sleep(2);
-                } catch (InterruptedException e) {
-                    // ignore
-                }
-                span.stop();
-                // TODO: 1.8.1: no longer done?
-                // Tracer.getInstance().flush();
-            }
-            
             if (null != query) {
                 query.setActiveCall(false);
                 try {
@@ -752,9 +718,9 @@ public class CachedResultsBean {
                 } catch (Exception e) {
                     response.addException(new QueryException(DatawaveErrorCode.QUERY_CLOSE_ERROR, e).getBottomQueryException());
                 }
-            } else if (connector != null) {
+            } else if (client != null) {
                 try {
-                    connectionFactory.returnConnection(connector);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error(new QueryException(DatawaveErrorCode.CONNECTOR_RETURN_ERROR, e));
                 }
@@ -1299,7 +1265,7 @@ public class CachedResultsBean {
                 auditMessage.append("User running secondary query on cached results of original query,");
                 auditMessage.append(" original query: ").append(query.getQuery());
                 auditMessage.append(", secondary query: ").append(sqlQuery);
-                MultiValueMap<String,String> params = query.toMap();
+                MultiValueMap<String,String> params = new LinkedMultiValueMap<>(query.toMap());
                 marking.validate(params);
                 PrivateAuditConstants.stripPrivateParameters(queryParameters);
                 params.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
@@ -2173,7 +2139,7 @@ public class CachedResultsBean {
                 QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), p);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
-                                new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, metricFactory);
+                                new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
                 query.setActiveCall(true);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 runningQueryCache.put(q.getId().toString(), query);
@@ -2303,8 +2269,8 @@ public class CachedResultsBean {
                     log.debug("retrieved cachedRunningQuery " + id + " from cache with status " + crq.getStatus());
                 }
             } catch (Exception e) {
-                log.error("Caught attempting to retrieve cached results from infinispan cache: " + e.getMessage(), e);
-                throw new IOException(e.getClass().getName() + " caught attempting to retrieve cached results from infinispan cache", e);
+                log.error("Caught attempting to retrieve cached results: " + e.getMessage(), e);
+                throw new IOException(e.getClass().getName() + " caught attempting to retrieve cached results", e);
             }
             
             log.debug("Details not in cache, checking the database");

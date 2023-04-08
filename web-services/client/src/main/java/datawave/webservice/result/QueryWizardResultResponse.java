@@ -1,13 +1,13 @@
 package datawave.webservice.result;
 
 import datawave.webservice.HtmlProvider;
+import datawave.webservice.metadata.MetadataFieldBase;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.istat.FieldStat;
 import datawave.webservice.query.result.istat.IndexStatsResponse;
-import datawave.webservice.metadata.MetadataFieldBase;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;

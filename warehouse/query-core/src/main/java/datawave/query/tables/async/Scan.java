@@ -3,7 +3,6 @@ package datawave.query.tables.async;
 import com.google.common.base.Function;
 import com.google.common.eventbus.Subscribe;
 import datawave.core.query.configuration.Result;
-import datawave.mr.bulk.RfileResource;
 import datawave.query.tables.AccumuloResource;
 import datawave.query.tables.AccumuloResource.ResourceFactory;
 import datawave.query.tables.BatchResource;
@@ -11,7 +10,7 @@ import datawave.query.tables.ResourceQueue;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.impl.ThriftScanner.ScanTimedOutException;
+import org.apache.accumulo.core.clientImpl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -198,31 +197,29 @@ public class Scan implements Callable<Scan> {
                 
                 Class<? extends AccumuloResource> initializer = delegatedResourceInitializer;
                 
-                if (initializer != RfileResource.class) {
-                    if (!docSpecific) {
-                        initializer = BatchResource.class;
-                    } else {
+                if (!docSpecific) {
+                    initializer = BatchResource.class;
+                } else {
+                    
+                    if (null != arbiter && timeout > 0) {
                         
-                        if (null != arbiter && timeout > 0) {
-                            
-                            myScan.getOptions().setTimeout(timeout, TimeUnit.MILLISECONDS);
-                            
-                            if (!arbiter.canRun(myScan)) {
-                                if (log.isInfoEnabled()) {
-                                    log.info("Not running " + currentRange);
-                                }
-                                if (log.isTraceEnabled()) {
-                                    log.trace("Not running scan as we have other work to do, and this server is unresponsive");
-                                }
-                                return this;
-                            } else {
-                                if (log.isTraceEnabled()) {
-                                    log.trace("Running scan as server is not unresponsive");
-                                }
+                        myScan.getOptions().setTimeout(timeout, TimeUnit.MILLISECONDS);
+                        
+                        if (!arbiter.canRun(myScan)) {
+                            if (log.isInfoEnabled()) {
+                                log.info("Not running " + currentRange);
+                            }
+                            if (log.isTraceEnabled()) {
+                                log.trace("Not running scan as we have other work to do, and this server is unresponsive");
+                            }
+                            return this;
+                        } else {
+                            if (log.isTraceEnabled()) {
+                                log.trace("Running scan as server is not unresponsive");
                             }
                         }
-                        
                     }
+                    
                 }
                 
                 String scanId = getNewScanId();
@@ -330,7 +327,10 @@ public class Scan implements Callable<Scan> {
      * Override this for your specific implementation.
      * 
      * @param lastKey
+     *            the last key
      * @param previousRange
+     *            a previous range
+     * @return a new range
      */
     public Range buildNextRange(final Key lastKey, final Range previousRange) {
         return new Range(lastKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME), true, previousRange.getEndKey(), previousRange.isEndKeyInclusive());

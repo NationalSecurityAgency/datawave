@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce;
 
+import java.nio.charset.StandardCharsets;
+
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
 
@@ -18,7 +20,7 @@ public class TermFilter<T> implements Funnel<T> {
     
     @Override
     public void funnel(T from, PrimitiveSink into) {
-        into.putUnencodedChars(from.toString());
+        into.putString(from.toString(), StandardCharsets.UTF_8);
     }
     
 }

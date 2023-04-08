@@ -6,6 +6,7 @@ import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.marking.MarkingFunctions;
 import datawave.security.authorization.ProxiedUserDetails;
+import datawave.security.authorization.UserOperations;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.query.Query;
@@ -13,7 +14,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseResponse;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 
@@ -29,7 +30,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * <p>
      * The default implementation is to return the query string as the normalized query
      *
-     * @param connection
+     * @param client
      *            - Accumulo connector to use for this query
      * @param settings
      *            - query settings (query, begin date, end date, etc.)
@@ -43,14 +44,14 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @throws Exception
      *             on failure
      */
-    String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+    String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception;
     
     /**
      * Implementations create a configuration using the connection, settings, and runtimeQueryAuthorizations.
-     *
-     * @param connection
-     *            - Accumulo connector to use for this query
+     * 
+     * @param client
+     *            - Accumulo client to use for this query
      * @param settings
      *            - query settings (query, begin date, end date, etc.)
      * @param runtimeQueryAuthorizations
@@ -59,7 +60,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @throws Exception
      *             on failure
      */
-    GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception;
+    GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception;
     
     /**
      * @param settings
@@ -400,6 +401,14 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @param pageProcessingStartTime
      */
     void setPageProcessingStartTime(long pageProcessingStartTime);
+    
+    /**
+     * Normally this simply returns null as the query logic simply uses the user within the local system. However sometimes we may have a query that goes off
+     * system and hence needs to use a different set of auths when downgrading.
+     *
+     * @return A user operations interface implementation. Null if NA (i.e. the local principal is sufficient)
+     */
+    UserOperations getUserOperations();
     
     ProxiedUserDetails getCurrentUser();
     

@@ -361,7 +361,7 @@ function servicesAreRunning() {
 
 function jdkIsConfigured() {
    local javacBinary="$(which javac)"
-   local requiredVersion="javac 1.8.0"
+   local requiredVersion="javac 11.0"
    local foundIt=""
 
    # Check JAVA_HOME

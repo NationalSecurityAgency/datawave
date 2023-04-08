@@ -1,6 +1,5 @@
 package datawave.ingest.csv;
 
-import datawave.accumulo.minicluster.MiniAccumuloClusterForPostZoo34;
 import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
@@ -27,7 +26,7 @@ import java.util.Set;
 
 public class TableConfigurationUtilTest {
     
-    private static MiniAccumuloClusterForPostZoo34 mac;
+    private static MiniAccumuloCluster mac;
     private static Configuration conf = new Configuration();
     private static File tempCacheFile;
     
@@ -37,7 +36,7 @@ public class TableConfigurationUtilTest {
         if (macDir.exists())
             FileUtils.deleteDirectory(macDir);
         macDir.mkdirs();
-        mac = new MiniAccumuloClusterForPostZoo34(new MiniAccumuloConfig(macDir, "pass"));
+        mac = new MiniAccumuloCluster(new MiniAccumuloConfig(macDir, "pass"));
         mac.start();
         
         tempCacheFile = File.createTempFile("tempCache", null);
@@ -100,7 +99,7 @@ public class TableConfigurationUtilTest {
         
         Assert.assertEquals(0, tempCacheFile.length());
         tcu.updateCacheFile();
-        Assert.assertEquals(12349, tempCacheFile.length());
+        Assert.assertEquals(7215, tempCacheFile.length());
         
         tcu.serializeTableConfgurationIntoConf(conf);
         
@@ -236,13 +235,13 @@ public class TableConfigurationUtilTest {
     
     private void validateTCU(TableConfigurationUtil tcu, Configuration conf) throws IOException {
         Map<String,String> shardProps = tcu.getTableProperties("datawave.shard");
-        Assert.assertEquals(23, shardProps.size());
+        Assert.assertEquals(13, shardProps.size());
         
         Map<String,String> shardIndexProps = tcu.getTableProperties("datawave.shardIndex");
-        Assert.assertEquals(20, shardIndexProps.size());
+        Assert.assertEquals(10, shardIndexProps.size());
         
         Map<String,String> metaProps = tcu.getTableProperties("datawave.metadata");
-        Assert.assertEquals(25, metaProps.size());
+        Assert.assertEquals(15, metaProps.size());
         
         tcu.setTableItersPrioritiesAndOpts();
         

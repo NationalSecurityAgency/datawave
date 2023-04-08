@@ -8,7 +8,7 @@ services:
     profiles:
       - quickstart
     command: ["datawave-bootstrap.sh", "--accumulo"]
-    image: datawave/quickstart-compose:3.40.0-SNAPSHOT
+    image: datawave/quickstart-compose:5.2.0-SNAPSHOT
     environment:
       - DW_CONTAINER_HOST=quickstart
     ports:
@@ -127,8 +127,8 @@ services:
         condition: service_started
 
   configuration:
-    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5009","-jar","app.jar" ]
-    image: datawave/config-service:1.7-SNAPSHOT
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009","-jar","app.jar" ]
+    image: datawave/config-service:2.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,native,open_actuator
@@ -152,7 +152,7 @@ services:
         condition: service_started
 
   cache:
-    image: datawave/hazelcast-service:1.10-SNAPSHOT
+    image: datawave/hazelcast-service:3.0-SNAPSHOT
     scale: 1
     command:
       - --spring.profiles.active=consul,compose,remoteauth
@@ -179,8 +179,8 @@ services:
         condition: service_started
 
   authorization:
-    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5008","-jar","app.jar" ]
-    image: datawave/authorization-service:1.15-SNAPSHOT
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008","-jar","app.jar" ]
+    image: datawave/authorization-service:3.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,mock,compose
@@ -209,7 +209,7 @@ services:
     profiles:
       - accumulo
       - full
-    image: datawave/accumulo-service:1.5-SNAPSHOT
+    image: datawave/accumulo-service:3.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -242,7 +242,7 @@ services:
         condition: service_healthy
 
   audit:
-    image: datawave/audit-service:1.12-SNAPSHOT
+    image: datawave/audit-service:3.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -275,8 +275,8 @@ services:
         condition: service_healthy
 
   metrics:
-    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5007","-jar","app.jar"]
-    image: datawave/query-metric-service:1.6.5-SNAPSHOT
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5007","-jar","app.jar"]
+    image: datawave/query-metric-service:3.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -313,7 +313,7 @@ services:
     profiles:
       - dictionary
       - full
-    image: datawave/dictionary-service:1.4-SNAPSHOT
+    image: datawave/dictionary-service:3.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -360,7 +360,7 @@ services:
 
   # If you want to test cached results, set the CACHED_RESULTS environment variable to 'true'
   query:
-    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005","-jar","app.jar"]
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
     image: datawave/query-service:1.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
@@ -404,7 +404,7 @@ services:
   mapreduce-query:
     profiles:
       - full
-    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005","-jar","app.jar"]
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
     image: datawave/mapreduce-query-service:1.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
@@ -442,7 +442,7 @@ services:
         condition: service_started
 
   executor-pool1:
-    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5006","-jar","app.jar"]
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006","-jar","app.jar"]
     image: datawave/query-executor-service:1.0-SNAPSHOT
     command:
       - --spring.application.name=executor-pool1
@@ -564,7 +564,7 @@ services:
         condition: service_healthy
 
   modification:
-    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5010","-jar","app.jar"]
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5010","-jar","app.jar"]
     profiles:
       - modification
       - full

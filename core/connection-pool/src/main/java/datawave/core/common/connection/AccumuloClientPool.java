@@ -1,6 +1,6 @@
 package datawave.core.common.connection;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
@@ -12,14 +12,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class AccumuloConnectionPool extends GenericObjectPool<Connector> {
+public class AccumuloClientPool extends GenericObjectPool<AccumuloClient> {
     
-    private static final Logger log = Logger.getLogger(AccumuloConnectionPool.class);
+    private static final Logger log = Logger.getLogger(AccumuloClientPool.class);
     private final Map<Long,Map<String,String>> threadToTrackingMapMap = Collections.synchronizedMap(new HashMap<>());
-    private final Map<Connector,Map<String,String>> connectorToTrackingMapMap = Collections.synchronizedMap(new HashMap<>());
-    private AccumuloConnectionPoolFactory factory = null;
+    private final Map<AccumuloClient,Map<String,String>> connectorToTrackingMapMap = Collections.synchronizedMap(new HashMap<>());
+    private AccumuloClientPoolFactory factory;
     
-    public AccumuloConnectionPool(AccumuloConnectionPoolFactory factory) {
+    public AccumuloClientPool(AccumuloClientPoolFactory factory) {
         super(factory);
         this.factory = factory;
     }
@@ -29,10 +29,10 @@ public class AccumuloConnectionPool extends GenericObjectPool<Connector> {
         return " NumIdle: " + getNumIdle() + " NumActive: " + getNumActive() + " MaxIdle: " + getMaxIdle() + " MaxTotal: " + getMaxTotal();
     }
     
-    public Connector borrowObject(Map<String,String> trackingMap) throws Exception {
+    public AccumuloClient borrowObject(Map<String,String> trackingMap) throws Exception {
         
         Long threadId = Thread.currentThread().getId();
-        Connector o = null;
+        AccumuloClient o;
         try {
             trackingMap.put(AccumuloConnectionFactory.START_TIME, Long.valueOf(System.currentTimeMillis()).toString());
             trackingMap.put(AccumuloConnectionFactory.STATE, AccumuloConnectionFactory.State.WAITING.toString());
@@ -59,22 +59,22 @@ public class AccumuloConnectionPool extends GenericObjectPool<Connector> {
     }
     
     @Override
-    public Connector borrowObject() throws Exception {
+    public AccumuloClient borrowObject() throws Exception {
         throw new UnsupportedOperationException("you can not call AccumuloConnectionFactory.borrowObject without a trackingMap argument");
     }
     
-    public void returnObject(Connector connector) {
-        if (connector != null) {
+    public void returnObject(AccumuloClient client) {
+        if (client != null) {
             synchronized (connectorToTrackingMapMap) {
-                connectorToTrackingMapMap.remove(connector);
-                Long threadId = Thread.currentThread().getId();
-                log.debug(System.currentTimeMillis() + " thread: " + threadId + " returned connector: " + connector);
+                connectorToTrackingMapMap.remove(client);
+                long threadId = Thread.currentThread().getId();
+                log.debug(System.currentTimeMillis() + " thread: " + threadId + " returned client: " + client);
                 if (log.isTraceEnabled()) {
                     log.trace(System.currentTimeMillis() + " " + Arrays.toString(Thread.currentThread().getStackTrace()));
                 }
             }
             
-            super.returnObject(connector);
+            super.returnObject(client);
         }
     }
     
@@ -105,8 +105,8 @@ public class AccumuloConnectionPool extends GenericObjectPool<Connector> {
         return Collections.unmodifiableList(t);
     }
     
-    public boolean connectorCameFromHere(Connector c) {
-        return this.connectorToTrackingMapMap.containsKey(c);
+    public boolean connectorCameFromHere(AccumuloClient client) {
+        return this.connectorToTrackingMapMap.containsKey(client);
     }
     
     @SuppressWarnings("UnusedDeclaration")
@@ -114,7 +114,7 @@ public class AccumuloConnectionPool extends GenericObjectPool<Connector> {
         return connectorToTrackingMapMap.size();
     }
     
-    public AccumuloConnectionPoolFactory getFactory() {
+    public AccumuloClientPoolFactory getFactory() {
         return factory;
     }
 }

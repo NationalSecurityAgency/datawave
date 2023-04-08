@@ -122,25 +122,6 @@ public class RemoteAuditor extends RemoteHttpService implements AuditService {
         // @formatter:on
     }
     
-    @Asynchronous
-    protected <T> void executePostMethodAsyncWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        T response = executePostMethodWithRuntimeException(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
-        log.debug(response.toString());
-    }
-    
-    protected <T> T executePostMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        try {
-            return executePostMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
-        } catch (IOException e) {
-            failureCounter.inc();
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-    
     @Override
     protected String serviceHost() {
         return auditServiceHost;
@@ -199,5 +180,10 @@ public class RemoteAuditor extends RemoteHttpService implements AuditService {
     @Override
     protected Counter retryCounter() {
         return retryCounter;
+    }
+    
+    @Override
+    protected Counter failureCounter() {
+        return failureCounter;
     }
 }

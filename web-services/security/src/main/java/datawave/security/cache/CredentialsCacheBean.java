@@ -13,7 +13,7 @@ import datawave.security.system.AuthorizationCache;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.GenericResponse;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
@@ -309,7 +309,7 @@ public class CredentialsCacheBean {
     
     private void retrieveAccumuloAuthorizations() throws Exception {
         Map<String,String> trackingMap = accumuloConnectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-        Connector c = accumuloConnectionFactory.getConnection(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+        AccumuloClient c = accumuloConnectionFactory.getClient(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
         try {
             Authorizations auths = c.securityOperations().getUserAuthorizations(c.whoami());
             HashSet<String> authSet = new HashSet<>();
@@ -319,7 +319,7 @@ public class CredentialsCacheBean {
             accumuloUserAuths = Collections.unmodifiableSet(authSet);
             log.debug("Accumulo User Authorizations: {}", accumuloUserAuths);
         } finally {
-            accumuloConnectionFactory.returnConnection(c);
+            accumuloConnectionFactory.returnClient(c);
         }
     }
 }

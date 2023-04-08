@@ -23,6 +23,7 @@ import java.util.TreeSet;
  *
  * 
  * @param <T>
+ *            type cast
  */
 public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     // temporary stores of uninitialized streams of iterators
@@ -164,7 +165,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             }
             
             // regardless of where we hit make sure to advance includeHeads if it matches there
-            if (includeHeads.get(lowest) != null) {
+            if (includeHeads != null && includeHeads.containsKey(lowest)) {
                 includeHeads = advanceIterators(lowest);
             }
         }
@@ -228,7 +229,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
      * dropped.
      * 
      * @param key
-     * @return
+     *            a key
+     * @return a sorted map
      */
     protected TreeMultimap<T,NestedIterator<T>> advanceIterators(T key) {
         transforms.remove(key);
@@ -248,8 +250,10 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
      * <code>to</code> parameter.
      * 
      * @param key
+     *            a key
      * @param to
-     * @return
+     *            another key to move
+     * @return a tree map
      */
     protected TreeMultimap<T,NestedIterator<T>> moveIterators(T key, T to) {
         transforms.remove(key);
@@ -332,7 +336,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     /**
      * If there are contextIncludes or contextExcludes this iterator requires context
      * 
-     * @return
+     * @return boolean
      */
     @Override
     public boolean isContextRequired() {
@@ -343,6 +347,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
      * Context will be considered when evaluating contextIncludes and contextExcludes if it is lower than the lowest includes value
      * 
      * @param context
+     *            a context
      */
     @Override
     public void setContext(T context) {

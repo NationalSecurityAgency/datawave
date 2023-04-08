@@ -12,16 +12,10 @@ import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
 import datawave.webservice.dictionary.edge.MetadataBase;
 import datawave.webservice.query.Query;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * Retrieves an {@link EdgeDictionaryBase} from the remote edge dictionary service.
@@ -101,7 +95,7 @@ public class RemoteEdgeDictionary extends RemoteHttpService {
     public EdgeDictionaryBase<?,? extends MetadataBase<?>> getEdgeDictionary(Query settings, String metadataTableName) {
         final String bearerHeader = "Bearer " + jwtTokenHandler.createTokenFromUsers(callerPrincipal.getName(), callerPrincipal.getProxiedUsers());
         // @formatter:off
-        return executeGetMethodWithRuntimeException(
+        return executeGetMethodWithRuntimeException("",
                 uriBuilder -> {
                     uriBuilder.addParameter("metadataTableName", metadataTableName);
                     uriBuilder.addParameter("auths", settings.getQueryAuthorizations());
@@ -110,18 +104,6 @@ public class RemoteEdgeDictionary extends RemoteHttpService {
                 entity -> edgeDictReader.readValue(entity.getContent()),
                 () -> "getEdgeDictionary [" + metadataTableName + ", " + settings.getQueryAuthorizations() + "]");
         // @formatter:on
-    }
-    
-    protected <T> T executeGetMethodWithRuntimeException(Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
-                    Supplier<String> errorSupplier) {
-        try {
-            return executeGetMethod(uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
-        } catch (IOException e) {
-            failureCounter.inc();
-            throw new RuntimeException(e.getMessage(), e);
-        }
     }
     
     @Override
@@ -182,5 +164,10 @@ public class RemoteEdgeDictionary extends RemoteHttpService {
     @Override
     protected Counter retryCounter() {
         return retryCounter;
+    }
+    
+    @Override
+    protected Counter failureCounter() {
+        return failureCounter;
     }
 }

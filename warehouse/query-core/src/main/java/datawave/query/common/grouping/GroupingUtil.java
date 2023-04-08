@@ -55,9 +55,12 @@ public class GroupingUtil {
      * GroupInfo object (clearer, but relies more on garbage collection)
      *
      * @param entry
+     *            the map entry
      * @param groupFieldsSet
+     *            group fields set
      * @param countingMap
-     * @return
+     *            the counting map
+     * @return grouping info
      */
     public GroupingInfo getGroupingInfo(Map.Entry<Key,Document> entry, Set<String> groupFieldsSet, GroupCountingHashMap countingMap) {
         return getGroupingInfo(entry, groupFieldsSet, countingMap, null);

@@ -2,15 +2,20 @@ package datawave.webservice.query.runner;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.UUIDType;
 import datawave.resteasy.util.DateFormatter;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.util.WSAuthorizationsUtil;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.configuration.IdTranslatorConfiguration;
 import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.VoidResponse;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
@@ -39,6 +44,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MultivaluedMap;
+import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -75,6 +81,9 @@ public class IdTranslatorBean {
     private Date beginDate = null;
     private static final String ID_TRANS_LOGIC = "IdTranslationQuery";
     private static final String ID_TRANS_TLD_LOGIC = "IdTranslationTLDQuery";
+    
+    @Inject
+    private QueryLogicFactory queryLogicFactory;
     
     private Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<>());
     
@@ -226,7 +235,7 @@ public class IdTranslatorBean {
         
         // Use the user's full authorizations when creating the query. Note that this will be ignored by the query logic, but we need
         // to pass a valid subset of the user's auths to even create the query.
-        String auths = AuthorizationsUtil.buildUserAuthorizationString(ctx.getCallerPrincipal());
+        String auths = getAuths(logicName, ctx.getCallerPrincipal());
         
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
         p.putAll(idTranslatorConfiguration.optionalParamsToMap());
@@ -252,4 +261,20 @@ public class IdTranslatorBean {
         
         return queryExecutor.createQueryAndNext(logicName, p);
     }
+    
+    private String getAuths(String logicName, Principal principal) {
+        String userAuths;
+        try {
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
+            // the query principal is our local principal unless the query logic has a different user operations
+            DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((logic.getUserOperations() == null) ? principal
+                            : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal));
+            userAuths = WSAuthorizationsUtil.buildUserAuthorizationString(queryPrincipal);
+        } catch (Exception e) {
+            log.error("Failed to get user query authorizations", e);
+            throw new DatawaveWebApplicationException(e, new VoidResponse());
+        }
+        return userAuths;
+    }
+    
 }

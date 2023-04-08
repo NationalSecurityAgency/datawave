@@ -20,6 +20,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
+import datawave.query.model.Direction;
 import datawave.util.TableName;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;

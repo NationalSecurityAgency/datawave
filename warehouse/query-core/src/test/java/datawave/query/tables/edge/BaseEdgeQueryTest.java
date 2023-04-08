@@ -1,5 +1,6 @@
 package datawave.query.tables.edge;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
@@ -11,9 +12,8 @@ import datawave.data.normalizer.Normalizer;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -58,7 +58,7 @@ public abstract class BaseEdgeQueryTest {
     
     protected static SimpleDateFormat simpleFormat;
     
-    protected static Connector connector;
+    protected static AccumuloClient client;
     protected static datawave.query.MockAccumuloRecordWriter recordWriter;
     protected Set<Authorizations> auths = Collections.singleton(new Authorizations("A", "B", "C", "D"));
     protected Set<Authorizations> limitedAuths = Collections.singleton(new Authorizations("A", "B"));
@@ -152,7 +152,7 @@ public abstract class BaseEdgeQueryTest {
         if (!disableCheckpoint && logic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) logic).isCheckpointable() && factory != null) {
             Queue<QueryCheckpoint> cps = new LinkedList<>();
             GenericQueryConfiguration config = logic.getConfig();
-            Connector connection = config.getConnector();
+            AccumuloClient client = config.getClient();
             QueryKey queryKey = new QueryKey("default", logic.getConfig().getQuery().getId().toString(), logic.getLogicName());
             cps.addAll(((CheckpointableQueryLogic) logic).checkpoint(queryKey));
             while (!cps.isEmpty()) {
@@ -166,7 +166,7 @@ public abstract class BaseEdgeQueryTest {
                 }
                 // now reset the logic given the checkpoint
                 try {
-                    ((CheckpointableQueryLogic) logic).setupQuery(connection, config, cp);
+                    ((CheckpointableQueryLogic) logic).setupQuery(client, config, cp);
                 } catch (Exception e) {
                     log.error("Failed to setup query given last checkpoint", e);
                     Assert.fail("Failed to setup query given last checkpoint: " + e.getMessage());
@@ -222,16 +222,16 @@ public abstract class BaseEdgeQueryTest {
         simpleFormat = new SimpleDateFormat("yyyyMMdd");
         
         InMemoryInstance i = new InMemoryInstance(BaseEdgeQueryTest.class.toString());
-        connector = i.getConnector("root", new PasswordToken(""));
+        client = new InMemoryAccumuloClient("root", i);
         
         // Create the CB tables
-        connector.tableOperations().create(EDGE_TABLE_NAME);
-        connector.tableOperations().create(MODEL_TABLE_NAME);
+        client.tableOperations().create(EDGE_TABLE_NAME);
+        client.tableOperations().create(MODEL_TABLE_NAME);
         
         // Create the map of batchwriters to cb tables
         recordWriter = new MockAccumuloRecordWriter();
         BatchWriterConfig bwCfg = new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1000L).setMaxWriteThreads(1);
-        recordWriter.addWriter(new Text(EDGE_TABLE_NAME), connector.createBatchWriter(EDGE_TABLE_NAME, bwCfg));
+        recordWriter.addWriter(new Text(EDGE_TABLE_NAME), client.createBatchWriter(EDGE_TABLE_NAME, bwCfg));
         
         addEdges();
     }

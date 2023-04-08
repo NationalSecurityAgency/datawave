@@ -52,6 +52,13 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
      * push functions into exceeded value threshold ranges.
      *
      * @param script
+     *            a script
+     * @param helper
+     *            the metadata helper
+     * @param datatypeFilter
+     *            the datatype filter
+     * @param <T>
+     *            type of the script
      * @return the modified node tree
      */
     @SuppressWarnings("unchecked")

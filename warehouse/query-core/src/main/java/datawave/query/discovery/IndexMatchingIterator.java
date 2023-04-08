@@ -295,7 +295,8 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
      * Converts a byte sequence backed by a byte array into a String using the default encoding of the JVM.
      * 
      * @param bs
-     * @return
+     *            the byte sequence
+     * @return the string form of the bytes
      */
     public static String stringify(ByteSequence bs) {
         Preconditions.checkArgument(bs.isBackedByArray(), "Received byte sequence that isn't backed by an array!");

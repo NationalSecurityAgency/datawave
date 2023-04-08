@@ -73,8 +73,10 @@ public class FetchDataTypesVisitor extends BaseVisitor {
      * which are numeric but not indexed.
      * 
      * @param node
+     *            a node
      * @param data
-     * @return
+     *            the data for the node
+     * @return the data visited
      */
     private Object genericVisit(JexlNode node, Object data) {
         HashMultimap<String,Type<?>> dataTypes = (HashMultimap<String,Type<?>>) data;

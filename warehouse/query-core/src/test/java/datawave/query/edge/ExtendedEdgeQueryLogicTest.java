@@ -32,7 +32,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
     
     public DefaultExtendedEdgeQueryLogic runLogic(QueryImpl q, Set<Authorizations> auths, long scanLimit) throws Exception {
         logic.setDateFilterScanLimit(scanLimit);
-        GenericQueryConfiguration config = logic.initialize(connector, q, auths);
+        GenericQueryConfiguration config = logic.initialize(client, q, auths);
         logic.setupQuery(config);
         return (DefaultExtendedEdgeQueryLogic) logic;
     }
@@ -151,6 +151,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
      * Tests to make sure QueryModel is applied properly to a query string
      * 
      * @throws Exception
+     *             if there are issues
      */
     @Test
     public void testQueryModelApplied() throws Exception {
@@ -161,7 +162,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
                         + "(TYPE == 'COSMOS_DATA' && RELATION == 'TO-FROM')))";
         
         QueryImpl q = configQuery(originalQueryString, auths);
-        GenericQueryConfiguration config = logic.initialize(connector, q, auths);
+        GenericQueryConfiguration config = logic.initialize(client, q, auths);
         logic.setupQuery(config);
         String actualQueryString = config.getQueryString();
         

@@ -42,6 +42,8 @@ datawave:
         instanceName: ${warehouse-cluster.accumulo.instanceName}
         username: ${warehouse-cluster.accumulo.username}
         password: ${warehouse-cluster.accumulo.password}
+        accumuloClientPoolSize: 16
+        mapStoreWriteThreads: 1
         numShards: 10
         fieldLengthThreshold: 4049
         shardTableName: datawave.queryMetrics_s
@@ -50,8 +52,8 @@ datawave:
         reverseIndexTableName: datawave.queryMetrics_r
         metadataTableName: datawave.queryMetrics_m
         metadataDefaultAuths: PUBLIC
-        recordWriterMaxMemory: 100000
-        recordWriterMaxLatency: 60000
+        recordWriterMaxMemory: 10
+        recordWriterMaxLatency: 16
         recordWriterNumThreads: 4
         enableBloomFilter: false
         queryVisibility: PUBLIC

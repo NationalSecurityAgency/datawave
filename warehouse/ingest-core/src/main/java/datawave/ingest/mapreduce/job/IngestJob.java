@@ -1,11 +1,13 @@
 package datawave.ingest.mapreduce.job;
 
 import datawave.ingest.config.TableConfigCache;
+import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
 import datawave.ingest.mapreduce.EventMapper;
+import datawave.ingest.mapreduce.handler.JobSetupHandler;
 import datawave.ingest.mapreduce.handler.shard.NumShards;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
@@ -28,11 +30,18 @@ import datawave.util.StringUtils;
 import datawave.util.cli.PasswordConverter;
 
 import org.apache.accumulo.core.Constants;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.NamespaceOperations;
+import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
@@ -129,7 +138,7 @@ public class IngestJob implements Tool {
     
     protected boolean eventProcessingError = false;
     protected Logger log = Logger.getLogger("datawave.ingest");
-    private ConsoleAppender ca = new ConsoleAppender(new PatternLayout("%p [%c{1}] %m%n"));
+    private ConsoleAppender ca = new ConsoleAppender();
     
     protected ArrayList<String[]> confOverrides = new ArrayList<>();
     protected int reduceTasks = 0;
@@ -249,6 +258,7 @@ public class IngestJob implements Tool {
         
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
         
+        ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
         ca.setThreshold(Level.INFO);
         log.addAppender(ca);
         log.setLevel(Level.INFO);
@@ -324,6 +334,9 @@ public class IngestJob implements Tool {
         // Job copies the configuration, so any changes made after this point don't get captured in the job.
         // Use the job's configuration from this point.
         conf = job.getConfiguration();
+        
+        setupHandlers(conf);
+        
         if (!useMapOnly || !outputMutations) {
             // Calculate the sampled splits, splits file, and set up the partitioner, but not if only doing only a map phase and outputting mutations
             // if not outputting mutations and only doing a map phase, we still need to go through this logic as the MultiRFileOutputFormatter
@@ -529,6 +542,25 @@ public class IngestJob implements Tool {
         }
         
         return 0;
+    }
+    
+    private void setupHandlers(Configuration conf) {
+        for (Type t : TypeRegistry.getTypes()) {
+            String[] handlers = t.getDefaultDataTypeHandlers();
+            if (handlers != null) {
+                for (String handler : handlers) {
+                    try {
+                        Object o = Class.forName(handler).newInstance();
+                        if (o instanceof JobSetupHandler) {
+                            JobSetupHandler setupHandler = (JobSetupHandler) o;
+                            setupHandler.setup(conf);
+                        }
+                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                        log.warn("Could not setup handler: " + handler, e);
+                    }
+                }
+            }
+        }
     }
     
     protected Configuration interpolateEnvironment(Configuration conf) {
@@ -982,8 +1014,9 @@ public class IngestJob implements Tool {
         // Setup the Output
         job.setWorkingDirectory(workDirPath);
         if (outputMutations) {
-            CBMutationOutputFormatter.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
-            CBMutationOutputFormatter.setOutputInfo(job, userName, password, true, null);
+            CBMutationOutputFormatter.configure()
+                            .clientProperties(Accumulo.newClientProperties().to(instanceName, zooKeepers).as(userName, new PasswordToken(password)).build())
+                            .createTables(true).store(job);
             job.setOutputFormatClass(CBMutationOutputFormatter.class);
         } else {
             FileOutputFormat.setOutputPath(job, new Path(workDirPath, "mapFiles"));

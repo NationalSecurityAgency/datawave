@@ -326,6 +326,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      * Get the longest term from a list of terms;
      * 
      * @param terms
+     *            the terms to create a phrase
      * @return the longest term (null if empty or null list)
      */
     protected String getLongestTerm(List<String> terms) {
@@ -345,6 +346,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      * Determine if this dt and uid are in the accepted column families
      *
      * @param dtAndUid
+     *            the dt and uid string
      * @return true if we can use it, false if not
      */
     private boolean isUsableDocument(String dtAndUid) {
@@ -355,8 +357,11 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      * Seek to the dt/uid following the one passed in
      *
      * @param row
+     *            a row
      * @param dtAndUid
+     *            the dt and uid string
      * @throws IOException
+     *             for issues with read/write
      */
     private void seekToNextUid(Text row, String dtAndUid) throws IOException {
         Key startKey = new Key(row, Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(dtAndUid + '.'));
@@ -372,6 +377,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      * Turn a set of column families into a sorted string set
      *
      * @param columnFamilies
+     *            the column families
      * @return a sorted set of column families as Strings
      */
     private SortedSet<String> getSortedCFs(Collection<ByteSequence> columnFamilies) {
@@ -388,6 +394,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      * Get the field and value from the end of the column qualifier of the tf key
      *
      * @param tfKey
+     *            the term freq key
      * @return the field name
      */
     private String[] getFieldAndValue(Key tfKey) {
@@ -403,6 +410,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      * get the dt and uid from a tf key
      *
      * @param tfKey
+     *            the term freq key
      * @return the dt\x00uid
      */
     private String getDtUidFromTfKey(Key tfKey) {
@@ -413,8 +421,11 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      * Get the dt and uid start or end given an event key
      *
      * @param eventKey
+     *            an event key
      * @param startKey
+     *            a start key
      * @param inclusive
+     *            inclusive boolean flag
      * @return the start or end document (cq) for our tf scan range. Null if dt,uid does not exist in the event key
      */
     private String getDtUidFromEventKey(Key eventKey, boolean startKey, boolean inclusive) {

@@ -8,7 +8,7 @@ import datawave.core.common.result.ConnectionFactoryResponse;
 import datawave.core.common.result.ConnectionPool;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
@@ -105,57 +105,56 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     }
     
     /**
-     * Gets a connection from the pool with the assigned priority
+     * Gets a client from the pool with the assigned priority
      *
-     * Deprecated in 2.2.3, use getConnection(String poolName, Priority priority, {@code Map<String, String> trackingMap)}
+     * Deprecated in 2.2.3, use getClient(String poolName, Priority priority, {@code Map<String, String> trackingMap)}
      *
      * @param priority
-     *            the connection's Priority
-     * @return accumulo connection
+     *            the client's Priority
+     * @return accumulo client
      * @throws Exception
      */
-    public Connector getConnection(Priority priority, Map<String,String> trackingMap) throws Exception {
-        return getConnection(getCurrentUserDN(), getCurrentProxyServers(), priority, trackingMap);
+    public AccumuloClient getClient(Priority priority, Map<String,String> trackingMap) throws Exception {
+        return getClient(getCurrentUserDN(), getCurrentProxyServers(), priority, trackingMap);
     }
     
     @Override
-    public Connector getConnection(String userDN, Collection<String> proxyServers, Priority priority, Map<String,String> trackingMap) throws Exception {
-        return factory.getConnection(userDN, proxyServers, priority, trackingMap);
+    public AccumuloClient getClient(String userDN, Collection<String> proxyServers, Priority priority, Map<String,String> trackingMap) throws Exception {
+        return factory.getClient(userDN, proxyServers, priority, trackingMap);
     }
     
     /**
-     * Gets a connection from the named pool with the assigned priority
+     * Gets a client from the named pool with the assigned priority
      *
      * @param cpn
-     *            the name of the pool to retrieve the connection from
+     *            the name of the pool to retrieve the client from
      * @param priority
-     *            the priority of the connection
+     *            the priority of the client
      * @param trackingMap
      *            the tracking map
-     * @return Accumulo connection
+     * @return Accumulo client
      * @throws Exception
      */
-    public Connector getConnection(final String cpn, final Priority priority, final Map<String,String> trackingMap) throws Exception {
-        return getConnection(getCurrentUserDN(), getCurrentProxyServers(), cpn, priority, trackingMap);
+    public AccumuloClient getClient(final String cpn, final Priority priority, final Map<String,String> trackingMap) throws Exception {
+        return getClient(getCurrentUserDN(), getCurrentProxyServers(), cpn, priority, trackingMap);
     }
     
     @Override
-    public Connector getConnection(String userDN, Collection<String> proxyServers, String cpn, Priority priority, Map<String,String> trackingMap)
+    public AccumuloClient getClient(String userDN, Collection<String> proxyServers, String cpn, Priority priority, Map<String,String> trackingMap)
                     throws Exception {
-        return factory.getConnection(userDN, proxyServers, cpn, priority, trackingMap);
+        return factory.getClient(userDN, proxyServers, cpn, priority, trackingMap);
     }
     
     /**
-     * Returns the connection to the pool with the associated priority.
+     * Returns the client to the pool with the associated priority.
      *
-     * @param connection
-     *            The connection to return
-     * @throws Exception
+     * @param client
+     *            The client to return
      */
     @PermitAll
     // permit anyone to return a connection
-    public void returnConnection(Connector connection) throws Exception {
-        factory.returnConnection(connection);
+    public void returnClient(AccumuloClient client) throws Exception {
+        factory.returnClient(client);
     }
     
     @PermitAll
@@ -205,7 +204,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         String currentUserDN = null;
         Principal p = context.getCallerPrincipal();
         
-        if (p != null && p instanceof DatawavePrincipal) {
+        if (p instanceof DatawavePrincipal) {
             currentUserDN = ((DatawavePrincipal) p).getUserDN().subjectDN();
         }
         
@@ -216,7 +215,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         List<String> currentProxyServers = null;
         Principal p = context.getCallerPrincipal();
         
-        if (p != null && p instanceof DatawavePrincipal) {
+        if (p instanceof DatawavePrincipal) {
             currentProxyServers = ((DatawavePrincipal) p).getProxyServers();
         }
         

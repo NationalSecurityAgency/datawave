@@ -1,6 +1,5 @@
 package datawave.security.cache;
 
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.INSTANCE;
 import static datawave.security.cache.AccumuloCacheStoreConfiguration.INSTANCE_NAME;
 import static datawave.security.cache.AccumuloCacheStoreConfiguration.ZOOKEEPERS;
 import static datawave.security.cache.AccumuloCacheStoreConfiguration.USERNAME;
@@ -15,7 +14,6 @@ import static datawave.security.cache.AccumuloCacheStoreConfiguration.AGEOFF_PRI
 
 import java.util.List;
 
-import org.apache.accumulo.core.client.Instance;
 import org.infinispan.commons.configuration.Builder;
 import org.infinispan.configuration.cache.AbstractStoreConfigurationBuilder;
 import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
@@ -29,11 +27,6 @@ public class AccumuloCacheStoreConfigurationBuilder
     
     @Override
     public AccumuloCacheStoreConfigurationBuilder self() {
-        return this;
-    }
-    
-    public AccumuloCacheStoreConfigurationBuilder instance(Instance instance) {
-        attributes.attribute(INSTANCE).set(instance);
         return this;
     }
     

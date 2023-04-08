@@ -379,6 +379,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
      *
      * @return True if and only if we have a top key that is a field index key in the parent range.
      * @throws IOException
+     *             for issues with read/write
      */
     protected boolean advanceToFieldIndex() throws IOException {
         log.trace("advanceToFieldIndex");
@@ -418,6 +419,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
      *
      * @return true if and only if the source has top AND it is in the parent range.
      * @throws IOException
+     *             for issues with read/write
      */
     protected boolean advanceToNextRow() throws IOException {
         log.trace("advanceToNextRow");
@@ -532,6 +534,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
      * 
      * @return true if we have a new key to return, false if the count is empty. This also resets current counters etc.
      * @throws IOException
+     *             for issues with read/write
      */
     private boolean wrapUpCurrent() throws IOException {
         if (log.isTraceEnabled()) {
@@ -615,6 +618,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
      * Basic method to find our topKey which matches our given FieldName,FieldValue.
      * 
      * @throws IOException
+     *             for issues with read/write
      */
     protected void findTop() throws IOException {
         resetCurrentMarkers();

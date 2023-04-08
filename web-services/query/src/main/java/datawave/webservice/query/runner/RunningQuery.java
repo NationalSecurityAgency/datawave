@@ -13,7 +13,9 @@ import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.UserOperations;
+import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.data.ObjectSizeOf;
@@ -22,9 +24,8 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
@@ -55,7 +56,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     
     private static Logger log = Logger.getLogger(RunningQuery.class);
     
-    private transient Connector connection = null;
+    private transient AccumuloClient client = null;
     private AccumuloConnectionFactory.Priority connectionPriority = null;
     private transient QueryLogic<?> logic = null;
     private Query settings = null;
@@ -65,7 +66,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private Set<Authorizations> calculatedAuths = null;
     private boolean finished = false;
     private volatile boolean canceled = false;
-    private TInfo traceInfo = null;
     private transient QueryMetricsBean queryMetrics = null;
     private transient RunningQueryTiming timing = null;
     private ExecutorService executor = null;
@@ -83,29 +83,35 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         super(new QueryMetricFactoryImpl());
     }
     
-    public RunningQuery(Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings, String methodAuths,
+    public RunningQuery(AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings, String methodAuths,
                     Principal principal, QueryMetricFactory metricFactory) throws Exception {
-        this(null, connection, priority, logic, settings, methodAuths, principal, null, null, metricFactory);
+        this(null, client, priority, logic, settings, methodAuths, principal, null, null, metricFactory);
     }
     
-    public RunningQuery(Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings, String methodAuths,
+    public RunningQuery(AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings, String methodAuths,
                     Principal principal, RunningQueryTiming timing, QueryMetricFactory metricFactory) throws Exception {
-        this(null, connection, priority, logic, settings, methodAuths, principal, timing, metricFactory);
+        this(null, client, priority, logic, settings, methodAuths, principal, timing, metricFactory);
     }
     
-    public RunningQuery(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
+    public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
                     String methodAuths, Principal principal, QueryMetricFactory metricFactory) throws Exception {
-        this(queryMetrics, connection, priority, logic, settings, methodAuths, principal, null, metricFactory);
+        this(queryMetrics, client, priority, logic, settings, methodAuths, principal, null, metricFactory);
     }
     
-    public RunningQuery(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
+    public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
                     String methodAuths, Principal principal, RunningQueryTiming timing, QueryMetricFactory metricFactory) throws Exception {
-        this(queryMetrics, connection, priority, logic, settings, methodAuths, principal, timing, null, metricFactory);
+        this(queryMetrics, client, priority, logic, settings, methodAuths, principal, timing, null, metricFactory);
     }
     
-    public RunningQuery(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
+    public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
                     String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, QueryMetricFactory metricFactory)
                     throws Exception {
+        this(queryMetrics, client, priority, logic, settings, methodAuths, principal, timing, null, null, metricFactory);
+    }
+    
+    public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
+                    String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, UserOperations userOperations,
+                    QueryMetricFactory metricFactory) throws Exception {
         super(metricFactory);
         if (logic != null && logic.getCollectQueryMetrics()) {
             this.queryMetrics = queryMetrics;
@@ -114,7 +120,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.logic = logic;
         this.connectionPriority = priority;
         this.settings = settings;
-        this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal);
+        // the query principal is our local principal unless the query logic has a different user operations
+        DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((logic.getUserOperations() == null) ? principal
+                        : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal));
+        // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
+        DatawavePrincipal overallPrincipal = (DatawavePrincipal) ((userOperations == null) ? principal
+                        : userOperations.getRemoteUser((DatawavePrincipal) principal));
+        this.calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
         this.timing = timing;
         this.executor = Executors.newSingleThreadExecutor();
         this.allowShortCircuitTimeouts = logic.isLongRunningQuery();
@@ -130,8 +142,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
         }
         // If connection is null, then we are likely not going to use this object for query, probably for removing or closing it.
-        if (null != connection) {
-            setConnection(connection);
+        if (null != client) {
+            setClient(client);
         }
         this.maxResults = this.logic.getResultLimit(this.settings.getDnList());
         if (this.maxResults != this.logic.getMaxResults()) {
@@ -140,10 +152,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         }
     }
     
-    public static RunningQuery createQueryWithAuthorizations(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority,
+    public static RunningQuery createQueryWithAuthorizations(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority,
                     QueryLogic<?> logic, Query settings, String methodAuths, RunningQueryTiming timing, QueryPredictor predictor,
                     QueryMetricFactory metricFactory) throws Exception {
-        RunningQuery runningQuery = new RunningQuery(queryMetrics, connection, priority, logic, settings, methodAuths, null, timing, predictor, metricFactory);
+        RunningQuery runningQuery = new RunningQuery(queryMetrics, client, priority, logic, settings, methodAuths, null, timing, predictor, metricFactory);
         runningQuery.calculatedAuths = Collections.singleton(new Authorizations(methodAuths));
         return runningQuery;
     }
@@ -160,20 +172,20 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         NDC.pop();
     }
     
-    public void setConnection(Connector connection) throws Exception {
+    public void setClient(AccumuloClient client) throws Exception {
         // if we are setting this null, we shouldn't try to initialize
         // the internal logic
-        if (connection == null) {
-            this.connection = null;
+        if (client == null) {
+            this.client = null;
             return;
         }
         
         try {
             addNDC();
             applyPrediction(null);
-            this.connection = connection;
+            this.client = client;
             long start = System.currentTimeMillis();
-            GenericQueryConfiguration configuration = this.logic.initialize(this.connection, this.settings, this.calculatedAuths);
+            GenericQueryConfiguration configuration = this.logic.initialize(this.client, this.settings, this.calculatedAuths);
             this.lastPageNumber = 0;
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
@@ -212,7 +224,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      * that the main RunningQuery.next() loop will have to pull the results before the next one can be retrieved. The hasNext and gotNext counters keep track of
      * the calls to hasNext and next on the underlying iterator. They will be decremented once a result is acknowledged in the RunningQuery.next() loop. The
      * running boolean will allow the graceful termination of this thread.
-     * 
+     *
      * @return running (with a value of false)
      */
     private Object getResultsThread() {
@@ -275,7 +287,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     
     /**
      * This method is used to determine if we have a next result. This will throw a timeout exception if the page short circuit limit is reached.
-     * 
+     *
      * @param pageStartTime
      * @return true if hasNext()
      * @throws TimeoutException
@@ -316,7 +328,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     /**
      * This method will get the next object from the results thread queue. This presumes that hasNext has returned true. A timeout exception will be thrown if
      * the page short circuit timeout has been reached.
-     * 
+     *
      * @param pageStartTime
      * @return the next object (could be null)
      * @throws TimeoutException
@@ -369,7 +381,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     
     /**
      * Get the next results page
-     * 
+     *
      * @return a results page.
      * @throws Exception
      */
@@ -576,8 +588,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         return canceled;
     }
     
-    public Connector getConnection() {
-        return connection;
+    public AccumuloClient getClient() {
+        return client;
     }
     
     public AccumuloConnectionFactory.Priority getConnectionPriority() {
@@ -634,10 +646,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             ((WritesResultCardinalities) iter.getTransformer()).writeResultCardinalities();
         }
         
-        if (connection != null) {
+        if (client != null) {
             try {
-                factory.returnConnection(connection);
-                connection = null;
+                factory.returnClient(client);
+                client = null;
             } finally {
                 // only push metrics if this RunningQuery was initialized
                 if (this.queryMetrics != null) {
@@ -681,25 +693,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         .append(this.getSettings().getParameters()).append(", callTime: ")
                         .append((this.getTimeOfCurrentCall() == 0) ? 0 : System.currentTimeMillis() - this.getTimeOfCurrentCall()).toString();
         
-    }
-    
-    /**
-     * Sets {@link TInfo} for this query as an indication that the query is being traced. This trace info is also used to continue a trace across different
-     * thread boundaries.
-     */
-    public void setTraceInfo(TInfo traceInfo) {
-        this.traceInfo = traceInfo;
-    }
-    
-    /**
-     * Gets the {@link TInfo} associated with this query, if any. If the query is not being traced, then {@code null} is returned. Callers can continue a trace
-     * on a different thread by calling {@link org.apache.accumulo.core.trace.Trace#trace(TInfo, String)} with the info returned here, and then interacting with
-     * the returned {@link org.apache.accumulo.core.trace.Span}.
-     * 
-     * @return the {@link TInfo} associated with this query, if any
-     */
-    public TInfo getTraceInfo() {
-        return traceInfo;
     }
     
     public QueryMetricsBean getQueryMetrics() {

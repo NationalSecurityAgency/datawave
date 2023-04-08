@@ -31,9 +31,6 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-/**
- * 
- */
 public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closeable {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ThreadedRangeBundlerIterator.class);
     
@@ -392,7 +389,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
      * 
      * @param settings
      *            original query settings.
-     * @return
+     * @return if we are running a tld query
      */
     private boolean isTld(List<IteratorSetting> settings) {
         for (IteratorSetting setting : this.original.getSettings()) {
@@ -408,7 +405,8 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     
     /**
      * @param plan
-     * @return
+     *            the query plan
+     * @return new query data
      */
     private QueryData createNewQueryData(QueryPlan plan) {
         

@@ -23,6 +23,13 @@ public class ParseException extends QueryNodeParseException {
     /**
      * This constructor is used by the method "generateParseException" in the generated parser. Calling this constructor generates a new object of this type
      * with the fields "currentToken", "expectedTokenSequences", and "tokenImage" set.
+     * 
+     * @param expectedTokenSequencesVal
+     *            the expected token sequences
+     * @param currentTokenVal
+     *            the current token
+     * @param tokenImageVal
+     *            the token image
      */
     public ParseException(Token currentTokenVal, int[][] expectedTokenSequencesVal, String[] tokenImageVal) {
         super(new MessageImpl(QueryParserMessages.INVALID_SYNTAX, initialise(currentTokenVal, expectedTokenSequencesVal, tokenImageVal)));
@@ -41,7 +48,12 @@ public class ParseException extends QueryNodeParseException {
         super(new MessageImpl(QueryParserMessages.INVALID_SYNTAX, "Error"));
     }
     
-    /** Constructor with message. */
+    /**
+     * Constructor with message.
+     * 
+     * @param message
+     *            the message
+     */
     public ParseException(Message message) {
         super(message);
     }
@@ -67,6 +79,14 @@ public class ParseException extends QueryNodeParseException {
     /**
      * It uses "currentToken" and "expectedTokenSequences" to generate a parse error message and returns it. If this object has been created due to a parse
      * error, and you do not catch it (it gets thrown from the parser) the correct error message gets displayed.
+     * 
+     * @param currentToken
+     *            the current token
+     * @param expectedTokenSequences
+     *            the expected token sequences
+     * @param tokenImage
+     *            the token image
+     * @return parse error message string
      */
     private static String initialise(Token currentToken, int[][] expectedTokenSequences, String[] tokenImage) {
         String eol = System.getProperty("line.separator", "\n");
@@ -117,6 +137,10 @@ public class ParseException extends QueryNodeParseException {
     
     /**
      * Used to convert raw characters to their escaped version when these raw version cannot be used as part of an ASCII string literal.
+     * 
+     * @param str
+     *            the input string
+     * @return string with escapes added
      */
     static String add_escapes(String str) {
         StringBuilder retval = new StringBuilder();

@@ -6,10 +6,12 @@ import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.marking.MarkingFunctions;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -93,7 +95,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
     
     @Override
-    public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+    public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception {
         // for many query logics, the query is what it is
         return settings.getQuery();
@@ -415,5 +417,11 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     public void setResponseEnricherBuilder(ResponseEnricherBuilder responseEnricherBuilder) {
         this.responseEnricherBuilder = responseEnricherBuilder;
+    }
+    
+    @Override
+    public UserOperations getUserOperations() {
+        // null implies that the local user operations/principal is to be used for auths.
+        return null;
     }
 }

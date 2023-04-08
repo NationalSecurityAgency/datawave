@@ -73,6 +73,15 @@ public class ShardUidMappingIterator extends UidMappingIterator {
      * Map the uid in the supplied key and value. The formats expected are for the shard table only.
      * 
      * @param keyValue
+     *            the key value
+     * @param startKey
+     *            true if this is the startKey in a range
+     * @param startKeyInclusive
+     *            true if the start key was inclusive
+     * @param endKey
+     *            true if this is the endKey in a range
+     * @param endKeyInclusive
+     *            true if the end key was inclusive
      * @return the key with the uid mapped appropriately. The original UID if any is placed in the value.
      */
     @Override
@@ -99,6 +108,8 @@ public class ShardUidMappingIterator extends UidMappingIterator {
     
     /**
      * Get the top key
+     *
+     * @return the top key
      */
     @Override
     public Key getTopKey() {
@@ -107,6 +118,8 @@ public class ShardUidMappingIterator extends UidMappingIterator {
     
     /**
      * Get the top value
+     *
+     * @return the top value
      */
     @Override
     public Value getTopValue() {
@@ -115,6 +128,8 @@ public class ShardUidMappingIterator extends UidMappingIterator {
     
     /**
      * Do we have a top key and value?
+     *
+     * @return boolean on whether the top is currently held
      */
     @Override
     public boolean hasTop() {
@@ -123,6 +138,13 @@ public class ShardUidMappingIterator extends UidMappingIterator {
     
     /**
      * Seek to a range and setup the next top key and value
+     *
+     * @param range
+     *            the range
+     * @param columnFamilies
+     *            the column families
+     * @param inclusive
+     *            inclusive flag
      */
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
@@ -171,6 +193,9 @@ public class ShardUidMappingIterator extends UidMappingIterator {
     
     /**
      * Find the next top key and value
+     *
+     * @throws IOException
+     *             for issues with read/write
      */
     @Override
     public void next() throws IOException {
@@ -186,8 +211,12 @@ public class ShardUidMappingIterator extends UidMappingIterator {
     }
     
     /**
-     * Map the requested seek parameters to appropriate values for the underlying (source) iterator. (non-Javadoc)
-     * 
+     * @param range
+     *            the range
+     * @param columnFamilies
+     *            the column families
+     * @param inclusive
+     *            inclusive flag
      * @see datawave.core.iterators.uid.UidMappingIterator#mapSeek(org.apache.accumulo.core.data.Range, java.util.Collection, boolean)
      */
     @Override
@@ -225,6 +254,10 @@ public class ShardUidMappingIterator extends UidMappingIterator {
     
     /**
      * Copy this iterator in a deep kind of way
+     *
+     * @param env
+     *            The iterator environment
+     * @return an iterator of key/values
      */
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
@@ -233,6 +266,9 @@ public class ShardUidMappingIterator extends UidMappingIterator {
     
     /**
      * Find the top for the underlying source iterator. This does not find the top for this iterator (@see findCacheTop).
+     *
+     * @throws IOException
+     *             for issues with read/write
      */
     @Override
     protected void findTop() throws IOException {
@@ -245,7 +281,7 @@ public class ShardUidMappingIterator extends UidMappingIterator {
         }
     }
     
-    /********************** Helper methods ***********************/
+    // Helper methods
     private KeyValue replaceEventUidInCQ(KeyValue keyValue, int partIndex, boolean startKey, boolean startKeyInclusive, boolean endKey,
                     boolean endKeyInclusive) {
         Key key = keyValue.getKey();
@@ -280,11 +316,17 @@ public class ShardUidMappingIterator extends UidMappingIterator {
      * Replace the uid in the specified "part" of the value (delimited by '\0' characters)
      *
      * @param value
+     *            the value
      * @param partIndex
+     *            the "part" index
      * @param startKey
+     *            true if this is the startKey in a range
      * @param startKeyInclusive
+     *            true if the start key was inclusive
      * @param endKey
+     *            true if this is the endKey in a range
      * @param endKeyInclusive
+     *            true if the end key was inclusive
      * @return The value with the uid replaced. Null if no changes required
      */
     private String[] replaceUid(String value, int partIndex, boolean startKey, boolean startKeyInclusive, boolean endKey, boolean endKeyInclusive) {
@@ -338,7 +380,8 @@ public class ShardUidMappingIterator extends UidMappingIterator {
      * Is this key contained by our column family filter
      * 
      * @param key
-     * @return
+     *            the key
+     * @return true/false if this key is contained by the column family filter
      */
     protected boolean containedByFilter(Key key) {
         boolean contained = true;
@@ -352,6 +395,7 @@ public class ShardUidMappingIterator extends UidMappingIterator {
      * Get the base uid key for a key. This returns a key that contains only the shardid, datatype, and base UID. Used to determine how much we cache.
      * 
      * @param key
+     *            the key
      * @return the base uid key
      */
     protected Key getBaseUidKey(Key key) {
@@ -389,7 +433,9 @@ public class ShardUidMappingIterator extends UidMappingIterator {
      * Cache keys that map to the same base uid key
      * 
      * @param baseUidKey
+     *            the base uid key
      * @throws IOException
+     *             if there is an issue with read/write
      */
     protected void cacheKeys(Key baseUidKey) throws IOException {
         this.cacheBaseUidKey = baseUidKey;
@@ -404,7 +450,7 @@ public class ShardUidMappingIterator extends UidMappingIterator {
     /**
      * Find the next item from the cache
      * 
-     * @return
+     * @return the cache top
      */
     protected boolean findCacheTop() {
         if (!cache.isEmpty()) {
@@ -422,6 +468,7 @@ public class ShardUidMappingIterator extends UidMappingIterator {
      * Seek within the cache to a specified range
      * 
      * @param range
+     *            the range
      * @return true if we have a new top key and value
      */
     protected boolean cacheSeek(Range range) {
@@ -444,7 +491,9 @@ public class ShardUidMappingIterator extends UidMappingIterator {
      * Add an entry in the cache, appending values if needed
      * 
      * @param key
+     *            the key
      * @param value
+     *            the value
      */
     protected void cacheAdd(Key key, Value value) {
         if (cache.containsKey(key)) {

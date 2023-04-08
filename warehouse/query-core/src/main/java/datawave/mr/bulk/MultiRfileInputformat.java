@@ -15,16 +15,15 @@ import datawave.mr.bulk.split.RfileSplit;
 import datawave.mr.bulk.split.TabletSplitSplit;
 import datawave.query.util.Tuple2;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.InstanceOperations;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -130,20 +129,15 @@ public class MultiRfileInputformat extends RFileInputFormat {
     
     public static List<InputSplit> computeSplitPoints(Configuration conf, String tableName, List<Range> ranges)
                     throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException, InterruptedException {
-        final Instance instance = BulkInputFormat.getInstance(conf);
-        final PasswordToken token = new PasswordToken(BulkInputFormat.getPassword(conf));
-        return computeSplitPoints(instance.getConnector(BulkInputFormat.getUsername(conf), token), conf, tableName, ranges);
+        return computeSplitPoints(BulkInputFormat.getClient(conf), conf, tableName, ranges);
     }
     
-    public static List<InputSplit> computeSplitPoints(Connector conn, Configuration conf, String tableName, List<Range> ranges)
+    public static List<InputSplit> computeSplitPoints(AccumuloClient client, Configuration conf, String tableName, List<Range> ranges)
                     throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException, InterruptedException {
         
         final Multimap<Range,RfileSplit> binnedRanges = ArrayListMultimap.create();
         
-        final Instance instance = conn.getInstance();
-        final PasswordToken token = new PasswordToken(BulkInputFormat.getPassword(conf));
-        
-        final String tableId = conn.tableOperations().tableIdMap().get(tableName);
+        final String tableId = client.tableOperations().tableIdMap().get(tableName);
         
         final List<InputSplit> inputSplitList = Lists.newArrayList();
         
@@ -157,7 +151,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
         if (dfsUriMap.get(tableId) == null || dfsDirMap.get(tableId) == null) {
             
             synchronized (MultiRfileInputformat.class) {
-                final InstanceOperations instOps = conn.instanceOperations();
+                final InstanceOperations instOps = client.instanceOperations();
                 dfsUriMap.put(tableId, instOps.getSystemConfiguration().get(Property.INSTANCE_DFS_URI.getKey()));
                 dfsDirMap.put(tableId, instOps.getSystemConfiguration().get(Property.INSTANCE_DFS_DIR.getKey()));
             }
@@ -194,19 +188,19 @@ public class MultiRfileInputformat extends RFileInputFormat {
                     final long size = conf.getLong(CACHE_METADATA_SIZE, 10000);
                     final long seconds = conf.getInt(CACHE_METADATA_EXPIRE_SECONDS, 7200);
                     locationMap = CacheBuilder.newBuilder().maximumSize(size).expireAfterWrite(seconds, TimeUnit.SECONDS)
-                                    .build(new MetadataCacheLoader(instance.getConnector(BulkInputFormat.getUsername(conf), token), defaultBasePath));
+                                    .build(new MetadataCacheLoader(client, defaultBasePath));
                 }
             }
         }
         
         for (Range range : ranges) {
             // turn this range into a range of rows against the accumulo metadata: (e.g. <tableId>;row)
-            Range metadataRange = MetadataCacheLoader.createMetadataRange(tableId, range);
+            Range metadataRange = MetadataCacheLoader.createMetadataRange(TableId.of(tableId), range);
             
             Set<Tuple2<String,Set<String>>> metadataEntries;
             try {
                 if (null == locationMap) {
-                    metadataEntries = new MetadataCacheLoader(conn, defaultBasePath).load(metadataRange);
+                    metadataEntries = new MetadataCacheLoader(client, defaultBasePath).load(metadataRange);
                 } else {
                     metadataEntries = locationMap.get(metadataRange);
                 }

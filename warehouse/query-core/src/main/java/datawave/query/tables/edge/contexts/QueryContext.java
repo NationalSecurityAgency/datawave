@@ -285,7 +285,7 @@ public class QueryContext implements EdgeContext {
         }
     }
     
-    /**
+    /*
      * Takes two string builders to append the query string for this query context. The includStats boolean tells if we need to build the query stats string The
      * includeSource tells if we need to include sources in the query string(s) The includeSink tells if we need to include sinks in the query string(s) we can
      * get away with excluding source and sink if the

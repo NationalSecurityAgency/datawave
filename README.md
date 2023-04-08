@@ -28,23 +28,23 @@ require some extra commands over the normal ones that one may be familiar
 with.
 
 ### Cloning with all submodules
-It's easiest to clone the repository pointing the submodules AT the features/queryMicroservices branch
+It's easiest to clone the repository pointing the submodules AT the same branch
 ```bash
-# This will checkout the feature/queryMicroservices branch for all of the submodules.
+# This will checkout the feature/queryMicroservicesAccumulo2.1 branch for all of the submodules.
 # By default, the submodules will all be in a detached head state.
-git clone --recurse-submodules git@github.com:NationalSecurityAgency/datawave.git --branch feature/queryMicroservices
+git clone --recurse-submodules git@github.com:NationalSecurityAgency/datawave.git --branch feature/queryMicroservicesAccumulo2.1
 
-# Checkout the feature/queryMicroservices branch for each submodule so that we are no longer in a detached head state.
+# Checkout the feature/queryMicroservicesAccumulo2.1 branch for each submodule so that we are no longer in a detached head state.
 # The addition of `|| :` will ensure that the command is executed for each submodule, 
-# ignoring failures for submodules that don't have a feature/queryMicroservices branch.
+# ignoring failures for submodules that don't have a main branch.
 cd datawave
-git submodule foreach 'git checkout feature/queryMicroservices || :'
+git submodule foreach 'git checkout feature/queryMicroservicesAccumulo2.1 || :'
 
 # It is recommended to build the project using multiple threads
 mvn -Pdocker,dist clean install -T 1C
 
-# If you don't want to build the microservices, disable the 'microservices' profile
-mvn -Pdocker,dist -P-microservices clean install -T 1C
+# If you don't want to build the microservices, you can skip them
+mvn -Pdocker,dist -DskipMicroservices clean install -T 1C
 ```
 
 ### DataWave Microservices

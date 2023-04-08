@@ -73,6 +73,7 @@ if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" == true ]; then
    info "Removing bundled guava jar from ${ACCUMULO_HOME}/lib"
    ${HADOOP_HOME}/bin/hdfs dfs -rm -f ${DW_ACCUMULO_VFS_DATAWAVE_DIR}/guava.jar
 else
+   mkdir "${ACCUMULO_HOME}/lib/ext"
    [ ! -d ${ACCUMULO_HOME}/lib/ext ] && fatal "Unable to update Accumulo classpath. ${ACCUMULO_HOME}/lib/ext does not exist!"
    info "Removing any existing jars from ${ACCUMULO_HOME}/lib/ext"
    rm -f ${ACCUMULO_HOME}/lib/ext/*.jar

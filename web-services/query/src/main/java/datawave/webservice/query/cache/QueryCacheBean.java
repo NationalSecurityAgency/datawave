@@ -5,7 +5,7 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.VoidResponse;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
@@ -78,7 +78,7 @@ public class QueryCacheBean {
             result.getQueries().add(value.toString());
         }
         // Iterate over queries that are in the init phase
-        for (Entry<String,Pair<QueryLogic<?>,Connector>> entry : qlCache.snapshot().entrySet()) {
+        for (Entry<String,Pair<QueryLogic<?>,AccumuloClient>> entry : qlCache.snapshot().entrySet()) {
             result.getQueries().add("Identifier: " + entry.getKey() + " Query Logic: " + entry.getValue().getFirst().getClass().getName() + "\n");
         }
         return result;

@@ -185,6 +185,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * Given a hit term attribute, return a ValueTuple representation which will give us the field and value parsed out.
      * 
      * @param source
+     *            a hit term attribute
      * @return A ValueTuple representation of the document hit-term attribute
      */
     private ValueTuple attributeToHitTuple(Attribute<?> source) {
@@ -216,6 +217,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * Given an event ID, return the document Key
      * 
      * @param eventId
+     *            eventId string
      * @return the document Key
      */
     private Key eventIdToKey(String eventId) {
@@ -233,6 +235,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * Given a document key, return the eventId
      * 
      * @param docKey
+     *            document key
      * @return the event id (shard\x00dt\x00uid)
      */
     private String keyToEventId(Key docKey) {

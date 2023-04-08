@@ -15,10 +15,10 @@ import datawave.metrics.mapreduce.util.JobSetupUtil;
 import datawave.metrics.util.Connections;
 import datawave.util.time.DateHelper;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -273,8 +273,10 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
         String password = jconf.get(MetricsConfig.WAREHOUSE_PASSWORD);
         String instance = jconf.get(MetricsConfig.WAREHOUSE_INSTANCE);
         String zookeepers = jconf.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS, "localhost");
-        Connector con = Connections.warehouseConnection(jconf);
-        Authorizations auths = con.securityOperations().getUserAuthorizations(con.whoami());
+        Authorizations auths;
+        try (AccumuloClient client = Connections.warehouseClient(jconf)) {
+            auths = client.securityOperations().getUserAuthorizations(client.whoami());
+        }
         Collection<Range> dayRanges = JobSetupUtil.computeShardedDayRange(jconf, log);
         Range timeRange = JobSetupUtil.computeTimeRange(jconf, log);
         long delta = Long.parseLong(timeRange.getEndKey().getRow().toString()) - Long.parseLong(timeRange.getStartKey().getRow().toString());

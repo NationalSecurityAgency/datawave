@@ -36,7 +36,15 @@ public class PipelineFactory {
      *            source used for deep copies.
      * @param env
      *            iterator environment
-     * @return
+     * @param columnFamilies
+     *            column families
+     * @param inclusive
+     *            inclusive flag
+     * @param yield
+     *            the yield
+     * @param yieldThresholdMs
+     *            the yield threshold
+     * @return an iterator
      */
     public static PipelineIterator createIterator(NestedIterator<Key> documents, int maxPipelines, int maxCachedResults, boolean requestSerialPipeline,
                     QuerySpanCollector querySpanCollector, QuerySpan querySpan, QueryIterator sourceIterator,

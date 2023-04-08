@@ -16,7 +16,7 @@ import datawave.query.util.CommonalityTokenTestDataIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -58,13 +58,13 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
     
     @RunWith(Arquillian.class)
     public static class ShardRange extends TestLimitReturnedGroupsToHitTermGroups {
-        protected static Connector connector = null;
+        protected static AccumuloClient connector = null;
         
         @BeforeClass
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
-            connector = qtth.connector;
+            connector = qtth.client;
             
             CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
@@ -82,13 +82,13 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
     
     @RunWith(Arquillian.class)
     public static class DocumentRange extends TestLimitReturnedGroupsToHitTermGroups {
-        protected static Connector connector = null;
+        protected static AccumuloClient connector = null;
         
         @BeforeClass
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
-            connector = qtth.connector;
+            connector = qtth.client;
             
             CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
@@ -147,7 +147,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
     protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                     throws Exception;
     
-    protected void runTestQuery(Connector connector, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
+    protected void runTestQuery(AccumuloClient connector, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
                     Collection<String> goodResults) throws Exception {
         
         QueryImpl settings = new QueryImpl();

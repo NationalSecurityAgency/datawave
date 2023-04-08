@@ -39,6 +39,7 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
      * Get the next document start key. TODO: See if we can skip over datatypes as defined by the dataTypeFilter
      * 
      * @param key
+     *            a key
      * @return the next document key
      */
     protected Key nextStartKey(Key key) {

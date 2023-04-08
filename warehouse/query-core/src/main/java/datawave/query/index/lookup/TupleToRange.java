@@ -31,7 +31,9 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     
     /**
      * @param currentNode
+     *            the jexl node
      * @param config
+     *            a configuration
      */
     public TupleToRange(String tableName, JexlNode currentNode, ShardQueryConfiguration config) {
         this.tableName = tableName;
@@ -43,7 +45,8 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
      * Transform the index information into a QueryPlan by building ranges.
      *
      * @param tuple
-     * @return
+     *            the tuple
+     * @return a query plan iterator
      */
     public Iterator<QueryPlan> apply(Tuple2<String,IndexInfo> tuple) {
         String shard = tuple.first();
@@ -82,6 +85,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     /**
      *
      * @param shard
+     *            a shard string
      * @return - true if the shard string is a shard range
      */
     public static boolean isShardRange(String shard) {
@@ -92,10 +96,14 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
      *
      *
      * @param queryNode
+     *            a query node
      * @param shard
+     *            shard string
      * @param indexMatches
+     *            the index to pull uids
      * @param isTldQuery
-     * @return
+     *            check for tld query
+     * @return an iterator of query plans
      */
     public static Iterator<QueryPlan> createDocumentRanges(String tableName, JexlNode queryNode, String shard, IndexInfo indexMatches, boolean isTldQuery) {
         List<QueryPlan> ranges = Lists.newArrayListWithCapacity(indexMatches.uids().size());

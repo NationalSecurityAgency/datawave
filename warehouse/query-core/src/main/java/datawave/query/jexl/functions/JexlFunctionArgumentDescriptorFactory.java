@@ -32,6 +32,10 @@ public interface JexlFunctionArgumentDescriptorFactory {
     class F {
         /**
          * A convenience method to get the argument descriptor from a node
+         * 
+         * @param node
+         *            the function node
+         * @return the argument descriptor
          */
         public static JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node) {
             if (node == null)

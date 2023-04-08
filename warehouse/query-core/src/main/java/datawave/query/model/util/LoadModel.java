@@ -1,7 +1,7 @@
 package datawave.query.model.util;
 
+import datawave.query.model.FieldMapping;
 import datawave.query.model.QueryModel;
-import datawave.webservice.model.FieldMapping;
 import datawave.webservice.model.Model;
 import org.apache.log4j.Logger;
 import org.xml.sax.InputSource;
@@ -70,7 +70,11 @@ public class LoadModel {
     /**
      * Simple factory method to load a query model from the specified classpath resource
      * 
+     * @param queryModelXml
+     *            the model xml
      * @return QueryModel instance
+     * @throws Exception
+     *             if there are issues
      */
     public static QueryModel loadModelFromXml(String queryModelXml) throws Exception {
         QueryModel model;

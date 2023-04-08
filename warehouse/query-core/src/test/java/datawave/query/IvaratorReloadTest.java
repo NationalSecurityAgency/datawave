@@ -49,6 +49,7 @@ public class IvaratorReloadTest {
      * files by verifying the files were not overwritten or changed.
      * 
      * @throws Exception
+     *             for unexpected exceptions
      */
     @Test
     public void reloadTest() throws Exception {

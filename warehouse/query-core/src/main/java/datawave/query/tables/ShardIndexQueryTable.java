@@ -39,8 +39,8 @@ import datawave.util.TableName;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -135,13 +135,16 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     /**
      * Create and initialize a metadata helper
      * 
-     * @param connector
+     * @param client
+     *            the client
      * @param metadataTableName
+     *            metadata table name
      * @param auths
+     *            a set of auths
      * @return a new initialized MetadataHelper
      */
-    protected MetadataHelper initializeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) {
-        return this.metadataHelperFactory.createMetadataHelper(connector, metadataTableName, auths);
+    protected MetadataHelper initializeMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths) {
+        return this.metadataHelperFactory.createMetadataHelper(client, metadataTableName, auths);
     }
     
     public MetadataHelperFactory getMetadataHelperFactory() {
@@ -177,10 +180,10 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         this.config = new ShardIndexQueryConfiguration(this, settings);
-        this.scannerFactory = new ScannerFactory(connection);
-        MetadataHelper metadataHelper = initializeMetadataHelper(connection, getConfig().getMetadataTableName(), auths);
+        this.scannerFactory = new ScannerFactory(client);
+        MetadataHelper metadataHelper = initializeMetadataHelper(client, getConfig().getMetadataTableName(), auths);
         
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -210,7 +213,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             }
         }
         
-        getConfig().setConnector(connection);
+        getConfig().setClient(client);
         getConfig().setAuthorizations(auths);
         
         if (settings.getBeginDate() != null) {
@@ -408,21 +411,21 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     /**
      * Implementations use the configuration to setup execution of a portion of their query. getTransformIterator should be used to get the partial results if
      * any.
-     * 
-     * @param connection
-     *            The accumulo connection
+     *
+     * @param client
+     *            The accumulo client
      * @param baseConfig
      *            The shard query configuration
      * @param checkpoint
      */
     @Override
-    public void setupQuery(Connector connection, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {
+    public void setupQuery(AccumuloClient client, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {
         ShardIndexQueryConfiguration config = (ShardIndexQueryConfiguration) baseConfig;
         baseConfig.setQueries(checkpoint.getQueries());
-        config.setConnector(connection);
+        config.setClient(client);
         
-        scannerFactory = new ScannerFactory(connection);
-        MetadataHelper metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), config.getAuthorizations());
+        scannerFactory = new ScannerFactory(client);
+        MetadataHelper metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), config.getAuthorizations());
         config.setQueryModel(metadataHelper.getQueryModel(config.getModelTableName(), config.getModelName(), null));
         
         setupQuery(config);
@@ -523,7 +526,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     /**
      * Query model
      * 
-     * @return
+     * @return the model name
      */
     public String getModelName() {
         return getConfig().getModelName();

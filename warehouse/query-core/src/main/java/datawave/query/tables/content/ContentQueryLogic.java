@@ -17,8 +17,8 @@ import datawave.query.transformer.ContentQueryTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -94,11 +94,11 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     }
     
     @Override
-    public GenericQueryConfiguration initialize(final Connector connection, final Query settings, final Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(final AccumuloClient client, final Query settings, final Set<Authorizations> auths) throws Exception {
         // Initialize the config and scanner factory
         config = new ContentQueryConfiguration(this, settings);
-        this.scannerFactory = new ScannerFactory(connection);
-        config.setConnector(connection);
+        this.scannerFactory = new ScannerFactory(client);
+        config.setClient(client);
         config.setAuthorizations(auths);
         
         // Re-assign the view name if specified via params
@@ -314,12 +314,12 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     }
     
     @Override
-    public void setupQuery(Connector connection, GenericQueryConfiguration config, QueryCheckpoint checkpoint) throws Exception {
+    public void setupQuery(AccumuloClient client, GenericQueryConfiguration config, QueryCheckpoint checkpoint) throws Exception {
         ContentQueryConfiguration contentQueryConfig = (ContentQueryConfiguration) config;
         contentQueryConfig.setRanges(((ContentQueryCheckpoint) checkpoint).getRanges());
-        contentQueryConfig.setConnector(connection);
+        contentQueryConfig.setClient(client);
         
-        scannerFactory = new ScannerFactory(connection);
+        scannerFactory = new ScannerFactory(client);
         
         setupQuery(contentQueryConfig);
     }

@@ -17,7 +17,7 @@ import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -56,7 +56,7 @@ import java.util.UUID;
 
 public abstract class IvaratorInterruptTest {
     private static final Logger log = Logger.getLogger(IvaratorInterruptTest.class);
-    private static Connector connector;
+    private static AccumuloClient client;
     
     @ClassRule
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -89,14 +89,14 @@ public abstract class IvaratorInterruptTest {
         
         QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.NEVER,
                         RebuildingScannerTestHelper.INTERRUPT.FI_EVERY_OTHER);
-        connector = qtth.connector;
+        client = qtth.client;
         
-        WiseGuysIngest.writeItAll(connector, range);
+        WiseGuysIngest.writeItAll(client, range);
         Authorizations auths = new Authorizations("ALL");
-        PrintUtility.printTable(connector, auths, TableName.SHARD);
-        PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(connector, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printTable(client, auths, TableName.SHARD);
+        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
     
     @AfterClass
@@ -136,6 +136,7 @@ public abstract class IvaratorInterruptTest {
     
     @RunWith(Arquillian.class)
     public static class ShardRange extends IvaratorInterruptTest {
+        protected static AccumuloClient client = null;
         
         @BeforeClass
         public static void init() throws Exception {
@@ -168,7 +169,7 @@ public abstract class IvaratorInterruptTest {
         log.debug("logic: " + settings.getQueryLogicName());
         logic.setMaxEvaluationPipelines(1);
         
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
+        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
         
         HashSet<String> expectedSet = new HashSet<>(expected);

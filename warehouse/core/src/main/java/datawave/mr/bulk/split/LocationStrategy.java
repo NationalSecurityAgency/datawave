@@ -5,6 +5,7 @@ import com.google.common.hash.PrimitiveSink;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public abstract class LocationStrategy implements Funnel<RangeSplit> {
     
@@ -22,7 +23,7 @@ public abstract class LocationStrategy implements Funnel<RangeSplit> {
     public void funnel(RangeSplit rangeSplit, PrimitiveSink sink) {
         try {
             for (String location : rangeSplit.getLocations()) {
-                sink.putUnencodedChars(location.trim().toLowerCase());
+                sink.putString(location.trim().toLowerCase(), StandardCharsets.UTF_8);
             }
         } catch (IOException e) {
             log.error(e);

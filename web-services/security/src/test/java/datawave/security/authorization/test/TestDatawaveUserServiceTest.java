@@ -1,5 +1,6 @@
 package datawave.security.authorization.test;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.result.ConnectionPool;
@@ -10,9 +11,9 @@ import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -240,18 +241,18 @@ public class TestDatawaveUserServiceTest {
         }
         
         @Override
-        public Connector getConnection(String userDN, Collection<String> proxiedDNs, Priority priority, Map<String,String> trackingMap) throws Exception {
-            return inMemoryInstance.getConnector("root", "");
+        public AccumuloClient getClient(String userDN, Collection<String> proxiedDNs, Priority priority, Map<String,String> trackingMap) throws Exception {
+            return new InMemoryAccumuloClient("root", inMemoryInstance);
         }
         
         @Override
-        public Connector getConnection(String userDN, Collection<String> proxiedDNs, String poolName, Priority priority, Map<String,String> trackingMap)
+        public AccumuloClient getClient(String userDN, Collection<String> proxiedDNs, String poolName, Priority priority, Map<String,String> trackingMap)
                         throws Exception {
-            return inMemoryInstance.getConnector("root", "");
+            return new InMemoryAccumuloClient("root", inMemoryInstance);
         }
         
         @Override
-        public void returnConnection(Connector connection) throws Exception {
+        public void returnClient(AccumuloClient client) {
             
         }
         

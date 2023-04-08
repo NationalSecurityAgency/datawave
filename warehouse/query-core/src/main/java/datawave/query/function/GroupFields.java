@@ -74,7 +74,9 @@ public class GroupFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * like this: {the.field.that.was.limited}_ORIGINAL_COUNT
      * 
      * @param doc
+     *            a document
      * @param groupFieldsMap
+     *            the group fields map
      */
     private void applyCounts(Document doc, Map<String,Integer> groupFieldsMap) {
         if (!groupFieldsMap.entrySet().isEmpty()) {

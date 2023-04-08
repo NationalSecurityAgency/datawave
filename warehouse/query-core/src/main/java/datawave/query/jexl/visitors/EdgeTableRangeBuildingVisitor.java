@@ -265,6 +265,12 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
      * {@code (SOURCE == 'source1' && SINK == 'sink') || (SOURCE == 'source2')}
      * 
      * Or node will return either a list of IdentityContexts or QueryContexts
+     * 
+     * @param node
+     *            the node
+     * @param data
+     *            the data
+     * @return list of IdentityContexts or QueryContexts
      */
     @Override
     public Object visit(ASTOrNode node, Object data) {
@@ -395,6 +401,12 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
      * string literal eg: 'searchTerm'
      * 
      * Returns a list of 1 or more IdentityContexts
+     * 
+     * @param node
+     *            the node
+     * @param data
+     *            the data
+     * @return list of IdentityContexts or QueryContexts
      */
     @Override
     public Object visit(ASTEQNode node, Object data) {
@@ -407,6 +419,12 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
      * string literal eg: 'searchTerm'
      * 
      * Returns a list of 1 or more IdentityContexts
+     * 
+     * @param node
+     *            the node
+     * @param data
+     *            the data
+     * @return list of IdentityContexts
      */
     @Override
     public Object visit(ASTERNode node, Object data) {
@@ -482,6 +500,10 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
     
     /**
      * Gets the Identity of an expression eg. SOURCE
+     * 
+     * @param referenceNode
+     *            a reference node
+     * @return the identity
      */
     private String getIdentity(SimpleNode referenceNode) {
         
@@ -495,6 +517,10 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
     
     /**
      * Gets the string literal
+     * 
+     * @param referenceNode
+     *            reference node
+     * @return string literal
      */
     private String getLiteral(SimpleNode referenceNode) {
         if (referenceNode.jjtGetNumChildren() != 1) {
@@ -509,6 +535,12 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
      * Used only for the Edge'Source'QueryLogic Basically function support was an afterthought only to support old code in the existing Edge'Source'QueryLogic A
      * list with a single Identity context is returned in the following format: Identity = FUNCTION Opperator = FUNCTION LITER = "{function string}" //eg
      * source.has_all(SINK, "t1", "t2", ...)
+     * 
+     * @param node
+     *            the node
+     * @param data
+     *            the data
+     * @return list of IdentityContexts
      */
     public Object visit(ASTFunctionNode node, Object data) {
         if (node.jjtGetParent() instanceof ASTJexlScript) {
@@ -553,6 +585,10 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
      * normalized query One of the main purposes of this method is to create the normalized query that is used to filter column families from ranges. This is a
      * problem when there are multiple query contexts because the whitelist will exclude certain column family values, which will affect what gets returned by
      * the query. This is addressed by the columnFamilyAreDifferent boolean which is passed down to populateQuery()
+     * 
+     * @param queryContexts
+     *            query contexts
+     * @return a visitation context
      */
     private VisitationContext computeVisitaionContext(List<QueryContext> queryContexts) {
         // if both edge types and edge relationships are complete (not regex) for each query context then we can use the

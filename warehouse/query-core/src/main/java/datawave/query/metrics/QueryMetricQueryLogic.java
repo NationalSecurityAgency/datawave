@@ -4,7 +4,7 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.query.Query;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
 import java.util.Collection;
@@ -62,8 +62,8 @@ public class QueryMetricQueryLogic extends ShardQueryLogic {
     }
     
     @Override
-    public final GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
-        return super.initialize(connection, settings, auths);
+    public final GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
+        return super.initialize(client, settings, auths);
     }
     
     @Override

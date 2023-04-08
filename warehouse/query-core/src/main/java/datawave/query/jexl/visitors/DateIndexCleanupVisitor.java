@@ -18,6 +18,12 @@ public class DateIndexCleanupVisitor extends RebuildingVisitor {
     
     /**
      * This will cleanup/remove the SHARDS_AND_DAYS assignment node.
+     * 
+     * @param node
+     *            the node
+     * @param <T>
+     *            type of node
+     * @return a reference to the node
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T cleanup(T node) {

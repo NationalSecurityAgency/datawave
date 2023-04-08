@@ -39,7 +39,6 @@ public final class FastCharStream implements CharStream {
     
     Reader input; // source of chars
     
-    /** Constructs from a Reader. */
     public FastCharStream(Reader r) {
         input = r;
     }

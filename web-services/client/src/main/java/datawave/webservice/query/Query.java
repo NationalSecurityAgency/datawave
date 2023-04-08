@@ -2,12 +2,9 @@ package datawave.webservice.query;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import datawave.microservice.query.QueryParameters;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -17,7 +14,9 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,30 +115,31 @@ public abstract class Query implements Externalizable {
     
     public abstract String getColumnVisibility();
     
-    public abstract MultiValueMap<String,String> toMap();
+    public abstract Map<String,List<String>> toMap();
     
-    public abstract void readMap(MultiValueMap<String,String> map) throws ParseException;
+    public abstract void readMap(Map<String,List<String>> map) throws ParseException;
     
     public abstract Map<String,String> getCardinalityFields();
     
     public abstract void setOptionalQueryParameters(Map<String,List<String>> optionalQueryParameters);
     
-    @JsonDeserialize(as = LinkedMultiValueMap.class)
     public abstract Map<String,List<String>> getOptionalQueryParameters();
     
     public abstract void removeParameter(String key);
     
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        Map<String,List<String>> map = new HashMap<>();
         int numKeys = in.readInt();
         for (int i = 0; i < numKeys; i++) {
             String key = in.readUTF();
             int numValues = in.readInt();
+            List<String> values = new ArrayList<>(numValues);
             for (int j = 0; j < numValues; j++) {
                 String value = in.readUTF();
-                map.add(key, value);
+                values.add(value);
             }
+            map.put(key, values);
         }
         try {
             readMap(map);

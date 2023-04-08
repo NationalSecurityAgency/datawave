@@ -72,7 +72,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     }
     
     public EdgeQueryLogic runLogic(QueryImpl q, Set<Authorizations> auths) throws Exception {
-        GenericQueryConfiguration config = logic.initialize(connector, q, auths);
+        GenericQueryConfiguration config = logic.initialize(client, q, auths);
         logic.setupQuery(config);
         return logic;
     }

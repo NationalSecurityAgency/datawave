@@ -148,11 +148,11 @@ public class HudBean {
         /*
          * Set<HudActiveUser> hudActiveUsers = new HashSet<>(); boolean isAnAdmin = false; Principal p = ctx.getCallerPrincipal(); if (p instanceof
          * DatawavePrincipal) { DatawavePrincipal dp = (DatawavePrincipal)p; hudActiveUsers.add(new HudActiveUser(dp.getSid())); isAnAdmin = isAnAdmin(dp); }
-         * 
+         *
          * try { // If they are an admin, make a call to the Persister EJB to get the list of // active users, otherwise they can only query for themselves.
          * if(isAnAdmin){ List<String> activeUsers = persister.findActiveUsers(); for(String sid : activeUsers) { hudActiveUsers.add(new HudActiveUser(sid)); }
          * }
-         * 
+         *
          * } catch (Exception e) { throw new EJBException("Error getting the list of active users running queries", e); } String activeUsersJson = null;
          * activeUsersJson = gson.toJson(hudActiveUsers.toArray()); return activeUsersJson;
          */

@@ -15,14 +15,14 @@ import datawave.core.query.remote.RemoteQueryService;
 import datawave.marking.MarkingFunctions;
 import datawave.query.config.RemoteQueryConfiguration;
 import datawave.query.transformer.EventQueryTransformerSupport;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -48,6 +48,8 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     private RemoteQueryConfiguration config;
     
     private RemoteQueryService remoteQueryService;
+    
+    private UserOperations userOperations;
     
     private QueryLogicTransformer transformerInstance = null;
     
@@ -96,7 +98,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> auths) throws Exception {
         // @TODO: If this is a checkpointable query, then we may need to set the page size down to 1
         
         GenericResponse<String> createResponse = remoteQueryService.createQuery(getRemoteQueryLogic(), settings.toMap(), currentUser);
@@ -105,7 +107,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     }
     
     @Override
-    public String getPlan(Connector connection, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
+    public String getPlan(AccumuloClient connection, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
         GenericResponse<String> planResponse = remoteQueryService.planQuery(getRemoteQueryLogic(), settings.toMap());
         return planResponse.getResult();
     }
@@ -208,15 +210,15 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     /**
      * Implementations use the configuration to setup execution of a portion of their query. getTransformIterator should be used to get the partial results if
      * any.
-     * 
-     * @param connection
-     *            The accumulo connection
+     *
+     * @param client
+     *            The accumulo client
      * @param baseConfig
      *            The shard query configuration
      * @param checkpoint
      */
     @Override
-    public void setupQuery(Connector connection, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {
+    public void setupQuery(AccumuloClient client, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {
         RemoteQueryConfiguration config = (RemoteQueryConfiguration) baseConfig;
         setupQuery(config);
     }
@@ -319,4 +321,13 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
         
     }
     
+    @Override
+    public void setUserOperations(UserOperations userOperations) {
+        this.userOperations = userOperations;
+    }
+    
+    @Override
+    public UserOperations getUserOperations() {
+        return userOperations;
+    }
 }

@@ -443,9 +443,6 @@ public class JavaCharStream {
         bufcolumn = null;
     }
     
-    /**
-     * Method to adjust line and column numbers for the start of a token.
-     */
     public void adjustBeginLineColumn(int newLine, int newCol) {
         int start = tokenBegin;
         int len;
