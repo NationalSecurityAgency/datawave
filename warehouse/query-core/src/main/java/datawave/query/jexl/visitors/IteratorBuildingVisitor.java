@@ -1458,7 +1458,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             }
         }
     }
-
+    
     /**
      * Get the DatatypeFilter
      *
