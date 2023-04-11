@@ -83,6 +83,12 @@ public class SharedCacheCoordinator implements Serializable {
      *            the Zookeeper namespace to use for grouping all entries created by this coordinator
      * @param zookeeperConnectionString
      *            the Zookeeper connection to use
+     * @param evictionReaperIntervalInSeconds
+     *            the eviction interval
+     * @param maxRetries
+     *            maximum number of retries
+     * @param numLocks
+     *            number of locks
      */
     public SharedCacheCoordinator(String namespace, String zookeeperConnectionString, int evictionReaperIntervalInSeconds, int numLocks, int maxRetries) {
         ArgumentChecker.notNull(namespace, zookeeperConnectionString);
@@ -291,6 +297,10 @@ public class SharedCacheCoordinator implements Serializable {
     
     /**
      * Creates a distributed mutex named {@code path}. This mutex can be used to perform locking across many servers.
+     * 
+     * @param path
+     *            a mutex
+     * @return a lock
      */
     public InterProcessLock getMutex(String path) {
         ArgumentChecker.notNull(path);
@@ -319,6 +329,8 @@ public class SharedCacheCoordinator implements Serializable {
      *            the name of the counter
      * @param listener
      *            a listener that is called when the counter value changes
+     * @throws Exception
+     *             if there are issues
      */
     public void registerCounter(String counterName, SharedCountListener listener) throws Exception {
         Preconditions.checkArgument(!sharedCounters.containsKey(counterName), "Counter " + counterName + " has already been registered!");
@@ -375,6 +387,11 @@ public class SharedCacheCoordinator implements Serializable {
     
     /**
      * Increments the shared distributed counter named {@code counterName} by one.
+     * 
+     * @param counterName
+     *            the counter name
+     * @throws Exception
+     *             if there are issues
      */
     public void incrementCounter(String counterName) throws Exception {
         ArgumentChecker.notNull(counterName);
@@ -410,6 +427,8 @@ public class SharedCacheCoordinator implements Serializable {
      *            the name of the boolean
      * @param listener
      *            a listener that is called when the boolean value changes
+     * @throws Exception
+     *             if there are issues
      */
     public void registerBoolean(String booleanName, SharedBooleanListener listener) throws Exception {
         Preconditions.checkArgument(!sharedBooleans.containsKey(booleanName), "Boolean " + booleanName + " has already been registered!");
@@ -477,6 +496,13 @@ public class SharedCacheCoordinator implements Serializable {
     
     /**
      * Sets the shared distributed boolean named {@code booleanName} to the passed state value.
+     * 
+     * @param booleanName
+     *            boolean name
+     * @param state
+     *            the state
+     * @throws Exception
+     *             if there are issues
      */
     public void setBoolean(String booleanName, boolean state) throws Exception {
         log.trace("table:" + booleanName + " setBoolean(" + state + ")");
@@ -513,8 +539,6 @@ public class SharedCacheCoordinator implements Serializable {
             log.trace("table:" + booleanName + " sharedBooleans:" + sharedBooleans);
         }
     }
-    
-    // tristate
     
     public void registerTriState(String triStateName, SharedTriStateListener listener) throws Exception {
         Preconditions.checkArgument(!sharedTriStates.containsKey(triStateName), "STATE " + triStateName + " has already been registered!");
@@ -579,6 +603,13 @@ public class SharedCacheCoordinator implements Serializable {
     
     /**
      * Changes the shared distributed triState named {@code triStateName} to the passed value.
+     * 
+     * @param state
+     *            the state
+     * @param triStateName
+     *            the name of the state whose locally cached value is to be tested
+     * @throws Exception
+     *             if there are issues
      */
     public void setTriState(String triStateName, SharedTriState.STATE state) throws Exception {
         log.trace("table:" + triStateName + " setTriState(" + state + ")");
@@ -604,6 +635,11 @@ public class SharedCacheCoordinator implements Serializable {
     
     /**
      * Sends an eviction message for {@code messagePath} to all other shared cache coordinators that are listening.
+     * 
+     * @param messagePath
+     *            a message path
+     * @throws Exception
+     *             if there are issues
      */
     public void sendEvictMessage(String messagePath) throws Exception {
         ArgumentChecker.notNull(messagePath);
@@ -631,6 +667,9 @@ public class SharedCacheCoordinator implements Serializable {
      * indicate this server has responded to the eviction request. Once all running servers have responded, then a cleanup thread running on each server will
      * attempt to remove the eviction request marker so as not to overpopulate zookeeper. All servers may try, but only one will actually delete all of the
      * nodes.
+     * 
+     * @param callback
+     *            the callback to invoke
      */
     public void watchForEvictions(final EvictionCallback callback) {
         ArgumentChecker.notNull(callback);

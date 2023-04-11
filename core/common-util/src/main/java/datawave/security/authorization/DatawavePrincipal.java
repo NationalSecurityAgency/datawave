@@ -63,6 +63,10 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
      * If there is more than one DatawaveUser, then the first (and presumably only) DatawaveUser whose {@link DatawaveUser#getUserType()} is
      * {@link UserType#USER} is the primary user. If no such DatawaveUser is present, then the first principal in the list is returned as the primary user. This
      * will be the first entity in the X-ProxiedEntitiesChain which should be the server that originated the request.
+     * 
+     * @param datawaveUsers
+     *            list of users
+     * @return a datawave user
      */
     static protected DatawaveUser findPrimaryUser(List<DatawaveUser> datawaveUsers) {
         if (datawaveUsers.isEmpty()) {

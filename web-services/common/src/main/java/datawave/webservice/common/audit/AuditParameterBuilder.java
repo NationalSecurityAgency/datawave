@@ -12,8 +12,10 @@ public interface AuditParameterBuilder {
     /**
      * Extracts parameters from {@code queryParameters}, converts to the parameters required by the audit microservice, and then validates the parameters before
      * returning them in a {@link Map}.
-     * 
+     *
      * @param queryParameters
+     *            the query parameters
+     * @return validated parameters
      */
     Map<String,String> convertAndValidate(MultiValueMap<String,String> queryParameters);
     

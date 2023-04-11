@@ -2,7 +2,6 @@ package datawave.query.iterator.logic;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import com.google.common.collect.Lists;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttributeFactory;
@@ -27,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -100,7 +100,6 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     protected final Text valueMinPrefix;
     protected final Text columnFamily;
     protected final Collection<ByteSequence> seekColumnFamilies;
-    protected final boolean includeColumnFamilies;
     
     // used for managing parent calls to seek
     protected Range scanRange;
@@ -110,6 +109,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     
     protected final String field;
     protected final String value;
+    
+    protected Key limitKey;
     
     protected PreNormalizedAttributeFactory attributeFactory;
     protected Document document;
@@ -154,8 +155,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         
         // Make sure we properly set the ColumnFamilies when calling seek() to avoid
         // opening readers to locality groups we don't care about
-        this.seekColumnFamilies = Lists.newArrayList((ByteSequence) new ArrayByteSequence(columnFamilyBytes));
-        this.includeColumnFamilies = true;
+        this.seekColumnFamilies = Collections.singleton(new ArrayByteSequence(columnFamilyBytes));
         
         this.field = field.toString();
         this.value = value.toString();
@@ -191,7 +191,10 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         
         tk = null;
         // reusable buffers
-        Text row = new Text(), cf = new Text(), cq = new Text();
+        Text row = new Text();
+        Text cf = new Text();
+        Text cq = new Text();
+        
         while (source.hasTop() && tk == null) {
             Key top = source.getTopKey();
             
@@ -215,7 +218,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
                     log.trace("cfDiff > 0, seeking to range: " + newRange);
                 }
                 
-                source.seek(newRange, seekColumnFamilies, includeColumnFamilies);
+                source.seek(newRange, seekColumnFamilies, true);
                 continue;
             } else if (cfDiff < 0) {
                 // need to move to the next row and try again
@@ -237,7 +240,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
                     log.trace("cfDiff < 0, seeking to range: " + newRange);
                 }
                 
-                source.seek(newRange, seekColumnFamilies, includeColumnFamilies);
+                source.seek(newRange, seekColumnFamilies, true);
                 continue;
             }
             
@@ -251,7 +254,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
                     log.trace("cqDiff > 0, seeking to range: " + newRange);
                 }
                 
-                source.seek(newRange, seekColumnFamilies, includeColumnFamilies);
+                source.seek(newRange, seekColumnFamilies, true);
                 continue;
             } else if (cqDiff < 0) {
                 // need to move to the next row and try again
@@ -273,7 +276,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
                     log.trace("cqDiff < 0, seeking to range: " + newRange);
                 }
                 
-                source.seek(newRange, seekColumnFamilies, includeColumnFamilies);
+                source.seek(newRange, seekColumnFamilies, true);
                 continue;
             }
             
@@ -298,7 +301,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
                 Range newRange;
                 if (timeSeekingFilter != null
                                 && (newRange = timeSeekingFilter.getSeekRange(top, this.scanRange.getEndKey(), this.scanRange.isEndKeyInclusive())) != null) {
-                    source.seek(newRange, seekColumnFamilies, includeColumnFamilies);
+                    source.seek(newRange, seekColumnFamilies, true);
                 } else {
                     source.next();
                 }
@@ -312,7 +315,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
                 Range newRange;
                 if (dataTypeSeekingFilter != null && (newRange = dataTypeSeekingFilter.getSeekRange(top, this.scanRange.getEndKey(),
                                 this.scanRange.isEndKeyInclusive())) != null) {
-                    source.seek(newRange, seekColumnFamilies, includeColumnFamilies);
+                    source.seek(newRange, seekColumnFamilies, true);
                 } else {
                     source.next();
                 }
@@ -320,10 +323,15 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
             }
             
             // restrict the aggregation to the current target value within the document
-            limitedSource.setLimit(new Key(top.getRow(), columnFamily, new Text(valueMinPrefix + Constants.MAX_UNICODE_STRING)));
+            limitedSource.setLimit(getLimitKey(top.getRow()));
+            
             // Aggregate the document. NOTE: This will advance the source iterator
-            tk = buildDocument ? aggregation.apply(limitedSource, document, attributeFactory)
-                            : aggregation.apply(limitedSource, scanRange, seekColumnFamilies, includeColumnFamilies);
+            if (buildDocument) {
+                tk = aggregation.apply(limitedSource, document, attributeFactory);
+            } else {
+                tk = aggregation.apply(limitedSource, scanRange, seekColumnFamilies, true);
+            }
+            
             if (log.isTraceEnabled()) {
                 log.trace("Doc size: " + this.document.size());
                 log.trace("Returning pointer " + tk.toStringNoTime());
@@ -359,7 +367,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
             log.trace(this + " seek'ing to: " + this.scanRange + " from " + range);
         }
         
-        source.seek(this.scanRange, this.seekColumnFamilies, this.includeColumnFamilies);
+        source.seek(this.scanRange, this.seekColumnFamilies, true);
         next();
     }
     
@@ -393,7 +401,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
             log.trace(this + " moving to: " + r);
         }
         
-        source.seek(r, seekColumnFamilies, includeColumnFamilies);
+        source.seek(r, seekColumnFamilies, true);
         
         if (log.isTraceEnabled()) {
             log.trace(this + " finished move. Now at " + (source.hasTop() ? source.getTopKey() : "null") + ", calling next()");
@@ -448,6 +456,22 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         }
         
         return key;
+    }
+    
+    /**
+     * Get a key to limit the scan range of this iterator.
+     * <p>
+     * Practically the row will not change, so this 'get or build' pattern is safe.
+     *
+     * @param row
+     *            the row a shard index key (the partition in YYYYmmdd_n format)
+     * @return the limit key
+     */
+    public Key getLimitKey(Text row) {
+        if (limitKey == null) {
+            limitKey = new Key(row, columnFamily, new Text(valueMinPrefix + Constants.MAX_UNICODE_STRING));
+        }
+        return limitKey;
     }
     
     @Override

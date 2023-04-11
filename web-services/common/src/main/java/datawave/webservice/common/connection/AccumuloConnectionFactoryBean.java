@@ -111,8 +111,11 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
      *
      * @param priority
      *            the client's Priority
+     * @param trackingMap
+     *            a tracking map
      * @return accumulo client
      * @throws Exception
+     *             if there are issues
      */
     public AccumuloClient getClient(Priority priority, Map<String,String> trackingMap) throws Exception {
         return getClient(getCurrentUserDN(), getCurrentProxyServers(), priority, trackingMap);
@@ -134,6 +137,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
      *            the tracking map
      * @return Accumulo client
      * @throws Exception
+     *             if there are issues
      */
     public AccumuloClient getClient(final String cpn, final Priority priority, final Map<String,String> trackingMap) throws Exception {
         return getClient(getCurrentUserDN(), getCurrentProxyServers(), cpn, priority, trackingMap);
@@ -150,6 +154,8 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
      *
      * @param client
      *            The client to return
+     * @throws Exception
+     *             if there are issues
      */
     @PermitAll
     // permit anyone to return a connection

@@ -59,6 +59,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
+import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.KeyAdjudicator;
 import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
@@ -267,8 +268,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         } else {
             this.source = source;
         }
-        
-        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEventNextSeek());
         
         if (isDebugMultithreadedSources()) {
             this.source = new SourceThreadTrackingIterator(this.source);
@@ -897,8 +896,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             };
         } else {
-            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, super.equality, getEvaluationFilter(),
-                            this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
+            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEvaluationFilter(), this.includeHierarchyFields,
+                            this.includeHierarchyFields).withRangeProvider(getRangeProvider());
         }
         
         Iterator<Entry<DocumentData,Document>> sourceIterator = Iterators.transform(documentSpecificSource, from -> {
@@ -1072,7 +1071,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 tfConfig.setContentExpansionFields(getContentExpansionFields());
                 tfConfig.setTfFields(getTermFrequencyFields());
                 tfConfig.setTypeMetadata(getTypeMetadata());
-                tfConfig.setEquality(super.equality);
+                tfConfig.setEquality(getEquality());
                 tfConfig.setEvaluationFilter(getEvaluationFilter());
                 
                 Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction = buildTfFunction(tfConfig);
@@ -1090,7 +1089,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 IndexOnlyContextCreatorBuilder contextCreatorBuilder = new IndexOnlyContextCreatorBuilder().setSource(sourceDeepCopy)
                                 .setRange(getDocumentRange(documentSource)).setTypeMetadata(typeMetadataForEval).setCompositeMetadata(compositeMetadata)
                                 .setOptions(this).setVariables(variables).setIteratorBuildingVisitor(iteratorBuildingVisitor)
-                                .setDelayedNonEventFieldMap(delayedNonEventFieldMap).setEquality(equality).setColumnFamilies(columnFamilies)
+                                .setDelayedNonEventFieldMap(delayedNonEventFieldMap).setEquality(getEquality()).setColumnFamilies(columnFamilies)
                                 .setInclusive(inclusive).setComparatorFactory(this);
                 final IndexOnlyContextCreator contextCreator = contextCreatorBuilder.build();
                 
@@ -1214,7 +1213,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             log.trace("mapDocument " + fieldIndexSatisfiesQuery);
         }
         if (fieldIndexSatisfiesQuery) {
-            final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, super.equality,
+            final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(),
                             getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
             
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(documents,
@@ -1525,7 +1524,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setFieldsToAggregate(this.getNonEventFields())
                 .setAttrFilter(this.getEvaluationFilter())
                 .setDatatypeFilter(this.getFieldIndexKeyDataTypeFilter())
-                .setFiAggregator(this.fiAggregator)
+                .setFiAggregator(this.getFiAggregator())
                 .setHdfsFileSystem(this.getFileSystemCache())
                 .setQueryLock(this.getQueryLock())
                 .setIvaratorCacheDirConfigs(this.getIvaratorCacheDirConfigs())
@@ -1695,6 +1694,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.activeQueryLog = ActiveQueryLog.getInstance(getActiveQueryLogName());
         }
         return this.activeQueryLog;
+    }
+    
+    /**
+     * Gets a default implementation of a FieldIndexAggregator
+     *
+     * @return a {@link IdentityAggregator}
+     */
+    @Override
+    public FieldIndexAggregator getFiAggregator() {
+        if (fiAggregator == null) {
+            fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEventNextSeek());
+        }
+        return fiAggregator;
     }
     
     protected ExcerptTransform getExcerptTransform() {

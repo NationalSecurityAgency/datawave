@@ -129,7 +129,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
         this.timing = timing;
         this.executor = Executors.newSingleThreadExecutor();
-        this.allowShortCircuitTimeouts = logic.isLongRunningQuery();
         this.predictor = predictor;
         // set the metric information
         this.getMetric().populate(this.settings);
@@ -189,6 +188,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.lastPageNumber = 0;
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
+            this.allowShortCircuitTimeouts = logic.isLongRunningQuery();
             // the configuration query string should now hold the planned query
             this.getMetric().setPlan(configuration.getQueryString());
             this.getMetric().setSetupTime((System.currentTimeMillis() - start));
@@ -289,8 +289,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      * This method is used to determine if we have a next result. This will throw a timeout exception if the page short circuit limit is reached.
      *
      * @param pageStartTime
+     *            the page start time
      * @return true if hasNext()
      * @throws TimeoutException
+     *             if there is a timeout
      */
     private boolean hasNext(long pageStartTime) throws TimeoutException {
         if (allowShortCircuitTimeouts) {
@@ -330,8 +332,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      * the page short circuit timeout has been reached.
      *
      * @param pageStartTime
+     *            the page start time
      * @return the next object (could be null)
      * @throws TimeoutException
+     *             if there is a timeout
      */
     private Object getNext(long pageStartTime) throws TimeoutException {
         if (allowShortCircuitTimeouts) {
@@ -384,6 +388,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      *
      * @return a results page.
      * @throws Exception
+     *             if there are issues
      */
     public ResultsPage next() throws Exception {
         // update AbstractRunningQuery.lastUsed

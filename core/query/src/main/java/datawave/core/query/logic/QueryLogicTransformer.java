@@ -11,6 +11,7 @@ public interface QueryLogicTransformer<I,O> extends Transformer<I,O> {
      * Set a response transform to be applied in the createResponse method.
      * 
      * @param responseTransform
+     *            a response transform
      */
     void setResponseEnricher(ResponseEnricher responseTransform);
     
@@ -31,10 +32,5 @@ public interface QueryLogicTransformer<I,O> extends Transformer<I,O> {
     @Override
     O transform(I input) throws EmptyObjectException;
     
-    /**
-     *
-     *
-     * @param queryExecutionForCurrentPageStartTime
-     */
     void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime);
 }

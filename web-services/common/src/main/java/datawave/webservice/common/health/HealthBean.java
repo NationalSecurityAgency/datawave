@@ -110,6 +110,8 @@ public class HealthBean {
      *
      * @param newStatus
      *            the new status to return from {@link #health()}
+     * @param request
+     *            the servlet request
      * @return the current/previous status
      */
     @PUT
@@ -148,6 +150,8 @@ public class HealthBean {
      *
      * @param timeoutMinutes
      *            the number of minutes to wait for queries to complete before continuing with the shutdown operation anyway
+     * @param request
+     *            the request to send
      * @return a message indicating whether or not shutdown was attempted
      */
     @GET

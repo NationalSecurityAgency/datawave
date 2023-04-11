@@ -4,17 +4,21 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import datawave.security.auth.DatawaveAuthenticationMechanism;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.result.GenericResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.EnableCaching;
 
 import javax.annotation.PostConstruct;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
+@EnableCaching
 public class RemoteUserOperationsImpl extends RemoteHttpService implements UserOperations {
     private static final Logger log = LoggerFactory.getLogger(RemoteUserOperationsImpl.class);
     
@@ -76,6 +80,13 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
         }, entity -> {
             return readResponse(entity, genericResponseReader);
         }, () -> suffix);
+    }
+    
+    @Override
+    @Cacheable(value = "remoteUser", key = "{#principal}", cacheManager = "remoteUserOperationsCacheManager")
+    public ProxiedUserDetails getRemoteUser(ProxiedUserDetails currentUser) throws AuthorizationException {
+        log.info("Cache fault: Retrieving user for " + currentUser.getPrimaryUser().getDn());
+        return UserOperations.super.getRemoteUser(currentUser);
     }
     
     private DatawavePrincipal getDatawavePrincipal(Object callerObject) {

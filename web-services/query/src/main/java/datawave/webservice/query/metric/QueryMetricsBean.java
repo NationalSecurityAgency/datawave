@@ -110,6 +110,7 @@ public class QueryMetricsBean {
      * Returns metrics for the current users queries that are identified by the id
      *
      * @param id
+     *            the id
      *
      * @return datawave.webservice.result.QueryMetricListResponse
      *
@@ -344,7 +345,7 @@ public class QueryMetricsBean {
     /**
      * Find out who/what called this method
      *
-     * @return
+     * @return who/what called this method
      */
     private DatawavePrincipal getPrincipal() {
         DatawavePrincipal dp = null;

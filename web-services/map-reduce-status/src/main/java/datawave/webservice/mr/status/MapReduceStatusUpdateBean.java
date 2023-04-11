@@ -48,14 +48,16 @@ public class MapReduceStatusUpdateBean {
      * (job.end.retry.interval)
      *
      * @param jobId
+     *            the job id
      * @param jobStatus
-     *
+     *            the job status
+     *           
      * @HTTP 200 success
      * @HTTP 500 failure
-     *
+     *           
      * @return datawave.webservice.result.VoidResponse
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *           
      */
     @GET
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",

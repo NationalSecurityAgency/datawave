@@ -102,7 +102,7 @@ public class JexlNodeFactory {
         
         // no expansions needed if the field name threshold is exceeded
         if (fieldsToValues.isKeyThresholdExceeded()) {
-            return new ExceededTermThresholdMarkerJexlNode(copy(original));
+            throw new DatawaveFatalQueryException("Failed to expand unfielded term");
         }
         
         // collapse the value sets if not expanding fields

@@ -604,6 +604,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
      * Setting the page processing start time is called after the logic is created. Pass this on to the children.
      *
      * @param pageProcessingStartTime
+     *            the processing start time
      */
     @Override
     public void setPageProcessingStartTime(long pageProcessingStartTime) {

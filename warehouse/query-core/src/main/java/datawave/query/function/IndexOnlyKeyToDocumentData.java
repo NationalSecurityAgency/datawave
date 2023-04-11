@@ -1,23 +1,11 @@
 package datawave.query.function;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.aggregation.DocumentData;
-
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.data.ArrayByteSequence;
@@ -30,8 +18,19 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static datawave.query.Constants.EMPTY_VALUE;
 
 /**
  * Fetches index-only tf key/values and outputs them as "standard" field key/value pairs
@@ -40,8 +39,6 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
     private static final Collection<ByteSequence> COLUMN_FAMILIES = Lists.<ByteSequence> newArrayList(new ArrayByteSequence("d"));
     
     private static Logger LOG = Logger.getLogger(IndexOnlyKeyToDocumentData.class);
-    
-    private static final Value EMPTY_VALUE = new Value();
     
     private static final Entry<Key,Value> INVALID_COLUMNQUALIFIER_FORMAT_KEY = Maps.immutableEntry(new Key("INVALID_COLUMNQUALIFIER_FORMAT_KEY"), EMPTY_VALUE);
     
@@ -85,7 +82,7 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
     
     /**
      * Constructor
-     * 
+     *
      * @param parentRange
      *            The range of the originally desired parent document
      * @param fieldName
@@ -99,7 +96,7 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
     
     /**
      * Constructor
-     * 
+     *
      * @param parentRange
      *            The range of the originally desired parent document
      * @param fieldName

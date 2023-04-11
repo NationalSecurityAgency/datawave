@@ -186,7 +186,12 @@ public class QueryMetricsReporter {
     /**
      * Given results from the QueryMetrics table, collect statistics on all queries falling in the date range.
      * 
+     * @param beginDate
+     *            the begin date
+     * @param endDate
+     *            the end date
      * @param iterator
+     *            an iterator
      */
     private void processResults(Date beginDate, Date endDate, Iterator<Entry<Key,Value>> iterator) {
         final Text holder = new Text();

@@ -201,8 +201,11 @@ public class MapReduceJobConfiguration {
     }
     
     /**
+     * @param conf
+     *            config
      * @return HDFS FileSystem
      * @throws IOException
+     *             for IOException
      */
     protected final FileSystem getFileSystem(Configuration conf) throws IOException {
         return FileSystem.get(conf);
@@ -212,8 +215,13 @@ public class MapReduceJobConfiguration {
      * Common code to setup distributed cache and classpath for the job
      *
      * @param job
+     *            the job
      * @param jobDir
+     *            job directory
+     * @param jobId
+     *            the job id
      * @throws Exception
+     *             if something goes wrong
      */
     protected void prepareClasspath(String jobId, Job job, Path jobDir) throws Exception {
         FileSystem fs = getFileSystem(job.getConfiguration());
@@ -404,6 +412,21 @@ public class MapReduceJobConfiguration {
     /**
      * Takes a source directory and archives the entire directory tree underneath it into a file in the job cache. This is used to bundle the configuration
      * module into the job cache so its files are available for MapReduce jobs.
+     * 
+     * @param source
+     *            a source
+     * @param fs
+     *            a filesystem
+     * @param classpath
+     *            a classpath
+     * @param job
+     *            a job
+     * @param jobId
+     *            a jobid
+     * @param pattern
+     *            a pattern
+     * @throws IOException
+     *             for input/output issues
      */
     private void addArchivedDirectory(String source, Pattern pattern, Path classpath, String jobId, Job job, FileSystem fs) throws IOException {
         File sourceDir = new File(source);

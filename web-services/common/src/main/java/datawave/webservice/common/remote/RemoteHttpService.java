@@ -421,7 +421,8 @@ public abstract class RemoteHttpService {
      * Useful for setting proxied entities header
      * 
      * @param callerPrincipal
-     * @return
+     *            the caller principal
+     * @return proxied entities
      */
     public static String getProxiedEntities(DatawavePrincipal callerPrincipal) {
         return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().subjectDN()).append('>'))
@@ -432,7 +433,8 @@ public abstract class RemoteHttpService {
      * Useful for setting proxied issuers header
      * 
      * @param callerPrincipal
-     * @return
+     *            the caller principal
+     * @return proxied entities
      */
     public static String getProxiedIssuers(DatawavePrincipal callerPrincipal) {
         return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().issuerDN()).append('>'))

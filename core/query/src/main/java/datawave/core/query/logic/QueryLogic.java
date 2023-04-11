@@ -40,9 +40,9 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            - should unfielded terms be expanded
      * @param expandValues
      *            - should regex/ranges be expanded into discrete values
-     * @return the plan
+     * @return the normalized query
      * @throws Exception
-     *             on failure
+     *             if there are issues
      */
     String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception;
@@ -56,9 +56,9 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            - query settings (query, begin date, end date, etc.)
      * @param runtimeQueryAuthorizations
      *            - authorizations that have been calculated for this query based on the caller and server.
-     * @return the resulting configuration
+     * @return a configuration
      * @throws Exception
-     *             on failure
+     *             if there are issues
      */
     GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception;
     
@@ -77,14 +77,14 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @param configuration
      *            Encapsulates all information needed to run a query (whether the query is a BatchScanner, a MapReduce job, etc)
      * @throws Exception
-     *             on failure
+     *             if there are issues
      */
     void setupQuery(GenericQueryConfiguration configuration) throws Exception;
     
     /**
      * @return a copy of this instance
      * @throws CloneNotSupportedException
-     *             if not supported
+     *             if the clone is not supported
      */
     Object clone() throws CloneNotSupportedException;
     
@@ -95,7 +95,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     /**
      * @param settings
-     *            The query settings object
+     *            query settings
      * @return Transformer that will convert Key,Value to a Result object
      */
     QueryLogicTransformer getTransformer(Query settings);
@@ -246,7 +246,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     /**
      * @param query
-     *            The query settings object
+     *            the query
      * @return the audit level for this logic
      */
     AuditType getAuditType(Query query);
@@ -399,6 +399,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * logics shouldn't store this property.
      *
      * @param pageProcessingStartTime
+     *            the processing start time
      */
     void setPageProcessingStartTime(long pageProcessingStartTime);
     

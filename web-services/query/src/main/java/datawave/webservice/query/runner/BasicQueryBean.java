@@ -205,7 +205,11 @@ public class BasicQueryBean {
     
     /**
      * Display the second step for a simple query web UI in the quickstart
-     *
+     * 
+     * @param queryParameters
+     *            parameters
+     * @param httpHeaders
+     *            headers
      * @HTTP 200 Success
      * @return datawave.webservice.result.QueryWizardStep2Response
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -310,7 +314,13 @@ public class BasicQueryBean {
     
     /**
      * Display the query plan and link to basic query results for a simple query web UI in the quickstart
-     *
+     * 
+     * @param queryParameters
+     *            parameters
+     * @param httpHeaders
+     *            headers
+     * @param logicName
+     *            logic name
      * @HTTP 200 Success
      * @return datawave.webservice.result.QueryWizardStep3Response
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy

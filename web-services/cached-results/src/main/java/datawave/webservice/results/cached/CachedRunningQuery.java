@@ -645,8 +645,15 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     /**
      * Return a specific page of results.
      * 
+     * @param pageByteTrigger
+     *            the page byte
+     * @param rowBegin
+     *            row begin
+     * @param rowEnd
+     *            row end
      * @return next page of results
      * @throws SQLException
+     *             for issues with sql
      */
     public ResultsPage getRows(Integer rowBegin, Integer rowEnd, long pageByteTrigger) throws SQLException {
         if (log.isTraceEnabled())
@@ -725,8 +732,11 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     /**
      * Return the next page of results
      * 
+     * @param pageByteTrigger
+     *            the page byte
      * @return next page of results
      * @throws SQLException
+     *             for issues with sql
      */
     public ResultsPage next(long pageByteTrigger) throws SQLException {
         // update timestamp in case this operation takes a long time.
@@ -763,8 +773,11 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     /**
      * Return the previous page of results
      * 
+     * @param pageByteTrigger
+     *            the page byte
      * @return previous page of results
      * @throws SQLException
+     *             for issues with sql
      */
     public ResultsPage previous(long pageByteTrigger) throws SQLException {
         // update timestamp in case this operation takes a long time.
@@ -807,8 +820,10 @@ public class CachedRunningQuery extends AbstractRunningQuery {
      * Convert the cached row set into a result list.
      * 
      * @param cachedRowSet
+     *            the row set
      * @param pageByteTrigger
-     * @return
+     *            the page byte
+     * @return ResultsPage
      */
     private ResultsPage convert(CachedRowSet cachedRowSet, long pageByteTrigger) {
         boolean hitPageByteTrigger = false;

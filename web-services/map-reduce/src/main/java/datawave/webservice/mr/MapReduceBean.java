@@ -198,7 +198,8 @@ public class MapReduceBean {
      * Execute a Oozie workflow with the given workFlow name and runtime parameters
      * 
      * @param queryParameters
-     * @return
+     *            the query parameters
+     * @return GenericResponse
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -548,6 +549,7 @@ public class MapReduceBean {
      * Cancels any MapReduce jobs with the specified jobId and clears out the results directory
      *
      * @param jobId
+     *            the job id
      * @return {@code datawave.webservice.result.GenericResponse<Boolean>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -652,6 +654,7 @@ public class MapReduceBean {
      * Kill any job running associated with the BulkResults id and start a new job.
      *
      * @param jobId
+     *            the job id
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -696,6 +699,7 @@ public class MapReduceBean {
      * Returns status of a job with the given jobId
      *
      * @param jobId
+     *            the job id
      * @return datawave.webservice.results.mr.MapReduceInfoResponseList
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -732,7 +736,9 @@ public class MapReduceBean {
      * operation.
      *
      * @param jobId
+     *            the job id
      * @param fileName
+     *            the file name
      * @return file contents
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -814,6 +820,9 @@ public class MapReduceBean {
      * Returns the a tar file where each tar entry is a result file.
      *
      * @param jobId
+     *            the job id
+     * @param httpResponse
+     *            the http response
      * @return tar file
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -959,6 +968,7 @@ public class MapReduceBean {
      * Removes the MapReduce entry and associated data
      * 
      * @param jobId
+     *            the job id
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
