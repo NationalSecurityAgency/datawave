@@ -46,7 +46,6 @@ import org.apache.accumulo.core.clientImpl.ClientConfConverter;
 import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.clientImpl.ClientInfo;
 import org.apache.accumulo.core.clientImpl.TabletLocator;
-import org.apache.accumulo.core.client.mapreduce.InputFormatBase;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -66,7 +65,6 @@ import datawave.common.util.ArgumentChecker;
 import org.apache.accumulo.core.singletons.SingletonReservation;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.util.TextUtil;
-import org.apache.accumulo.core.util.tables.TableNameUtil;
 import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.accumulo.core.util.UtilWaitThread;
 import org.apache.accumulo.core.util.format.DefaultFormatter;
@@ -93,7 +91,7 @@ import com.google.common.collect.Multimap;
 
 public class BulkInputFormat extends InputFormat<Key,Value> {
     
-    protected static final Logger log = Logger.getLogger(InputFormatBase.class);
+    protected static final Logger log = Logger.getLogger(BulkInputFormat.class);
     
     protected static final String PREFIX = BulkInputFormat.class.getSimpleName();
     protected static final String INPUT_INFO_HAS_BEEN_SET = PREFIX + ".configured";
@@ -768,6 +766,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         protected long numKeysRead;
         protected Iterator<Entry<Key,Value>> scannerIterator;
         protected RangeSplit split;
+        private AccumuloClient client = null;
         private BatchScanner scanner = null;
         protected float progress = 0.0f;
         
@@ -879,7 +878,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             Configuration conf = attempt.getConfiguration();
             Authorizations authorizations = getAuthorizations(conf);
             
-            try (AccumuloClient client = getClient(conf)) {
+            try {
+                client = getClient(conf);
                 log.debug("Creating scanner for table: " + getTablename(conf));
                 log.debug("Authorizations are: " + authorizations);
                 
@@ -915,6 +915,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         
         public void close() {
             scanner.close();
+            client.close();
         }
         
         @Override

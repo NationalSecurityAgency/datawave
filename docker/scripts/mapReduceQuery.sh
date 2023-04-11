@@ -164,10 +164,11 @@ while [ $ATTEMPT -le $ATTEMPTS ]; do
         break;
     fi
 
-    if [ $ATTEMPT -lt $ATTEMPTS ]; then
+    if [ $ATTEMPT -le $ATTEMPTS ]; then
         sleep ${TIMEOUT}
-        ((ATTEMPT++))
     fi
+
+    ((ATTEMPT++))
 done
 
 TOTAL_EVENTS=0
