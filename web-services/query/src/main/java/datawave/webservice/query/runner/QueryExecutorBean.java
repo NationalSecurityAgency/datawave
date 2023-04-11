@@ -2979,7 +2979,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *           
+     *            
      * @HTTP 200 success
      * @HTTP 204 no results for userid
      * @HTTP 401 if the user does not have Administrative credentials
