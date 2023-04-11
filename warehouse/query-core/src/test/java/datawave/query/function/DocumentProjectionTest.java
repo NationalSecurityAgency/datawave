@@ -26,6 +26,7 @@ public class DocumentProjectionTest {
 
     private final ColumnVisibility cv = new ColumnVisibility("PUBLIC");
     private Document d;
+    private int ALL_FIELDS;
 
     @Before
     public void setup() {
@@ -33,49 +34,45 @@ public class DocumentProjectionTest {
         d.put("FOO", new Content("foofighter", new Key("row", "dt\0uid", "", cv, -1), true));
         d.put("ID", new Numeric(123, new Key("row", "dt\0uid", "", cv, -1), true));
 
-        Document primes = new Document();
-        primes.put("PRIME", new Numeric(2, new Key("row", "dt\0uid", "", cv, -1), true));
-        primes.put("PRIME", new Numeric(3, new Key("row", "dt\0uid", "", cv, -1), true));
-        primes.put("PRIME", new Numeric(5, new Key("row", "dt\0uid", "", cv, -1), true));
-        primes.put("PRIME", new Numeric(7, new Key("row", "dt\0uid", "", cv, -1), true));
-        primes.put("PRIME", new Numeric(11, new Key("row", "dt\0uid", "", cv, -1), true));
+        Attributes primes = new Attributes(true);
+        primes.add(new Numeric(2, new Key("row", "dt\0uid", "", cv, -1), true));
+        primes.add(new Numeric(3, new Key("row", "dt\0uid", "", cv, -1), true));
+        primes.add(new Numeric(5, new Key("row", "dt\0uid", "", cv, -1), true));
+        primes.add(new Numeric(7, new Key("row", "dt\0uid", "", cv, -1), true));
+        primes.add(new Numeric(11, new Key("row", "dt\0uid", "", cv, -1), true));
         d.put("PRIMES", primes);
 
-        Attributes others = new Attributes(true);
+        d.put("FOO.1", new Content("bar", new Key("row", "dt\0uid", "", cv, -1), true), true, false);
+        d.put("ID.1", new Numeric(456, new Key("row", "dt\0uid", "", cv, -1), true), true, false);
 
-        Document sub1 = new Document();
-        sub1.put("FOO.1", new Content("bar", new Key("row", "dt\0uid", "", cv, -1), true));
-        sub1.put("ID.1", new Numeric(456, new Key("row", "dt\0uid", "", cv, -1), true));
-        others.add(sub1);
+        d.put("FOO.2", new Content("baz", new Key("row", "dt\0uid", "", cv, -1), true), true, false);
+        d.put("ID.2", new Numeric(789, new Key("row", "dt\0uid", "", cv, -1), true), true, false);
 
-        Document sub2 = new Document();
-        sub2.put("FOO.2", new Content("baz", new Key("row", "dt\0uid", "", cv, -1), true));
-        sub2.put("ID.2", new Numeric(789, new Key("row", "dt\0uid", "", cv, -1), true));
-        others.add(sub2);
+        d.put("PRIMARY_ID", new Numeric(789, new Key("row", "dt\0uid", "", cv, -1), true), true, false);
 
-        d.put("OTHERS", others); // others' attributes have grouping context
+        ALL_FIELDS = d.getDictionary().size() + primes.size() - 1;
     }
 
     @Deprecated
     @Test
-    public void testIncludesSingleFieldDeprecated() {
+    public void testIncludesMissingSingleFieldDeprecated() {
         Set<String> includes = Sets.newHashSet("OTHERS");
         DocumentProjection projection = new DocumentProjection();
         projection.setIncludes(includes);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(4, result.getValue().size());
+        assertEquals(0, result.getValue().size());
     }
 
     @Test
-    public void testIncludesSingleField() {
+    public void testIncludesMissingSingleField() {
         Set<String> includes = Sets.newHashSet("OTHERS");
-        DocumentProjection projection = new DocumentProjection(includes, Projection.ProjectionType.INCLUDES);
+        DocumentProjection projection = new DocumentProjection(false, false, true, includes, Projection.ProjectionType.INCLUDES);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(4, result.getValue().size());
+        assertEquals(0, result.getValue().size());
     }
 
     @Deprecated
@@ -85,7 +82,7 @@ public class DocumentProjectionTest {
         DocumentProjection projection = new DocumentProjection();
         projection.setIncludes(includes);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
         assertEquals(6, result.getValue().size());
     }
@@ -93,9 +90,9 @@ public class DocumentProjectionTest {
     @Test
     public void testIncludesTwoFields() {
         Set<String> includes = Sets.newHashSet("FOO", "ID");
-        DocumentProjection projection = new DocumentProjection(includes, Projection.ProjectionType.INCLUDES);
+        DocumentProjection projection = new DocumentProjection(false, false, true, includes, Projection.ProjectionType.INCLUDES);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
         assertEquals(6, result.getValue().size());
     }
@@ -106,16 +103,16 @@ public class DocumentProjectionTest {
         DocumentProjection projection = new DocumentProjection();
         projection.setIncludes(Collections.emptySet());
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
         assertEquals(0, result.getValue().size());
     }
 
     @Test
     public void testIncludesNoFieldsSpecified() {
-        DocumentProjection projection = new DocumentProjection(Collections.emptySet(), Projection.ProjectionType.INCLUDES);
+        DocumentProjection projection = new DocumentProjection(false, false, true, Collections.emptySet(), Projection.ProjectionType.INCLUDES);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
         assertEquals(0, result.getValue().size());
     }
@@ -123,47 +120,23 @@ public class DocumentProjectionTest {
     @Deprecated
     @Test
     public void testIncludesAllFieldsDeprecated() {
-        Set<String> includes = Sets.newHashSet("FOO", "ID", "PRIMES", "PRIME", "CHILDREN");
+        Set<String> includes = Sets.newHashSet("FOO", "ID", "PRIMES", "PRIMARY_ID");
         DocumentProjection projection = new DocumentProjection();
         projection.setIncludes(includes);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(11, result.getValue().size());
+        assertEquals(ALL_FIELDS, result.getValue().size());
     }
 
     @Test
     public void testIncludesAllFields() {
-        Set<String> includes = Sets.newHashSet("FOO", "ID", "PRIMES", "PRIME", "CHILDREN");
-        DocumentProjection projection = new DocumentProjection(includes, Projection.ProjectionType.INCLUDES);
+        Set<String> includes = Sets.newHashSet("FOO", "ID", "PRIMES", "PRIMARY_ID");
+        DocumentProjection projection = new DocumentProjection(false, false, true, includes, Projection.ProjectionType.INCLUDES);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(11, result.getValue().size());
-    }
-
-    @Deprecated
-    @Test
-    public void testIncludesAllFieldsExceptNestedDocumentFieldsDeprecated() {
-        Set<String> includes = Sets.newHashSet("FOO", "ID", "PRIME");
-        DocumentProjection projection = new DocumentProjection();
-        projection.setIncludes(includes);
-
-        assertEquals(11, d.size());
-        Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(11, result.getValue().size());
-    }
-
-    // even though the sub-document field is not on the includes list, all the fields in the
-    // sub-document are. Therefore, we keep the child document.
-    @Test
-    public void testIncludesAllFieldsExceptNestedDocumentFields() {
-        Set<String> includes = Sets.newHashSet("FOO", "ID", "PRIME");
-        DocumentProjection projection = new DocumentProjection(includes, Projection.ProjectionType.INCLUDES);
-
-        assertEquals(11, d.size());
-        Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(11, result.getValue().size());
+        assertEquals(ALL_FIELDS, result.getValue().size());
     }
 
     @Deprecated
@@ -173,85 +146,41 @@ public class DocumentProjectionTest {
         DocumentProjection projection = new DocumentProjection();
         projection.setExcludes(excludes);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(8, result.getValue().size());
+        assertEquals(9, result.getValue().size());
     }
 
     @Test
     public void testExcludeSingleField() {
         Set<String> excludes = Sets.newHashSet("ID");
-        DocumentProjection projection = new DocumentProjection(excludes, Projection.ProjectionType.EXCLUDES);
+        DocumentProjection projection = new DocumentProjection(false, false, true, excludes, Projection.ProjectionType.EXCLUDES);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(8, result.getValue().size());
-    }
-
-    @Deprecated
-    @Test
-    public void testExcludeChildDocumentFieldDeprecated() {
-        Set<String> excludes = Sets.newHashSet("CHILDREN");
-        DocumentProjection projection = new DocumentProjection();
-        projection.setExcludes(excludes);
-
-        assertEquals(11, d.size());
-        Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(11, result.getValue().size());
-    }
-
-    @Test
-    public void testExcludeChildDocumentField() {
-        Set<String> excludes = Sets.newHashSet("CHILDREN");
-        DocumentProjection projection = new DocumentProjection(excludes, Projection.ProjectionType.EXCLUDES);
-
-        assertEquals(11, d.size());
-        Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(11, result.getValue().size());
+        assertEquals(9, result.getValue().size());
     }
 
     @Deprecated
     @Test
     public void testExcludeAllFieldsDeprecated() {
-        Set<String> excludes = Sets.newHashSet("FOO", "ID", "PRIMES", "PRIME", "CHILDREN");
+        Set<String> excludes = Sets.newHashSet("FOO", "ID", "PRIMES", "PRIMARY_ID");
         DocumentProjection projection = new DocumentProjection();
         projection.setExcludes(excludes);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
         assertEquals(0, result.getValue().size());
     }
 
     @Test
     public void testExcludeAllFields() {
-        Set<String> excludes = Sets.newHashSet("FOO", "ID", "PRIMES", "PRIME", "CHILDREN");
-        DocumentProjection projection = new DocumentProjection(excludes, Projection.ProjectionType.EXCLUDES);
+        Set<String> excludes = Sets.newHashSet("FOO", "ID", "PRIMES", "PRIMARY_ID");
+        DocumentProjection projection = new DocumentProjection(false, false, true, excludes, Projection.ProjectionType.EXCLUDES);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
         assertEquals(0, result.getValue().size());
-    }
-
-    @Deprecated
-    @Test
-    public void testExcludeNestedFieldDeprecated() {
-        Set<String> excludes = Sets.newHashSet("PRIME");
-        DocumentProjection projection = new DocumentProjection();
-        projection.setExcludes(excludes);
-
-        assertEquals(11, d.size());
-        Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(6, result.getValue().size());
-    }
-
-    @Test
-    public void testExcludeNestedField() {
-        Set<String> excludes = Sets.newHashSet("PRIME");
-        DocumentProjection projection = new DocumentProjection(excludes, Projection.ProjectionType.EXCLUDES);
-
-        assertEquals(11, d.size());
-        Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(6, result.getValue().size());
     }
 
     @Deprecated
@@ -261,20 +190,20 @@ public class DocumentProjectionTest {
         DocumentProjection projection = new DocumentProjection();
         projection.setExcludes(excludes);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(6, result.getValue().size());
+        assertEquals(7, result.getValue().size());
         assertFalse(result.getValue().containsKey("PRIMES")); // key no longer exists
     }
 
     @Test
     public void testConfirmFieldExcluded() {
         Set<String> excludes = Sets.newHashSet("PRIMES");
-        DocumentProjection projection = new DocumentProjection(excludes, Projection.ProjectionType.EXCLUDES);
+        DocumentProjection projection = new DocumentProjection(false, false, true, excludes, Projection.ProjectionType.EXCLUDES);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(6, result.getValue().size());
+        assertEquals(7, result.getValue().size());
         assertFalse(result.getValue().containsKey("PRIMES")); // key no longer exists
     }
 
@@ -285,20 +214,20 @@ public class DocumentProjectionTest {
         DocumentProjection projection = new DocumentProjection();
         projection.setExcludes(excludes);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(8, result.getValue().size());
+        assertEquals(ALL_FIELDS - 3, result.getValue().size());
         assertFalse(result.getValue().containsKey("FOO")); // key no longer exists
     }
 
     @Test
     public void testConfirmGroupingContext() {
         Set<String> excludes = Sets.newHashSet("FOO");
-        DocumentProjection projection = new DocumentProjection(excludes, Projection.ProjectionType.EXCLUDES);
+        DocumentProjection projection = new DocumentProjection(false, false, true, excludes, Projection.ProjectionType.EXCLUDES);
 
-        assertEquals(11, d.size());
+        assertEquals(ALL_FIELDS, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
-        assertEquals(8, result.getValue().size());
+        assertEquals(ALL_FIELDS - 3, result.getValue().size());
         assertFalse(result.getValue().containsKey("FOO")); // key no longer exists
     }
 
@@ -320,7 +249,7 @@ public class DocumentProjectionTest {
     public void testIncludesExampleCase() {
         Document d = buildExampleDocument();
 
-        DocumentProjection projection = new DocumentProjection(Collections.singleton("NAME"), Projection.ProjectionType.INCLUDES);
+        DocumentProjection projection = new DocumentProjection(false, false, true, Collections.singleton("NAME"), Projection.ProjectionType.INCLUDES);
 
         assertEquals(6, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
@@ -346,7 +275,7 @@ public class DocumentProjectionTest {
     public void testExcludesExampleCase() {
         Document d = buildExampleDocument();
 
-        DocumentProjection projection = new DocumentProjection(Collections.singleton("NAME"), Projection.ProjectionType.EXCLUDES);
+        DocumentProjection projection = new DocumentProjection(false, false, true, Collections.singleton("NAME"), Projection.ProjectionType.EXCLUDES);
 
         assertEquals(6, d.size());
         Map.Entry<Key,Document> result = projection.apply(Maps.immutableEntry(new Key(), d));
@@ -359,19 +288,12 @@ public class DocumentProjectionTest {
         d.put("NAME", new Content("bob", new Key("row", "dt\0uid", "", cv, -1), true));
         d.put("AGE", new Numeric(40, new Key("row", "dt\0uid", "", cv, -1), true));
 
-        Attributes children = new Attributes(true);
+        d.put("NAME.1", new Content("frank", new Key("row", "dt\0uid", "", cv, -1), true), true, false);
+        d.put("AGE.1", new Numeric(ALL_FIELDS, new Key("row", "dt\0uid", "", cv, -1), true), true, false);
 
-        Document frank = new Document();
-        frank.put("NAME", new Content("frank", new Key("row", "dt\0uid", "", cv, -1), true));
-        frank.put("AGE", new Numeric(12, new Key("row", "dt\0uid", "", cv, -1), true));
-        children.add(frank);
+        d.put("NAME.2", new Content("sally", new Key("row", "dt\0uid", "", cv, -1), true), true, false);
+        d.put("AGE.2", new Numeric(10, new Key("row", "dt\0uid", "", cv, -1), true), true, false);
 
-        Document sally = new Document();
-        sally.put("NAME", new Content("sally", new Key("row", "dt\0uid", "", cv, -1), true));
-        sally.put("AGE", new Numeric(10, new Key("row", "dt\0uid", "", cv, -1), true));
-        children.add(sally);
-
-        d.put("CHILDREN", children); // others' attributes have grouping context
         return d;
     }
 

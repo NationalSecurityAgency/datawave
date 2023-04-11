@@ -25,7 +25,6 @@ import org.junit.Test;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.TimingMetadata;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.BaseRawData;
@@ -164,10 +163,6 @@ public class QueryAuthsTest extends AbstractFunctionalQuery {
 
         @Override
         public void assertValid(Document doc) {
-            if (doc instanceof TimingMetadata) {
-                return;
-            }
-
             Map<String,Attribute<? extends Comparable<?>>> dict = doc.getDictionary();
 
             for (Map.Entry<String,Attribute<? extends Comparable<?>>> entry : dict.entrySet()) {
@@ -179,9 +174,7 @@ public class QueryAuthsTest extends AbstractFunctionalQuery {
 
                 Attribute<?> attr = entry.getValue();
 
-                if (attr instanceof Document) {
-                    assertValid((Document) attr);
-                } else if (attr instanceof Attributes) {
+                if (attr instanceof Attributes) {
                     assertValid((Attributes) attr, fieldName);
                 } else {
                     assertValid(attr, fieldName);
@@ -192,9 +185,7 @@ public class QueryAuthsTest extends AbstractFunctionalQuery {
 
         protected void assertValid(Attributes attrs, String fieldName) {
             for (Attribute<? extends Comparable<?>> attr : attrs.getAttributes()) {
-                if (attr instanceof Document) {
-                    assertValid((Document) attr);
-                } else if (attr instanceof Attributes) {
+                if (attr instanceof Attributes) {
                     assertValid((Attributes) attr, fieldName);
                 } else {
                     assertValid(attr, fieldName);

@@ -98,102 +98,24 @@ public class DocumentProjection implements DocumentPermutation {
      */
     @Override
     public Entry<Key,Document> apply(Entry<Key,Document> from) {
-        Document returnDoc = trim(from.getValue());
-        return Maps.immutableEntry(from.getKey(), returnDoc);
+        trim(from.getValue());
+        return Maps.immutableEntry(from.getKey(), from.getValue());
     }
 
-    private Document trim(Document d) {
+    private void trim(Document d) {
         if (log.isTraceEnabled()) {
             log.trace("Applying projection " + projection + " to " + d);
         }
         Map<String,Attribute<? extends Comparable<?>>> dict = d.getDictionary();
-        Document newDoc = new Document();
 
         for (Entry<String,Attribute<? extends Comparable<?>>> entry : dict.entrySet()) {
             String fieldName = entry.getKey();
             Attribute<?> attr = entry.getValue();
-
-            if (projection.apply(fieldName)) {
-
-                // If the projection is configured to exclude, we must fully traverse the subtree
-                if (projection.isUseExcludes()) {
-                    if (attr instanceof Document) {
-                        Document newSubDoc = trim((Document) attr);
-
-                        if (0 < newSubDoc.size()) {
-                            newDoc.put(fieldName, newSubDoc.copy(), this.includeGroupingContext, this.reducedResponse);
-                        }
-
-                        continue;
-                    } else if (attr instanceof Attributes) {
-                        Attributes subAttrs = trim((Attributes) attr, fieldName);
-
-                        if (0 < subAttrs.size()) {
-                            newDoc.put(fieldName, subAttrs.copy(), this.includeGroupingContext, this.reducedResponse);
-                        }
-
-                        continue;
-                    }
-                }
-
-                // We just want to add this subtree
-                newDoc.put(fieldName, (Attribute<?>) attr.copy(), this.includeGroupingContext, this.reducedResponse);
-
-            } else if (!projection.isUseExcludes()) {
-                // excludes will completely exclude a subtree, but an includes may
-                // initially retain a parent whose children do not match the includes,
-                // i.e., a child attribute does not match the includes
-                if (attr instanceof Document) {
-                    Document newSubDoc = trim((Document) attr);
-
-                    if (0 < newSubDoc.size()) {
-                        newDoc.put(fieldName, newSubDoc.copy(), this.includeGroupingContext, this.reducedResponse);
-                    }
-                } else if (attr instanceof Attributes) {
-                    // Since Document instances can be nested under attributes and vice-versa
-                    // all the way down, we need to pass along the fieldName so that when we
-                    // have come up with a nested document it can be evaluated by its own name
-                    Attributes subAttrs = trim((Attributes) attr, fieldName);
-
-                    if (0 < subAttrs.size()) {
-                        newDoc.put(fieldName, subAttrs.copy(), this.includeGroupingContext, this.reducedResponse);
-                    }
-                }
-            }
+            attr.setToKeep(attr.isToKeep() && projection.apply(fieldName));
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("Document after projection: " + newDoc);
-        }
-
-        return newDoc;
-    }
-
-    private Attributes trim(Attributes attrs, String fieldName) {
-        Attributes newAttrs = new Attributes(attrs.isToKeep(), trackSizes);
-        for (Attribute<? extends Comparable<?>> attr : attrs.getAttributes()) {
-            if (attr instanceof Document) {
-                Document newAttr = trim((Document) attr);
-
-                if (0 < newAttr.size()) {
-                    newAttrs.add(newAttr);
-                }
-            } else if (attr instanceof Attributes) {
-                Attributes newAttr = trim((Attributes) attr, fieldName);
-
-                if (0 < newAttr.size()) {
-                    newAttrs.add(newAttr);
-                }
-            } else if (projection.apply(fieldName)) {
-                // If we're trimming an Attributes and find an Attribute that
-                // doesn't nest more Attribute's (Document, Attributes), otherwise,
-                // we can retain the "singular" Attribute's (Content, Numeric, etc)
-                // if it applies
-                newAttrs.add(attr);
-            }
-        }
-
-        return newAttrs;
+        // reduce the document to those to keep
+        d.reduceToKeep();
     }
 
 }

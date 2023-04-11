@@ -10,7 +10,6 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
@@ -26,136 +25,63 @@ import datawave.query.jexl.DatawaveJexlContext;
 public abstract class Attribute<T extends Comparable<T>> implements WritableComparable<T>, KryoSerializable {
 
     private static final Logger log = Logger.getLogger(Attribute.class);
-    private static final Text EMPTY_TEXT = new Text();
 
     /**
      * The metadata for this attribute. Really only the column visibility and timestamp are preserved in this metadata when serializing and deserializing.
      * However more information (e.g. the document key) can be maintained in this field for use locally.
      */
-    protected Key metadata = null;
+    protected AttributeMetadata metadata = new AttributeMetadata();
     protected boolean toKeep = true; // a flag denoting whether this attribute is to be kept in the returned results (transient or not)
     protected boolean fromIndex = true; // Assume attributes are from the index unless specified otherwise.
 
     public Attribute() {}
 
-    public Attribute(Key metadata, boolean toKeep) {
+    public Attribute(boolean toKeep) {
         this.toKeep = toKeep;
-        setMetadata(metadata);
+    }
+
+    public Attribute(Key key, boolean toKeep) {
+        this.toKeep = toKeep;
+        metadata.setMetadata(key);
     }
 
     public boolean isMetadataSet() {
-        return (metadata != null);
-    }
-
-    public ColumnVisibility getColumnVisibility() {
-        if (isMetadataSet()) {
-            return metadata.getColumnVisibilityParsed();
-        }
-        return Constants.EMPTY_VISIBILITY;
-    }
-
-    public void setColumnVisibility(ColumnVisibility columnVisibility) {
-        if (isMetadataSet()) {
-            metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), metadata.getColumnQualifier(), columnVisibility, metadata.getTimestamp());
-        } else {
-            metadata = new Key(EMPTY_TEXT, EMPTY_TEXT, EMPTY_TEXT, columnVisibility, -1);
-        }
-    }
-
-    public long getTimestamp() {
-        if (isMetadataSet()) {
-            return metadata.getTimestamp();
-        }
-        return -1;
-    }
-
-    public void setTimestamp(long ts) {
-        if (isMetadataSet()) {
-            metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), metadata.getColumnQualifier(), metadata.getColumnVisibility(), ts);
-        } else {
-            metadata = new Key(EMPTY_TEXT, EMPTY_TEXT, EMPTY_TEXT, Constants.EMPTY_VISIBILITY, ts);
-        }
-    }
-
-    /*
-     *
-     * Set the metadata. This should only be set here or from extended classes.
-     */
-    protected void setMetadata(ColumnVisibility vis, long ts) {
-        if (isMetadataSet()) {
-            metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), metadata.getColumnQualifier(), vis, ts);
-        } else {
-            metadata = new Key(EMPTY_TEXT, EMPTY_TEXT, EMPTY_TEXT, vis, ts);
-        }
-    }
-
-    private static final ByteSequence EMPTY_BYTE_SEQUENCE = new ArrayByteSequence(new byte[0]);
-
-    /*
-     * Given a key, set the metadata. Expected input keys can be an event key, an fi key, or a tf key. Expected metadata is row=shardid, cf = type\0uid; cq =
-     * empty; cv, ts left as is.
-     */
-    protected void setMetadata(Key key) {
-        if (key == null) {
-            this.metadata = null;
-        } else {
-            // convert the key to the form shard type\0uid cv, ts. Possible inputs are an event key, a fi key, or a tf key
-            final ByteSequence row = key.getRowData(), cf = key.getColumnFamilyData(), cv = key.getColumnVisibilityData();
-            if (isFieldIndex(cf)) {
-                // find the first null byte in the cq and take everything after that (cq = Normalized Field Value\0Data Type\0UID)
-                final ByteSequence cq = key.getColumnQualifierData();
-                int nullOffset = 0;
-                for (int i = 0; i < cq.length(); i++) {
-                    if (cq.byteAt(i) == '\0') {
-                        nullOffset = i;
-                        break;
-                    }
-                }
-                this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cq.getBackingArray(), nullOffset + 1, cq.length() - (nullOffset + 1),
-                                EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(),
-                                cv.offset(), cv.length(), key.getTimestamp());
-            } else if (isTermFrequency(cf)) {
-                // find the second null byte in the cq and take everything before that (cq = DataType\0UID\0Normalized Field Value\0Field Name)
-                final ByteSequence cq = key.getColumnQualifierData();
-                int nullOffset = 0;
-                int count = 0;
-                for (int i = 0; i < cf.length(); i++) {
-                    if (cf.byteAt(i) == '\0') {
-                        count++;
-                        if (count == 2) {
-                            nullOffset = i;
-                            break;
-                        }
-                    }
-                }
-                this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cq.getBackingArray(), cq.offset(), nullOffset,
-                                EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(),
-                                cv.offset(), cv.length(), key.getTimestamp());
-            } else {
-                this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(),
-                                EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(),
-                                cv.offset(), cv.length(), key.getTimestamp());
-            }
-        }
-    }
-
-    protected boolean isFieldIndex(ByteSequence cf) {
-        return (cf.length() >= 3 && cf.byteAt(0) == 'f' && cf.byteAt(1) == 'i' && cf.byteAt(2) == '\0');
-    }
-
-    protected boolean isTermFrequency(ByteSequence cf) {
-        return (cf.length() == 2 && cf.byteAt(0) == 't' && cf.byteAt(1) == 'f');
+        return metadata.isMetadataSet();
     }
 
     public Key getMetadata() {
-        return metadata;
+        return metadata.getMetadata();
+    }
+
+    public void setMetadata(Key key) {
+        metadata.setMetadata(key);
+    }
+
+    public void setMetadata(ColumnVisibility vis, long ts) {
+        metadata.setMetadata(vis, ts);
+    }
+
+    public ColumnVisibility getColumnVisibility() {
+        return metadata.getColumnVisibility();
+    }
+
+    public void setColumnVisibility(ColumnVisibility vis) {
+        metadata.setColumnVisibility(vis);
+    }
+
+    public long getTimestamp() {
+        return metadata.getTimestamp();
+    }
+
+    public void setTimestamp(long ts) {
+        metadata.setTimestamp(ts);
     }
 
     /**
      * Unset the metadata. This should only be set here or from extended classes.
      */
     protected void clearMetadata() {
-        metadata = null;
+        metadata.setMetadata(null);
     }
 
     protected void writeMetadata(DataOutput out, Boolean reducedResponse) throws IOException {
@@ -249,17 +175,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     }
 
     private long getMetadataSizeInBytes() {
-        long size = 0;
-        if (isMetadataSet()) {
-            size += roundUp(33);
-            // 33 is object overhead, 4 array refs, 1 long and 1 boolean
-            size += roundUp(metadata.getRowData().length() + 12);
-            size += roundUp(metadata.getColumnFamilyData().length() + 12);
-            size += roundUp(metadata.getColumnQualifierData().length() + 12);
-            size += roundUp(metadata.getColumnVisibilityData().length() + 12);
-            // 12 is array overhead
-        }
-        return size;
+        return metadata.getSizeInBytes();
     }
 
     public long sizeInBytes() {

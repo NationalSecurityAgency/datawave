@@ -17,7 +17,6 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
@@ -89,9 +88,7 @@ public class QueryLogicTestHarness {
             // AttributeFactory class
             int count = 0;
             for (Attribute<? extends Comparable<?>> attribute : document.getAttributes()) {
-                if (attribute instanceof TimingMetadata) {
-                    // ignore
-                } else if (attribute instanceof Attributes) {
+                if (attribute instanceof Attributes) {
                     Attributes attrs = (Attributes) attribute;
                     Collection<Class<?>> types = new HashSet<>();
                     for (Attribute<? extends Comparable<?>> attr : attrs.getAttributes()) {

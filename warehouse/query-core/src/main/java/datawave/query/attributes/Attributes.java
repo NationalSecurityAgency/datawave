@@ -24,11 +24,11 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 
-public class Attributes extends AttributeBag<Attributes> implements Serializable {
+public class Attributes extends Attribute<Attributes> implements Serializable, AttributeBagMetadata.AttributesGetter {
 
     private static final long serialVersionUID = 1L;
     private static final Logger log = Logger.getLogger(Attributes.class);
-    private Set<Attribute<? extends Comparable<?>>> attributes;
+    private final Set<Attribute<? extends Comparable<?>>> attributes = new LinkedHashSet();
     private int _count = 0;
     // cache the size in bytes as it can be expensive to compute on the fly if we have many attributes
     private long _bytes = super.sizeInBytes(16) + 16 + 48;
@@ -53,8 +53,8 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
 
     public Attributes(boolean toKeep, boolean trackSizes) {
         super(toKeep);
-        attributes = new LinkedHashSet<>();
         this.trackSizes = trackSizes;
+        this.metadata = new AttributeBagMetadata(this);
     }
 
     public Attributes(Collection<Attribute<? extends Comparable<?>>> attributes, boolean toKeep) {
@@ -69,6 +69,15 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         }
     }
 
+    private void invalidateMetadata() {
+        ((AttributeBagMetadata) metadata).invalidateMetadata();
+    }
+
+    private boolean isValidMetadata() {
+        return ((AttributeBagMetadata) metadata).isValidMetadata();
+    }
+
+    @Override
     public Set<Attribute<? extends Comparable<?>>> getAttributes() {
         return Collections.unmodifiableSet(this.attributes);
     }
@@ -135,7 +144,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         this._count = WritableUtils.readVInt(in);
         this.trackSizes = in.readBoolean();
         int numAttrs = WritableUtils.readVInt(in);
-        this.attributes = new LinkedHashSet<>();
+        this.attributes.clear();
         for (int i = 0; i < numAttrs; i++) {
             String attrClassName = WritableUtils.readString(in);
             Class<?> clz;
@@ -166,7 +175,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
             this.attributes.add(attr);
         }
 
-        this.invalidateMetadata();
+        invalidateMetadata();
     }
 
     @Override
@@ -309,7 +318,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         this.trackSizes = input.readBoolean();
         int numAttrs = input.readInt(true);
 
-        this.attributes = new LinkedHashSet<>();
+        this.attributes.clear();
         for (int i = 0; i < numAttrs; i++) {
             String attrClassName = input.readString();
             Class<?> clz;
@@ -357,8 +366,8 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
             attrs.add((Attribute<?>) attr.copy());
         }
 
-        attrs.setMetadata(getMetadata());
-        attrs.validMetadata = this.validMetadata;
+        attrs.metadata.setMetadata(getMetadata());
+        ((AttributeBagMetadata) attrs.metadata).setValidMetadata(isValidMetadata());
 
         return attrs;
     }

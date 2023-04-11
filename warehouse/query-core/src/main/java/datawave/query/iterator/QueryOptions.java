@@ -90,7 +90,6 @@ import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
-import datawave.util.UniversalSet;
 
 /**
  * QueryOptions are set on the iterators.
@@ -1287,17 +1286,15 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(PROJECTION_FIELDS)) {
             this.projectResults = true;
-            this.useWhiteListedFields = true;
 
             String fieldList = options.get(PROJECTION_FIELDS);
-            if (fieldList != null && EVERYTHING.equals(fieldList)) {
-                this.whiteListedFields = UniversalSet.instance();
-            } else if (fieldList != null && !fieldList.trim().equals("")) {
+            if (fieldList != null && !EVERYTHING.equals(fieldList) && !fieldList.trim().equals("")) {
+                this.useWhiteListedFields = true;
                 this.whiteListedFields = new HashSet<>();
                 Collections.addAll(this.whiteListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
-            }
-            if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
-                this.whiteListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
+                if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
+                    this.whiteListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
+                }
             }
         }
 
@@ -1316,6 +1313,9 @@ public class QueryOptions implements OptionDescriber {
                 Collections.addAll(this.blackListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
         }
+
+        // if we never actually set an allow or deny list, then no need to project results
+        this.projectResults = this.useBlackListedFields || this.useWhiteListedFields;
 
         this.evaluationFilter = null;
         this.getDocumentKey = GetStartKey.instance();
