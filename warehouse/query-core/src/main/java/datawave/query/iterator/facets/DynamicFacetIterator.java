@@ -12,6 +12,7 @@ import java.util.SortedSet;
 
 import javax.annotation.Nullable;
 
+import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -138,7 +139,6 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         configuration.setFacetedFields(facetedFields);
         
-        fiAggregator = new CardinalityAggregator(getAllIndexOnlyFields(), !merge);
         // assign the options for later use by the document iterator
         documenIteratorOptions = options;
         
@@ -294,4 +294,18 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         } else
             return fieldIndexDocuments;
     }
+    
+    /**
+     * Get a FieldIndexAggregator
+     *
+     * @return a {@link CardinalityAggregator}
+     */
+    @Override
+    public FieldIndexAggregator getFiAggregator() {
+        if (fiAggregator == null) {
+            fiAggregator = new CardinalityAggregator(getAllIndexOnlyFields(), !merge);
+        }
+        return fiAggregator;
+    }
+    
 }
