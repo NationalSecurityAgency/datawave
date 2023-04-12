@@ -21,4 +21,9 @@
         <property name="cacheSpecification" value="maximumSize=1000, expireAfterAccess=24h, expireAfterWrite=24h" />
     </bean>
 
+    <bean id="remoteUserOperationsCacheManager" class="org.springframework.cache.caffeine.CaffeineCacheManager" >
+        <property name="cacheSpecification" value="maximumSize=100, expireAfterWrite=5m, recordStats" />
+    </bean>
+
+
 </beans>
