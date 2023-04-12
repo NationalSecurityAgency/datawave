@@ -132,6 +132,8 @@ public class IdTranslatorBean {
      *            (@Required)
      * @param parentAuditId
      *            optional
+     * @param TLDonly
+     *            TLDonly
      * @return event results - {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -178,6 +180,10 @@ public class IdTranslatorBean {
      *            "13383f57-45dc-4709-934a-363117e7c473,6ea02cb3-644c-4c2e-9739-76322dfb477b"(@Required)
      * @param pagesize
      *            - optional pagesize (default 100)
+     * @param TLDonly
+     *            TLDonly
+     * @param pageTimeout
+     *            page timeout
      * @return event results - {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain

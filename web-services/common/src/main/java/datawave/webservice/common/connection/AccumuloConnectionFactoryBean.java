@@ -233,8 +233,11 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
      *
      * @param priority
      *            the connection's Priority
+     * @param trackingMap
+     *            a tracking map
      * @return accumulo connection
      * @throws Exception
+     *             if there are issues
      */
     public Connector getConnection(Priority priority, Map<String,String> trackingMap) throws Exception {
         return getConnection(null, priority, trackingMap);
@@ -251,6 +254,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
      *            the tracking map
      * @return Accumulo connection
      * @throws Exception
+     *             if there are issues
      */
     public Connector getConnection(final String cpn, final Priority priority, final Map<String,String> tm) throws Exception {
         final Map<String,String> trackingMap = (tm != null) ? tm : new HashMap<>();
@@ -286,6 +290,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
      * @param connection
      *            The connection to return
      * @throws Exception
+     *             if there are issues
      */
     @PermitAll
     // permit anyone to return a connection
