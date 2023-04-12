@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.google.common.base.Preconditions;
 import datawave.ingest.protobuf.Uid.List.Builder;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
@@ -14,6 +15,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +27,7 @@ import org.slf4j.LoggerFactory;
 public class GlobalIndexUidAggregator extends PropogatingCombiner {
     private static final Logger log = LoggerFactory.getLogger(GlobalIndexUidAggregator.class);
     private static final String TIMESTAMPS_IGNORED = "timestampsIgnored";
+    private static final String MAX_UIDS = "maxUids";
     
     /**
      * Using a set instead of a list so that duplicate UIDs are filtered out of the list. This might happen in the case of rows with masked fields that share a
@@ -345,10 +348,24 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
+        
+        Preconditions.checkNotNull(source);
+        Preconditions.checkNotNull(env);
+        Preconditions.checkNotNull(options);
         super.init(source, options, env);
+        
         if (options.containsKey(TIMESTAMPS_IGNORED)) {
             timestampsIgnored = Boolean.parseBoolean(options.get(TIMESTAMPS_IGNORED));
         }
+        
+        if (options.containsKey(MAX_UIDS)) {
+            maxUids = Integer.parseInt(options.get(MAX_UIDS));
+        }
+        
+        // determine if we should propagate deletes.
+        // logic pulled from the PropagatingIterator
+        propogate = !(env.getIteratorScope() == IteratorUtil.IteratorScope.majc && env.isFullMajorCompaction())
+                        && !(env.getIteratorScope() == IteratorUtil.IteratorScope.scan);
     }
     
     public static void setTimestampsIgnoredOpt(IteratorSetting is, boolean timestampsIgnored) {
