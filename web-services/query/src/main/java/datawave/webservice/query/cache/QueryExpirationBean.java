@@ -170,7 +170,9 @@ public class QueryExpirationBean {
      * Method to determine if a query has been idle too long based on configured values.
      *
      * @param query
+     *            a query
      * @param currentTime
+     *            the current time
      * @return true if query has been idle too long, false otherwise
      */
     private boolean isIdleTooLong(RunningQuery query, long currentTime) {
@@ -187,7 +189,9 @@ public class QueryExpirationBean {
      * Method to determine if a query next call has been running too long based on configured values.
      *
      * @param query
+     *            a query
      * @param currentTime
+     *            the current time
      * @return true if query next has been running too long, false otherwise
      */
     private boolean isNextTooLong(RunningQuery query, long currentTime) {

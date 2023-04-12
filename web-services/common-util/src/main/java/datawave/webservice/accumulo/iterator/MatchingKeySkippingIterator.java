@@ -38,7 +38,7 @@ public class MatchingKeySkippingIterator extends SkippingIterator implements Opt
     private String delimiter;
     protected Comparator<Key> comparator = new RowEqualsComparator();
     
-    /**
+    /*
      * convenience method to set the option to optimize the frequency of scans vs. seeks
      */
     public static void setNumScansBeforeSeek(IteratorSetting cfg, int num) {
