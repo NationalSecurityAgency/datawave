@@ -11,7 +11,6 @@ import datawave.query.Constants;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
-import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.planner.rules.NodeTransformRule;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
@@ -75,12 +74,9 @@ public class LookupUUIDTune implements Profile {
             if (reduceResponse) {
                 rsq.setParseTldUids(true);
                 
-                // setup SeekingQueryPlanner in case the queryIterator requires it
-                SeekingQueryPlanner planner = new SeekingQueryPlanner();
-                planner.setMaxFieldHitsBeforeSeek(maxFieldHitsBeforeSeek);
-                planner.setMaxKeysBeforeSeek(maxKeysBeforeSeek);
-                
-                rsq.setQueryPlanner(planner);
+                // pass through seek options
+                rsq.setFiFieldSeek(maxFieldHitsBeforeSeek);
+                rsq.setFiNextSeek(maxKeysBeforeSeek);
                 
                 if (maxPageSize != -1) {
                     rsq.setMaxPageSize(maxPageSize);
