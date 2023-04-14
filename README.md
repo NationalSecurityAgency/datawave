@@ -40,6 +40,11 @@ git clone --recurse-submodules git@github.com:NationalSecurityAgency/datawave.gi
 cd datawave
 git submodule foreach 'git checkout feature/queryMicroservicesAccumulo2.1 || :'
 
+# If you clone without the --recurse-submodules or a new submodule was added afterwards,
+# then you will need to execute this within the new (empty) submodule directory
+git submodule update --init
+got checkout feature/queryMicroservicesAccumulo2.1
+
 # It is recommended to build the project using multiple threads
 mvn -Pdocker,dist clean install -T 1C
 
