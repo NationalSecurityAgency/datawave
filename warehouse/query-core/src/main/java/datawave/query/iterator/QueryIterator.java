@@ -121,6 +121,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
@@ -981,10 +982,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // note that we have already reduced the document to those attributes to keep. This will reduce the attributes further
             // base on those fields we are limiting.
             if (gatherTimingDetails()) {
-                documents = Iterators.transform(documents,
-                                new EvaluationTrackingFunction<>(QuerySpan.Stage.LimitFields, trackingSpan, new LimitFields(this.getLimitFieldsMap())));
+                documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.LimitFields, trackingSpan, getLimitFields()));
             } else {
-                documents = Iterators.transform(documents, new LimitFields(this.getLimitFieldsMap()));
+                documents = Iterators.transform(documents, getLimitFields());
             }
         }
         
@@ -1154,6 +1154,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return jexlEvaluationFunction;
     }
     
+    protected LimitFields getLimitFields() {
+        return new LimitFields(this.getLimitFieldsMap(), this.getMatchingFieldSets());
+    }
+    
     @Override
     public JexlArithmetic getArithmetic() {
         JexlArithmetic myArithmetic = this.arithmetic;
@@ -1293,9 +1297,17 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         
         if (this.useWhiteListedFields) {
+            // make sure we include any fields being matched in the limit fields mechanism
+            if (!this.matchingFieldSets.isEmpty()) {
+                this.whiteListedFields.addAll(this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList()));
+            }
             projection.setIncludes(this.whiteListedFields);
             return projection;
         } else if (this.useBlackListedFields) {
+            // make sure we including any fields being matched in the limit fields mechanism
+            if (!this.matchingFieldSets.isEmpty()) {
+                this.blackListedFields.removeAll(this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList()));
+            }
             projection.setExcludes(this.blackListedFields);
             return projection;
         } else {
@@ -1316,6 +1328,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     }
                 }
             }
+        }
+        // make sure we include any fields being matched in the limit fields mechanism
+        if (!this.matchingFieldSets.isEmpty()) {
+            composites.removeAll(this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList()));
         }
         projection.setExcludes(composites);
         return projection;

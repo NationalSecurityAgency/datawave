@@ -762,6 +762,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
         }
         
+        // Get the MATCHING_FIELD_SETS parameter if given
+        String matchingFieldSets = settings.findParameter(QueryParameters.MATCHING_FIELD_SETS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(matchingFieldSets)) {
+            List<String> matchingFieldSetsList = Arrays.asList(StringUtils.split(matchingFieldSets, Constants.PARAM_VALUE_SEP));
+            
+            // Only set the limit fields if we were actually given some
+            if (!matchingFieldSetsList.isEmpty()) {
+                config.setMatchingFieldSets(new HashSet<>(matchingFieldSetsList));
+            }
+        }
+        
         String limitFieldsPreQueryEvaluation = settings.findParameter(QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(limitFieldsPreQueryEvaluation)) {
             Boolean limitFieldsPreQueryEvaluationValue = Boolean.parseBoolean(limitFieldsPreQueryEvaluation);
@@ -1256,6 +1267,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setLimitFields(Set<String> limitFields) {
         getConfig().setLimitFields(limitFields);
+    }
+    
+    public Set<String> getMatchingFieldSets() {
+        return getConfig().getMatchingFieldSets();
+    }
+    
+    public void setMatchingFieldSets(Set<String> matchingFieldSets) {
+        getConfig().setMatchingFieldSets(matchingFieldSets);
     }
     
     public boolean isLimitFieldsPreQueryEvaluation() {
@@ -2043,6 +2062,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(QueryOptions.HIT_LIST);
         optionalParams.add(QueryOptions.DATE_INDEX_TIME_TRAVEL);
         optionalParams.add(QueryParameters.LIMIT_FIELDS);
+        optionalParams.add(QueryParameters.MATCHING_FIELD_SETS);
         optionalParams.add(QueryParameters.GROUP_FIELDS);
         optionalParams.add(QueryParameters.UNIQUE_FIELDS);
         optionalParams.add(QueryOptions.LOG_TIMING_DETAILS);
