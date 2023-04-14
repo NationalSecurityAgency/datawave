@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
@@ -781,6 +782,13 @@ public class JexlASTHelperTest {
     private void testDeconstructionGroupingFalse(String expected, String input) {
         String actual = JexlASTHelper.deconstructIdentifier(input, false);
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testTempName() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == '1' and (FOO == '2' and (FOO == '3' or FOO == '4'))");
+
+        JexlEvaluation eval = new JexlEvaluation("FOO == '1' and (FOO == '2' and (FOO == '3' or FOO == '4'))");
     }
     
 }
