@@ -2143,6 +2143,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGESIZE);
         optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGETIMEOUT);
         optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_EXPIRATION);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE);
         optionalParams.add(QueryParameters.SUM_FIELDS);
         optionalParams.add(QueryParameters.MAX_FIELDS);
         optionalParams.add(QueryParameters.MIN_FIELDS);
