@@ -58,6 +58,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
+import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.KeyAdjudicator;
 import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
@@ -267,8 +268,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         } else {
             this.source = source;
         }
-        
-        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEventNextSeek());
         
         if (isDebugMultithreadedSources()) {
             this.source = new SourceThreadTrackingIterator(this.source);
@@ -1530,7 +1529,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setFieldsToAggregate(this.getNonEventFields())
                 .setAttrFilter(this.getEvaluationFilter())
                 .setDatatypeFilter(this.getFieldIndexKeyDataTypeFilter())
-                .setFiAggregator(this.fiAggregator)
+                .setFiAggregator(this.getFiAggregator())
                 .setHdfsFileSystem(this.getFileSystemCache())
                 .setQueryLock(this.getQueryLock())
                 .setIvaratorCacheDirConfigs(this.getIvaratorCacheDirConfigs())
@@ -1700,6 +1699,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.activeQueryLog = ActiveQueryLog.getInstance(getActiveQueryLogName());
         }
         return this.activeQueryLog;
+    }
+    
+    /**
+     * Gets a default implementation of a FieldIndexAggregator
+     *
+     * @return a {@link IdentityAggregator}
+     */
+    @Override
+    public FieldIndexAggregator getFiAggregator() {
+        if (fiAggregator == null) {
+            fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEventNextSeek());
+        }
+        return fiAggregator;
     }
     
     protected ExcerptTransform getExcerptTransform() {

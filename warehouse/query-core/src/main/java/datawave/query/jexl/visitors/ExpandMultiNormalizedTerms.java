@@ -1,7 +1,6 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
@@ -42,6 +41,7 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -164,7 +164,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     }
     
     private Object expandRangeForNormalizers(LiteralRange<?> range, JexlNode node) {
-        List<BoundedRange> aliasedBounds = Lists.newArrayList();
+        Set<BoundedRange> aliasedBounds = new HashSet<BoundedRange>();
         String field = range.getFieldName();
         
         // Get all of the indexed or normalized dataTypes for the field name
@@ -206,9 +206,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             
             // Avoid extra parens around the expansion
             if (1 == aliasedBounds.size()) {
-                return aliasedBounds.get(0);
+                return aliasedBounds.iterator().next();
             } else {
-                List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(aliasedBounds);
+                // ensure we wrap bounded ranges in parens for certain edge cases
+                List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(new ArrayList(aliasedBounds));
                 return JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[var.size()])));
             }
         }
@@ -230,7 +231,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             final String fieldName = op.deconstructIdentifier();
             final Object literal = op.getLiteralValue();
             
-            // Get all of the indexed or normalized dataTypes for the field name
+            // Get all the indexed or normalized dataTypes for the field name
             Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(fieldName));
             dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(fieldName));
             
