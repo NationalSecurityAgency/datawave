@@ -27,7 +27,10 @@ class KryoObjectPoolFactory extends BasePooledObjectFactory<KryoEntry> {
         // Log.set(Log.LEVEL_TRACE);
         
         kryo.setReferences(false);
-        
+
+//        kryo.register(IpV4Address.class, new IPV4AddressSerializer());
+//        kryo.register(IpV6Address.class, new IPV6AddressSerializer());
+
         Map<Class<?>,DelegateTypeSerializer<?,? extends BaseType<?>>> map = new LinkedHashMap<>();
         map.put(DateType.class, new DelegateTypeSerializer<>(new DefaultSerializers.DateSerializer(), Date.class));
         map.put(GeoLatType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
@@ -37,7 +40,7 @@ class KryoObjectPoolFactory extends BasePooledObjectFactory<KryoEntry> {
         map.put(GeoType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(HexStringType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(HitTermType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
-        map.put(IpAddressType.class, new DelegateTypeSerializer<>(new IpAddressDynamicSerializer(), IpAddress.class));
+        map.put(IpAddress.class, new DelegateTypeSerializer<>(new IpAddressDynamicSerializer(), IpAddress.class));
         map.put(LcType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(LcNoDiacriticsType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         map.put(MacAddressType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
@@ -50,13 +53,13 @@ class KryoObjectPoolFactory extends BasePooledObjectFactory<KryoEntry> {
         map.put(TrimLeadingZerosType.class, new DelegateTypeSerializer<>(new DefaultSerializers.StringSerializer(), String.class));
         
         // register the class and default serializers for the type attributes
-        map.forEach((k, v) -> kryo.register(k, v));
+        // map.forEach((k, v) -> kryo.register(k, v));
         
         // set the serializer for attribute class
         kryo.addDefaultSerializer(Attribute.class, new KryoCVAwareSerializableSerializer(true));
         
         KryoDocumentOptions documentOptions = new KryoDocumentOptions();
-        map.forEach((k, v) -> documentOptions.addSerializer(k, v));
+        // map.forEach((k, v) -> documentOptions.addSerializer(k, v));
         kryo.getContext().put(KryoDocumentOptions.CACHE_KEY, documentOptions);
         kryo.setAutoReset(false);
         KryoEntry kryoEntry = new KryoEntry(kryo);

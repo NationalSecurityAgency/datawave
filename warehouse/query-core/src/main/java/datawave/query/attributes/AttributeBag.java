@@ -1,5 +1,7 @@
 package datawave.query.attributes;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.Sets;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
@@ -21,10 +23,10 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
     
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
     
-    protected static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
+    protected static final Supplier<MarkingFunctions> markingFunctions = Suppliers.memoize(() -> MarkingFunctionsFactory.createMarkingFunctions());
     
     public MarkingFunctions getMarkingFunctions() {
-        return markingFunctions;
+        return markingFunctions.get();
     }
     
     protected AttributeBag() {
@@ -81,7 +83,7 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
         for (Attribute<?> attr : attributes) {
             columnVisibilities.add(attr.getColumnVisibility());
         }
-        return AttributeBag.markingFunctions.combine(columnVisibilities);
+        return AttributeBag.markingFunctions.get().combine(columnVisibilities);
     }
     
     private long updateTimestamps() {

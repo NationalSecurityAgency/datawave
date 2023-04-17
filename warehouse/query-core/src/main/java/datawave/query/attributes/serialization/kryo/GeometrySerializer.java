@@ -56,9 +56,9 @@ public class GeometrySerializer<G extends Geometry,T extends AbstractGeometry<G>
             throw new KryoException(e);
         }
     }
-
+    
     private GeometrySerializerCache getCache(Kryo kryo) {
-        GeometrySerializerCache cache = (GeometrySerializerCache)kryo.getContext().get(this);
+        GeometrySerializerCache cache = (GeometrySerializerCache) kryo.getContext().get(this);
         if (cache == null) {
             cache = new GeometrySerializerCache();
             kryo.getContext().put(this, cache);

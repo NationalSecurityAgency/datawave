@@ -1,6 +1,8 @@
 package datawave.query.attributes;
 
+import datawave.data.type.IpAddressType;
 import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.util.IpAddress;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import org.apache.accumulo.core.data.Key;
@@ -22,8 +24,11 @@ public class DocumentKryoSerializationTest {
         RandomStringGenerator rg = new RandomStringGenerator.Builder().usingRandom(random::nextInt).withinRange('a', 'z').build();
         String field1 = "field-1";
         String field2 = "field-2";
+        IpAddressType ip1 = new IpAddressType();
+        ip1.setDelegateFromString(ip1.normalize("100.2.10.*"));
         TypeAttribute<String> type1 = new TypeAttribute<>(new LcNoDiacriticsType("value-1"), key, true);
         TypeAttribute<String> type2 = new TypeAttribute<>(new LcNoDiacriticsType("value-2"), key, true);
+        TypeAttribute<IpAddress> type3 = new TypeAttribute<>(ip1, key, true);
         Document doc = new Document();
         TimingMetadata timing = new TimingMetadata();
         timing.setHost("localhost");

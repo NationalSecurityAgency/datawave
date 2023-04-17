@@ -4,9 +4,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.InputChunked;
 import com.esotericsoftware.kryo.io.Output;
-import com.esotericsoftware.kryo.io.OutputChunked;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
@@ -170,11 +168,11 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         // save that we have a custom serializer attempt or not
         output.writeBoolean(hasSerializer);
         if (hasSerializer) {
-            OutputChunked outputChunked = new OutputChunked(output);
+            // OutputChunked outputChunked = new OutputChunked(output);
             try {
-                kryo.writeObject(outputChunked, datawaveType, serializer.get());
+                kryo.writeObject(output, datawaveType, serializer.get());
             } finally {
-                outputChunked.endChunks();
+                // outputChunked.endChunks();
                 // outputChunked.flush();
             }
         }
@@ -223,16 +221,16 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         boolean wasSerialized = input.readBoolean();
         try {
             if (wasSerialized) {
-                InputChunked inputChunked = new InputChunked(input);
+                // InputChunked inputChunked = new InputChunked(input);
                 try {
                     if (serializer.isPresent()) {
-                        datawaveType = (Type<T>) kryo.readObject(inputChunked, typeClass, serializer.get());
+                        datawaveType = (Type<T>) kryo.readObject(input, typeClass, serializer.get());
                     }
                 } catch (Exception serializeEx) {
                     log.warn("Was unable to make a " + datawaveType + " to contain a delegate created from serializer:" + delegateString
                                     + "  Will try to create from string itself.");
                 } finally {
-                    inputChunked.nextChunks();
+                    //inputChunked.nextChunks();
                 }
             }
             if (datawaveType == null) {
