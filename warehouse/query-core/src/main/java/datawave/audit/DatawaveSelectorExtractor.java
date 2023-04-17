@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.webservice.query.Query;
+import org.apache.commons.jexl2.JexlException;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import datawave.query.language.tree.QueryNode;
@@ -39,6 +40,8 @@ public class DatawaveSelectorExtractor implements SelectorExtractor {
                     }
                 }
             }
+        } catch (JexlException e) {
+            log.error("Failure to extract selectors, failure parsing query");
         } catch (Exception e) {
             log.error(e.getMessage());
         }
