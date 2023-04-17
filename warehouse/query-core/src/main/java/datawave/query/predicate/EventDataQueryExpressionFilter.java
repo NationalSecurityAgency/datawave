@@ -21,7 +21,7 @@ import java.util.Set;
 /**
  * This class is used to filter out fields that are required for evaluation by apply the query expressions to the field values on the fly. This filter will
  * "keep" all of those returned by "apply". If more fields are required to be returned to the user, then this class must be overridden. startNewDocument will be
- * called with a documentKey whenever we are starting to scan a new document or document tree as defined by getKeyRange.
+ * called with a documentKey whenever we are starting to scan a new document or document tree.
  */
 public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
     private static final Logger log = Logger.getLogger(EventDataQueryExpressionFilter.class);
