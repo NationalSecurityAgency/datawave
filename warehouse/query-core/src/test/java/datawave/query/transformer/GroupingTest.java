@@ -543,8 +543,7 @@ public abstract class GroupingTest {
         // @formatter:on
         
         extraParameters.put("group.fields", "GENDER,DEPENDENTS");
-        // extraParameters.put("group.fields.batch.size", "12");
-        
+
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
                 runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
@@ -563,8 +562,7 @@ public abstract class GroupingTest {
         String queryString = "UUID =~ '^[CS].*'";
         
         Map<String,Integer> expectedMap = ImmutableMap.of("FEAR", 2, "MONEY", 1);
-        // Map<String,Integer> expectedMap = ImmutableMap.of("WISEGUY", 3);
-        
+
         extraParameters.put("group.fields", "MOTIVE");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
@@ -585,8 +583,7 @@ public abstract class GroupingTest {
         String queryString = "UUID == 'CORLEONE'";
         
         Map<String,Integer> expectedMap = ImmutableMap.of("FEAR", 1, "MONEY", 1);
-        // Map<String,Integer> expectedMap = ImmutableMap.of("WISEGUY", 3);
-        
+
         extraParameters.put("group.fields", "MOTIVE");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
