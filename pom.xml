@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>3.42.0-SNAPSHOT</version>
+    <version>3.43.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast,
@@ -51,9 +51,9 @@
         <version.curator>2.13.0</version.curator>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.easymock>4.0.2</version.easymock>
-        <version.geoserver>2.21.1</version.geoserver>
-        <version.geotools>27.1</version.geotools>
-        <version.geowave>1.1.0</version.geowave>
+        <version.geoserver>2.22.1</version.geoserver>
+        <version.geotools>28.1</version.geotools>
+        <version.geowave>1.2.0</version.geowave>
         <version.google-guava>15.0</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
@@ -89,7 +89,7 @@
         <version.microservice.metadata-utils>1.13</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>1.2</version.microservice.metrics-reporter>
         <version.microservice.query-metric-api>1.5.7</version.microservice.query-metric-api>
-        <version.microservice.type-utils>1.11</version.microservice.type-utils>
+        <version.microservice.type-utils>1.13</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>8.0.16</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
@@ -889,12 +889,20 @@
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.accumulo</groupId>
                         <artifactId>accumulo-minicluster</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.commons</groupId>
                         <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.emf</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
