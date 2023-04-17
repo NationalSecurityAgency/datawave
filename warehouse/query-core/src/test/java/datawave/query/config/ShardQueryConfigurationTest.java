@@ -328,7 +328,7 @@ public class ShardQueryConfigurationTest {
         IndexHole otherIndexHole = new IndexHole(new String[] {"4", "5"}, new String[] {"6", "7"});
         indexHoles.add(otherIndexHole);
         projectFields.add("projectFieldB");
-        blacklistedFields.add("blacklistedfieldB");
+        blacklistedFields.add("blacklistedFieldB");
         indexedFields.add("indexedFieldB");
         normalizedFields.add("normalizedFieldB");
         dataTypes.put("K2", new NoOpType("V2"));
