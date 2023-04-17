@@ -107,7 +107,7 @@ public abstract class GroupingTest {
         protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
                         Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
                         throws Exception {
-            System.out.println("runTestQueryWithGrouping teardown/interrupt: " + teardown.name() + "/" + interrupt.name());
+            log.debug("runTestQueryWithGrouping teardown/interrupt: " + teardown.name() + "/" + interrupt.name());
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.getName(), log, teardown, interrupt);
             AccumuloClient client = qtth.client;
             VisibilityWiseGuysIngest.writeItAll(client, VisibilityWiseGuysIngest.WhatKindaRange.SHARD);
@@ -543,7 +543,7 @@ public abstract class GroupingTest {
         // @formatter:on
         
         extraParameters.put("group.fields", "GENDER,DEPENDENTS");
-
+        
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
                 runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
@@ -562,7 +562,7 @@ public abstract class GroupingTest {
         String queryString = "UUID =~ '^[CS].*'";
         
         Map<String,Integer> expectedMap = ImmutableMap.of("FEAR", 2, "MONEY", 1);
-
+        
         extraParameters.put("group.fields", "MOTIVE");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
@@ -583,7 +583,7 @@ public abstract class GroupingTest {
         String queryString = "UUID == 'CORLEONE'";
         
         Map<String,Integer> expectedMap = ImmutableMap.of("FEAR", 1, "MONEY", 1);
-
+        
         extraParameters.put("group.fields", "MOTIVE");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
