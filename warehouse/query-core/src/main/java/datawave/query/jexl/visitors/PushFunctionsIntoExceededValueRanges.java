@@ -98,7 +98,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
                     children.add(child);
                 }
             } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException(e);
+                log.debug("Unable to retrieve data types for fields");
             }
         }
         

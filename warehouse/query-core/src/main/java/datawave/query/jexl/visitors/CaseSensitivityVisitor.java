@@ -19,6 +19,7 @@ import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
 
 import java.util.Set;
 
@@ -31,6 +32,8 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
     
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
+    
+    private static final Logger LOGGER = Logger.getLogger(CaseSensitivityVisitor.class);
     
     public CaseSensitivityVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
         this.config = config;
@@ -67,7 +70,7 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
         try {
             fields = desc.fields(helper, config.getDatatypeFilter());
         } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            LOGGER.debug("Unable to retrieve data types for field " + fields);
         }
         
         return super.visit(node, fields);

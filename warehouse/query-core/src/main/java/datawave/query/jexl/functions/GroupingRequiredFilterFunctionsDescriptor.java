@@ -100,7 +100,6 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
         @Override
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) throws TableNotFoundException {
             Set<String> allFields = helper.getAllFields(datatypeFilter);
-            Set<String> filteredFields = Sets.newHashSet();
             Set<String> fields = Sets.newHashSet();
             
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
@@ -116,11 +115,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
                 }
             }
             
-            for (String field : fields) {
-                filterField(allFields, field, filteredFields);
-            }
-            
-            return filteredFields;
+            return filterField(allFields, fields);
         }
         
         @Override
@@ -144,11 +139,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
             }
             
             for (Set<String> aFieldSet : fieldSets) {
-                Set<String> filteredFields = Sets.newHashSet();
-                for (String field : aFieldSet) {
-                    filterField(allFields, field, filteredFields);
-                }
-                filteredSets.add(filteredFields);
+                filteredSets.add(filterField(allFields, aFieldSet));
             }
             
             return filteredSets;
@@ -165,6 +156,19 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
             if (allFields.contains(fieldToAdd)) {
                 returnedFields.add(fieldToAdd);
             }
+        }
+        
+        /**
+         * Given a list of all possible fields, filters out fields based on the given datatype(s)
+         *
+         * @param allFields
+         * @param fields
+         */
+        private Set<String> filterField(Set<String> allFields, Set<String> fields) {
+            Set<String> returnedFields = Sets.newHashSet();
+            returnedFields.addAll(allFields);
+            returnedFields.retainAll(fields);
+            return returnedFields;
         }
         
         @Override

@@ -141,6 +141,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         try {
             return FunctionNormalizationRebuildingVisitor.normalize(node, config.getQueryFieldsDatatypes(), helper, config.getDatatypeFilter());
         } catch (TableNotFoundException e) {
+            log.debug("Unable to load data from metadata table");
             throw new RuntimeException(e);
         }
     }

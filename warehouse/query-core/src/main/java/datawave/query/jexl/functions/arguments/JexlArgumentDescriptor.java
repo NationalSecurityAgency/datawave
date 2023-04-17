@@ -38,7 +38,7 @@ public interface JexlArgumentDescriptor {
                     throws TableNotFoundException;
     
     /**
-     * Get the expression filters for this function. NOTE NOTE NOTE: This only needs to add expression filters IFF the getIndexQuery does not add appropriate
+     * Get the expression filters for this function. NOTE NOTE NOTE: This only needs to add expression filters IF the getIndexQuery does not add appropriate
      * expression filters in the first place. This is because addFilters is used after the query had been expanded to include the index query. So for most
      * implementations this function will do nothing. For the EvaluationPhaseFilterFunctions however this will have to be implemented.
      *

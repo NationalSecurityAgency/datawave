@@ -22,6 +22,7 @@ import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
 
 import java.util.Arrays;
 
@@ -36,6 +37,8 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
     protected ShardQueryConfiguration config;
     protected MetadataHelper metadataHelper;
     protected DateIndexHelper dateIndexHelper;
+    
+    private static final Logger LOGGER = Logger.getLogger(FunctionIndexQueryExpansionVisitor.class);
     
     public FunctionIndexQueryExpansionVisitor(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper) {
         this.config = config;
@@ -113,14 +116,12 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
                 return rebuiltNode.jjtAccept(this, data);
         }
         
-        if (!evaluationOnly) {
+        if (!evaluationOnly && desc != null) {
             JexlNode indexQuery = null;
             try {
-                if (desc != null) {
-                    indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
-                }
+                indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
             } catch (TableNotFoundException e) {
-                throw new RuntimeException(e);
+                LOGGER.debug("Unable to load data from metadata table");
             }
             if (indexQuery != null && !(indexQuery instanceof ASTTrueNode)) {
                 if (desc instanceof ContentFunctionsDescriptor.ContentJexlArgumentDescriptor) {

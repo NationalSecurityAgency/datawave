@@ -437,7 +437,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         try {
             desc.addFilters(attributeFactory, filterMap);
         } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            log.debug("Unable to retrieve data types");
         }
         
         return null;

@@ -56,6 +56,7 @@ import org.apache.commons.jexl2.parser.ASTVar;
 import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.log4j.Logger;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -67,6 +68,8 @@ import java.util.Set;
 public class QueryFieldsVisitor extends BaseVisitor {
     
     private final MetadataHelper helper;
+    
+    private static final Logger LOGGER = Logger.getLogger(QueryFieldsVisitor.class);
     
     public static Set<String> parseQueryFields(String query, MetadataHelper helper) {
         try {
@@ -158,12 +161,15 @@ public class QueryFieldsVisitor extends BaseVisitor {
     public Object visit(ASTFunctionNode node, Object data) {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         Set<String> fields = null;
-        try {
-            fields = desc.fields(helper, null);
-        } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+        if (desc != null) {
+            try {
+                fields = desc.fields(helper, null);
+                ((Set<String>) data).addAll(fields);
+            } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
+                LOGGER.debug("Unable tto load datatypes for fields: " + fields);
+            }
         }
-        ((Set<String>) data).addAll(fields);
+        
         return data;
     }
     
