@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+import com.google.common.base.Throwables;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.CountingOutputStream;
@@ -731,7 +732,7 @@ public class QueryExecutorBean implements QueryExecutor {
                             log.error("Error accessing query selector", e);
                         }
                         // if the user didn't set an audit id, use the query id
-                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID) && q != null) {
                             queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
                         }
                         auditor.audit(queryParameters);
@@ -792,6 +793,8 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } catch (Throwable t) {
             response.setHasResults(false);
+            String queryId = (q != null ? q.getId().toString() : "<unknown>");
+            response.addMessage("Query creation failed for " + queryId);
             
             if (rq != null) {
                 rq.getMetric().setError(t);
@@ -824,22 +827,22 @@ public class QueryExecutorBean implements QueryExecutor {
              * Allow web services to throw their own WebApplicationExceptions
              */
             if (t instanceof Error && !(t instanceof TokenMgrError)) {
-                log.error(t.getMessage(), t);
+                log.error(queryId + ": " + t.getMessage(), t);
                 throw (Error) t;
             } else if (t instanceof WebApplicationException) {
-                log.error(t.getMessage(), t);
+                log.error(queryId + ": " + t.getMessage(), t);
                 throw ((WebApplicationException) t);
             } else if (t instanceof InterruptedException) {
                 if (rq != null) {
                     rq.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
                 }
-                log.info("Query " + q.getId() + " canceled on request");
+                log.info("Query " + queryId + " canceled on request");
                 QueryException qe = new QueryException(DatawaveErrorCode.QUERY_CANCELED, t);
                 response.addException(qe.getBottomQueryException());
                 int statusCode = qe.getBottomQueryException().getStatusCode();
                 throw new DatawaveWebApplicationException(qe, response, statusCode);
             } else {
-                log.error(t.getMessage(), t);
+                log.error(queryId + ": " + t.getMessage(), t);
                 QueryException qe = new QueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, t);
                 response.addException(qe.getBottomQueryException());
                 int statusCode = qe.getBottomQueryException().getStatusCode();
