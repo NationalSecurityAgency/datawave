@@ -67,17 +67,6 @@ public class AncestorEventDataFilter extends EventDataQueryExpressionFilter {
         return (docUid == null || docUid.equals(getUid(k)));
     }
     
-    /**
-     * We need to remap the start key to the begining of the TLD so that we can get all of the necessary fields when scanning the shard table.
-     * 
-     * @param from
-     *            the from key
-     */
-    @Override
-    public Key getStartKey(Key from) {
-        return new Key(from.getRow().toString(), TLD.parseRootPointerFromId(from.getColumnFamily().toString()));
-    }
-    
     protected String getUid(Key k) {
         String uid;
         String cf = k.getColumnFamily().toString();
