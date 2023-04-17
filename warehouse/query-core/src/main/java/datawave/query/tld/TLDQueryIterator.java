@@ -4,6 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import datawave.query.attributes.Document;
+import datawave.query.function.Equality;
 import datawave.query.function.RangeProvider;
 import datawave.query.function.TLDEquality;
 import datawave.query.function.TLDRangeProvider;
@@ -11,6 +12,7 @@ import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.postprocessing.tf.TFFactory;
@@ -63,7 +65,6 @@ public class TLDQueryIterator extends QueryIterator {
     @Override
     public boolean validateOptions(Map<String,String> options) {
         boolean success = super.validateOptions(options);
-        super.equality = new TLDEquality();
         super.getDocumentKey = GetStartKeyForRoot.instance();
         return success;
     }
@@ -85,8 +86,6 @@ public class TLDQueryIterator extends QueryIterator {
         
         super.init(source, options, env);
         
-        super.fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getFIEvaluationFilter(), maxKeysBeforeSeek);
-        
         // Replace the fieldIndexKeyDataTypeFilter with a chain of "anded" index-filtering predicates.
         // If no other predicates are configured via the indexfiltering.classes property, the method
         // simply returns the existing fieldIndexKeyDataTypeFilter value. Otherwise, the returned value
@@ -96,6 +95,19 @@ public class TLDQueryIterator extends QueryIterator {
         fieldIndexKeyDataTypeFilter = parseIndexFilteringChain(new SourcedOptions<>(source, env, options));
         
         disableIndexOnlyDocuments = false;
+    }
+    
+    /**
+     * Get a FieldIndexAggregator for the {@link TLDQueryIterator}
+     *
+     * @return a {@link TLDFieldIndexAggregator}
+     */
+    @Override
+    public FieldIndexAggregator getFiAggregator() {
+        if (fiAggregator == null) {
+            fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getFIEvaluationFilter(), getFiNextSeek());
+        }
+        return fiAggregator;
     }
     
     /**
@@ -117,7 +129,7 @@ public class TLDQueryIterator extends QueryIterator {
         if (this.evaluationFilter == null && script != null) {
             // setup an evaluation filter to avoid loading every single child key into the event
             this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), typeMetadata, useWhiteListedFields ? whiteListedFields : null,
-                            useBlackListedFields ? blackListedFields : null, maxFieldHitsBeforeSeek, maxKeysBeforeSeek,
+                            useBlackListedFields ? blackListedFields : null, getEventFieldSeek(), getEventNextSeek(),
                             limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
         }
         return this.evaluationFilter != null ? evaluationFilter.clone() : null;
@@ -227,4 +239,16 @@ public class TLDQueryIterator extends QueryIterator {
         return rangeProvider;
     }
     
+    /**
+     * Get a {@link TLDEquality} implementation of an {@link Equality}
+     *
+     * @return a TLDEquality
+     */
+    @Override
+    public Equality getEquality() {
+        if (equality == null) {
+            equality = new TLDEquality();
+        }
+        return equality;
+    }
 }

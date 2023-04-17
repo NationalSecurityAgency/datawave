@@ -373,7 +373,6 @@ public abstract class RemoteHttpService {
     
     public <T> T executePostMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer,
                     IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        init();
         try {
             return executePostMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
         } catch (URISyntaxException e) {
@@ -398,7 +397,6 @@ public abstract class RemoteHttpService {
     
     public <T> T executeGetMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
                     IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
-        init();
         try {
             return executeGetMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
         } catch (URISyntaxException e) {
@@ -425,7 +423,8 @@ public abstract class RemoteHttpService {
      * Useful for setting proxied entities header
      * 
      * @param callerPrincipal
-     * @return
+     *            the caller principal
+     * @return proxied entities
      */
     public static String getProxiedEntities(DatawavePrincipal callerPrincipal) {
         return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().subjectDN()).append('>'))
@@ -436,7 +435,8 @@ public abstract class RemoteHttpService {
      * Useful for setting proxied issuers header
      * 
      * @param callerPrincipal
-     * @return
+     *            the caller principal
+     * @return proxied entities
      */
     public static String getProxiedIssuers(DatawavePrincipal callerPrincipal) {
         return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().issuerDN()).append('>'))

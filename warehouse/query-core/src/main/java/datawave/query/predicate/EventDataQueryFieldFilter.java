@@ -35,6 +35,9 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
      * Initialize the query field filter with all of the fields required to evaluation this query
      * 
      * @param script
+     *            a script
+     * @param nonEventFields
+     *            a set of non event fields
      */
     public EventDataQueryFieldFilter(ASTJexlScript script, Set<String> nonEventFields) {
         this.nonEventFields = nonEventFields;
@@ -64,21 +67,6 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
         return true;
     }
     
-    @Override
-    public Key getStartKey(Key from) {
-        return new Key(from.getRow(), from.getColumnFamily());
-    }
-    
-    @Override
-    public Key getStopKey(Key from) {
-        return from.followingKey(PartialKey.ROW_COLFAM);
-    }
-    
-    @Override
-    public Range getKeyRange(Map.Entry<Key,Document> from) {
-        return new Range(getStartKey(from.getKey()), true, getStopKey(from.getKey()), false);
-    }
-    
     /**
      * Not yet implemented for this filter. Not guaranteed to be called
      *
@@ -88,7 +76,7 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
      *            the current range endKey
      * @param endKeyInclusive
      *            the endKeyInclusive flag from the current range
-     * @return
+     * @return null
      */
     @Override
     public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {

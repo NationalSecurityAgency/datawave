@@ -21,6 +21,7 @@ public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.
      * that a page has begun processing (in milliseconds)
      *
      * @param queryExecutionForPageStartTime
+     *            the query execution to set
      */
     void setQueryExecutionForPageStartTime(long queryExecutionForPageStartTime);
     

@@ -113,7 +113,7 @@ public class RangeRecordReader extends RFileRecordReader {
      *            new list of splits
      * @param table
      *            table that we're accessing.
-     * @return
+     * @return the merged tablet splits
      * @throws IOException
      *             cannot build TabletSplitSplit
      * @throws InterruptedException

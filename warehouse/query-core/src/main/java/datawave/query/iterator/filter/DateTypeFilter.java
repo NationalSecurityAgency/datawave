@@ -32,6 +32,9 @@ public class DateTypeFilter extends Filter {
      * Method to setup expression from the iterator options for evaluation.
      *
      * @param options
+     *            map of options
+     * @throws IOException
+     *             for issues with read/write
      */
     private void initOptions(Map<String,String> options) throws IOException {
         
@@ -71,7 +74,9 @@ public class DateTypeFilter extends Filter {
      * isActivityEdge.
      *
      * @param k
+     *            a key
      * @param V
+     *            a value
      * @return boolean - true if it is a match.
      */
     @Override

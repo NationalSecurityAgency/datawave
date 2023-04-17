@@ -393,7 +393,9 @@ public class DatawaveInterpreterTest {
      * Evaluate a query against a default context
      * 
      * @param query
+     *            the query
      * @param expectedResult
+     *            the expected result
      */
     private void test(String query, boolean expectedResult) {
         test(query, buildDefaultContext(), expectedResult);

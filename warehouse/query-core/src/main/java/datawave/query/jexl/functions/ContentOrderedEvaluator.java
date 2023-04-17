@@ -105,6 +105,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
      * Convert a List of offsets into a NavigableSet of EvaluateTermPositions
      * 
      * @param offsets
+     *            the list of offsets
      * @return null if a phrase match is not possible, or the term positions
      */
     private List<NavigableSet<EvaluateTermPosition>> buildTermPositions(List<List<TermWeightPosition>> offsets) {
@@ -142,6 +143,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
      * Trim impossible offsets from the arrays by removing any terms which are less than the first term walking through the term lists
      * 
      * @param offsets
+     *            the list of offsets
      * @return null if a terms offsets are empty, otherwise the trimmed list
      */
     private List<NavigableSet<EvaluateTermPosition>> trim(List<NavigableSet<EvaluateTermPosition>> offsets) {
@@ -225,7 +227,9 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
      * @param eventId
      *            the event id (see @TermFrequencyList.getEventId(Key))
      * @param offsets
+     *            a list of offsets
      * @param distance
+     *            the distance
      * @return true if satisfied, false otherwise
      */
     private boolean isConverged(String field, String eventId, List<NavigableSet<EvaluateTermPosition>> offsets, int distance) {

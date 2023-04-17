@@ -18,6 +18,7 @@ import datawave.webservice.query.exception.QueryException;
  * 
  * 
  * @param <T>
+ *            type for the iterator
  */
 public class MergeSortIterator<T> implements Iterator<T> {
     
@@ -86,8 +87,7 @@ public class MergeSortIterator<T> implements Iterator<T> {
         }
     }
     
-    /************ Some utility methods *********/
-    
+    /* Some utility methods */
     private boolean equals(T o1, T o2) {
         if (o1 == null) {
             return o2 == null;

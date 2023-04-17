@@ -119,6 +119,7 @@ public class FieldedTerm extends Term implements Comparable<FieldedTerm> {
      * Determines if the query term matches the row term. The String passed to this method should not contain any field or realm information, only the term.
      * 
      * @param selector
+     *            a selector
      * @return True if the query term matches this row
      */
     public boolean isSelectorMatch(String selector) {
@@ -133,6 +134,7 @@ public class FieldedTerm extends Term implements Comparable<FieldedTerm> {
      * Determines if this row field (or realm) matches the query term. If no field was specified in the query then this method returns true.
      * 
      * @param field
+     *            a field
      * @return Returns False if field is null, otherwise returns true if the query field matches the row field.
      */
     public boolean isFieldMatch(String field) {

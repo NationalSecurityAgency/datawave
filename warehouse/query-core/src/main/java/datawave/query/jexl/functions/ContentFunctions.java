@@ -251,6 +251,7 @@ public class ContentFunctions {
      * character. This allows us to specify a zone as something pulled from the context, or as a literal string.
      * 
      * @param zone
+     *            a zone object
      * @return the set of field names extracted from the "zone" object
      */
     private static Set<String> getFields(Object zone) {

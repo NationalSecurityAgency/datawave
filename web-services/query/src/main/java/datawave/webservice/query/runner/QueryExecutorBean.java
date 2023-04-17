@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+import com.google.common.base.Throwables;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.CountingOutputStream;
@@ -398,6 +399,11 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * Helper to throw Response Error for create/define Query
+     * 
+     * @param ec
+     *            the error code
+     * @param response
+     *            generic response
      */
     private void throwBadRequest(DatawaveErrorCode ec, GenericResponse<String> response) {
         BadRequestQueryException qe = new BadRequestQueryException(ec);
@@ -413,6 +419,14 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * This method will provide some initial query validation for the define and create query calls.
+     * 
+     * @param httpHeaders
+     *            the http headers
+     * @param queryParameters
+     *            the query parameters
+     * @param queryLogicName
+     *            the logic name
+     * @return QueryData
      */
     private QueryData validateQuery(String queryLogicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
         
@@ -564,8 +578,12 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param queryLogicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            the query parameters
+     * @param httpHeaders
+     *            the headers
+     * @return the generic response
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -658,8 +676,12 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param queryLogicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            the query parameters
+     * @param httpHeaders
+     *            the headers
+     * @return the generic response
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -710,7 +732,7 @@ public class QueryExecutorBean implements QueryExecutor {
                             log.error("Error accessing query selector", e);
                         }
                         // if the user didn't set an audit id, use the query id
-                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID) && q != null) {
                             queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
                         }
                         auditor.audit(queryParameters);
@@ -771,6 +793,8 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } catch (Throwable t) {
             response.setHasResults(false);
+            String queryId = (q != null ? q.getId().toString() : "<unknown>");
+            response.addMessage("Query creation failed for " + queryId);
             
             if (rq != null) {
                 rq.getMetric().setError(t);
@@ -803,22 +827,22 @@ public class QueryExecutorBean implements QueryExecutor {
              * Allow web services to throw their own WebApplicationExceptions
              */
             if (t instanceof Error && !(t instanceof TokenMgrError)) {
-                log.error(t.getMessage(), t);
+                log.error(queryId + ": " + t.getMessage(), t);
                 throw (Error) t;
             } else if (t instanceof WebApplicationException) {
-                log.error(t.getMessage(), t);
+                log.error(queryId + ": " + t.getMessage(), t);
                 throw ((WebApplicationException) t);
             } else if (t instanceof InterruptedException) {
                 if (rq != null) {
                     rq.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
                 }
-                log.info("Query " + q.getId() + " canceled on request");
+                log.info("Query " + queryId + " canceled on request");
                 QueryException qe = new QueryException(DatawaveErrorCode.QUERY_CANCELED, t);
                 response.addException(qe.getBottomQueryException());
                 int statusCode = qe.getBottomQueryException().getStatusCode();
                 throw new DatawaveWebApplicationException(qe, response, statusCode);
             } else {
-                log.error(t.getMessage(), t);
+                log.error(queryId + ": " + t.getMessage(), t);
                 QueryException qe = new QueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, t);
                 response.addException(qe.getBottomQueryException());
                 int statusCode = qe.getBottomQueryException().getStatusCode();
@@ -841,8 +865,10 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param queryLogicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            the query parameters
+     * @return the generic response
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -981,7 +1007,9 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param queryLogicName
+     *            the logic name
      * @param queryParameters
+     *            the query parameters
      * @return query predictions
      */
     @POST
@@ -1349,9 +1377,13 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     /**
+     * @param httpHeaders
+     *            headers
      * @param logicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            the query parameters
+     * @return BaseQueryResponse
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -1444,9 +1476,13 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      *
      * @param uuid
+     *            the uuid
      * @param uuidType
+     *            the uuid type
      * @param uriInfo
+     *            the uri
      * @param httpHeaders
+     *            the headers
      * @return content results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1515,7 +1551,9 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      *
      * @param queryParameters
+     *            the query parameters
      * @param httpHeaders
+     *            the headers
      * @return content results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1575,11 +1613,14 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      *
-     * @param uuidType
      * @param uuid
+     *            the uuid
+     * @param uuidType
+     *            the uuid type
      * @param uriInfo
+     *            the uri
      * @param httpHeaders
-     * @return
+     *            the headers
      * @return event results, either as a paged BaseQueryResponse (automatically closed upon return) or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1648,7 +1689,9 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      *
      * @param queryParameters
+     *            the parameters
      * @param httpHeaders
+     *            the headers
      * @return event results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1898,6 +1941,10 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      * Asynchronous version of {@link #next(String)}.
      * 
+     * @param id
+     *            an id
+     * @param asyncResponse
+     *            an async response
      * @see #next(String)
      */
     @GET
@@ -2152,6 +2199,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * after a 'close' will start over at page 1.
      * 
      * @param id
+     *            the id
      *
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2235,7 +2283,8 @@ public class QueryExecutorBean implements QueryExecutor {
      * <strong>JBossAdministrator or Administrator credentials required.</strong>
      *
      * @param id
-     * @return
+     *            the id
+     * @return a void response
      */
     @PUT
     @POST
@@ -2326,6 +2375,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * will start over at page 1.
      * 
      * @param id
+     *            the id
      *
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2402,7 +2452,8 @@ public class QueryExecutorBean implements QueryExecutor {
      * <strong>JBossAdministrator or Administrator credentials required.</strong>
      *
      * @param id
-     * @return
+     *            the id
+     * @return a void response
      */
     @PUT
     @POST
@@ -2594,6 +2645,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * remove (delete) the query
      * 
      * @param id
+     *            the id
      *
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2998,7 +3050,9 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * <strong>Administrator credentials required.</strong> Returns list of queries for some other user
-     *
+     * 
+     * @param userId
+     *            the user id
      * @return datawave.webservice.result.QueryImplListResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -3216,7 +3270,9 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param logicName
+     *            the logic name
      * @param queryParameters
+     *            the parameters
      *
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -3362,6 +3418,14 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      * Asynchronous version of {@link #execute(String, MultivaluedMap, HttpHeaders)}
      * 
+     * @param asyncResponse
+     *            the async response
+     * @param logicName
+     *            the logic name
+     * @param httpHeaders
+     *            the headers
+     * @param queryParameters
+     *            parameters
      * @see #execute(String, MultivaluedMap, HttpHeaders)
      */
     @POST

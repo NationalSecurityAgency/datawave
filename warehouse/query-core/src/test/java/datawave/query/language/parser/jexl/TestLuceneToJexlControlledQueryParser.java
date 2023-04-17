@@ -32,6 +32,7 @@ public class TestLuceneToJexlControlledQueryParser {
      * Noticed bug when no allowed fields were set, users could not perform an ANYFIELD query.
      * 
      * @throws ParseException
+     *             for issues parsing
      */
     @Test
     public void testAllowedAnyfieldWithEmptyAllowedFields() throws ParseException {

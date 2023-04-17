@@ -57,6 +57,7 @@ public class CreateUidsIteratorTest {
      * Ensure that for a known set of data the iterator will correctly seek to each next value.
      *
      * @throws IOException
+     *             for issues with read/write
      */
     @Test
     public void testReseek() throws IOException {
@@ -110,6 +111,7 @@ public class CreateUidsIteratorTest {
      * Ensure that iterator will work when some Protobuf UIDs are created with the IGNORE flag set to 'true'.
      *
      * @throws IOException
+     *             for issues with read/write
      */
     @Test
     public void testWithIgnore() throws IOException {

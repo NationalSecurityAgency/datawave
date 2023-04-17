@@ -18,6 +18,7 @@ public class GroupBy extends JexlQueryFunction {
      * query options is a list of fields. Cannot be the empty list.
      * 
      * @throws IllegalArgumentException
+     *             for illegal arguments
      */
     @Override
     public void validate() throws IllegalArgumentException {
