@@ -16,8 +16,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
@@ -31,7 +29,6 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     protected SortedKeyValueIterator<Key,Value> source;
     protected TypeMetadata typeMetadata;
     protected Set<String> compositeFields;
-    protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
     protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
     protected Set<String> fieldsToAggregate;
     protected EventDataQueryFilter attrFilter;
@@ -87,14 +84,6 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
         this.compositeFields = compositeFields;
     }
     
-    public Predicate<Key> getDatatypeFilter() {
-        return datatypeFilter;
-    }
-    
-    public void setDatatypeFilter(Predicate<Key> datatypeFilter) {
-        this.datatypeFilter = datatypeFilter;
-    }
-    
     public TimeFilter getTimeFilter() {
         return timeFilter;
     }
@@ -121,14 +110,13 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     
     @SuppressWarnings("unchecked")
     public NestedIterator<Key> build() {
-        if (notNull(field, range, source, datatypeFilter, timeFilter)) {
+        if (notNull(field, range, source, timeFilter)) {
             IndexIteratorBridge itr = new IndexIteratorBridge(new TermFrequencyIndexIterator(range, source, this.timeFilter, this.typeMetadata,
                             this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field), termFrequencyAggregator), getNode(), getField());
             field = null;
             range = null;
             source = null;
             timeFilter = null;
-            datatypeFilter = null;
             node = null;
             return itr;
         } else {
