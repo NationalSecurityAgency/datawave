@@ -542,14 +542,10 @@ public class IngestJob implements Tool {
         // default to all types
         Collection<Type> types = TypeRegistry.getTypes();
         
-        // if a datatype is defined for this job, setup it only
-        String dataType = conf.get(DataTypeHelper.Properties.DATA_NAME);
+        // when an override is specified only load handlers associated with that data type
         String override = conf.get(DataTypeHelper.Properties.DATA_NAME_OVERRIDE);
         if (override != null) {
-            dataType = override;
-        }
-        if (dataType != null) {
-            types = Collections.singleton(TypeRegistry.getType(dataType));
+            types = Collections.singleton(TypeRegistry.getType(override));
         }
         
         for (Type t : types) {
