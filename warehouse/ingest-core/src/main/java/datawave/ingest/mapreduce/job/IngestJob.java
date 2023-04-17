@@ -4,6 +4,7 @@ import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
 import datawave.ingest.mapreduce.EventMapper;
@@ -545,6 +546,7 @@ public class IngestJob implements Tool {
                         Object o = Class.forName(handler).newInstance();
                         if (o instanceof JobSetupHandler) {
                             JobSetupHandler setupHandler = (JobSetupHandler) o;
+                            conf.set(DataTypeHelper.Properties.DATA_NAME, t.typeName());
                             setupHandler.setup(conf);
                         }
                     } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {

@@ -29,7 +29,7 @@ public class DataDictionaryBean {
     @Inject
     private RemoteDataDictionary remoteDataDictionary;
     
-    /**
+    /*
      * Capture and redirect GET requests to the root path for the data dictionary.
      */
     @GET
@@ -38,7 +38,7 @@ public class DataDictionaryBean {
         return sendRedirect("", uriInfo);
     }
     
-    /**
+    /*
      * Capture and redirect GET requests to any sub-path for the data dictionary.
      */
     @GET
