@@ -99,6 +99,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -537,7 +538,16 @@ public class IngestJob implements Tool {
     }
     
     private void setupHandlers(Configuration conf) {
-        for (Type t : TypeRegistry.getTypes()) {
+        // default to all types
+        Collection<Type> types = TypeRegistry.getTypes();
+        
+        // when an override is specified only load handlers associated with that data type
+        String override = conf.get(DataTypeHelper.Properties.DATA_NAME_OVERRIDE);
+        if (override != null) {
+            types = Collections.singleton(TypeRegistry.getType(override));
+        }
+        
+        for (Type t : types) {
             String[] handlers = t.getDefaultDataTypeHandlers();
             if (handlers != null) {
                 for (String handler : handlers) {
