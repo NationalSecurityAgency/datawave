@@ -838,9 +838,9 @@ public class JexlASTHelper {
     
     /**
      * Ranges: A range prior to being "tagged" must be of the form "(term1 &amp;&amp; term2)" where term1 and term2 refer to the same field and denote two sides
-     * of the range ((LE or LT) and (GE or GT)). A tagged range is of the form "(BoundedRange=true) &amp;&amp; (term1 &amp;&amp; term2))" <<<<<<< HEAD
+     * of the range ((LE or LT) and (GE or GT)). A tagged range is of the form "(BoundedRange=true) &amp;&amp; (term1 &amp;&amp; term2))"
      *
-     * @return a new rangefinder ======= >>>>>>> integration
+     * @return a new rangefinder
      */
     public static RangeFinder findRange() {
         return new RangeFinder();
