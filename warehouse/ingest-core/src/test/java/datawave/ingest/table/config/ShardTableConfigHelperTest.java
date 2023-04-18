@@ -11,6 +11,7 @@ import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
 import datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator;
 import datawave.ingest.table.config.ShardTableConfigHelper.ShardTableType;
 
+import datawave.iterators.PropogatingIterator;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -147,6 +148,19 @@ public class ShardTableConfigHelperTest {
             } else {
                 
                 results = defaultValue;
+            }
+            
+            return results;
+        }).anyTimes();
+        
+        mock.get(EasyMock.anyObject(String.class));
+        EasyMock.expectLastCall().andAnswer(() -> {
+            String results = null;
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            
+            if (configuration.containsKey(key)) {
+                
+                results = configuration.get(key);
             }
             
             return results;
@@ -491,6 +505,74 @@ public class ShardTableConfigHelperTest {
         } finally {
             
             ShardTableConfigHelperTest.logger.info("ShardTableConfigHelperTest.testConfigureGidxTable completed.");
+        }
+    }
+    
+    @Test
+    public void testConfigureGidxWithMaxUidsTable() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+        ShardTableConfigHelperTest.logger.info("ShardTableConfigHelperTest.testConfigureGidxWithMaxUidsTable called.");
+        
+        try {
+            Configuration config = createMockConfiguration();
+            Logger log = createMockLogger();
+            TableOperations tops = mockUpTableOperations();
+            
+            ShardTableConfigHelper uut = new ShardTableConfigHelper();
+            
+            this.configuration.put(ShardedDataTypeHandler.SHARD_GIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            
+            // set the maxUids to 3
+            this.configuration.put(ShardTableConfigHelper.MAX_INDEX_UIDS, "3");
+            
+            this.tableProperties.clear();
+            this.localityGroups.clear();
+            
+            uut.setup(ShardTableConfigHelperTest.TABLE_NAME, config, log);
+            
+            ShardTableType expectedTableType = ShardTableType.GIDX;
+            
+            Assert.assertEquals("ShardTableConfigHelper.setup incorrectly identified the ShardTableType of the table identified", expectedTableType,
+                            uut.tableType);
+            
+            uut.configure(tops);
+            
+            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.", this.tableProperties.isEmpty());
+            Assert.assertEquals("3", tableProperties.get("table.iterator.scan.UIDAggregator.opt." + PropogatingIterator.getOptString("*", "maxUids")));
+            Assert.assertEquals("true", tableProperties.get("table.iterator.scan.UIDAggregator.opt." + PropogatingIterator.getOptString("*", "all")));
+            Assert.assertEquals("3", tableProperties.get("table.iterator.minc.UIDAggregator.opt." + PropogatingIterator.getOptString("*", "maxUids")));
+            Assert.assertEquals("true", tableProperties.get("table.iterator.minc.UIDAggregator.opt." + PropogatingIterator.getOptString("*", "all")));
+            Assert.assertEquals("3", tableProperties.get("table.iterator.majc.UIDAggregator.opt." + PropogatingIterator.getOptString("*", "maxUids")));
+            Assert.assertEquals("true", tableProperties.get("table.iterator.majc.UIDAggregator.opt." + PropogatingIterator.getOptString("*", "all")));
+            Assert.assertTrue("ShardTableConfigHelper.configureShardTable caused the Locality Groups collection to be populated.",
+                            this.localityGroups.isEmpty());
+            
+            // clear and make sure they are gone
+            this.tableProperties.clear();
+            this.localityGroups.clear();
+            
+            // clear max uids
+            this.configuration.remove(ShardTableConfigHelper.MAX_INDEX_UIDS);
+            
+            uut.setup(ShardTableConfigHelperTest.TABLE_NAME, config, log);
+            
+            expectedTableType = ShardTableType.GIDX;
+            
+            Assert.assertEquals("ShardTableConfigHelper.setup incorrectly identified the ShardTableType of the table identified", expectedTableType,
+                            uut.tableType);
+            
+            uut.configure(tops);
+            
+            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.", this.tableProperties.isEmpty());
+            Assert.assertNull(tableProperties.get("table.iterator.scan.UIDAggregator.opt." + PropogatingIterator.getOptString("*", "maxUids")));
+            Assert.assertNull(tableProperties.get("table.iterator.scan.UIDAggregator.opt." + PropogatingIterator.getOptString("*", "all")));
+            Assert.assertNull(tableProperties.get("table.iterator.minc.UIDAggregator.opt." + PropogatingIterator.getOptString("*", "maxUids")));
+            Assert.assertNull(tableProperties.get("table.iterator.minc.UIDAggregator.opt." + PropogatingIterator.getOptString("*", "all")));
+            Assert.assertNull(tableProperties.get("table.iterator.majc.UIDAggregator.opt." + PropogatingIterator.getOptString("*", "maxUids")));
+            Assert.assertNull(tableProperties.get("table.iterator.majc.UIDAggregator.opt." + PropogatingIterator.getOptString("*", "all")));
+            Assert.assertTrue("ShardTableConfigHelper.configureShardTable caused the Locality Groups collection to be populated.",
+                            this.localityGroups.isEmpty());
+        } finally {
+            ShardTableConfigHelperTest.logger.info("ShardTableConfigHelperTest.testConfigureGidxWithMaxUidsTable completed.");
         }
     }
     
