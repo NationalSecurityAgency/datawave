@@ -230,4 +230,15 @@ public class JsonRecordReaderTest {
         
         reader.close();
     }
+    
+    @Test
+    public void testJsonNulls() throws Exception {
+        JsonRecordReader reader = init(false, FlattenMode.NORMAL);
+        reader.setInputDate(System.currentTimeMillis());
+        
+        while (reader.nextKeyValue()) {
+            System.out.println("Current event: " + reader.getEvent());
+        }
+        
+    }
 }

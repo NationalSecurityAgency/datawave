@@ -17,7 +17,7 @@
     "2017-02-01T02:02:01Z",
     "2017-03-01T03:03:03Z"
   ],
-  "misc_text" : "BOOOO",
+  "misc_text" : "MISC_TEXT",
   "nested_object" : {
     "string_array" : [ "A", "B", "C", "D" ],
     "nested_object" : {
