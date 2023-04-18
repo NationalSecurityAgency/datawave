@@ -48,7 +48,8 @@ import com.google.common.collect.Multimap;
  * <p>
  * This class creates the following Mutations or Key/Values: <br>
  * <br>
- * <table border="1" summary="">
+ * <table border="1">
+ * <caption></caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>

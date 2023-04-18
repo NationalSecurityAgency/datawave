@@ -5,7 +5,6 @@
         <resource-root path="hadoop-common-${version.hadoop}.jar"/>
         <resource-root path="hadoop-shaded-guava-${version.hadoop-shaded}.jar"/>
         <resource-root path="hadoop-shaded-protobuf_3_7-${version.hadoop-shaded}.jar"/>
-        <resource-root path="htrace-core4-${version.htrace}.jar"/>
         <resource-root path="protobuf-java-${version.protobuf}.jar"/>
         <resource-root path="commons-beanutils-${version.commons-beanutils}.jar"/>
         <resource-root path="commons-configuration2-${version.commons-configuration2}.jar"/>

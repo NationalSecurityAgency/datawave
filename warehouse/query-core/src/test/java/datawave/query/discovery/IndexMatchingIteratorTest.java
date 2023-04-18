@@ -8,7 +8,7 @@ import datawave.query.Constants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedMapIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.javatuples.Pair;

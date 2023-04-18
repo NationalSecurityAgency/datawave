@@ -1,6 +1,5 @@
 package datawave.query.index.lookup;
 
-import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.tables.RangeStreamScanner;
@@ -131,7 +130,7 @@ public class ScannerStream extends BaseIndexStream {
                 // If the underlying RangeStreamScanner returns null we are done.
                 this.peekedElement = null;
                 this.hasPeeked = false;
-                this.backingIter = Iterators.emptyIterator();
+                this.backingIter = Collections.emptyIterator();
                 return null;
             } else {
                 

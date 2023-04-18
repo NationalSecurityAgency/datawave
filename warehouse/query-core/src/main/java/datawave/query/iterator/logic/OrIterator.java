@@ -165,7 +165,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             }
             
             // regardless of where we hit make sure to advance includeHeads if it matches there
-            if (includeHeads.get(lowest) != null) {
+            if (includeHeads != null && includeHeads.containsKey(lowest)) {
                 includeHeads = advanceIterators(lowest);
             }
         }

@@ -57,7 +57,8 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
  * <p>
  * This class creates the following Mutations or Key/Values: <br>
  * <br>
- * <table border="1" summary="">
+ * <table border="1">
+ * <caption></caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -608,8 +609,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             
             try {
                 // Create and start the stopwatch
-                final Stopwatch stopWatch = new Stopwatch();
-                stopWatch.start();
+                final Stopwatch stopWatch = Stopwatch.createStarted();
                 
                 // Create the bloom filter, which may involve NGram expansion
                 final BloomFilterWrapper result = this.createBloomFilter(fields);
