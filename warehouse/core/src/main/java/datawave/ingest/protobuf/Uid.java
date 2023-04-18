@@ -3,6 +3,17 @@
 
 package datawave.ingest.protobuf;
 
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.LazyStringArrayList;
+import com.google.protobuf.Message;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 public final class Uid {
     private Uid() {}
     
@@ -167,6 +178,77 @@ public final class Uid {
                 this.unknownFields = unknownFields.build();
                 makeExtensionsImmutable();
             }
+        }
+        
+        public boolean sameAs(final Object other) {
+            if (other == this) {
+                return true;
+            }
+            if (!(other instanceof Uid.List)) {
+                return false;
+            }
+            
+            final Uid.List otherList = (Uid.List) other;
+            if (getDescriptorForType() != otherList.getDescriptorForType()) {
+                return false;
+            }
+            
+            return iGNORE_ == otherList.iGNORE_ && cOUNT_ == otherList.cOUNT_ && sameList(uID_, otherList.uID_) && sameList(rEMOVEDUID_, otherList.rEMOVEDUID_);
+            
+        }
+        
+        public boolean sameAs2(final Object other) {
+            if (other == this) {
+                return true;
+            }
+            if (!(other instanceof Uid.List)) {
+                return false;
+            }
+            
+            final Uid.List otherList = (Uid.List) other;
+            if (getDescriptorForType() != otherList.getDescriptorForType()) {
+                return false;
+            }
+            
+            Map<Descriptors.FieldDescriptor,Object> fields = getAllFields();
+            Map<Descriptors.FieldDescriptor,Object> otherFields = otherList.getAllFields();
+            if (fields.size() != otherFields.size()) {
+                return false;
+            }
+            
+            for (Descriptors.FieldDescriptor key : fields.keySet()) {
+                Object value = fields.get(key);
+                Object otherValue = otherFields.get(key);
+                
+                if (key.isRepeated()) {
+                    if (!sameList2((java.util.List<?>) value, (java.util.List<?>) otherValue)) {
+                        return false;
+                    }
+                } else {
+                    if (!value.equals(otherValue)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        
+        private boolean sameList(java.util.List<String> list1, java.util.List<String> list2) {
+            java.util.List<String> _list1 = new ArrayList<>(list1);
+            java.util.List<String> _list2 = new ArrayList<>(list2);
+            Collections.sort(_list1);
+            Collections.sort(_list2);
+            return _list1.equals(_list2);
+        }
+        
+        private boolean sameList2(java.util.List<?> list1, java.util.List<?> list2) {
+            if (list1.size() != list2.size()) {
+                return false;
+            }
+            
+            Set<?> set1 = new HashSet<>(list1);
+            Set<?> set2 = new HashSet<>(list2);
+            return set1.equals(set2);
         }
         
         public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
