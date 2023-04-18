@@ -51,6 +51,7 @@ import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricListResponse;
 import datawave.microservice.querymetric.QueryMetricsDetailListResponse;
+import datawave.microservice.querymetric.QueryMetricsSubplanResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor;
@@ -561,8 +562,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     }
     
     // This method below needs to be changed to only show subplans
-    public QueryMetricsDetailListResponse subplan(String user, String queryId, DatawavePrincipal datawavePrincipal) {
-        QueryMetricsDetailListResponse response = new QueryMetricsDetailListResponse();
+    public QueryMetricsSubplanResponse subplan(String user, String queryId, DatawavePrincipal datawavePrincipal) {
+        QueryMetricsSubplanResponse response = new QueryMetricsSubplanResponse();
         
         try {
             enableLogs(false);
