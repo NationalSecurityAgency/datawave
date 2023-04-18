@@ -1,6 +1,7 @@
+syntax = "proto2";
+
 package datawave.webservice.query.exception;
 
-option optimize_for = LITE_RUNTIME;
 option java_package = "datawave.webservice.query.exception";
 
 message QueryExceptionType {

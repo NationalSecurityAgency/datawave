@@ -1,6 +1,7 @@
+syntax = "proto2";
+
 package datawave.webservice.query.metric;
 
-option optimize_for = LITE_RUNTIME;
 option java_package = "datawave.webservice.query.metric";
 
 import "exception_messages.proto";

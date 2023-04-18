@@ -1,6 +1,7 @@
+syntax = "proto2";
+
 package datawave.webservice.result;
 
-option optimize_for = LITE_RUNTIME;
 option java_package = "datawave.webservice.result";
 
 import "exception_messages.proto";

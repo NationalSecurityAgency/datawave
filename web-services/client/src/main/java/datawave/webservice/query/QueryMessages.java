@@ -8,165 +8,217 @@ public final class QueryMessages {
     
     public static void registerAllExtensions(com.google.protobuf.ExtensionRegistryLite registry) {}
     
-    public interface QueryImplOrBuilder extends com.google.protobuf.MessageLiteOrBuilder {
+    public static void registerAllExtensions(com.google.protobuf.ExtensionRegistry registry) {
+        registerAllExtensions((com.google.protobuf.ExtensionRegistryLite) registry);
+    }
+    
+    public interface QueryImplOrBuilder extends
+    // @@protoc_insertion_point(interface_extends:datawave.webservice.query.QueryImpl)
+                    com.google.protobuf.MessageOrBuilder {
         
-        // required string query_logic_name = 1;
         /**
          * <code>required string query_logic_name = 1;</code>
+         * 
+         * @return Whether the queryLogicName field is set.
          */
         boolean hasQueryLogicName();
         
         /**
          * <code>required string query_logic_name = 1;</code>
+         * 
+         * @return The queryLogicName.
          */
         java.lang.String getQueryLogicName();
         
         /**
          * <code>required string query_logic_name = 1;</code>
+         * 
+         * @return The bytes for queryLogicName.
          */
         com.google.protobuf.ByteString getQueryLogicNameBytes();
         
-        // required string id = 2;
         /**
          * <code>required string id = 2;</code>
+         * 
+         * @return Whether the id field is set.
          */
         boolean hasId();
         
         /**
          * <code>required string id = 2;</code>
+         * 
+         * @return The id.
          */
         java.lang.String getId();
         
         /**
          * <code>required string id = 2;</code>
+         * 
+         * @return The bytes for id.
          */
         com.google.protobuf.ByteString getIdBytes();
         
-        // optional string query_name = 3;
         /**
          * <code>optional string query_name = 3;</code>
+         * 
+         * @return Whether the queryName field is set.
          */
         boolean hasQueryName();
         
         /**
          * <code>optional string query_name = 3;</code>
+         * 
+         * @return The queryName.
          */
         java.lang.String getQueryName();
         
         /**
          * <code>optional string query_name = 3;</code>
+         * 
+         * @return The bytes for queryName.
          */
         com.google.protobuf.ByteString getQueryNameBytes();
         
-        // required string user_DN = 4;
         /**
          * <code>required string user_DN = 4;</code>
+         * 
+         * @return Whether the userDN field is set.
          */
         boolean hasUserDN();
         
         /**
          * <code>required string user_DN = 4;</code>
+         * 
+         * @return The userDN.
          */
         java.lang.String getUserDN();
         
         /**
          * <code>required string user_DN = 4;</code>
+         * 
+         * @return The bytes for userDN.
          */
         com.google.protobuf.ByteString getUserDNBytes();
         
-        // required string query = 5;
         /**
          * <code>required string query = 5;</code>
+         * 
+         * @return Whether the query field is set.
          */
         boolean hasQuery();
         
         /**
          * <code>required string query = 5;</code>
+         * 
+         * @return The query.
          */
         java.lang.String getQuery();
         
         /**
          * <code>required string query = 5;</code>
+         * 
+         * @return The bytes for query.
          */
         com.google.protobuf.ByteString getQueryBytes();
         
-        // required string query_visibility = 6;
         /**
          * <code>required string query_visibility = 6;</code>
+         * 
+         * @return Whether the queryVisibility field is set.
          */
         boolean hasQueryVisibility();
         
         /**
          * <code>required string query_visibility = 6;</code>
+         * 
+         * @return The queryVisibility.
          */
         java.lang.String getQueryVisibility();
         
         /**
          * <code>required string query_visibility = 6;</code>
+         * 
+         * @return The bytes for queryVisibility.
          */
         com.google.protobuf.ByteString getQueryVisibilityBytes();
         
-        // optional int64 begin_date = 7;
         /**
          * <code>optional int64 begin_date = 7;</code>
+         * 
+         * @return Whether the beginDate field is set.
          */
         boolean hasBeginDate();
         
         /**
          * <code>optional int64 begin_date = 7;</code>
+         * 
+         * @return The beginDate.
          */
         long getBeginDate();
         
-        // optional int64 end_date = 8;
         /**
          * <code>optional int64 end_date = 8;</code>
+         * 
+         * @return Whether the endDate field is set.
          */
         boolean hasEndDate();
         
         /**
          * <code>optional int64 end_date = 8;</code>
+         * 
+         * @return The endDate.
          */
         long getEndDate();
         
-        // required string query_authorizations = 9;
         /**
          * <code>required string query_authorizations = 9;</code>
+         * 
+         * @return Whether the queryAuthorizations field is set.
          */
         boolean hasQueryAuthorizations();
         
         /**
          * <code>required string query_authorizations = 9;</code>
+         * 
+         * @return The queryAuthorizations.
          */
         java.lang.String getQueryAuthorizations();
         
         /**
          * <code>required string query_authorizations = 9;</code>
+         * 
+         * @return The bytes for queryAuthorizations.
          */
         com.google.protobuf.ByteString getQueryAuthorizationsBytes();
         
-        // required int64 expiration_date = 10;
         /**
          * <code>required int64 expiration_date = 10;</code>
+         * 
+         * @return Whether the expirationDate field is set.
          */
         boolean hasExpirationDate();
         
         /**
          * <code>required int64 expiration_date = 10;</code>
+         * 
+         * @return The expirationDate.
          */
         long getExpirationDate();
         
-        // required uint32 pagesize = 11 [default = 0];
         /**
          * <code>required uint32 pagesize = 11 [default = 0];</code>
+         * 
+         * @return Whether the pagesize field is set.
          */
         boolean hasPagesize();
         
         /**
          * <code>required uint32 pagesize = 11 [default = 0];</code>
+         * 
+         * @return The pagesize.
          */
         int getPagesize();
         
-        // repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
          */
@@ -181,34 +233,61 @@ public final class QueryMessages {
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
          */
         int getParametersCount();
+        
+        /**
+         * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+         */
+        java.util.List<? extends datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder> getParametersOrBuilderList();
+        
+        /**
+         * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+         */
+        datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder getParametersOrBuilder(int index);
     }
     
     /**
      * Protobuf type {@code datawave.webservice.query.QueryImpl}
      */
-    public static final class QueryImpl extends com.google.protobuf.GeneratedMessageLite implements QueryImplOrBuilder {
+    public static final class QueryImpl extends com.google.protobuf.GeneratedMessageV3 implements
+    // @@protoc_insertion_point(message_implements:datawave.webservice.query.QueryImpl)
+                    QueryImplOrBuilder {
+        private static final long serialVersionUID = 0L;
+        
         // Use QueryImpl.newBuilder() to construct.
-        private QueryImpl(com.google.protobuf.GeneratedMessageLite.Builder builder) {
+        private QueryImpl(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
             super(builder);
-            
         }
         
-        private QueryImpl(boolean noInit) {}
-        
-        private static final QueryImpl defaultInstance;
-        
-        public static QueryImpl getDefaultInstance() {
-            return defaultInstance;
+        private QueryImpl() {
+            queryLogicName_ = "";
+            id_ = "";
+            queryName_ = "";
+            userDN_ = "";
+            query_ = "";
+            queryVisibility_ = "";
+            queryAuthorizations_ = "";
+            parameters_ = java.util.Collections.emptyList();
         }
         
-        public QueryImpl getDefaultInstanceForType() {
-            return defaultInstance;
+        @java.lang.Override
+        @SuppressWarnings({"unused"})
+        protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
+            return new QueryImpl();
+        }
+        
+        @java.lang.Override
+        public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
+            return this.unknownFields;
         }
         
         private QueryImpl(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
-            initFields();
+            this();
+            if (extensionRegistry == null) {
+                throw new java.lang.NullPointerException();
+            }
             int mutable_bitField0_ = 0;
+            com.google.protobuf.UnknownFieldSet.Builder unknownFields = com.google.protobuf.UnknownFieldSet.newBuilder();
             try {
                 boolean done = false;
                 while (!done) {
@@ -217,40 +296,40 @@ public final class QueryMessages {
                         case 0:
                             done = true;
                             break;
-                        default: {
-                            if (!parseUnknownField(input, extensionRegistry, tag)) {
-                                done = true;
-                            }
-                            break;
-                        }
                         case 10: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000001;
-                            queryLogicName_ = input.readBytes();
+                            queryLogicName_ = bs;
                             break;
                         }
                         case 18: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000002;
-                            id_ = input.readBytes();
+                            id_ = bs;
                             break;
                         }
                         case 26: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000004;
-                            queryName_ = input.readBytes();
+                            queryName_ = bs;
                             break;
                         }
                         case 34: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000008;
-                            userDN_ = input.readBytes();
+                            userDN_ = bs;
                             break;
                         }
                         case 42: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000010;
-                            query_ = input.readBytes();
+                            query_ = bs;
                             break;
                         }
                         case 50: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000020;
-                            queryVisibility_ = input.readBytes();
+                            queryVisibility_ = bs;
                             break;
                         }
                         case 56: {
@@ -264,8 +343,9 @@ public final class QueryMessages {
                             break;
                         }
                         case 74: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000100;
-                            queryAuthorizations_ = input.readBytes();
+                            queryAuthorizations_ = bs;
                             break;
                         }
                         case 80: {
@@ -279,70 +359,90 @@ public final class QueryMessages {
                             break;
                         }
                         case 98: {
-                            if (!((mutable_bitField0_ & 0x00000800) == 0x00000800)) {
+                            if (!((mutable_bitField0_ & 0x00000800) != 0)) {
                                 parameters_ = new java.util.ArrayList<datawave.webservice.query.QueryMessages.QueryImpl.Parameter>();
                                 mutable_bitField0_ |= 0x00000800;
                             }
                             parameters_.add(input.readMessage(datawave.webservice.query.QueryMessages.QueryImpl.Parameter.PARSER, extensionRegistry));
                             break;
                         }
+                        default: {
+                            if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                                done = true;
+                            }
+                            break;
+                        }
                     }
                 }
             } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                 throw e.setUnfinishedMessage(this);
+            } catch (com.google.protobuf.UninitializedMessageException e) {
+                throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
             } catch (java.io.IOException e) {
-                throw new com.google.protobuf.InvalidProtocolBufferException(e.getMessage()).setUnfinishedMessage(this);
+                throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
             } finally {
-                if (((mutable_bitField0_ & 0x00000800) == 0x00000800)) {
+                if (((mutable_bitField0_ & 0x00000800) != 0)) {
                     parameters_ = java.util.Collections.unmodifiableList(parameters_);
                 }
+                this.unknownFields = unknownFields.build();
                 makeExtensionsImmutable();
             }
         }
         
-        public static com.google.protobuf.Parser<QueryImpl> PARSER = new com.google.protobuf.AbstractParser<QueryImpl>() {
-            public QueryImpl parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                            throws com.google.protobuf.InvalidProtocolBufferException {
-                return new QueryImpl(input, extensionRegistry);
-            }
-        };
-        
-        @java.lang.Override
-        public com.google.protobuf.Parser<QueryImpl> getParserForType() {
-            return PARSER;
+        public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+            return datawave.webservice.query.QueryMessages.internal_static_datawave_webservice_query_QueryImpl_descriptor;
         }
         
-        public interface ParameterOrBuilder extends com.google.protobuf.MessageLiteOrBuilder {
+        @java.lang.Override
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+            return datawave.webservice.query.QueryMessages.internal_static_datawave_webservice_query_QueryImpl_fieldAccessorTable
+                            .ensureFieldAccessorsInitialized(datawave.webservice.query.QueryMessages.QueryImpl.class,
+                                            datawave.webservice.query.QueryMessages.QueryImpl.Builder.class);
+        }
+        
+        public interface ParameterOrBuilder extends
+        // @@protoc_insertion_point(interface_extends:datawave.webservice.query.QueryImpl.Parameter)
+                        com.google.protobuf.MessageOrBuilder {
             
-            // required string parameter_name = 1;
             /**
              * <code>required string parameter_name = 1;</code>
+             * 
+             * @return Whether the parameterName field is set.
              */
             boolean hasParameterName();
             
             /**
              * <code>required string parameter_name = 1;</code>
+             * 
+             * @return The parameterName.
              */
             java.lang.String getParameterName();
             
             /**
              * <code>required string parameter_name = 1;</code>
+             * 
+             * @return The bytes for parameterName.
              */
             com.google.protobuf.ByteString getParameterNameBytes();
             
-            // required string parameter_value = 2;
             /**
              * <code>required string parameter_value = 2;</code>
+             * 
+             * @return Whether the parameterValue field is set.
              */
             boolean hasParameterValue();
             
             /**
              * <code>required string parameter_value = 2;</code>
+             * 
+             * @return The parameterValue.
              */
             java.lang.String getParameterValue();
             
             /**
              * <code>required string parameter_value = 2;</code>
+             * 
+             * @return The bytes for parameterValue.
              */
             com.google.protobuf.ByteString getParameterValueBytes();
         }
@@ -350,29 +450,40 @@ public final class QueryMessages {
         /**
          * Protobuf type {@code datawave.webservice.query.QueryImpl.Parameter}
          */
-        public static final class Parameter extends com.google.protobuf.GeneratedMessageLite implements ParameterOrBuilder {
+        public static final class Parameter extends com.google.protobuf.GeneratedMessageV3 implements
+        // @@protoc_insertion_point(message_implements:datawave.webservice.query.QueryImpl.Parameter)
+                        ParameterOrBuilder {
+            private static final long serialVersionUID = 0L;
+            
             // Use Parameter.newBuilder() to construct.
-            private Parameter(com.google.protobuf.GeneratedMessageLite.Builder builder) {
+            private Parameter(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
                 super(builder);
-                
             }
             
-            private Parameter(boolean noInit) {}
-            
-            private static final Parameter defaultInstance;
-            
-            public static Parameter getDefaultInstance() {
-                return defaultInstance;
+            private Parameter() {
+                parameterName_ = "";
+                parameterValue_ = "";
             }
             
-            public Parameter getDefaultInstanceForType() {
-                return defaultInstance;
+            @java.lang.Override
+            @SuppressWarnings({"unused"})
+            protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
+                return new Parameter();
+            }
+            
+            @java.lang.Override
+            public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
+                return this.unknownFields;
             }
             
             private Parameter(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws com.google.protobuf.InvalidProtocolBufferException {
-                initFields();
+                this();
+                if (extensionRegistry == null) {
+                    throw new java.lang.NullPointerException();
+                }
                 int mutable_bitField0_ = 0;
+                com.google.protobuf.UnknownFieldSet.Builder unknownFields = com.google.protobuf.UnknownFieldSet.newBuilder();
                 try {
                     boolean done = false;
                     while (!done) {
@@ -381,60 +492,69 @@ public final class QueryMessages {
                             case 0:
                                 done = true;
                                 break;
-                            default: {
-                                if (!parseUnknownField(input, extensionRegistry, tag)) {
-                                    done = true;
-                                }
-                                break;
-                            }
                             case 10: {
+                                com.google.protobuf.ByteString bs = input.readBytes();
                                 bitField0_ |= 0x00000001;
-                                parameterName_ = input.readBytes();
+                                parameterName_ = bs;
                                 break;
                             }
                             case 18: {
+                                com.google.protobuf.ByteString bs = input.readBytes();
                                 bitField0_ |= 0x00000002;
-                                parameterValue_ = input.readBytes();
+                                parameterValue_ = bs;
+                                break;
+                            }
+                            default: {
+                                if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                                    done = true;
+                                }
                                 break;
                             }
                         }
                     }
                 } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                     throw e.setUnfinishedMessage(this);
+                } catch (com.google.protobuf.UninitializedMessageException e) {
+                    throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
                 } catch (java.io.IOException e) {
-                    throw new com.google.protobuf.InvalidProtocolBufferException(e.getMessage()).setUnfinishedMessage(this);
+                    throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
                 } finally {
+                    this.unknownFields = unknownFields.build();
                     makeExtensionsImmutable();
                 }
             }
             
-            public static com.google.protobuf.Parser<Parameter> PARSER = new com.google.protobuf.AbstractParser<Parameter>() {
-                public Parameter parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                                throws com.google.protobuf.InvalidProtocolBufferException {
-                    return new Parameter(input, extensionRegistry);
-                }
-            };
+            public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+                return datawave.webservice.query.QueryMessages.internal_static_datawave_webservice_query_QueryImpl_Parameter_descriptor;
+            }
             
             @java.lang.Override
-            public com.google.protobuf.Parser<Parameter> getParserForType() {
-                return PARSER;
+            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+                return datawave.webservice.query.QueryMessages.internal_static_datawave_webservice_query_QueryImpl_Parameter_fieldAccessorTable
+                                .ensureFieldAccessorsInitialized(datawave.webservice.query.QueryMessages.QueryImpl.Parameter.class,
+                                                datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder.class);
             }
             
             private int bitField0_;
-            // required string parameter_name = 1;
             public static final int PARAMETER_NAME_FIELD_NUMBER = 1;
-            private java.lang.Object parameterName_;
+            private volatile java.lang.Object parameterName_;
             
             /**
              * <code>required string parameter_name = 1;</code>
+             * 
+             * @return Whether the parameterName field is set.
              */
+            @java.lang.Override
             public boolean hasParameterName() {
-                return ((bitField0_ & 0x00000001) == 0x00000001);
+                return ((bitField0_ & 0x00000001) != 0);
             }
             
             /**
              * <code>required string parameter_name = 1;</code>
+             * 
+             * @return The parameterName.
              */
+            @java.lang.Override
             public java.lang.String getParameterName() {
                 java.lang.Object ref = parameterName_;
                 if (ref instanceof java.lang.String) {
@@ -451,7 +571,10 @@ public final class QueryMessages {
             
             /**
              * <code>required string parameter_name = 1;</code>
+             * 
+             * @return The bytes for parameterName.
              */
+            @java.lang.Override
             public com.google.protobuf.ByteString getParameterNameBytes() {
                 java.lang.Object ref = parameterName_;
                 if (ref instanceof java.lang.String) {
@@ -463,20 +586,25 @@ public final class QueryMessages {
                 }
             }
             
-            // required string parameter_value = 2;
             public static final int PARAMETER_VALUE_FIELD_NUMBER = 2;
-            private java.lang.Object parameterValue_;
+            private volatile java.lang.Object parameterValue_;
             
             /**
              * <code>required string parameter_value = 2;</code>
+             * 
+             * @return Whether the parameterValue field is set.
              */
+            @java.lang.Override
             public boolean hasParameterValue() {
-                return ((bitField0_ & 0x00000002) == 0x00000002);
+                return ((bitField0_ & 0x00000002) != 0);
             }
             
             /**
              * <code>required string parameter_value = 2;</code>
+             * 
+             * @return The parameterValue.
              */
+            @java.lang.Override
             public java.lang.String getParameterValue() {
                 java.lang.Object ref = parameterValue_;
                 if (ref instanceof java.lang.String) {
@@ -493,7 +621,10 @@ public final class QueryMessages {
             
             /**
              * <code>required string parameter_value = 2;</code>
+             * 
+             * @return The bytes for parameterValue.
              */
+            @java.lang.Override
             public com.google.protobuf.ByteString getParameterValueBytes() {
                 java.lang.Object ref = parameterValue_;
                 if (ref instanceof java.lang.String) {
@@ -505,17 +636,15 @@ public final class QueryMessages {
                 }
             }
             
-            private void initFields() {
-                parameterName_ = "";
-                parameterValue_ = "";
-            }
-            
             private byte memoizedIsInitialized = -1;
             
+            @java.lang.Override
             public final boolean isInitialized() {
                 byte isInitialized = memoizedIsInitialized;
-                if (isInitialized != -1)
-                    return isInitialized == 1;
+                if (isInitialized == 1)
+                    return true;
+                if (isInitialized == 0)
+                    return false;
                 
                 if (!hasParameterName()) {
                     memoizedIsInitialized = 0;
@@ -529,39 +658,90 @@ public final class QueryMessages {
                 return true;
             }
             
+            @java.lang.Override
             public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-                getSerializedSize();
-                if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                    output.writeBytes(1, getParameterNameBytes());
+                if (((bitField0_ & 0x00000001) != 0)) {
+                    com.google.protobuf.GeneratedMessageV3.writeString(output, 1, parameterName_);
                 }
-                if (((bitField0_ & 0x00000002) == 0x00000002)) {
-                    output.writeBytes(2, getParameterValueBytes());
+                if (((bitField0_ & 0x00000002) != 0)) {
+                    com.google.protobuf.GeneratedMessageV3.writeString(output, 2, parameterValue_);
                 }
+                unknownFields.writeTo(output);
             }
             
-            private int memoizedSerializedSize = -1;
-            
+            @java.lang.Override
             public int getSerializedSize() {
-                int size = memoizedSerializedSize;
+                int size = memoizedSize;
                 if (size != -1)
                     return size;
                 
                 size = 0;
-                if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                    size += com.google.protobuf.CodedOutputStream.computeBytesSize(1, getParameterNameBytes());
+                if (((bitField0_ & 0x00000001) != 0)) {
+                    size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, parameterName_);
                 }
-                if (((bitField0_ & 0x00000002) == 0x00000002)) {
-                    size += com.google.protobuf.CodedOutputStream.computeBytesSize(2, getParameterValueBytes());
+                if (((bitField0_ & 0x00000002) != 0)) {
+                    size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, parameterValue_);
                 }
-                memoizedSerializedSize = size;
+                size += unknownFields.getSerializedSize();
+                memoizedSize = size;
                 return size;
             }
             
-            private static final long serialVersionUID = 0L;
+            @java.lang.Override
+            public boolean equals(final java.lang.Object obj) {
+                if (obj == this) {
+                    return true;
+                }
+                if (!(obj instanceof datawave.webservice.query.QueryMessages.QueryImpl.Parameter)) {
+                    return super.equals(obj);
+                }
+                datawave.webservice.query.QueryMessages.QueryImpl.Parameter other = (datawave.webservice.query.QueryMessages.QueryImpl.Parameter) obj;
+                
+                if (hasParameterName() != other.hasParameterName())
+                    return false;
+                if (hasParameterName()) {
+                    if (!getParameterName().equals(other.getParameterName()))
+                        return false;
+                }
+                if (hasParameterValue() != other.hasParameterValue())
+                    return false;
+                if (hasParameterValue()) {
+                    if (!getParameterValue().equals(other.getParameterValue()))
+                        return false;
+                }
+                if (!unknownFields.equals(other.unknownFields))
+                    return false;
+                return true;
+            }
             
             @java.lang.Override
-            protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
-                return super.writeReplace();
+            public int hashCode() {
+                if (memoizedHashCode != 0) {
+                    return memoizedHashCode;
+                }
+                int hash = 41;
+                hash = (19 * hash) + getDescriptor().hashCode();
+                if (hasParameterName()) {
+                    hash = (37 * hash) + PARAMETER_NAME_FIELD_NUMBER;
+                    hash = (53 * hash) + getParameterName().hashCode();
+                }
+                if (hasParameterValue()) {
+                    hash = (37 * hash) + PARAMETER_VALUE_FIELD_NUMBER;
+                    hash = (53 * hash) + getParameterValue().hashCode();
+                }
+                hash = (29 * hash) + unknownFields.hashCode();
+                memoizedHashCode = hash;
+                return hash;
+            }
+            
+            public static datawave.webservice.query.QueryMessages.QueryImpl.Parameter parseFrom(java.nio.ByteBuffer data)
+                            throws com.google.protobuf.InvalidProtocolBufferException {
+                return PARSER.parseFrom(data);
+            }
+            
+            public static datawave.webservice.query.QueryMessages.QueryImpl.Parameter parseFrom(java.nio.ByteBuffer data,
+                            com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+                return PARSER.parseFrom(data, extensionRegistry);
             }
             
             public static datawave.webservice.query.QueryMessages.QueryImpl.Parameter parseFrom(com.google.protobuf.ByteString data)
@@ -585,66 +765,89 @@ public final class QueryMessages {
             }
             
             public static datawave.webservice.query.QueryMessages.QueryImpl.Parameter parseFrom(java.io.InputStream input) throws java.io.IOException {
-                return PARSER.parseFrom(input);
+                return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
             }
             
             public static datawave.webservice.query.QueryMessages.QueryImpl.Parameter parseFrom(java.io.InputStream input,
                             com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-                return PARSER.parseFrom(input, extensionRegistry);
+                return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
             }
             
             public static datawave.webservice.query.QueryMessages.QueryImpl.Parameter parseDelimitedFrom(java.io.InputStream input) throws java.io.IOException {
-                return PARSER.parseDelimitedFrom(input);
+                return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
             }
             
             public static datawave.webservice.query.QueryMessages.QueryImpl.Parameter parseDelimitedFrom(java.io.InputStream input,
                             com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-                return PARSER.parseDelimitedFrom(input, extensionRegistry);
+                return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input, extensionRegistry);
             }
             
             public static datawave.webservice.query.QueryMessages.QueryImpl.Parameter parseFrom(com.google.protobuf.CodedInputStream input)
                             throws java.io.IOException {
-                return PARSER.parseFrom(input);
+                return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
             }
             
             public static datawave.webservice.query.QueryMessages.QueryImpl.Parameter parseFrom(com.google.protobuf.CodedInputStream input,
                             com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-                return PARSER.parseFrom(input, extensionRegistry);
+                return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
             }
             
-            public static Builder newBuilder() {
-                return Builder.create();
-            }
-            
+            @java.lang.Override
             public Builder newBuilderForType() {
                 return newBuilder();
             }
             
-            public static Builder newBuilder(datawave.webservice.query.QueryMessages.QueryImpl.Parameter prototype) {
-                return newBuilder().mergeFrom(prototype);
+            public static Builder newBuilder() {
+                return DEFAULT_INSTANCE.toBuilder();
             }
             
+            public static Builder newBuilder(datawave.webservice.query.QueryMessages.QueryImpl.Parameter prototype) {
+                return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+            }
+            
+            @java.lang.Override
             public Builder toBuilder() {
-                return newBuilder(this);
+                return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+            }
+            
+            @java.lang.Override
+            protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+                Builder builder = new Builder(parent);
+                return builder;
             }
             
             /**
              * Protobuf type {@code datawave.webservice.query.QueryImpl.Parameter}
              */
-            public static final class Builder extends
-                            com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.query.QueryMessages.QueryImpl.Parameter,Builder> implements
+            public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+            // @@protoc_insertion_point(builder_implements:datawave.webservice.query.QueryImpl.Parameter)
                             datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder {
+                public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+                    return datawave.webservice.query.QueryMessages.internal_static_datawave_webservice_query_QueryImpl_Parameter_descriptor;
+                }
+                
+                @java.lang.Override
+                protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+                    return datawave.webservice.query.QueryMessages.internal_static_datawave_webservice_query_QueryImpl_Parameter_fieldAccessorTable
+                                    .ensureFieldAccessorsInitialized(datawave.webservice.query.QueryMessages.QueryImpl.Parameter.class,
+                                                    datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder.class);
+                }
+                
                 // Construct using datawave.webservice.query.QueryMessages.QueryImpl.Parameter.newBuilder()
                 private Builder() {
                     maybeForceBuilderInitialization();
                 }
                 
-                private void maybeForceBuilderInitialization() {}
-                
-                private static Builder create() {
-                    return new Builder();
+                private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+                    super(parent);
+                    maybeForceBuilderInitialization();
                 }
                 
+                private void maybeForceBuilderInitialization() {
+                    if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {}
+                }
+                
+                @java.lang.Override
                 public Builder clear() {
                     super.clear();
                     parameterName_ = "";
@@ -654,14 +857,17 @@ public final class QueryMessages {
                     return this;
                 }
                 
-                public Builder clone() {
-                    return create().mergeFrom(buildPartial());
+                @java.lang.Override
+                public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+                    return datawave.webservice.query.QueryMessages.internal_static_datawave_webservice_query_QueryImpl_Parameter_descriptor;
                 }
                 
+                @java.lang.Override
                 public datawave.webservice.query.QueryMessages.QueryImpl.Parameter getDefaultInstanceForType() {
                     return datawave.webservice.query.QueryMessages.QueryImpl.Parameter.getDefaultInstance();
                 }
                 
+                @java.lang.Override
                 public datawave.webservice.query.QueryMessages.QueryImpl.Parameter build() {
                     datawave.webservice.query.QueryMessages.QueryImpl.Parameter result = buildPartial();
                     if (!result.isInitialized()) {
@@ -670,20 +876,62 @@ public final class QueryMessages {
                     return result;
                 }
                 
+                @java.lang.Override
                 public datawave.webservice.query.QueryMessages.QueryImpl.Parameter buildPartial() {
                     datawave.webservice.query.QueryMessages.QueryImpl.Parameter result = new datawave.webservice.query.QueryMessages.QueryImpl.Parameter(this);
                     int from_bitField0_ = bitField0_;
                     int to_bitField0_ = 0;
-                    if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+                    if (((from_bitField0_ & 0x00000001) != 0)) {
                         to_bitField0_ |= 0x00000001;
                     }
                     result.parameterName_ = parameterName_;
-                    if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+                    if (((from_bitField0_ & 0x00000002) != 0)) {
                         to_bitField0_ |= 0x00000002;
                     }
                     result.parameterValue_ = parameterValue_;
                     result.bitField0_ = to_bitField0_;
+                    onBuilt();
                     return result;
+                }
+                
+                @java.lang.Override
+                public Builder clone() {
+                    return super.clone();
+                }
+                
+                @java.lang.Override
+                public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                    return super.setField(field, value);
+                }
+                
+                @java.lang.Override
+                public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
+                    return super.clearField(field);
+                }
+                
+                @java.lang.Override
+                public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+                    return super.clearOneof(oneof);
+                }
+                
+                @java.lang.Override
+                public Builder setRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
+                    return super.setRepeatedField(field, index, value);
+                }
+                
+                @java.lang.Override
+                public Builder addRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                    return super.addRepeatedField(field, value);
+                }
+                
+                @java.lang.Override
+                public Builder mergeFrom(com.google.protobuf.Message other) {
+                    if (other instanceof datawave.webservice.query.QueryMessages.QueryImpl.Parameter) {
+                        return mergeFrom((datawave.webservice.query.QueryMessages.QueryImpl.Parameter) other);
+                    } else {
+                        super.mergeFrom(other);
+                        return this;
+                    }
                 }
                 
                 public Builder mergeFrom(datawave.webservice.query.QueryMessages.QueryImpl.Parameter other) {
@@ -692,28 +940,30 @@ public final class QueryMessages {
                     if (other.hasParameterName()) {
                         bitField0_ |= 0x00000001;
                         parameterName_ = other.parameterName_;
-                        
+                        onChanged();
                     }
                     if (other.hasParameterValue()) {
                         bitField0_ |= 0x00000002;
                         parameterValue_ = other.parameterValue_;
-                        
+                        onChanged();
                     }
+                    this.mergeUnknownFields(other.unknownFields);
+                    onChanged();
                     return this;
                 }
                 
+                @java.lang.Override
                 public final boolean isInitialized() {
                     if (!hasParameterName()) {
-                        
                         return false;
                     }
                     if (!hasParameterValue()) {
-                        
                         return false;
                     }
                     return true;
                 }
                 
+                @java.lang.Override
                 public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                                 throws java.io.IOException {
                     datawave.webservice.query.QueryMessages.QueryImpl.Parameter parsedMessage = null;
@@ -721,7 +971,7 @@ public final class QueryMessages {
                         parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
                     } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                         parsedMessage = (datawave.webservice.query.QueryMessages.QueryImpl.Parameter) e.getUnfinishedMessage();
-                        throw e;
+                        throw e.unwrapIOException();
                     } finally {
                         if (parsedMessage != null) {
                             mergeFrom(parsedMessage);
@@ -732,24 +982,30 @@ public final class QueryMessages {
                 
                 private int bitField0_;
                 
-                // required string parameter_name = 1;
                 private java.lang.Object parameterName_ = "";
                 
                 /**
                  * <code>required string parameter_name = 1;</code>
+                 * 
+                 * @return Whether the parameterName field is set.
                  */
                 public boolean hasParameterName() {
-                    return ((bitField0_ & 0x00000001) == 0x00000001);
+                    return ((bitField0_ & 0x00000001) != 0);
                 }
                 
                 /**
                  * <code>required string parameter_name = 1;</code>
+                 * 
+                 * @return The parameterName.
                  */
                 public java.lang.String getParameterName() {
                     java.lang.Object ref = parameterName_;
                     if (!(ref instanceof java.lang.String)) {
-                        java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                        parameterName_ = s;
+                        com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                        java.lang.String s = bs.toStringUtf8();
+                        if (bs.isValidUtf8()) {
+                            parameterName_ = s;
+                        }
                         return s;
                     } else {
                         return (java.lang.String) ref;
@@ -758,6 +1014,8 @@ public final class QueryMessages {
                 
                 /**
                  * <code>required string parameter_name = 1;</code>
+                 * 
+                 * @return The bytes for parameterName.
                  */
                 public com.google.protobuf.ByteString getParameterNameBytes() {
                     java.lang.Object ref = parameterName_;
@@ -772,6 +1030,10 @@ public final class QueryMessages {
                 
                 /**
                  * <code>required string parameter_name = 1;</code>
+                 * 
+                 * @param value
+                 *            The parameterName to set.
+                 * @return This builder for chaining.
                  */
                 public Builder setParameterName(java.lang.String value) {
                     if (value == null) {
@@ -779,22 +1041,28 @@ public final class QueryMessages {
                     }
                     bitField0_ |= 0x00000001;
                     parameterName_ = value;
-                    
+                    onChanged();
                     return this;
                 }
                 
                 /**
                  * <code>required string parameter_name = 1;</code>
+                 * 
+                 * @return This builder for chaining.
                  */
                 public Builder clearParameterName() {
                     bitField0_ = (bitField0_ & ~0x00000001);
                     parameterName_ = getDefaultInstance().getParameterName();
-                    
+                    onChanged();
                     return this;
                 }
                 
                 /**
                  * <code>required string parameter_name = 1;</code>
+                 * 
+                 * @param value
+                 *            The bytes for parameterName to set.
+                 * @return This builder for chaining.
                  */
                 public Builder setParameterNameBytes(com.google.protobuf.ByteString value) {
                     if (value == null) {
@@ -802,28 +1070,34 @@ public final class QueryMessages {
                     }
                     bitField0_ |= 0x00000001;
                     parameterName_ = value;
-                    
+                    onChanged();
                     return this;
                 }
                 
-                // required string parameter_value = 2;
                 private java.lang.Object parameterValue_ = "";
                 
                 /**
                  * <code>required string parameter_value = 2;</code>
+                 * 
+                 * @return Whether the parameterValue field is set.
                  */
                 public boolean hasParameterValue() {
-                    return ((bitField0_ & 0x00000002) == 0x00000002);
+                    return ((bitField0_ & 0x00000002) != 0);
                 }
                 
                 /**
                  * <code>required string parameter_value = 2;</code>
+                 * 
+                 * @return The parameterValue.
                  */
                 public java.lang.String getParameterValue() {
                     java.lang.Object ref = parameterValue_;
                     if (!(ref instanceof java.lang.String)) {
-                        java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                        parameterValue_ = s;
+                        com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                        java.lang.String s = bs.toStringUtf8();
+                        if (bs.isValidUtf8()) {
+                            parameterValue_ = s;
+                        }
                         return s;
                     } else {
                         return (java.lang.String) ref;
@@ -832,6 +1106,8 @@ public final class QueryMessages {
                 
                 /**
                  * <code>required string parameter_value = 2;</code>
+                 * 
+                 * @return The bytes for parameterValue.
                  */
                 public com.google.protobuf.ByteString getParameterValueBytes() {
                     java.lang.Object ref = parameterValue_;
@@ -846,6 +1122,10 @@ public final class QueryMessages {
                 
                 /**
                  * <code>required string parameter_value = 2;</code>
+                 * 
+                 * @param value
+                 *            The parameterValue to set.
+                 * @return This builder for chaining.
                  */
                 public Builder setParameterValue(java.lang.String value) {
                     if (value == null) {
@@ -853,22 +1133,28 @@ public final class QueryMessages {
                     }
                     bitField0_ |= 0x00000002;
                     parameterValue_ = value;
-                    
+                    onChanged();
                     return this;
                 }
                 
                 /**
                  * <code>required string parameter_value = 2;</code>
+                 * 
+                 * @return This builder for chaining.
                  */
                 public Builder clearParameterValue() {
                     bitField0_ = (bitField0_ & ~0x00000002);
                     parameterValue_ = getDefaultInstance().getParameterValue();
-                    
+                    onChanged();
                     return this;
                 }
                 
                 /**
                  * <code>required string parameter_value = 2;</code>
+                 * 
+                 * @param value
+                 *            The bytes for parameterValue to set.
+                 * @return This builder for chaining.
                  */
                 public Builder setParameterValueBytes(com.google.protobuf.ByteString value) {
                     if (value == null) {
@@ -876,36 +1162,78 @@ public final class QueryMessages {
                     }
                     bitField0_ |= 0x00000002;
                     parameterValue_ = value;
-                    
+                    onChanged();
                     return this;
+                }
+                
+                @java.lang.Override
+                public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                    return super.setUnknownFields(unknownFields);
+                }
+                
+                @java.lang.Override
+                public final Builder mergeUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                    return super.mergeUnknownFields(unknownFields);
                 }
                 
                 // @@protoc_insertion_point(builder_scope:datawave.webservice.query.QueryImpl.Parameter)
             }
             
+            // @@protoc_insertion_point(class_scope:datawave.webservice.query.QueryImpl.Parameter)
+            private static final datawave.webservice.query.QueryMessages.QueryImpl.Parameter DEFAULT_INSTANCE;
             static {
-                defaultInstance = new Parameter(true);
-                defaultInstance.initFields();
+                DEFAULT_INSTANCE = new datawave.webservice.query.QueryMessages.QueryImpl.Parameter();
             }
             
-            // @@protoc_insertion_point(class_scope:datawave.webservice.query.QueryImpl.Parameter)
+            public static datawave.webservice.query.QueryMessages.QueryImpl.Parameter getDefaultInstance() {
+                return DEFAULT_INSTANCE;
+            }
+            
+            @java.lang.Deprecated
+            public static final com.google.protobuf.Parser<Parameter> PARSER = new com.google.protobuf.AbstractParser<Parameter>() {
+                @java.lang.Override
+                public Parameter parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                                throws com.google.protobuf.InvalidProtocolBufferException {
+                    return new Parameter(input, extensionRegistry);
+                }
+            };
+            
+            public static com.google.protobuf.Parser<Parameter> parser() {
+                return PARSER;
+            }
+            
+            @java.lang.Override
+            public com.google.protobuf.Parser<Parameter> getParserForType() {
+                return PARSER;
+            }
+            
+            @java.lang.Override
+            public datawave.webservice.query.QueryMessages.QueryImpl.Parameter getDefaultInstanceForType() {
+                return DEFAULT_INSTANCE;
+            }
+            
         }
         
         private int bitField0_;
-        // required string query_logic_name = 1;
         public static final int QUERY_LOGIC_NAME_FIELD_NUMBER = 1;
-        private java.lang.Object queryLogicName_;
+        private volatile java.lang.Object queryLogicName_;
         
         /**
          * <code>required string query_logic_name = 1;</code>
+         * 
+         * @return Whether the queryLogicName field is set.
          */
+        @java.lang.Override
         public boolean hasQueryLogicName() {
-            return ((bitField0_ & 0x00000001) == 0x00000001);
+            return ((bitField0_ & 0x00000001) != 0);
         }
         
         /**
          * <code>required string query_logic_name = 1;</code>
+         * 
+         * @return The queryLogicName.
          */
+        @java.lang.Override
         public java.lang.String getQueryLogicName() {
             java.lang.Object ref = queryLogicName_;
             if (ref instanceof java.lang.String) {
@@ -922,7 +1250,10 @@ public final class QueryMessages {
         
         /**
          * <code>required string query_logic_name = 1;</code>
+         * 
+         * @return The bytes for queryLogicName.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString getQueryLogicNameBytes() {
             java.lang.Object ref = queryLogicName_;
             if (ref instanceof java.lang.String) {
@@ -934,20 +1265,25 @@ public final class QueryMessages {
             }
         }
         
-        // required string id = 2;
         public static final int ID_FIELD_NUMBER = 2;
-        private java.lang.Object id_;
+        private volatile java.lang.Object id_;
         
         /**
          * <code>required string id = 2;</code>
+         * 
+         * @return Whether the id field is set.
          */
+        @java.lang.Override
         public boolean hasId() {
-            return ((bitField0_ & 0x00000002) == 0x00000002);
+            return ((bitField0_ & 0x00000002) != 0);
         }
         
         /**
          * <code>required string id = 2;</code>
+         * 
+         * @return The id.
          */
+        @java.lang.Override
         public java.lang.String getId() {
             java.lang.Object ref = id_;
             if (ref instanceof java.lang.String) {
@@ -964,7 +1300,10 @@ public final class QueryMessages {
         
         /**
          * <code>required string id = 2;</code>
+         * 
+         * @return The bytes for id.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString getIdBytes() {
             java.lang.Object ref = id_;
             if (ref instanceof java.lang.String) {
@@ -976,20 +1315,25 @@ public final class QueryMessages {
             }
         }
         
-        // optional string query_name = 3;
         public static final int QUERY_NAME_FIELD_NUMBER = 3;
-        private java.lang.Object queryName_;
+        private volatile java.lang.Object queryName_;
         
         /**
          * <code>optional string query_name = 3;</code>
+         * 
+         * @return Whether the queryName field is set.
          */
+        @java.lang.Override
         public boolean hasQueryName() {
-            return ((bitField0_ & 0x00000004) == 0x00000004);
+            return ((bitField0_ & 0x00000004) != 0);
         }
         
         /**
          * <code>optional string query_name = 3;</code>
+         * 
+         * @return The queryName.
          */
+        @java.lang.Override
         public java.lang.String getQueryName() {
             java.lang.Object ref = queryName_;
             if (ref instanceof java.lang.String) {
@@ -1006,7 +1350,10 @@ public final class QueryMessages {
         
         /**
          * <code>optional string query_name = 3;</code>
+         * 
+         * @return The bytes for queryName.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString getQueryNameBytes() {
             java.lang.Object ref = queryName_;
             if (ref instanceof java.lang.String) {
@@ -1018,20 +1365,25 @@ public final class QueryMessages {
             }
         }
         
-        // required string user_DN = 4;
         public static final int USER_DN_FIELD_NUMBER = 4;
-        private java.lang.Object userDN_;
+        private volatile java.lang.Object userDN_;
         
         /**
          * <code>required string user_DN = 4;</code>
+         * 
+         * @return Whether the userDN field is set.
          */
+        @java.lang.Override
         public boolean hasUserDN() {
-            return ((bitField0_ & 0x00000008) == 0x00000008);
+            return ((bitField0_ & 0x00000008) != 0);
         }
         
         /**
          * <code>required string user_DN = 4;</code>
+         * 
+         * @return The userDN.
          */
+        @java.lang.Override
         public java.lang.String getUserDN() {
             java.lang.Object ref = userDN_;
             if (ref instanceof java.lang.String) {
@@ -1048,7 +1400,10 @@ public final class QueryMessages {
         
         /**
          * <code>required string user_DN = 4;</code>
+         * 
+         * @return The bytes for userDN.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString getUserDNBytes() {
             java.lang.Object ref = userDN_;
             if (ref instanceof java.lang.String) {
@@ -1060,20 +1415,25 @@ public final class QueryMessages {
             }
         }
         
-        // required string query = 5;
         public static final int QUERY_FIELD_NUMBER = 5;
-        private java.lang.Object query_;
+        private volatile java.lang.Object query_;
         
         /**
          * <code>required string query = 5;</code>
+         * 
+         * @return Whether the query field is set.
          */
+        @java.lang.Override
         public boolean hasQuery() {
-            return ((bitField0_ & 0x00000010) == 0x00000010);
+            return ((bitField0_ & 0x00000010) != 0);
         }
         
         /**
          * <code>required string query = 5;</code>
+         * 
+         * @return The query.
          */
+        @java.lang.Override
         public java.lang.String getQuery() {
             java.lang.Object ref = query_;
             if (ref instanceof java.lang.String) {
@@ -1090,7 +1450,10 @@ public final class QueryMessages {
         
         /**
          * <code>required string query = 5;</code>
+         * 
+         * @return The bytes for query.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString getQueryBytes() {
             java.lang.Object ref = query_;
             if (ref instanceof java.lang.String) {
@@ -1102,20 +1465,25 @@ public final class QueryMessages {
             }
         }
         
-        // required string query_visibility = 6;
         public static final int QUERY_VISIBILITY_FIELD_NUMBER = 6;
-        private java.lang.Object queryVisibility_;
+        private volatile java.lang.Object queryVisibility_;
         
         /**
          * <code>required string query_visibility = 6;</code>
+         * 
+         * @return Whether the queryVisibility field is set.
          */
+        @java.lang.Override
         public boolean hasQueryVisibility() {
-            return ((bitField0_ & 0x00000020) == 0x00000020);
+            return ((bitField0_ & 0x00000020) != 0);
         }
         
         /**
          * <code>required string query_visibility = 6;</code>
+         * 
+         * @return The queryVisibility.
          */
+        @java.lang.Override
         public java.lang.String getQueryVisibility() {
             java.lang.Object ref = queryVisibility_;
             if (ref instanceof java.lang.String) {
@@ -1132,7 +1500,10 @@ public final class QueryMessages {
         
         /**
          * <code>required string query_visibility = 6;</code>
+         * 
+         * @return The bytes for queryVisibility.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString getQueryVisibilityBytes() {
             java.lang.Object ref = queryVisibility_;
             if (ref instanceof java.lang.String) {
@@ -1144,56 +1515,71 @@ public final class QueryMessages {
             }
         }
         
-        // optional int64 begin_date = 7;
         public static final int BEGIN_DATE_FIELD_NUMBER = 7;
         private long beginDate_;
         
         /**
          * <code>optional int64 begin_date = 7;</code>
+         * 
+         * @return Whether the beginDate field is set.
          */
+        @java.lang.Override
         public boolean hasBeginDate() {
-            return ((bitField0_ & 0x00000040) == 0x00000040);
+            return ((bitField0_ & 0x00000040) != 0);
         }
         
         /**
          * <code>optional int64 begin_date = 7;</code>
+         * 
+         * @return The beginDate.
          */
+        @java.lang.Override
         public long getBeginDate() {
             return beginDate_;
         }
         
-        // optional int64 end_date = 8;
         public static final int END_DATE_FIELD_NUMBER = 8;
         private long endDate_;
         
         /**
          * <code>optional int64 end_date = 8;</code>
+         * 
+         * @return Whether the endDate field is set.
          */
+        @java.lang.Override
         public boolean hasEndDate() {
-            return ((bitField0_ & 0x00000080) == 0x00000080);
+            return ((bitField0_ & 0x00000080) != 0);
         }
         
         /**
          * <code>optional int64 end_date = 8;</code>
+         * 
+         * @return The endDate.
          */
+        @java.lang.Override
         public long getEndDate() {
             return endDate_;
         }
         
-        // required string query_authorizations = 9;
         public static final int QUERY_AUTHORIZATIONS_FIELD_NUMBER = 9;
-        private java.lang.Object queryAuthorizations_;
+        private volatile java.lang.Object queryAuthorizations_;
         
         /**
          * <code>required string query_authorizations = 9;</code>
+         * 
+         * @return Whether the queryAuthorizations field is set.
          */
+        @java.lang.Override
         public boolean hasQueryAuthorizations() {
-            return ((bitField0_ & 0x00000100) == 0x00000100);
+            return ((bitField0_ & 0x00000100) != 0);
         }
         
         /**
          * <code>required string query_authorizations = 9;</code>
+         * 
+         * @return The queryAuthorizations.
          */
+        @java.lang.Override
         public java.lang.String getQueryAuthorizations() {
             java.lang.Object ref = queryAuthorizations_;
             if (ref instanceof java.lang.String) {
@@ -1210,7 +1596,10 @@ public final class QueryMessages {
         
         /**
          * <code>required string query_authorizations = 9;</code>
+         * 
+         * @return The bytes for queryAuthorizations.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString getQueryAuthorizationsBytes() {
             java.lang.Object ref = queryAuthorizations_;
             if (ref instanceof java.lang.String) {
@@ -1222,49 +1611,59 @@ public final class QueryMessages {
             }
         }
         
-        // required int64 expiration_date = 10;
         public static final int EXPIRATION_DATE_FIELD_NUMBER = 10;
         private long expirationDate_;
         
         /**
          * <code>required int64 expiration_date = 10;</code>
+         * 
+         * @return Whether the expirationDate field is set.
          */
+        @java.lang.Override
         public boolean hasExpirationDate() {
-            return ((bitField0_ & 0x00000200) == 0x00000200);
+            return ((bitField0_ & 0x00000200) != 0);
         }
         
         /**
          * <code>required int64 expiration_date = 10;</code>
+         * 
+         * @return The expirationDate.
          */
+        @java.lang.Override
         public long getExpirationDate() {
             return expirationDate_;
         }
         
-        // required uint32 pagesize = 11 [default = 0];
         public static final int PAGESIZE_FIELD_NUMBER = 11;
         private int pagesize_;
         
         /**
          * <code>required uint32 pagesize = 11 [default = 0];</code>
+         * 
+         * @return Whether the pagesize field is set.
          */
+        @java.lang.Override
         public boolean hasPagesize() {
-            return ((bitField0_ & 0x00000400) == 0x00000400);
+            return ((bitField0_ & 0x00000400) != 0);
         }
         
         /**
          * <code>required uint32 pagesize = 11 [default = 0];</code>
+         * 
+         * @return The pagesize.
          */
+        @java.lang.Override
         public int getPagesize() {
             return pagesize_;
         }
         
-        // repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;
         public static final int PARAMETERS_FIELD_NUMBER = 12;
         private java.util.List<datawave.webservice.query.QueryMessages.QueryImpl.Parameter> parameters_;
         
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
          */
+        @java.lang.Override
         public java.util.List<datawave.webservice.query.QueryMessages.QueryImpl.Parameter> getParametersList() {
             return parameters_;
         }
@@ -1272,6 +1671,7 @@ public final class QueryMessages {
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
          */
+        @java.lang.Override
         public java.util.List<? extends datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder> getParametersOrBuilderList() {
             return parameters_;
         }
@@ -1279,6 +1679,7 @@ public final class QueryMessages {
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
          */
+        @java.lang.Override
         public int getParametersCount() {
             return parameters_.size();
         }
@@ -1286,6 +1687,7 @@ public final class QueryMessages {
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
          */
+        @java.lang.Override
         public datawave.webservice.query.QueryMessages.QueryImpl.Parameter getParameters(int index) {
             return parameters_.get(index);
         }
@@ -1293,31 +1695,20 @@ public final class QueryMessages {
         /**
          * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
          */
+        @java.lang.Override
         public datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder getParametersOrBuilder(int index) {
             return parameters_.get(index);
         }
         
-        private void initFields() {
-            queryLogicName_ = "";
-            id_ = "";
-            queryName_ = "";
-            userDN_ = "";
-            query_ = "";
-            queryVisibility_ = "";
-            beginDate_ = 0L;
-            endDate_ = 0L;
-            queryAuthorizations_ = "";
-            expirationDate_ = 0L;
-            pagesize_ = 0;
-            parameters_ = java.util.Collections.emptyList();
-        }
-        
         private byte memoizedIsInitialized = -1;
         
+        @java.lang.Override
         public final boolean isInitialized() {
             byte isInitialized = memoizedIsInitialized;
-            if (isInitialized != -1)
-                return isInitialized == 1;
+            if (isInitialized == 1)
+                return true;
+            if (isInitialized == 0)
+                return false;
             
             if (!hasQueryLogicName()) {
                 memoizedIsInitialized = 0;
@@ -1361,99 +1752,246 @@ public final class QueryMessages {
             return true;
         }
         
+        @java.lang.Override
         public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-            getSerializedSize();
-            if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                output.writeBytes(1, getQueryLogicNameBytes());
+            if (((bitField0_ & 0x00000001) != 0)) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 1, queryLogicName_);
             }
-            if (((bitField0_ & 0x00000002) == 0x00000002)) {
-                output.writeBytes(2, getIdBytes());
+            if (((bitField0_ & 0x00000002) != 0)) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 2, id_);
             }
-            if (((bitField0_ & 0x00000004) == 0x00000004)) {
-                output.writeBytes(3, getQueryNameBytes());
+            if (((bitField0_ & 0x00000004) != 0)) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 3, queryName_);
             }
-            if (((bitField0_ & 0x00000008) == 0x00000008)) {
-                output.writeBytes(4, getUserDNBytes());
+            if (((bitField0_ & 0x00000008) != 0)) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 4, userDN_);
             }
-            if (((bitField0_ & 0x00000010) == 0x00000010)) {
-                output.writeBytes(5, getQueryBytes());
+            if (((bitField0_ & 0x00000010) != 0)) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 5, query_);
             }
-            if (((bitField0_ & 0x00000020) == 0x00000020)) {
-                output.writeBytes(6, getQueryVisibilityBytes());
+            if (((bitField0_ & 0x00000020) != 0)) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 6, queryVisibility_);
             }
-            if (((bitField0_ & 0x00000040) == 0x00000040)) {
+            if (((bitField0_ & 0x00000040) != 0)) {
                 output.writeInt64(7, beginDate_);
             }
-            if (((bitField0_ & 0x00000080) == 0x00000080)) {
+            if (((bitField0_ & 0x00000080) != 0)) {
                 output.writeInt64(8, endDate_);
             }
-            if (((bitField0_ & 0x00000100) == 0x00000100)) {
-                output.writeBytes(9, getQueryAuthorizationsBytes());
+            if (((bitField0_ & 0x00000100) != 0)) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 9, queryAuthorizations_);
             }
-            if (((bitField0_ & 0x00000200) == 0x00000200)) {
+            if (((bitField0_ & 0x00000200) != 0)) {
                 output.writeInt64(10, expirationDate_);
             }
-            if (((bitField0_ & 0x00000400) == 0x00000400)) {
+            if (((bitField0_ & 0x00000400) != 0)) {
                 output.writeUInt32(11, pagesize_);
             }
             for (int i = 0; i < parameters_.size(); i++) {
                 output.writeMessage(12, parameters_.get(i));
             }
+            unknownFields.writeTo(output);
         }
         
-        private int memoizedSerializedSize = -1;
-        
+        @java.lang.Override
         public int getSerializedSize() {
-            int size = memoizedSerializedSize;
+            int size = memoizedSize;
             if (size != -1)
                 return size;
             
             size = 0;
-            if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                size += com.google.protobuf.CodedOutputStream.computeBytesSize(1, getQueryLogicNameBytes());
+            if (((bitField0_ & 0x00000001) != 0)) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, queryLogicName_);
             }
-            if (((bitField0_ & 0x00000002) == 0x00000002)) {
-                size += com.google.protobuf.CodedOutputStream.computeBytesSize(2, getIdBytes());
+            if (((bitField0_ & 0x00000002) != 0)) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, id_);
             }
-            if (((bitField0_ & 0x00000004) == 0x00000004)) {
-                size += com.google.protobuf.CodedOutputStream.computeBytesSize(3, getQueryNameBytes());
+            if (((bitField0_ & 0x00000004) != 0)) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, queryName_);
             }
-            if (((bitField0_ & 0x00000008) == 0x00000008)) {
-                size += com.google.protobuf.CodedOutputStream.computeBytesSize(4, getUserDNBytes());
+            if (((bitField0_ & 0x00000008) != 0)) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, userDN_);
             }
-            if (((bitField0_ & 0x00000010) == 0x00000010)) {
-                size += com.google.protobuf.CodedOutputStream.computeBytesSize(5, getQueryBytes());
+            if (((bitField0_ & 0x00000010) != 0)) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, query_);
             }
-            if (((bitField0_ & 0x00000020) == 0x00000020)) {
-                size += com.google.protobuf.CodedOutputStream.computeBytesSize(6, getQueryVisibilityBytes());
+            if (((bitField0_ & 0x00000020) != 0)) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, queryVisibility_);
             }
-            if (((bitField0_ & 0x00000040) == 0x00000040)) {
+            if (((bitField0_ & 0x00000040) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeInt64Size(7, beginDate_);
             }
-            if (((bitField0_ & 0x00000080) == 0x00000080)) {
+            if (((bitField0_ & 0x00000080) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeInt64Size(8, endDate_);
             }
-            if (((bitField0_ & 0x00000100) == 0x00000100)) {
-                size += com.google.protobuf.CodedOutputStream.computeBytesSize(9, getQueryAuthorizationsBytes());
+            if (((bitField0_ & 0x00000100) != 0)) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(9, queryAuthorizations_);
             }
-            if (((bitField0_ & 0x00000200) == 0x00000200)) {
+            if (((bitField0_ & 0x00000200) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeInt64Size(10, expirationDate_);
             }
-            if (((bitField0_ & 0x00000400) == 0x00000400)) {
+            if (((bitField0_ & 0x00000400) != 0)) {
                 size += com.google.protobuf.CodedOutputStream.computeUInt32Size(11, pagesize_);
             }
             for (int i = 0; i < parameters_.size(); i++) {
                 size += com.google.protobuf.CodedOutputStream.computeMessageSize(12, parameters_.get(i));
             }
-            memoizedSerializedSize = size;
+            size += unknownFields.getSerializedSize();
+            memoizedSize = size;
             return size;
         }
         
-        private static final long serialVersionUID = 0L;
+        @java.lang.Override
+        public boolean equals(final java.lang.Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof datawave.webservice.query.QueryMessages.QueryImpl)) {
+                return super.equals(obj);
+            }
+            datawave.webservice.query.QueryMessages.QueryImpl other = (datawave.webservice.query.QueryMessages.QueryImpl) obj;
+            
+            if (hasQueryLogicName() != other.hasQueryLogicName())
+                return false;
+            if (hasQueryLogicName()) {
+                if (!getQueryLogicName().equals(other.getQueryLogicName()))
+                    return false;
+            }
+            if (hasId() != other.hasId())
+                return false;
+            if (hasId()) {
+                if (!getId().equals(other.getId()))
+                    return false;
+            }
+            if (hasQueryName() != other.hasQueryName())
+                return false;
+            if (hasQueryName()) {
+                if (!getQueryName().equals(other.getQueryName()))
+                    return false;
+            }
+            if (hasUserDN() != other.hasUserDN())
+                return false;
+            if (hasUserDN()) {
+                if (!getUserDN().equals(other.getUserDN()))
+                    return false;
+            }
+            if (hasQuery() != other.hasQuery())
+                return false;
+            if (hasQuery()) {
+                if (!getQuery().equals(other.getQuery()))
+                    return false;
+            }
+            if (hasQueryVisibility() != other.hasQueryVisibility())
+                return false;
+            if (hasQueryVisibility()) {
+                if (!getQueryVisibility().equals(other.getQueryVisibility()))
+                    return false;
+            }
+            if (hasBeginDate() != other.hasBeginDate())
+                return false;
+            if (hasBeginDate()) {
+                if (getBeginDate() != other.getBeginDate())
+                    return false;
+            }
+            if (hasEndDate() != other.hasEndDate())
+                return false;
+            if (hasEndDate()) {
+                if (getEndDate() != other.getEndDate())
+                    return false;
+            }
+            if (hasQueryAuthorizations() != other.hasQueryAuthorizations())
+                return false;
+            if (hasQueryAuthorizations()) {
+                if (!getQueryAuthorizations().equals(other.getQueryAuthorizations()))
+                    return false;
+            }
+            if (hasExpirationDate() != other.hasExpirationDate())
+                return false;
+            if (hasExpirationDate()) {
+                if (getExpirationDate() != other.getExpirationDate())
+                    return false;
+            }
+            if (hasPagesize() != other.hasPagesize())
+                return false;
+            if (hasPagesize()) {
+                if (getPagesize() != other.getPagesize())
+                    return false;
+            }
+            if (!getParametersList().equals(other.getParametersList()))
+                return false;
+            if (!unknownFields.equals(other.unknownFields))
+                return false;
+            return true;
+        }
         
         @java.lang.Override
-        protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
-            return super.writeReplace();
+        public int hashCode() {
+            if (memoizedHashCode != 0) {
+                return memoizedHashCode;
+            }
+            int hash = 41;
+            hash = (19 * hash) + getDescriptor().hashCode();
+            if (hasQueryLogicName()) {
+                hash = (37 * hash) + QUERY_LOGIC_NAME_FIELD_NUMBER;
+                hash = (53 * hash) + getQueryLogicName().hashCode();
+            }
+            if (hasId()) {
+                hash = (37 * hash) + ID_FIELD_NUMBER;
+                hash = (53 * hash) + getId().hashCode();
+            }
+            if (hasQueryName()) {
+                hash = (37 * hash) + QUERY_NAME_FIELD_NUMBER;
+                hash = (53 * hash) + getQueryName().hashCode();
+            }
+            if (hasUserDN()) {
+                hash = (37 * hash) + USER_DN_FIELD_NUMBER;
+                hash = (53 * hash) + getUserDN().hashCode();
+            }
+            if (hasQuery()) {
+                hash = (37 * hash) + QUERY_FIELD_NUMBER;
+                hash = (53 * hash) + getQuery().hashCode();
+            }
+            if (hasQueryVisibility()) {
+                hash = (37 * hash) + QUERY_VISIBILITY_FIELD_NUMBER;
+                hash = (53 * hash) + getQueryVisibility().hashCode();
+            }
+            if (hasBeginDate()) {
+                hash = (37 * hash) + BEGIN_DATE_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getBeginDate());
+            }
+            if (hasEndDate()) {
+                hash = (37 * hash) + END_DATE_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getEndDate());
+            }
+            if (hasQueryAuthorizations()) {
+                hash = (37 * hash) + QUERY_AUTHORIZATIONS_FIELD_NUMBER;
+                hash = (53 * hash) + getQueryAuthorizations().hashCode();
+            }
+            if (hasExpirationDate()) {
+                hash = (37 * hash) + EXPIRATION_DATE_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getExpirationDate());
+            }
+            if (hasPagesize()) {
+                hash = (37 * hash) + PAGESIZE_FIELD_NUMBER;
+                hash = (53 * hash) + getPagesize();
+            }
+            if (getParametersCount() > 0) {
+                hash = (37 * hash) + PARAMETERS_FIELD_NUMBER;
+                hash = (53 * hash) + getParametersList().hashCode();
+            }
+            hash = (29 * hash) + unknownFields.hashCode();
+            memoizedHashCode = hash;
+            return hash;
+        }
+        
+        public static datawave.webservice.query.QueryMessages.QueryImpl parseFrom(java.nio.ByteBuffer data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+        
+        public static datawave.webservice.query.QueryMessages.QueryImpl parseFrom(java.nio.ByteBuffer data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
         
         public static datawave.webservice.query.QueryMessages.QueryImpl parseFrom(com.google.protobuf.ByteString data)
@@ -1476,64 +2014,90 @@ public final class QueryMessages {
         }
         
         public static datawave.webservice.query.QueryMessages.QueryImpl parseFrom(java.io.InputStream input) throws java.io.IOException {
-            return PARSER.parseFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
         
         public static datawave.webservice.query.QueryMessages.QueryImpl parseFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
         
         public static datawave.webservice.query.QueryMessages.QueryImpl parseDelimitedFrom(java.io.InputStream input) throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
         }
         
         public static datawave.webservice.query.QueryMessages.QueryImpl parseDelimitedFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input, extensionRegistry);
         }
         
         public static datawave.webservice.query.QueryMessages.QueryImpl parseFrom(com.google.protobuf.CodedInputStream input) throws java.io.IOException {
-            return PARSER.parseFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
         
         public static datawave.webservice.query.QueryMessages.QueryImpl parseFrom(com.google.protobuf.CodedInputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
         
-        public static Builder newBuilder() {
-            return Builder.create();
-        }
-        
+        @java.lang.Override
         public Builder newBuilderForType() {
             return newBuilder();
         }
         
-        public static Builder newBuilder(datawave.webservice.query.QueryMessages.QueryImpl prototype) {
-            return newBuilder().mergeFrom(prototype);
+        public static Builder newBuilder() {
+            return DEFAULT_INSTANCE.toBuilder();
         }
         
+        public static Builder newBuilder(datawave.webservice.query.QueryMessages.QueryImpl prototype) {
+            return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+        }
+        
+        @java.lang.Override
         public Builder toBuilder() {
-            return newBuilder(this);
+            return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+        }
+        
+        @java.lang.Override
+        protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+            Builder builder = new Builder(parent);
+            return builder;
         }
         
         /**
          * Protobuf type {@code datawave.webservice.query.QueryImpl}
          */
-        public static final class Builder extends com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.query.QueryMessages.QueryImpl,Builder>
-                        implements datawave.webservice.query.QueryMessages.QueryImplOrBuilder {
+        public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:datawave.webservice.query.QueryImpl)
+                        datawave.webservice.query.QueryMessages.QueryImplOrBuilder {
+            public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+                return datawave.webservice.query.QueryMessages.internal_static_datawave_webservice_query_QueryImpl_descriptor;
+            }
+            
+            @java.lang.Override
+            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+                return datawave.webservice.query.QueryMessages.internal_static_datawave_webservice_query_QueryImpl_fieldAccessorTable
+                                .ensureFieldAccessorsInitialized(datawave.webservice.query.QueryMessages.QueryImpl.class,
+                                                datawave.webservice.query.QueryMessages.QueryImpl.Builder.class);
+            }
+            
             // Construct using datawave.webservice.query.QueryMessages.QueryImpl.newBuilder()
             private Builder() {
                 maybeForceBuilderInitialization();
             }
             
-            private void maybeForceBuilderInitialization() {}
-            
-            private static Builder create() {
-                return new Builder();
+            private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+                super(parent);
+                maybeForceBuilderInitialization();
             }
             
+            private void maybeForceBuilderInitialization() {
+                if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {
+                    getParametersFieldBuilder();
+                }
+            }
+            
+            @java.lang.Override
             public Builder clear() {
                 super.clear();
                 queryLogicName_ = "";
@@ -1558,19 +2122,26 @@ public final class QueryMessages {
                 bitField0_ = (bitField0_ & ~0x00000200);
                 pagesize_ = 0;
                 bitField0_ = (bitField0_ & ~0x00000400);
-                parameters_ = java.util.Collections.emptyList();
-                bitField0_ = (bitField0_ & ~0x00000800);
+                if (parametersBuilder_ == null) {
+                    parameters_ = java.util.Collections.emptyList();
+                    bitField0_ = (bitField0_ & ~0x00000800);
+                } else {
+                    parametersBuilder_.clear();
+                }
                 return this;
             }
             
-            public Builder clone() {
-                return create().mergeFrom(buildPartial());
+            @java.lang.Override
+            public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+                return datawave.webservice.query.QueryMessages.internal_static_datawave_webservice_query_QueryImpl_descriptor;
             }
             
+            @java.lang.Override
             public datawave.webservice.query.QueryMessages.QueryImpl getDefaultInstanceForType() {
                 return datawave.webservice.query.QueryMessages.QueryImpl.getDefaultInstance();
             }
             
+            @java.lang.Override
             public datawave.webservice.query.QueryMessages.QueryImpl build() {
                 datawave.webservice.query.QueryMessages.QueryImpl result = buildPartial();
                 if (!result.isInitialized()) {
@@ -1579,61 +2150,107 @@ public final class QueryMessages {
                 return result;
             }
             
+            @java.lang.Override
             public datawave.webservice.query.QueryMessages.QueryImpl buildPartial() {
                 datawave.webservice.query.QueryMessages.QueryImpl result = new datawave.webservice.query.QueryMessages.QueryImpl(this);
                 int from_bitField0_ = bitField0_;
                 int to_bitField0_ = 0;
-                if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+                if (((from_bitField0_ & 0x00000001) != 0)) {
                     to_bitField0_ |= 0x00000001;
                 }
                 result.queryLogicName_ = queryLogicName_;
-                if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+                if (((from_bitField0_ & 0x00000002) != 0)) {
                     to_bitField0_ |= 0x00000002;
                 }
                 result.id_ = id_;
-                if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+                if (((from_bitField0_ & 0x00000004) != 0)) {
                     to_bitField0_ |= 0x00000004;
                 }
                 result.queryName_ = queryName_;
-                if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+                if (((from_bitField0_ & 0x00000008) != 0)) {
                     to_bitField0_ |= 0x00000008;
                 }
                 result.userDN_ = userDN_;
-                if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+                if (((from_bitField0_ & 0x00000010) != 0)) {
                     to_bitField0_ |= 0x00000010;
                 }
                 result.query_ = query_;
-                if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+                if (((from_bitField0_ & 0x00000020) != 0)) {
                     to_bitField0_ |= 0x00000020;
                 }
                 result.queryVisibility_ = queryVisibility_;
-                if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+                if (((from_bitField0_ & 0x00000040) != 0)) {
+                    result.beginDate_ = beginDate_;
                     to_bitField0_ |= 0x00000040;
                 }
-                result.beginDate_ = beginDate_;
-                if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+                if (((from_bitField0_ & 0x00000080) != 0)) {
+                    result.endDate_ = endDate_;
                     to_bitField0_ |= 0x00000080;
                 }
-                result.endDate_ = endDate_;
-                if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+                if (((from_bitField0_ & 0x00000100) != 0)) {
                     to_bitField0_ |= 0x00000100;
                 }
                 result.queryAuthorizations_ = queryAuthorizations_;
-                if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
+                if (((from_bitField0_ & 0x00000200) != 0)) {
+                    result.expirationDate_ = expirationDate_;
                     to_bitField0_ |= 0x00000200;
                 }
-                result.expirationDate_ = expirationDate_;
-                if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
+                if (((from_bitField0_ & 0x00000400) != 0)) {
+                    result.pagesize_ = pagesize_;
                     to_bitField0_ |= 0x00000400;
                 }
-                result.pagesize_ = pagesize_;
-                if (((bitField0_ & 0x00000800) == 0x00000800)) {
-                    parameters_ = java.util.Collections.unmodifiableList(parameters_);
-                    bitField0_ = (bitField0_ & ~0x00000800);
+                if (parametersBuilder_ == null) {
+                    if (((bitField0_ & 0x00000800) != 0)) {
+                        parameters_ = java.util.Collections.unmodifiableList(parameters_);
+                        bitField0_ = (bitField0_ & ~0x00000800);
+                    }
+                    result.parameters_ = parameters_;
+                } else {
+                    result.parameters_ = parametersBuilder_.build();
                 }
-                result.parameters_ = parameters_;
                 result.bitField0_ = to_bitField0_;
+                onBuilt();
                 return result;
+            }
+            
+            @java.lang.Override
+            public Builder clone() {
+                return super.clone();
+            }
+            
+            @java.lang.Override
+            public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.setField(field, value);
+            }
+            
+            @java.lang.Override
+            public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
+                return super.clearField(field);
+            }
+            
+            @java.lang.Override
+            public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+                return super.clearOneof(oneof);
+            }
+            
+            @java.lang.Override
+            public Builder setRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
+                return super.setRepeatedField(field, index, value);
+            }
+            
+            @java.lang.Override
+            public Builder addRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.addRepeatedField(field, value);
+            }
+            
+            @java.lang.Override
+            public Builder mergeFrom(com.google.protobuf.Message other) {
+                if (other instanceof datawave.webservice.query.QueryMessages.QueryImpl) {
+                    return mergeFrom((datawave.webservice.query.QueryMessages.QueryImpl) other);
+                } else {
+                    super.mergeFrom(other);
+                    return this;
+                }
             }
             
             public Builder mergeFrom(datawave.webservice.query.QueryMessages.QueryImpl other) {
@@ -1642,32 +2259,32 @@ public final class QueryMessages {
                 if (other.hasQueryLogicName()) {
                     bitField0_ |= 0x00000001;
                     queryLogicName_ = other.queryLogicName_;
-                    
+                    onChanged();
                 }
                 if (other.hasId()) {
                     bitField0_ |= 0x00000002;
                     id_ = other.id_;
-                    
+                    onChanged();
                 }
                 if (other.hasQueryName()) {
                     bitField0_ |= 0x00000004;
                     queryName_ = other.queryName_;
-                    
+                    onChanged();
                 }
                 if (other.hasUserDN()) {
                     bitField0_ |= 0x00000008;
                     userDN_ = other.userDN_;
-                    
+                    onChanged();
                 }
                 if (other.hasQuery()) {
                     bitField0_ |= 0x00000010;
                     query_ = other.query_;
-                    
+                    onChanged();
                 }
                 if (other.hasQueryVisibility()) {
                     bitField0_ |= 0x00000020;
                     queryVisibility_ = other.queryVisibility_;
-                    
+                    onChanged();
                 }
                 if (other.hasBeginDate()) {
                     setBeginDate(other.getBeginDate());
@@ -1678,7 +2295,7 @@ public final class QueryMessages {
                 if (other.hasQueryAuthorizations()) {
                     bitField0_ |= 0x00000100;
                     queryAuthorizations_ = other.queryAuthorizations_;
-                    
+                    onChanged();
                 }
                 if (other.hasExpirationDate()) {
                     setExpirationDate(other.getExpirationDate());
@@ -1686,61 +2303,70 @@ public final class QueryMessages {
                 if (other.hasPagesize()) {
                     setPagesize(other.getPagesize());
                 }
-                if (!other.parameters_.isEmpty()) {
-                    if (parameters_.isEmpty()) {
-                        parameters_ = other.parameters_;
-                        bitField0_ = (bitField0_ & ~0x00000800);
-                    } else {
-                        ensureParametersIsMutable();
-                        parameters_.addAll(other.parameters_);
+                if (parametersBuilder_ == null) {
+                    if (!other.parameters_.isEmpty()) {
+                        if (parameters_.isEmpty()) {
+                            parameters_ = other.parameters_;
+                            bitField0_ = (bitField0_ & ~0x00000800);
+                        } else {
+                            ensureParametersIsMutable();
+                            parameters_.addAll(other.parameters_);
+                        }
+                        onChanged();
                     }
-                    
+                } else {
+                    if (!other.parameters_.isEmpty()) {
+                        if (parametersBuilder_.isEmpty()) {
+                            parametersBuilder_.dispose();
+                            parametersBuilder_ = null;
+                            parameters_ = other.parameters_;
+                            bitField0_ = (bitField0_ & ~0x00000800);
+                            parametersBuilder_ = com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ? getParametersFieldBuilder() : null;
+                        } else {
+                            parametersBuilder_.addAllMessages(other.parameters_);
+                        }
+                    }
                 }
+                this.mergeUnknownFields(other.unknownFields);
+                onChanged();
                 return this;
             }
             
+            @java.lang.Override
             public final boolean isInitialized() {
                 if (!hasQueryLogicName()) {
-                    
                     return false;
                 }
                 if (!hasId()) {
-                    
                     return false;
                 }
                 if (!hasUserDN()) {
-                    
                     return false;
                 }
                 if (!hasQuery()) {
-                    
                     return false;
                 }
                 if (!hasQueryVisibility()) {
-                    
                     return false;
                 }
                 if (!hasQueryAuthorizations()) {
-                    
                     return false;
                 }
                 if (!hasExpirationDate()) {
-                    
                     return false;
                 }
                 if (!hasPagesize()) {
-                    
                     return false;
                 }
                 for (int i = 0; i < getParametersCount(); i++) {
                     if (!getParameters(i).isInitialized()) {
-                        
                         return false;
                     }
                 }
                 return true;
             }
             
+            @java.lang.Override
             public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws java.io.IOException {
                 datawave.webservice.query.QueryMessages.QueryImpl parsedMessage = null;
@@ -1748,7 +2374,7 @@ public final class QueryMessages {
                     parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
                 } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                     parsedMessage = (datawave.webservice.query.QueryMessages.QueryImpl) e.getUnfinishedMessage();
-                    throw e;
+                    throw e.unwrapIOException();
                 } finally {
                     if (parsedMessage != null) {
                         mergeFrom(parsedMessage);
@@ -1759,24 +2385,30 @@ public final class QueryMessages {
             
             private int bitField0_;
             
-            // required string query_logic_name = 1;
             private java.lang.Object queryLogicName_ = "";
             
             /**
              * <code>required string query_logic_name = 1;</code>
+             * 
+             * @return Whether the queryLogicName field is set.
              */
             public boolean hasQueryLogicName() {
-                return ((bitField0_ & 0x00000001) == 0x00000001);
+                return ((bitField0_ & 0x00000001) != 0);
             }
             
             /**
              * <code>required string query_logic_name = 1;</code>
+             * 
+             * @return The queryLogicName.
              */
             public java.lang.String getQueryLogicName() {
                 java.lang.Object ref = queryLogicName_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    queryLogicName_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        queryLogicName_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -1785,6 +2417,8 @@ public final class QueryMessages {
             
             /**
              * <code>required string query_logic_name = 1;</code>
+             * 
+             * @return The bytes for queryLogicName.
              */
             public com.google.protobuf.ByteString getQueryLogicNameBytes() {
                 java.lang.Object ref = queryLogicName_;
@@ -1799,6 +2433,10 @@ public final class QueryMessages {
             
             /**
              * <code>required string query_logic_name = 1;</code>
+             * 
+             * @param value
+             *            The queryLogicName to set.
+             * @return This builder for chaining.
              */
             public Builder setQueryLogicName(java.lang.String value) {
                 if (value == null) {
@@ -1806,22 +2444,28 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000001;
                 queryLogicName_ = value;
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required string query_logic_name = 1;</code>
+             * 
+             * @return This builder for chaining.
              */
             public Builder clearQueryLogicName() {
                 bitField0_ = (bitField0_ & ~0x00000001);
                 queryLogicName_ = getDefaultInstance().getQueryLogicName();
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required string query_logic_name = 1;</code>
+             * 
+             * @param value
+             *            The bytes for queryLogicName to set.
+             * @return This builder for chaining.
              */
             public Builder setQueryLogicNameBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -1829,28 +2473,34 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000001;
                 queryLogicName_ = value;
-                
+                onChanged();
                 return this;
             }
             
-            // required string id = 2;
             private java.lang.Object id_ = "";
             
             /**
              * <code>required string id = 2;</code>
+             * 
+             * @return Whether the id field is set.
              */
             public boolean hasId() {
-                return ((bitField0_ & 0x00000002) == 0x00000002);
+                return ((bitField0_ & 0x00000002) != 0);
             }
             
             /**
              * <code>required string id = 2;</code>
+             * 
+             * @return The id.
              */
             public java.lang.String getId() {
                 java.lang.Object ref = id_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    id_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        id_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -1859,6 +2509,8 @@ public final class QueryMessages {
             
             /**
              * <code>required string id = 2;</code>
+             * 
+             * @return The bytes for id.
              */
             public com.google.protobuf.ByteString getIdBytes() {
                 java.lang.Object ref = id_;
@@ -1873,6 +2525,10 @@ public final class QueryMessages {
             
             /**
              * <code>required string id = 2;</code>
+             * 
+             * @param value
+             *            The id to set.
+             * @return This builder for chaining.
              */
             public Builder setId(java.lang.String value) {
                 if (value == null) {
@@ -1880,22 +2536,28 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000002;
                 id_ = value;
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required string id = 2;</code>
+             * 
+             * @return This builder for chaining.
              */
             public Builder clearId() {
                 bitField0_ = (bitField0_ & ~0x00000002);
                 id_ = getDefaultInstance().getId();
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required string id = 2;</code>
+             * 
+             * @param value
+             *            The bytes for id to set.
+             * @return This builder for chaining.
              */
             public Builder setIdBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -1903,28 +2565,34 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000002;
                 id_ = value;
-                
+                onChanged();
                 return this;
             }
             
-            // optional string query_name = 3;
             private java.lang.Object queryName_ = "";
             
             /**
              * <code>optional string query_name = 3;</code>
+             * 
+             * @return Whether the queryName field is set.
              */
             public boolean hasQueryName() {
-                return ((bitField0_ & 0x00000004) == 0x00000004);
+                return ((bitField0_ & 0x00000004) != 0);
             }
             
             /**
              * <code>optional string query_name = 3;</code>
+             * 
+             * @return The queryName.
              */
             public java.lang.String getQueryName() {
                 java.lang.Object ref = queryName_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    queryName_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        queryName_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -1933,6 +2601,8 @@ public final class QueryMessages {
             
             /**
              * <code>optional string query_name = 3;</code>
+             * 
+             * @return The bytes for queryName.
              */
             public com.google.protobuf.ByteString getQueryNameBytes() {
                 java.lang.Object ref = queryName_;
@@ -1947,6 +2617,10 @@ public final class QueryMessages {
             
             /**
              * <code>optional string query_name = 3;</code>
+             * 
+             * @param value
+             *            The queryName to set.
+             * @return This builder for chaining.
              */
             public Builder setQueryName(java.lang.String value) {
                 if (value == null) {
@@ -1954,22 +2628,28 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000004;
                 queryName_ = value;
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>optional string query_name = 3;</code>
+             * 
+             * @return This builder for chaining.
              */
             public Builder clearQueryName() {
                 bitField0_ = (bitField0_ & ~0x00000004);
                 queryName_ = getDefaultInstance().getQueryName();
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>optional string query_name = 3;</code>
+             * 
+             * @param value
+             *            The bytes for queryName to set.
+             * @return This builder for chaining.
              */
             public Builder setQueryNameBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -1977,28 +2657,34 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000004;
                 queryName_ = value;
-                
+                onChanged();
                 return this;
             }
             
-            // required string user_DN = 4;
             private java.lang.Object userDN_ = "";
             
             /**
              * <code>required string user_DN = 4;</code>
+             * 
+             * @return Whether the userDN field is set.
              */
             public boolean hasUserDN() {
-                return ((bitField0_ & 0x00000008) == 0x00000008);
+                return ((bitField0_ & 0x00000008) != 0);
             }
             
             /**
              * <code>required string user_DN = 4;</code>
+             * 
+             * @return The userDN.
              */
             public java.lang.String getUserDN() {
                 java.lang.Object ref = userDN_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    userDN_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        userDN_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -2007,6 +2693,8 @@ public final class QueryMessages {
             
             /**
              * <code>required string user_DN = 4;</code>
+             * 
+             * @return The bytes for userDN.
              */
             public com.google.protobuf.ByteString getUserDNBytes() {
                 java.lang.Object ref = userDN_;
@@ -2021,6 +2709,10 @@ public final class QueryMessages {
             
             /**
              * <code>required string user_DN = 4;</code>
+             * 
+             * @param value
+             *            The userDN to set.
+             * @return This builder for chaining.
              */
             public Builder setUserDN(java.lang.String value) {
                 if (value == null) {
@@ -2028,22 +2720,28 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000008;
                 userDN_ = value;
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required string user_DN = 4;</code>
+             * 
+             * @return This builder for chaining.
              */
             public Builder clearUserDN() {
                 bitField0_ = (bitField0_ & ~0x00000008);
                 userDN_ = getDefaultInstance().getUserDN();
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required string user_DN = 4;</code>
+             * 
+             * @param value
+             *            The bytes for userDN to set.
+             * @return This builder for chaining.
              */
             public Builder setUserDNBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -2051,28 +2749,34 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000008;
                 userDN_ = value;
-                
+                onChanged();
                 return this;
             }
             
-            // required string query = 5;
             private java.lang.Object query_ = "";
             
             /**
              * <code>required string query = 5;</code>
+             * 
+             * @return Whether the query field is set.
              */
             public boolean hasQuery() {
-                return ((bitField0_ & 0x00000010) == 0x00000010);
+                return ((bitField0_ & 0x00000010) != 0);
             }
             
             /**
              * <code>required string query = 5;</code>
+             * 
+             * @return The query.
              */
             public java.lang.String getQuery() {
                 java.lang.Object ref = query_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    query_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        query_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -2081,6 +2785,8 @@ public final class QueryMessages {
             
             /**
              * <code>required string query = 5;</code>
+             * 
+             * @return The bytes for query.
              */
             public com.google.protobuf.ByteString getQueryBytes() {
                 java.lang.Object ref = query_;
@@ -2095,6 +2801,10 @@ public final class QueryMessages {
             
             /**
              * <code>required string query = 5;</code>
+             * 
+             * @param value
+             *            The query to set.
+             * @return This builder for chaining.
              */
             public Builder setQuery(java.lang.String value) {
                 if (value == null) {
@@ -2102,22 +2812,28 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000010;
                 query_ = value;
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required string query = 5;</code>
+             * 
+             * @return This builder for chaining.
              */
             public Builder clearQuery() {
                 bitField0_ = (bitField0_ & ~0x00000010);
                 query_ = getDefaultInstance().getQuery();
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required string query = 5;</code>
+             * 
+             * @param value
+             *            The bytes for query to set.
+             * @return This builder for chaining.
              */
             public Builder setQueryBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -2125,28 +2841,34 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000010;
                 query_ = value;
-                
+                onChanged();
                 return this;
             }
             
-            // required string query_visibility = 6;
             private java.lang.Object queryVisibility_ = "";
             
             /**
              * <code>required string query_visibility = 6;</code>
+             * 
+             * @return Whether the queryVisibility field is set.
              */
             public boolean hasQueryVisibility() {
-                return ((bitField0_ & 0x00000020) == 0x00000020);
+                return ((bitField0_ & 0x00000020) != 0);
             }
             
             /**
              * <code>required string query_visibility = 6;</code>
+             * 
+             * @return The queryVisibility.
              */
             public java.lang.String getQueryVisibility() {
                 java.lang.Object ref = queryVisibility_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    queryVisibility_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        queryVisibility_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -2155,6 +2877,8 @@ public final class QueryMessages {
             
             /**
              * <code>required string query_visibility = 6;</code>
+             * 
+             * @return The bytes for queryVisibility.
              */
             public com.google.protobuf.ByteString getQueryVisibilityBytes() {
                 java.lang.Object ref = queryVisibility_;
@@ -2169,6 +2893,10 @@ public final class QueryMessages {
             
             /**
              * <code>required string query_visibility = 6;</code>
+             * 
+             * @param value
+             *            The queryVisibility to set.
+             * @return This builder for chaining.
              */
             public Builder setQueryVisibility(java.lang.String value) {
                 if (value == null) {
@@ -2176,22 +2904,28 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000020;
                 queryVisibility_ = value;
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required string query_visibility = 6;</code>
+             * 
+             * @return This builder for chaining.
              */
             public Builder clearQueryVisibility() {
                 bitField0_ = (bitField0_ & ~0x00000020);
                 queryVisibility_ = getDefaultInstance().getQueryVisibility();
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required string query_visibility = 6;</code>
+             * 
+             * @param value
+             *            The bytes for queryVisibility to set.
+             * @return This builder for chaining.
              */
             public Builder setQueryVisibilityBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -2199,102 +2933,130 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000020;
                 queryVisibility_ = value;
-                
+                onChanged();
                 return this;
             }
             
-            // optional int64 begin_date = 7;
             private long beginDate_;
             
             /**
              * <code>optional int64 begin_date = 7;</code>
+             * 
+             * @return Whether the beginDate field is set.
              */
+            @java.lang.Override
             public boolean hasBeginDate() {
-                return ((bitField0_ & 0x00000040) == 0x00000040);
+                return ((bitField0_ & 0x00000040) != 0);
             }
             
             /**
              * <code>optional int64 begin_date = 7;</code>
+             * 
+             * @return The beginDate.
              */
+            @java.lang.Override
             public long getBeginDate() {
                 return beginDate_;
             }
             
             /**
              * <code>optional int64 begin_date = 7;</code>
+             * 
+             * @param value
+             *            The beginDate to set.
+             * @return This builder for chaining.
              */
             public Builder setBeginDate(long value) {
                 bitField0_ |= 0x00000040;
                 beginDate_ = value;
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>optional int64 begin_date = 7;</code>
+             * 
+             * @return This builder for chaining.
              */
             public Builder clearBeginDate() {
                 bitField0_ = (bitField0_ & ~0x00000040);
                 beginDate_ = 0L;
-                
+                onChanged();
                 return this;
             }
             
-            // optional int64 end_date = 8;
             private long endDate_;
             
             /**
              * <code>optional int64 end_date = 8;</code>
+             * 
+             * @return Whether the endDate field is set.
              */
+            @java.lang.Override
             public boolean hasEndDate() {
-                return ((bitField0_ & 0x00000080) == 0x00000080);
+                return ((bitField0_ & 0x00000080) != 0);
             }
             
             /**
              * <code>optional int64 end_date = 8;</code>
+             * 
+             * @return The endDate.
              */
+            @java.lang.Override
             public long getEndDate() {
                 return endDate_;
             }
             
             /**
              * <code>optional int64 end_date = 8;</code>
+             * 
+             * @param value
+             *            The endDate to set.
+             * @return This builder for chaining.
              */
             public Builder setEndDate(long value) {
                 bitField0_ |= 0x00000080;
                 endDate_ = value;
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>optional int64 end_date = 8;</code>
+             * 
+             * @return This builder for chaining.
              */
             public Builder clearEndDate() {
                 bitField0_ = (bitField0_ & ~0x00000080);
                 endDate_ = 0L;
-                
+                onChanged();
                 return this;
             }
             
-            // required string query_authorizations = 9;
             private java.lang.Object queryAuthorizations_ = "";
             
             /**
              * <code>required string query_authorizations = 9;</code>
+             * 
+             * @return Whether the queryAuthorizations field is set.
              */
             public boolean hasQueryAuthorizations() {
-                return ((bitField0_ & 0x00000100) == 0x00000100);
+                return ((bitField0_ & 0x00000100) != 0);
             }
             
             /**
              * <code>required string query_authorizations = 9;</code>
+             * 
+             * @return The queryAuthorizations.
              */
             public java.lang.String getQueryAuthorizations() {
                 java.lang.Object ref = queryAuthorizations_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    queryAuthorizations_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        queryAuthorizations_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -2303,6 +3065,8 @@ public final class QueryMessages {
             
             /**
              * <code>required string query_authorizations = 9;</code>
+             * 
+             * @return The bytes for queryAuthorizations.
              */
             public com.google.protobuf.ByteString getQueryAuthorizationsBytes() {
                 java.lang.Object ref = queryAuthorizations_;
@@ -2317,6 +3081,10 @@ public final class QueryMessages {
             
             /**
              * <code>required string query_authorizations = 9;</code>
+             * 
+             * @param value
+             *            The queryAuthorizations to set.
+             * @return This builder for chaining.
              */
             public Builder setQueryAuthorizations(java.lang.String value) {
                 if (value == null) {
@@ -2324,22 +3092,28 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000100;
                 queryAuthorizations_ = value;
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required string query_authorizations = 9;</code>
+             * 
+             * @return This builder for chaining.
              */
             public Builder clearQueryAuthorizations() {
                 bitField0_ = (bitField0_ & ~0x00000100);
                 queryAuthorizations_ = getDefaultInstance().getQueryAuthorizations();
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required string query_authorizations = 9;</code>
+             * 
+             * @param value
+             *            The bytes for queryAuthorizations to set.
+             * @return This builder for chaining.
              */
             public Builder setQueryAuthorizationsBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -2347,125 +3121,164 @@ public final class QueryMessages {
                 }
                 bitField0_ |= 0x00000100;
                 queryAuthorizations_ = value;
-                
+                onChanged();
                 return this;
             }
             
-            // required int64 expiration_date = 10;
             private long expirationDate_;
             
             /**
              * <code>required int64 expiration_date = 10;</code>
+             * 
+             * @return Whether the expirationDate field is set.
              */
+            @java.lang.Override
             public boolean hasExpirationDate() {
-                return ((bitField0_ & 0x00000200) == 0x00000200);
+                return ((bitField0_ & 0x00000200) != 0);
             }
             
             /**
              * <code>required int64 expiration_date = 10;</code>
+             * 
+             * @return The expirationDate.
              */
+            @java.lang.Override
             public long getExpirationDate() {
                 return expirationDate_;
             }
             
             /**
              * <code>required int64 expiration_date = 10;</code>
+             * 
+             * @param value
+             *            The expirationDate to set.
+             * @return This builder for chaining.
              */
             public Builder setExpirationDate(long value) {
                 bitField0_ |= 0x00000200;
                 expirationDate_ = value;
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required int64 expiration_date = 10;</code>
+             * 
+             * @return This builder for chaining.
              */
             public Builder clearExpirationDate() {
                 bitField0_ = (bitField0_ & ~0x00000200);
                 expirationDate_ = 0L;
-                
+                onChanged();
                 return this;
             }
             
-            // required uint32 pagesize = 11 [default = 0];
             private int pagesize_;
             
             /**
              * <code>required uint32 pagesize = 11 [default = 0];</code>
+             * 
+             * @return Whether the pagesize field is set.
              */
+            @java.lang.Override
             public boolean hasPagesize() {
-                return ((bitField0_ & 0x00000400) == 0x00000400);
+                return ((bitField0_ & 0x00000400) != 0);
             }
             
             /**
              * <code>required uint32 pagesize = 11 [default = 0];</code>
+             * 
+             * @return The pagesize.
              */
+            @java.lang.Override
             public int getPagesize() {
                 return pagesize_;
             }
             
             /**
              * <code>required uint32 pagesize = 11 [default = 0];</code>
+             * 
+             * @param value
+             *            The pagesize to set.
+             * @return This builder for chaining.
              */
             public Builder setPagesize(int value) {
                 bitField0_ |= 0x00000400;
                 pagesize_ = value;
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>required uint32 pagesize = 11 [default = 0];</code>
+             * 
+             * @return This builder for chaining.
              */
             public Builder clearPagesize() {
                 bitField0_ = (bitField0_ & ~0x00000400);
                 pagesize_ = 0;
-                
+                onChanged();
                 return this;
             }
             
-            // repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;
             private java.util.List<datawave.webservice.query.QueryMessages.QueryImpl.Parameter> parameters_ = java.util.Collections.emptyList();
             
             private void ensureParametersIsMutable() {
-                if (!((bitField0_ & 0x00000800) == 0x00000800)) {
+                if (!((bitField0_ & 0x00000800) != 0)) {
                     parameters_ = new java.util.ArrayList<datawave.webservice.query.QueryMessages.QueryImpl.Parameter>(parameters_);
                     bitField0_ |= 0x00000800;
                 }
             }
             
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.QueryMessages.QueryImpl.Parameter,datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder,datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder> parametersBuilder_;
+            
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
              */
             public java.util.List<datawave.webservice.query.QueryMessages.QueryImpl.Parameter> getParametersList() {
-                return java.util.Collections.unmodifiableList(parameters_);
+                if (parametersBuilder_ == null) {
+                    return java.util.Collections.unmodifiableList(parameters_);
+                } else {
+                    return parametersBuilder_.getMessageList();
+                }
             }
             
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
              */
             public int getParametersCount() {
-                return parameters_.size();
+                if (parametersBuilder_ == null) {
+                    return parameters_.size();
+                } else {
+                    return parametersBuilder_.getCount();
+                }
             }
             
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
              */
             public datawave.webservice.query.QueryMessages.QueryImpl.Parameter getParameters(int index) {
-                return parameters_.get(index);
+                if (parametersBuilder_ == null) {
+                    return parameters_.get(index);
+                } else {
+                    return parametersBuilder_.getMessage(index);
+                }
             }
             
             /**
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
              */
             public Builder setParameters(int index, datawave.webservice.query.QueryMessages.QueryImpl.Parameter value) {
-                if (value == null) {
-                    throw new NullPointerException();
+                if (parametersBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureParametersIsMutable();
+                    parameters_.set(index, value);
+                    onChanged();
+                } else {
+                    parametersBuilder_.setMessage(index, value);
                 }
-                ensureParametersIsMutable();
-                parameters_.set(index, value);
-                
                 return this;
             }
             
@@ -2473,9 +3286,13 @@ public final class QueryMessages {
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
              */
             public Builder setParameters(int index, datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder builderForValue) {
-                ensureParametersIsMutable();
-                parameters_.set(index, builderForValue.build());
-                
+                if (parametersBuilder_ == null) {
+                    ensureParametersIsMutable();
+                    parameters_.set(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    parametersBuilder_.setMessage(index, builderForValue.build());
+                }
                 return this;
             }
             
@@ -2483,12 +3300,16 @@ public final class QueryMessages {
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
              */
             public Builder addParameters(datawave.webservice.query.QueryMessages.QueryImpl.Parameter value) {
-                if (value == null) {
-                    throw new NullPointerException();
+                if (parametersBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureParametersIsMutable();
+                    parameters_.add(value);
+                    onChanged();
+                } else {
+                    parametersBuilder_.addMessage(value);
                 }
-                ensureParametersIsMutable();
-                parameters_.add(value);
-                
                 return this;
             }
             
@@ -2496,12 +3317,16 @@ public final class QueryMessages {
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
              */
             public Builder addParameters(int index, datawave.webservice.query.QueryMessages.QueryImpl.Parameter value) {
-                if (value == null) {
-                    throw new NullPointerException();
+                if (parametersBuilder_ == null) {
+                    if (value == null) {
+                        throw new NullPointerException();
+                    }
+                    ensureParametersIsMutable();
+                    parameters_.add(index, value);
+                    onChanged();
+                } else {
+                    parametersBuilder_.addMessage(index, value);
                 }
-                ensureParametersIsMutable();
-                parameters_.add(index, value);
-                
                 return this;
             }
             
@@ -2509,9 +3334,13 @@ public final class QueryMessages {
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
              */
             public Builder addParameters(datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder builderForValue) {
-                ensureParametersIsMutable();
-                parameters_.add(builderForValue.build());
-                
+                if (parametersBuilder_ == null) {
+                    ensureParametersIsMutable();
+                    parameters_.add(builderForValue.build());
+                    onChanged();
+                } else {
+                    parametersBuilder_.addMessage(builderForValue.build());
+                }
                 return this;
             }
             
@@ -2519,9 +3348,13 @@ public final class QueryMessages {
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
              */
             public Builder addParameters(int index, datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder builderForValue) {
-                ensureParametersIsMutable();
-                parameters_.add(index, builderForValue.build());
-                
+                if (parametersBuilder_ == null) {
+                    ensureParametersIsMutable();
+                    parameters_.add(index, builderForValue.build());
+                    onChanged();
+                } else {
+                    parametersBuilder_.addMessage(index, builderForValue.build());
+                }
                 return this;
             }
             
@@ -2529,9 +3362,13 @@ public final class QueryMessages {
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
              */
             public Builder addAllParameters(java.lang.Iterable<? extends datawave.webservice.query.QueryMessages.QueryImpl.Parameter> values) {
-                ensureParametersIsMutable();
-                super.addAll(values, parameters_);
-                
+                if (parametersBuilder_ == null) {
+                    ensureParametersIsMutable();
+                    com.google.protobuf.AbstractMessageLite.Builder.addAll(values, parameters_);
+                    onChanged();
+                } else {
+                    parametersBuilder_.addAllMessages(values);
+                }
                 return this;
             }
             
@@ -2539,9 +3376,13 @@ public final class QueryMessages {
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
              */
             public Builder clearParameters() {
-                parameters_ = java.util.Collections.emptyList();
-                bitField0_ = (bitField0_ & ~0x00000800);
-                
+                if (parametersBuilder_ == null) {
+                    parameters_ = java.util.Collections.emptyList();
+                    bitField0_ = (bitField0_ & ~0x00000800);
+                    onChanged();
+                } else {
+                    parametersBuilder_.clear();
+                }
                 return this;
             }
             
@@ -2549,24 +3390,155 @@ public final class QueryMessages {
              * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
              */
             public Builder removeParameters(int index) {
-                ensureParametersIsMutable();
-                parameters_.remove(index);
-                
+                if (parametersBuilder_ == null) {
+                    ensureParametersIsMutable();
+                    parameters_.remove(index);
+                    onChanged();
+                } else {
+                    parametersBuilder_.remove(index);
+                }
                 return this;
+            }
+            
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             */
+            public datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder getParametersBuilder(int index) {
+                return getParametersFieldBuilder().getBuilder(index);
+            }
+            
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             */
+            public datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder getParametersOrBuilder(int index) {
+                if (parametersBuilder_ == null) {
+                    return parameters_.get(index);
+                } else {
+                    return parametersBuilder_.getMessageOrBuilder(index);
+                }
+            }
+            
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             */
+            public java.util.List<? extends datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder> getParametersOrBuilderList() {
+                if (parametersBuilder_ != null) {
+                    return parametersBuilder_.getMessageOrBuilderList();
+                } else {
+                    return java.util.Collections.unmodifiableList(parameters_);
+                }
+            }
+            
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             */
+            public datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder addParametersBuilder() {
+                return getParametersFieldBuilder().addBuilder(datawave.webservice.query.QueryMessages.QueryImpl.Parameter.getDefaultInstance());
+            }
+            
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             */
+            public datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder addParametersBuilder(int index) {
+                return getParametersFieldBuilder().addBuilder(index, datawave.webservice.query.QueryMessages.QueryImpl.Parameter.getDefaultInstance());
+            }
+            
+            /**
+             * <code>repeated .datawave.webservice.query.QueryImpl.Parameter parameters = 12;</code>
+             */
+            public java.util.List<datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder> getParametersBuilderList() {
+                return getParametersFieldBuilder().getBuilderList();
+            }
+            
+            private com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.QueryMessages.QueryImpl.Parameter,datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder,datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder> getParametersFieldBuilder() {
+                if (parametersBuilder_ == null) {
+                    parametersBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<datawave.webservice.query.QueryMessages.QueryImpl.Parameter,datawave.webservice.query.QueryMessages.QueryImpl.Parameter.Builder,datawave.webservice.query.QueryMessages.QueryImpl.ParameterOrBuilder>(
+                                    parameters_, ((bitField0_ & 0x00000800) != 0), getParentForChildren(), isClean());
+                    parameters_ = null;
+                }
+                return parametersBuilder_;
+            }
+            
+            @java.lang.Override
+            public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.setUnknownFields(unknownFields);
+            }
+            
+            @java.lang.Override
+            public final Builder mergeUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.mergeUnknownFields(unknownFields);
             }
             
             // @@protoc_insertion_point(builder_scope:datawave.webservice.query.QueryImpl)
         }
         
+        // @@protoc_insertion_point(class_scope:datawave.webservice.query.QueryImpl)
+        private static final datawave.webservice.query.QueryMessages.QueryImpl DEFAULT_INSTANCE;
         static {
-            defaultInstance = new QueryImpl(true);
-            defaultInstance.initFields();
+            DEFAULT_INSTANCE = new datawave.webservice.query.QueryMessages.QueryImpl();
         }
         
-        // @@protoc_insertion_point(class_scope:datawave.webservice.query.QueryImpl)
+        public static datawave.webservice.query.QueryMessages.QueryImpl getDefaultInstance() {
+            return DEFAULT_INSTANCE;
+        }
+        
+        @java.lang.Deprecated
+        public static final com.google.protobuf.Parser<QueryImpl> PARSER = new com.google.protobuf.AbstractParser<QueryImpl>() {
+            @java.lang.Override
+            public QueryImpl parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                            throws com.google.protobuf.InvalidProtocolBufferException {
+                return new QueryImpl(input, extensionRegistry);
+            }
+        };
+        
+        public static com.google.protobuf.Parser<QueryImpl> parser() {
+            return PARSER;
+        }
+        
+        @java.lang.Override
+        public com.google.protobuf.Parser<QueryImpl> getParserForType() {
+            return PARSER;
+        }
+        
+        @java.lang.Override
+        public datawave.webservice.query.QueryMessages.QueryImpl getDefaultInstanceForType() {
+            return DEFAULT_INSTANCE;
+        }
+        
     }
     
-    static {}
+    private static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_webservice_query_QueryImpl_descriptor;
+    private static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_webservice_query_QueryImpl_fieldAccessorTable;
+    private static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_webservice_query_QueryImpl_Parameter_descriptor;
+    private static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_webservice_query_QueryImpl_Parameter_fieldAccessorTable;
+    
+    public static com.google.protobuf.Descriptors.FileDescriptor getDescriptor() {
+        return descriptor;
+    }
+    
+    private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
+    static {
+        java.lang.String[] descriptorData = {"\n\024query_messages.proto\022\031datawave.webserv"
+                        + "ice.query\"\363\002\n\tQueryImpl\022\030\n\020query_logic_n"
+                        + "ame\030\001 \002(\t\022\n\n\002id\030\002 \002(\t\022\022\n\nquery_name\030\003 \001("
+                        + "\t\022\017\n\007user_DN\030\004 \002(\t\022\r\n\005query\030\005 \002(\t\022\030\n\020que"
+                        + "ry_visibility\030\006 \002(\t\022\022\n\nbegin_date\030\007 \001(\003\022"
+                        + "\020\n\010end_date\030\010 \001(\003\022\034\n\024query_authorization"
+                        + "s\030\t \002(\t\022\027\n\017expiration_date\030\n \002(\003\022\023\n\010page"
+                        + "size\030\013 \002(\r:\0010\022B\n\nparameters\030\014 \003(\0132..data" + "wave.webservice.query.QueryImpl.Paramete"
+                        + "r\032<\n\tParameter\022\026\n\016parameter_name\030\001 \002(\t\022\027"
+                        + "\n\017parameter_value\030\002 \002(\tB\033\n\031datawave.webs" + "ervice.query"};
+        descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
+                        new com.google.protobuf.Descriptors.FileDescriptor[] {});
+        internal_static_datawave_webservice_query_QueryImpl_descriptor = getDescriptor().getMessageTypes().get(0);
+        internal_static_datawave_webservice_query_QueryImpl_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+                        internal_static_datawave_webservice_query_QueryImpl_descriptor, new java.lang.String[] {"QueryLogicName", "Id", "QueryName", "UserDN",
+                                "Query", "QueryVisibility", "BeginDate", "EndDate", "QueryAuthorizations", "ExpirationDate", "Pagesize", "Parameters",});
+        internal_static_datawave_webservice_query_QueryImpl_Parameter_descriptor = internal_static_datawave_webservice_query_QueryImpl_descriptor
+                        .getNestedTypes().get(0);
+        internal_static_datawave_webservice_query_QueryImpl_Parameter_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+                        internal_static_datawave_webservice_query_QueryImpl_Parameter_descriptor, new java.lang.String[] {"ParameterName", "ParameterValue",});
+    }
     
     // @@protoc_insertion_point(outer_class_scope)
 }

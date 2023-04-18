@@ -95,8 +95,8 @@
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.2</version.powermock>
-        <version.protobuf>2.5.0</version.protobuf>
-        <version.protostuff>1.6.2</version.protostuff>
+        <version.protobuf>3.21.1</version.protobuf>
+        <version.protostuff>1.8.0</version.protostuff>
         <version.reload4j>1.2.19</version.reload4j>
         <version.slf4j>1.7.35</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
