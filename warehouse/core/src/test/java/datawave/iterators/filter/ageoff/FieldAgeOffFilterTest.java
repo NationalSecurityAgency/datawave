@@ -3,20 +3,16 @@ package datawave.iterators.filter.ageoff;
 import com.google.common.base.Predicate;
 import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.AgeOffTtlUnits;
-import org.apache.accumulo.core.client.SampleNotPresentException;
-import org.apache.accumulo.core.client.sample.SamplerConfiguration;
+import datawave.iterators.test.StubbedIteratorEnvironment;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -28,7 +24,7 @@ public class FieldAgeOffFilterTest {
     
     private ConfigurableIteratorEnvironment iterEnv = new ConfigurableIteratorEnvironment();
     
-    private class ConfigurableIteratorEnvironment implements IteratorEnvironment {
+    private class ConfigurableIteratorEnvironment extends StubbedIteratorEnvironment {
         
         private IteratorUtil.IteratorScope scope;
         private AccumuloConfiguration conf;
@@ -43,11 +39,6 @@ public class FieldAgeOffFilterTest {
         }
         
         @Override
-        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
-            return null;
-        }
-        
-        @Override
         public AccumuloConfiguration getConfig() {
             return conf;
         }
@@ -56,37 +47,6 @@ public class FieldAgeOffFilterTest {
         public IteratorUtil.IteratorScope getIteratorScope() {
             return scope;
         }
-        
-        @Override
-        public boolean isFullMajorCompaction() {
-            throw new UnsupportedOperationException();
-        }
-        
-        @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
-            throw new UnsupportedOperationException();
-        }
-        
-        @Override
-        public Authorizations getAuthorizations() {
-            throw new UnsupportedOperationException();
-        }
-        
-        @Override
-        public IteratorEnvironment cloneWithSamplingEnabled() {
-            throw new SampleNotPresentException();
-        }
-        
-        @Override
-        public boolean isSamplingEnabled() {
-            return false;
-        }
-        
-        @Override
-        public SamplerConfiguration getSamplerConfiguration() {
-            return null;
-        }
-        
     }
     
     public class EditableAccumuloConfiguration extends AccumuloConfiguration {

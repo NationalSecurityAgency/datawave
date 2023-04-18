@@ -178,6 +178,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-iterator-test-harness</artifactId>
+            <version>${version.accumulo}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-test</artifactId>
             <scope>test</scope>

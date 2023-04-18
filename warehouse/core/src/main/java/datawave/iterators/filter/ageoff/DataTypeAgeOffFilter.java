@@ -12,7 +12,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
-import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
@@ -40,34 +39,6 @@ import com.google.common.collect.Sets;
  * </pre>
  */
 public class DataTypeAgeOffFilter extends AppliedRule {
-    
-    /**
-     * Null byte
-     */
-    private static final int NULL = 0x00;
-    /**
-     * Document column
-     */
-    private static final Text DOCUMENT_COLUMN = new Text("d");
-    private static final byte[] DOCUMENT_COLUMN_BYTES = DOCUMENT_COLUMN.getBytes();
-    /**
-     * Term frequency column.
-     */
-    private static final Text TF_COLUMN = new Text("tf");
-    private static final byte[] TF_COLUMN_BYTES = TF_COLUMN.getBytes();
-    /**
-     * Fi column
-     */
-    private static final Text FI_COLUMN = new Text("fi");
-    /**
-     * Fi column bytes.
-     */
-    private static final byte[] FI_COLUMN_BYTES = FI_COLUMN.getBytes();
-    
-    /**
-     * Minimum shard length
-     */
-    private static final int SHARD_ID_LENGTH_MIN = 10;
     
     /**
      * Logger
@@ -112,95 +83,8 @@ public class DataTypeAgeOffFilter extends AppliedRule {
     public boolean accept(AgeOffPeriod period, Key k, Value v) {
         
         ruleApplied = false;
-        // get the column qualifier, so that we can use it throughout
-        // ASSUMES THAT THE KEY STARTS WITH A CORRECTLY SIZED BYTE ARRAY
-        final byte[] cq = k.getColumnQualifierData().getBackingArray();
         
-        int cqLength = cq.length;
-        
-        int nullIndex = -1;
-        
-        ByteSequence dataType = null;
-        
-        /**
-         * Supports the shard and index table. There should not be a failure, however if either one is used on the incorrect table
-         */
-        if (isIndextable) {
-            for (int i = SHARD_ID_LENGTH_MIN; i < cqLength; i++) {
-                if (cq[i] == NULL) {
-                    nullIndex = i + 1;
-                    break;
-                }
-            }
-            
-            if (nullIndex > 0)
-                dataType = new ArrayByteSequence(cq, nullIndex, (cqLength - nullIndex));
-            
-        } else {
-            // shard table
-            
-            // ASSUMES THAT THE KEY STARTS WITH A CORRECTLY SIZED BYTE ARRAY
-            byte[] cf = k.getColumnFamilyData().getBackingArray();
-            
-            byte[] column = null;
-            if (cf.length >= 3 && cf[0] == FI_COLUMN_BYTES[0] && cf[1] == FI_COLUMN_BYTES[1] && cf[2] == NULL) {
-                column = FI_COLUMN_BYTES;
-            } else if (cf.length == 2 && cf[0] == TF_COLUMN_BYTES[0]) {
-                // no need to check second character as we cannot have a datatype of 't' with an empty UID
-                column = TF_COLUMN_BYTES;
-            } else if (cf.length == 1 && cf[0] == DOCUMENT_COLUMN_BYTES[0]) {
-                column = DOCUMENT_COLUMN_BYTES;
-            }
-            
-            // if a document or tf column family, then we parse the shard entry differently
-            if (column == DOCUMENT_COLUMN_BYTES || column == TF_COLUMN_BYTES) {
-                
-                // don't need to check the last byte as we expect more than one null if formatted correctly
-                for (int i = 0; i < cqLength - 1; i++) {
-                    if (cq[i] == NULL) {
-                        nullIndex = i;
-                        break;
-                    }
-                }
-                
-                // the data type is the first part of this entry.
-                if (nullIndex > 0) {
-                    dataType = new ArrayByteSequence(cq, 0, nullIndex);
-                }
-                
-            } else if (column == FI_COLUMN_BYTES) {
-                
-                int uidIndex = -1;
-                for (int i = cqLength - 1; i >= 0; i--) {
-                    if (cq[i] == NULL) {
-                        if (uidIndex == -1)
-                            uidIndex = i;
-                        else {
-                            nullIndex = i + 1;
-                        }
-                        if (uidIndex > 0 && nullIndex > 0)
-                            break;
-                    }
-                }
-                
-                if (uidIndex > 0 && nullIndex > 0)
-                    dataType = new ArrayByteSequence(cq, nullIndex, (uidIndex - nullIndex));
-                
-            } else {
-                int cfLength = cf.length;
-                for (int i = 0; i < cfLength; i++) {
-                    if (cf[i] == NULL) {
-                        nullIndex = i;
-                        break;
-                    }
-                }
-                // data column
-                if (nullIndex > 0) {
-                    dataType = new ArrayByteSequence(cf, 0, nullIndex);
-                }
-                
-            }
-        }
+        ByteSequence dataType = DataTypeParser.parseKey(k, isIndextable);
         
         long defaultCutoffTime = (period.getTtl() >= 0) ? period.getCutOffMilliseconds() : -1;
         Long dataTypeCutoff = (dataTypeTimes.containsKey(dataType)) ? dataTypeTimes.get(dataType) : null;

@@ -16,8 +16,7 @@ import java.util.SortedMap;
 import java.util.TimeZone;
 import java.util.TreeMap;
 
-import org.apache.accumulo.core.client.SampleNotPresentException;
-import org.apache.accumulo.core.client.sample.SamplerConfiguration;
+import datawave.iterators.test.StubbedIteratorEnvironment;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -27,7 +26,6 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.CachedConfiguration;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -342,7 +340,7 @@ public class SourceManagerTest {
         }
     }
     
-    public class MockIteratorEnvironment implements IteratorEnvironment {
+    public class MockIteratorEnvironment extends StubbedIteratorEnvironment {
         
         AccumuloConfiguration conf;
         
@@ -371,36 +369,5 @@ public class SourceManagerTest {
         public IteratorScope getIteratorScope() {
             return IteratorScope.scan;
         }
-        
-        @Override
-        public boolean isFullMajorCompaction() {
-            throw new UnsupportedOperationException();
-        }
-        
-        @Override
-        public Authorizations getAuthorizations() {
-            throw new UnsupportedOperationException();
-        }
-        
-        @Override
-        public IteratorEnvironment cloneWithSamplingEnabled() {
-            throw new SampleNotPresentException();
-        }
-        
-        @Override
-        public boolean isSamplingEnabled() {
-            return false;
-        }
-        
-        @Override
-        public SamplerConfiguration getSamplerConfiguration() {
-            return null;
-        }
-        
-        @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
-            throw new UnsupportedOperationException();
-        }
-        
     }
 }

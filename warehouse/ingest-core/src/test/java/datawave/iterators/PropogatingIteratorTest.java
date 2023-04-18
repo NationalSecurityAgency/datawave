@@ -1,16 +1,19 @@
 package datawave.iterators;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.LockSupport;
 
-import org.apache.accumulo.core.client.SampleNotPresentException;
-import org.apache.accumulo.core.client.sample.SamplerConfiguration;
+import datawave.iterators.test.StubbedIteratorEnvironment;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -18,7 +21,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.junit.Assert;
 import org.junit.Test;
@@ -74,7 +76,7 @@ public class PropogatingIteratorTest {
         return builder;
     }
     
-    public static class MockIteratorEnvironment implements IteratorEnvironment {
+    public static class MockIteratorEnvironment extends StubbedIteratorEnvironment {
         AccumuloConfiguration conf;
         private final boolean major;
         
@@ -99,36 +101,6 @@ public class PropogatingIteratorTest {
         @Override
         public boolean isFullMajorCompaction() {
             return major;
-        }
-        
-        @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
-            throw new UnsupportedOperationException();
-        }
-        
-        @Override
-        public Authorizations getAuthorizations() {
-            throw new UnsupportedOperationException();
-        }
-        
-        @Override
-        public IteratorEnvironment cloneWithSamplingEnabled() {
-            throw new SampleNotPresentException();
-        }
-        
-        @Override
-        public boolean isSamplingEnabled() {
-            return false;
-        }
-        
-        @Override
-        public SamplerConfiguration getSamplerConfiguration() {
-            return null;
-        }
-        
-        @Override
-        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String arg0) {
-            return null;
         }
     }
     
