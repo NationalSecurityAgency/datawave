@@ -12,9 +12,9 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -23,6 +23,8 @@ import java.util.Set;
  */
 class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
     private MetadataHelper metadataHelper;
+    
+    private static final Logger LOGGER = Logger.getLogger(SplitGeoWaveFunctionVisitor.class);
     
     private SplitGeoWaveFunctionVisitor(MetadataHelper metadataHelper) {
         this.metadataHelper = metadataHelper;
@@ -40,9 +42,9 @@ class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
         if (descriptor instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
             Set<String> fields = null;
             try {
-                fields = descriptor.fields(metadataHelper, Collections.emptySet());
+                fields = descriptor.fields(metadataHelper, null);
             } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException(e);
+                LOGGER.debug("Unable to load datatypes from metadata table");
             }
             if (fields.size() > 1) {
                 List<JexlNode> functionNodes = new ArrayList<>();
@@ -68,9 +70,9 @@ class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
         } else if (descriptor instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
             Set<String> fields = null;
             try {
-                fields = descriptor.fields(metadataHelper, Collections.emptySet());
+                fields = descriptor.fields(metadataHelper, null);
             } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException(e);
+                LOGGER.debug("Unable to load datatypes from metadata table");
             }
             if (fields.size() > 1) {
                 List<JexlNode> functionNodes = new ArrayList<>();
