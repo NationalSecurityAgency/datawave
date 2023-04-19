@@ -236,7 +236,9 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
      * @param serverPrincipal
      *            the {@link Principal} of the server running DATAWAVE
      * @throws IOException
+     *             for IOException
      * @throws AccumuloSecurityException
+     *             for AccumuloSecurityException
      */
     private void setupJob(Job job, Path jobDir, GenericQueryConfiguration queryConfig, QueryLogic<?> logic, String base64EncodedQuery,
                     Class<? extends Query> queryImplClass, Set<Authorizations> runtimeQueryAuthorizations, DatawavePrincipal serverPrincipal)

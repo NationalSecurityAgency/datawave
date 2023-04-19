@@ -164,7 +164,9 @@ public class MapReduceStatePersisterBean {
      * @param id
      *            map reduce id
      * @param hdfsUri
+     *            the uri
      * @param jobTracker
+     *            the job tracker name
      * @param workingDirectory
      *            map reduce job working directory
      * @param mapReduceJobId
@@ -174,6 +176,9 @@ public class MapReduceStatePersisterBean {
      * @param runtimeParameters
      *            parameters
      * @param jobName
+     *            job name
+     * @throws QueryException
+     *             for QueryException
      */
     public void create(String id, String hdfsUri, String jobTracker, String workingDirectory, String mapReduceJobId, String resultsDirectory,
                     String runtimeParameters, String jobName) throws QueryException {
@@ -512,6 +517,7 @@ public class MapReduceStatePersisterBean {
      * @param mapReduceJobId
      *            map reduce job id
      * @throws QueryException
+     *             for problems with query
      */
     public void addJob(String id, String mapReduceJobId) throws QueryException {
         // Find out who/what called this method
@@ -572,7 +578,8 @@ public class MapReduceStatePersisterBean {
      *
      * @param id
      *            bulk results id
-     *
+     * @throws QueryException
+     *             for problems with query
      */
     public void remove(String id) throws QueryException {
         // Find out who/what called this method

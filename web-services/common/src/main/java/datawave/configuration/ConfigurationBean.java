@@ -55,6 +55,8 @@ public class ConfigurationBean {
     /**
      * Causes reloadable configuration to be re-read from disk. If a spring config file on disk is edited, or a system property is changed, call this endpoint
      * to have all classes that are able to refresh themselves using the updated configuration.
+     * 
+     * @return endpoint response
      */
     @GET
     @Path("/refresh")
