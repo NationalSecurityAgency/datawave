@@ -4,6 +4,7 @@ import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
 public class EventKeyTest {
@@ -66,6 +67,7 @@ public class EventKeyTest {
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
         assertEquals("value", parser.getValue());
+        assertEquals(eventKey, parser.getKey());
     }
     
     private void assertKeyWithNullsInValue(KeyParser parser) {
@@ -74,6 +76,7 @@ public class EventKeyTest {
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
         assertEquals("v\0a\0l\0u\0e", parser.getValue());
+        assertEquals(eventKeyWithNullsInValue, parser.getKey());
     }
     
     private void assertKeyWithChildUid(KeyParser parser) {
@@ -82,6 +85,7 @@ public class EventKeyTest {
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
         assertEquals("value", parser.getValue());
+        assertEquals(eventKeyWithChildUid, parser.getKey());
     }
     
     private void assertKeyWithChildUidNoDashes(KeyParser parser) {
@@ -90,6 +94,7 @@ public class EventKeyTest {
         assertEquals("d8zay2.3pnndm.anolok", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
         assertEquals("value", parser.getValue());
+        assertEquals(eventKeyWithChildUidNoDashes, parser.getKey());
     }
     
     @Test
@@ -99,6 +104,7 @@ public class EventKeyTest {
         // cq parses cleanly
         assertEquals("FIELD", parser.getField());
         assertEquals("value", parser.getValue());
+        assertEquals(eventKeyWithNoCf, parser.getKey());
         
         // cf is invalid, exceptions are thrown
         assertThrows(IllegalArgumentException.class, parser::getDatatype);
@@ -113,6 +119,7 @@ public class EventKeyTest {
         assertEquals("datatype", parser.getDatatype());
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getUid());
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
+        assertEquals(eventKeyWithNoCq, parser.getKey());
         
         assertThrows(IllegalArgumentException.class, parser::getField);
         assertThrows(IllegalArgumentException.class, parser::getValue);
@@ -125,6 +132,7 @@ public class EventKeyTest {
         // cq parses cleanly
         assertEquals("FIELD", parser.getField());
         assertEquals("value", parser.getValue());
+        assertEquals(eventKeyWithMalformedCf, parser.getKey());
         
         // cf is invalid, exceptions will be thrown
         assertThrows(IllegalArgumentException.class, parser::getDatatype);
@@ -140,6 +148,7 @@ public class EventKeyTest {
         assertEquals("datatype", parser.getDatatype());
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getUid());
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
+        assertEquals(eventKeyWithMalformedCq, parser.getKey());
         
         assertThrows(IllegalArgumentException.class, parser::getField);
         assertThrows(IllegalArgumentException.class, parser::getValue);
@@ -148,6 +157,7 @@ public class EventKeyTest {
     @Test
     public void testParseNullKey() {
         parser.parse(null);
+        assertNull(parser.getKey());
         assertThrows(IllegalArgumentException.class, parser::getDatatype);
         assertThrows(IllegalArgumentException.class, parser::getUid);
         assertThrows(IllegalArgumentException.class, parser::getRootUid);
