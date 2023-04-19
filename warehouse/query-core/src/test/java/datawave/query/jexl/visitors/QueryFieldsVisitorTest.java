@@ -24,6 +24,11 @@ public class QueryFieldsVisitorTest {
         helper.addNormalizers("FOO2", Collections.singleton(new LcNoDiacriticsType()));
         helper.addNormalizers("FOO3", Collections.singleton(new LcNoDiacriticsType()));
         helper.addNormalizers("FOO4", Collections.singleton(new LcNoDiacriticsType()));
+        
+        helper.addField("FOO", "LcNoDiacriticsType");
+        helper.addField("FOO2", "LcNoDiacriticsType");
+        helper.addField("FOO3", "LcNoDiacriticsType");
+        helper.addField("FOO4", "LcNoDiacriticsType");
     }
     
     @Test

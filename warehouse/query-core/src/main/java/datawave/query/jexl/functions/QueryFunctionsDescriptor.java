@@ -1,6 +1,7 @@
 package datawave.query.jexl.functions;
 
 import com.google.common.collect.Sets;
+import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.ArithmeticJexlEngines;
@@ -52,6 +53,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         @Override
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter)
                         throws TableNotFoundException {
+            Set<String> allFields = helper.getAllFields(datatypeFilter);
             switch (name) {
                 case BETWEEN:
                     JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), args.get(1).image);
@@ -64,22 +66,26 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                                     + args.get(2).image + '}');
                 case QueryFunctions.MATCH_REGEX:
                     // Return an index query.
-                    return getIndexQuery(helper, datatypeFilter);
+                    return getIndexQuery(allFields);
                 case INCLUDE_TEXT:
                     // Return the appropriate index query.
-                    return getTextIndexQuery(helper, datatypeFilter);
+                    return getTextIndexQuery(allFields);
                 default:
                     // Return the true node if unable to parse arguments.
                     return TRUE_NODE;
             }
         }
         
-        private JexlNode getIndexQuery(MetadataHelper helper, Set<String> datatypeFilter) throws TableNotFoundException {
+        private JexlNode getIndexQuery(Set<String> allFields) throws TableNotFoundException {
             JexlNode node0 = args.get(0);
             final String value = args.get(1).image;
             if (node0 instanceof ASTIdentifier) {
                 final String field = JexlASTHelper.deconstructIdentifier(node0.image);
-                return JexlNodeFactory.buildNode((ASTERNode) null, field, value);
+                if (allFields.contains(field) || field.equals(Constants.ANY_FIELD)) {
+                    return JexlNodeFactory.buildNode((ASTERNode) null, field, value);
+                } else {
+                    return null;
+                }
             } else {
                 // node0 is an Or node or an And node
                 // copy it
@@ -87,20 +93,26 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 int i = 0;
                 for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
                     String field = JexlASTHelper.deconstructIdentifier(identifier.image);
-                    JexlNode kid = JexlNodeFactory.buildNode((ASTERNode) null, field, value);
-                    kid.jjtSetParent(newParent);
-                    newParent.jjtAddChild(kid, i++);
+                    if (allFields.contains(field)) {
+                        JexlNode kid = JexlNodeFactory.buildNode((ASTERNode) null, field, value);
+                        kid.jjtSetParent(newParent);
+                        newParent.jjtAddChild(kid, i++);
+                    }
                 }
                 return newParent;
             }
         }
         
-        private JexlNode getTextIndexQuery(MetadataHelper helper, Set<String> datatypeFilter) {
+        private JexlNode getTextIndexQuery(Set<String> allFields) {
             JexlNode node0 = args.get(0);
             final String value = args.get(1).image;
             if (node0 instanceof ASTIdentifier) {
                 final String field = JexlASTHelper.deconstructIdentifier(node0.image);
-                return JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
+                if (allFields.contains(field) || field.equals(Constants.ANY_FIELD)) {
+                    return JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
+                } else {
+                    return null;
+                }
             } else {
                 // node0 is an Or node or an And node
                 // copy it
@@ -151,11 +163,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             Set<String> allFields = helper.getAllFields(datatypeFilter);
             
             for (Set<String> aFieldSet : JexlArgumentDescriptor.Fields.product(args.get(0))) {
-                Set<String> filteredFields = Sets.newHashSet();
-                for (String field : aFieldSet) {
-                    filterField(allFields, field, filteredFields);
-                }
-                filteredSets.add(filteredFields);
+                filteredSets.add(filterSet(allFields, aFieldSet));
             }
             
             return filteredSets;
@@ -172,6 +180,19 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             if (allFields.contains(fieldToAdd)) {
                 returnedFields.add(fieldToAdd);
             }
+        }
+        
+        /**
+         * Given a list of all possible fields, filters out fields based on the given datatype(s)
+         *
+         * @param allFields
+         * @param fields
+         */
+        private Set<String> filterSet(Set<String> allFields, Set<String> fields) {
+            Set<String> returnedFields = Sets.newHashSet();
+            returnedFields.addAll(allFields);
+            returnedFields.retainAll(fields);
+            return returnedFields;
         }
         
         @Override
