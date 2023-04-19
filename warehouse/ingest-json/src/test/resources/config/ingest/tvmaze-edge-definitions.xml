@@ -24,14 +24,10 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <!--
-                               'AllPairs', i.e., create an edge between each pair of items in this list, bidirectional in this case
+                               'AllPairs', i.e., create an edge between each pair of items in this list, bidirectional in this case.
 
                                With nested data structures that are ingested with 'grouping' context enabled, we can leverage
-                               that context to pinpoint the exact pairings that we want. Unfortunately though, we don't currently
-                               have a way to dynamically define the pairings based on cardinality of , therefore we have to
-                               statically define them here and assume some reasonable upper bound. E.g., here we're assuming
-                               that a TV show cast will not exceed 35 members. If it does exceed 35, they will not be included
-                               in the graph.
+                               that context to pinpoint the exact pairings that we want. Alternatively, to dynamically generate pairings regardless of grouping contexts, field groups can be trimmed using the SimpleGroupFieldNameParser.
                              -->
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED.CAST.PERSON"/>

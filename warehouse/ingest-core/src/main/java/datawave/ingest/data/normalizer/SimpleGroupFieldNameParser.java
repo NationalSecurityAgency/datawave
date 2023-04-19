@@ -19,7 +19,7 @@ import com.google.common.collect.Multimap;
 public class SimpleGroupFieldNameParser {
     private static final long serialVersionUID = 1035918631638323565L;
     private static final Logger log = Logger.getLogger(SimpleGroupFieldNameParser.class);
-    private static final String DOT = ".";
+    private static final char DOT = '.';
     
     public SimpleGroupFieldNameParser() {}
     
@@ -30,7 +30,7 @@ public class SimpleGroupFieldNameParser {
      */
     public NormalizedContentInterface extractFieldNameComponents(NormalizedContentInterface origField) {
         String originalIndexedFieldName = origField.getIndexedFieldName();
-        int index = originalIndexedFieldName.indexOf('.');
+        int index = originalIndexedFieldName.indexOf(DOT);
         
         if (index > -1) {
             // this field name has a group component
@@ -85,7 +85,7 @@ public class SimpleGroupFieldNameParser {
      * @return the component array. base field name : FIELD_NAME, groups: GROUP.{IntermediateGroups} with offsets removed, and subgroup {Context}
      */
     public String[] extractTrimmedGroupAndSubGroup(String fullFieldName) {
-        String[] splits = StringUtils.split(fullFieldName, '.');
+        String[] splits = StringUtils.split(fullFieldName, DOT);
         String baseFieldName = splits[0];
         String group = null;
         String subgroup = null;
@@ -122,7 +122,7 @@ public class SimpleGroupFieldNameParser {
      * @return GROUP.{IntermediateGroups} with parent offsets removed
      */
     public String getTrimmedGroup(String origGroup) {
-        String[] splits = StringUtils.split(origGroup, '.');
+        String[] splits = StringUtils.split(origGroup, DOT);
         
         origGroup = removeLastGroup(splits);
         String group = trimGroup(origGroup);
@@ -176,7 +176,7 @@ public class SimpleGroupFieldNameParser {
         for (int i = 0; i < groupStr.length(); i++) {
             char c = groupStr.charAt(i);
             if (checkForSubgroup) {
-                if (c == '.') {
+                if (c == DOT) {
                     group.append(c);
                     checkForSubgroup = false;
                 } else if (Character.isDigit(c)) {

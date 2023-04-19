@@ -982,11 +982,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     protected String getGroupedFieldName(NormalizedContentInterface value) {
         String fieldName = value.getIndexedFieldName();
-        String group;
         if (value instanceof GroupedNormalizedContentInterface) {
             GroupedNormalizedContentInterface grouped = (GroupedNormalizedContentInterface) value;
             if (grouped.isGrouped() && grouped.getGroup() != null) {
                 if (!grouped.getGroup().isEmpty()) {
+                    String group;
                     if (trimFieldGroup) {
                         group = fieldParser.getTrimmedGroup(grouped.getGroup());
                     } else {
