@@ -48,7 +48,17 @@ public class GeoFunctionsDescriptorTest {
     }
     
     @Test
-    public void antiMeridianTest1() throws ParseException, TableNotFoundException {
+    public void testGeoLatLonToGeoWaveFunction() throws Exception {
+        String query = "geo:within_bounding_box(LON_FIELD, LAT_FIELD, 16.30, 26.16, -12.74, -3.31)";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        GeoFunctionsDescriptor.GeoJexlArgumentDescriptor argDesc = (GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) new GeoFunctionsDescriptor()
+                        .getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0).jjtGetChild(0));
+        JexlNode queryNode = argDesc.toGeoWaveFunction(Sets.newHashSet("LON_FIELD", "LAT_FIELD"));
+        Assert.assertNull(queryNode);
+    }
+    
+    @Test
+    public void antiMeridianTest1() throws Exception {
         String query = "geo:within_bounding_box(GEO_FIELD, '40_170', '50_-170')";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         JexlArgumentDescriptor argDesc = new GeoFunctionsDescriptor().getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0).jjtGetChild(0));

@@ -1,7 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
-import org.apache.accumulo.fate.zookeeper.ZooCache;
+import org.apache.accumulo.core.fate.zookeeper.ZooCache;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;

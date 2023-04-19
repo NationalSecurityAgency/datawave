@@ -387,7 +387,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         TraceStopwatch eventMapperTimer = null;
         
         if (metricsEnabled) {
-            eventMapperTimer = new TraceStopwatch("Time in EventMapper");
+            eventMapperTimer = new TraceStopwatch("Time in EventMapper for " + context.getTaskAttemptID());
             eventMapperTimer.start();
         }
         

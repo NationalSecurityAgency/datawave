@@ -18,12 +18,13 @@ import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import datawave.webservice.query.util.QueryUtil;
+
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchDeleter;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
@@ -119,7 +120,7 @@ public class Persister {
         return q;
     }
     
-    private void tableCheck(Connector c) throws AccumuloException, AccumuloSecurityException, TableExistsException {
+    private void tableCheck(AccumuloClient c) throws AccumuloException, AccumuloSecurityException, TableExistsException {
         if (!c.tableOperations().exists(TABLE_NAME)) {
             c.tableOperations().create(TABLE_NAME);
             try {
@@ -139,10 +140,10 @@ public class Persister {
      *
      */
     private void create(Query query) {
-        Connector c = null;
+        AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (BatchWriter writer = c.createBatchWriter(TABLE_NAME, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L)
                             .setMaxWriteThreads(1))) {
@@ -156,7 +157,7 @@ public class Persister {
             throw new EJBException("Error creating query", e);
         } finally {
             try {
-                connectionFactory.returnConnection(c);
+                connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error creating query", e);
                 c = null;
@@ -201,11 +202,11 @@ public class Persister {
         }
         log.trace(sid + " has authorizations " + auths);
         
-        Connector c = null;
+        AccumuloClient c = null;
         BatchDeleter deleter = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(Priority.ADMIN, trackingMap);
             if (!c.tableOperations().exists(TABLE_NAME)) {
                 return;
             }
@@ -227,7 +228,7 @@ public class Persister {
                 deleter.close();
             }
             try {
-                connectionFactory.returnConnection(c);
+                connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error deleting query", e);
                 c = null;
@@ -258,17 +259,17 @@ public class Persister {
         }
         log.trace(sid + " has authorizations " + auths);
         
-        Connector conn = null;
+        AccumuloClient client = null;
         
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            conn = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
-            tableCheck(conn);
+            client = connectionFactory.getClient(Priority.ADMIN, trackingMap);
+            tableCheck(client);
             
             IteratorSetting regex = new IteratorSetting(21, RegExFilter.class);
             regex.addOption(RegExFilter.COLQ_REGEX, id + "\0.*");
             
-            try (Scanner scanner = ScannerHelper.createScanner(conn, TABLE_NAME, auths)) {
+            try (Scanner scanner = ScannerHelper.createScanner(client, TABLE_NAME, auths)) {
                 scanner.setRange(new Range(sid, sid));
                 scanner.addScanIterator(regex);
                 
@@ -279,7 +280,7 @@ public class Persister {
             throw new EJBException("Error creating query", e);
         } finally {
             try {
-                connectionFactory.returnConnection(conn);
+                connectionFactory.returnClient(client);
             } catch (Exception e) {
                 log.error("Error creating query", e);
             }
@@ -307,10 +308,10 @@ public class Persister {
         }
         log.trace(shortName + " has authorizations " + auths);
         
-        Connector c = null;
+        AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 Range range = new Range(shortName, shortName);
@@ -332,7 +333,7 @@ public class Persister {
             throw new EJBException("Error creating query", e);
         } finally {
             try {
-                connectionFactory.returnConnection(c);
+                connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error creating query", e);
                 c = null;
@@ -353,10 +354,10 @@ public class Persister {
         }
         log.trace(sid + " has authorizations " + auths);
         
-        Connector c = null;
+        AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 Range range = new Range(sid, sid);
@@ -376,7 +377,7 @@ public class Persister {
             throw new EJBException("Error creating query", e);
         } finally {
             try {
-                connectionFactory.returnConnection(c);
+                connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error creating query", e);
                 c = null;
@@ -405,10 +406,10 @@ public class Persister {
         }
         log.trace(sid + " has authorizations " + auths);
         
-        Connector c = null;
+        AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 Range range = new Range(user, user);
@@ -428,7 +429,7 @@ public class Persister {
             throw new EJBException("Error creating query", e);
         } finally {
             try {
-                connectionFactory.returnConnection(c);
+                connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error creating query", e);
                 c = null;
@@ -438,20 +439,20 @@ public class Persister {
     
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     public List<Query> adminFindById(final String queryId) {
-        Connector conn = null;
+        AccumuloClient client = null;
         
         try {
             final Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            conn = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
-            tableCheck(conn);
+            client = connectionFactory.getClient(Priority.ADMIN, trackingMap);
+            tableCheck(client);
             
             final IteratorSetting regex = new IteratorSetting(21, RegExFilter.class);
             regex.addOption(RegExFilter.COLQ_REGEX, queryId);
             
             final HashSet<Authorizations> auths = new HashSet<>();
-            auths.add(conn.securityOperations().getUserAuthorizations(conn.whoami()));
+            auths.add(client.securityOperations().getUserAuthorizations(client.whoami()));
             
-            try (final Scanner scanner = ScannerHelper.createScanner(conn, TABLE_NAME, auths)) {
+            try (final Scanner scanner = ScannerHelper.createScanner(client, TABLE_NAME, auths)) {
                 scanner.addScanIterator(regex);
                 return Lists.newArrayList(Iterables.transform(scanner, implResultsTransform));
             }
@@ -460,8 +461,8 @@ public class Persister {
             throw new EJBException("Error finding query", ex);
         } finally {
             try {
-                if (conn != null)
-                    connectionFactory.returnConnection(conn);
+                if (client != null)
+                    connectionFactory.returnClient(client);
             } catch (Exception ex) {
                 log.error("Error creating query", ex);
             }

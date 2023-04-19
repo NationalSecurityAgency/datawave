@@ -4,9 +4,8 @@ import com.github.benmanes.caffeine.cache.Cache;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.security.util.ScannerHelper;
 import datawave.util.StringUtils;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -41,7 +40,8 @@ import java.util.TreeMap;
  * <p>
  * Helper class to fetch data from the date index.
  * </p>
- * <table border="1" summary="">
+ * <table border="1">
+ * <caption></caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -68,8 +68,7 @@ public class DateIndexHelper implements ApplicationContextAware {
     
     public static final String NULL_BYTE = "\0";
     
-    protected Connector connector;
-    protected Instance instance;
+    protected AccumuloClient client;
     
     protected String dateIndexTableName;
     protected Set<Authorizations> auths;
@@ -94,8 +93,8 @@ public class DateIndexHelper implements ApplicationContextAware {
         return dateIndexTableName;
     }
     
-    public Connector getConnector() {
-        return connector;
+    public AccumuloClient getClient() {
+        return client;
     }
     
     public Set<Authorizations> getAuths() {
@@ -127,36 +126,12 @@ public class DateIndexHelper implements ApplicationContextAware {
                             new Exception("exception for debug purposes"));
         return new DateIndexHelper();
     }
-    
-    /**
-     * Create and instance of a date index helper
-     *
-     * @param connector
-     *            a connector
-     * @param dateIndexTableName
-     *            the date index table name
-     * @param auths
-     *            auths
-     * @param collapseDatePercentThreshold
-     *            collapseDatePercentThreshold
-     * @param numQueryThreads
-     *            numQueryThreads
-     * @return the date index helper
-     */
-    public DateIndexHelper initialize(Connector connector, String dateIndexTableName, Set<Authorizations> auths, int numQueryThreads,
-                    float collapseDatePercentThreshold) {
-        if (dateIndexTableName != null && !dateIndexTableName.isEmpty()) {
-            return initialize(connector, connector.getInstance(), dateIndexTableName, auths, numQueryThreads, collapseDatePercentThreshold);
-        }
-        log.warn("Attempting to create a date index helper however the date index table name is empty");
-        return null;
-    }
-    
+
     /**
      * Initializes the instance with a provided update interval.
-     *
-     * @param connector
-     *            A Connector to Accumulo
+     * 
+     * @param client
+     *            A client connection to Accumulo
      * @param dateIndexTableName
      *            The name of the date index table
      * @param auths
@@ -165,21 +140,23 @@ public class DateIndexHelper implements ApplicationContextAware {
      *            number of query threads
      * @param collapseDatePercentThreshold
      *            the date percent threshold
-     * @param instance
-     *            an instance
      * @return the instance
      */
-    protected DateIndexHelper initialize(Connector connector, Instance instance, String dateIndexTableName, Set<Authorizations> auths, int numQueryThreads,
+    public DateIndexHelper initialize(AccumuloClient client, String dateIndexTableName, Set<Authorizations> auths, int numQueryThreads,
                     float collapseDatePercentThreshold) {
-        this.connector = connector;
-        this.instance = instance;
+        if (dateIndexTableName == null || dateIndexTableName.isEmpty()) {
+            log.warn("Attempting to create a date index helper however the date index table name is empty");
+            return null;
+        }
+
+        this.client = client;
         this.dateIndexTableName = dateIndexTableName;
         this.auths = auths;
         this.numQueryThreads = numQueryThreads;
         this.collapseDatePercentThreshold = collapseDatePercentThreshold;
         
         if (log.isTraceEnabled()) {
-            log.trace("Constructor  connector: " + (connector != null ? connector.getClass().getCanonicalName() : connector) + " with auths: " + auths
+            log.trace("Constructor  connector: " + (client != null ? client.getClass().getCanonicalName() : client) + " with auths: " + auths
                             + " and date index table name: " + dateIndexTableName + "; " + numQueryThreads + " threads and " + collapseDatePercentThreshold
                             + " collapse date percent threshold");
         }
@@ -251,7 +228,7 @@ public class DateIndexHelper implements ApplicationContextAware {
         
         DateTypeDescription desc = new DateTypeDescription();
         
-        BatchScanner bs = ScannerHelper.createBatchScanner(connector, dateIndexTableName, auths, numQueryThreads);
+        BatchScanner bs = ScannerHelper.createBatchScanner(client, dateIndexTableName, auths, numQueryThreads);
         try {
             
             // scan from begin to end
@@ -342,7 +319,7 @@ public class DateIndexHelper implements ApplicationContextAware {
         
         TreeMap<String,BitSet> bitsets = new TreeMap<>();
         
-        BatchScanner bs = ScannerHelper.createBatchScanner(connector, dateIndexTableName, auths, numQueryThreads);
+        BatchScanner bs = ScannerHelper.createBatchScanner(client, dateIndexTableName, auths, numQueryThreads);
         
         try {
             bs.setRanges(Arrays.asList(new Range(DateIndexUtil.format(begin), DateIndexUtil.format(end) + '~')));

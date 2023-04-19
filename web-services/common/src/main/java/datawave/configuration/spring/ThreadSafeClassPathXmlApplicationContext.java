@@ -345,6 +345,16 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     }
     
     @Override
+    public Class<?> getType(String name, boolean allowFactoryBeanInit) throws NoSuchBeanDefinitionException {
+        lock.readLock().lock();
+        try {
+            return configurableApplicationContext.getType(name, allowFactoryBeanInit);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+    
+    @Override
     public String[] getAliases(String name) {
         lock.readLock().lock();
         try {
@@ -401,6 +411,16 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     
     @Override
     public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
+        lock.readLock().lock();
+        try {
+            return configurableApplicationContext.getBeanNamesForType(type, includeNonSingletons, allowEagerInit);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+    
+    @Override
+    public String[] getBeanNamesForType(ResolvableType type, boolean includeNonSingletons, boolean allowEagerInit) {
         lock.readLock().lock();
         try {
             return configurableApplicationContext.getBeanNamesForType(type, includeNonSingletons, allowEagerInit);

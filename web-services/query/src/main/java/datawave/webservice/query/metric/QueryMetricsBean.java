@@ -80,7 +80,7 @@ public class QueryMetricsBean {
     @Inject
     @SpringBean(name = "QueryMetricsWriterConfiguration", refreshable = true)
     private QueryMetricsWriterConfiguration queryMetricsWriterConfiguration;
-    
+
     /*
      * @PermitAll is necessary because this method is called indirectly from the @PreDestroy method of the QueryExpirationBean and the QueryExpirationBean's
      * 
@@ -141,7 +141,7 @@ public class QueryMetricsBean {
             return queryHandler.query(user, id, dp);
         }
     }
-    
+
     @GET
     @POST
     @Path("/id/{id}/map")
@@ -163,7 +163,7 @@ public class QueryMetricsBean {
             return queryGeometryHandler.getQueryGeometryResponse(id, queryHandler.query(user, id, dp).getResult());
         }
     }
-    
+
     /**
      *
      * Returns a summary of the query metrics
@@ -192,7 +192,7 @@ public class QueryMetricsBean {
             return queryMetricsSummary(begin, end, false);
         }
     }
-    
+
     /**
      *
      * Returns a summary of the query metrics
@@ -223,7 +223,7 @@ public class QueryMetricsBean {
             return queryMetricsSummary(begin, end, false);
         }
     }
-    
+
     /**
      *
      * Returns a summary of the query metrics
@@ -254,7 +254,7 @@ public class QueryMetricsBean {
             return queryMetricsSummary(begin, end, false);
         }
     }
-    
+
     /**
      *
      * Returns a summary of the requesting user's query metrics
@@ -282,7 +282,7 @@ public class QueryMetricsBean {
             return queryMetricsSummary(begin, end, true);
         }
     }
-    
+
     /**
      *
      * Returns a summary of the requesting user's query metrics
@@ -312,7 +312,7 @@ public class QueryMetricsBean {
             return queryMetricsSummary(begin, end, true);
         }
     }
-    
+
     private QueryMetricsSummaryResponse queryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser) {
         
         if (null == end) {
