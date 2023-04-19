@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import datawave.common.test.integration.IntegrationTest;
-import datawave.common.test.logging.CommonTestAppender;
+import datawave.common.test.logging.TestLogCollector;
 import datawave.common.test.utils.ProcessUtils;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -26,8 +26,6 @@ import datawave.ingest.input.reader.EventRecordReader;
 import datawave.ingest.input.reader.LongLineEventRecordReader;
 
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.client.impl.Credentials;
-import org.apache.commons.vfs2.provider.hdfs.HdfsFileSystem;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -61,19 +59,22 @@ public class BulkIngestMapFileLoaderTest {
     
     protected static final Logger logger = Logger.getLogger(BulkIngestMapFileLoaderTest.class);
     protected Level testDriverLevel;
-    protected Level uutLevel;
-    protected CommonTestAppender uutAppender;
     
     private List<String> systemProperties;
     
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+
+    @Rule
+    public TestLogCollector logCollector = new TestLogCollector.Builder()
+            .with(BulkIngestMapFileLoader.class, Level.ALL).build();
     
     @Test
     public void testShutdownPortAlreadyInUse() throws IOException {
         exit.expectSystemExitWithStatus(-3);
         try (final ServerSocket socket = new ServerSocket(0)) {
-            new BulkIngestMapFileLoader(".", null, null, null, null, null, null, null, null, null, null, socket.getLocalPort());
+            new BulkIngestMapFileLoader(".", null, "test", "localhost:2181", "root", new PasswordToken(""), null, null, null, null, null, null,
+                            socket.getLocalPort());
         }
     }
     
@@ -388,7 +389,7 @@ public class BulkIngestMapFileLoaderTest {
     }
     
     protected List<String> retrieveUUTLogs() throws IOException {
-        return uutAppender.retrieveLogsEntries();
+        return logCollector.getMessages();
     }
     
     @Before
@@ -397,23 +398,11 @@ public class BulkIngestMapFileLoaderTest {
         
         testDriverLevel = BulkIngestMapFileLoaderTest.logger.getLevel();
         BulkIngestMapFileLoaderTest.logger.setLevel(Level.ALL);
-        
-        Logger uutLogger = Logger.getLogger(BulkIngestMapFileLoader.class);
-        uutAppender = new CommonTestAppender();
-        
-        uutLevel = uutLogger.getLevel();
-        uutLogger.setLevel(Level.ALL);
-        uutLogger.addAppender(uutAppender);
-        
     }
     
     @After
     public void teardown() {
-        
-        Logger.getLogger(BulkIngestMapFileLoader.class).setLevel(uutLevel);
-        Logger.getLogger(BulkIngestMapFileLoader.class).removeAppender(uutAppender);
         BulkIngestMapFileLoaderTest.logger.setLevel(testDriverLevel);
-        
     }
     
     @Test
@@ -1532,7 +1521,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -1540,13 +1528,13 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
-            uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs, destHdfs, jobtracker,
-                            tablePriorities, conf, 0);
+            uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"), seqFileHdfs, srcHdfs,
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -1575,7 +1563,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -1583,8 +1570,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -1646,7 +1633,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -1654,8 +1640,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -1707,7 +1693,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -1715,8 +1700,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -1769,7 +1754,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -1777,8 +1761,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -1831,7 +1815,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -1839,8 +1822,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -1900,7 +1883,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -1908,8 +1890,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -1966,7 +1948,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -1974,8 +1955,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2030,7 +2011,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -2038,8 +2018,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2093,7 +2073,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -2101,8 +2080,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2157,7 +2136,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -2165,8 +2143,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2221,7 +2199,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -2229,8 +2206,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2283,7 +2260,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -2291,8 +2267,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2346,7 +2322,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -2354,8 +2329,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2407,7 +2382,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -2415,8 +2389,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2470,7 +2444,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -2478,8 +2451,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2526,7 +2499,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -2534,8 +2506,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2577,7 +2549,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -2585,8 +2556,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2626,7 +2597,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -2634,8 +2604,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2677,7 +2647,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -2685,8 +2654,8 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Integer> tablePriorities = new HashMap<>();
             Configuration conf = new Configuration();
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2726,7 +2695,6 @@ public class BulkIngestMapFileLoaderTest {
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
             URI seqFileHdfs = url.toURI();
             URI srcHdfs = url.toURI();
             URI destHdfs = url.toURI();
@@ -2738,8 +2706,8 @@ public class BulkIngestMapFileLoaderTest {
             
             mfs.create(new Path(url.toString() + "/job.cleanup"));
             
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
+                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             

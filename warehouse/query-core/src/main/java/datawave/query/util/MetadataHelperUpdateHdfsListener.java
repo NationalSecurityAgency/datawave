@@ -4,9 +4,10 @@ import datawave.webservice.common.cache.SharedCacheCoordinator;
 import datawave.webservice.common.cache.SharedTriState;
 import datawave.webservice.common.cache.SharedTriStateListener;
 import datawave.webservice.common.cache.SharedTriStateReader;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import datawave.webservice.util.EnvProvider;
 import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
@@ -83,16 +84,14 @@ public class MetadataHelperUpdateHdfsListener {
     private String resolvePassword(String password) {
         return EnvProvider.resolve(password);
     }
-    
+
     private void registerCacheListener(final String metadataTableName) {
         if (log.isDebugEnabled())
             log.debug("table:" + metadataTableName + " created UpdateHdfs listener for table:" + metadataTableName);
         final SharedCacheCoordinator watcher = new SharedCacheCoordinator(metadataTableName, this.zookeepers, 30, 300, 10);
         try {
             watcher.start();
-        } catch (Exception e) {
-            throw new RuntimeException("table:" + metadataTableName + " Error starting Watcher for MetadataHelper", e);
-        } catch (Error e) {
+        } catch (Exception | Error e) {
             throw new RuntimeException("table:" + metadataTableName + " Error starting Watcher for MetadataHelper", e);
         }
         final String triStateName = metadataTableName + ":needsUpdate";
@@ -152,11 +151,10 @@ public class MetadataHelperUpdateHdfsListener {
                             log.debug("table:" + metadataTableName + " " + this + " setTriState to UPDATING");
                         }
                         // get a connection for my MetadataHelper, and get the TypeMetadata map
-                        ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(this.instance)
-                                        .withZkHosts(this.zookeepers));
-                        Connector connector = instance.getConnector(this.username, new PasswordToken(this.password));
-                        TypeMetadataHelper typeMetadataHelper = this.typeMetadataHelperFactory.createTypeMetadataHelper(connector, metadataTableName,
-                                        allMetadataAuths, false);
+                        try (AccumuloClient client = Accumulo.newClient().to(instance, zookeepers).as(username, password).build()) {
+                            TypeMetadataHelper typeMetadataHelper = this.typeMetadataHelperFactory.createTypeMetadataHelper(client, metadataTableName,
+                                            allMetadataAuths, false);
+                        }
                         if (log.isDebugEnabled()) {
                             log.debug("table:" + metadataTableName + " " + this + " set the sharedTriState needsUpdate to UPDATED for " + metadataTableName);
                         }

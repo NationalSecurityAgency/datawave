@@ -81,42 +81,6 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     }
     
     /**
-     * Not supported.
-     *
-     * @param from
-     *            a start key
-     * @return an exception
-     */
-    @Override
-    public Key getStartKey(Key from) {
-        throw new UnsupportedOperationException();
-    }
-    
-    /**
-     * Not supported.
-     *
-     * @param from
-     *            a stop key
-     * @return an exception
-     */
-    @Override
-    public Key getStopKey(Key from) {
-        throw new UnsupportedOperationException();
-    }
-    
-    /**
-     * Not supported.
-     *
-     * @param from
-     *            an entry of type Key,Document
-     * @return an exception
-     */
-    @Override
-    public Range getKeyRange(Map.Entry<Key,Document> from) {
-        throw new UnsupportedOperationException();
-    }
-    
-    /**
      * Clones this query filter
      *
      * @return a new instance of this query filter

@@ -22,6 +22,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.google.common.base.Throwables;
+
 import datawave.mr.bulk.RfileScanner;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.IndexMatch;
@@ -109,7 +110,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         currentQueue = Queues.newArrayDeque();
         readLock = queueLock.readLock();
         writeLock = queueLock.writeLock();
-        myExecutor = MoreExecutors.sameThreadExecutor();
+        myExecutor = MoreExecutors.newDirectExecutorService();
         if (null != stats)
             initializeTimers();
     }
@@ -121,7 +122,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         currentQueue = Queues.newArrayDeque();
         readLock = queueLock.readLock();
         writeLock = queueLock.writeLock();
-        myExecutor = MoreExecutors.sameThreadExecutor();
+        myExecutor = MoreExecutors.newDirectExecutorService();
         if (null != stats)
             initializeTimers();
     }
@@ -745,6 +746,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             
             if (baseScanner instanceof Scanner)
                 ((Scanner) baseScanner).setReadaheadThreshold(Long.MAX_VALUE);
+            else if (baseScanner instanceof RfileScanner)
+                ((RfileScanner) baseScanner).setRanges(Collections.singleton(currentRange));
             
             for (Column family : options.getFetchedColumns()) {
                 if (family.columnQualifier != null)
@@ -788,9 +791,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             }
             if (baseScanner instanceof Scanner)
                 ((Scanner) baseScanner).setRange(currentRange);
-            else if (baseScanner instanceof RfileScanner) {
-                ((RfileScanner) baseScanner).setRanges(Collections.singleton(currentRange));
-            }
             
             Iterator<Entry<Key,Value>> iter = baseScanner.iterator();
             

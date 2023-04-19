@@ -54,15 +54,16 @@ public class GeoFeatureVisitor extends ShortCircuitBaseVisitor {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         
         try {
+            String wkt = null;
+            
             if (desc instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
-                JexlNode geowaveNode = ((GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) desc).toGeoWaveFunction(desc.fields(null, null));
-                geowaveNode.jjtAccept(this, JexlStringBuildingVisitor.buildQuery(node));
+                wkt = ((GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) desc).getWkt();
             } else if (desc instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
-                String function = null;
-                if (data != null)
-                    function = (String) data;
-                else
-                    function = JexlStringBuildingVisitor.buildQuery(node);
+                wkt = ((GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) desc).getWkt();
+            }
+            
+            if (wkt != null) {
+                String function = JexlStringBuildingVisitor.buildQuery(node);
                 
                 // reformat as a lucene function
                 if (isLuceneQuery) {
@@ -78,9 +79,7 @@ public class GeoFeatureVisitor extends ShortCircuitBaseVisitor {
                     }
                 }
                 
-                String geometry = geoJson.toString(wktReader.read(((GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) desc).getWkt()));
-                
-                geoFeatures.add(new QueryGeometry(function, geometry));
+                geoFeatures.add(new QueryGeometry(function, geoJson.toString(wktReader.read(wkt))));
             }
         } catch (Exception e) {
             log.error("Unable to extract geo feature from function", e);

@@ -99,7 +99,7 @@ public class TableConfigurationUtilTest {
         
         Assert.assertEquals(0, tempCacheFile.length());
         tcu.updateCacheFile();
-        Assert.assertEquals(12349, tempCacheFile.length());
+        Assert.assertEquals(7215, tempCacheFile.length());
         
         tcu.serializeTableConfgurationIntoConf(conf);
         
@@ -235,13 +235,13 @@ public class TableConfigurationUtilTest {
     
     private void validateTCU(TableConfigurationUtil tcu, Configuration conf) throws IOException {
         Map<String,String> shardProps = tcu.getTableProperties("datawave.shard");
-        Assert.assertEquals(23, shardProps.size());
+        Assert.assertEquals(13, shardProps.size());
         
         Map<String,String> shardIndexProps = tcu.getTableProperties("datawave.shardIndex");
-        Assert.assertEquals(20, shardIndexProps.size());
+        Assert.assertEquals(10, shardIndexProps.size());
         
         Map<String,String> metaProps = tcu.getTableProperties("datawave.metadata");
-        Assert.assertEquals(25, metaProps.size());
+        Assert.assertEquals(15, metaProps.size());
         
         tcu.setTableItersPrioritiesAndOpts();
         

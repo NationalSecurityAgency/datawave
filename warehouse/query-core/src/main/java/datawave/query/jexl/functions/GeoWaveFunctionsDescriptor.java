@@ -3,7 +3,6 @@ package datawave.query.jexl.functions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import datawave.data.normalizer.AbstractGeometryNormalizer;
-import datawave.data.normalizer.GeoNormalizer;
 import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.normalizer.PointNormalizer;
 import datawave.data.type.GeoType;
