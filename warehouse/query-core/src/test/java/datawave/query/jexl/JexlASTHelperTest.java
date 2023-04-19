@@ -5,16 +5,21 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
+import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.util.MockMetadataHelper;
+import datawave.query.util.Tuple3;
+import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
+import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -783,12 +788,123 @@ public class JexlASTHelperTest {
         String actual = JexlASTHelper.deconstructIdentifier(input, false);
         assertEquals(expected, actual);
     }
-
+    
     @Test
-    public void testTempName() throws Exception {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == '1' and (FOO == '2' and (FOO == '3' or FOO == '4'))");
-
-        JexlEvaluation eval = new JexlEvaluation("FOO == '1' and (FOO == '2' and (FOO == '3' or FOO == '4'))");
+    public void testArtificialParenthesisTreeOrAnd() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == '1' or FOO == '2' and BAR == '3'");
+        // Parenthesis artificially added in should be: "((FOO == '1') or ((FOO == '2') and (BAR == '3')))"
+        
+        List<ASTOrNode> orNodes = JexlASTHelper.getNodesOfType(query, ASTOrNode.class);
+        List<ASTAndNode> andNodes = JexlASTHelper.getNodesOfType(query, ASTAndNode.class);
+        
+        for (JexlNode orNode : orNodes) {
+            assertTrue(JexlASTHelper.childrenContainNodeType(orNode, ASTAndNode.class));
+        }
+        
+        for (JexlNode andNode : andNodes) {
+            assertTrue(JexlASTHelper.isWithinOr(andNode));
+        }
+    }
+    
+    @Test
+    public void testArtificialParenthesisTreeAndNot() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("not (FOO == '1') and BAR == '3'");
+        // Parenthesis artificially added in should be: "((not (FOO == '1')) and (BAR == '3'))"
+        
+        List<ASTAndNode> andNodes = JexlASTHelper.getNodesOfType(query, ASTAndNode.class);
+        List<ASTNotNode> notNodes = JexlASTHelper.getNodesOfType(query, ASTNotNode.class);
+        
+        for (JexlNode andNode : andNodes) {
+            assertTrue(JexlASTHelper.childrenContainNodeType(andNode, ASTNotNode.class));
+        }
+        
+        for (JexlNode notNode : notNodes) {
+            assertTrue(JexlASTHelper.isWithinNodeType(notNode, ASTAndNode.class));
+        }
+    }
+    
+    @Test
+    public void testArtificialParenthesisTreeOrNot() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("not (FOO == '1') or BAR == '3'");
+        // Parenthesis artificially added in should be: "((not (FOO == '1')) or (BAR == '3'))"
+        
+        List<ASTOrNode> orNodes = JexlASTHelper.getNodesOfType(query, ASTOrNode.class);
+        List<ASTNotNode> notNodes = JexlASTHelper.getNodesOfType(query, ASTNotNode.class);
+        
+        for (JexlNode orNode : orNodes) {
+            assertTrue(JexlASTHelper.childrenContainNodeType(orNode, ASTNotNode.class));
+        }
+        
+        for (JexlNode notNode : notNodes) {
+            assertTrue(JexlASTHelper.isWithinNodeType(notNode, ASTOrNode.class));
+        }
+    }
+    
+    @Test
+    public void testArtificialParenthesisTreeOrAndNot() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == '1' or not (BAR == '3') and FOO == '2'");
+        // Parenthesis artificially added in should be: "((FOO == '1') or ((not (BAR == '3')) and (FOO == '2')))"
+        
+        List<ASTOrNode> orNodes = JexlASTHelper.getNodesOfType(query, ASTOrNode.class);
+        List<ASTAndNode> andNodes = JexlASTHelper.getNodesOfType(query, ASTAndNode.class);
+        List<ASTNotNode> notNodes = JexlASTHelper.getNodesOfType(query, ASTNotNode.class);
+        
+        for (JexlNode orNode : orNodes) {
+            assertTrue(JexlASTHelper.childrenContainNodeType(orNode, ASTAndNode.class));
+            assertTrue(JexlASTHelper.childrenContainNodeType(orNode, ASTNotNode.class));
+        }
+        
+        for (JexlNode andNode : andNodes) {
+            assertTrue(JexlASTHelper.isWithinNodeType(andNode, ASTOrNode.class));
+            assertTrue(JexlASTHelper.childrenContainNodeType(andNode, ASTNotNode.class));
+        }
+        
+        for (JexlNode notNode : notNodes) {
+            assertTrue(JexlASTHelper.isWithinNodeType(notNode, ASTOrNode.class));
+            assertTrue(JexlASTHelper.isWithinNodeType(notNode, ASTAndNode.class));
+        }
+    }
+    
+    @Test
+    public void testChildrenContainNodeType() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("not FOO == '1' or (FOO == '2' and BAR == '3')");
+        
+        List<ASTOrNode> orNodes = JexlASTHelper.getNodesOfType(query, ASTOrNode.class);
+        List<ASTAndNode> andNodes = JexlASTHelper.getNodesOfType(query, ASTAndNode.class);
+        
+        for (JexlNode orNode : orNodes) {
+            assertFalse(JexlASTHelper.childrenContainNodeType(orNode, ASTOrNode.class));
+            assertTrue(JexlASTHelper.childrenContainNodeType(orNode, ASTAndNode.class));
+            assertTrue(JexlASTHelper.childrenContainNodeType(orNode, ASTNotNode.class));
+            assertTrue(JexlASTHelper.childrenContainNodeType(orNode, ASTEQNode.class));
+        }
+        
+        for (JexlNode andNode : andNodes) {
+            assertFalse(JexlASTHelper.childrenContainNodeType(andNode, ASTOrNode.class));
+            assertTrue(JexlASTHelper.childrenContainNodeType(andNode, ASTEQNode.class));
+        }
+    }
+    
+    @Test
+    public void testArtificialParenthesisQueryMeaningChange() throws Exception {
+        // Query with parenthesis
+        String parenthesisQueryString = "(FOO == '1' or FOO == '2') and BAR == '3'";
+        
+        // Query without parenthesis
+        String noParenthesisQueryString = "FOO == '1' or FOO == '2' and BAR == '3'";
+        // Parenthesis artificially added in should be: "((FOO == '1') or ((FOO == '2') and (BAR == '3')))"
+        
+        DatawaveJexlContext djc = new DatawaveJexlContext();
+        djc.set("FOO", 1);
+        djc.set("BAR", 2);
+        
+        Tuple3<Key,Document,DatawaveJexlContext> evalArgs = new Tuple3<>(new Key(), new Document(), djc);
+        
+        JexlEvaluation eval = new JexlEvaluation(parenthesisQueryString);
+        assertEquals(false, eval.apply(evalArgs));
+        
+        JexlEvaluation evalBad = new JexlEvaluation(noParenthesisQueryString);
+        assertEquals(true, evalBad.apply(evalArgs));
     }
     
 }

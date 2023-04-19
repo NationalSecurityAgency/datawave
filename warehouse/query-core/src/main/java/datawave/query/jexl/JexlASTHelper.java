@@ -796,6 +796,25 @@ public class JexlASTHelper {
         }
     }
     
+    public static <T extends JexlNode> List<T> getNodesOfType(JexlNode node, Class<T> typeKey) {
+        List<T> nodes = Lists.newArrayList();
+        
+        getNodesOfType(node, nodes, typeKey);
+        
+        return nodes;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static <T extends JexlNode> void getNodesOfType(JexlNode node, List<T> nodes, Class<T> typeKey) {
+        if (typeKey.isInstance(node)) {
+            nodes.add((T) node);
+        } else {
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                getNodesOfType(node.jjtGetChild(i), nodes, typeKey);
+            }
+        }
+    }
+    
     public static List<Object> getLiteralValues(JexlNode node) {
         return getLiterals(node).stream().map(JexlASTHelper::getLiteralValue).collect(Collectors.toList());
     }
@@ -1232,6 +1251,44 @@ public class JexlASTHelper {
             }
             
             return isWithinAnd(parent);
+        }
+        
+        return false;
+    }
+    
+    public static <T extends JexlNode> boolean isWithinNodeType(JexlNode node, Class<T> typeKey) {
+        while (null != node && null != node.jjtGetParent()) {
+            JexlNode parent = node.jjtGetParent();
+            
+            if (typeKey.isInstance(parent)) {
+                return true;
+            }
+            
+            return isWithinNodeType(parent, typeKey);
+        }
+        
+        return false;
+    }
+    
+    public static <T extends JexlNode> boolean childrenContainNodeType(JexlNode node, Class<T> typeKey) {
+        if (node != null) {
+            int numChildren = node.jjtGetNumChildren();
+            
+            for (int i = 0; i < numChildren; i++) {
+                JexlNode child = node.jjtGetChild(i);
+                
+                boolean foundType = false;
+                
+                if (typeKey.isInstance(child)) {
+                    return true;
+                } else {
+                    foundType = childrenContainNodeType(child, typeKey);
+                }
+                
+                if (foundType) {
+                    return true;
+                }
+            }
         }
         
         return false;
