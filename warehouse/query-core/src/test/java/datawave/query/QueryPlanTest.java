@@ -56,7 +56,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         DataTypeHadoopConfig dataType = new CitiesDataType(CitiesDataType.CityEntry.generic, generic);
         accumuloSetup.setData(FileType.CSV, dataType);
         
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     @Before

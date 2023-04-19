@@ -8,7 +8,7 @@ import java.util.Set;
 import datawave.ingest.util.cache.Loader;
 import datawave.security.util.ScannerHelper;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -32,7 +32,7 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
     /**
      * Our connector.
      */
-    protected Connector connector;
+    protected AccumuloClient client;
     /**
      * Table we are pulling data from.
      */
@@ -46,10 +46,10 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
      */
     protected Collection<Text> columnFamilyList;
     
-    protected AccumuloLoader(Connector connector, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList) {
+    protected AccumuloLoader(AccumuloClient client, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList) {
         
         super();
-        this.connector = connector;
+        this.client = client;
         this.tableName = tableName;
         this.auths = auths;
         this.columnFamilyList = new ArrayList<>(columnFamilyList);
@@ -97,7 +97,7 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
         if (log.isDebugEnabled())
             log.debug("Building cache from accumulo");
         synchronized (entryCache) {
-            try (Scanner scanner = ScannerHelper.createScanner(connector, myTableName, auths)) {
+            try (Scanner scanner = ScannerHelper.createScanner(client, myTableName, auths)) {
                 Range range = null;
                 if (key == null) {
                     if (log.isDebugEnabled())
@@ -142,7 +142,7 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
     public boolean equals(Object obj) {
         if (obj instanceof AccumuloLoader) {
             AccumuloLoader loaderObj = AccumuloLoader.class.cast(obj);
-            if (connector.getInstance().getInstanceID().equals(loaderObj.connector.getInstance().getInstanceID())) {
+            if (client.instanceOperations().getInstanceID().equals(loaderObj.client.instanceOperations().getInstanceID())) {
                 if (tableName.equals(loaderObj.tableName))
                     return true;
             }
@@ -152,7 +152,7 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
     
     @Override
     public int hashCode() {
-        return tableName.hashCode() + 31 + connector.getInstance().getInstanceID().hashCode();
+        return tableName.hashCode() + 31 + client.instanceOperations().getInstanceID().hashCode();
     }
     
 }

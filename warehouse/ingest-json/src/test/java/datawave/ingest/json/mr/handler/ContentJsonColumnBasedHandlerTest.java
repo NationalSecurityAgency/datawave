@@ -88,7 +88,9 @@ public class ContentJsonColumnBasedHandlerTest {
     
     private static void enableLogging() {
         Logger.getRootLogger().removeAllAppenders();
-        Logger.getRootLogger().addAppender(new ConsoleAppender(new PatternLayout("%p [%c{1}] %m%n")));
+        ConsoleAppender ca = new ConsoleAppender();
+        ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
+        Logger.getRootLogger().addAppender(ca);
         log.setLevel(Level.TRACE);
         Logger.getLogger(ColumnBasedHandlerTestUtil.class).setLevel(Level.TRACE);
         Logger.getLogger(ContentIndexingColumnBasedHandler.class).setLevel(Level.TRACE);

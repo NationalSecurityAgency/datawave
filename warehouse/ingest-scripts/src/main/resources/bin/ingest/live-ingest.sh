@@ -9,14 +9,14 @@ THIS_DIR="${THIS_SCRIPT%/*}"
 cd $THIS_DIR
 
 #
-# Get the job cache directory
-#
-. ./job-cache-env.sh
-
-#
 # Get the classpath
 #
 . ./ingest-libs.sh
+
+#
+# Get the job cache directory
+#
+. ./job-cache-env.sh
 
 if [[ -z $DATAWAVE_INGEST_HOME ]]; then
   export DATAWAVE_INGEST_HOME=$THIS_DIR/../..
@@ -39,6 +39,17 @@ LIBJARS=`echo $CLASSPATH | sed 's/:/,/g'`
 #
 # Ingest parameters
 #
+if [[ "$LIVE_CHILD_MAP_MAX_MEMORY_MB" == "" ]]; then
+   LIVE_CHILD_MAP_MAX_MEMORY_MB=1536
+fi
+if [[ "$LIVE_CHILD_REDUCE_MAX_MEMORY_MB" == "" ]]; then
+   LIVE_CHILD_REDUCE_MAX_MEMORY_MB=1536
+fi
+# Tell Yarn that we're using 20% more memory than we've requested for the VM
+# to account for off heap memory usage.
+MAP_MEMORY_MB=$(( (($BULK_CHILD_MAP_MAX_MEMORY_MB*1048576*12)/10)/1048576  ))
+REDUCE_MEMORY_MB=$(( (($BULK_CHILD_REDUCE_MAX_MEMORY_MB*1048576*12)/10)/1048576  ))
+
 DATE=`date "+%Y%m%d%H%M%S"`
 WORKDIR=${BASE_WORK_DIR}/${DATE}-$$/
 # using the hash partitioner to reduce latency....
@@ -49,14 +60,7 @@ REDUCERS=$2
 EXTRA_OPTS=${@:3}
 # Don't change this option unless you know what you're doing. There's a specific format to the field. See AccumuloOutputFormat for details.
 BATCHWRITER_OPTS="-AccumuloOutputFormat.WriteOpts.BatchWriterConfig=    11#maxMemory=100000000,maxWriteThreads=8"
-MAPRED_OPTS="-mapreduce.job.reduces=$REDUCERS -mapreduce.task.io.sort.mb=${LIVE_CHILD_IO_SORT_MB} -mapreduce.task.io.sort.factor=100 -bulk.ingest.mapper.threads=0 -bulk.ingest.mapper.workqueue.size=10000 -io.file.buffer.size=1048576 -dfs.bytes-per-checksum=4096 -io.sort.record.percent=.10 -mapreduce.map.sort.spill.percent=.50 -mapreduce.map.output.compress=${LIVE_MAP_OUTPUT_COMPRESS} -mapreduce.map.output.compress.codec=${LIVE_MAP_OUTPUT_COMPRESSION_CODEC} -mapreduce.output.fileoutputformat.compress.type=${LIVE_MAP_OUTPUT_COMPRESSION_TYPE} $PART_ARG -mapreduce.task.timeout=$TIMEOUT -markerFileReducePercentage 0.33 -context.writer.max.cache.size=2500 -mapreduce.job.queuename=liveIngestQueue $MAPRED_INGEST_OPTS"
-
-if [[ "$LIVE_CHILD_MAP_MAX_MEMORY_MB" == "" ]]; then
-   LIVE_CHILD_MAP_MAX_MEMORY_MB=1536
-fi
-if [[ "$LIVE_CHILD_REDUCE_MAX_MEMORY_MB" == "" ]]; then
-   LIVE_CHILD_REDUCE_MAX_MEMORY_MB=1536
-fi
+MAPRED_OPTS="-mapreduce.map.memory.mb=$MAP_MEMORY_MB -mapreduce.reduce.memory.mb=$REDUCE_MEMORY_MB -mapreduce.job.reduces=$REDUCERS -mapreduce.task.io.sort.mb=${LIVE_CHILD_IO_SORT_MB} -mapreduce.task.io.sort.factor=100 -bulk.ingest.mapper.threads=0 -bulk.ingest.mapper.workqueue.size=10000 -io.file.buffer.size=1048576 -dfs.bytes-per-checksum=4096 -io.sort.record.percent=.10 -mapreduce.map.sort.spill.percent=.50 -mapreduce.map.output.compress=${LIVE_MAP_OUTPUT_COMPRESS} -mapreduce.map.output.compress.codec=${LIVE_MAP_OUTPUT_COMPRESSION_CODEC} -mapreduce.output.fileoutputformat.compress.type=${LIVE_MAP_OUTPUT_COMPRESSION_TYPE} $PART_ARG -mapreduce.task.timeout=$TIMEOUT -markerFileReducePercentage 0.33 -context.writer.max.cache.size=2500 -mapreduce.job.queuename=liveIngestQueue $MAPRED_INGEST_OPTS"
 
 export HADOOP_CLASSPATH=$CLASSPATH
 export HADOOP_OPTS="-Dfile.encoding=UTF8 -Duser.timezone=GMT $HADOOP_INGEST_OPTS"

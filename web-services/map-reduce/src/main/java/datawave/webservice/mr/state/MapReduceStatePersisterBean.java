@@ -11,11 +11,11 @@ import datawave.webservice.results.mr.JobExecution;
 import datawave.webservice.results.mr.MapReduceInfoResponse;
 import datawave.webservice.results.mr.MapReduceInfoResponseList;
 import datawave.webservice.results.mr.ResultFile;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -61,7 +61,8 @@ import java.util.concurrent.TimeUnit;
  * Maintains information in a table about the state of a MapReduce job <br>
  *
  * MapReduce Table
- * <table summary="">
+ * <table>
+ * <caption></caption>
  * <tr>
  * <th>Row</th>
  * <th>ColF</th>
@@ -113,7 +114,8 @@ import java.util.concurrent.TimeUnit;
  * </table>
  *
  * MapReduce Index
- * <table summary="">
+ * <table>
+ * <caption></caption>
  * <tr>
  * <th>Row</th>
  * <th>ColF</th>
@@ -190,10 +192,10 @@ public class MapReduceStatePersisterBean {
             sid = cp.getShortName();
         }
         
-        Connector c = null;
+        AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             tableCheck(c);
             // Not using a MultiTableBatchWriter here because its not implemented yet
             // in Mock Accumulo.
@@ -218,7 +220,7 @@ public class MapReduceStatePersisterBean {
             throw qe;
         } finally {
             try {
-                connectionFactory.returnConnection(c);
+                connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error closing writers", e);
             }
@@ -241,10 +243,10 @@ public class MapReduceStatePersisterBean {
         // so that we can create a new mutation to put into the table.
         List<MapReduceServiceJobIndex> results = null;
         // Find the index entry for the jobid
-        Connector c = null;
+        AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, INDEX_TABLE_NAME, Collections.singleton(new Authorizations()))) {
                 Range range = new Range(mapReduceJobId, mapReduceJobId);
@@ -262,7 +264,7 @@ public class MapReduceStatePersisterBean {
             throw qe;
         } finally {
             try {
-                connectionFactory.returnConnection(c);
+                connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error returning connection to pool", e);
             }
@@ -281,7 +283,7 @@ public class MapReduceStatePersisterBean {
             BatchWriter writer = null;
             try {
                 Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-                c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+                c = connectionFactory.getClient(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
                 tableCheck(c);
                 writer = c.createBatchWriter(TABLE_NAME, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1));
                 writer.addMutation(m);
@@ -296,7 +298,7 @@ public class MapReduceStatePersisterBean {
                 try {
                     if (null != writer)
                         writer.close();
-                    connectionFactory.returnConnection(c);
+                    connectionFactory.returnClient(c);
                 } catch (Exception e) {
                     log.error("Error creating query", e);
                 }
@@ -323,10 +325,10 @@ public class MapReduceStatePersisterBean {
         log.trace(sid + " has authorizations " + auths);
         
         MapReduceInfoResponseList result = new MapReduceInfoResponseList();
-        Connector c = null;
+        AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 scanner.fetchColumnFamily(new Text(sid));
@@ -365,7 +367,7 @@ public class MapReduceStatePersisterBean {
             return result;
         } finally {
             try {
-                connectionFactory.returnConnection(c);
+                connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error returning connection to connection pool", e);
             }
@@ -393,10 +395,10 @@ public class MapReduceStatePersisterBean {
         log.trace(sid + " has authorizations " + auths);
         
         MapReduceInfoResponseList result = new MapReduceInfoResponseList();
-        Connector c = null;
+        AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 Range range = new Range(id);
@@ -419,7 +421,7 @@ public class MapReduceStatePersisterBean {
             return result;
         } finally {
             try {
-                connectionFactory.returnConnection(c);
+                connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error returning connection to connection pool", e);
             }
@@ -528,10 +530,10 @@ public class MapReduceStatePersisterBean {
             sid = dp.getShortName();
         }
         
-        Connector c = null;
+        AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             tableCheck(c);
             // Not using a MultiTableBatchWriter here because its not implemented yet
             // in Mock Accumulo.
@@ -550,7 +552,7 @@ public class MapReduceStatePersisterBean {
             throw qe;
         } finally {
             try {
-                connectionFactory.returnConnection(c);
+                connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error closing writers", e);
             }
@@ -558,7 +560,7 @@ public class MapReduceStatePersisterBean {
         
     }
     
-    private void tableCheck(Connector c) throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
+    private void tableCheck(AccumuloClient c) throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
         if (!c.tableOperations().exists(TABLE_NAME)) {
             c.tableOperations().create(TABLE_NAME);
             // Remove the versioning iterator
@@ -612,10 +614,10 @@ public class MapReduceStatePersisterBean {
                 i.putDelete(sid, r.getId());
                 indexEntries.add(i);
             }
-            Connector c = null;
+            AccumuloClient c = null;
             try {
                 Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-                c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+                c = connectionFactory.getClient(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
                 tableCheck(c);
                 // using BatchWriter instead of MultiTableBatchWriter because Mock CB does not support
                 // MultiTableBatchWriter
@@ -633,7 +635,7 @@ public class MapReduceStatePersisterBean {
                 throw new QueryException(qe);
             } finally {
                 try {
-                    connectionFactory.returnConnection(c);
+                    connectionFactory.returnClient(c);
                 } catch (Exception e) {
                     log.error("Error creating query", e);
                 }

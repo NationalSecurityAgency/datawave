@@ -38,7 +38,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
         generic.addIndexOnlyField(CityField.STATE.name());
         
         accumuloSetup.setData(FileType.CSV, new CitiesDataType(CitiesDataType.CityEntry.generic, generic));
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     public IndexOnlyQueryTest() {

@@ -55,21 +55,6 @@ public class TLDTermFrequencyEventDataQueryFilter implements EventDataQueryFilte
     }
     
     @Override
-    public Key getStartKey(Key from) {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
-    public Key getStopKey(Key from) {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
-    public Range getKeyRange(Map.Entry<Key,Document> from) {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
     public EventDataQueryFilter clone() {
         return this;
     }
