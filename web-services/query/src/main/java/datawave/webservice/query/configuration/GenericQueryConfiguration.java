@@ -8,10 +8,10 @@ import java.util.Set;
 import datawave.util.TableName;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.logic.BaseQueryLogic;
-
 import datawave.webservice.util.EnvProvider;
+
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 
 import com.google.common.collect.Iterators;
@@ -29,10 +29,10 @@ import org.apache.log4j.Logger;
  * 
  */
 public abstract class GenericQueryConfiguration {
-    
+
     private static final Logger log = ThreadConfigurableLogger.getLogger(GenericQueryConfiguration.class);
-    
-    private Connector connector = null;
+
+    private AccumuloClient client = null;
     private Set<Authorizations> authorizations = Collections.singleton(Authorizations.EMPTY);
     // Leave in a top-level query for backwards-compatibility purposes
     private String queryString = null;
@@ -48,13 +48,13 @@ public abstract class GenericQueryConfiguration {
     // Table name
     private String tableName = TableName.SHARD;
     
-    private Iterator<QueryData> queries = Iterators.emptyIterator();
+    private Iterator<QueryData> queries = Collections.emptyIterator();
     
     protected boolean bypassAccumulo;
     
     // use a value like 'env:PASS' to pull from the environment
     private String accumuloPassword = "";
-    
+
     /**
      * Empty default constructor
      */
@@ -78,7 +78,7 @@ public abstract class GenericQueryConfiguration {
         this.setAccumuloPassword(genericConfig.getAccumuloPassword());
         this.setAuthorizations(genericConfig.getAuthorizations());
         this.setBeginDate(genericConfig.getBeginDate());
-        this.setConnector(genericConfig.getConnector());
+        this.setClient(genericConfig.getClient());
         this.setEndDate(genericConfig.getEndDate());
         this.setMaxWork(genericConfig.getMaxWork());
         this.setQueries(genericConfig.getQueries());
@@ -105,12 +105,12 @@ public abstract class GenericQueryConfiguration {
         this.queries = queries;
     }
     
-    public Connector getConnector() {
-        return connector;
+    public AccumuloClient getClient() {
+        return client;
     }
     
-    public void setConnector(Connector connector) {
-        this.connector = connector;
+    public void setClient(AccumuloClient client) {
+        this.client = client;
     }
     
     public void setQueryString(String query) {
@@ -183,7 +183,7 @@ public abstract class GenericQueryConfiguration {
     public String getAccumuloPassword() {
         return this.accumuloPassword;
     }
-    
+
     /**
      * Sets configured password for accumulo access
      *
@@ -193,7 +193,7 @@ public abstract class GenericQueryConfiguration {
     public void setAccumuloPassword(String password) {
         this.accumuloPassword = EnvProvider.resolve(password);
     }
-    
+
     /**
      * Checks for non-null, sane values for the configured values
      * 
@@ -201,7 +201,7 @@ public abstract class GenericQueryConfiguration {
      */
     public boolean canRunQuery() {
         // Ensure we were given connector and authorizations
-        if (null == this.getConnector() || null == this.getAuthorizations()) {
+        if (null == this.getClient() || null == this.getAuthorizations()) {
             return false;
         }
         

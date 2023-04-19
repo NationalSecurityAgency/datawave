@@ -12,9 +12,9 @@ import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -48,7 +48,7 @@ public class DiscoveryLogicTest {
     
     protected static Set<Authorizations> auths = Collections.singleton(new Authorizations("FOO", "BAR"));
     protected static String queryAuths = "FOO,BAR";
-    protected Connector connector = null;
+    protected AccumuloClient client = null;
     protected MockAccumuloRecordWriter recordWriter;
     protected DiscoveryLogic logic;
     protected SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyyMMdd");
@@ -77,9 +77,9 @@ public class DiscoveryLogicTest {
         QueryTestTableHelper testTableHelper = new QueryTestTableHelper(DiscoveryLogicTest.class.getCanonicalName(), log);
         recordWriter = new MockAccumuloRecordWriter();
         testTableHelper.configureTables(recordWriter);
-        connector = testTableHelper.connector;
+        client = testTableHelper.client;
         
-        for (Pair p : terms) {
+        for (Pair<String,String> p : terms) {
             insertIndex(p);
         }
         
@@ -117,7 +117,7 @@ public class DiscoveryLogicTest {
             dates.add(dateFormatter.parse("2013010" + i));
         }
         
-        try (BatchWriter writer = connector.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
+        try (BatchWriter writer = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
             Mutation m = new Mutation(valueField.getValue1().toUpperCase());
             m.put("t", "datatype\u0000" + LcNoDiacriticsType.class.getName(), viz, blank);
             m.put("i", "datatype", viz, blank);
@@ -125,7 +125,7 @@ public class DiscoveryLogicTest {
             writer.addMutation(m);
         }
         
-        try (BatchWriter writer = connector.createBatchWriter(TableName.SHARD_INDEX, config)) {
+        try (BatchWriter writer = client.createBatchWriter(TableName.SHARD_INDEX, config)) {
             Mutation m = new Mutation(valueField.getValue0().toLowerCase());
             int numShards = 10;
             for (int i = 0; i < numShards; i++) {
@@ -138,7 +138,7 @@ public class DiscoveryLogicTest {
             writer.addMutation(m);
         }
         
-        try (BatchWriter writer = connector.createBatchWriter(TableName.SHARD_RINDEX, config)) {
+        try (BatchWriter writer = client.createBatchWriter(TableName.SHARD_RINDEX, config)) {
             Mutation m = new Mutation(new StringBuilder().append(valueField.getValue0().toLowerCase()).reverse().toString());
             int numShards = 10;
             for (int i = 0; i < numShards; i++) {
@@ -156,7 +156,7 @@ public class DiscoveryLogicTest {
         BatchWriterConfig config = new BatchWriterConfig().setMaxMemory(1024L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
         ColumnVisibility viz = new ColumnVisibility("FOO");
         
-        try (BatchWriter writer = connector.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
+        try (BatchWriter writer = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
             Mutation m = new Mutation(from.toUpperCase());
             m.put("DATAWAVE", to.toUpperCase() + "\u0000forward", viz, blank);
             writer.addMutation(m);
@@ -167,7 +167,7 @@ public class DiscoveryLogicTest {
         BatchWriterConfig config = new BatchWriterConfig().setMaxMemory(1024L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
         ColumnVisibility viz = new ColumnVisibility("FOO");
         
-        try (BatchWriter writer = connector.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
+        try (BatchWriter writer = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
             Mutation m = new Mutation(from.toUpperCase());
             m.put("DATAWAVE", to.toUpperCase() + "\u0000reverse", viz, blank);
             writer.addMutation(m);
@@ -193,7 +193,7 @@ public class DiscoveryLogicTest {
         settings.setId(UUID.randomUUID());
         settings.addParameters(params);
         
-        GenericQueryConfiguration config = logic.initialize(connector, settings, auths);
+        GenericQueryConfiguration config = logic.initialize(client, settings, auths);
         logic.setupQuery(config);
         return logic.iterator();
     }

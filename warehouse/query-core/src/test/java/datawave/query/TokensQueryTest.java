@@ -43,7 +43,7 @@ public class TokensQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new GroupsDataType(GroupsEntry.cities, fields));
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     public TokensQueryTest() {

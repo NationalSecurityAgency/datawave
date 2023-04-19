@@ -3,6 +3,7 @@ package datawave.query.index.lookup;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.common.test.integration.IntegrationTest;
 import datawave.data.type.LcNoDiacriticsType;
@@ -16,9 +17,9 @@ import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -61,7 +62,7 @@ public class RangeStreamQueryTest {
     private static final Logger log = Logger.getLogger(RangeStreamQueryTest.class);
     
     private static InMemoryInstance instance = new InMemoryInstance(RangeStreamQueryTest.class.toString());
-    private static Connector connector;
+    private static AccumuloClient connector;
     private ShardQueryConfiguration config;
     
     private MockMetadataHelper helper;
@@ -85,7 +86,7 @@ public class RangeStreamQueryTest {
     
     @BeforeClass
     public static void setupAccumulo() throws Exception {
-        connector = instance.getConnector("", new PasswordToken(new byte[0]));
+        connector = new InMemoryAccumuloClient("root", instance);
         connector.tableOperations().create(SHARD_INDEX);
         
         BatchWriter bw = connector.createBatchWriter(SHARD_INDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
@@ -147,7 +148,7 @@ public class RangeStreamQueryTest {
         fieldToDataType.putAll("FOO3", Sets.newHashSet(new LcNoDiacriticsType()));
         
         config = new ShardQueryConfiguration();
-        config.setConnector(connector);
+        config.setClient(connector);
         config.setBeginDate(sdf.parse("20200101"));
         config.setEndDate(sdf.parse("20200102"));
         config.setDatatypeFilter(Collections.singleton("datatype"));
@@ -401,7 +402,7 @@ public class RangeStreamQueryTest {
         
         // Run a standard limited-scanner range stream.
         count++;
-        rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        rangeStream = new RangeStream(config, new ScannerFactory(config.getClient(), 1), helper);
         rangeStream.setLimitScanners(true);
         
         script = JexlASTHelper.parseAndFlattenJexlQuery(query);
