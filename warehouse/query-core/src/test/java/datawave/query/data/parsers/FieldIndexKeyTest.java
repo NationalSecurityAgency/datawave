@@ -4,6 +4,7 @@ import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -59,6 +60,7 @@ public class FieldIndexKeyTest {
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
         assertEquals("value", parser.getValue());
+        assertEquals(fiKey, parser.getKey());
     }
     
     private void asserKeyWithNullsInValue() {
@@ -67,6 +69,7 @@ public class FieldIndexKeyTest {
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
         assertEquals("v\0al\0ue", parser.getValue());
+        assertEquals(fiKeyWithNullsInValue, parser.getKey());
     }
     
     private void assertKeyWithChildUid() {
@@ -75,6 +78,7 @@ public class FieldIndexKeyTest {
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
         assertEquals("value", parser.getValue());
+        assertEquals(fiKeyWithChildUid, parser.getKey());
     }
     
     @Test
@@ -86,6 +90,7 @@ public class FieldIndexKeyTest {
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getUid());
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("value", parser.getValue());
+        assertEquals(fiKeyNoCf, parser.getKey());
         assertTrue("made it this far", true);
         
         // invalid column family means the parser will throw an exception
@@ -98,6 +103,7 @@ public class FieldIndexKeyTest {
         
         // parse field works
         assertEquals("FIELD", parser.getField());
+        assertEquals(fiKeyNoCq, parser.getKey());
         
         // invalid column qualifier means the parser throws an exception
         assertThrows(IllegalArgumentException.class, parser::getDatatype);
@@ -112,6 +118,7 @@ public class FieldIndexKeyTest {
         
         // parse field works
         assertEquals("FIELD", parser.getField());
+        assertEquals(fiKeyCqOneNull, parser.getKey());
         
         // invalid column qualifier means the parser throws an exception
         assertThrows(IllegalArgumentException.class, parser::getDatatype);
@@ -126,6 +133,7 @@ public class FieldIndexKeyTest {
         
         // parse field works
         assertEquals("FIELD", parser.getField());
+        assertEquals(fiKeyCqZeroNulls, parser.getKey());
         
         // invalid column qualifier means the parser throws an exception
         assertThrows(IllegalArgumentException.class, parser::getDatatype);
@@ -142,5 +150,6 @@ public class FieldIndexKeyTest {
         assertThrows(IllegalArgumentException.class, parser::getRootUid);
         assertThrows(IllegalArgumentException.class, parser::getField);
         assertThrows(IllegalArgumentException.class, parser::getValue);
+        assertNull(parser.getKey());
     }
 }

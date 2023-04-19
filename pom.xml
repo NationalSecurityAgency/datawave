@@ -53,9 +53,9 @@
         <version.curator.test>5.2.0</version.curator.test>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.easymock>4.0.2</version.easymock>
-        <version.geoserver>2.21.1</version.geoserver>
-        <version.geotools>27.1</version.geotools>
-        <version.geowave>1.1.0</version.geowave>
+        <version.geoserver>2.22.1</version.geoserver>
+        <version.geotools>28.1</version.geotools>
+        <version.geowave>1.2.0</version.geowave>
         <version.google-guava>31.1-jre</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
@@ -976,6 +976,10 @@
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.accumulo</groupId>
