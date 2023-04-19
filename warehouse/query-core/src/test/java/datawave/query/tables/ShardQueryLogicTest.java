@@ -19,7 +19,7 @@ import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
@@ -60,7 +60,7 @@ public abstract class ShardQueryLogicTest {
     
     @RunWith(Arquillian.class)
     public static class ShardRange extends ShardQueryLogicTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient connector = null;
         private static Authorizations auths = new Authorizations("ALL");
         
         @BeforeClass
@@ -71,7 +71,7 @@ public abstract class ShardQueryLogicTest {
             // different keys.
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log,
                             RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER);
-            connector = qtth.connector;
+            connector = qtth.client;
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
             PrintUtility.printTable(connector, auths, TableName.SHARD);
@@ -87,7 +87,7 @@ public abstract class ShardQueryLogicTest {
     
     @RunWith(Arquillian.class)
     public static class DocumentRange extends ShardQueryLogicTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient connector = null;
         private static Authorizations auths = new Authorizations("ALL");
         
         @BeforeClass
@@ -98,7 +98,7 @@ public abstract class ShardQueryLogicTest {
             // different keys.
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log,
                             RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER);
-            connector = qtth.connector;
+            connector = qtth.client;
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
@@ -157,7 +157,7 @@ public abstract class ShardQueryLogicTest {
     protected abstract void runTestQuery(Set<Set<String>> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
                     throws Exception;
     
-    protected void runTestQuery(Set<Set<String>> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
+    protected void runTestQuery(Set<Set<String>> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, AccumuloClient connector)
                     throws Exception {
         log.debug("runTestQuery");
         

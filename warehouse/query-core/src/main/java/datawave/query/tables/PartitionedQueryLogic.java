@@ -12,7 +12,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 public class PartitionedQueryLogic extends ShardQueryLogic {
     protected static final Logger log = Logger.getLogger(PartitionedQueryLogic.class);
     
-    private Connector connector;
+    private AccumuloClient client;
     private Query settings;
     private Set<Authorizations> auths;
     
@@ -37,10 +37,10 @@ public class PartitionedQueryLogic extends ShardQueryLogic {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         log.trace("initialize()");
         
-        this.connector = connection;
+        this.client = client;
         this.auths = auths;
         
         this.settings = settings.duplicate(settings.getQueryName() + "-chunk");
@@ -61,7 +61,7 @@ public class PartitionedQueryLogic extends ShardQueryLogic {
         this.settings.setParameters(params);
         
         if (chunker.preInitializeQueryLogic()) {
-            GenericQueryConfiguration config = super.initialize(this.connector, this.settings, this.auths);
+            GenericQueryConfiguration config = super.initialize(this.client, this.settings, this.auths);
             if (!config.getQueries().hasNext()) {
                 return config;
             }
@@ -83,10 +83,10 @@ public class PartitionedQueryLogic extends ShardQueryLogic {
         log.trace("initializeNextChunk()");
         if (chunker.hasNext()) {
             Query settings = chunker.next();
-            return super.initialize(this.connector, settings, this.auths);
+            return super.initialize(this.client, settings, this.auths);
         } else {
             log.trace("Something went wrong in chunking...calling initialize with the original query");
-            return super.initialize(this.connector, this.settings, this.auths);
+            return super.initialize(this.client, this.settings, this.auths);
         }
     }
     

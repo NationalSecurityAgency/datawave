@@ -15,7 +15,7 @@ import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.conf.ColumnToClassMapping;
+import org.apache.accumulo.core.iteratorsImpl.conf.ColumnToClassMapping;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;

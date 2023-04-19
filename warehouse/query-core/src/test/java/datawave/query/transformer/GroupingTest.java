@@ -31,7 +31,7 @@ import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -85,7 +85,7 @@ public abstract class GroupingTest {
     
     private static final String COLVIS_MARKING = "columnVisibility";
     private static final String EXPECTED_COLVIS = "ALL&E&I";
-    
+
     private static Authorizations auths = new Authorizations("ALL", "E", "I");
     
     // @formatter:off
@@ -109,12 +109,12 @@ public abstract class GroupingTest {
                         Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
                         throws Exception {
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.getName(), log, teardown, interrupt);
-            Connector connector = qtth.connector;
-            VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-            return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
+            AccumuloClient client = qtth.client;
+            VisibilityWiseGuysIngest.writeItAll(client, VisibilityWiseGuysIngest.WhatKindaRange.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
     
@@ -126,12 +126,12 @@ public abstract class GroupingTest {
                         Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
                         throws Exception {
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log, teardown, interrupt);
-            Connector connector = qtth.connector;
-            VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.DOCUMENT);
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-            return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
+            AccumuloClient client = qtth.client;
+            VisibilityWiseGuysIngest.writeItAll(client, VisibilityWiseGuysIngest.WhatKindaRange.DOCUMENT);
+            PrintUtility.printTable(client, auths, TableName.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
     
@@ -182,7 +182,7 @@ public abstract class GroupingTest {
                     throws Exception;
     
     protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
-                    Map<String,String> extraParms, Connector connector) throws Exception {
+                    Map<String,String> extraParms, AccumuloClient client) throws Exception {
         log.debug("runTestQueryWithGrouping");
         
         QueryImpl settings = new QueryImpl();
@@ -197,7 +197,7 @@ public abstract class GroupingTest {
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
         
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
+        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
         
         DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
@@ -370,28 +370,28 @@ public abstract class GroupingTest {
     @Test
     public void testGroupingWithReducedResponse() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        
+
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
-        
+
         String queryString = "UUID =~ '^[CS].*'";
-        
+
         Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
-        
+
         extraParameters.put("reduced.response", "true");
         extraParameters.put("group.fields", "GENDER");
         extraParameters.put("group.fields.batch.size", "0");
-        
+
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
                 EventQueryResponseBase response = (EventQueryResponseBase) runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate,
                                 extraParameters, teardown, interrupt);
-                
+
                 for (EventBase event : response.getEvents()) {
                     // The event should have a collapsed columnVisibility
                     String actualCV = event.getMarkings().get(COLVIS_MARKING).toString();
                     Assert.assertEquals(EXPECTED_COLVIS, actualCV);
-                    
+
                     // The fields should have no columnVisibility
                     for (Object f : event.getFields()) {
                         FieldBase<?> field = (FieldBase<?>) f;
@@ -401,7 +401,7 @@ public abstract class GroupingTest {
             }
         }
     }
-    
+
     @Test
     public void testGrouping4() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();

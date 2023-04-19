@@ -161,4 +161,13 @@ public class EventKey implements KeyParser {
         return field;
     }
     
+    /**
+     * Get the key
+     *
+     * @return the key
+     */
+    @Override
+    public Key getKey() {
+        return key;
+    }
 }

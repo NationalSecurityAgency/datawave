@@ -25,7 +25,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -80,7 +80,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         
         facetedConfig = ((FacetedQueryPlanner) getQueryPlanner()).getConfiguration();
         
@@ -123,7 +123,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
             facetedConfig.setMinimumCount(Integer.parseInt(minimumCount));
         }
         
-        return super.initialize(connection, settings, auths);
+        return super.initialize(client, settings, auths);
         
     }
     

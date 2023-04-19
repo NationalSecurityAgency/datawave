@@ -71,6 +71,7 @@
             <useStrictFiltering>true</useStrictFiltering>
             <fileMode>0444</fileMode>
             <includes>
+                  <include>commons-lang:commons-lang</include>
                   <include>org.apache.commons:commons-lang3</include>
                   <include>commons-pool:commons-pool</include>
                   <include>com.google.protobuf:protobuf-java</include>
