@@ -4153,7 +4153,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.queryLogic1.getMaxPageSize()).andReturn(10).anyTimes();
         expect(queryLogic1.getSelectors(null)).andReturn(null);
-        expect(auditor.audit(queryParameters)).andThrow(new JMSRuntimeException("EXPECTED TESTING EXCEPTION"));
+        expect(auditor.audit(EasyMock.anyObject())).andThrow(new JMSRuntimeException("EXPECTED TESTING EXCEPTION"));
         queryLogic1.close();
         
         PowerMock.replayAll();
