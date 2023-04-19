@@ -213,6 +213,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
      *            the client's Priority
      * @return accumulo client
      * @throws Exception
+     *             if there are issues
      */
     public AccumuloClient getClient(Priority priority, Map<String,String> trackingMap) throws Exception {
         return getClient(null, priority, trackingMap);
@@ -229,6 +230,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
      *            the tracking map
      * @return Accumulo client
      * @throws Exception
+     *             if there are issues
      */
     public AccumuloClient getClient(final String cpn, final Priority priority, final Map<String,String> tm) throws Exception {
         final Map<String,String> trackingMap = (tm != null) ? tm : new HashMap<>();

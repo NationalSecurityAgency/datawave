@@ -114,6 +114,12 @@ public class LookupUUIDUtil {
      *            Service that executes queriesoptionalParamsToMap
      * @param context
      *            The EJB's content
+     * @param queryLogicFactory
+     *            the query factory
+     * @param responseObjectFactory
+     *            the response object factory
+     * @param userOperations
+     *            the user operations
      */
     public LookupUUIDUtil(final LookupUUIDConfiguration configuration, final QueryExecutor queryExecutor, final EJBContext context,
                     final ResponseObjectFactory responseObjectFactory, final QueryLogicFactory queryLogicFactory, final UserOperations userOperations) {
@@ -298,6 +304,8 @@ public class LookupUUIDUtil {
      * 
      * @param unvalidatedCriteria
      *            UUID lookup criteria that has presumably not been validated
+     * @param <T>
+     *            type of response
      * @return a BaseQueryResponse if the criteria contains a null HttpHeaders value (indicating paged results are required), or StreamingOutput if a valid,
      *         non-null HttpHeaders value is provided
      */
@@ -445,7 +453,7 @@ public class LookupUUIDUtil {
     /**
      * Returns the EJB context that was active when this class was created.
      * 
-     * @return
+     * @return the context
      */
     public EJBContext getContext() {
         return ctx;
@@ -458,6 +466,8 @@ public class LookupUUIDUtil {
      *            pre-validated UUID lookup criteria
      * @param nextQueryResponse
      *            the results of a <code>QueryExecutor.next(queryId)</code> operation
+     * @param <T>
+     *            type of response
      * @return a BaseQueryResponse if the criteria contains a null HttpHeaders value (indicating paged results are required), or StreamingOutput if a valid,
      *         non-null HttpHeaders value is provided
      */
@@ -503,6 +513,8 @@ public class LookupUUIDUtil {
      * 
      * @param unvalidatedCriteria
      *            UUID lookup criteria that has presumably not been validated
+     * @param <T>
+     *            type of response
      * @return a BaseQueryResponse if the criteria contains a null HttpHeaders value (indicating paged results are required), or StreamingOutput if a valid,
      *         non-null HttpHeaders value is provided
      */

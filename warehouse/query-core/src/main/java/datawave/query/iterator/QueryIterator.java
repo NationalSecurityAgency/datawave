@@ -59,6 +59,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
+import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.KeyAdjudicator;
 import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
@@ -99,20 +100,18 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.io.Text;
 
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import javax.annotation.Nullable;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -269,8 +268,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.source = source;
         }
         
-        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEventNextSeek());
-        
         if (isDebugMultithreadedSources()) {
             this.source = new SourceThreadTrackingIterator(this.source);
         }
@@ -290,21 +287,13 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     // this method will prune any ivarator cache directories that do not have a valid configuration.
     private void pruneIvaratorCacheDirs() throws InterruptedIOException {
-        if (ivaratorCacheDirConfigs.isEmpty()) {
-            return;
-        }
-        IvaratorCacheDirConfig validConfig = null;
+        List<IvaratorCacheDirConfig> configsToRemove = new ArrayList<>();
         for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
-            if (hasValidBasePath(config)) {
-                validConfig = config;
-                break;
+            if (!hasValidBasePath(config)) {
+                configsToRemove.add(config);
             }
         }
-        if (validConfig != null) {
-            ivaratorCacheDirConfigs = Collections.singletonList(validConfig);
-        } else {
-            ivaratorCacheDirConfigs = Collections.EMPTY_LIST;
-        }
+        ivaratorCacheDirConfigs.removeAll(configsToRemove);
     }
     
     private boolean hasValidBasePath(IvaratorCacheDirConfig config) throws InterruptedIOException {
@@ -312,36 +301,17 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             try {
                 Path basePath = new Path(config.getBasePathURI());
                 FileSystem fileSystem = this.getFileSystemCache().getFileSystem(basePath.toUri());
-                return isWritablePath(basePath, fileSystem);
+                
+                // Note: The ivarator config base paths are used by ALL queries which run on the system, so there
+                // should be no harm in creating these directories if they do not already exist by this point.
+                // Also, since we are selecting these directories intentionally for use by the ivarators, it
+                // should be a given that we have write permissions.
+                return fileSystem.exists(basePath) || fileSystem.mkdirs(basePath);
             } catch (InterruptedIOException ioe) {
                 throw ioe;
             } catch (Exception e) {
                 log.error("Failure to validate path " + config, e);
             }
-        }
-        return false;
-    }
-    
-    private boolean isWritablePath(Path path, FileSystem fileSystem) throws InterruptedIOException {
-        try {
-            FileStatus fileStatus = fileSystem.getFileStatus(path);
-            // If the path exists, verify that it's a directory, not a file.
-            if (fileStatus.isDirectory()) {
-                // Verify that we have write access to the directory.
-                fileSystem.access(path, FsAction.WRITE);
-                return true;
-            }
-        } catch (FileNotFoundException e) {
-            // If the path does not exist, check if the path's parent is a writable directory.
-            Path parent = path.getParent();
-            if (parent != null) {
-                return isWritablePath(parent, fileSystem);
-            }
-            // If the parent is null, we're at the root directory and we do not have write access.
-        } catch (InterruptedIOException ioe) {
-            throw ioe;
-        } catch (Exception e) {
-            log.error("Failure to validate path " + path, e);
         }
         return false;
     }
@@ -899,7 +869,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             };
         } else {
-            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, super.equality, getEvaluationFilter(),
+            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEvaluationFilter(),
                             this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
         }
         
@@ -1074,7 +1044,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 tfConfig.setContentExpansionFields(getContentExpansionFields());
                 tfConfig.setTfFields(getTermFrequencyFields());
                 tfConfig.setTypeMetadata(getTypeMetadata());
-                tfConfig.setEquality(super.equality);
+                tfConfig.setEquality(getEquality());
                 tfConfig.setEvaluationFilter(getEvaluationFilter());
                 
                 Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction = buildTfFunction(tfConfig);
@@ -1092,7 +1062,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 IndexOnlyContextCreatorBuilder contextCreatorBuilder = new IndexOnlyContextCreatorBuilder().setSource(sourceDeepCopy)
                                 .setRange(getDocumentRange(documentSource)).setTypeMetadata(typeMetadataForEval).setCompositeMetadata(compositeMetadata)
                                 .setOptions(this).setVariables(variables).setIteratorBuildingVisitor(iteratorBuildingVisitor)
-                                .setDelayedNonEventFieldMap(delayedNonEventFieldMap).setEquality(equality).setColumnFamilies(columnFamilies)
+                                .setDelayedNonEventFieldMap(delayedNonEventFieldMap).setEquality(getEquality()).setColumnFamilies(columnFamilies)
                                 .setInclusive(inclusive).setComparatorFactory(this);
                 final IndexOnlyContextCreator contextCreator = contextCreatorBuilder.build();
                 
@@ -1216,7 +1186,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             log.trace("mapDocument " + fieldIndexSatisfiesQuery);
         }
         if (fieldIndexSatisfiesQuery) {
-            final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, super.equality,
+            final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(),
                             getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
             
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(
@@ -1527,7 +1497,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setFieldsToAggregate(this.getNonEventFields())
                 .setAttrFilter(this.getEvaluationFilter())
                 .setDatatypeFilter(this.getFieldIndexKeyDataTypeFilter())
-                .setFiAggregator(this.fiAggregator)
+                .setFiAggregator(this.getFiAggregator())
                 .setHdfsFileSystem(this.getFileSystemCache())
                 .setQueryLock(this.getQueryLock())
                 .setIvaratorCacheDirConfigs(this.getIvaratorCacheDirConfigs())
@@ -1697,6 +1667,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.activeQueryLog = ActiveQueryLog.getInstance(getActiveQueryLogName());
         }
         return this.activeQueryLog;
+    }
+    
+    /**
+     * Gets a default implementation of a FieldIndexAggregator
+     *
+     * @return a {@link IdentityAggregator}
+     */
+    @Override
+    public FieldIndexAggregator getFiAggregator() {
+        if (fiAggregator == null) {
+            fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEventNextSeek());
+        }
+        return fiAggregator;
     }
     
     protected ExcerptTransform getExcerptTransform() {

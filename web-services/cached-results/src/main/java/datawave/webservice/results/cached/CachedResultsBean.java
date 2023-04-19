@@ -797,6 +797,7 @@ public class CachedResultsBean {
      * Returns status of the requested cached result
      *
      * @param queryId
+     *            a query id
      * @return List of attribute names that can be used in subsequent queries
      *
      * @return {@code datawave.webservice.result.GenericResponse<String>}
@@ -966,7 +967,9 @@ public class CachedResultsBean {
     /**
      *
      * @param queryParameters
-     *
+     *            query parameters
+     * @param queryId
+     *            the query id
      * @return datawave.webservice.result.CachedResultsResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1233,7 +1236,9 @@ public class CachedResultsBean {
     /**
      *
      * @param queryParameters
-     *
+     *            the query parameters
+     * @param queryId
+     *            the id
      * @return datawave.webservice.result.CachedResultsResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1999,6 +2004,7 @@ public class CachedResultsBean {
      * Cancel the load process.
      *
      * @param originalQueryId
+     *            the query id
      *
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
@@ -2059,6 +2065,7 @@ public class CachedResultsBean {
      * <strong>JBossAdministrator or Administrator credentials required.</strong> Cancel the load process
      *
      * @param originalQueryId
+     *            the query id
      *
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for a user by specifying a chain of DNs of the identities to proxy

@@ -184,6 +184,7 @@ public class ModelBean {
      * <strong>Administrator credentials required.</strong> Insert a new model
      *
      * @param model
+     *            the model
      * @param modelTableName
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
@@ -532,6 +533,7 @@ public class ModelBean {
     /**
      * 
      * @param tableName
+     *            the table name
      * @return default table name if param is null or empty, else return the input.
      */
     private String checkModelTableName(String tableName) {

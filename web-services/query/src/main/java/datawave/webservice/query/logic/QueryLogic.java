@@ -40,6 +40,9 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            - should unfielded terms be expanded
      * @param expandValues
      *            - should regex/ranges be expanded into discrete values
+     * @return the normalized query
+     * @throws Exception
+     *             if there are issues
      */
     String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception;
@@ -53,7 +56,9 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            - query settings (query, begin date, end date, etc.)
      * @param runtimeQueryAuthorizations
      *            - authorizations that have been calculated for this query based on the caller and server.
+     * @return a configuration
      * @throws Exception
+     *             if there are issues
      */
     GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception;
     
@@ -72,11 +77,15 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * 
      * @param configuration
      *            Encapsulates all information needed to run a query (whether the query is a BatchScanner, a MapReduce job, etc)
+     * @throws Exception
+     *             if there are issues
      */
     void setupQuery(GenericQueryConfiguration configuration) throws Exception;
     
     /**
      * @return a copy of this instance
+     * @throws CloneNotSupportedException
+     *             if the clone is not supported
      */
     Object clone() throws CloneNotSupportedException;
     
@@ -86,6 +95,8 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     AccumuloConnectionFactory.Priority getConnectionPriority();
     
     /**
+     * @param settings
+     *            query settings
      * @return Transformer that will convert Key,Value to a Result object
      */
     QueryLogicTransformer getTransformer(Query settings);
@@ -222,6 +233,8 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     void setLogicDescription(String logicDescription);
     
     /**
+     * @param query
+     *            the query
      * @return the audit level for this logic
      */
     AuditType getAuditType(Query query);
@@ -277,6 +290,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * Check that the user has one of the required roles principal my be null when there is no intent to control access to QueryLogic
      * 
      * @param principal
+     *            the principal
      * @return true/false
      */
     boolean canRunQuery(Principal principal);
@@ -378,6 +392,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * logics shouldn't store this property.
      *
      * @param pageProcessingStartTime
+     *            the processing start time
      */
     void setPageProcessingStartTime(long pageProcessingStartTime);
     

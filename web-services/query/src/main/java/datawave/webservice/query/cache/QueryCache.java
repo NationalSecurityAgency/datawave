@@ -31,6 +31,10 @@ public class QueryCache extends AbstractQueryCache<RunningQuery> {
     /**
      * "Locks" {@code id}. This is really just a marker to indicate whether or not {@code id} is locked or not. That is, if {@code id} is not locked, this
      * method will return {@code true}. If {@code id} is already locked, then this method will return {@code false}.
+     * 
+     * @param id
+     *            an id
+     * @return a boolean
      */
     public boolean lock(String id) {
         // If the return value from putIfAbsent is null, that means there was no previous entry and
@@ -42,6 +46,9 @@ public class QueryCache extends AbstractQueryCache<RunningQuery> {
     
     /**
      * Unlocks {@code id}, which is assumed to have been previously locked with a call to {@link #lock(String)}.
+     * 
+     * @param id
+     *            an id
      */
     public void unlock(String id) {
         locks.remove(id);

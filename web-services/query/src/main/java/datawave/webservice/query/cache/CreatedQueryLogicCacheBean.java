@@ -90,8 +90,11 @@ public class CreatedQueryLogicCacheBean {
      * Add the provided QueryLogic to the QueryLogicCache.
      * 
      * @param queryId
+     *            a query id
      * @param userId
+     *            a user id
      * @param logic
+     *            the query logic
      * @param client
      * @return true if there was no previous mapping for the given queryId in the cache.
      */
@@ -196,7 +199,8 @@ public class CreatedQueryLogicCacheBean {
      * arbitrarily-found 'first' entry as we shouldn't have such a collision in the first place
      * 
      * @param queryId
-     * @return
+     *            the query id
+     * @return entry in the underlying cache with the given queryId
      */
     private Entry<Pair<String,Long>,Triple> get(String queryId) {
         for (Pair<String,Long> key : cache.keySet()) {

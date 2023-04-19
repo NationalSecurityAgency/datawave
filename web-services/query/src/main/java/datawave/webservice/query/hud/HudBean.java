@@ -60,9 +60,12 @@ public class HudBean {
 
     /**
      * Return true if there is at least one log in the last 60 minutes.
-     *
-     * @return
+     * 
+     * @param userId
+     *            the userid
+     * @return true if there is at least one log in the last 60 minutes.
      * @throws org.apache.accumulo.core.client.TableNotFoundException
+     *             if the table is not found
      */
     @Path("/runningqueries/{userid}")
     @GET

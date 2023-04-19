@@ -17,6 +17,9 @@ public class BeanProvider {
     
     /**
      * Perform CDI injection on the non-managed object {@code bean}.
+     * 
+     * @param bean
+     *            - a bean
      */
     public static void injectFields(Object bean) {
         if (instance == null) {

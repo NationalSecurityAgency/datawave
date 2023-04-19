@@ -137,6 +137,7 @@ public class DashboardBean {
      * @return a {@link Scanner} that will only scan over the last 60 minutes of logs
      *
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     private Scanner createScanner(AccumuloClient accumuloClient) throws TableNotFoundException {
         long start = Instant.now().toEpochMilli() - MS_IN_12_HRS;

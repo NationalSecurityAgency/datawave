@@ -706,6 +706,18 @@ public class QueryOptions implements OptionDescriber {
         this.arithmetic = arithmetic;
     }
     
+    /**
+     * Gets a default implementation of a FieldIndexAggregator
+     *
+     * @return a FieldIndexAggregator
+     */
+    public FieldIndexAggregator getFiAggregator() {
+        if (fiAggregator == null) {
+            this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEventNextSeek());
+        }
+        return fiAggregator;
+    }
+    
     public EventDataQueryFilter getEvaluationFilter() {
         return evaluationFilter != null ? evaluationFilter.clone() : null;
     }
@@ -1300,7 +1312,6 @@ public class QueryOptions implements OptionDescriber {
             }
         }
         
-        this.equality = new PrefixEquality(PartialKey.ROW_COLFAM);
         this.evaluationFilter = null;
         this.getDocumentKey = GetStartKey.instance();
         this.mustUseFieldIndex = false;
@@ -1393,8 +1404,6 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(INDEXED_FIELDS)) {
             this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
         }
-        
-        this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEventNextSeek());
         
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
             this.ignoreColumnFamilies = buildIgnoredColumnFamilies(options.get(IGNORE_COLUMN_FAMILIES));
@@ -2120,5 +2129,17 @@ public class QueryOptions implements OptionDescriber {
     
     public void setTfNextSeek(int tfNextSeek) {
         this.tfNextSeek = tfNextSeek;
+    }
+    
+    /**
+     * Get an {@link Equality}
+     *
+     * @return an Equality
+     */
+    public Equality getEquality() {
+        if (equality == null) {
+            equality = new PrefixEquality(PartialKey.ROW_COLFAM);
+        }
+        return equality;
     }
 }

@@ -512,6 +512,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
      * Setting the principal is called after the logic is created. Pass this on to the children.
      *
      * @param principal
+     *            the principal
      */
     @Override
     public void setPrincipal(Principal principal) {
@@ -527,6 +528,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
      * Setting the page processing start time is called after the logic is created. Pass this on to the children.
      *
      * @param pageProcessingStartTime
+     *            the processing start time
      */
     @Override
     public void setPageProcessingStartTime(long pageProcessingStartTime) {

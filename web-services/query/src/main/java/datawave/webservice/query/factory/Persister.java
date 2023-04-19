@@ -136,6 +136,7 @@ public class Persister {
      * Persists a QueryImpl object
      *
      * @param query
+     *            the query
      *
      */
     private void create(Query query) {
@@ -166,8 +167,11 @@ public class Persister {
     
     /**
      * Removes existing query object with same id and inserts the updated object
-     * 
+     *
      * @param query
+     *            the query
+     * @throws Exception
+     *             if there are issues
      */
     public void update(Query query) throws Exception {
         // TODO: decide the right thing to do here
@@ -179,8 +183,11 @@ public class Persister {
     
     /**
      * Removes the query object
-     * 
+     *
      * @param query
+     *            the query
+     * @throws Exception
+     *             if there are issues
      */
     public void remove(Query query) throws Exception {
         // Find out who/what called this method
@@ -234,6 +241,7 @@ public class Persister {
      * Finds Query objects by the query id
      *
      * @param id
+     *            the id
      * @return null if no results or list of query objects
      */
     @SuppressWarnings("unchecked")
@@ -284,6 +292,7 @@ public class Persister {
      * Finds Query objects by the query name
      *
      * @param name
+     *            query name
      * @return null if no results or list of query objects
      */
     public List<Query> findByName(String name) {
@@ -380,6 +389,7 @@ public class Persister {
      * Returns queries for the specified user with the credentials of the caller.
      *
      * @param user
+     *            user name
      * @return list of specified users queries.
      */
     @RolesAllowed("Administrator")
