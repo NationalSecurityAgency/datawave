@@ -305,7 +305,8 @@ public class TypeRegistry extends HashMap<String,Type> {
         names.remove("file");
         names.remove("accumulo");
         names.remove("num");
-        
+        names.remove("yarn.timeline-service");
+
         return names;
     }
     

@@ -22,7 +22,6 @@ import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.Constants;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.query.jexl.functions.ContentFunctions;
 import datawave.query.jexl.visitors.LiteralNodeSubsetVisitor;
 
 import datawave.util.StringUtils;
@@ -40,12 +39,16 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NAMESPACE;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME;
 
 public class TermOffsetPopulator {
     private static final Logger log = Logger.getLogger(TermOffsetPopulator.class);
@@ -54,10 +57,10 @@ public class TermOffsetPopulator {
     
     static {
         Set<String> _phraseFunctions = Sets.newHashSet();
-        _phraseFunctions.add(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME);
-        _phraseFunctions.add(ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME);
-        _phraseFunctions.add(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME);
-        _phraseFunctions.add(ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME);
+        _phraseFunctions.add(CONTENT_WITHIN_FUNCTION_NAME);
+        _phraseFunctions.add(CONTENT_ADJACENT_FUNCTION_NAME);
+        _phraseFunctions.add(CONTENT_PHRASE_FUNCTION_NAME);
+        _phraseFunctions.add(CONTENT_SCORED_PHRASE_FUNCTION_NAME);
         phraseFunctions = Collections.unmodifiableSet(_phraseFunctions);
     }
     
@@ -231,17 +234,12 @@ public class TermOffsetPopulator {
     /**
      * Finds all the content functions and returns a map indexed by function name to the function.
      * 
-     * @param query
-     *            the query node
+     * @param node
+     *            a JexlNode
      * @return a map indexed by function name to the function
      */
-    public static Multimap<String,Function> getContentFunctions(JexlNode query) {
-        FunctionReferenceVisitor visitor = new FunctionReferenceVisitor();
-        query.jjtAccept(visitor, null);
-        
-        Multimap<String,Function> functionsInNamespace = Multimaps.index(visitor.functions().get(ContentFunctions.CONTENT_FUNCTION_NAMESPACE), Function::name);
-        
-        return Multimaps.filterKeys(functionsInNamespace, TermOffsetPopulator::isContentFunctionTerm);
+    public static Multimap<String,Function> getContentFunctions(JexlNode node) {
+        return FunctionReferenceVisitor.functions(node, Collections.singleton(CONTENT_FUNCTION_NAMESPACE));
     }
     
     /**

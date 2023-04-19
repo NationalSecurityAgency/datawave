@@ -33,7 +33,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  * frequency, etc.) and creates mutations for a accumulo table with the format:
  * <p>
  * <br>
- * <table border="1" summary="">
+ * <table border="1">
+ * <caption></caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>

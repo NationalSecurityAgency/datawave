@@ -15,7 +15,7 @@ import org.apache.abdera.Abdera;
 import org.apache.abdera.model.Categories;
 import org.apache.abdera.model.Entry;
 import org.apache.abdera.model.Feed;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
@@ -124,13 +124,13 @@ public class AtomServiceBean {
                 auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
         }
         Categories result;
-        Connector connection = null;
+        AccumuloClient client = null;
         try {
             result = abdera.newCategories();
             
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connection = connectionFactory.getConnection(poolName, Priority.NORMAL, trackingMap);
-            try (Scanner scanner = ScannerHelper.createScanner(connection, tableName + "Categories", auths)) {
+            client = connectionFactory.getClient(poolName, Priority.NORMAL, trackingMap);
+            try (Scanner scanner = ScannerHelper.createScanner(client, tableName + "Categories", auths)) {
                 Map<String,String> props = new HashMap<>();
                 props.put(MatchingKeySkippingIterator.ROW_DELIMITER_OPTION, "\0");
                 props.put(MatchingKeySkippingIterator.NUM_SCANS_STRING_NAME, "5");
@@ -156,9 +156,9 @@ public class AtomServiceBean {
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
-            if (null != connection) {
+            if (null != client) {
                 try {
-                    connectionFactory.returnConnection(connection);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection to factory", e);
                 }
@@ -201,11 +201,11 @@ public class AtomServiceBean {
         }
         
         Feed result;
-        Connector connection = null;
+        AccumuloClient client = null;
         Date maxDate = new Date(0);
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connection = connectionFactory.getConnection(poolName, Priority.NORMAL, trackingMap);
+            client = connectionFactory.getClient(poolName, Priority.NORMAL, trackingMap);
             
             result = abdera.newFeed();
             result.addAuthor(clustername);
@@ -214,7 +214,7 @@ public class AtomServiceBean {
             Key nextLastKey = null;
             int count = 0;
             
-            try (Scanner scanner = ScannerHelper.createScanner(connection, tableName, auths)) {
+            try (Scanner scanner = ScannerHelper.createScanner(client, tableName, auths)) {
                 if (null != lastKey) {
                     Key lastSeenKey = deserializeKey(lastKey);
                     scanner.setRange(new Range(lastSeenKey, false, new Key(category + "\1"), false));
@@ -258,9 +258,9 @@ public class AtomServiceBean {
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
-            if (null != connection) {
+            if (null != client) {
                 try {
-                    connectionFactory.returnConnection(connection);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection to factory", e);
                 }
@@ -291,12 +291,12 @@ public class AtomServiceBean {
         }
         
         Entry result = null;
-        Connector connection = null;
+        AccumuloClient client = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connection = connectionFactory.getConnection(poolName, Priority.NORMAL, trackingMap);
+            client = connectionFactory.getClient(poolName, Priority.NORMAL, trackingMap);
             
-            try (Scanner scanner = ScannerHelper.createScanner(connection, tableName, auths)) {
+            try (Scanner scanner = ScannerHelper.createScanner(client, tableName, auths)) {
                 scanner.setRange(new Range(category, true, category + "\1", false));
                 // ID is fieldValue\0UUID
                 scanner.fetchColumnFamily(new Text(AtomKeyValueParser.decodeId(id)));
@@ -320,9 +320,9 @@ public class AtomServiceBean {
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
-            if (null != connection) {
+            if (null != client) {
                 try {
-                    connectionFactory.returnConnection(connection);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection to factory", e);
                 }

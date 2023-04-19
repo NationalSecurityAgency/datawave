@@ -169,4 +169,14 @@ public class TermFrequencyKey implements KeyParser {
         }
         return uidAndValue;
     }
+    
+    /**
+     * Get the key
+     *
+     * @return the key
+     */
+    @Override
+    public Key getKey() {
+        return key;
+    }
 }
