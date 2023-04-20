@@ -28,8 +28,8 @@ public class GeoWaveUtilsTest {
         
         List<ByteArrayRange> byteArrayRanges = new ArrayList<>();
         for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(geom.getEnvelopeInternal()).getIndexConstraints(
-                        PointNormalizer.index)) {
-            byteArrayRanges.addAll(PointNormalizer.index.getIndexStrategy().getQueryRanges(range, 32).getCompositeQueryRanges());
+                        PointNormalizer.getPointIndex())) {
+            byteArrayRanges.addAll(PointNormalizer.getPointIndexStrategy().getQueryRanges(range, 32).getCompositeQueryRanges());
         }
         
         List<ByteArrayRange> optimizedByteArrayRanges = GeoWaveUtils.optimizeByteArrayRanges(geom, byteArrayRanges, 16, 0.25);
@@ -44,8 +44,8 @@ public class GeoWaveUtilsTest {
         
         List<ByteArrayRange> byteArrayRanges = new ArrayList<>();
         for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(geom.getEnvelopeInternal()).getIndexConstraints(
-                        GeometryNormalizer.index)) {
-            byteArrayRanges.addAll(GeometryNormalizer.index.getIndexStrategy().getQueryRanges(range, 8).getCompositeQueryRanges());
+                        GeometryNormalizer.getGeometryIndex())) {
+            byteArrayRanges.addAll(GeometryNormalizer.getGeometryIndexStrategy().getQueryRanges(range, 8).getCompositeQueryRanges());
         }
         
         // count the number of cells included in the original ranges
