@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
@@ -25,6 +26,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 
 import static datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJexlArgumentDescriptor.distributeFunctionIntoIndexQuery;
 
@@ -33,94 +35,89 @@ import static datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJe
  * provide potentially additional filtering after applying the index query.
  */
 public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
-    
+
     protected ShardQueryConfiguration config;
     protected MetadataHelper metadataHelper;
     protected DateIndexHelper dateIndexHelper;
-    
+
     private static final Logger LOGGER = Logger.getLogger(FunctionIndexQueryExpansionVisitor.class);
-    
+
     public FunctionIndexQueryExpansionVisitor(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper) {
         this.config = config;
         this.metadataHelper = metadataHelper;
         this.dateIndexHelper = dateIndexHelper;
     }
-    
+
     /**
      * Expand functions to be AND'ed with their index query equivalents.
      *
-     * @param script
-     *            script
-     * @param <T>
-     *            the type cast
-     * @param config
-     *            config
-     * @param dateIndexHelper
-     *            dateIndexHelper
-     * @param metadataHelper
-     *            metadataHelper
+     * @param script          script
+     * @param <T>             the type cast
+     * @param config          config
+     * @param dateIndexHelper dateIndexHelper
+     * @param metadataHelper  metadataHelper
      * @return The tree with additional index query portions
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T expandFunctions(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    T script) {
+                                                         T script) {
         JexlNode copy = copy(script);
-        
+
         FunctionIndexQueryExpansionVisitor visitor = new FunctionIndexQueryExpansionVisitor(config, metadataHelper, dateIndexHelper);
-        
+
         return (T) copy.jjtAccept(visitor, null);
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         boolean evaluationOnly = (data instanceof Boolean) && (Boolean) data;
-        
+
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-        
+
         if (desc instanceof RebuildingJexlArgumentDescriptor) {
             JexlNode rebuiltNode = ((RebuildingJexlArgumentDescriptor) desc).rebuildNode(config, this.metadataHelper, this.dateIndexHelper,
-                            this.config.getDatatypeFilter(), node);
-            
+                    this.config.getDatatypeFilter(), node);
+
             // if the node changed, visit the rebuilt node
             if (rebuiltNode != node)
                 return rebuiltNode.jjtAccept(this, data);
         }
-        
+
         if (!evaluationOnly && desc != null) {
             JexlNode indexQuery = null;
             try {
                 indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
-            } catch (TableNotFoundException e) {
+            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
                 LOGGER.debug("Unable to load data from metadata table");
             }
             if (indexQuery != null && !(indexQuery instanceof ASTTrueNode)) {
@@ -132,16 +129,16 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
                 }
             }
         }
-        
+
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // if we know from a parent that this is evaluation only, pass that forward. if we don't know, check.
         return super.visit(node, (data instanceof Boolean && (Boolean) data) || QueryPropertyMarker.findInstance(node).isType(ASTEvaluationOnly.class));
     }
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         // if we know from a parent that this is evaluation only, pass that forward. if we don't know, check.

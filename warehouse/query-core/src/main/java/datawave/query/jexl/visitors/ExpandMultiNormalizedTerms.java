@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
 import datawave.data.type.Type;
+import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
@@ -46,6 +47,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 /**
  * When more than one normalizer exists for a field, we want to transform the single term into a conjunction of the term with each normalizer applied to it. If
@@ -56,106 +58,102 @@ import java.util.Set;
  */
 public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ExpandMultiNormalizedTerms.class);
-    
+
     private final ShardQueryConfiguration config;
     private final HashSet<JexlNode> expandedNodes;
     private final MetadataHelper helper;
-    
+
     public ExpandMultiNormalizedTerms(ShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(config);
         Preconditions.checkNotNull(helper);
-        
+
         this.config = config;
         this.helper = helper;
         this.expandedNodes = Sets.newHashSet();
     }
-    
+
     /**
      * Expand all nodes which have multiple dataTypes for the field.
      *
-     * @param config
-     *            a config
-     * @param script
-     *            a script
-     * @param <T>
-     *            type of node
-     * @param helper
-     *            the metadata helper
+     * @param config a config
+     * @param script a script
+     * @param <T>    type of node
+     * @param helper the metadata helper
      * @return a reference to the node
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T expandTerms(ShardQueryConfiguration config, MetadataHelper helper, T script) {
         ExpandMultiNormalizedTerms visitor = new ExpandMultiNormalizedTerms(config, helper);
-        
+
         if (null == visitor.config.getQueryFieldsDatatypes()) {
             QueryException qe = new QueryException(DatawaveErrorCode.DATATYPESFORINDEXFIELDS_MULTIMAP_MISSING);
             throw new DatawaveFatalQueryException(qe);
         }
-        
+
         script = TreeFlatteningRebuildingVisitor.flatten(script);
         return (T) script.jjtAccept(visitor, null);
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return expandNodeForNormalizers(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         return expandNodeForNormalizers(node, data);
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return expandNodeForNormalizers(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return expandNodeForNormalizers(node, data);
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return expandNodeForNormalizers(node, data);
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return expandNodeForNormalizers(node, data);
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return expandNodeForNormalizers(node, data);
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return expandNodeForNormalizers(node, data);
     }
-    
+
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         try {
             return FunctionNormalizationRebuildingVisitor.normalize(node, config.getQueryFieldsDatatypes(), helper, config.getDatatypeFilter());
-        } catch (TableNotFoundException e) {
+        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
             log.debug("Unable to load data from metadata table");
             throw new RuntimeException(e);
         }
     }
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         /**
          * If we have an exceeded value or term predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types
          */
         if (QueryPropertyMarker.findInstance(node).isAnyTypeOf(ExceededValueThresholdMarkerJexlNode.class, ExceededTermThresholdMarkerJexlNode.class)
-                        || this.expandedNodes.contains(node)) {
+                || this.expandedNodes.contains(node)) {
             return node;
         }
-        
+
         LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
         if (range != null) {
             return expandRangeForNormalizers(range, node);
@@ -163,48 +161,48 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             return super.visit(node, data);
         }
     }
-    
+
     private Object expandRangeForNormalizers(LiteralRange<?> range, JexlNode node) {
         Set<BoundedRange> aliasedBounds = new HashSet<BoundedRange>();
         String field = range.getFieldName();
-        
+
         // Get all of the indexed or normalized dataTypes for the field name
         Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(field));
         dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(field));
-        
+
         for (Type<?> normalizer : dataTypes) {
             JexlNode lowerBound = range.getLowerNode(), upperBound = range.getUpperNode();
-            
+
             JexlNode left = null;
             try {
                 left = JexlASTHelper.applyNormalization(copy(lowerBound), normalizer);
             } catch (Exception ne) {
                 if (log.isTraceEnabled()) {
                     log.trace("Could not normalize " + PrintingVisitor.formattedQueryString(lowerBound) + " using " + normalizer.getClass() + ". "
-                                    + ne.getMessage());
+                            + ne.getMessage());
                 }
                 continue;
             }
-            
+
             JexlNode right = null;
             try {
                 right = JexlASTHelper.applyNormalization(copy(upperBound), normalizer);
             } catch (Exception ne) {
                 if (log.isTraceEnabled()) {
                     log.trace("Could not normalize " + PrintingVisitor.formattedQueryString(upperBound) + " using " + normalizer.getClass() + ". "
-                                    + ne.getMessage());
+                            + ne.getMessage());
                 }
                 continue;
             }
-            
+
             aliasedBounds.add(new BoundedRange(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right)));
         }
-        
+
         if (aliasedBounds.isEmpty()) {
             return node;
         } else {
             this.expandedNodes.addAll(aliasedBounds);
-            
+
             // Avoid extra parens around the expansion
             if (1 == aliasedBounds.size()) {
                 return aliasedBounds.iterator().next();
@@ -215,34 +213,32 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             }
         }
     }
-    
+
     /**
-     * @param node
-     *            a jexl node
-     * @param data
-     *            the node data
+     * @param node a jexl node
+     * @param data the node data
      * @return a jexl node
      */
     protected JexlNode expandNodeForNormalizers(JexlNode node, Object data) {
         JexlNode nodeToReturn = node;
-        
+
         IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
         if (op != null) {
-            
+
             final String fieldName = op.deconstructIdentifier();
             final Object literal = op.getLiteralValue();
-            
+
             // Get all the indexed or normalized dataTypes for the field name
             Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(fieldName));
             dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(fieldName));
-            
+
             // Catch the case of the user entering FIELD == null
             if (!dataTypes.isEmpty() && null != literal) {
                 try {
                     String term = literal.toString();
                     Set<String> normalizedTerms = Sets.newHashSet();
                     boolean evaluationOnlyRegex = false;
-                    
+
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
                         try {
@@ -259,7 +255,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                 // change to FIELD >= low and FIELD <= hi
                                 JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), fieldName, lowHi[0]);
                                 JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, lowHi[1]);
-                                
+
                                 // now link em up
                                 return BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
                             } catch (Exception ex) {
@@ -282,7 +278,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                             }
                         }
                     }
-                    
+
                     if (normalizedTerms.size() > 1) {
                         // if it is a negated node, then and the possibilities
                         if (node instanceof ASTNRNode || node instanceof ASTNENode) {
@@ -290,7 +286,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                         } else {
                             nodeToReturn = JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.OR_NODE, node, node, fieldName, normalizedTerms);
                         }
-                        
+
                     } else if (1 == normalizedTerms.size()) {
                         // If there is only one term, we don't need to make an OR
                         nodeToReturn = JexlNodeFactory.buildUntypedNewLiteralNode(node, fieldName, normalizedTerms.iterator().next());
@@ -298,7 +294,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                         // If we couldn't map anything, return a copy
                         nodeToReturn = JexlNodeFactory.buildUntypedNewLiteralNode(node, fieldName, literal);
                     }
-                    
+
                     // if we have an unnormalizable regex in the mix, then wrap with evaluation only
                     // this is ok even if we have a mix of normalizations that worked vs not because
                     // if one of a union is evaluation only, then they all must be (see executability
@@ -308,7 +304,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     }
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.NODE_EXPANSION_ERROR, e, MessageFormat.format("Node: {0}, Datatypes: {1}",
-                                    PrintingVisitor.formattedQueryString(node), dataTypes));
+                            PrintingVisitor.formattedQueryString(node), dataTypes));
                     log.error(qe);
                     throw new DatawaveFatalQueryException(qe);
                 }
@@ -316,5 +312,5 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         }
         return nodeToReturn;
     }
-    
+
 }
