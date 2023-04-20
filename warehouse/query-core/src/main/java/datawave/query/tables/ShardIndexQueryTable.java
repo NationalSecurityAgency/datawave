@@ -35,8 +35,8 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -138,13 +138,16 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     /**
      * Create and initialize a metadata helper
      * 
-     * @param connector
+     * @param client
+     *            the client
      * @param metadataTableName
+     *            metadata table name
      * @param auths
+     *            a set of auths
      * @return a new initialized MetadataHelper
      */
-    protected MetadataHelper initializeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) {
-        return this.metadataHelperFactory.createMetadataHelper(connector, metadataTableName, auths);
+    protected MetadataHelper initializeMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths) {
+        return this.metadataHelperFactory.createMetadataHelper(client, metadataTableName, auths);
     }
     
     public MetadataHelperFactory getMetadataHelperFactory() {
@@ -172,10 +175,10 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         ShardIndexQueryConfiguration config = new ShardIndexQueryConfiguration(this, settings);
-        this.scannerFactory = new ScannerFactory(connection);
-        MetadataHelper metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
+        this.scannerFactory = new ScannerFactory(client);
+        MetadataHelper metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), auths);
         
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -205,7 +208,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             }
         }
         
-        config.setConnector(connection);
+        config.setClient(client);
         config.setAuthorizations(auths);
         
         if (indexTableName != null) {
@@ -444,7 +447,17 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             public String getClassLoaderContext() {
                 return null;
             }
-            
+
+            @Override
+            public ConsistencyLevel getConsistencyLevel() {
+                return null;
+            }
+
+            @Override
+            public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
+
+            }
+
             @Override
             public void fetchColumn(Text colFam, Text colQual) {}
             
@@ -483,15 +496,24 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
      * scanned are trimmed based on a set of terms to match, and a set of data types (found in the config)
      *
      * @param config
+     *            the shard config
      * @param scannerFactory
+     *            the scanner factory
      * @param tableName
+     *            the table name
      * @param ranges
+     *            a set of ranges
      * @param literals
+     *            the list of literals
      * @param patterns
+     *            the list of patterns
      * @param reverseIndex
+     *            the reverse index flag
      * @param expansionFields
+     *            the expansion fields
      * @return the batch scanner
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     public static BatchScanner configureBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName, Collection<Range> ranges,
                     Collection<String> literals, Collection<String> patterns, boolean reverseIndex, Collection<String> expansionFields)
@@ -587,7 +609,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     /**
      * Query model
      * 
-     * @return
+     * @return the model name
      */
     public String getModelName() {
         return modelName;

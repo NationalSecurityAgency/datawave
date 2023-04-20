@@ -9,7 +9,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -17,7 +17,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterators;
 
 /**
  * Purpose: Basic Iterable resource. Contains the connector from which we will create the scanners.
@@ -35,20 +34,20 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
     /**
      * Our connector.
      */
-    private Connector connector;
+    private AccumuloClient client;
     
-    public AccumuloResource(final Connector cxn) {
-        Preconditions.checkNotNull(cxn);
+    public AccumuloResource(final AccumuloClient client) {
+        Preconditions.checkNotNull(client);
         
-        connector = cxn;
+        this.client = client;
     }
     
     public AccumuloResource(final AccumuloResource other) {
         // deep copy
     }
     
-    protected Connector getConnector() {
-        return connector;
+    protected AccumuloClient getClient() {
+        return client;
     }
     
     /*
@@ -69,7 +68,8 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
      * Sets the option on this currently running resource.
      * 
      * @param options
-     * @return
+     *            options to set
+     * @return the resource
      */
     public AccumuloResource setOptions(SessionOptions options) {
         
@@ -83,7 +83,7 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
      */
     @Override
     public Iterator<Entry<Key,Value>> iterator() {
-        return Iterators.emptyIterator();
+        return Collections.emptyIterator();
     }
     
     public static final class ResourceFactory {
@@ -92,12 +92,20 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
          * Initializes a resource after it was delegated.
          * 
          * @param clazz
+         *            a class
          * @param baseResource
+         *            a base resource
          * @param tableName
+         *            the table name
          * @param auths
+         *            set of auths
          * @param currentRange
-         * @return
+         *            a current range
+         * @return the set resource
          * @throws TableNotFoundException
+         *             if the table was not found
+         * @param <T>
+         *            type of the class
          */
         public static <T> AccumuloResource initializeResource(Class<T> clazz, AccumuloResource baseResource, final String tableName,
                         final Set<Authorizations> auths, Range currentRange) throws TableNotFoundException {

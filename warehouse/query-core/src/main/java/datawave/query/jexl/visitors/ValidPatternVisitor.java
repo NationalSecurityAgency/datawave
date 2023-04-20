@@ -38,7 +38,7 @@ public class ValidPatternVisitor extends ShortCircuitBaseVisitor {
      * @param node
      *            - an AST Regex Equals node
      * @param data
-     *            - data
+     *            the node data
      * @return the data
      */
     @Override
@@ -69,7 +69,7 @@ public class ValidPatternVisitor extends ShortCircuitBaseVisitor {
      *            - an ASTFunctionNode
      * @param data
      *            - the data
-     * @return
+     * @return the data
      */
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
@@ -100,6 +100,7 @@ public class ValidPatternVisitor extends ShortCircuitBaseVisitor {
      * Parse a literal value and put into the pattern cache if it does not exist.
      *
      * @param node
+     *            a jexl node
      */
     public void parseAndPutPattern(JexlNode node) {
         // Catch the situation where a user might enter FIELD1 !~ VALUE1

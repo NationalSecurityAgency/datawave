@@ -26,11 +26,8 @@ public class ScannerChunk {
     protected int hashCode = 31;
     protected String queryId = "";
     
-    /**
+    /*
      * Constructor used for testing
-     * 
-     * @param options
-     * @param ranges
      */
     public ScannerChunk(SessionOptions options, Collection<Range> ranges) {
         this(options, ranges, "localhost");
@@ -54,6 +51,7 @@ public class ScannerChunk {
      * Deepcopy for the scanner chunk
      * 
      * @param chunk
+     *            a chunk
      */
     public ScannerChunk(ScannerChunk chunk) {
         Preconditions.checkNotNull(chunk);
@@ -69,9 +67,6 @@ public class ScannerChunk {
         this.queryId = chunk.queryId;
     }
     
-    /**
-     * @param ranges
-     */
     protected void setRanges(Collection<Range> ranges) {
         if (!ranges.isEmpty()) {
             List<Range> rangeList = Lists.newArrayList(ranges);
@@ -112,9 +107,6 @@ public class ScannerChunk {
         return new StringBuilder().append(options).append(ranges).append(lastKnownLocation).toString();
     }
     
-    /**
-     * @return
-     */
     public SessionOptions getOptions() {
         return options;
     }

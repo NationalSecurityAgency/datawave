@@ -4,8 +4,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import datawave.data.type.NoOpType;
 import datawave.query.Constants;
-import datawave.query.attributes.Document;
-import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.iterator.builder.AbstractIteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
@@ -15,8 +13,7 @@ import datawave.query.jexl.functions.TLDEventFieldAggregator;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.predicate.TLDEventDataFilter;
+import datawave.query.predicate.TLDTermFrequencyEventDataQueryFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -28,9 +25,7 @@ import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
@@ -49,9 +44,9 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         TLDIndexIteratorBuilder builder = new TLDIndexIteratorBuilder();
         builder.setSource(source.deepCopy(env));
         builder.setTypeMetadata(typeMetadata);
-        builder.setDatatypeFilter(datatypeFilter);
+        builder.setDatatypeFilter(getDatatypeFilter());
         builder.setFieldsToAggregate(fieldsToAggregate);
-        builder.setKeyTransform(fiAggregator);
+        builder.setKeyTransform(getFiAggregator());
         builder.setTimeFilter(timeFilter);
         builder.setNode(node);
         node.childrenAccept(this, builder);
@@ -79,11 +74,6 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         return null;
     }
     
-    /**
-     * @param kvIter
-     * @param node
-     * @throws IOException
-     */
     @Override
     protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key,Value> kvIter, ASTEQNode node) throws IOException {
         if (null != rangeLimiter && limitLookup) {
@@ -143,9 +133,9 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
-        builder.setDatatypeFilter(datatypeFilter);
+        builder.setDatatypeFilter(getDatatypeFilter());
         builder.setFieldsToAggregate(fieldsToAggregate);
-        builder.setKeyTransform(fiAggregator);
+        builder.setKeyTransform(getFiAggregator());
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
         builder.setNode(node);
         node.childrenAccept(this, builder);
@@ -190,89 +180,28 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     
     @Override
     protected EventFieldAggregator getEventFieldAggregator(String field, ChainableEventDataQueryFilter filter) {
-        return new TLDEventFieldAggregator(field, filter, attrFilter != null ? attrFilter.getMaxNextCount() : -1, typeMetadata, NoOpType.class.getName());
+        return new TLDEventFieldAggregator(field, filter, eventNextSeek, typeMetadata, NoOpType.class.getName());
     }
     
     /**
      * Use fieldsToAggregate instead of indexOnlyFields because this enables TLDs to return non-event tokens as part of the user document
-     * 
+     *
+     * @param identifier
+     *            the field to be aggregated
      * @param filter
+     *            a {@link ChainableEventDataQueryFilter}
      * @param maxNextCount
-     * @return
+     *            the maximum number of next calls before a seek is issued
+     * @return a {@link TermFrequencyAggregator} loaded with the provided filter
      */
     @Override
     protected TermFrequencyAggregator buildTermFrequencyAggregator(String identifier, ChainableEventDataQueryFilter filter, int maxNextCount) {
-        EventDataQueryFilter rootFilter = new EventDataQueryFilter() {
-            @Override
-            public void startNewDocument(Key documentKey) {
-                // no-op
-            }
-            
-            @Override
-            public boolean apply(@Nullable Entry<Key,String> var1) {
-                // accept all
-                return true;
-            }
-            
-            @Override
-            public boolean peek(@Nullable Entry<Key,String> var1) {
-                // accept all
-                return true;
-            }
-            
-            /**
-             * Only keep the tf key if it isn't the root pointer or if it is index only and contributes to document evaluation
-             * 
-             * @param k
-             * @return
-             */
-            @Override
-            public boolean keep(Key k) {
-                DatawaveKey key = new DatawaveKey(k);
-                return (!TLDEventDataFilter.isRootPointer(k) || indexOnlyFields.contains(key.getFieldName()))
-                                && attrFilter.peek(new AbstractMap.SimpleEntry(k, null));
-            }
-            
-            @Override
-            public Key getStartKey(Key from) {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public Key getStopKey(Key from) {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public Range getKeyRange(Entry<Key,Document> from) {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public EventDataQueryFilter clone() {
-                return this;
-            }
-            
-            @Override
-            public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public int getMaxNextCount() {
-                return -1;
-            }
-            
-            @Override
-            public Key transform(Key toTransform) {
-                throw new UnsupportedOperationException();
-            }
-        };
-        filter.addFilter(rootFilter);
+        
+        filter.addFilter(new TLDTermFrequencyEventDataQueryFilter(indexOnlyFields, attrFilter));
         
         Set<String> toAggregate = fieldsToAggregate.contains(identifier) ? Collections.singleton(identifier) : Collections.emptySet();
         
-        return new TLDTermFrequencyAggregator(toAggregate, filter, filter.getMaxNextCount());
+        return new TLDTermFrequencyAggregator(toAggregate, filter, tfNextSeek);
     }
     
     /**
@@ -280,7 +209,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
      * 
      * @param range
      *            non-null literal range to generate an FI range from
-     * @return
+     * @return a range
      */
     @Override
     protected Range getFiRangeForTF(LiteralRange<?> range) {

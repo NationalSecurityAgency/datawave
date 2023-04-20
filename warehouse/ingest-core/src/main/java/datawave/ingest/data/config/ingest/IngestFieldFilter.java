@@ -5,8 +5,8 @@ import com.google.common.collect.Multimap;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import org.apache.commons.collections.Unmodifiable;
-import org.apache.commons.collections.keyvalue.AbstractMapEntry;
+import org.apache.commons.collections4.Unmodifiable;
+import org.apache.commons.collections4.keyvalue.AbstractMapEntry;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
@@ -67,6 +67,7 @@ public class IngestFieldFilter {
      * Configures the field filter.
      *
      * @param conf
+     *            the configuration to use
      */
     public void setup(Configuration conf) {
         fieldNameFilters = new FieldConfiguration();
@@ -82,6 +83,7 @@ public class IngestFieldFilter {
      * Applies the configured filter rules to the given fields.
      *
      * @param fields
+     *            the fields to filter on
      */
     public void apply(Multimap<String,?> fields) {
         // for the field name filters, remove the drop fields if the keep fields exist
@@ -116,7 +118,9 @@ public class IngestFieldFilter {
      * Determine if two sets of field values are the same
      * 
      * @param left
+     *            first field value
      * @param right
+     *            second field value
      * @return true if the values are equal
      */
     private boolean equalValues(List<FieldValue> left, List<FieldValue> right) {
@@ -144,6 +148,8 @@ public class IngestFieldFilter {
      *            The fields to gather (this ordering is maintained in the return value)
      * @param group
      *            The group to use or null if not specified
+     * @param index
+     *            the index of the field
      * @return a collection of value lists which maintain the order as specified in the fieldsToGather
      */
     private Collection<List<FieldValue>> gatherValueLists(Multimap<String,?> fieldValues, List<String> fieldsToGather, int index, String group) {
@@ -261,6 +267,7 @@ public class IngestFieldFilter {
          * Determine if the raw value in this matches the raw value in another
          * 
          * @param other
+         *            the field value to check
          * @return true of equal
          */
         public boolean equalRawValue(FieldValue other) {

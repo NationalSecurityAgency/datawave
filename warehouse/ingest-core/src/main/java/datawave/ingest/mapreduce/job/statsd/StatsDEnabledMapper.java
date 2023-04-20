@@ -34,6 +34,14 @@ public class StatsDEnabledMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends Mapper<K
     
     /**
      * A helper method to get the appropriate counter dependent on whether we have a statsd client
+     * 
+     * @param context
+     *            the context
+     * @param counter
+     *            the name of the counter
+     * @param group
+     *            the name of the group
+     * @return a counter
      */
     public Counter getCounter(TaskAttemptContext context, String group, String counter) {
         return helper.getCounter(context, group, counter);
@@ -41,6 +49,12 @@ public class StatsDEnabledMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends Mapper<K
     
     /**
      * A helper method to get the appropriate counter dependent on whether we have a statsd client
+     * 
+     * @param context
+     *            the context
+     * @param counterName
+     *            the counter name
+     * @return a counter
      */
     public Counter getCounter(TaskAttemptContext context, Enum<?> counterName) {
         return helper.getCounter(context, counterName);

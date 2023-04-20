@@ -73,14 +73,14 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CityEntry.italy, italy));
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     public MaxExpansionQueryTest() {
         super(CitiesDataType.getManager());
     }
     
-    @Test
+    @Test(expected = DatawaveFatalQueryException.class)
     public void testMaxUnfielded() throws Exception {
         log.info("------  testMaxUnfielded  ------");
         

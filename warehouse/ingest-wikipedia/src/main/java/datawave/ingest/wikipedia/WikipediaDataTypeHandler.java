@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.GZIPOutputStream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -19,7 +18,6 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.ContextWrappedStatusReporter;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue.OffsetList;
 import datawave.ingest.mapreduce.handler.shard.content.ContentIndexCounters;
@@ -35,8 +33,6 @@ import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -47,7 +43,6 @@ import org.apache.hadoop.util.bloom.BloomFilter;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.wikipedia.WikipediaTokenizer;
-import org.infinispan.commons.util.Base64;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -56,9 +51,6 @@ import org.xml.sax.SAXException;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-/**
- * 
- */
 public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VALUEOUT> {
     private static final Logger log = Logger.getLogger(WikipediaDataTypeHandler.class);
     
@@ -105,7 +97,7 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
             accumuloHelper.setup(conf);
             
             log.debug("Attempting to create Accumulo connection.");
-            docWriter = accumuloHelper.getConnector().createBatchWriter(conf.get("shard.table.name"),
+            docWriter = accumuloHelper.newClient().createBatchWriter(conf.get("shard.table.name"),
                             new BatchWriterConfig().setMaxLatency(60, TimeUnit.SECONDS).setMaxMemory(100000000L).setMaxWriteThreads(10));
             log.debug("Created connection to Accumulo for asynchronous document storage.");
         } catch (Exception e) {
@@ -158,11 +150,16 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
      * Tokenize the event, and write all of the shard, shardIndex, and shardReverseIndex keys out to the context
      * 
      * @param event
+     *            the event
      * @param context
+     *            the context
      * @param contextWriter
-     * @return
+     *            the context writer
+     * @return a count of events
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if a thread is interrupted
      */
     @Override
     protected long tokenizeEvent(RawRecordContainer event, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
@@ -317,13 +314,21 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
      * uses).
      * 
      * @param event
+     *            the event
      * @param contextWriter
+     *            the context writer
      * @param context
+     *            the context
      * @param nFV
+     *            the normalized field value interface
      * @param shardId
+     *            the shard id
      * @param visibility
+     *            the visibility
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     @Override
     protected void createShardEventColumn(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
@@ -354,15 +359,23 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
     
     /**
      * Creates and writes the BulkIngestKey for the event's field and global indexes to the ContextWriter
-     * 
+     *
      * @param event
+     *            the event
      * @param contextWriter
+     *            the context writer
      * @param context
+     *            the context
      * @param nFV
+     *            the normalized field value interface
      * @param shardId
+     *            the shard id
      * @param fieldVisibility
+     *            the field visibility
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     @Override
     protected void createShardIndexColumns(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
@@ -396,19 +409,30 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
     }
     
     /**
-     * Process a term and zone by writting all applicable keys to the context.
+     * Process a term and zone by writing all applicable keys to the context.
      * 
      * @param event
+     *            the event
      * @param position
+     *            the position
      * @param term
+     *            the term string
      * @param alreadyIndexedTerms
+     *            the already indexed terms
      * @param context
+     *            the context
      * @param contextWriter
+     *            the context writer
      * @param fieldName
+     *            the field name
      * @param fieldNameToken
+     *            the field name token
      * @param reporter
+     *            the reporter
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected void processTerm(RawRecordContainer event, int position, String term, BloomFilter alreadyIndexedTerms,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter,

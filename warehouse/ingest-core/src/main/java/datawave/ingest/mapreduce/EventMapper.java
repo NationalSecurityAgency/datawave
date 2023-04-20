@@ -284,7 +284,11 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     
     /**
      * Get the data type handlers for a given type name. This will also fill the dataTypeDiscardIntervalCache and the validators as a side effect.
-     *
+     * 
+     * @param typeStr
+     *            name of the type
+     * @param context
+     *            the context
      * @return the data type handlers
      */
     private List<DataTypeHandler<K1>> loadDataType(String typeStr, Context context) {
@@ -383,7 +387,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         TraceStopwatch eventMapperTimer = null;
         
         if (metricsEnabled) {
-            eventMapperTimer = new TraceStopwatch("Time in EventMapper");
+            eventMapperTimer = new TraceStopwatch("Time in EventMapper for " + context.getTaskAttemptID());
             eventMapperTimer.start();
         }
         
@@ -562,7 +566,9 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     /**
      * Get an exception synopsis that is suitable as a counter. We want at a minimum the exception name and a useful location. A useful location is defined as
      * the highest location that is in the datawave.ingest package
-     *
+     * 
+     * @param e
+     *            the exception to check
      * @return A synopsis of the exception
      */
     private List<String> getExceptionSynopsis(Throwable e) {
@@ -668,6 +674,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
      * @param context
      *            The context
      * @throws Exception
+     *             if there is a problem
      */
     public void processEvent(K1 key, RawRecordContainer value, List<DataTypeHandler<K1>> handlers, Multimap<String,NormalizedContentInterface> fields,
                     Context context) throws Exception {

@@ -18,18 +18,21 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
 
 import datawave.query.data.UUIDType;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.UserOperations;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
-import datawave.webservice.common.exception.PreConditionFailedException;
 import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -40,6 +43,7 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
 
+import datawave.webservice.result.VoidResponse;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -84,6 +88,8 @@ public class LookupUUIDUtil {
     
     private ResponseObjectFactory responseObjectFactory;
     
+    private QueryLogicFactory queryLogicFactory;
+    
     private AuditParameters auditParameters;
     
     private LookupUUIDConfiguration lookupUUIDConfiguration;
@@ -92,6 +98,8 @@ public class LookupUUIDUtil {
     private int maxAllowedBatchLookupUUIDs = LookupUUIDConstants.DEFAULT_BATCH_LOOKUP_UPPER_LIMIT;
     
     private final QueryExecutor queryExecutor;
+    
+    private final UserOperations userOperations;
     
     private Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<>());
     
@@ -106,9 +114,15 @@ public class LookupUUIDUtil {
      *            Service that executes queriesoptionalParamsToMap
      * @param context
      *            The EJB's content
+     * @param queryLogicFactory
+     *            the query factory
+     * @param responseObjectFactory
+     *            the response object factory
+     * @param userOperations
+     *            the user operations
      */
     public LookupUUIDUtil(final LookupUUIDConfiguration configuration, final QueryExecutor queryExecutor, final EJBContext context,
-                    final ResponseObjectFactory responseObjectFactory) {
+                    final ResponseObjectFactory responseObjectFactory, final QueryLogicFactory queryLogicFactory, final UserOperations userOperations) {
         // Validate and assign the lookup UUID configuration
         if (null == configuration) {
             throw new IllegalArgumentException("Non-null configuration required to lookup UUIDs");
@@ -121,11 +135,16 @@ public class LookupUUIDUtil {
         }
         this.queryExecutor = queryExecutor;
         
+        this.userOperations = userOperations;
+        
         // Assign the EJB context
         this.ctx = context;
         
         // Assign the field event factory needed for the response objects
         this.responseObjectFactory = responseObjectFactory;
+        
+        // set the query logic factory
+        this.queryLogicFactory = queryLogicFactory;
         
         // Populate the UUIDType map
         final List<UUIDType> types = this.lookupUUIDConfiguration.getUuidTypes();
@@ -285,6 +304,8 @@ public class LookupUUIDUtil {
      * 
      * @param unvalidatedCriteria
      *            UUID lookup criteria that has presumably not been validated
+     * @param <T>
+     *            type of response
      * @return a BaseQueryResponse if the criteria contains a null HttpHeaders value (indicating paged results are required), or StreamingOutput if a valid,
      *         non-null HttpHeaders value is provided
      */
@@ -314,14 +335,11 @@ public class LookupUUIDUtil {
             queryParameters.putAll(this.defaultOptionalParams);
             queryParameters.putAll(validatedCriteria.getQueryParameters());
             queryParameters.putSingle(QueryParameters.QUERY_STRING, validatedCriteria.getRawQueryString());
-            // Override the extraneous query details
             
-            String userAuths;
-            if (queryParameters.containsKey(QueryParameters.QUERY_AUTHORIZATIONS)) {
-                userAuths = AuthorizationsUtil.downgradeUserAuths(principal, queryParameters.getFirst(QueryParameters.QUERY_AUTHORIZATIONS));
-            } else {
-                userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal);
-            }
+            // Override the extraneous query details
+            String logicName = queryParameters.getFirst(QueryParameters.QUERY_LOGIC_NAME);
+            String queryAuths = queryParameters.getFirst(QueryParameters.QUERY_AUTHORIZATIONS);
+            String userAuths = getAuths(logicName, queryAuths, principal);
             if (queryParameters.containsKey(QueryParameters.QUERY_AUTHORIZATIONS)) {
                 queryParameters.remove(QueryParameters.QUERY_AUTHORIZATIONS);
             }
@@ -363,12 +381,11 @@ public class LookupUUIDUtil {
             
             // If the headers are defined as part of a standard UUID lookup, execute the query for a streamed response
             if (!validatedCriteria.isContentLookup() && (null != headers)) {
-                response = (T) this.queryExecutor.execute(queryParameters.getFirst(QueryParameters.QUERY_LOGIC_NAME), queryParameters,
-                                validatedCriteria.getStreamingOutputHeaders());
+                response = (T) this.queryExecutor.execute(logicName, queryParameters, validatedCriteria.getStreamingOutputHeaders());
             }
             // Otherwise, execute the query for a standard paged response
             else {
-                response = (T) this.queryExecutor.createQueryAndNext(queryParameters.getFirst(QueryParameters.QUERY_LOGIC_NAME), queryParameters);
+                response = (T) this.queryExecutor.createQueryAndNext(logicName, queryParameters);
             }
         }
         
@@ -393,6 +410,28 @@ public class LookupUUIDUtil {
         return response;
     }
     
+    private String getAuths(String logicName, String queryAuths, Principal principal) {
+        String userAuths;
+        try {
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
+            // the query principal is our local principal unless the query logic has a different user operations
+            DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal : logic.getUserOperations().getRemoteUser(
+                            (DatawavePrincipal) principal);
+            // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
+            DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal : userOperations
+                            .getRemoteUser((DatawavePrincipal) principal);
+            if (queryAuths != null) {
+                userAuths = AuthorizationsUtil.downgradeUserAuths(queryAuths, overallPrincipal, queryPrincipal);
+            } else {
+                userAuths = AuthorizationsUtil.buildUserAuthorizationString(queryPrincipal);
+            }
+        } catch (Exception e) {
+            log.error("Failed to get user query authorizations", e);
+            throw new DatawaveWebApplicationException(e, new VoidResponse());
+        }
+        return userAuths;
+    }
+    
     /**
      * Returns a UUIDType implementation, if any, matching the specified field name
      * 
@@ -414,7 +453,7 @@ public class LookupUUIDUtil {
     /**
      * Returns the EJB context that was active when this class was created.
      * 
-     * @return
+     * @return the context
      */
     public EJBContext getContext() {
         return ctx;
@@ -427,6 +466,8 @@ public class LookupUUIDUtil {
      *            pre-validated UUID lookup criteria
      * @param nextQueryResponse
      *            the results of a <code>QueryExecutor.next(queryId)</code> operation
+     * @param <T>
+     *            type of response
      * @return a BaseQueryResponse if the criteria contains a null HttpHeaders value (indicating paged results are required), or StreamingOutput if a valid,
      *         non-null HttpHeaders value is provided
      */
@@ -472,6 +513,8 @@ public class LookupUUIDUtil {
      * 
      * @param unvalidatedCriteria
      *            UUID lookup criteria that has presumably not been validated
+     * @param <T>
+     *            type of response
      * @return a BaseQueryResponse if the criteria contains a null HttpHeaders value (indicating paged results are required), or StreamingOutput if a valid,
      *         non-null HttpHeaders value is provided
      */
@@ -522,7 +565,7 @@ public class LookupUUIDUtil {
         String sid = principal.getName();
         
         // Initialize the reusable query input
-        final String userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal);
+        final String userAuths = getAuths(CONTENT_QUERY, null, principal);
         final String queryName = sid + '-' + UUID.randomUUID();
         final Date endDate = new Date();
         final Date expireDate = new Date(endDate.getTime() + 1000 * 60 * 60);

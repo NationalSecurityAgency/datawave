@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
@@ -17,26 +18,24 @@ import datawave.webservice.common.connection.WrappedConnector;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.conf.ClientProperty;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
-/**
- * 
- */
 public class ScannerFactory {
     
     protected int maxQueue = 1000;
     protected HashSet<ScannerBase> instances = new HashSet<>();
     protected HashSet<ScannerSession> sessionInstances = new HashSet<>();
-    protected Connector cxn;
+    protected AccumuloClient cxn;
     protected boolean open = true;
     protected boolean accrueStats = false;
     protected Query settings;
@@ -47,7 +46,7 @@ public class ScannerFactory {
     
     public ScannerFactory(GenericQueryConfiguration queryConfiguration) {
         
-        this.cxn = queryConfiguration.getConnector();
+        this.cxn = queryConfiguration.getClient();
         
         if (queryConfiguration instanceof ShardQueryConfiguration) {
             this.settings = ((ShardQueryConfiguration) queryConfiguration).getQuery();
@@ -67,15 +66,15 @@ public class ScannerFactory {
         }
     }
     
-    public ScannerFactory(Connector cxn) {
-        this(cxn, 100);
+    public ScannerFactory(AccumuloClient client) {
+        this(client, 100);
         
     }
     
-    public ScannerFactory(Connector connector, int queueSize) {
+    public ScannerFactory(AccumuloClient client, int queueSize) {
         try {
-            this.cxn = connector;
-            scanQueue = new ResourceQueue(queueSize, connector);
+            this.cxn = client;
+            scanQueue = new ResourceQueue(queueSize, client);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -137,9 +136,14 @@ public class ScannerFactory {
      * is hardcoded, below, to 1000, but can be changed
      * 
      * @param tableName
+     *            the table string
      * @param auths
-     * @return
+     *            a set of auths
+     * @param settings
+     *            query settings
+     * @return a new scanner session
      * @throws Exception
+     *             if there are issues
      */
     public synchronized BatchScannerSession newQueryScanner(final String tableName, final Set<Authorizations> auths, Query settings) throws Exception {
         
@@ -149,11 +153,21 @@ public class ScannerFactory {
     /**
      * Builds a new scanner session using a finalized table name and set of authorizations using the previously defined queue. Note that the number of entries
      * is hardcoded, below, to 1000, but can be changed
-     * 
+     *
      * @param tableName
+     *            the table string
      * @param auths
-     * @return
+     *            a set of auths
+     * @param settings
+     *            query settings
+     * @param <T>
+     *            type of the wrapper
+     * @param wrapper
+     *            a wrapper class
+     * @return a new scanner session
      * @throws Exception
+     *             if there are issues
+     *
      */
     public synchronized <T extends ScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths,
                     final Query settings) throws Exception {
@@ -188,11 +202,16 @@ public class ScannerFactory {
     /**
      * Builds a new scanner session using a finalized table name and set of authorizations using the previously defined queue. Note that the number of entries
      * is hardcoded, below, to 1000, but can be changed
-     * 
+     *
      * @param tableName
+     *            the table string
      * @param auths
-     * @return
+     *            a set of auths
+     * @param settings
+     *            query settings
+     * @return a new scanner session
      * @throws Exception
+     *             if there are issues
      */
     public synchronized RangeStreamScanner newRangeScanner(final String tableName, final Set<Authorizations> auths, final Query settings) throws Exception {
         return newRangeScanner(tableName, auths, settings, Integer.MAX_VALUE);
@@ -242,9 +261,6 @@ public class ScannerFactory {
         return open;
     }
     
-    /**
-     * @param bs
-     */
     public synchronized void close(ScannerSession bs) {
         try {
             log.debug("Closed session " + System.identityHashCode(bs));
@@ -266,10 +282,11 @@ public class ScannerFactory {
     public synchronized ScannerBase newRfileScanner(String tableName, Set<Authorizations> auths, Query setting) {
         Configuration conf = new Configuration();
         
-        Connector con = cxn;
+        AccumuloClient con = cxn;
         
-        final String instanceName = con.getInstance().getInstanceName();
-        final String zookeepers = con.getInstance().getZooKeepers();
+        Properties clientProps = con.properties();
+        final String instanceName = clientProps.getProperty(ClientProperty.INSTANCE_NAME.getKey());
+        final String zookeepers = clientProps.getProperty(ClientProperty.INSTANCE_ZOOKEEPERS.getKey());
         
         AccumuloHelper.setInstanceName(conf, instanceName);
         AccumuloHelper.setUsername(conf, con.whoami());
@@ -288,5 +305,4 @@ public class ScannerFactory {
         
         return baseScanner;
     }
-    
 }

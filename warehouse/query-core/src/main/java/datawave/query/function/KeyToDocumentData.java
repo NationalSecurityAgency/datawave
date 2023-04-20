@@ -1,17 +1,8 @@
 package datawave.query.function;
 
-import java.io.IOException;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDConstants;
 import datawave.query.attributes.Document;
@@ -22,7 +13,6 @@ import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.Tuple3;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -37,9 +27,17 @@ import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import static datawave.query.Constants.EMPTY_VALUE;
 
@@ -59,6 +57,9 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     protected Equality equality;
     
     private EventDataQueryFilter filter;
+    
+    // default implementation
+    protected RangeProvider rangeProvider = new DocumentRangeProvider();
     
     private boolean includeParent = false;
     
@@ -100,8 +101,20 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     }
     
     /**
+     * Builder-style method for setting a non-default implementation of a {@link RangeProvider}
+     *
+     * @param rangeProvider
+     *            a {@link RangeProvider}
+     * @return this object
+     */
+    public KeyToDocumentData withRangeProvider(RangeProvider rangeProvider) {
+        this.rangeProvider = rangeProvider;
+        return this;
+    }
+    
+    /**
      * Append hierarchy fields, including parent and descendant counts, based on the specified range and key
-     * 
+     *
      * @param documentAttributes
      *            the attributes to update (and output)
      * @param range
@@ -110,9 +123,10 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      *            the reference event for generating hierarchical fields
      * @return the modified list of document attributes
      * @throws IOException
+     *             for issues with read/write
      */
     public List<Entry<Key,Value>> appendHierarchyFields(final List<Entry<Key,Value>> documentAttributes, final Range range, final Key key) throws IOException {
-        return appendHierarchyFields(documentAttributes, key, source, range, countFunction, includeParent);
+        return appendHierarchyFields(documentAttributes, key, range, countFunction, includeParent);
     }
     
     @Override
@@ -120,7 +134,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         // We want to ensure that we have a non-empty colqual
         if (null == from || null == from.getKey() || null == from.getValue())
             return null;
-        Range keyRange = getKeyRange(from);
+        Range keyRange = rangeProvider.getRange(from.getKey());
         
         try {
             
@@ -130,7 +144,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                 log.debug(source.hasTop() + " Key range is " + keyRange);
             
             final List<Entry<Key,Value>> attrs; // Assign only once for
-                                                // efficiency
+            // efficiency
             final Set<Key> docKeys = new HashSet<>();
             if (source.hasTop()) {
                 attrs = this.collectDocumentAttributes(from.getKey(), docKeys, keyRange);
@@ -151,14 +165,16 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     /**
      * Given a Key pointing to the start of an document to aggregate, construct a list of attributes, adding the names of the attributes to the specified set of
      * "docKeys".
-     * 
+     *
      * @param documentStartKey
      *            A Key of the form "bucket type\x00uid: "
      * @param docKeys
      *            the names of generated generated attributes
      * @param keyRange
      *            the Range used to initialize source with seek()
-     * @return
+     * @return list of entries
+     * @throws IOException
+     *             for issues with read/write
      */
     public List<Entry<Key,Value>> collectDocumentAttributes(final Key documentStartKey, final Set<Key> docKeys, final Range keyRange) throws IOException {
         return collectAttributesForDocumentKey(documentStartKey, source, equality, filter, docKeys, keyRange);
@@ -167,12 +183,22 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     /**
      * Given a Key pointing to the start of an document to aggregate, construct a Range that should encapsulate the "document" to be aggregated together. Also
      * checks to see if data was found for the constructed Range before returning.
-     * 
+     *
      * @param documentStartKey
      *            A Key of the form "bucket type\x00uid: "
      * @param keyRange
      *            the Range used to initialize source with seek()
+     * @param source
+     *            a source
+     * @param equality
+     *            an equality
+     * @param docKeys
+     *            set of keys
+     * @param filter
+     *            a query filter
      * @return the attributes
+     * @throws IOException
+     *             for issues with read/write
      */
     private static List<Entry<Key,Value>> collectAttributesForDocumentKey(Key documentStartKey, SortedKeyValueIterator<Key,Value> source, Equality equality,
                     EventDataQueryFilter filter, Set<Key> docKeys, Range keyRange) throws IOException {
@@ -225,7 +251,9 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                 
             }
         }
-        
+        if (log.isTraceEnabled()) {
+            log.trace("Document attributes: " + documentAttributes);
+        }
         return documentAttributes;
     }
     
@@ -237,8 +265,8 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                         cv.length(), key.getTimestamp());
     }
     
-    private static List<Entry<Key,Value>> appendHierarchyFields(List<Entry<Key,Value>> documentAttributes, Key key, SortedKeyValueIterator<Key,Value> source,
-                    Range seekRange, DescendantCountFunction function, boolean includeParent) throws IOException {
+    private static List<Entry<Key,Value>> appendHierarchyFields(List<Entry<Key,Value>> documentAttributes, Key key, Range seekRange,
+                    DescendantCountFunction function, boolean includeParent) throws IOException {
         if ((null != function) || includeParent) {
             
             // get the minimal timestamp and majority visibility from the
@@ -281,7 +309,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                     String parentUid = uidString.substring(0, uidString.lastIndexOf(UIDConstants.DEFAULT_SEPARATOR));
                     Key parentUidKey = new Key(key.getRow(), key.getColumnFamily(), new Text(QueryOptions.DEFAULT_PARENT_UID_FIELDNAME + '\0' + parentUid),
                                     new ColumnVisibility(visibility), minTimestamp);
-                    documentAttributes.add(Maps.immutableEntry(parentUidKey, new Value()));
+                    documentAttributes.add(Maps.immutableEntry(parentUidKey, EMPTY_VALUE));
                 }
             }
         }
@@ -328,45 +356,12 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                         }
                         
                         final Key appliedKey = new Key(appliedRow, appliedCf, appliedCq, appliedVis, timestamp);
-                        documentAttributes.add(Maps.immutableEntry(appliedKey, new Value()));
+                        documentAttributes.add(Maps.immutableEntry(appliedKey, EMPTY_VALUE));
                     }
                 }
             }
         }
         
         return basicChildCount;
-    }
-    
-    /**
-     * Define the start key given the from condition.
-     *
-     * @param from
-     * @return
-     */
-    protected Key getStartKey(Map.Entry<Key,Document> from) {
-        return new Key(from.getKey().getRow(), from.getKey().getColumnFamily());
-    }
-    
-    /**
-     * Define the end key given the from condition.
-     *
-     * @param from
-     * @return
-     */
-    protected Key getStopKey(Map.Entry<Key,Document> from) {
-        return filter == null ? from.getKey().followingKey(PartialKey.ROW_COLFAM) : filter.getStopKey(from.getKey());
-    }
-    
-    /**
-     * Get the key range that covers the complete document specified by the input key range
-     *
-     * @param from
-     * @return
-     */
-    protected Range getKeyRange(Map.Entry<Key,Document> from) {
-        if (filter != null) {
-            return filter.getKeyRange(from);
-        }
-        return new Range(getStartKey(from), true, getStopKey(from), false);
     }
 }

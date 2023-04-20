@@ -103,7 +103,7 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
             scans.add(scan);
             ListenableFuture<Scan> future = (ListenableFuture<Scan>) service.submit(scan);
             scanFutures.add(future);
-            Futures.addCallback(future, this);
+            Futures.addCallback(future, this, service);
         }
         return true;
     }
@@ -147,7 +147,9 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
      * Override this for your specific implementation.
      * 
      * @param lastKey
+     *            a lastkey
      * @param previousRange
+     *            the previous range
      */
     public Range buildNextRange(final Key lastKey, final Range previousRange) {
         return scans.iterator().next().buildNextRange(lastKey, previousRange);

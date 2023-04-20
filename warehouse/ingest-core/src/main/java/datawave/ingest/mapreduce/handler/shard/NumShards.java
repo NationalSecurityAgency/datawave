@@ -10,9 +10,9 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -93,6 +93,8 @@ public class NumShards {
      * this method will take configuration (comma-separated yyyyMMdd_numShards) i.e.) 20170101_13,20170201_17
      * 
      * @param multipleNumShardsConfiguration
+     *            name of the numshards keys
+     *
      */
     private void configureDyanmicNumShards(String multipleNumShardsConfiguration) {
         // this could happen if the feature is enabled, but not yet configured. treat it like it's not enabled.
@@ -162,7 +164,7 @@ public class NumShards {
      * this will read multiple numshards cache from the filesystem and return a formatted string. comma-separated date based shards. i.e.)
      * 20170101_11,20170201_13
      * 
-     * @return
+     * @return a formatted string of the date based shards
      */
     public String readMultipleNumShardsConfig() {
         if (isCacheValid()) {
@@ -216,16 +218,16 @@ public class NumShards {
             this.aHelper.setup(conf);
         }
         
-        Connector conn = aHelper.getConnector();
-        
-        ensureTableExists(conn, metadataTableName);
-        
         ArrayList<String> nsEntries = new ArrayList<>();
-        try (Scanner scanner = conn.createScanner(metadataTableName, new Authorizations())) {
-            scanner.setRange(Range.exact(NUM_SHARDS, NUM_SHARDS_CF));
+        try (AccumuloClient client = aHelper.newClient()) {
+            ensureTableExists(client, metadataTableName);
             
-            for (Map.Entry<Key,Value> entry : scanner) {
-                nsEntries.add(entry.getKey().getColumnQualifier().toString());
+            try (Scanner scanner = client.createScanner(metadataTableName, new Authorizations())) {
+                scanner.setRange(Range.exact(NUM_SHARDS, NUM_SHARDS_CF));
+                
+                for (Map.Entry<Key,Value> entry : scanner) {
+                    nsEntries.add(entry.getKey().getColumnQualifier().toString());
+                }
             }
         }
         
@@ -275,8 +277,8 @@ public class NumShards {
         
     }
     
-    private void ensureTableExists(Connector connector, String metadataTableName) throws AccumuloException, AccumuloSecurityException {
-        TableOperations tops = connector.tableOperations();
+    private void ensureTableExists(AccumuloClient client, String metadataTableName) throws AccumuloException, AccumuloSecurityException {
+        TableOperations tops = client.tableOperations();
         if (!tops.exists(metadataTableName)) {
             log.info("Creating table: " + metadataTableName);
             try {

@@ -128,7 +128,9 @@ public class ExtendedCSVHelper extends CSVHelper {
     
     /**
      * @param config
+     *            a configuration
      * @param prefixPattern
+     *            prefix pattern to match
      */
     protected void addIdParsers(Configuration config, Pattern prefixPattern) {
         for (Map.Entry<String,String> entry : config) {

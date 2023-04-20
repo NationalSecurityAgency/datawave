@@ -22,6 +22,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.google.common.base.Throwables;
+
 import datawave.mr.bulk.RfileScanner;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.IndexMatch;
@@ -103,29 +104,17 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         return "RangeStreamScanner (" + id + ")";
     }
     
-    /**
-     * @param tableName
-     * @param auths
-     * @param delegator
-     * @param maxResults
-     */
     public RangeStreamScanner(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings) {
         super(tableName, auths, delegator, maxResults, settings);
         delegatedResourceInitializer = BatchResource.class;
         currentQueue = Queues.newArrayDeque();
         readLock = queueLock.readLock();
         writeLock = queueLock.writeLock();
-        myExecutor = MoreExecutors.sameThreadExecutor();
+        myExecutor = MoreExecutors.newDirectExecutorService();
         if (null != stats)
             initializeTimers();
     }
     
-    /**
-     * @param tableName
-     * @param auths
-     * @param delegator
-     * @param maxResults
-     */
     public RangeStreamScanner(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, SessionOptions options,
                     Collection<Range> ranges) {
         super(tableName, auths, delegator, maxResults, settings, options, ranges);
@@ -133,7 +122,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         currentQueue = Queues.newArrayDeque();
         readLock = queueLock.readLock();
         writeLock = queueLock.writeLock();
-        myExecutor = MoreExecutors.sameThreadExecutor();
+        myExecutor = MoreExecutors.newDirectExecutorService();
         if (null != stats)
             initializeTimers();
     }
@@ -162,7 +151,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
      * so we should append a null so that we we don't skip shards. similarly, an assumption is made of the key structure within this class.
      *
      * @param lastKey
+     *            the last key
      * @param previousRange
+     *            the previous range
      */
     @Override
     public Range buildNextRange(final Key lastKey, final Range previousRange) {
@@ -673,7 +664,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
      * Get the day from the key
      *
      * @param key
-     * @return
+     *            a key
+     * @return the day
      */
     protected String getDay(final Key key) {
         String myDay = null;
@@ -720,6 +712,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
      * FindTop -- Follows the logic outlined in the comments, below. Effectively, we continue
      *
      * @throws Exception
+     *             if there are issues
      */
     protected void findTop() throws Exception {
         if (ranges.isEmpty() && lastSeenKey == null) {
@@ -753,6 +746,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             
             if (baseScanner instanceof Scanner)
                 ((Scanner) baseScanner).setReadaheadThreshold(Long.MAX_VALUE);
+            else if (baseScanner instanceof RfileScanner)
+                ((RfileScanner) baseScanner).setRanges(Collections.singleton(currentRange));
             
             for (Column family : options.getFetchedColumns()) {
                 if (family.columnQualifier != null)
@@ -796,9 +791,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             }
             if (baseScanner instanceof Scanner)
                 ((Scanner) baseScanner).setRange(currentRange);
-            else if (baseScanner instanceof RfileScanner) {
-                ((RfileScanner) baseScanner).setRanges(Collections.singleton(currentRange));
-            }
             
             Iterator<Entry<Key,Value>> iter = baseScanner.iterator();
             

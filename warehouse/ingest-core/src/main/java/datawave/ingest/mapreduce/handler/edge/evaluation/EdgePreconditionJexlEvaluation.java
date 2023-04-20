@@ -30,6 +30,7 @@ public class EdgePreconditionJexlEvaluation implements Predicate<Script> {
      * This convenience method can be used to interpret the result of the script.execute() result which calls the interpret method below.
      * 
      * @param scriptExecuteResult
+     *            the result of script execute
      * @return true if we matched, false otherwise.
      */
     public boolean isMatched(Object scriptExecuteResult) {

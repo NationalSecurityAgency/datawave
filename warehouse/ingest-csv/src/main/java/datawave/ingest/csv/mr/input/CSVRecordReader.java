@@ -143,6 +143,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
      * Determine if a field is required to be added to the metadata for validation
      * 
      * @param fieldName
+     *            field name
      * @return true if required
      */
     private boolean requiredForValidation(String fieldName) {
@@ -218,7 +219,9 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
      * Apply the id metadata parser
      * 
      * @param idFieldValue
+     *            id field value
      * @throws Exception
+     *             if there is an issue
      */
     protected void getMetadataFromParsers(String idFieldValue) throws Exception {
         Multimap<String,String> metadata = HashMultimap.create();

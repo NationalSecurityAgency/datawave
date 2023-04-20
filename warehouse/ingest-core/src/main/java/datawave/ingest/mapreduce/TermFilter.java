@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce;
 
+import java.nio.charset.StandardCharsets;
+
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
 
@@ -7,6 +9,7 @@ import com.google.common.hash.PrimitiveSink;
  * Bloom filter implementation that puts an arbitrary string into the sink.
  * 
  * @param <T>
+ *            the type of term filter
  */
 public class TermFilter<T> implements Funnel<T> {
     
@@ -17,7 +20,7 @@ public class TermFilter<T> implements Funnel<T> {
     
     @Override
     public void funnel(T from, PrimitiveSink into) {
-        into.putString(from.toString());
+        into.putString(from.toString(), StandardCharsets.UTF_8);
     }
     
 }

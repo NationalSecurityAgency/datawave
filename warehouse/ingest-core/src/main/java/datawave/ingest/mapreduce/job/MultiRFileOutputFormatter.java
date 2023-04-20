@@ -20,6 +20,7 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -28,7 +29,9 @@ import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.accumulo.core.file.FileSKVWriter;
 import org.apache.accumulo.core.file.rfile.RFile;
-import org.apache.accumulo.core.file.rfile.bcfile.Compression;
+import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
+import org.apache.accumulo.core.spi.crypto.CryptoService;
+import org.apache.accumulo.core.spi.file.rfile.compression.NoCompression;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -47,6 +50,8 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+
+import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
 public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
     
@@ -175,7 +180,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * Insert a count into the filename. The filename is expected to end with our extension.
      * 
      * @param filename
+     *            file name
      * @param count
+     *            the count
      * @return filename with the count inserted as follows: {@code path/name + extension -> path/name + _count + extension}
      */
     protected Path insertFileCount(Path filename, int count) {
@@ -189,6 +196,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * Remove a count from a filename. The filename is expected to end with _count.extension.
      * 
      * @param filename
+     *            file name
      * @return filename with the count removed as follows: {@code path/name + _count + extension -> path/name + extension}
      */
     protected Path removeFileCount(Path filename) {
@@ -208,7 +216,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      *            The table name
      * @param filename
      *            The path of the file being written to
+     * @param tableConf
+     *            the table accumulo configuration
      * @throws IOException
+     *             if there is an issue with read or write
+     * @throws AccumuloException
+     *             if there is an issue accumulo
      */
     protected void createAndRegisterWriter(String key, String table, Path filename, AccumuloConfiguration tableConf) throws IOException, AccumuloException {
         // first get the writer count (how many writers have we made for this key)
@@ -237,15 +250,20 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     
     protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf) throws IOException {
         startWriteTime = System.currentTimeMillis();
-        return new SizeTrackingWriter(FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf).withTableConfiguration(tableConf).build());
+        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, tableConf.getAllCryptoProperties());
+        return new SizeTrackingWriter(FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf, cs)
+                        .withTableConfiguration(tableConf).build());
     }
     
     /**
      * Close the current writer for the specified key, and create the next writer. The index encoded in the filename will be appropriately updated.
      * 
      * @param key
+     *            a key
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws AccumuloException
+     *             if there is an issue with accumulo
      */
     protected void closeAndUpdateWriter(String key) throws IOException, AccumuloException {
         SizeTrackingWriter writer = writers.get(key);
@@ -316,9 +334,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * Get a writer that was previously registered. This will mark the writer as being used.
      * 
      * @param key
+     *            a key
      * @return the writer
-     * @throws AccumuloException
      * @throws IOException
+     *             if there is an issue with read or write
+     * @throws AccumuloException
+     *             if there is an issue with accumulo
      */
     protected SizeTrackingWriter getRegisteredWriter(String key) throws IOException, AccumuloException {
         SizeTrackingWriter writer = writers.get(key);
@@ -345,8 +366,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     // get the sequence file block file size to use
     protected int getSeqFileBlockSize() {
         if (!tableConfigs.isEmpty()) {
-            return (int) tableConfigs.values().iterator().next().getMemoryInBytes(Property.TABLE_FILE_COMPRESSED_BLOCK_SIZE);
-            
+            return (int) tableConfigs.values().iterator().next().getAsBytes(Property.TABLE_FILE_COMPRESSED_BLOCK_SIZE);
         } else {
             return 0;
         }
@@ -372,12 +392,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     }
     
     protected void setTableIdsAndConfigs() throws IOException {
-        
+
         tableConfigs = new HashMap<>();
         Iterable<String> localityGroupTables = Splitter.on(",").split(conf.get(CONFIGURE_LOCALITY_GROUPS, ""));
-        
+
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
-        
+
         tableIds = tcu.getJobOutputTableNames(conf);
         Set<String> compressionTableBlackList = getCompressionTableBlackList(conf);
         String compressionType = getCompressionType(conf);
@@ -387,9 +407,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 log.error("No properties found for table " + tableName);
             } else {
                 ConfigurationCopy tableConfig = new ConfigurationCopy(properties);
-                tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableBlackList.contains(tableName) ? Compression.COMPRESSION_NONE
+                tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableBlackList.contains(tableName) ? new NoCompression().getName()
                                 : compressionType));
-                
+
                 // the locality groups feature is broken and will be removed in a future MR
                 if (Iterables.contains(localityGroupTables, tableName)) {
                     Map<String,Set<Text>> localityGroups = tcu.getLocalityGroups(tableName);
@@ -552,8 +572,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     Path path = entry.getValue();
                     String table = writerTableNames.get(entry.getKey());
                     try {
-                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf).withTableConfiguration(tableConfigs.get(table))
-                                        .build();
+                        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
+                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf, cs)
+                                        .withTableConfiguration(tableConfigs.get(table)).build();
                         FileStatus fileStatus = fs.getFileStatus(path);
                         long fileSize = fileStatus.getLen();
                         openReader.close();
@@ -633,6 +654,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     /**
      * Read in the sequence file (that was created at job startup) for the given table that contains a list of shard IDs and the corresponding tablet server to
      * which that shard is assigned.
+     *
+     * @param tableName
+     *            the table name
+     * @return a mapping of the shard ids and tablet server
+     * @throws IOException
+     *             if there is an issue with read or write
      */
     protected Map<Text,String> getShardLocations(String tableName) throws IOException {
         // Create the Map of sharded table name to [shardId -> server]

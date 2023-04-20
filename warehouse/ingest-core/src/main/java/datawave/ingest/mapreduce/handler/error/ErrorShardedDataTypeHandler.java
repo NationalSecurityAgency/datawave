@@ -47,7 +47,8 @@ import java.util.List;
  * <p>
  * This class creates the following Mutations or Key/Values: <br>
  * <br>
- * <table border="1" summary="">
+ * <table border="1">
+ * <caption></caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -95,6 +96,7 @@ import java.util.List;
  *
  *
  * @param <KEYIN>
+ *            type of input key
  */
 public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN> implements
                 ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
@@ -319,7 +321,9 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
      * Get the stack trace for a throwable
      * 
      * @param buffer
+     *            the writing buffer
      * @param e
+     *            the exception throwable
      */
     public static void getStackTrace(DataOutputBuffer buffer, Throwable e) {
         PrintStream stream = new PrintStream(buffer);
@@ -331,7 +335,9 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
      * A helper routine to determine the visibility for a field.
      *
      * @param event
+     *            the event container
      * @param value
+     *            the value
      * @return the visibility
      */
     @Override

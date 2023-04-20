@@ -29,7 +29,13 @@ public class EdgeDictionaryBean {
     private RemoteEdgeDictionary remoteEdgeDictionary;
     
     /**
-     * The edge dictionary only has one endpoint. Send redirects for any request to it.
+     * @param uriInfo
+     *            uriInfo The edge dictionary only has one endpoint. Send redirects for any request to it.
+     * @throws TextParseException
+     *             for issues with parsing
+     * @throws URISyntaxException
+     *             for syntax issues
+     * @return a redirect response
      */
     @GET
     @Path("/")

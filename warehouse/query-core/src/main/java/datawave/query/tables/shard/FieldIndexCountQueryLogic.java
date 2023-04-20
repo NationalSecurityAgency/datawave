@@ -31,8 +31,8 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -63,14 +63,14 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
     public FieldIndexCountQueryLogic() {}
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         
         if (logger.isTraceEnabled()) {
             logger.trace("initialize");
         }
         
-        this.scannerFactory = new ScannerFactory(connection);
-        MetadataHelper metadataHelper = prepareMetadataHelper(connection, this.getMetadataTableName(), auths);
+        this.scannerFactory = new ScannerFactory(client);
+        MetadataHelper metadataHelper = prepareMetadataHelper(client, this.getMetadataTableName(), auths);
         String modelName = this.getModelName();
         String modelTableName = this.getModelTableName();
         // Check if the default modelName and modelTableNames have been overriden by custom parameters.
@@ -94,7 +94,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         
         // I'm using this config object in a pinch, we should probably create a custom one.
         ShardQueryConfiguration config = ShardQueryConfiguration.create(this, settings);
-        config.setConnector(connection);
+        config.setClient(client);
         config.setAuthorizations(auths);
         
         // the following throw IllegalArgumentExceptions if validation fails.
@@ -202,6 +202,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
      * @param genericConfig
      *            configuration object
      * @throws Exception
+     *             for any exceptions encountered
      */
     @Override
     public void setupQuery(GenericQueryConfiguration genericConfig) throws Exception {

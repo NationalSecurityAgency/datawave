@@ -15,7 +15,7 @@ import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.conf.ColumnToClassMapping;
+import org.apache.accumulo.core.iteratorsImpl.conf.ColumnToClassMapping;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -102,7 +102,9 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
      * Private constructor.
      * 
      * @param other
+     *            the other iterator
      * @param env
+     *            an interator environment
      */
     private PropogatingIterator(PropogatingIterator other, IteratorEnvironment env) {
         iterator = other.iterator.deepCopy(env);
@@ -122,8 +124,9 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     /**
      * Aggregates the same partial key.
      * 
-     * @return
+     * @return a partial key
      * @throws IOException
+     *             for issues with read/write
      */
     private boolean aggregateRowColumn() throws IOException {
         // this function assumes that first value is not delete
@@ -191,8 +194,9 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     
     /**
      * Find Top method, will attempt to aggregate, iff an aggregator is specified
-     * 
+     *
      * @throws IOException
+     *             for issues with read/write
      */
     private void findTop() throws IOException {
         // check if aggregation is needed
@@ -205,8 +209,11 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
      * SKVI Constructor
      * 
      * @param iterator
+     *            an iterator
      * @param Aggregators
+     *            mapping of aggregators
      * @throws IOException
+     *             for issues with read/write
      */
     public PropogatingIterator(SortedKeyValueIterator<Key,Value> iterator, ColumnToClassMapping<Combiner> Aggregators) throws IOException {
         this.iterator = iterator;
@@ -333,7 +340,8 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
      * Create the aggregator using the provided options.
      *
      * @param className
-     * @return
+     *            name of the class
+     * @return an aggregator class
      */
     private Object createAggregator(String className) {
         try {

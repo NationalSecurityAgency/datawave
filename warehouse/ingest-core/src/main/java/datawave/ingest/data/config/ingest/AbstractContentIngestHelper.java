@@ -9,7 +9,7 @@ public abstract class AbstractContentIngestHelper extends BaseIngestHelper {
      * Obtain the designator used for tokenized fields, implementations should never return null, rather an empty string to indicate that no suffix should be
      * used.
      * 
-     * @return
+     * @return the designator, or an empty String
      */
     public abstract String getTokenFieldNameDesignator();
     
@@ -18,7 +18,8 @@ public abstract class AbstractContentIngestHelper extends BaseIngestHelper {
      * specified.
      * 
      * @param field
-     * @return
+     *            the field
+     * @return true if the field should be indexed
      */
     public abstract boolean isContentIndexField(String field);
     
@@ -27,7 +28,8 @@ public abstract class AbstractContentIngestHelper extends BaseIngestHelper {
      * is specified.
      * 
      * @param field
-     * @return
+     *            the field
+     * @return true if the field should be reversed indexed
      */
     public abstract boolean isReverseContentIndexField(String field);
     
@@ -36,7 +38,8 @@ public abstract class AbstractContentIngestHelper extends BaseIngestHelper {
      * designator if any is specified.
      *
      * @param field
-     * @return
+     *            the field
+     * @return true if the field value should be indexed as a list of values
      */
     public abstract boolean isIndexListField(String field);
     
@@ -45,14 +48,15 @@ public abstract class AbstractContentIngestHelper extends BaseIngestHelper {
      * designator if any is specified.
      *
      * @param field
-     * @return
+     *            the field
+     * @return true if the field value should be indexed as a list of values
      */
     public abstract boolean isReverseIndexListField(String field);
     
     /**
      * Return the delimiters to use when splitting a list of values into separate entries.
      *
-     * @return
+     * @return the delimiter used to split a value into a list
      */
     public abstract String getListDelimiter();
     
@@ -66,7 +70,7 @@ public abstract class AbstractContentIngestHelper extends BaseIngestHelper {
     /**
      * When saving the raw document in the document column, we must have a 'view' name; this method must return that value.
      * 
-     * @return
+     * @return the raw document view name
      */
     public abstract String getRawDocumentViewName();
     
@@ -78,7 +82,8 @@ public abstract class AbstractContentIngestHelper extends BaseIngestHelper {
      * designator if any is specified.
      * 
      * @param fieldName
-     * @return
+     *            the field name
+     * @return true if the field should be indexed
      */
     @Override
     public boolean isIndexedField(String fieldName) {

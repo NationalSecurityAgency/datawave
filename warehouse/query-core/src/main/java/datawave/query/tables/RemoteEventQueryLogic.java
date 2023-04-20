@@ -4,6 +4,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.config.RemoteQueryConfiguration;
 import datawave.query.tables.remote.RemoteQueryLogic;
 import datawave.query.transformer.EventQueryTransformerSupport;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.common.remote.RemoteQueryService;
@@ -17,7 +18,7 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -40,6 +41,8 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     private RemoteQueryConfiguration config;
     
     private RemoteQueryService remoteQueryService;
+    
+    private UserOperations userOperations;
     
     private QueryLogicTransformer transformerInstance = null;
     
@@ -92,14 +95,14 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> auths) throws Exception {
         GenericResponse<String> createResponse = remoteQueryService.createQuery(getRemoteQueryLogic(), settings.toMap(), getCallerObject());
         setRemoteId(createResponse.getResult());
         return getConfig();
     }
     
     @Override
-    public String getPlan(Connector connection, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
+    public String getPlan(AccumuloClient connection, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
         GenericResponse<String> planResponse = remoteQueryService.planQuery(getRemoteQueryLogic(), settings.toMap());
         return planResponse.getResult();
     }
@@ -255,4 +258,13 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
         
     }
     
+    @Override
+    public void setUserOperations(UserOperations userOperations) {
+        this.userOperations = userOperations;
+    }
+    
+    @Override
+    public UserOperations getUserOperations() {
+        return userOperations;
+    }
 }

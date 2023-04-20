@@ -214,7 +214,6 @@ findHadoopVersion (){
 }
 METRICS_VERSION=$(findVersion ../../lib datawave-metrics-core)
 INGEST_VERSION=$(findVersion ../../lib datawave-ingest-csv)
-ZOOKEEPER_VERSION=$(findVersion $ZOOKEEPER_HOME zookeeper)
 HADOOP_VERSION=$(findHadoopVersion $INGEST_HADOOP_HOME)
 
 

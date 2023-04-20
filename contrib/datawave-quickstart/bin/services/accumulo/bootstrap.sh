@@ -15,31 +15,36 @@ DW_ACCUMULO_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Zookeeper config
 
 # You may override DW_ZOOKEEPER_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://archive.apache.org/dist/zookeeper/zookeeper-3.4.14/zookeeper-3.4.14.tar.gz}"
+DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://archive.apache.org/dist/zookeeper/zookeeper-3.7.1/apache-zookeeper-3.7.1-bin.tar.gz}"
+# shellcheck disable=SC2154
+# shellcheck disable=SC2034
 DW_ZOOKEEPER_DIST="$( downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ZOOKEEPER_BASEDIR="zookeeper-install"
 DW_ZOOKEEPER_SYMLINK="zookeeper"
 
 # zoo.cfg...
+# shellcheck disable=SC2034
 DW_ZOOKEEPER_CONF="
 tickTime=2000
 syncLimit=5
 clientPort=2181
 dataDir=${DW_CLOUD_DATA}/zookeeper
-maxClientCnxns=100"
+maxClientCnxns=100
+admin.serverPort=8089
+admin.enableServer=false"
 
 # Accumulo config
 
 # You may override DW_ACCUMULO_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-
-DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://raw.githubusercontent.com/brianloss/maven_repo/files/accumulo-1.9.3-hadoop3-bin.tar.gz}"
+DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-http://archive.apache.org/dist/accumulo/2.1.0/accumulo-2.1.0-bin.tar.gz}"
+# shellcheck disable=SC2034
 DW_ACCUMULO_DIST="$( downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"
 DW_ACCUMULO_SYMLINK="accumulo"
 DW_ACCUMULO_INSTANCE_NAME="my-instance-01"
 DW_ACCUMULO_PASSWORD="${DW_ACCUMULO_PASSWORD:-secret}"
 
-alias ashell="accumulo shell -u root -p ${DW_ACCUMULO_PASSWORD}"
+alias ashell="accumulo shell -u root -p \${DW_ACCUMULO_PASSWORD}"
 
 # Note that example configuration is provided for setting up VFS classpath for DataWave jars,
 # but it is disabled by default, as it doesn't really buy you anything on a standalone cluster.
@@ -49,29 +54,47 @@ alias ashell="accumulo shell -u root -p ${DW_ACCUMULO_PASSWORD}"
 DW_ACCUMULO_VFS_DATAWAVE_ENABLED=${DW_ACCUMULO_VFS_DATAWAVE_ENABLED:-false}
 DW_ACCUMULO_VFS_DATAWAVE_DIR="/datawave/accumulo-vfs-classpath"
 
-# accumulo-site.xml (Format: <property-name><space><property-value>{<newline>})
+# accumulo.properties (Format: <property-name>=<property-value>{<newline>})
 
-DW_ACCUMULO_SITE_CONF="instance.volumes ${DW_HADOOP_DFS_URI}/accumulo
-instance.zookeeper.host localhost:2181
-instance.secret ${DW_ACCUMULO_PASSWORD}
-tserver.memory.maps.max 385M
-tserver.memory.maps.native.enabled false
-tserver.cache.data.size 64M
-tserver.cache.index.size 64M
-trace.token.property.password ${DW_ACCUMULO_PASSWORD}
-trace.user root
-general.classpaths \$ACCUMULO_HOME/lib/accumulo-server.jar,\n\$ACCUMULO_HOME/lib/accumulo-core.jar,\n\$ACCUMULO_HOME/lib/accumulo-start.jar,\n\$ACCUMULO_HOME/lib/accumulo-fate.jar,\n\$ACCUMULO_HOME/lib/accumulo-proxy.jar,\n\$ACCUMULO_HOME/lib/[^.].*.jar,\n\$ZOOKEEPER_HOME/zookeeper[^.].*.jar,\n\$HADOOP_CONF_DIR,\n\$HADOOP_PREFIX/share/hadoop/common/[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/common/lib/(?!slf4j)[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/hdfs/[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/mapreduce/[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/yarn/[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/yarn/lib/jersey.*.jar"
+DW_ACCUMULO_PROPERTIES="## Sets location in HDFS where Accumulo will store data
+instance.volumes=${DW_HADOOP_DFS_URI}/accumulo
+
+## Sets location of Zookeepers
+instance.zookeeper.host=localhost:2181
+
+## Change secret before initialization. All Accumulo servers must have same secret
+instance.secret=${DW_ACCUMULO_PASSWORD}
+
+## Set to false if 'accumulo-util build-native' fails
+tserver.memory.maps.native.enabled=true
+tserver.memory.maps.max=385M
+tserver.cache.data.size=64M
+tserver.cache.index.size=64M
+
+## Trace user
+trace.user=root
+
+## Trace password
+trace.password=${DW_ACCUMULO_PASSWORD}"
 
 if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
-  DW_ACCUMULO_SITE_CONF="${DW_ACCUMULO_SITE_CONF}
-general.vfs.context.classpath.datawave ${DW_HADOOP_DFS_URI}${DW_ACCUMULO_VFS_DATAWAVE_DIR}/.*.jar"
+  DW_ACCUMULO_PROPERTIES="${DW_ACCUMULO_PROPERTIES}
+general.vfs.context.classpath.datawave=${DW_HADOOP_DFS_URI}${DW_ACCUMULO_VFS_DATAWAVE_DIR}/.*.jar"
+else
+  DW_ACCUMULO_PROPERTIES="${DW_ACCUMULO_PROPERTIES}
+general.vfs.context.classpath.extlib=file://${ACCUMULO_HOME}/lib/ext/.*.jar"
 fi
 
-DW_ACCUMULO_CLIENT_CONF="instance.zookeeper.host=localhost:2181"
+# shellcheck disable=SC2034
+DW_ACCUMULO_CLIENT_CONF="instance.name=${DW_ACCUMULO_INSTANCE_NAME}
+instance.zookeepers=localhost:2181
+auth.type=password
+auth.principal=root
+auth.token=${DW_ACCUMULO_PASSWORD}"
 
 DW_ACCUMULO_JVM_HEAPDUMP_DIR="${DW_CLOUD_DATA}/heapdumps"
 
-DW_ACCUMULO_TSERVER_OPTS="\${POLICY} -Xmx768m -Xms768m -XX:-HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${DW_ACCUMULO_JVM_HEAPDUMP_DIR} -XX:+UseCompressedOops "
+# shellcheck disable=SC2034
 
 export ZOOKEEPER_HOME="${DW_CLOUD_HOME}/${DW_ZOOKEEPER_SYMLINK}"
 export ACCUMULO_HOME="${DW_CLOUD_HOME}/${DW_ACCUMULO_SYMLINK}"
@@ -81,11 +104,11 @@ export PATH=${ACCUMULO_HOME}/bin:${ZOOKEEPER_HOME}/bin:$PATH
 
 DW_ZOOKEEPER_CMD_START="( cd ${ZOOKEEPER_HOME}/bin && ./zkServer.sh start )"
 DW_ZOOKEEPER_CMD_STOP="( cd ${ZOOKEEPER_HOME}/bin && ./zkServer.sh stop )"
-DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'zookeeper.server.quorum.QuorumPeerMain'"
+DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="ps -ef | grep 'zookeeper.server.quorum.QuorumPeerMain' | grep -v grep | awk '{ print \$2 }'"
 
-DW_ACCUMULO_CMD_START="( cd ${ACCUMULO_HOME}/bin && ./start-all.sh )"
-DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./stop-all.sh )"
-DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'o.start.Main master|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
+DW_ACCUMULO_CMD_START="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster start )"
+DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster stop )"
+DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'o.start.Main manager|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
 
 function accumuloIsRunning() {
     DW_ACCUMULO_PID_LIST="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS}")"
@@ -112,14 +135,14 @@ function accumuloStart() {
 }
 
 function accumuloStop() {
-    accumuloIsRunning && [ ! -z "${DW_ACCUMULO_PID_LIST}" ] && eval "${DW_ACCUMULO_CMD_STOP}" || echo "Accumulo is already stopped"
+    accumuloIsRunning && [ -n "${DW_ACCUMULO_PID_LIST}" ] && eval "${DW_ACCUMULO_CMD_STOP}" || echo "Accumulo is already stopped"
     zookeeperStop
 }
 
 function accumuloStatus() {
     # define vars for accumulo processes
     local _gc
-    local _master
+    local _manager
     local _monitor
     local _tracer
     local _tserver
@@ -133,7 +156,8 @@ function accumuloStatus() {
         local -r _pids=${DW_ACCUMULO_PID_LIST// /|}
         echo "pids: ${DW_ACCUMULO_PID_LIST}"
 
-        for _arg in $(jps -lm | egrep "${_pids}"); do
+        for _arg in $(jps -lm | grep -E "${_pids}"); do
+
             case ${_opt} in
                 pid)
                     _pid=${_arg}
@@ -143,7 +167,7 @@ function accumuloStatus() {
                     local _none
                     case "${_arg}" in
                         gc) _gc=${_pid};;
-                        master) _master=${_pid};;
+                        manager) _manager=${_pid};;
                         monitor) _monitor=${_pid};;
                         tracer) _tracer=${_pid};;
                         tserver) _tserver=${_pid};;
@@ -151,17 +175,15 @@ function accumuloStatus() {
                     esac
 
                     test -z "${_none}" && info "${_arg} => ${_pid}"
-                    _opt=address
+                    _opt=pid
                     unset _none
                     _pid=;;
-                address) _opt=addrValue;;
-                addrValue) _opt=pid;;
             esac
         done
     }
 
     test -z "${_gc}" && warn "gc is not running"
-    test -z "${_master}" && warn "master is not running"
+    test -z "${_manager}" && warn "manager is not running"
     test -z "${_monitor}" && info "monitor is not running"
     test -z "${_tracer}" && info "tracer is not running"
     test -z "${_tserver}" && warn "tserver is not running"
@@ -182,9 +204,10 @@ function accumuloUninstall() {
        fi
 
        if [ -d "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_BASEDIR}" ] ; then
-           rm -rf "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_BASEDIR}"
+           rm -rf "${DW_ACCUMULO_SERVICE_DIR:?}/${DW_ACCUMULO_BASEDIR}"
        fi
 
+       # shellcheck disable=SC2015
        ! accumuloIsInstalled && info "Accumulo uninstalled" || error "Failed to uninstall Accumulo"
     else
       info "Accumulo not installed. Nothing to do"
@@ -197,9 +220,10 @@ function accumuloUninstall() {
        fi
 
        if [ -d "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}" ] ; then
-           rm -rf "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}"
+           rm -rf "${DW_ACCUMULO_SERVICE_DIR:?}/${DW_ZOOKEEPER_BASEDIR}"
        fi
 
+       # shellcheck disable=SC2015
        ! zookeeperIsInstalled && info "ZooKeeper uninstalled" || error "Failed to uninstall ZooKeeper"
     else
        info "ZooKeeper not installed. Nothing to do"
@@ -209,7 +233,7 @@ function accumuloUninstall() {
 }
 
 function accumuloInstall() {
-    ${DW_ACCUMULO_SERVICE_DIR}/install.sh
+    "${DW_ACCUMULO_SERVICE_DIR}/install.sh"
 }
 
 function zookeeperIsInstalled() {
@@ -230,6 +254,7 @@ function zookeeperIsRunning() {
 }
 
 function zookeeperStart() {
+    # shellcheck disable=SC2015
     zookeeperIsRunning && echo "ZooKeeper is already running" || eval "${DW_ZOOKEEPER_CMD_START}"
 }
 

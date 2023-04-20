@@ -97,6 +97,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int collapseUidsThreshold = -1;
     // Should this query dedupe terms within ANDs and ORs
     private boolean enforceUniqueTermsWithinExpressions = false;
+    // should this query reduce the set of fields prior to serialization
+    private boolean reduceQueryFields = false;
     private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
@@ -393,6 +395,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // The class for the excerpt iterator
     private Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
     
+    // controls when to issue a seek. disabled by default.
+    private int fiFieldSeek = -1;
+    private int fiNextSeek = -1;
+    private int eventFieldSeek = -1;
+    private int eventNextSeek = -1;
+    private int tfFieldSeek = -1;
+    private int tfNextSeek = -1;
+    
     /**
      * The maximum weight for entries in the visitor function cache. The weight is calculated as the total number of characters for each key and value in the
      * cache. Default is 5m characters, which is roughly 10MB
@@ -434,6 +444,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
+        this.setReduceQueryFields(other.getReduceQueryFields());
         this.setParseTldUids(other.getParseTldUids());
         this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
@@ -590,6 +601,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setNoExpansionFields(other.getNoExpansionFields());
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
         this.setExcerptIterator(other.getExcerptIterator());
+        this.setFiFieldSeek(other.getFiFieldSeek());
+        this.setFiNextSeek(other.getFiNextSeek());
+        this.setEventFieldSeek(other.getEventFieldSeek());
+        this.setEventNextSeek(other.getEventNextSeek());
+        this.setTfFieldSeek(other.getTfFieldSeek());
+        this.setTfNextSeek(other.getTfNextSeek());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
         this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
@@ -674,7 +691,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * A convenience method that determines whether we can handle when we have exceeded the value threshold on some node. We can handle this if the Ivarators
      * can be used which required a hadoop config and a base hdfs cache directory.
      *
-     * @return
+     * @return if we can handle the exceeded value
      */
     public boolean canHandleExceededValueThreshold() {
         return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheDirConfigs && !this.ivaratorCacheDirConfigs.isEmpty());
@@ -683,7 +700,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     /**
      * A convenience method that determines whether we can handle when we have exceeded the term threshold on some node. Currently we cannot.
      *
-     * @return
+     * @return if we can handle exceeding the term threshold
      */
     public boolean canHandleExceededTermThreshold() {
         return false;
@@ -1096,7 +1113,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     /**
      * Join unevaluated fields together on comma
      *
-     * @return
+     * @return the unevaluated fields string
      */
     public String getUnevaluatedFieldsAsString() {
         return StringUtils.join(this.unevaluatedFields, Constants.PARAM_VALUE_SEP);
@@ -1970,6 +1987,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
     }
     
+    public boolean getReduceQueryFields() {
+        return reduceQueryFields;
+    }
+    
+    public void setReduceQueryFields(boolean reduceQueryFields) {
+        this.reduceQueryFields = reduceQueryFields;
+    }
+    
     public boolean getSequentialScheduler() {
         return sequentialScheduler;
     }
@@ -2282,6 +2307,54 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator) {
         this.excerptIterator = excerptIterator;
+    }
+    
+    public int getFiFieldSeek() {
+        return fiFieldSeek;
+    }
+    
+    public void setFiFieldSeek(int fiFieldSeek) {
+        this.fiFieldSeek = fiFieldSeek;
+    }
+    
+    public int getFiNextSeek() {
+        return fiNextSeek;
+    }
+    
+    public void setFiNextSeek(int fiNextSeek) {
+        this.fiNextSeek = fiNextSeek;
+    }
+    
+    public int getEventFieldSeek() {
+        return eventFieldSeek;
+    }
+    
+    public void setEventFieldSeek(int eventFieldSeek) {
+        this.eventFieldSeek = eventFieldSeek;
+    }
+    
+    public int getEventNextSeek() {
+        return eventNextSeek;
+    }
+    
+    public void setEventNextSeek(int eventNextSeek) {
+        this.eventNextSeek = eventNextSeek;
+    }
+    
+    public int getTfFieldSeek() {
+        return tfFieldSeek;
+    }
+    
+    public void setTfFieldSeek(int tfFieldSeek) {
+        this.tfFieldSeek = tfFieldSeek;
+    }
+    
+    public int getTfNextSeek() {
+        return tfNextSeek;
+    }
+    
+    public void setTfNextSeek(int tfNextSeek) {
+        this.tfNextSeek = tfNextSeek;
     }
     
     public long getVisitorFunctionMaxWeight() {

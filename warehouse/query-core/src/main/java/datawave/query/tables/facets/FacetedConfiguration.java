@@ -54,6 +54,7 @@ public class FacetedConfiguration {
      * Sets whether or not we have a limited fields
      * 
      * @param limits
+     *            setting for hasFieldLimits
      */
     public void setHasFieldLimits(boolean limits) {
         this.hasFieldLimits = limits;
@@ -67,6 +68,7 @@ public class FacetedConfiguration {
      * Set the minimum count.
      * 
      * @param count
+     *            the count
      */
     public void setMinimumCount(int count) {
         minimumFacetCount = count;
@@ -75,7 +77,7 @@ public class FacetedConfiguration {
     /**
      * Get the minimum facet count.
      * 
-     * @return
+     * @return minimum facet count
      */
     public int getMinimumFacetCount() {
         return minimumFacetCount;
@@ -85,6 +87,7 @@ public class FacetedConfiguration {
      * Set the facet search type.
      * 
      * @param type
+     *            facet search type
      */
     public void setType(final FacetedSearchType type) {
         this.type = type;
@@ -93,7 +96,7 @@ public class FacetedConfiguration {
     /**
      * Returns the facet search type
      * 
-     * @return
+     * @return facet search type
      */
     public FacetedSearchType getType() {
         return type;
@@ -103,6 +106,7 @@ public class FacetedConfiguration {
      * Sets the faceted fields.
      * 
      * @param fields
+     *            faceted fields
      */
     public void setFacetedFields(final Set<String> fields) {
         this.facetedFields = Sets.newTreeSet(fields);
@@ -112,7 +116,7 @@ public class FacetedConfiguration {
     /**
      * Return the sorted set of faceted fields.
      * 
-     * @return
+     * @return sorted set of faceted fields
      */
     public SortedSet<String> getFacetedFields() {
         return facetedFields;
@@ -122,7 +126,8 @@ public class FacetedConfiguration {
      * Add a single faceted field.
      * 
      * @param field
-     * @return
+     *            the field
+     * @return if the field was added
      */
     public boolean addFacetedField(final String field) {
         return facetedFields.add(field);
@@ -132,6 +137,7 @@ public class FacetedConfiguration {
      * Sets the maximum facet group count.
      * 
      * @param max
+     *            maximum facet group count
      */
     public void setMaximumFacetGroupCount(int max) {
         this.maximumFacetGroupCount = max;
@@ -140,7 +146,7 @@ public class FacetedConfiguration {
     /**
      * Returns the maximum facet group count.
      * 
-     * @return
+     * @return maximum facet group count
      */
     public int getMaximumFacetGroupCount() {
         return maximumFacetGroupCount;
@@ -149,7 +155,7 @@ public class FacetedConfiguration {
     /**
      * If maximum facet group count is not the max value, we assume that it was set and therefore grouping is enabled.
      * 
-     * @return
+     * @return If maximum facet group count is not the max value
      */
     public boolean isGroupingEnabled() {
         return (maximumFacetGroupCount != Integer.MAX_VALUE);
@@ -157,6 +163,7 @@ public class FacetedConfiguration {
     
     /**
      * @param isStreaming
+     *            setting for isStreaming
      */
     public void setStreamingMode(boolean isStreaming) {
         this.isStreaming = isStreaming;

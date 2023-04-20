@@ -19,7 +19,11 @@ public class RunCompare {
      * Runs a comparison of the two given files and outputs results to stdout.
      *
      * @param filename1
+     *            a file name
      * @param filename2
+     *            a different file name
+     * @throws IOException
+     *             if either file cannot be found
      */
     public void run(String filename1, String filename2) throws IOException {
         Configuration c1 = fileBasedConf(filename1);
@@ -38,7 +42,9 @@ public class RunCompare {
      * Prints out a section of comparison results.
      * 
      * @param title
+     *            the section title
      * @param entries
+     *            the content of the section
      */
     private void printResultSection(String title, Collection<String> entries) {
         System.out.println(title);
@@ -53,8 +59,10 @@ public class RunCompare {
      * Creates a new configuration from a local file.
      * 
      * @param filename
-     * @return configuration
+     *            the file name
+     * @return configuration a new configuration
      * @throws FileNotFoundException
+     *             if the file is not found
      */
     private Configuration fileBasedConf(String filename) throws FileNotFoundException {
         Configuration c = new Configuration();
@@ -75,6 +83,7 @@ public class RunCompare {
      * Verifies that the given filename 1) exists and 2) can be read by this user.
      *
      * @param filename
+     *            the file name
      * @return True if the file exists and can be read, false, otherwise.
      */
     private static boolean verifyFile(String filename) {
@@ -89,6 +98,9 @@ public class RunCompare {
      * Entry point
      *
      * @param args
+     *            command line args
+     * @throws IOException
+     *             if something goes wrong
      */
     public static void main(String[] args) throws IOException {
         if (args.length < 2 || !verifyFile(args[0]) || !verifyFile(args[1]))

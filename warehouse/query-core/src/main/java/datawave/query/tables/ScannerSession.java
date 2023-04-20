@@ -135,6 +135,9 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * @param delegator
      *            scanner queue
      * @param maxResults
+     *            the max results
+     * @param settings
+     *            query settings
      */
     public ScannerSession(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings) {
         this(tableName, auths, delegator, maxResults, settings, new SessionOptions(), null);
@@ -210,7 +213,8 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * Sets the ranges for the given scannersession.
      * 
      * @param ranges
-     * @return
+     *            the ranges
+     * @return the current scannersession
      */
     public ScannerSession setRanges(Collection<Range> ranges) {
         Preconditions.checkNotNull(ranges);
@@ -227,9 +231,10 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     
     /**
      * Sets the ranges for the given scannersession.
-     * 
+     *
      * @param ranges
-     * @return
+     *            the ranges
+     * @return the current scannersession
      */
     public ScannerSession setRanges(Iterable<Range> ranges) {
         Preconditions.checkNotNull(ranges);
@@ -285,8 +290,15 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             // until we've completed the start process
             if (null != stats)
                 initializeTimers();
-            startAndWait();
             
+            // these two guava methods replaced behavior of startAndWait() from version 15 but
+            // will now throw an exception if another thread closes the session so catch and ignore
+            startAsync();
+            try {
+                awaitRunning();
+            } catch (IllegalStateException e) {
+                log.debug("Session was closed while waiting to start up.");
+            }
         }
         
         // isFlushNeeded is only in the case of when we are finished
@@ -381,7 +393,10 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * Override this for your specific implementation.
      * 
      * @param lastKey
+     *            the last key
      * @param previousRange
+     *            the previous range
+     * @return a new range
      */
     public Range buildNextRange(final Key lastKey, final Range previousRange) {
         return new Range(lastKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME), true, previousRange.getEndKey(), previousRange.isEndKeyInclusive());
@@ -391,6 +406,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * set the resource class.
      * 
      * @param clazz
+     *            the class to set
      */
     public void setResourceClass(Class<? extends AccumuloResource> clazz) {
         delegatedResourceInitializer = clazz;
@@ -400,6 +416,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * FindTop -- Follows the logic outlined in the comments, below. Effectively, we continue
      * 
      * @throws Exception
+     *             if there are issues
      * 
      */
     protected void findTop() throws Exception {
@@ -409,7 +426,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 flush();
                 return;
             }
-            stop();
+            stopAsync();
             
             return;
         }
@@ -585,6 +602,8 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * Set the scanner options
      * 
      * @param options
+     *            options to set
+     * @return scanner options
      */
     public ScannerSession setOptions(SessionOptions options) {
         Preconditions.checkNotNull(options);
@@ -596,32 +615,18 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     /**
      * Return scanner options.
      * 
-     * @return
+     * @return scanner options
      */
     public SessionOptions getOptions() {
         return this.options;
     }
     
-    /**
-     * Methods, below, are solely for testing.
-     */
-    
-    /**
-     * Test method.
-     * 
-     * @throws InterruptedException
-     */
     protected void waitUntilCapacity() throws InterruptedException {
         while (resultQueue.remainingCapacity() > 0) {
             Thread.sleep(500);
         }
     }
     
-    /**
-     * Returns the current range object for testing.
-     * 
-     * @return
-     */
     protected Range getCurrentRange() {
         return currentRange;
     }
@@ -637,7 +642,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     /**
      * Get last Range.
      * 
-     * @return
+     * @return last Range
      */
     protected Range getLastRange() {
         return lastRange;
@@ -646,7 +651,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     /**
      * Get last key.
      * 
-     * @return
+     * @return last key
      */
     protected Key getLastKey() {
         return lastSeenKey;
@@ -673,7 +678,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     
     public void close() {
         forceClose = true;
-        stop();
+        stopAsync();
         synchronized (sessionDelegator) {
             if (null != delegatedResource) {
                 try {

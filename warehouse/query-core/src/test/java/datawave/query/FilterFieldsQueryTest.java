@@ -1,5 +1,10 @@
 package datawave.query;
 
+import datawave.helpers.PrintUtility;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.function.Aggregation;
+import datawave.query.function.DocumentProjection;
+import datawave.query.iterator.QueryIterator;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -13,6 +18,7 @@ import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryJexl;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.ResponseFieldChecker;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -50,7 +56,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     public FilterFieldsQueryTest() {
@@ -64,6 +70,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         for (final TestCities city : TestCities.values()) {
             String cont = "'ohio'";
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + CityField.STATE.name() + EQ_OP + cont;
+            // make sure we have a fresh query logic instance
+            querySetUp();
             runTest(query, true, false);
         }
     }
@@ -75,6 +83,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String cont = "'north america'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + CityField.CONTINENT.name() + EQ_OP + cont;
+            // make sure we have a fresh query logic instance
+            querySetUp();
             runTest(query, true, true);
         }
     }
@@ -87,6 +97,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             String cityPhrase = EQ_OP + "'" + city.name() + "'";
             String query = Constants.ANY_FIELD + cityPhrase;
             String expect = this.dataManager.convertAnyField(cityPhrase);
+            // make sure we have a fresh query logic instance
+            querySetUp();
             runTest(query, expect, true, false);
         }
     }
@@ -149,6 +161,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + " filter:includeRegex(" + Constants.ANY_FIELD + "," + state + ")";
             String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + anyState;
+            // make sure we have a fresh query logic instance
+            querySetUp();
             runTest(query, expectQuery, true, false);
         }
     }
@@ -161,6 +175,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + ":" + city.name() + AND_OP + " #INCLUDE(" + Constants.ANY_FIELD + ",ohio)";
             String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + anyState;
+            // make sure we have a fresh query logic instance
+            querySetUp();
             this.logic.setParser(new LuceneToJexlQueryParser());
             runTest(query, expectQuery, true, false);
         }
@@ -174,6 +190,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + ":" + city.name() + AND_OP + " #TEXT(Ohio)";
             String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + anyState;
+            // make sure we have a fresh query logic instance
+            querySetUp();
             this.logic.setParser(new LuceneToJexlQueryParser());
             runTest(query, expectQuery, true, false);
         }
@@ -209,6 +227,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             final Set<String> fields = CityField.getRandomReturnFields(false);
             // remove CITY field
             fields.remove(CityField.CITY.name());
+            // make sure we have a fresh query logic instance
+            querySetUp();
             runTest(query, false, false, fields);
         }
     }
@@ -225,6 +245,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             final Set<String> fields = CityField.getRandomReturnFields(false);
             // include CITY field
             fields.add(CityField.CITY.name());
+            // make sure we have a fresh query logic instance
+            querySetUp();
             runTest(query, false, false, fields);
         }
     }
@@ -238,6 +260,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.STATE.name() + EQ_OP + state + OR_OP
                             + CityField.STATE.name() + EQ_OP + mizzu + ")";
+            // make sure we have a fresh query logic instance
+            querySetUp();
             runTest(query, false, false);
         }
     }
@@ -249,6 +273,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String regex = "'miss.*'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + CityField.STATE.name() + RE_OP + regex;
+            // make sure we have a fresh query logic instance
+            querySetUp();
             runTest(query, false, false);
         }
     }
@@ -260,6 +286,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String regex = "'miss.*'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + CityField.STATE.name() + RE_OP + regex;
+            // make sure we have a fresh query logic instance
+            querySetUp();
             runTest(query, true, false);
         }
     }
@@ -273,6 +301,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.STATE.name() + EQ_OP + state + OR_OP
                             + CityField.CONTINENT.name() + EQ_OP + cont + ")";
+            // make sure we have a fresh query logic instance
+            querySetUp();
             runTest(query, false, true);
         }
     }
@@ -287,6 +317,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             final Set<String> fields = CityField.getRandomReturnFields(true);
             // include STATE field
             fields.add(CityField.STATE.name());
+            // make sure we have a fresh query logic instance
+            querySetUp();
             runTest(query, true, true, fields);
         }
     }
@@ -301,6 +333,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             final Set<String> fields = CityField.getRandomReturnFields(true);
             // remove STATE field
             fields.remove(CityField.STATE.name());
+            // make sure we have a fresh query logic instance
+            querySetUp();
             runTest(query, true, true, fields);
         }
     }
@@ -357,7 +391,6 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
      */
     private void runTest(final String query, final String expectQuery, final Date startDate, final Date endDate, final boolean whiteList,
                     final boolean hitList, final Set<String> fields) throws Exception {
-        
         QueryJexl jexl = new QueryJexl(expectQuery, this.dataManager, startDate, endDate);
         final Set<Map<String,String>> allData = jexl.evaluate();
         final Set<String> expected = this.dataManager.getKeys(allData);
@@ -369,8 +402,10 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         
         Map<String,String> options = new HashMap<>();
         final List<QueryLogicTestHarness.DocumentChecker> queryChecker = new ArrayList<>();
-        if (whiteList) {
-            // NOTE CityField.EVENT_ID MUST be included in blacklisted fields
+        if (fields.isEmpty()) {
+            queryChecker.add(new ResponseFieldChecker(otherFields, fields));
+        } else if (whiteList) {
+            // NOTE CityField.EVENT_ID MUST be included in whitelisted fields
             options.put(QueryParameters.RETURN_FIELDS, queryFields);
             queryChecker.add(new ResponseFieldChecker(fields, otherFields));
         } else {

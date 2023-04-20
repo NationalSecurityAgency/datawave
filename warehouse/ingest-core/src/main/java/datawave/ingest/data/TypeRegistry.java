@@ -71,7 +71,11 @@ public class TypeRegistry extends HashMap<String,Type> {
         return registry;
     }
     
-    /** Helps determine whether or not the registry instance has been instantiated. */
+    /**
+     * Helps determine whether or not the registry instance has been instantiated.
+     * 
+     * @return true if the registry exists, false otherwise
+     * */
     public static boolean hasInstance() {
         return registry != null;
     }
@@ -291,7 +295,8 @@ public class TypeRegistry extends HashMap<String,Type> {
         names.remove("file");
         names.remove("accumulo");
         names.remove("num");
-        
+        names.remove("yarn.timeline-service");
+
         return names;
     }
     

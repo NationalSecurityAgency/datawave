@@ -2,17 +2,13 @@ package datawave.ingest.data.config.ingest;
 
 import datawave.ingest.data.config.ConfigurationHelper;
 
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
-import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
+
+import java.util.Properties;
 
 /**
  * Helper class to validate configuration of Accumulo required parameters
@@ -40,24 +36,6 @@ public class AccumuloHelper {
         zooKeepers = ConfigurationHelper.isNull(config, ZOOKEEPERS, String.class);
     }
     
-    /**
-     * @return instance based on zookeepers and instance name set in this object
-     */
-    public Instance getInstance() {
-        return new ZooKeeperInstance(getZookeeperConfig());
-    }
-    
-    public ClientConfiguration getZookeeperConfig() {
-        return ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers);
-    }
-    
-    /**
-     * @return Accumulo authorization info based on username and password set in this object.
-     */
-    public Credentials getCredentials() throws AccumuloSecurityException {
-        return new Credentials(username, password);
-    }
-    
     public String getInstanceName() {
         return instanceName;
     }
@@ -74,17 +52,15 @@ public class AccumuloHelper {
         return password.getPassword();
     }
     
-    public AuthenticationToken getAuthToken() {
-        return password;
+    /**
+     * @return an {@link AccumuloClient} to Accumulo given this object's settings.
+     */
+    public AccumuloClient newClient() {
+        return Accumulo.newClient().to(instanceName, zooKeepers).as(username, password).build();
     }
     
-    /**
-     * @return Connector to Accumulo given this objects settings.
-     * @throws AccumuloSecurityException
-     * @throws AccumuloException
-     */
-    public Connector getConnector() throws AccumuloSecurityException, AccumuloException {
-        return getInstance().getConnector(username, password);
+    public Properties newClientProperties() {
+        return Accumulo.newClientProperties().to(instanceName, zooKeepers).as(username, password).build();
     }
     
     public static void setUsername(Configuration conf, String username) {

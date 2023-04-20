@@ -19,8 +19,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Throwables;
-import org.apache.accumulo.core.client.impl.ScannerOptions;
-import org.apache.accumulo.core.client.impl.TabletLocator;
+import org.apache.accumulo.core.clientImpl.ScannerOptions;
+import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -31,7 +31,6 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
@@ -41,16 +40,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
 
-import datawave.mr.bulk.RfileResource;
 import datawave.query.tables.async.Scan;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.tables.async.SessionArbiter;
 import datawave.query.tables.async.SpeculativeScan;
 import datawave.webservice.query.Query;
 
-/**
- * 
- */
 public class BatchScannerSession extends ScannerSession implements Iterator<Entry<Key,Value>>, FutureCallback<Scan>, SessionArbiter, UncaughtExceptionHandler {
     
     private static final int THIRTY_MINUTES = 108000000;
@@ -146,6 +141,13 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      * @param delegator
      *            scanner queue
      * @param maxResults
+     *            the max results
+     * @param settings
+     *            the query settings
+     * @param options
+     *            the scanner options
+     * @param ranges
+     *            list of ranges
      */
     public BatchScannerSession(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, ScannerOptions options,
                     Collection<Range> ranges) {
@@ -159,7 +161,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         
         delegatorReference = super.sessionDelegator;
         
-        scannerBatches = Iterators.emptyIterator();
+        scannerBatches = Collections.emptyIterator();
         
         currentBatch = Queues.newLinkedBlockingDeque();
         
@@ -204,9 +206,8 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      * Sets the ranges for the given scannersession.
      * 
      * @param chunkIter
-     * @return
-     * 
-     * 
+     *            list of scanner chunks
+     * @return the scanner session
      */
     public synchronized BatchScannerSession setChunkIter(Iterator<List<ScannerChunk>> chunkIter) {
         
@@ -239,7 +240,9 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      * Override this for your specific implementation.
      * 
      * @param lastKey
+     *            the last key
      * @param previousRange
+     *            the previous range
      */
     public Range buildNextRange(final Key lastKey, final Range previousRange) {
         return new Range(lastKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME), true, previousRange.getEndKey(), previousRange.isEndKeyInclusive());
@@ -249,6 +252,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      * set the resource class.
      * 
      * @param clazz
+     *            a class
      */
     public void setResourceClass(Class<? extends AccumuloResource> clazz) {
         delegatedResourceInitializer = clazz;
@@ -341,9 +345,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         return 5;
     }
     
-    /**
-     * @param chunks
-     */
     protected void pushChunks(List<ScannerChunk> chunks) {
         currentBatch.addAll(chunks);
     }
@@ -361,7 +362,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
             
             Scan scan = null;
             
-            if (speculativeScanning && delegatedResourceInitializer == RfileResource.class) {
+            if (speculativeScanning) {
                 
                 if (log.isTraceEnabled()) {
                     log.trace("Using speculative execution");
@@ -424,7 +425,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
             
             Scan scan = null;
             
-            if (speculativeScanning && delegatedResourceInitializer == RfileResource.class) {
+            if (speculativeScanning) {
                 
                 if (log.isTraceEnabled()) {
                     log.trace("Using speculative execution");
@@ -458,13 +459,15 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         ListenableFuture<Scan> future = (ListenableFuture<Scan>) service.submit(scan);
         if (increment)
             runnableCount.incrementAndGet();
-        Futures.addCallback(future, this);
+        Futures.addCallback(future, this, service);
     }
     
     /**
      * Set the scanner options
      * 
      * @param options
+     *            options
+     * @return the scan session
      */
     public BatchScannerSession setOptions(SessionOptions options) {
         return this;
@@ -472,27 +475,22 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     }
     
     /**
-     * Returns the current range object for testing.
-     * 
-     * @return
+     * @return the current range object for testing.
      */
     protected Range getCurrentRange() {
         return null;
     }
     
     /**
-     * Get last Range.
-     * 
-     * @return
+     * @return last Range.
      */
     protected Range getLastRange() {
         return lastRange;
     }
     
     /**
-     * Get last key.
-     * 
-     * @return
+     * @return last key.
+     *
      */
     protected Key getLastKey() {
         return null;
@@ -665,7 +663,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     
     @Override
     public void close() {
-        stop();
+        stopAsync();
         service.shutdownNow();
         listenerService.shutdownNow();
     }

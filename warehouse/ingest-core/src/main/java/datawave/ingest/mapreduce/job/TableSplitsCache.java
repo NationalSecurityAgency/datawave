@@ -14,6 +14,7 @@ import java.util.Set;
 
 import datawave.ingest.config.BaseHdfsFileCacheUtil;
 import datawave.util.StringUtils;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -49,6 +50,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     /**
      *
      * @param conf
+     *            the configuration
      */
     
     public TableSplitsCache(Configuration conf) {
@@ -104,8 +106,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     }
     
     /**
-     * 
-     * @return
+     * @return the file status
      */
     public FileStatus getFileStatus() {
         FileStatus splitsStatus = null;
@@ -129,19 +130,22 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     
     /**
      * updates the splits file if the splits in the new file have not decreased beyond the maximum deviation allowed
+     * 
+     * @param fs
+     *            the filesystem
+     * @param tmpSplitsFile
+     *            a path to the splits file
+     * @throws IOException
+     *             for issues with read or write
      */
     @Override
     public void writeCacheFile(FileSystem fs, Path tmpSplitsFile) throws IOException {
         TableOperations tops = null;
         initAccumuloHelper();
-        try {
-            tops = this.accumuloHelper.getConnector().tableOperations();
-        } catch (AccumuloSecurityException | AccumuloException ex) {
-            throw new IOException("Could not get TableOperations", ex);
-        }
-        Set<String> tableNames = getIngestTableNames();
-        Map<String,Integer> splitsPerTable = new HashMap<>();
-        if (tops != null) {
+        try (AccumuloClient client = this.accumuloHelper.newClient()) {
+            tops = client.tableOperations();
+            Set<String> tableNames = getIngestTableNames();
+            Map<String,Integer> splitsPerTable = new HashMap<>();
             try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpSplitsFile)))) {
                 this.splits = new HashMap<>();
                 // gather the splits and write to PrintStream
@@ -206,6 +210,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      * @param in
      *            an input stream containing the split points to read
      * @throws IOException
+     *             for issues with read or write
      */
     @Override
     protected void readCache(BufferedReader in) throws IOException {
@@ -230,8 +235,10 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     /**
      * 
      * @param table
+     *            name of the table
      * @return list of splits for the table
-     * @throws java.io.IOException
+     * @throws IOException
+     *             for issues with read or write
      */
     public List<Text> getSplits(String table) throws IOException {
         if (null == this.splits)
@@ -246,18 +253,21 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     /**
      * 
      * @param table
+     *            name of the table
      * @param maxSplits
-     * @return
+     *            number of maximum splits
+     * @return a list of the splits
      * @throws IOException
+     *             for issues with read or write
      */
     public List<Text> getSplits(String table, int maxSplits) throws IOException {
         return trimSplits(getSplits(table), maxSplits);
     }
     
     /**
-     * 
      * @return map of table name to list of splits for the table
-     * @throws java.io.IOException
+     * @throws IOException
+     *             for issues with read or write
      */
     public Map<String,List<Text>> getSplits() throws IOException {
         if (null == this.splits)

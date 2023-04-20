@@ -4,10 +4,13 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.BatchWriterConfig;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -34,9 +37,6 @@ public class MockLoader extends CacheLoader<LoaderKey,InMemoryInstance> {
     
     public static final byte[] MOCK_PASSWORD = "".getBytes();
     
-    /**
-     * @param listeningDecorator
-     */
     public MockLoader(ListeningExecutorService listeningDecorator) {
         executorService = listeningDecorator;
     }
@@ -79,36 +79,37 @@ public class MockLoader extends CacheLoader<LoaderKey,InMemoryInstance> {
         public InMemoryInstance call() throws Exception {
             
             InMemoryInstance instance = new InMemoryInstance(UUID.randomUUID() + key.table);
-            Authorizations auths = key.connector.securityOperations().getUserAuthorizations(key.user);
+            Authorizations auths = key.client.securityOperations().getUserAuthorizations(key.user);
             
             if (log.isTraceEnabled()) {
                 log.trace("Building mock instances, with auths " + auths + " from " + key);
             }
             
-            Connector instanceConnector = instance.getConnector(key.user, MOCK_PASSWORD);
-            
-            instanceConnector.securityOperations().changeUserAuthorizations(key.user, auths);
-            if (instanceConnector.tableOperations().exists(key.table))
-                instanceConnector.tableOperations().delete(key.table);
-            
-            instanceConnector.tableOperations().create(key.table);
-            
-            try (BatchScanner scanner = key.connector.createBatchScanner(key.table, auths, 11);
-                            BatchWriter writer = instanceConnector.createBatchWriter(key.table, 100L * (1024L * 1024L), 100L, 1)) {
+            try (AccumuloClient client = new InMemoryAccumuloClient(key.user, instance)) {
+                client.securityOperations().changeUserAuthorizations(key.user, auths);
+                if (client.tableOperations().exists(key.table))
+                    client.tableOperations().delete(key.table);
                 
-                scanner.setRanges(Lists.newArrayList(new Range()));
-                Iterator<Entry<Key,Value>> iter = scanner.iterator();
-                while (iter.hasNext()) {
+                client.tableOperations().create(key.table);
+                
+                try (BatchScanner scanner = key.client.createBatchScanner(key.table, auths, 11);
+                                BatchWriter writer = client.createBatchWriter(key.table, new BatchWriterConfig().setMaxMemory(100L * (1024L * 1024L))
+                                                .setMaxLatency(100L, TimeUnit.MILLISECONDS).setMaxWriteThreads(1))) {
                     
-                    Entry<Key,Value> value = iter.next();
-                    
-                    Key valueKey = value.getKey();
-                    
-                    Mutation m = new Mutation(value.getKey().getRow());
-                    m.put(valueKey.getColumnFamily(), valueKey.getColumnQualifier(), new ColumnVisibility(valueKey.getColumnVisibility()),
-                                    valueKey.getTimestamp(), value.getValue());
-                    writer.addMutation(m);
-                    
+                    scanner.setRanges(Lists.newArrayList(new Range()));
+                    Iterator<Entry<Key,Value>> iter = scanner.iterator();
+                    while (iter.hasNext()) {
+                        
+                        Entry<Key,Value> value = iter.next();
+                        
+                        Key valueKey = value.getKey();
+                        
+                        Mutation m = new Mutation(value.getKey().getRow());
+                        m.put(valueKey.getColumnFamily(), valueKey.getColumnQualifier(), new ColumnVisibility(valueKey.getColumnVisibility()),
+                                        valueKey.getTimestamp(), value.getValue());
+                        writer.addMutation(m);
+                        
+                    }
                 }
             }
             if (log.isTraceEnabled())

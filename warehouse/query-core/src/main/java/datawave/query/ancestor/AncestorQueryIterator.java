@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import datawave.query.function.AncestorRangeProvider;
+import datawave.query.function.Equality;
+import datawave.query.function.RangeProvider;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
@@ -64,7 +67,6 @@ public class AncestorQueryIterator extends QueryIterator {
     @Override
     public boolean validateOptions(Map<String,String> options) {
         boolean success = super.validateOptions(options);
-        super.equality = new AncestorEquality();
         // we need the hit list arithmetic in any case (see getJexlEvaluation below)
         super.arithmetic = new HitListArithmetic(false);
         return success;
@@ -231,13 +233,14 @@ public class AncestorQueryIterator extends QueryIterator {
                     throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
         IteratorBuildingVisitor v = createIteratorBuildingVisitor(AncestorIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs)
                         .setIteratorBuilder(AncestorIndexIteratorBuilder.class);
-        return ((AncestorIndexBuildingVisitor) v).setEquality(equality);
+        return ((AncestorIndexBuildingVisitor) v).setEquality(getEquality());
     }
     
     /**
      * Create a comparator used to order values within lists in the JexlContext.
      * 
      * @param from
+     *            the tuple to create the comparator
      * @return a ValueComparator
      */
     @Override
@@ -274,4 +277,29 @@ public class AncestorQueryIterator extends QueryIterator {
         }
     }
     
+    /**
+     * Get a {@link AncestorRangeProvider}
+     *
+     * @return a {@link AncestorRangeProvider}
+     */
+    @Override
+    public RangeProvider getRangeProvider() {
+        if (rangeProvider == null) {
+            rangeProvider = new AncestorRangeProvider();
+        }
+        return rangeProvider;
+    }
+    
+    /**
+     * Get an {@link AncestorEquality}
+     *
+     * @return an Equality
+     */
+    @Override
+    public Equality getEquality() {
+        if (equality == null) {
+            equality = new AncestorEquality();
+        }
+        return equality;
+    }
 }

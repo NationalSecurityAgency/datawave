@@ -13,6 +13,7 @@ import java.util.Map.Entry;
  * Key adjudicator, will take an accumulo key based entry whose value is specified by T.
  * 
  * @param <T>
+ *            type of the key adjudicator
  */
 public class KeyAdjudicator<T> implements Iterator<Entry<Key,T>>, Function<Entry<Key,T>,Entry<Key,T>> {
     

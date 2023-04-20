@@ -4,11 +4,12 @@ import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 
@@ -41,13 +42,13 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     }
     
     @Override
-    public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+    public String getPlan(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception {
         return delegate.getPlan(connection, settings, runtimeQueryAuthorizations, expandFields, expandValues);
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
         return delegate.initialize(connection, settings, runtimeQueryAuthorizations);
     }
     
@@ -338,5 +339,10 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     @Override
     public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         delegate.validate(parameters);
+    }
+    
+    @Override
+    public UserOperations getUserOperations() {
+        return delegate.getUserOperations();
     }
 }

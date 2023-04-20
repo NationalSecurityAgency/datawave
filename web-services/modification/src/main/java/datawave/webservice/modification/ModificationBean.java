@@ -20,7 +20,7 @@ import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.results.modification.ModificationConfigurationResponse;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
@@ -158,7 +158,7 @@ public class ModificationBean {
             throw new DatawaveWebApplicationException(qe, response);
         }
         
-        Connector con = null;
+        AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
         try {
             // Get the Modification Service from the configuration
@@ -198,10 +198,10 @@ public class ModificationBean {
             
             // Process the modification
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            con = connectionFactory.getConnection(modificationConfiguration.getPoolName(), priority, trackingMap);
+            client = connectionFactory.getClient(modificationConfiguration.getPoolName(), priority, trackingMap);
             service.setQueryService(queryService);
             log.info("Processing modification request from user=" + user + ": \n" + request);
-            service.process(con, request, cache.getCachedMutableFieldList(), cbAuths, user);
+            service.process(client, request, cache.getCachedMutableFieldList(), cbAuths, user);
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
@@ -211,9 +211,9 @@ public class ModificationBean {
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(e, response);
         } finally {
-            if (null != con)
+            if (null != client)
                 try {
-                    connectionFactory.returnConnection(con);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection", e);
                 }

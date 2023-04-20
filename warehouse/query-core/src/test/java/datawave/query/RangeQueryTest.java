@@ -49,7 +49,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
         Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     public RangeQueryTest() {
@@ -253,6 +253,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
      * Range ops in different sub trees should not get coalesed as then can apply to different values in a multivalued range.
      * 
      * @throws Exception
+     *             for unexpected issues
      */
     @Test
     public void testRangeOpsInDiffSubTree() throws Exception {

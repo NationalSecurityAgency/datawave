@@ -94,6 +94,7 @@ public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy
      *            Maximum length of tokenized n-grams
      * @return The number of tokenized n-grams
      * @throws TokenizationException
+     *             for issues with tokenization
      */
     public int tokenize(final NormalizedContentInterface content, int maxNGramLength) throws TokenizationException {
         // Initialize return value and try tokenization using the parent

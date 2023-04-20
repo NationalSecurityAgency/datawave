@@ -18,11 +18,11 @@ import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.StringUtils;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -88,9 +88,13 @@ public class EdgeKeyVersioningCache {
      * @param fs
      *            the hadoop filesystem containing the splits file
      * @throws AccumuloSecurityException
+     *             for issues authenticating with accumulo
      * @throws AccumuloException
+     *             for general issues with accumulo
      * @throws IOException
+     *             for problems reading or writing to the cache
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     
     public void updateCache(FileSystem fs) throws AccumuloSecurityException, AccumuloException, IOException, TableNotFoundException {
@@ -99,44 +103,41 @@ public class EdgeKeyVersioningCache {
             this.cbHelper = new AccumuloHelper();
             this.cbHelper.setup(conf);
         }
-        Connector conn = this.cbHelper.getConnector();
         
-        ensureTableExists(conn);
-        
-        org.apache.accumulo.core.client.Scanner scanner = conn.createScanner(metadataTableName, new Authorizations());
-        
-        scanner.setRange(new Range(EDGE_KEY_VERSION_ROW));
         // a temporary date map. using tree map so we can print out the version/dates in order
-        Map<Integer,String> versionDates = new TreeMap();
-        
-        // Read the edge key version dates from the datawave metadata table
-        // If there happen to be the same version numbers but with different dates then the one with the earliest date is kept
-        for (Map.Entry<Key,Value> entry : scanner) {
-            String cq = entry.getKey().getColumnQualifier().toString();
+        Map<Integer,String> versionDates = new TreeMap<>();
+        try (AccumuloClient client = cbHelper.newClient()) {
+            ensureTableExists(client);
             
-            String parts[] = StringUtils.split(cq, '/');
-            
-            Integer versionNum = NumericalEncoder.decode(parts[0]).intValue();
-            
-            // Earlier dates will sort first so only remember the first date for each version number
-            if (!versionDates.containsKey(versionNum)) {
-                versionDates.put(versionNum, parts[1]);
+            try (org.apache.accumulo.core.client.Scanner scanner = client.createScanner(metadataTableName, new Authorizations())) {
+                scanner.setRange(new Range(EDGE_KEY_VERSION_ROW));
+                
+                // Read the edge key version dates from the datawave metadata table
+                // If there happen to be the same version numbers but with different dates then the one with the earliest date is kept
+                for (Map.Entry<Key,Value> entry : scanner) {
+                    String cq = entry.getKey().getColumnQualifier().toString();
+                    
+                    String parts[] = StringUtils.split(cq, '/');
+                    
+                    Integer versionNum = NumericalEncoder.decode(parts[0]).intValue();
+                    
+                    // Earlier dates will sort first so only remember the first date for each version number
+                    if (!versionDates.containsKey(versionNum)) {
+                        versionDates.put(versionNum, parts[1]);
+                    }
+                }
             }
-            
-        }
-        
-        scanner.close();
-        
-        // If Datawave Metadatatable does not have any key versions automatically populate it with one
-        if (versionDates.isEmpty()) {
-            /*
-             * If no key versions were found, then we're most likely initializing a new system. Therefore seeding with epoch date, which should prevent the
-             * "old" edge key from being created...that is, with EdgeKey.DATE_TYPE.OLD_EVENT (See ProtobufEdgeDataTypeHandler.writeEdges)
-             */
-            Date then = new Date(0);
-            log.warn("Could not find any edge key version entries in the " + metadataTableName + " table. Automatically seeding with date: " + then);
-            String dateString = seedMetadataTable(conn, then.getTime(), 1);
-            versionDates.put(1, dateString);
+            // If Datawave Metadatatable does not have any key versions automatically populate it with one
+            if (versionDates.isEmpty()) {
+                /*
+                 * If no key versions were found, then we're most likely initializing a new system. Therefore seeding with epoch date, which should prevent the
+                 * "old" edge key from being created...that is, with EdgeKey.DATE_TYPE.OLD_EVENT (See ProtobufEdgeDataTypeHandler.writeEdges)
+                 */
+                Date then = new Date(0);
+                log.warn("Could not find any edge key version entries in the " + metadataTableName + " table. Automatically seeding with date: " + then);
+                String dateString = seedMetadataTable(client, then.getTime(), 1);
+                versionDates.put(1, dateString);
+            }
         }
         
         // create a new temporary file
@@ -194,6 +195,7 @@ public class EdgeKeyVersioningCache {
      *            an input stream containing the split points to read
      * @return a map of table name to split points
      * @throws IOException
+     *             for problems reading or writing to the cache
      */
     private Map<Integer,String> readCache(BufferedReader in) throws IOException {
         
@@ -213,9 +215,15 @@ public class EdgeKeyVersioningCache {
      * Key structure: edge_key version:num/yyyy-MM-ddThh:MM:ss:000Z []
      *
      * @param time
+     *            the time of the entry
+     * @param keyVersionNum
+     *            the key version number
      * @throws AccumuloSecurityException
+     *             for issues authenticating with accumulo
      * @throws AccumuloException
+     *             for general issues with accumulo
      * @throws TableNotFoundException
+     *             if the table was not found
      */
     public void createMetadataEntry(long time, int keyVersionNum) throws Exception {
         if (this.cbHelper == null) {
@@ -224,19 +232,20 @@ public class EdgeKeyVersioningCache {
         }
         cbHelper.setup(conf);
         
-        Connector connector = cbHelper.getConnector();
-        
-        ensureTableExists(connector);
-        
-        seedMetadataTable(connector, time, keyVersionNum);
+        try (AccumuloClient client = cbHelper.newClient()) {
+            
+            ensureTableExists(client);
+            
+            seedMetadataTable(client, time, keyVersionNum);
+        }
     }
     
     /*
      * Creates the Datawave Metadata table if it does not exist. Used for first time users who don't have any tables in their accumulo instance. This only
      * creates the table the ingest job will configure it
      */
-    private void ensureTableExists(Connector connector) throws AccumuloSecurityException, AccumuloException {
-        TableOperations tops = connector.tableOperations();
+    private void ensureTableExists(AccumuloClient client) throws AccumuloSecurityException, AccumuloException {
+        TableOperations tops = client.tableOperations();
         if (!tops.exists(metadataTableName)) {
             log.info("Creating table: " + metadataTableName);
             try {
@@ -247,11 +256,11 @@ public class EdgeKeyVersioningCache {
         }
     }
     
-    private String seedMetadataTable(Connector connector, long time, int keyVersionNum) throws TableNotFoundException, MutationsRejectedException {
+    private String seedMetadataTable(AccumuloClient client, long time, int keyVersionNum) throws TableNotFoundException, MutationsRejectedException {
         Value emptyVal = new Value();
         SimpleDateFormat dateFormat = new SimpleDateFormat(DateNormalizer.ISO_8601_FORMAT_STRING);
         String dateString = dateFormat.format(new Date(time));
-        try (BatchWriter recordWriter = connector.createBatchWriter(metadataTableName, new BatchWriterConfig())) {
+        try (BatchWriter recordWriter = client.createBatchWriter(metadataTableName, new BatchWriterConfig())) {
             String normalizedVersionNum = NumericalEncoder.encode(Integer.toString(keyVersionNum));
             String rowID = "edge_key";
             String columnFamily = "version";

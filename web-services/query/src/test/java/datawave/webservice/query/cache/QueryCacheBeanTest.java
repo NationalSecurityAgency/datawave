@@ -5,7 +5,8 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.runner.RunningQuery;
-import org.apache.accumulo.core.client.Connector;
+
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.util.Pair;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,7 +36,7 @@ public class QueryCacheBeanTest {
     QueryLogic<?> logic;
     
     @Mock
-    Pair<QueryLogic<?>,Connector> pair;
+    Pair<QueryLogic<?>,AccumuloClient> pair;
     
     @Mock
     CreatedQueryLogicCacheBean remoteCache;
@@ -53,7 +54,7 @@ public class QueryCacheBeanTest {
     public void testListRunningQueries() {
         // Set expectations
         expect(altCache.iterator()).andReturn((Iterator<RunningQuery>) new HashMap().values().iterator());
-        Map<String,Pair<QueryLogic<?>,Connector>> snapshot = new HashMap<>();
+        Map<String,Pair<QueryLogic<?>,AccumuloClient>> snapshot = new HashMap<>();
         snapshot.put("key", this.pair);
         expect(this.remoteCache.snapshot()).andReturn(snapshot);
         expect(this.pair.getFirst()).andReturn((QueryLogic) this.logic);
@@ -124,6 +125,7 @@ public class QueryCacheBeanTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(q.getDnList())).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
+        expect(logic.getUserOperations()).andReturn(null);
         
         PowerMock.replayAll();
         

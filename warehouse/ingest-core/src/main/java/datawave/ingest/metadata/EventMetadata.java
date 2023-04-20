@@ -33,7 +33,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  * frequency, etc.) and creates mutations for a accumulo table with the format:
  * <p>
  * <br>
- * <table border="1" summary="">
+ * <table border="1">
+ * <caption></caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -114,6 +115,8 @@ public class EventMetadata implements RawRecordMetadata {
      *            used as part of column family within LOAD_DATES_TABLE_NAME
      * @param shardReverseIndexTableName
      *            used as part of column family within LOAD_DATES_TABLE_NAME
+     * @param loadDatesTableName
+     *            the table name for the load dates
      * @param frequency
      *            whether to add to the metadata table's counts for field name by event date
      */

@@ -62,7 +62,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         dataTypes.add(new CarsDataType(CarsDataType.CarEntry.ford, generic));
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     @Before
@@ -320,6 +320,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
      * Query should be throwing an InvalidFieldIndexQueryFatalException due to AND with a non-indexed field.
      *
      * @throws Exception
+     *             for any exceptions encountered
      */
     @Test
     public void testQuery018() throws Exception {

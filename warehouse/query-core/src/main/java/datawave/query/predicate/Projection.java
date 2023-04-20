@@ -3,6 +3,7 @@ package datawave.query.predicate;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlASTHelper;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.Collections;
 import java.util.Set;
@@ -77,5 +78,9 @@ public class Projection implements Predicate<String> {
         }
         
         throw new RuntimeException("This Projection must be initialized with a set of includes or excludes fields");
+    }
+    
+    public String toString() {
+        return new ToStringBuilder(this).append("includes", includes).append("excludes", excludes).toString();
     }
 }

@@ -21,6 +21,7 @@ import com.google.common.collect.Multimap;
  * 
  * 
  * @param <KEYIN>
+ *            type of data type handler
  */
 public interface DataTypeHandler<KEYIN> {
     
@@ -31,14 +32,18 @@ public interface DataTypeHandler<KEYIN> {
     /**
      * Return the list of tables that are used by this handler. Note that the handler should NOT have to be "setup" to call this method.
      * 
-     * @return
+     * @param conf
+     *            the configuration
+     * @return list of table names
      */
     String[] getTableNames(Configuration conf);
     
     /**
      * Return the list of table priorities that are used by this handler. Note that the handler should NOT have to be "setup" to call this method.
      * 
-     * @return
+     * @param conf
+     *            the configuration
+     * @return a list of table priorities
      */
     int[] getTableLoaderPriorities(Configuration conf);
     
@@ -46,9 +51,13 @@ public interface DataTypeHandler<KEYIN> {
      * This method is called by the EventMapper to process the current Event for Bulk ingest.
      * 
      * @param key
+     *            a key
      * @param event
+     *            a event container
      * @param fields
+     *            fields of event
      * @param reporter
+     *            a status reporter
      * @return Map of Key,Value pairs or null if error.
      */
     Multimap<BulkIngestKey,Value> processBulk(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, StatusReporter reporter);

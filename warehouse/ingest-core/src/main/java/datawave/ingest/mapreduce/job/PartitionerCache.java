@@ -45,6 +45,7 @@ public class PartitionerCache {
      * @param tableNames
      *            an array of table names, it's expected to include non-configured table names
      * @param job
+     *            the job
      * @return only the table names that were configured with valid partitioners.
      */
     public List<String> validatePartitioners(String[] tableNames, Job job) {
@@ -99,6 +100,7 @@ public class PartitionerCache {
     
     /**
      * @param tableName
+     *            the table name
      * @return the cached partitioner for this table name (which may be a dedicated or shared partitioner)
      */
     public Partitioner<BulkIngestKey,Value> getPartitioner(Text tableName) {
@@ -118,7 +120,9 @@ public class PartitionerCache {
     
     /**
      * @param conf
+     *            the configuration
      * @param tableName
+     *            the table name
      * @return category name to which this table belongs or null if the table name does not belong a table
      */
     public static Text getCategory(Configuration conf, Text tableName) {
@@ -147,6 +151,12 @@ public class PartitionerCache {
     
     /**
      * returns the classname for this table's partitioner, either dedicated or shared
+     * 
+     * @param conf
+     *            the configuration
+     * @param tableName
+     *            the table name
+     * @return the class name of the partitioner
      */
     private static String getPartitionerClassNameForTableName(Configuration conf, String tableName) {
         String partitionerClassName;

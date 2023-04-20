@@ -251,9 +251,7 @@ public class TestLuceneQueryParser {
     
     /**
      * The include is now allowed within an or as it could be pushed down or handled by a full table scan. This is no longer an error.
-     * 
-     * @Test(expected = ParseException.class) public void testFunctionWrongStructure() throws ParseException { LuceneQueryParser luceneParser = new
-     *                LuceneQueryParser(); luceneParser.parse("field:selector OR #include(field, test[abc]*.*)"); }
+     *
      */
     
     @Test
@@ -282,6 +280,20 @@ public class TestLuceneQueryParser {
     public void testSpaceAfterColon() throws ParseException {
         LuceneQueryParser luceneParser = new LuceneQueryParser();
         Assert.assertEquals("[AND,field1:selector1,field2:selector2]", luceneParser.parse("field1: selector1 field2: selector2").getContents());
+    }
+    
+    @Test
+    public void testANDSpaceAfterColonWithWrappedFields() throws ParseException {
+        LuceneQueryParser luceneParser = new LuceneQueryParser();
+        Assert.assertEquals("[AND,field1:selector1,field1:selector2]", luceneParser.parse("field1: (selector1 AND selector2)").getContents());
+        Assert.assertEquals("[AND,field1:selector1,field1:selector2]", luceneParser.parse("field1:(selector1 AND selector2)").getContents());
+    }
+    
+    @Test
+    public void testORSpaceAfterColonWithWrappedFields() throws ParseException {
+        LuceneQueryParser luceneParser = new LuceneQueryParser();
+        Assert.assertEquals("[OR,field1:selector1,field1:selector2]", luceneParser.parse("field1: (selector1 OR selector2)").getContents());
+        Assert.assertEquals("[OR,field1:selector1,field1:selector2]", luceneParser.parse("field1:(selector1 OR selector2)").getContents());
     }
     
     @Test

@@ -3,8 +3,10 @@ package datawave.query.jexl.visitors;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
@@ -14,9 +16,9 @@ import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -43,7 +45,7 @@ import static org.junit.Assert.fail;
 public class UnfieldedIndexExpansionVisitorTest {
     
     private static InMemoryInstance instance = new InMemoryInstance(UnfieldedIndexExpansionVisitorTest.class.toString());
-    private static Connector conn;
+    private static AccumuloClient conn;
     
     private final static Long timestamp = DateHelper.parse("20210101").getTime();
     private final static Value emptyValue = new Value(new byte[0]);
@@ -57,7 +59,7 @@ public class UnfieldedIndexExpansionVisitorTest {
     
     @BeforeClass
     public static void setup() throws Exception {
-        conn = instance.getConnector("", new PasswordToken(new byte[0]));
+        conn = new InMemoryAccumuloClient("root", instance);
         
         createTables();
         writeShardIndexData();
@@ -165,7 +167,7 @@ public class UnfieldedIndexExpansionVisitorTest {
     
     private ShardQueryConfiguration createConfig() {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
-        config.setConnector(conn);
+        config.setClient(conn);
         config.setDatatypeFilter(Sets.newHashSet("datatype"));
         
         // default date range
@@ -216,7 +218,7 @@ public class UnfieldedIndexExpansionVisitorTest {
             String expected = "FIELD1 == 'burrito' || FIELD2 == 'burrito'";
             
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-            ScannerFactory scannerFactory = new ScannerFactory(config.getConnector());
+            ScannerFactory scannerFactory = new ScannerFactory(config.getClient());
             metadataHelper.addExpansionFields(ImmutableSet.of("FIELD1", "FIELD2"));
             ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
             
@@ -240,7 +242,7 @@ public class UnfieldedIndexExpansionVisitorTest {
             String expected = "_NOFIELD_ == 'burrito'";
             
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-            ScannerFactory scannerFactory = new ScannerFactory(config.getConnector());
+            ScannerFactory scannerFactory = new ScannerFactory(config.getClient());
             metadataHelper.addExpansionFields(ImmutableSet.of("FOOBAR"));
             ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
             
@@ -290,7 +292,7 @@ public class UnfieldedIndexExpansionVisitorTest {
     }
     
     // regex term fails to expand fields, marked with an exceeded term threshold marker
-    @Test
+    @Test(expected = DatawaveFatalQueryException.class)
     public void testExceededTermThreshold() throws Exception {
         ShardQueryConfiguration config = createConfig();
         config.setMaxUnfieldedExpansionThreshold(2);
@@ -366,7 +368,7 @@ public class UnfieldedIndexExpansionVisitorTest {
             String expected = "(_ANYFIELD_ !~ '.*?ly' && FIELD8 != 'fearfully' && FIELD9 != 'wonderfully')";
             
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-            ScannerFactory scannerFactory = new ScannerFactory(config.getConnector());
+            ScannerFactory scannerFactory = new ScannerFactory(config.getClient());
             metadataHelper.addExpansionFields(ImmutableSet.of("FIELD8", "FIELD9"));
             ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
             
@@ -425,7 +427,7 @@ public class UnfieldedIndexExpansionVisitorTest {
     // throw exception to assert failure cases, such as CannotExpandUnfieldedTermFatalException
     public void test(String query, String expected, ShardQueryConfiguration config, MockMetadataHelper metadataHelper) throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        ScannerFactory scannerFactory = new ScannerFactory(config.getConnector());
+        ScannerFactory scannerFactory = new ScannerFactory(config.getClient());
         ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
         
         // assert and validate

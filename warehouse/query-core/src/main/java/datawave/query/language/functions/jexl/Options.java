@@ -18,6 +18,7 @@ public class Options extends JexlQueryFunction {
      * query options are pairs of key/value. Ensure that the number of args is even
      * 
      * @throws IllegalArgumentException
+     *             for illegal arguments
      */
     @Override
     public void validate() throws IllegalArgumentException {

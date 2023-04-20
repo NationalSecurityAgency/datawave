@@ -3,6 +3,7 @@ package datawave.webservice.query.runner;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
@@ -49,8 +50,7 @@ import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.result.GenericResponse;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -232,7 +232,7 @@ public class QueryExecutorBeanTest {
         return q;
     }
     
-    private MultivaluedMap createNewQueryParameterMap() throws Exception {
+    private MultivaluedMap<String,String> createNewQueryParameterMap() throws Exception {
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
         p.putSingle(QueryParameters.QUERY_STRING, "foo == 'bar'");
         p.putSingle(QueryParameters.QUERY_NAME, "query name");
@@ -249,7 +249,7 @@ public class QueryExecutorBeanTest {
         return p;
     }
     
-    private MultivaluedMap createNewQueryParameters(QueryImpl q, MultivaluedMap p) {
+    private MultivaluedMap<String,String> createNewQueryParameters(QueryImpl q, MultivaluedMap<String,String> p) {
         QueryParameters qp = new QueryParametersImpl();
         MultivaluedMap<String,String> optionalParameters = new MultivaluedMapImpl<>();
         optionalParameters.putAll(qp.getUnknownParameters(p));
@@ -260,7 +260,7 @@ public class QueryExecutorBeanTest {
         return optionalParameters;
     }
     
-    private void defineTestRunner(QueryImpl q, MultivaluedMap p) throws Exception {
+    private void defineTestRunner(QueryImpl q, MultivaluedMap<String,String> p) throws Exception {
         
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, p);
         
@@ -286,9 +286,9 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         EasyMock.expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
-        EasyMock.expect(logic.isLongRunningQuery()).andReturn(false);
         EasyMock.expect(logic.getResultLimit(q.getDnList())).andReturn(-1L);
         EasyMock.expect(logic.getMaxResults()).andReturn(-1L);
+        EasyMock.expect(logic.getUserOperations()).andReturn(null);
         PowerMock.replayAll();
         
         bean.defineQuery(queryLogicName, p);
@@ -346,7 +346,7 @@ public class QueryExecutorBeanTest {
         p.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, "PRIVATE|PUBLIC");
         
         InMemoryInstance instance = new InMemoryInstance();
-        Connector c = instance.getConnector("root", new PasswordToken(""));
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
         
         QueryParameters qp = new QueryParametersImpl();
         MultivaluedMap<String,String> optionalParameters = new MultivaluedMapImpl<>();
@@ -392,7 +392,7 @@ public class QueryExecutorBeanTest {
     @Test
     public void testDefine() throws Exception {
         QueryImpl q = createNewQuery();
-        MultivaluedMap p = createNewQueryParameterMap();
+        MultivaluedMap<String,String> p = createNewQueryParameterMap();
         p.putSingle(QueryParameters.QUERY_LOGIC_NAME, "EventQueryLogic");
         
         defineTestRunner(q, p);
@@ -402,7 +402,7 @@ public class QueryExecutorBeanTest {
     @Test
     public void testPredict() throws Exception {
         QueryImpl q = createNewQuery();
-        MultivaluedMap p = createNewQueryParameterMap();
+        MultivaluedMap<String,String> p = createNewQueryParameterMap();
         p.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, p);
@@ -433,6 +433,8 @@ public class QueryExecutorBeanTest {
         metric.setQueryType(RunningQuery.class.getSimpleName());
         
         QueryMetric testMetric = new QueryMetric((QueryMetric) metric) {
+            public static final long serialVersionUID = 1L;
+
             @Override
             public boolean equals(Object o) {
                 // test for equality except for the create date
@@ -569,7 +571,7 @@ public class QueryExecutorBeanTest {
     
     private void nullDateTestRunner(boolean nullStart, boolean nullEnd) throws Exception {
         QueryImpl q = createNewQuery();
-        MultivaluedMap p = createNewQueryParameterMap();
+        MultivaluedMap<String,String> p = createNewQueryParameterMap();
         
         if (nullStart) {
             q.setBeginDate(null);
@@ -653,7 +655,7 @@ public class QueryExecutorBeanTest {
         List<String> dnList = Arrays.asList(dns);
         
         InMemoryInstance instance = new InMemoryInstance();
-        Connector c = instance.getConnector("root", new PasswordToken(""));
+        AccumuloClient c = new InMemoryAccumuloClient("root", instance);
         
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, queryParameters);
         
@@ -678,10 +680,10 @@ public class QueryExecutorBeanTest {
         
         connectionRequestBean.requestBegin(q.getId().toString());
         EasyMock.expectLastCall();
-        EasyMock.expect(connectionFactory.getConnection(eq("connPool1"), anyObject(), anyObject())).andReturn(c).anyTimes();
+        EasyMock.expect(connectionFactory.getClient(eq("connPool1"), anyObject(), anyObject())).andReturn(c).anyTimes();
         connectionRequestBean.requestEnd(q.getId().toString());
         EasyMock.expectLastCall();
-        connectionFactory.returnConnection(c);
+        connectionFactory.returnClient(c);
         EasyMock.expectLastCall();
         
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
@@ -691,12 +693,12 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         EasyMock.expect(logic.getAuditType(q)).andReturn(AuditType.NONE);
         EasyMock.expect(logic.getConnPoolName()).andReturn("connPool1");
-        EasyMock.expect(logic.isLongRunningQuery()).andReturn(false);
         EasyMock.expect(logic.getResultLimit(eq(q.getDnList()))).andReturn(-1L).anyTimes();
         EasyMock.expect(logic.getMaxResults()).andReturn(-1L).anyTimes();
+        EasyMock.expect(logic.getUserOperations()).andReturn(null);
         
         EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString(), principal)).andReturn(false).anyTimes();
-        connectionFactory.returnConnection(EasyMock.isA(Connector.class));
+        connectionFactory.returnClient(EasyMock.isA(AccumuloClient.class));
         
         final AtomicBoolean initializeLooping = new AtomicBoolean(false);
         
@@ -713,7 +715,7 @@ public class QueryExecutorBeanTest {
             }
         };
         
-        EasyMock.expect(logic.initialize(anyObject(Connector.class), anyObject(Query.class), anyObject(Set.class))).andAnswer(initializeAnswer);
+        EasyMock.expect(logic.initialize(anyObject(AccumuloClient.class), anyObject(Query.class), anyObject(Set.class))).andAnswer(initializeAnswer);
         EasyMock.expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
         
         // On close, interrupt the thread to simulate the ScannerFactory cleaning up
@@ -751,7 +753,7 @@ public class QueryExecutorBeanTest {
             // initialize has not completed yet so it will not appear in the cache
             Object cachedRunningQuery = cache.get(q.getId().toString());
             Assert.assertNull(cachedRunningQuery);
-            Pair<QueryLogic<?>,Connector> pair = qlCache.poll(q.getId().toString());
+            Pair<QueryLogic<?>,AccumuloClient> pair = qlCache.poll(q.getId().toString());
             Assert.assertNotNull(pair);
             Assert.assertEquals(logic, pair.getFirst());
             Assert.assertEquals(c, pair.getSecond());

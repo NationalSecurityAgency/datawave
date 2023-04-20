@@ -65,7 +65,9 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
      * Add the metadata from the event into our event fields
      * 
      * @param from
+     *            the from event fields
      * @param to
+     *            the to event fields
      */
     protected void addMetadata(Map<String,Collection<Object>> from, Multimap<String,NormalizedContentInterface> to) {
         if (from == null)
@@ -152,7 +154,9 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
      * Parse metadata base on the id
      * 
      * @param event
+     *            the event container
      * @param id
+     *            the event id
      */
     public void addMetadataFromId(RawRecordContainer event, String id) {
         Multimap<String,String> metadata = HashMultimap.create();
@@ -251,6 +255,8 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
     
     /**
      * Override the normalize call to enable event field value normalization
+     * 
+     * @return a set of the event content interface
      */
     public Set<NormalizedContentInterface> normalize(NormalizedContentInterface nci) {
         
@@ -276,7 +282,8 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
      * make sure the field name gets aliased (uppercased) properly.
      * 
      * @param nci
-     * @return
+     *            the normalized content interface
+     * @return the normalized content interface with proper aliases
      */
     public NormalizedContentInterface resolveAlias(NormalizedContentInterface nci) {
         return super.aliaser.normalizeAndAlias(nci);

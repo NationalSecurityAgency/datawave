@@ -6,7 +6,7 @@ import com.clearspring.analytics.stream.frequency.CountMinSketch;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class ApproximateAlgorithmsTest {
     

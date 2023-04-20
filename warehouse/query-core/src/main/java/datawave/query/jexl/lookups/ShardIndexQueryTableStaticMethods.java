@@ -29,7 +29,7 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -68,14 +68,22 @@ public class ShardIndexQueryTableStaticMethods {
      * Create an IndexLookup task to find field names give a JexlNode and a set of Types for that node
      *
      * @param node
+     *            the node
      * @param config
+     *            query configuration
      * @param scannerFactory
+     *            the scanner factory
      * @param expansionFields
+     *            the expansion fields
      * @param dataTypes
+     *            the data types
      * @param helperRef
+     *            the metadata helper
      * @param execService
-     * @return
+     *            the executor service
+     * @return an IndexLookup task
      * @throws TableNotFoundException
+     *             if the table was not found
      */
     public static IndexLookup normalizeQueryTerm(JexlNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
                     Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
@@ -126,11 +134,16 @@ public class ShardIndexQueryTableStaticMethods {
      * set of forward or reverse indexed fields is returned.
      * 
      * @param expansionFields
+     *            the expansion fields
      * @param reverseIndex
+     *            the reverse index
      * @param ingestDataTypes
+     *            the ingest data types
      * @param helperRef
+     *            the metadata helper
      * @return The actual set of expansion fields
      * @throws TableNotFoundException
+     *             if the table was not found
      */
     public static Set<String> getIndexedExpansionFields(Set<String> expansionFields, boolean reverseIndex, Set<String> ingestDataTypes, MetadataHelper helperRef)
                     throws TableNotFoundException {
@@ -147,14 +160,22 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     *            the AST node
      * @param config
+     *            the query configuration
      * @param scannerFactory
+     *            the scanner factory
      * @param expansionFields
+     *            the expansion fields
      * @param dataTypes
+     *            the data types
      * @param helperRef
+     *            the metadata helper
      * @param execService
+     *            the executor service
      * @return The index lookup instance
      * @throws TableNotFoundException
+     *             if the table was not found
      */
     public static IndexLookup normalizeQueryTerm(ASTEQNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
                     Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
@@ -165,14 +186,22 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     *            the AST node
      * @param config
+     *            the query configuration
      * @param scannerFactory
+     *            the scanner factory
      * @param expansionFields
+     *            the expansion fields
      * @param dataTypes
+     *            the data types
      * @param helperRef
+     *            the metadata helper
      * @param execService
+     *            the executor service
      * @return The index lookup instance
      * @throws TableNotFoundException
+     *             if the table was not found
      */
     public static IndexLookup normalizeQueryTerm(ASTNENode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
                     Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
@@ -197,14 +226,22 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     *            the AST node
      * @param config
+     *            the query configuration
      * @param scannerFactory
+     *            the scanner factory
      * @param expansionFields
+     *            the expansion fields
      * @param dataTypes
+     *            the data types
      * @param helperRef
+     *            the metadata helper
      * @param execService
+     *            the executor service
      * @return The index lookup instance
      * @throws TableNotFoundException
+     *             if the table was not found
      */
     public static IndexLookup expandRegexFieldName(ASTERNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
                     Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
@@ -215,14 +252,22 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     *            the AST node
      * @param config
+     *            the query configuration
      * @param scannerFactory
+     *            the scanner factory
      * @param expansionFields
+     *            the expansion fields
      * @param dataTypes
+     *            the data types
      * @param helperRef
+     *            the metadata helper
      * @param execService
+     *            the executor service
      * @return The index lookup instance
      * @throws TableNotFoundException
+     *             if the table was not found
      */
     public static IndexLookup expandRegexFieldName(ASTNRNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
                     Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
@@ -233,14 +278,22 @@ public class ShardIndexQueryTableStaticMethods {
      * A non-public method that implements the expandRegexFieldName to force clients to actually provide an ASTERNode or ASTNRNode
      *
      * @param node
+     *            the AST node
      * @param config
+     *            the query configuration
      * @param scannerFactory
+     *            the scanner factory
      * @param expansionFields
+     *            the expansion fields
      * @param dataTypes
+     *            the data types
      * @param helperRef
+     *            the metadata helper
      * @param execService
+     *            the executor service
      * @return The index lookup instance
      * @throws TableNotFoundException
+     *             if the table was not found
      */
     protected static IndexLookup _expandRegexFieldName(JexlNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory,
                     Set<String> expansionFields, Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
@@ -286,12 +339,19 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     *            the AST node
      * @param config
+     *            the query configuration
      * @param scannerFactory
-     * @param fieldName
+     *            the scanner factory
      * @param dataTypes
+     *            the data types
      * @param helperRef
+     *            the metadata helper
+     * @param fieldName
+     *            the field name
      * @param execService
+     *            the executor service
      * @return The index lookup instance
      */
     public static IndexLookup expandRegexTerms(ASTERNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, String fieldName,
@@ -334,7 +394,8 @@ public class ShardIndexQueryTableStaticMethods {
      * Get a range description for a specified query term which is a literal.
      *
      * @param normalizedQueryTerm
-     * @return
+     *            normalized query term string
+     * @return a range description
      */
     public static Range getLiteralRange(String normalizedQueryTerm) {
         return getLiteralRange(null, normalizedQueryTerm);
@@ -358,15 +419,24 @@ public class ShardIndexQueryTableStaticMethods {
      * We only need to concern ourselves with looking for field names.
      * 
      * @param config
+     *            query config
      * @param scannerFactory
+     *            the scanner factory
      * @param tableName
+     *            table name string
      * @param ranges
+     *            list of ranges
      * @param literals
+     *            list of literal strings
      * @param patterns
+     *            list of patterns
      * @param reverseIndex
+     *            reverseIndex boolean flag
      * @param limitToUniqueTerms
-     * @return
+     *            check for limiting unique terms
+     * @return the scanner session
      * @throws Exception
+     *             if there are issues
      */
     public static ScannerSession configureTermMatchOnly(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
@@ -562,14 +632,22 @@ public class ShardIndexQueryTableStaticMethods {
      * fieldname.
      *
      * @param fieldName
+     *            a field name string
      * @param normalizedQueryTerm
+     *            string of a normalized term
      * @param fullTableScanEnabled
+     *            whether full scans are enabled
      * @param metadataHelper
+     *            the metadata helper
      * @param config
-     * @return
+     *            the query config
+     * @return a range description
      * @throws datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException
+     *             for issues with parsing
      * @throws org.apache.accumulo.core.client.TableNotFoundException
+     *             if the table is not found
      * @throws java.util.concurrent.ExecutionException
+     *             for problems with threading execution
      */
     public static RefactoredRangeDescription getRegexRange(String fieldName, String normalizedQueryTerm, boolean fullTableScanEnabled,
                     MetadataHelper metadataHelper, ShardQueryConfiguration config) throws JavaRegexAnalyzer.JavaRegexParseException, TableNotFoundException,
@@ -683,12 +761,18 @@ public class ShardIndexQueryTableStaticMethods {
      * Determine whether a field =~ regex should be run against the reverse index or not.
      * 
      * @param analyzer
+     *            a regex analyzer
      * @param fieldName
+     *            the field name
      * @param metadataHelper
+     *            the metadata helper
      * @param config
-     * @return
+     *            the query config
+     * @return if the regex should run against reverse index
      * @throws TableNotFoundException
+     *             if the table is not found
      * @throws ExecutionException
+     *             for issues with execution
      */
     public static boolean shouldUseReverseIndex(JavaRegexAnalyzer analyzer, String fieldName, MetadataHelper metadataHelper, ShardQueryConfiguration config)
                     throws TableNotFoundException, ExecutionException {
@@ -743,8 +827,10 @@ public class ShardIndexQueryTableStaticMethods {
      * Get the accumulo range for a literal query range. Note that it is assumed that the column family set will include the fieldname.
      * 
      * @param literalRange
-     * @return
+     *            the literal range
+     * @return the accumulo range
      * @throws IllegalRangeArgumentException
+     *             if the range is not valid
      */
     public static Range getBoundedRangeRange(LiteralRange<?> literalRange) throws IllegalRangeArgumentException {
         String lower = literalRange.getLower().toString(), upper = literalRange.getUpper().toString();
@@ -776,6 +862,8 @@ public class ShardIndexQueryTableStaticMethods {
      *
      * @param literal
      *            The literal to trim.
+     * @param config
+     *            the query configuration
      * @return A literal with the realm information removed.
      */
     private static String trimRealmFromLiteral(String literal, ShardQueryConfiguration config) {

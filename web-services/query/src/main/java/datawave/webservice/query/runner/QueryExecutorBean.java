@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+import com.google.common.base.Throwables;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.CountingOutputStream;
@@ -20,10 +21,15 @@ import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.query.data.UUIDType;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.user.UserOperationsBean;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
@@ -62,10 +68,6 @@ import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
-import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
@@ -87,15 +89,12 @@ import io.protostuff.Message;
 import io.protostuff.ProtobufIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.YamlIOUtil;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.trace.Span;
-import org.apache.accumulo.core.trace.Trace;
-import org.apache.accumulo.core.trace.Tracer;
-import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.jexl2.parser.TokenMgrError;
 import org.apache.deltaspike.core.api.exclude.Exclude;
+
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -159,7 +158,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
@@ -245,6 +243,9 @@ public class QueryExecutorBean implements QueryExecutor {
     private QueryPredictor predictor;
     
     @Inject
+    private UserOperationsBean userOperationsBean;
+
+    @Inject
     private QueryMetricFactory metricFactory;
     
     @Inject
@@ -260,7 +261,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private final int PAGE_TIMEOUT_MAX = QueryExpirationConfiguration.PAGE_TIMEOUT_MIN_DEFAULT;
     private final String UUID_REGEX_RULE = "[a-fA-F\\d-]+";
     private final String INVALID_PAGESIZE = "page.size";
-    
+
     @Inject
     private QueryParameters qp;
     
@@ -288,7 +289,8 @@ public class QueryExecutorBean implements QueryExecutor {
         };
         queryTraceCache.addListener(traceCacheListener);
         
-        this.lookupUUIDUtil = new LookupUUIDUtil(this.lookupUUIDConfiguration, this, this.ctx, this.responseObjectFactory);
+        this.lookupUUIDUtil = new LookupUUIDUtil(this.lookupUUIDConfiguration, this, this.ctx, this.responseObjectFactory, this.queryLogicFactory,
+                        this.userOperationsBean);
     }
     
     @PreDestroy
@@ -393,6 +395,11 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * Helper to throw Response Error for create/define Query
+     * 
+     * @param ec
+     *            the error code
+     * @param response
+     *            generic response
      */
     private void throwBadRequest(DatawaveErrorCode ec, GenericResponse<String> response) {
         BadRequestQueryException qe = new BadRequestQueryException(ec);
@@ -405,9 +412,17 @@ public class QueryExecutorBean implements QueryExecutor {
         GenericResponse<String> response = new GenericResponse<>();
         throwBadRequest(DatawaveErrorCode.INVALID_PAGE_SIZE, response);
     }
-    
+
     /**
      * This method will provide some initial query validation for the define and create query calls.
+     * 
+     * @param httpHeaders
+     *            the http headers
+     * @param queryParameters
+     *            the query parameters
+     * @param queryLogicName
+     *            the logic name
+     * @return QueryData
      */
     private QueryData validateQuery(String queryLogicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
         
@@ -437,12 +452,12 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
             }
         }
-        
+
         /* If the incorrect pagesize parameter comes through as a main parameter, return a similar error. */
         if (queryParameters.containsKey(INVALID_PAGESIZE)) {
             handleIncorrectPageSize();
         }
-        
+
         queryParameters.remove(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ);
         queryParameters.remove(AuditParameters.USER_DN);
         queryParameters.remove(AuditParameters.QUERY_AUDIT_TYPE);
@@ -559,8 +574,12 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param queryLogicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            the query parameters
+     * @param httpHeaders
+     *            the headers
+     * @return the generic response
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -581,36 +600,22 @@ public class QueryExecutorBean implements QueryExecutor {
         
         // We need to put a disconnected RunningQuery instance into the cache. Otherwise TRANSIENT queries
         // will not exist when reset is called.
-        Span defineSpan = null;
         RunningQuery rq;
         try {
             MultivaluedMap<String,String> optionalQueryParameters = new MultivaluedMapImpl<>();
             optionalQueryParameters.putAll(qp.getUnknownParameters(queryParameters));
             Query q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
             response.setResult(q.getId().toString());
-            
-            // If we're supposed to trace this query, then turn tracing on and set information about the query
-            // onto the span so that it is saved in the trace table.
-            TInfo traceInfo = null;
             boolean shouldTraceQuery = shouldTraceQuery(qp.getQuery(), qd.userid, false);
             if (shouldTraceQuery) {
-                Span span = Trace.on("query:" + q.getId());
-                log.debug("Tracing query " + q.getId() + " [" + qp.getQuery() + "] on trace ID " + Long.toHexString(span.traceId()));
-                for (Entry<String,List<String>> param : queryParameters.entrySet()) {
-                    span.data(param.getKey(), param.getValue().get(0));
-                }
-                traceInfo = Tracer.traceInfo();
-                
-                defineSpan = Trace.start("query:define");
+                //TODO: OTEL-based tracing setup here
             }
-            
             AccumuloConnectionFactory.Priority priority = qd.logic.getConnectionPriority();
             
             rq = new RunningQuery(metrics, null, priority, qd.logic, q, qp.getAuths(), qd.p, new RunningQueryTimingImpl(queryExpirationConf,
-                            qp.getPageTimeout()), this.predictor, this.metricFactory);
+                            qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
             rq.setActiveCall(true);
             rq.getMetric().setProxyServers(qd.proxyServers);
-            rq.setTraceInfo(traceInfo);
             queryCache.put(q.getId().toString(), rq);
             rq.setActiveCall(false);
             CreateQuerySessionIDFilter.QUERY_ID.set(q.getId().toString());
@@ -623,25 +628,6 @@ public class QueryExecutorBean implements QueryExecutor {
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
-        } finally {
-            if (null != defineSpan) {
-                // Spans aren't recorded if they take no time, so sleep for a
-                // couple milliseconds just to ensure we get something saved.
-                try {
-                    Thread.sleep(2);
-                } catch (InterruptedException e) {
-                    // ignore
-                }
-                
-                defineSpan.stop();
-                
-                // TODO: not sure this makes any sense anymore in Accumulo 1.8.1
-                // if (null != defineSpan.parent()) {
-                // // Stop the main query span since we're done working with it on this thread.
-                // // We'll continue it later.
-                // defineSpan.parent().stop();
-                // }
-            }
         }
     }
     
@@ -653,8 +639,12 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param queryLogicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            the query parameters
+     * @param httpHeaders
+     *            the headers
+     * @return the generic response
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -674,9 +664,8 @@ public class QueryExecutorBean implements QueryExecutor {
         GenericResponse<String> response = new GenericResponse<>();
         
         Query q = null;
-        Connector connection = null;
+        AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
-        Span createSpan = null;
         RunningQuery rq = null;
         try {
             // Default hasResults to true. If a query logic is actually able to set this value,
@@ -705,7 +694,7 @@ public class QueryExecutorBean implements QueryExecutor {
                             log.error("Error accessing query selector", e);
                         }
                         // if the user didn't set an audit id, use the query id
-                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID) && q != null) {
                             queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
                         }
                         auditor.audit(queryParameters);
@@ -728,33 +717,23 @@ public class QueryExecutorBean implements QueryExecutor {
             q.populateTrackingMap(trackingMap);
             accumuloConnectionRequestBean.requestBegin(q.getId().toString());
             try {
-                connection = connectionFactory.getConnection(qd.logic.getConnPoolName(), priority, trackingMap);
+                client = connectionFactory.getClient(qd.logic.getConnPoolName(), priority, trackingMap);
             } finally {
                 accumuloConnectionRequestBean.requestEnd(q.getId().toString());
             }
-            // If we're supposed to trace this query, then turn tracing on and set information about the query
-            // onto the span so that it is saved in the trace table.
-            TInfo traceInfo = null;
+
             boolean shouldTraceQuery = shouldTraceQuery(qp.getQuery(), qd.userid, qp.isTrace());
             if (shouldTraceQuery) {
-                Span span = Trace.on("query:" + q.getId());
-                log.debug("Tracing query " + q.getId() + " [" + qp.getQuery() + "] on trace ID " + Long.toHexString(span.traceId()));
-                for (Entry<String,List<String>> param : queryParameters.entrySet()) {
-                    span.data(param.getKey(), param.getValue().get(0));
-                }
-                traceInfo = Tracer.traceInfo();
-                
-                createSpan = Trace.start("query:create");
+                //TODO: OTEL-based tracing setup here
             }
-            
+
             // hold on to a reference of the query logic so we cancel it if need be.
-            qlCache.add(q.getId().toString(), qd.userid, qd.logic, connection);
+            qlCache.add(q.getId().toString(), qd.userid, qd.logic, client);
             rq = new RunningQuery(metrics, null, priority, qd.logic, q, qp.getAuths(), qd.p, new RunningQueryTimingImpl(queryExpirationConf,
-                            qp.getPageTimeout()), this.predictor, this.metricFactory);
+                            qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
             rq.setActiveCall(true);
-            rq.setTraceInfo(traceInfo);
             rq.getMetric().setProxyServers(qd.proxyServers);
-            rq.setConnection(connection);
+            rq.setClient(client);
             
             // Put in the cache by id. Don't put the cache in by name because multiple users may use the same name
             // and only the last one will be in the cache.
@@ -766,6 +745,8 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } catch (Throwable t) {
             response.setHasResults(false);
+            String queryId = (q != null ? q.getId().toString() : "<unknown>");
+            response.addMessage("Query creation failed for " + queryId);
             
             if (rq != null) {
                 rq.getMetric().setError(t);
@@ -780,9 +761,9 @@ public class QueryExecutorBean implements QueryExecutor {
                 log.error("Exception occured while closing query logic; may be innocuous if scanners were running.", e);
             }
             
-            if (null != connection) {
+            if (null != client) {
                 try {
-                    connectionFactory.returnConnection(connection);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection on failed create", e);
                 }
@@ -798,35 +779,28 @@ public class QueryExecutorBean implements QueryExecutor {
              * Allow web services to throw their own WebApplicationExceptions
              */
             if (t instanceof Error && !(t instanceof TokenMgrError)) {
-                log.error(t.getMessage(), t);
+                log.error(queryId + ": " + t.getMessage(), t);
                 throw (Error) t;
             } else if (t instanceof WebApplicationException) {
-                log.error(t.getMessage(), t);
+                log.error(queryId + ": " + t.getMessage(), t);
                 throw ((WebApplicationException) t);
             } else if (t instanceof InterruptedException) {
                 if (rq != null) {
                     rq.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
                 }
-                log.info("Query " + q.getId() + " canceled on request");
+                log.info("Query " + queryId + " canceled on request");
                 QueryException qe = new QueryException(DatawaveErrorCode.QUERY_CANCELED, t);
                 response.addException(qe.getBottomQueryException());
                 int statusCode = qe.getBottomQueryException().getStatusCode();
                 throw new DatawaveWebApplicationException(qe, response, statusCode);
             } else {
-                log.error(t.getMessage(), t);
+                log.error(queryId + ": " + t.getMessage(), t);
                 QueryException qe = new QueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, t);
                 response.addException(qe.getBottomQueryException());
                 int statusCode = qe.getBottomQueryException().getStatusCode();
                 throw new DatawaveWebApplicationException(qe, response, statusCode);
             }
         } finally {
-            if (createSpan != null) {
-                createSpan.stop();
-                // TODO: not sure this makes any sense anymore in Accumulo 1.8.1
-                // Stop the main query span since we're done working with it on this thread.
-                // We'll continue it later.
-                // createSpan.parent().stop();
-            }
             if (null != q) {
                 // - Remove the logic from the cache
                 qlCache.poll(q.getId().toString());
@@ -836,8 +810,10 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param queryLogicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            the query parameters
+     * @return the generic response
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -851,7 +827,7 @@ public class QueryExecutorBean implements QueryExecutor {
         GenericResponse<String> response = new GenericResponse<>();
         
         Query q = null;
-        Connector connection = null;
+        AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
         try {
             // Default hasResults to true.
@@ -912,13 +888,18 @@ public class QueryExecutorBean implements QueryExecutor {
             q.populateTrackingMap(trackingMap);
             accumuloConnectionRequestBean.requestBegin(q.getId().toString());
             try {
-                connection = connectionFactory.getConnection(qd.logic.getConnPoolName(), priority, trackingMap);
+                client = connectionFactory.getClient(qd.logic.getConnPoolName(), priority, trackingMap);
             } finally {
                 accumuloConnectionRequestBean.requestEnd(q.getId().toString());
             }
             
-            Set<Authorizations> calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), qd.p);
-            String plan = qd.logic.getPlan(connection, q, calculatedAuths, expandFields, expandValues);
+            // the query principal is our local principal unless the query logic has a different user operations
+            DatawavePrincipal queryPrincipal = (qd.logic.getUserOperations() == null) ? (DatawavePrincipal) qd.p : qd.logic.getUserOperations().getRemoteUser(
+                            (DatawavePrincipal) qd.p);
+            // the overall principal (the one with combined auths across remote user operations) is our own user operations bean
+            DatawavePrincipal overallPrincipal = userOperationsBean.getRemoteUser((DatawavePrincipal) qd.p);
+            Set<Authorizations> calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), overallPrincipal, queryPrincipal);
+            String plan = qd.logic.getPlan(client, q, calculatedAuths, expandFields, expandValues);
             response.setResult(plan);
             
             return response;
@@ -942,9 +923,9 @@ public class QueryExecutorBean implements QueryExecutor {
                 throw new DatawaveWebApplicationException(qe, response, statusCode);
             }
         } finally {
-            if (connection != null) {
+            if (client != null) {
                 try {
-                    connectionFactory.returnConnection(connection);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Failed to close connection for " + q.getId(), e);
                 }
@@ -959,9 +940,9 @@ public class QueryExecutorBean implements QueryExecutor {
                 log.error("Exception occured while closing query logic; may be innocuous if scanners were running.", e);
             }
             
-            if (null != connection) {
+            if (null != client) {
                 try {
-                    connectionFactory.returnConnection(connection);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection on failed create", e);
                 }
@@ -971,7 +952,9 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * @param queryLogicName
+     *            the logic name
      * @param queryParameters
+     *            the query parameters
      * @return query predictions
      */
     @POST
@@ -1085,7 +1068,7 @@ public class QueryExecutorBean implements QueryExecutor {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), p);
             AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
             RunningQuery query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(
-                            queryExpirationConf, qp.getPageTimeout()), this.predictor, this.metricFactory);
+                            queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
             results.add(query);
             // Put in the cache by id if its not already in the cache.
             if (!queryCache.containsKey(q.getId().toString()))
@@ -1122,7 +1105,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), principal);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), principal, new RunningQueryTimingImpl(
-                                queryExpirationConf, qp.getPageTimeout()), this.predictor, this.metricFactory);
+                                queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 queryCache.put(q.getId().toString(), query);
             }
@@ -1200,21 +1183,14 @@ public class QueryExecutorBean implements QueryExecutor {
         VoidResponse response = new VoidResponse();
         AccumuloConnectionFactory.Priority priority;
         
-        Connector connection = null;
+        AccumuloClient client = null;
         RunningQuery query = null;
-        Span span = null;
-        
+
         try {
             ctx.getUserTransaction().begin();
             
             query = getQueryById(id);
-            
-            // If we're tracing this query, then continue the trace for the reset call.
-            TInfo traceInfo = query.getTraceInfo();
-            if (traceInfo != null) {
-                span = Trace.trace(traceInfo, "query:reset");
-            }
-            
+
             // Lock this so that this query cannot be used concurrently.
             // The lock should be released at the end of the method call.
             if (!queryCache.lock(id))
@@ -1225,7 +1201,7 @@ public class QueryExecutorBean implements QueryExecutor {
             // because the query was alive and in use, so we need to close that
             // connection in order to reset the query. Otherwise, we are truly
             // restarting the query, so we should re-audit ().
-            if (query.getConnection() != null) {
+            if (query.getClient() != null) {
                 query.closeConnection(connectionFactory);
             } else {
                 AuditType auditType = query.getLogic().getAuditType(query.getSettings());
@@ -1272,11 +1248,11 @@ public class QueryExecutorBean implements QueryExecutor {
             query.getSettings().populateTrackingMap(trackingMap);
             accumuloConnectionRequestBean.requestBegin(id);
             try {
-                connection = connectionFactory.getConnection(query.getLogic().getConnPoolName(), priority, trackingMap);
+                client = connectionFactory.getClient(query.getLogic().getConnPoolName(), priority, trackingMap);
             } finally {
                 accumuloConnectionRequestBean.requestEnd(id);
             }
-            query.setConnection(connection);
+            query.setClient(client);
             response.addMessage(id + " reset.");
             CreateQuerySessionIDFilter.QUERY_ID.set(id);
             return response;
@@ -1292,16 +1268,16 @@ public class QueryExecutorBean implements QueryExecutor {
         } catch (Exception e) {
             log.error("Exception caught on resetting query", e);
             try {
-                if (null != connection) {
+                if (null != client) {
                     /*
                      * if the query exists, we need to make sure the connection isn't set on it because the "proper" work flow is to close and/or cancel the
                      * query after a failure. we don't want to purge it from the query cache, so setting the connector to null avoids having the connector
                      * returned multiple times to the connector pool.
                      */
                     if (query != null) {
-                        query.setConnection(null);
+                        query.setClient(null);
                     }
-                    connectionFactory.returnConnection(connection);
+                    connectionFactory.returnClient(client);
                 }
             } catch (Exception e2) {
                 log.error("Error returning connection on failed reset", e2);
@@ -1321,11 +1297,6 @@ public class QueryExecutorBean implements QueryExecutor {
                 QueryException qe = new QueryException(DatawaveErrorCode.QUERY_TRANSACTION_ERROR, e);
                 response.addException(qe.getBottomQueryException());
                 throw new DatawaveWebApplicationException(qe, response);
-            } finally {
-                // Stop timing on this trace, if any
-                if (span != null) {
-                    span.stop();
-                }
             }
         }
         
@@ -1339,9 +1310,13 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     /**
+     * @param httpHeaders
+     *            headers
      * @param logicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            the query parameters
+     * @return BaseQueryResponse
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -1384,12 +1359,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
     }
     
-    private BaseQueryResponse _next(RunningQuery query, String queryId, Collection<String> proxyServers, Span span) throws Exception {
-        // If we're tracing this query, then continue the trace for the next call.
-        TInfo traceInfo = query.getTraceInfo();
-        if (traceInfo != null) {
-            span = Trace.trace(traceInfo, "query:next");
-        }
+    private BaseQueryResponse _next(RunningQuery query, String queryId, Collection<String> proxyServers) throws Exception {
         
         ResultsPage resultsPage;
         try {
@@ -1410,11 +1380,7 @@ public class QueryExecutorBean implements QueryExecutor {
         response.setPageNumber(pageNum);
         response.setLogicName(query.getLogic().getLogicName());
         response.setQueryId(queryId);
-        
-        if (span != null) {
-            span.data("pageNumber", Long.toString(pageNum));
-        }
-        
+
         query.getMetric().setProxyServers(proxyServers);
         
         testForUncaughtException(query.getSettings(), resultsPage);
@@ -1428,15 +1394,19 @@ public class QueryExecutorBean implements QueryExecutor {
         } else {
             return response;
         }
-        
+
     }
     
     /**
      *
      * @param uuid
+     *            the uuid
      * @param uuidType
+     *            the uuid type
      * @param uriInfo
+     *            the uri
      * @param httpHeaders
+     *            the headers
      * @return content results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1505,7 +1475,9 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      *
      * @param queryParameters
+     *            the query parameters
      * @param httpHeaders
+     *            the headers
      * @return content results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1565,11 +1537,14 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      *
-     * @param uuidType
      * @param uuid
+     *            the uuid
+     * @param uuidType
+     *            the uuid type
      * @param uriInfo
+     *            the uri
      * @param httpHeaders
-     * @return
+     *            the headers
      * @return event results, either as a paged BaseQueryResponse (automatically closed upon return) or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1638,7 +1613,9 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      *
      * @param queryParameters
+     *            the parameters
      * @param httpHeaders
+     *            the headers
      * @return event results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1738,7 +1715,7 @@ public class QueryExecutorBean implements QueryExecutor {
             // So if the connection is null here, then either the query wasn't in the cache
             // at all, or it was but only because of a call to list. In either case, it's
             // an error.
-            if (null == query || null == query.getConnection()) {
+            if (null == query || null == query.getClient()) {
                 // If the query just wasn't in the cache, then check the persister to see if the
                 // ID exists at all. If it doesn't, then we need to return a 404 rather than 412
                 // status code.
@@ -1823,7 +1800,7 @@ public class QueryExecutorBean implements QueryExecutor {
             // So if the connection is null here, then either the query wasn't in the cache
             // at all, or it was but only because of a call to list. In either case, it's
             // an error.
-            if (null == query || null == query.getConnection()) {
+            if (null == query || null == query.getClient()) {
                 // If the query just wasn't in the cache, then check the persister to see if the
                 // ID exists at all. If it doesn't, then we need to return a 404 rather than 412
                 // status code.
@@ -1888,6 +1865,10 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      * Asynchronous version of {@link #next(String)}.
      * 
+     * @param id
+     *            an id
+     * @param asyncResponse
+     *            an async response
      * @see #next(String)
      */
     @GET
@@ -1959,8 +1940,7 @@ public class QueryExecutorBean implements QueryExecutor {
             userid = dp.getShortName();
             proxyServers = dp.getProxyServers();
         }
-        
-        Span span = null;
+
         RunningQuery query = null;
         Query contentLookupSettings = null;
         try {
@@ -1969,7 +1949,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 GenericResponse<String> genericResponse = new GenericResponse<>();
                 throwBadRequest(DatawaveErrorCode.INVALID_QUERY_ID, genericResponse);
             }
-            
+
             ctx.getUserTransaction().begin();
             
             // Not calling getQueryById() here. We don't want to pull the persisted definition.
@@ -1985,7 +1965,7 @@ public class QueryExecutorBean implements QueryExecutor {
             // So if the connection is null here, then either the query wasn't in the cache
             // at all, or it was but only because of a call to list. In either case, it's
             // an error.
-            if (null == query || null == query.getConnection()) {
+            if (null == query || null == query.getClient()) {
                 // If the query just wasn't in the cache, then check the persister to see if the
                 // ID exists at all. If it doesn't, then we need to return a 404 rather than 412
                 // status code.
@@ -2006,8 +1986,8 @@ public class QueryExecutorBean implements QueryExecutor {
                 
                 // Set the active call and get next
                 query.setActiveCall(true);
-                response = _next(query, id, proxyServers, span);
-                
+                response = _next(query, id, proxyServers);
+
                 // Conditionally swap the standard response with content
                 if (checkForContentLookup) {
                     final Query settings = query.getSettings();
@@ -2120,11 +2100,6 @@ public class QueryExecutorBean implements QueryExecutor {
                 log.error("Error committing transaction: resources rolled back transaction", e);
             } catch (Exception e) {
                 log.error("Error committing transaction: Unknown error", e);
-            } finally {
-                // Stop timing on this trace, if any
-                if (span != null) {
-                    span.stop();
-                }
             }
         }
         
@@ -2142,6 +2117,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * after a 'close' will start over at page 1.
      * 
      * @param id
+     *            the id
      *
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2172,7 +2148,7 @@ public class QueryExecutorBean implements QueryExecutor {
         VoidResponse response = new VoidResponse();
         try {
             boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id, principal);
-            Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, ((DatawavePrincipal) principal).getShortName());
+            Pair<QueryLogic<?>,AccumuloClient> tuple = qlCache.pollIfOwnedBy(id, ((DatawavePrincipal) principal).getShortName());
             if (!id.matches(UUID_REGEX_RULE)) {
                 log.error("Invalid query id: " + id);
                 GenericResponse<String> genericResponse = new GenericResponse<>();
@@ -2202,7 +2178,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 } catch (Exception e) {
                     log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnConnection(tuple.getSecond());
+                connectionFactory.returnClient(tuple.getSecond());
                 response.addMessage(id + " closed before create completed.");
             }
             
@@ -2225,7 +2201,8 @@ public class QueryExecutorBean implements QueryExecutor {
      * <strong>JBossAdministrator or Administrator credentials required.</strong>
      *
      * @param id
-     * @return
+     *            the id
+     * @return a void response
      */
     @PUT
     @POST
@@ -2240,7 +2217,7 @@ public class QueryExecutorBean implements QueryExecutor {
         VoidResponse response = new VoidResponse();
         try {
             boolean connectionRequestCanceled = accumuloConnectionRequestBean.adminCancelConnectionRequest(id);
-            Pair<QueryLogic<?>,Connector> tuple = qlCache.poll(id);
+            Pair<QueryLogic<?>,AccumuloClient> tuple = qlCache.poll(id);
             if (tuple == null) {
                 try {
                     RunningQuery query = adminGetQueryById(id);
@@ -2261,7 +2238,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 } catch (Exception e) {
                     log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnConnection(tuple.getSecond());
+                connectionFactory.returnClient(tuple.getSecond());
                 response.addMessage(id + " closed before create completed.");
             }
             
@@ -2292,23 +2269,7 @@ public class QueryExecutorBean implements QueryExecutor {
         queryCache.remove(queryId);
         
         log.debug("Closed " + queryId);
-        
-        // The trace was already stopped, but mark the time we closed it in the trace data.
-        TInfo traceInfo = query.getTraceInfo();
-        if (traceInfo != null) {
-            Span span = Trace.trace(traceInfo, "query:close");
-            span.data("closedAt", new Date().toString());
-            // Spans aren't recorded if they take no time, so sleep for a
-            // couple milliseconds just to ensure we get something saved.
-            try {
-                Thread.sleep(2);
-            } catch (InterruptedException e) {
-                // ignore
-            }
-            span.stop();
-            // TODO: not sure this makes any sense anymore in Accumulo 1.8.1
-            // Tracer.getInstance().flush();
-        }
+
     }
     
     /**
@@ -2316,6 +2277,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * will start over at page 1.
      * 
      * @param id
+     *            the id
      *
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2342,7 +2304,7 @@ public class QueryExecutorBean implements QueryExecutor {
         VoidResponse response = new VoidResponse();
         try {
             boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id);
-            Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, ctx.getCallerPrincipal().getName());
+            Pair<QueryLogic<?>,AccumuloClient> tuple = qlCache.pollIfOwnedBy(id, ctx.getCallerPrincipal().getName());
             
             if (tuple == null) {
                 try {
@@ -2369,7 +2331,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 } catch (Exception e) {
                     log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnConnection(tuple.getSecond());
+                connectionFactory.returnClient(tuple.getSecond());
                 response.addMessage(id + " closed before create completed due to cancel.");
             }
             
@@ -2392,7 +2354,8 @@ public class QueryExecutorBean implements QueryExecutor {
      * <strong>JBossAdministrator or Administrator credentials required.</strong>
      *
      * @param id
-     * @return
+     *            the id
+     * @return a void response
      */
     @PUT
     @POST
@@ -2407,7 +2370,7 @@ public class QueryExecutorBean implements QueryExecutor {
         VoidResponse response = new VoidResponse();
         try {
             boolean connectionRequestCanceled = accumuloConnectionRequestBean.adminCancelConnectionRequest(id);
-            Pair<QueryLogic<?>,Connector> tuple = qlCache.poll(id);
+            Pair<QueryLogic<?>,AccumuloClient> tuple = qlCache.poll(id);
             if (tuple == null) {
                 try {
                     RunningQuery query = adminGetQueryById(id);
@@ -2429,7 +2392,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 } catch (Exception e) {
                     log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
-                connectionFactory.returnConnection(tuple.getSecond());
+                connectionFactory.returnClient(tuple.getSecond());
                 response.addMessage(id + " closed before create completed due to cancel.");
             }
             
@@ -2584,6 +2547,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * remove (delete) the query
      * 
      * @param id
+     *            the id
      *
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2988,7 +2952,9 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * <strong>Administrator credentials required.</strong> Returns list of queries for some other user
-     *
+     * 
+     * @param userId
+     *            the user id
      * @return datawave.webservice.result.QueryImplListResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -3203,10 +3169,12 @@ public class QueryExecutorBean implements QueryExecutor {
     protected QueryCache getQueryCache() {
         return queryCache;
     }
-    
+
     /**
      * @param logicName
+     *            the logic name
      * @param queryParameters
+     *            the parameters
      *
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -3352,6 +3320,14 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      * Asynchronous version of {@link #execute(String, MultivaluedMap, HttpHeaders)}
      * 
+     * @param asyncResponse
+     *            the async response
+     * @param logicName
+     *            the logic name
+     * @param httpHeaders
+     *            the headers
+     * @param queryParameters
+     *            parameters
      * @see #execute(String, MultivaluedMap, HttpHeaders)
      */
     @POST
@@ -3414,7 +3390,6 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             
             boolean done = false;
-            Span span = null;
             List<PageMetric> pageMetrics = rq.getMetric().getPageTimes();
             
             // Loop over each page of query results, and notify the observer about each page.
@@ -3423,7 +3398,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 long callStart = System.nanoTime();
                 rq.setActiveCall(true);
                 try {
-                    BaseQueryResponse page = _next(rq, queryId, proxyServers, span);
+                    BaseQueryResponse page = _next(rq, queryId, proxyServers);
                     long serializationStart = System.nanoTime();
                     observer.queryResultsAvailable(page);
                     long serializationTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - serializationStart);
@@ -3531,13 +3506,12 @@ public class QueryExecutorBean implements QueryExecutor {
                     
                     boolean sentResults = false;
                     boolean done = false;
-                    Span span = null;
                     List<PageMetric> pageMetrics = rq.getMetric().getPageTimes();
                     
                     do {
                         try {
                             long callStart = System.nanoTime();
-                            BaseQueryResponse page = _next(rq, queryId, proxies, span);
+                            BaseQueryResponse page = _next(rq, queryId, proxies);
                             PageMetric pm = pageMetrics.get(pageMetrics.size() - 1);
                             
                             // Wrap the output stream so that we can get a byte count

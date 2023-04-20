@@ -3,14 +3,12 @@ package datawave.metrics.analytic;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Longs;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.mapreduce.AccumuloOutputFormat;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.lib.aggregate.LongValueSum;
@@ -59,6 +57,12 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
     
     /**
      * Computes a simple summation metric value. The key is written out as is and the values, assumed to be string longs, are aggregated and written out.
+     * 
+     * @param key
+     *            a key
+     * @param values
+     *            list of values
+     * @return an output mutation
      */
     private Mutation sumMutation(Key key, Iterable<Value> values) {
         LongValueSum sum = new LongValueSum();
@@ -75,6 +79,12 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
      * Computes a "stats" metric value. Each incoming value in {@code values} is assumed to be a unique value. We calculate min, max, median, and average values
      * and include those in the output mutation. Note that median will only be calculated if there are not more than {@code MAX_MEDIAN_COUNT} values. This
      * restriction prevents us from using too much memory in the task tracker.
+     * 
+     * @param key
+     *            a key
+     * @param values
+     *            a list of values
+     * @return an output mutation
      */
     private Mutation statsMutation(Key key, Iterable<Value> values) {
         long numLongs = 0;
@@ -117,6 +127,12 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
      * {@link WeightedPair} object. If the median can be calculated, then the 95% percentile weighted value is also emitted as a statistic. The weights are
      * summed, and the value at the 95th percentile of the weights is returned. (e.g., for event latencies, each pair's value is the latency and the weight is
      * the number of events at that latency, so we return the latency (value) from the list that represents 95% of the events (weights).
+     * 
+     * @param key
+     *            a key
+     * @param values
+     *            a list of values
+     * @return the output mutation
      */
     private Mutation statsPercentileMutation(Key key, Iterable<Value> values) {
         long numPairs = 0;
@@ -170,16 +186,18 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
         return m;
     }
     
-    public static void configureJob(Job job, int numDays, String instance, String zookeepers, String userName, String password, String outputTable)
-                    throws AccumuloSecurityException {
+    public static void configureJob(Job job, int numDays, String instance, String zookeepers, String userName, String password, String outputTable) {
         job.setNumReduceTasks(Math.min(numDays, 100)); // Cap the number of reducers at 100, just in case we have a large day range (shouldn't really happen
                                                        // though)
         job.setReducerClass(MetricsDailySummaryReducer.class);
         job.setOutputFormatClass(AccumuloOutputFormat.class);
-        AccumuloOutputFormat.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instance).withZkHosts(zookeepers));
-        AccumuloOutputFormat.setConnectorInfo(job, userName, new PasswordToken(password));
-        AccumuloOutputFormat.setCreateTables(job, true);
-        AccumuloOutputFormat.setDefaultTableName(job, outputTable);
+        // @formatter:off
+        AccumuloOutputFormat.configure()
+                .clientProperties(Accumulo.newClientProperties().to(instance,zookeepers).as(userName, password).build())
+                .createTables(true)
+                .defaultTable(outputTable)
+                .store(job);
+        // @formatter:on
     }
     
     public static class WeightedPair implements Writable, Comparable<WeightedPair> {

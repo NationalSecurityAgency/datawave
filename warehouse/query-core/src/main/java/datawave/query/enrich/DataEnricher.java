@@ -37,7 +37,10 @@ public abstract class DataEnricher {
      *            The configured source on the table
      * @param enricherOptions
      *            An options map to pass in DataEnricher specific values
+     * @param env
+     *            the environment for the iterator
      * @throws ParseException
+     *             for issues parsing
      */
     public abstract void init(SortedKeyValueIterator<Key,Value> source, Map<String,Object> enricherOptions, IteratorEnvironment env) throws ParseException;
     

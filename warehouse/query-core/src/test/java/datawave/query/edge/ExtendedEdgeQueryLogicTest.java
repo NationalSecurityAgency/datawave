@@ -31,9 +31,9 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
     public DefaultExtendedEdgeQueryLogic runLogic(QueryImpl q, Set<Authorizations> auths) throws Exception {
         return runLogic(q, auths, Long.MAX_VALUE);
     }
-    
+
     public DefaultExtendedEdgeQueryLogic runLogic(QueryImpl q, Set<Authorizations> auths, long scanLimit) throws Exception {
-        GenericQueryConfiguration config = logic.initialize(connector, q, auths);
+        GenericQueryConfiguration config = logic.initialize(client, q, auths);
         logic.setDateFilterScanLimit(scanLimit);
         logic.setupQuery(config);
         return logic;
@@ -153,6 +153,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
      * Tests to make sure QueryModel is applied properly to a query string
      * 
      * @throws Exception
+     *             if there are issues
      */
     @Test
     public void testQueryModelApplied() throws Exception {
@@ -163,7 +164,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
                         + "(TYPE == 'COSMOS_DATA' && RELATION == 'TO-FROM')))";
         
         QueryImpl q = configQuery(originalQueryString, auths);
-        GenericQueryConfiguration config = logic.initialize(connector, q, auths);
+        GenericQueryConfiguration config = logic.initialize(client, q, auths);
         logic.setupQuery(config);
         String actualQueryString = config.getQueryString();
         
@@ -192,21 +193,21 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         
         Assert.assertTrue(sources.containsAll(expected));
     }
-    
+
     @Test
     public void testEdgeQueryWithScanLimit() throws Exception {
         QueryImpl q = configQuery("(SOURCE =~ 'M.*') && (SINK == 'JUPITER') && (RELATION == 'FROM-TO' || RELATION == 'TO-FROM')", auths);
         q.addParameter("stats", "true");
         DefaultExtendedEdgeQueryLogic logic = runLogic(q, auths, 2);
-        
+
         List<String> expected = new ArrayList<>();
-        
+
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("mercury STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
-        
+
         compareResults(logic, expected);
-        
+
         try {
             logic = runLogic(q, auths, 1);
             compareResults(logic, expected);
@@ -215,5 +216,5 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
             // expected
         }
     }
-    
+
 }

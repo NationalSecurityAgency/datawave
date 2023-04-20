@@ -5,21 +5,21 @@ import com.google.common.collect.Lists;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.util.cli.PasswordConverter;
+
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
-import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.impl.ClientContext;
-import org.apache.accumulo.core.client.impl.Credentials;
-import org.apache.accumulo.core.client.impl.MasterClient;
+import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.master.thrift.MasterClientService.Iface;
-import org.apache.accumulo.core.master.thrift.MasterMonitorInfo;
+import org.apache.accumulo.core.manager.thrift.ManagerClientService;
+import org.apache.accumulo.core.manager.thrift.ManagerClientService.Iface;
+import org.apache.accumulo.core.manager.thrift.ManagerMonitorInfo;
 import org.apache.accumulo.core.master.thrift.TableInfo;
+import org.apache.accumulo.core.rpc.ThriftUtil;
+import org.apache.accumulo.core.rpc.clients.ManagerClient;
+import org.apache.accumulo.core.rpc.clients.ThriftClientTypes;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileChecksum;
@@ -95,7 +95,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private String jobDirPattern;
     private String instanceName;
     private String zooKeepers;
-    private Credentials credentials;
+    private AccumuloClient accumuloClient;
     private Map<String,Integer> tablePriorities;
     private Configuration conf;
     private URI seqFileHdfs;
@@ -353,29 +353,29 @@ public final class BulkIngestMapFileLoader implements Runnable {
         String jobDirPattern = args[1].replaceAll("'", "");
         String instanceName = args[2];
         String zooKeepers = args[3];
+        String user = args[4];
         String passwordStr = PasswordConverter.parseArg(args[5]);
         
-        Credentials credentials = new Credentials(args[4], new PasswordToken(passwordStr));
-        BulkIngestMapFileLoader processor = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                        destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, numHdfsThreads, jobObservers);
+        BulkIngestMapFileLoader processor = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, user, new PasswordToken(passwordStr),
+                        seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, numHdfsThreads, jobObservers);
         Thread t = new Thread(processor, "map-file-watcher");
         t.start();
     }
     
-    public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, Credentials credentials, URI seqFileHdfs,
-                    URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf) {
-        this(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT,
-                        1, Collections.emptyList());
+    public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
+                    URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf) {
+        this(workDir, jobDirPattern, instanceName, zooKeepers, user, passToken, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf,
+                        SHUTDOWN_PORT, 1, Collections.emptyList());
     }
     
-    public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, Credentials credentials, URI seqFileHdfs,
-                    URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort) {
-        this(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, shutdownPort, 1,
-                        Collections.emptyList());
+    public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
+                    URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort) {
+        this(workDir, jobDirPattern, instanceName, zooKeepers, user, passToken, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf,
+                        shutdownPort, 1, Collections.emptyList());
     }
     
-    public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, Credentials credentials, URI seqFileHdfs,
-                    URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort,
+    public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
+                    URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort,
                     int numHdfsThreads, List<Observer> jobObservers) {
         this.conf = conf;
         this.tablePriorities = tablePriorities;
@@ -383,7 +383,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
         this.jobDirPattern = jobDirPattern;
         this.instanceName = instanceName;
         this.zooKeepers = zooKeepers;
-        this.credentials = credentials;
+        // this will keep an active connection open to Accumulo and must be closed during shutdown
+        this.accumuloClient = Accumulo.newClient().to(instanceName, zooKeepers).as(user, passToken).build();
         this.seqFileHdfs = seqFileHdfs;
         this.srcHdfs = srcHdfs;
         this.destHdfs = destHdfs;
@@ -533,6 +534,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             
         } finally {
             log.info("Shutting down executor service");
+            accumuloClient.close();
             executor.shutdown();
         }
         log.info("Bulk map file loader shutting down.");
@@ -560,6 +562,9 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Listens for connections on {@code serverSocket}. Upon receipt of a connection, listens for a shutdown command which must be sent within 30 seconds. If
      * the shutdown command is received, then the map file loader will shut down.
+     * 
+     * @param serverSocket
+     *            the server socket
      */
     protected void listenForShutdownCommand(ServerSocket serverSocket) {
         log.info("Listening for shutdown commands on port " + serverSocket.getLocalPort());
@@ -659,6 +664,12 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Determines whether or not it is safe to bring map files online. This asks Accumulo for its stats for major compaction (running and queued), and will
      * return false if either "too many" compactions are running/queued.
+     * 
+     * @param lastOnlineTime
+     *            the last online time
+     * @param logInfo
+     *            log info
+     * @return boolean flag
      */
     public boolean canBringMapFilesOnline(long lastOnlineTime, boolean logInfo) {
         Level level = (logInfo ? Level.INFO : Level.DEBUG);
@@ -673,13 +684,12 @@ public final class BulkIngestMapFileLoader implements Runnable {
     
     private int getMajorCompactionCount() {
         int majC = 0;
-        
-        ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
-        
-        Iface client = null;
+
+        ManagerClientService.Client client = null;
+        ClientContext context = (ClientContext) accumuloClient;
         try {
-            client = MasterClient.getConnection(new ClientContext(instance, credentials, AccumuloConfiguration.getDefaultConfiguration()));
-            MasterMonitorInfo mmi = client.getMasterStats(null, credentials.toThrift(instance));
+            client = ThriftClientTypes.MANAGER.getConnection(context);
+            ManagerMonitorInfo mmi = client.getManagerStats(null, context.rpcCreds());
             Map<String,TableInfo> tableStats = mmi.getTableMap();
             
             for (java.util.Map.Entry<String,TableInfo> e : tableStats.entrySet()) {
@@ -692,7 +702,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             log.error("Unable to retrieve major compaction stats: " + e.getMessage());
         } finally {
             if (client != null) {
-                MasterClient.close(client);
+                ThriftUtil.close(client, context);
             }
         }
         
@@ -702,7 +712,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Gets a list of job directories that are marked with pathPattern.
      * 
+     * @param hdfs
+     *            the HDFS URI
      * @param pathPattern
+     *            the path pattern
+     * @throws IOException
+     *             for issues reading/writing with the file system.
+     * @return a path array
      */
     private Path[] getJobDirectories(URI hdfs, Path pathPattern) throws IOException {
         log.debug("Checking for completed job directories.");
@@ -730,6 +746,17 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Brings all map files in {@code mapFilesDir} online in accumulo. Note that {@code mapFilesDir} is assumed to have subdirectories that are the names of the
      * tables for which map files are to be loaded. Under those directories should be "part-XXXXX" directories which in turn contain the map/index files.
+     * 
+     * @param mapFilesDir
+     *            the map files directory
+     * @throws IOException
+     *             for IO related issues
+     * @throws AccumuloException
+     *             for accumulo issues
+     * @throws AccumuloSecurityException
+     *             for accumulo auth issues
+     * @throws TableNotFoundException
+     *             if the table is not found
      */
     public void bringMapFilesOnline(Path mapFilesDir) throws IOException, AccumuloException, AccumuloSecurityException, TableNotFoundException {
         log.info("Bringing all mapFiles under " + mapFilesDir + " online.");
@@ -737,9 +764,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         // By now the map files should be on the local filesystem
         FileSystem fs = getFileSystem(destHdfs);
         
-        Instance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
-        TableOperations tops = instance.getConnector(credentials.getPrincipal(), credentials.getToken()).tableOperations();
-        Map<String,String> tableIds = tops.tableIdMap();
+        Map<String,String> tableIds = accumuloClient.tableOperations().tableIdMap();
         FileStatus[] tableDirs = fs.globStatus(new Path(mapFilesDir, "*"));
         
         // sort the table dirs in priority order based on the configuration
@@ -806,7 +831,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 
                 priority = tablePriorities.get(stat.getPath().getName());
             }
-            imports.push(startImport(mapFilesDir, tableName, tableDir, tops));
+            imports.push(startImport(mapFilesDir, tableName, tableDir, accumuloClient));
         }
         
         Exception e = null;
@@ -827,8 +852,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
             throw new IOException(e);
     }
     
-    public ImportRunnable startImport(Path mapFilesDir, String tableName, Path tableDir, TableOperations tops) {
-        ImportRunnable runnable = new ImportRunnable(mapFilesDir, tableName, tableDir, tops);
+    public ImportRunnable startImport(Path mapFilesDir, String tableName, Path tableDir, AccumuloClient accumuloClient) {
+        ImportRunnable runnable = new ImportRunnable(mapFilesDir, tableName, tableDir, accumuloClient);
         Thread thread = new Thread(runnable);
         runnable.setThread(thread);
         thread.start();
@@ -839,15 +864,15 @@ public final class BulkIngestMapFileLoader implements Runnable {
         private boolean complete = false;
         private String tableName;
         private Path tableDir;
-        private TableOperations tops;
+        private AccumuloClient accumuloClient;
         private Path mapFilesDir;
         private Exception exception = null;
         private Thread thread = null;
         
-        private ImportRunnable(Path mapFilesDir, String tableName, Path tableDir, TableOperations tops) {
+        private ImportRunnable(Path mapFilesDir, String tableName, Path tableDir, AccumuloClient accumuloClient) {
             this.tableName = tableName;
             this.tableDir = tableDir;
-            this.tops = tops;
+            this.accumuloClient = accumuloClient;
             this.mapFilesDir = mapFilesDir;
         }
         
@@ -894,7 +919,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 
                 // import the directory
                 log.info("Bringing Map Files online for " + tableName);
-                tops.importDirectory(tableName, tableDir.toString(), failuresDir, false);
+                accumuloClient.tableOperations().importDirectory(tableName, tableDir.toString(), failuresDir, false);
                 log.info("Completed bringing map files online for " + tableName);
                 validateComplete();
             } catch (Exception e) {
@@ -958,6 +983,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
          * Return a rfile with .1 appended before the extension. {@code foo.ext -> foo.1.ext foo -> foo.1}
          *
          * @param rfile
+         *            the rfile string
          * @return a rfile with .1 appended before the extension
          */
         private String getNextName(String rfile) {
@@ -981,6 +1007,11 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Verify there are no RFiles left behind. If there are, then we need to throw an exception to ensure we fail this bulk load and the directory is not
      * removed.
+     * 
+     * @param mapFilesDir
+     *            the map files directory
+     * @throws IOException
+     *             if there is an issue accessing the filesystem
      */
     public void verifyNothingLeftBehind(Path mapFilesDir) throws IOException {
         verifyNothingLeftBehind(getFileSystem(destHdfs), mapFilesDir.getParent());
@@ -999,6 +1030,11 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Cleans up a job directory. If the process to bring map files online was successful, then the job directory and map files directory are removed.
      * Otherwise, they are just marked as failed.
+     * 
+     * @param mapFilesDir
+     *            the map files directory
+     * @throws IOException
+     *             if there is an issue accessing the filesystem
      */
     public void cleanUpJobDirectory(Path mapFilesDir) throws IOException {
         Path jobDirectory = mapFilesDir.getParent();
@@ -1033,6 +1069,10 @@ public final class BulkIngestMapFileLoader implements Runnable {
     
     /**
      * Marks {@code jobDirectory} as failed (in the source filesystem) so that the loader won't try again to load the map files in this job directory.
+     * 
+     * @param jobDirectory
+     *            the job directory
+     * @return if the action succeeded or not
      */
     public boolean takeOwnershipJobDirectory(Path jobDirectory) {
         boolean success = false;
@@ -1086,6 +1126,12 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Marks {@code jobDirectory} as failed (in the source filesystem) so that the loader won't try again to load the map files in this job directory. If we
      * were successfully distCped over, then this will fail but that is OK because it no longer in the source filesystem.
+     * 
+     * @param workingHdfs
+     *            the working hdfs directory
+     * @param jobDirectory
+     *            the job directory
+     * @return if the action succeeded or not
      */
     public boolean markJobDirectoryFailed(URI workingHdfs, Path jobDirectory) {
         boolean success = false;
