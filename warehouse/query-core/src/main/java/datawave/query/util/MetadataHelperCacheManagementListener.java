@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import datawave.webservice.common.cache.SharedCacheCoordinator;
 
-import org.apache.accumulo.core.client.Connector;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
 import org.apache.curator.framework.recipes.shared.SharedCountReader;

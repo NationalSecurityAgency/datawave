@@ -454,7 +454,7 @@ public class ShardQueryConfigurationTest {
         logic.setEnforceUniqueConjunctionsWithinExpression(true);
         Assert.assertEquals(expected, logic.getEnforceUniqueConjunctionsWithinExpression());
     }
-    
+
     @Test
     public void testGetSetDisjunctionsWithinExpression() {
         ShardQueryLogic logic = new ShardQueryLogic();
@@ -462,7 +462,7 @@ public class ShardQueryConfigurationTest {
         logic.setEnforceUniqueDisjunctionsWithinExpression(true);
         Assert.assertEquals(expected, logic.getEnforceUniqueDisjunctionsWithinExpression());
     }
-    
+
     @Test
     public void testGetSetBlacklistedFields() {
         String expected = "blacklistA,blacklistB";

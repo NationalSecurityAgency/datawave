@@ -21,8 +21,8 @@ import datawave.iterators.IteratorSettingHelper;
 import datawave.query.Constants;
 
 import datawave.util.TableName;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
@@ -45,16 +45,16 @@ public class IndexStatsClient {
     
     private static final Logger log = Logger.getLogger(IndexStatsClient.class);
     
-    private Connector con;
+    private AccumuloClient client;
     private String table;
     private DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
     
-    public IndexStatsClient(Connector connector) {
-        this(connector, TableName.INDEX_STATS);
+    public IndexStatsClient(AccumuloClient client) {
+        this(client, TableName.INDEX_STATS);
     }
     
-    public IndexStatsClient(Connector connector, String tableName) {
-        con = connector;
+    public IndexStatsClient(AccumuloClient client, String tableName) {
+        this.client = client;
         table = tableName;
     }
     
@@ -90,7 +90,7 @@ public class IndexStatsClient {
     }
     
     public Map<String,Double> getStat(Set<String> fields, Set<String> dataTypes, Date start, Date end) throws IOException {
-        if (con.tableOperations().exists(this.table)) {
+        if (client.tableOperations().exists(this.table)) {
             TreeSet<String> dates = new TreeSet<>();
             dates.add(dateFormat.format(start));
             dates.add(dateFormat.format(end));
@@ -106,11 +106,11 @@ public class IndexStatsClient {
     public Map<String,Double> getStat(Set<String> fields, Set<String> dataTypes, SortedSet<String> dates) throws IOException {
         final ScannerBase scanner;
         try {
-            Authorizations auths = con.securityOperations().getUserAuthorizations(con.whoami());
+            Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
             if (fields.isEmpty()) {
-                scanner = con.createScanner(table, auths);
+                scanner = client.createScanner(table, auths);
             } else {
-                BatchScanner bScanner = con.createBatchScanner(table, auths, fields.size());
+                BatchScanner bScanner = client.createBatchScanner(table, auths, fields.size());
                 bScanner.setRanges(buildRanges(fields));
                 scanner = bScanner;
             }

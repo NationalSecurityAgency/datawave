@@ -1,5 +1,9 @@
 package datawave.query.iterator;
 
+import datawave.query.function.DocumentRangeProvider;
+import datawave.query.function.Equality;
+import datawave.query.function.PrefixEquality;
+import datawave.query.function.RangeProvider;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.io.Text;
@@ -83,5 +87,19 @@ public class QueryIteratorTest {
         
         // Test the null case as well
         assertEquals("null", QueryIterator.rowColFamToString(null));
+    }
+    
+    @Test
+    public void testGetRangeProvider() {
+        QueryIterator iterator = new QueryIterator();
+        RangeProvider provider = iterator.getRangeProvider();
+        assertEquals(DocumentRangeProvider.class.getSimpleName(), provider.getClass().getSimpleName());
+    }
+    
+    @Test
+    public void testGetEquality() {
+        QueryIterator iterator = new QueryIterator();
+        Equality equality = iterator.getEquality();
+        assertEquals(PrefixEquality.class.getSimpleName(), equality.getClass().getSimpleName());
     }
 }

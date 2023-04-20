@@ -1915,7 +1915,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return the comparison result
      */
     private static boolean compareFields(FunctionalSet<ValueTuple> set1, FunctionalSet<ValueTuple> set2, String operator, boolean matchAny) {
-        switch (CharMatcher.WHITESPACE.removeFrom(operator)) {
+        switch (CharMatcher.whitespace().removeFrom(operator)) {
             case "==":
             case "=":
                 return areNormalizedValuesEqual(set1, set2, matchAny);

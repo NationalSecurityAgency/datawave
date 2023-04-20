@@ -17,7 +17,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.server.util.time.SimpleTimer;
+import org.apache.accumulo.core.util.threads.ThreadPools;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -102,6 +103,9 @@ import java.util.concurrent.TimeUnit;
 public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber {
     
     private static final Logger log = Logger.getLogger(ConfigurableAgeOffFilter.class);
+
+    private static final ScheduledThreadPoolExecutor SIMPLE_TIMER = ThreadPools.getServerThreadPools().createScheduledExecutorService(
+            1, ConfigurableAgeOffFilter.class.getSimpleName() +"-ruleCache-refresh", false);
     
     public static final String UPDATE_INTERVAL_MS_PROP = "tserver.datawave.ageoff.cache.update.interval.ms";
     protected static final long DEFAULT_UPDATE_INTERVAL_MS = 5;
@@ -345,7 +349,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                                     .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new ReloadableCacheBuilder());
                     // this will schedule a check to see if the update or expiration intervals have changed
                     // if so the ruleCache will be rebuilt with these new intervals
-                    SimpleTimer.getInstance(1).schedule(
+                    SIMPLE_TIMER.scheduleWithFixedDelay(
                                     () -> {
                                         try {
                                             long interval = getLongProperty(UPDATE_INTERVAL_MS_PROP, DEFAULT_UPDATE_INTERVAL_MS);
@@ -362,7 +366,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                                         } catch (Throwable t) {
                                             log.error(t, t);
                                         }
-                                    }, 1000, 10 * 1000);
+                                    }, 1, 10, TimeUnit.SECONDS);
                 }
             }
         }

@@ -5,22 +5,23 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 
 import datawave.webservice.util.EnvProvider;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
+import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ColumnUpdate;
@@ -48,7 +49,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     private long mutCount = 0;
     private long valCount = 0;
     
-    private Connector conn;
+    private AccumuloClient client;
     private AccumuloConnectionFactory connFactory;
     private static final String PREFIX = AccumuloRecordWriter.class.getSimpleName();
     private static final String OUTPUT_INFO_HAS_BEEN_SET = PREFIX + ".configured";
@@ -95,13 +96,14 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         if (!simulate) {
             try {
                 if (connectionFactory == null) {
-                    this.conn = getInstance(conf).getConnector(getUsername(conf), new PasswordToken(getPassword(conf)));
+                    this.client = getClient(conf);
                 } else {
                     this.connFactory = connectionFactory;
                     Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-                    this.conn = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+                    this.client = connectionFactory.getClient(Priority.ADMIN, trackingMap);
                 }
-                mtbw = conn.createMultiTableBatchWriter(getMaxMutationBufferSize(conf), getMaxLatency(conf), getMaxWriteThreads(conf));
+                mtbw = client.createMultiTableBatchWriter(new BatchWriterConfig().setMaxMemory(getMaxMutationBufferSize(conf))
+                                .setMaxLatency(getMaxLatency(conf), TimeUnit.MILLISECONDS).setMaxWriteThreads(getMaxWriteThreads(conf)));
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
@@ -165,9 +167,9 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         BatchWriter bw = null;
         String table = tableName.toString();
         
-        if (createTables && !conn.tableOperations().exists(table)) {
+        if (createTables && !client.tableOperations().exists(table)) {
             try {
-                conn.tableOperations().create(table);
+                client.tableOperations().create(table);
             } catch (AccumuloSecurityException e) {
                 log.error("Accumulo security violation creating " + table, e);
                 throw e;
@@ -248,14 +250,14 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     public void returnConnector() {
         if (null != this.connFactory) {
             log.debug("Non-null connection factory");
-            if (null != this.conn) {
+            if (null != this.client) {
                 log.debug("Non-null connector to return");
                 try {
-                    this.connFactory.returnConnection(this.conn);
+                    this.connFactory.returnClient(this.client);
                 } catch (Exception e) {
                     log.warn("Could not return connection to pool", e);
                 }
-                this.conn = null;
+                this.client = null;
             }
         }
     }
@@ -325,11 +327,14 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         return conf.get(DEFAULT_TABLE_NAME);
     }
     
-    protected static Instance getInstance(Configuration conf) {
+    protected static AccumuloClient getClient(Configuration conf) throws AccumuloSecurityException, AccumuloException {
         if (conf.getBoolean(MOCK, false)) {
-            return new InMemoryInstance(conf.get(INSTANCE_NAME));
+            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), new InMemoryInstance(conf.get(INSTANCE_NAME)));
+            client.securityOperations().changeLocalUserPassword(client.whoami(), new PasswordToken(getPassword(conf)));
+            return client;
+        } else {
+            return Accumulo.newClient().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS)).as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
         }
-        return new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(conf.get(INSTANCE_NAME)).withZkHosts(conf.get(ZOOKEEPERS)));
     }
     
     protected static long getMaxMutationBufferSize(Configuration conf) {

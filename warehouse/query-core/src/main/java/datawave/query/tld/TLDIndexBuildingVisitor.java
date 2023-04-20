@@ -44,9 +44,9 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         TLDIndexIteratorBuilder builder = new TLDIndexIteratorBuilder();
         builder.setSource(source.deepCopy(env));
         builder.setTypeMetadata(typeMetadata);
-        builder.setDatatypeFilter(datatypeFilter);
+        builder.setDatatypeFilter(getDatatypeFilter());
         builder.setFieldsToAggregate(fieldsToAggregate);
-        builder.setKeyTransform(fiAggregator);
+        builder.setKeyTransform(getFiAggregator());
         builder.setTimeFilter(timeFilter);
         builder.setNode(node);
         node.childrenAccept(this, builder);
@@ -133,9 +133,9 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
-        builder.setDatatypeFilter(datatypeFilter);
+        builder.setDatatypeFilter(getDatatypeFilter());
         builder.setFieldsToAggregate(fieldsToAggregate);
-        builder.setKeyTransform(fiAggregator);
+        builder.setKeyTransform(getFiAggregator());
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
         builder.setNode(node);
         node.childrenAccept(this, builder);

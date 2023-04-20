@@ -50,7 +50,7 @@ public class ZookeeperQueryLock implements QueryLock {
                     if (builder.length() > 0) {
                         builder.append(',');
                     }
-                    builder.append(server.addr.getHostName()).append(':').append(zooConfig.getClientPortAddress().getPort());
+                    builder.append(server.addr.getReachableOrOne().getHostName()).append(':').append(zooConfig.getClientPortAddress().getPort());
                 }
                 if (builder.length() == 0) {
                     builder.append(zooConfig.getClientPortAddress().getHostName()).append(':').append(zooConfig.getClientPortAddress().getPort());

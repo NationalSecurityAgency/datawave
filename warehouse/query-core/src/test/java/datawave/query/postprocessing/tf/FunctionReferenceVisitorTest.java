@@ -1,6 +1,7 @@
 package datawave.query.postprocessing.tf;
 
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -15,6 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -35,10 +37,7 @@ public class FunctionReferenceVisitorTest {
         String query = "f:function(x1,x2,x3,x4,x5)";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         
-        FunctionReferenceVisitor visitor = new FunctionReferenceVisitor();
-        script.jjtAccept(visitor, null);
-        
-        Multimap<String,Function> functions = visitor.functions();
+        Multimap<String,Function> functions = FunctionReferenceVisitor.functions(script);
         
         assertTrue(functions.containsKey("f"));
         assertEquals(1, functions.keySet().size());
@@ -255,16 +254,51 @@ public class FunctionReferenceVisitorTest {
         assertFunctionNames("isNotNull", "phrase");
     }
     
+    @Test
+    public void testMultipleFunctionsWithNamespaceFilter() {
+        Set<String> filter = Sets.newHashSet("filter", "content");
+        String query = "filter:isNotNull(FIELD) && content:phrase(FOO,termOffsetMap, 'brown', 'fox')";
+        parseFunctions(query, filter);
+        assertNameSpaces("filter", "content");
+        assertFunctionNames("isNotNull", "phrase");
+    }
+    
+    @Test
+    public void testMultipleFunctionsWithContentNamespaceFilter() {
+        Set<String> filter = Collections.singleton("content");
+        String query = "filter:isNotNull(FIELD) && content:phrase(FOO,termOffsetMap, 'brown', 'fox')";
+        parseFunctions(query, filter);
+        assertNameSpaces("content");
+        assertFunctionNames("phrase");
+    }
+    
+    @Test
+    public void testMultipleFunctionsWithFilterNamespaceFilter() {
+        Set<String> filter = Collections.singleton("filter");
+        String query = "filter:isNotNull(FIELD) && content:phrase(FOO,termOffsetMap, 'brown', 'fox')";
+        parseFunctions(query, filter);
+        assertNameSpaces("filter");
+        assertFunctionNames("isNotNull");
+    }
+    
+    @Test
+    public void testNamespaceFilterWithNoHits() {
+        Set<String> filter = Collections.singleton("fourOhFourNamespaceNotfound");
+        String query = "filter:isNotNull(FIELD) && content:phrase(FOO,termOffsetMap, 'brown', 'fox')";
+        parseFunctions(query, filter);
+        assertTrue(functions.isEmpty());
+    }
+    
     // helper methods
     
     private void parseFunctions(String query) {
+        parseFunctions(query, Collections.emptySet());
+    }
+    
+    private void parseFunctions(String query, Set<String> namespaceFilter) {
         try {
             ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-            
-            FunctionReferenceVisitor visitor = new FunctionReferenceVisitor();
-            script.jjtAccept(visitor, null);
-            
-            this.functions = visitor.functions();
+            this.functions = FunctionReferenceVisitor.functions(script, namespaceFilter);
         } catch (ParseException e) {
             fail("Failed to parse query: " + query);
         }

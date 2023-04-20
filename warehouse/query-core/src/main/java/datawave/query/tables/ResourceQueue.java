@@ -4,7 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.NoSuchElementException;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.pool.PoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
@@ -27,11 +27,11 @@ public final class ResourceQueue implements Closeable {
      * 
      * @param capacity
      *            the capacity
-     * @param cxn
-     *            a connector
+     * @param client
+     *            a client
      */
-    public ResourceQueue(int capacity, Connector cxn) {
-        this(capacity, cxn, GenericObjectPool.WHEN_EXHAUSTED_BLOCK);
+    public ResourceQueue(int capacity, AccumuloClient client) {
+        this(capacity, client, GenericObjectPool.WHEN_EXHAUSTED_BLOCK);
     }
     
     /**
@@ -39,20 +39,20 @@ public final class ResourceQueue implements Closeable {
      *
      * @param capacity
      *            the capacity
-     * @param cxn
-     *            a connector
+     * @param client
+     *            a client
      * @param type
      *            type of pool
      */
-    public ResourceQueue(int capacity, Connector cxn, byte type) {
-        Preconditions.checkNotNull(cxn);
+    public ResourceQueue(int capacity, AccumuloClient client, byte type) {
+        Preconditions.checkNotNull(client);
         Preconditions.checkArgument(capacity > 0);
         
         this.type = type;
         
-        PoolableObjectFactory<AccumuloResource> factory = new AccumuloResourceFactory(cxn);
+        PoolableObjectFactory<AccumuloResource> factory = new AccumuloResourceFactory(client);
         
-        this.scannerPool = new GenericObjectPool<AccumuloResource>(factory);
+        this.scannerPool = new GenericObjectPool<>(factory);
         // set the max capacity
         this.scannerPool.setMaxActive(capacity);
         // amount of time to wait for a connection
@@ -110,26 +110,26 @@ public final class ResourceQueue implements Closeable {
     
     private static final class AccumuloResourceFactory implements PoolableObjectFactory<AccumuloResource> {
         
-        private final Connector connector;
+        private final AccumuloClient client;
         
-        AccumuloResourceFactory(Connector connector) {
-            this.connector = connector;
+        AccumuloResourceFactory(AccumuloClient client) {
+            this.client = client;
         }
         
         @Override
-        public void activateObject(AccumuloResource object) throws Exception {
+        public void activateObject(AccumuloResource object) {
             /* no-op */
         }
         
         @Override
-        public void destroyObject(AccumuloResource object) throws Exception {
+        public void destroyObject(AccumuloResource object) {
             if (log.isTraceEnabled())
                 log.trace("Removing " + object.hashCode());
         }
         
         @Override
-        public AccumuloResource makeObject() throws Exception {
-            AccumuloResource scannerResource = new AccumuloResource(connector);
+        public AccumuloResource makeObject() {
+            AccumuloResource scannerResource = new AccumuloResource(client);
             if (log.isTraceEnabled())
                 log.trace("Returning " + scannerResource.hashCode());
             return scannerResource;

@@ -1,6 +1,8 @@
 package datawave.query.iterator;
 
 import com.google.common.collect.Sets;
+import datawave.query.function.Equality;
+import datawave.query.function.PrefixEquality;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
@@ -131,5 +133,12 @@ public class QueryOptionsTest {
         assertEquals(13, options.getEventNextSeek());
         assertEquals(14, options.getTfFieldSeek());
         assertEquals(15, options.getTfNextSeek());
+    }
+    
+    @Test
+    public void testGetEquality() {
+        QueryOptions options = new QueryOptions();
+        Equality equality = options.getEquality();
+        assertEquals(PrefixEquality.class.getSimpleName(), equality.getClass().getSimpleName());
     }
 }

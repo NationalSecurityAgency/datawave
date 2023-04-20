@@ -18,7 +18,7 @@ import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -65,7 +65,7 @@ public abstract class CompositeFunctionsTest {
     
     @RunWith(Arquillian.class)
     public static class ShardRange extends CompositeFunctionsTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient client = null;
         
         @BeforeClass
         public static void setUp() throws Exception {
@@ -75,14 +75,14 @@ public abstract class CompositeFunctionsTest {
             System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
+            WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            PrintUtility.printTable(client, auths, TableName.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @AfterClass
@@ -92,19 +92,19 @@ public abstract class CompositeFunctionsTest {
         
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector, eventQueryLogic);
+            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client, eventQueryLogic);
         }
         
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, ShardQueryLogic logic)
                         throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector, logic);
+            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client, logic);
         }
     }
     
     @RunWith(Arquillian.class)
     public static class DocumentRange extends CompositeFunctionsTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient client = null;
         
         @BeforeClass
         public static void setUp() throws Exception {
@@ -114,14 +114,14 @@ public abstract class CompositeFunctionsTest {
             System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.DocumentRange.class.toString(), log);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
+            WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            PrintUtility.printTable(client, auths, TableName.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @AfterClass
@@ -131,13 +131,13 @@ public abstract class CompositeFunctionsTest {
         
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector, eventQueryLogic);
+            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client, eventQueryLogic);
         }
         
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, ShardQueryLogic logic)
                         throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector, logic);
+            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client, logic);
         }
     }
     
@@ -191,7 +191,7 @@ public abstract class CompositeFunctionsTest {
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
                     ShardQueryLogic logic) throws Exception;
     
-    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector,
+    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, AccumuloClient client,
                     ShardQueryLogic logic) throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
@@ -208,7 +208,7 @@ public abstract class CompositeFunctionsTest {
         log.debug("logic: " + settings.getQueryLogicName());
         logic.setMaxEvaluationPipelines(1);
         
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
+        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
         
         HashSet<String> expectedSet = new HashSet<>(expected);

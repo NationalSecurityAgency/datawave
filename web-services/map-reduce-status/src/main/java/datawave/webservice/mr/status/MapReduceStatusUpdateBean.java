@@ -48,7 +48,9 @@ public class MapReduceStatusUpdateBean {
      * (job.end.retry.interval)
      *
      * @param jobId
+     *            the job id
      * @param jobStatus
+     *            the job status
      *
      * @HTTP 200 success
      * @HTTP 500 failure

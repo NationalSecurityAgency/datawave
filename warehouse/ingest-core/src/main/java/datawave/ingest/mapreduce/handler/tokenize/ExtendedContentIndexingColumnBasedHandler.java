@@ -68,7 +68,8 @@ import com.google.common.collect.Multimap;
  * <p>
  * This class creates the following Mutations or Key/Values in addition to those created by the {@link ShardedDataTypeHandler}: <br>
  * <br>
- * <table border="1" summary="">
+ * <table border="1">
+ * <caption></caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -183,7 +184,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                 accumuloHelper.setup(conf);
                 
                 log.debug("Attempting to create Accumulo connection.");
-                docWriter = accumuloHelper.getConnector().createBatchWriter(conf.get("shard.table.name"),
+                docWriter = accumuloHelper.newClient().createBatchWriter(conf.get("shard.table.name"),
                                 new BatchWriterConfig().setMaxLatency(60, TimeUnit.SECONDS).setMaxMemory(100000000L).setMaxWriteThreads(10));
                 log.debug("Created connection to Accumulo for asynchronous document storage.");
             } catch (Exception e) {

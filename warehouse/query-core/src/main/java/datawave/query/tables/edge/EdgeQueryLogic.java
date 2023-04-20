@@ -33,8 +33,8 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -137,13 +137,13 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         
         currentIteratorPriority = super.getBaseIteratorPriority() + 30;
         
         EdgeQueryConfiguration cfg = setUpConfig(settings);
         
-        cfg.setConnector(connection);
+        cfg.setClient(client);
         cfg.setAuthorizations(auths);
         
         String jexlQueryString = getJexlQueryString(settings);
@@ -156,7 +156,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         cfg.setBeginDate(settings.getBeginDate());
         cfg.setEndDate(settings.getEndDate());
         
-        scannerFactory = new ScannerFactory(connection);
+        scannerFactory = new ScannerFactory(client);
         
         return cfg;
     }
@@ -265,18 +265,18 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     /**
      * Get an instance of MetadataHelper for the given params
      * 
-     * @param connection
-     *            the connector
+     * @param client
+     *            the client
      * @param metadataTableName
      *            the metadata table name
      * @param auths
      *            a set of auths
      * @return MetadataHelper
      */
-    protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths) {
+    protected MetadataHelper prepareMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths) {
         if (log.isTraceEnabled())
-            log.trace("prepareMetadataHelper with " + connection);
-        return metadataHelperFactory.createMetadataHelper(connection, metadataTableName, auths);
+            log.trace("prepareMetadataHelper with " + client);
+        return metadataHelperFactory.createMetadataHelper(client, metadataTableName, auths);
     }
     
     /**
