@@ -6,6 +6,7 @@ import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.GeoType;
 import datawave.data.type.Type;
+import datawave.marking.MarkingFunctions;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
@@ -14,6 +15,7 @@ import datawave.query.util.GeoUtils;
 import datawave.query.util.GeoWaveUtils;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFalseNode;
@@ -29,6 +31,7 @@ import org.locationtech.jts.geom.Geometry;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
@@ -38,30 +41,30 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  * query.
  */
 public class GeoWavePruningVisitor extends RebuildingVisitor {
-    
+
     private static final Logger log = ThreadConfigurableLogger.getLogger(GeoWavePruningVisitor.class);
-    
-    private final Multimap<String,String> prunedTerms;
+
+    private final Multimap<String, String> prunedTerms;
     private final MetadataHelper metadataHelper;
-    
-    private GeoWavePruningVisitor(Multimap<String,String> prunedTerms, MetadataHelper metadataHelper) {
+
+    private GeoWavePruningVisitor(Multimap<String, String> prunedTerms, MetadataHelper metadataHelper) {
         this.prunedTerms = prunedTerms;
         this.metadataHelper = metadataHelper;
     }
-    
+
     public static <T extends JexlNode> T pruneTree(JexlNode node) {
         return pruneTree(node, null, null);
     }
-    
-    public static <T extends JexlNode> T pruneTree(JexlNode node, Multimap<String,String> prunedTerms, MetadataHelper metadataHelper) {
+
+    public static <T extends JexlNode> T pruneTree(JexlNode node, Multimap<String, String> prunedTerms, MetadataHelper metadataHelper) {
         GeoWavePruningVisitor pruningVisitor = new GeoWavePruningVisitor(prunedTerms, metadataHelper);
         return (T) node.jjtAccept(pruningVisitor, null);
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        Multimap<String,Geometry> fieldToGeometryMap = (data instanceof Multimap) ? (Multimap<String,Geometry>) data : HashMultimap.create();
-        
+        Multimap<String, Geometry> fieldToGeometryMap = (data instanceof Multimap) ? (Multimap<String, Geometry>) data : HashMultimap.create();
+
         // if one of the anded nodes is a geowave function, pass down the geometry and field name in the multimap
         for (JexlNode child : children(node)) {
             child = JexlASTHelper.dereference(child);
@@ -69,20 +72,31 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
                 JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor((ASTFunctionNode) child);
                 if (desc instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
                     GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor geoWaveDesc = (GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) desc;
-                    if (isPrunable(geoWaveDesc)) {
-                        Geometry geom = GeometryNormalizer.parseGeometry(geoWaveDesc.getWkt());
-                        Set<String> fields = geoWaveDesc.fields(metadataHelper, null);
-                        for (String field : fields) {
-                            fieldToGeometryMap.put(field, geom);
+                    try {
+                        if (isPrunable(geoWaveDesc)) {
+                            Geometry geom = GeometryNormalizer.parseGeometry(geoWaveDesc.getWkt());
+                            Set<String> fields = null;
+                            try {
+                                fields = geoWaveDesc.fields(metadataHelper, null);
+                            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+                                log.debug("Could not load datatypes from metadata table");
+                            }
+                            if (fields != null) {
+                                for (String field : fields) {
+                                    fieldToGeometryMap.put(field, geom);
+                                }
+                            }
                         }
+                    } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+                        log.debug("Could not load datatypes from metadata table");
                     }
                 }
             }
         }
         return super.visit(node, (fieldToGeometryMap.isEmpty() ? null : fieldToGeometryMap));
     }
-    
-    private boolean isPrunable(GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor geoWaveDesc) {
+
+    private boolean isPrunable(GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor geoWaveDesc) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
         Set<String> fields = geoWaveDesc.fields(metadataHelper, null);
         // @formatter:off
         return fields.stream().anyMatch(
@@ -90,15 +104,15 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
                                 type -> (type instanceof AbstractGeometryType || type instanceof GeoType)));
         // @formatter:on
     }
-    
+
     private boolean isGeoWaveType(String field) {
         return getDatatypesForField(field).stream().anyMatch(type -> type instanceof AbstractGeometryType);
     }
-    
+
     private boolean isGeoType(String field) {
         return getDatatypesForField(field).stream().anyMatch(type -> type instanceof GeoType);
     }
-    
+
     private Set<Type<?>> getDatatypesForField(String field) {
         Set<Type<?>> dataTypes = new HashSet<>();
         try {
@@ -108,40 +122,40 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
         }
         return dataTypes;
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         JexlNode copiedNode = (JexlNode) super.visit(node, data);
-        
+
         // if all of the children were dropped, turn this into a false node
         if (copiedNode.jjtGetNumChildren() == 0) {
             copiedNode = new ASTFalseNode(ParserTreeConstants.JJTFALSENODE);
         }
-        
+
         return copiedNode;
     }
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         JexlNode rebuiltNode = (JexlNode) super.visit(node, data);
         return (rebuiltNode.jjtGetNumChildren() == 0) ? null : rebuiltNode;
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         JexlNode rebuiltNode = (JexlNode) super.visit(node, data);
         return (rebuiltNode.jjtGetNumChildren() == 0) ? null : rebuiltNode;
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         if (data instanceof Multimap) {
-            Multimap<String,Geometry> fieldToGeometryMap = (Multimap<String,Geometry>) data;
-            
+            Multimap<String, Geometry> fieldToGeometryMap = (Multimap<String, Geometry>) data;
+
             String field = JexlASTHelper.getIdentifier(node);
-            
+
             Collection<Geometry> queryGeometries = fieldToGeometryMap.get(field);
-            
+
             if (queryGeometries != null && !queryGeometries.isEmpty()) {
                 String value = (String) JexlASTHelper.getLiteralValue(node);
                 if (value != null) {
@@ -167,7 +181,7 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
                 }
             }
         }
-        
+
         return super.visit(node, data);
     }
 }

@@ -864,7 +864,7 @@ public class WhindexVisitor extends RebuildingVisitor {
                 JexlNode leafKid = getLeafNode(child);
                 if (leafKid != null) {
                     Set<String> kidFieldNames = new LinkedHashSet<>();
-                    LiteralRange range = JexlASTHelper.findRange().getRange(leafKid);
+                    LiteralRange<?> range = JexlASTHelper.findRange().getRange(leafKid);
                     if (range != null) {
                         kidFieldNames.add(range.getFieldName());
                     } else {
@@ -874,7 +874,7 @@ public class WhindexVisitor extends RebuildingVisitor {
                             JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor((ASTFunctionNode) leafKid);
                             if (descriptor instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor
                                     || descriptor instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
-                                kidFieldNames.addAll(descriptor.fields(metadataHelper, Collections.emptySet()));
+                                kidFieldNames.addAll(descriptor.fields(metadataHelper, null));
                             } else {
                                 if (otherNodes != null) {
                                     otherNodes.add(child);
