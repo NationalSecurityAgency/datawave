@@ -13,6 +13,7 @@ import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJexlArgumentDescriptor;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
@@ -29,7 +30,8 @@ import java.util.Set;
 public class DocumentKeysFunction {
     
     private static final Logger log = Logger.getLogger(DocumentKeysFunction.class);
-    
+
+    private final Set<String> negatedValues = new HashSet<>();
     private final Multimap<String,ContentFunction> contentFunctions = LinkedListMultimap.create();
     
     /**
@@ -70,8 +72,26 @@ public class DocumentKeysFunction {
                 field = JexlASTHelper.deconstructIdentifier(fieldsAndTerms[0].iterator().next());
                 ContentFunction contentFunction = new ContentFunction(field, fieldsAndTerms[1]);
                 contentFunctions.put(contentFunction.getField(), contentFunction);
+
+                if(isFunctionNegated(f)){
+                    negatedValues.addAll(contentFunction.getValues());
+                }
             }
         }
+    }
+
+    public boolean isFunctionNegated(Function f){
+        JexlNode node = f.args().get(0);
+        int numNegations = 0;
+        if(node != null){
+            while (node.jjtGetParent() != null){
+                node = node.jjtGetParent();
+                if(node instanceof ASTNotNode){
+                    numNegations++;
+                }
+            }
+        }
+        return numNegations % 2 == 1;
     }
     
     /**
@@ -85,6 +105,12 @@ public class DocumentKeysFunction {
      */
     protected Set<Key> getDocKeys(Document d, Set<Key> docKeys) {
         Multimap<String,Key> valueToKeys = buildValueToKeys(d);
+
+        //  add all negated values
+        for(String value : negatedValues){
+            valueToKeys.putAll(value, docKeys);
+        }
+
         Set<Key> filterKeys = buildFilterKeys(valueToKeys);
         
         if (log.isDebugEnabled() && docKeys.size() != filterKeys.size()) {
