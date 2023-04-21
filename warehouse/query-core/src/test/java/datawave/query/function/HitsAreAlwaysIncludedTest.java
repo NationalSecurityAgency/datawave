@@ -272,7 +272,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
+        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
         
         String queryString = "FOO_3_BAR == 'defg<cat>'";
         
@@ -304,7 +304,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Map<String,String> extraParameters = new HashMap<>();
         
         String queryString = "FOO_3_BAR == 'defg<cat>' and f:options('include.grouping.context', 'true', "
-                        + "'hit.list', 'true', 'limit.fields', 'FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4')";
+                        + "'hit.list', 'true', 'limit.fields', 'FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0')";
         
         //@formatter:off
         Set<String> goodResults = Sets.newHashSet(
@@ -334,7 +334,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
+        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
         
         String queryString = "FOO_3 == 'defg'";
         
@@ -366,7 +366,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "_ANYFIELD_=2");
+        extraParameters.put("limit.fields", "_ANYFIELD_=2,BAR_1=0,BAR_2=0,BAR_3=0");
         
         String queryString = "FOO_3_BAR == 'defg<cat>'";
         
@@ -396,7 +396,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "_ANYFIELD_=2");
+        extraParameters.put("limit.fields", "_ANYFIELD_=2,BAR_1=0,BAR_2=0,BAR_3=0");
         
         String queryString = "FOO_3_BAR == 'defg<cat>' and FOO_1 == 'good'";
         //@formatter:off
@@ -425,7 +425,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "false");
         extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
+        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
         
         String queryString = "FOO_3_BAR == 'defg<cat>'";
         
@@ -456,7 +456,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "false");
         extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
+        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
         
         String queryString = "((_Bounded_ = true) && (FOO_1_BAR_1 >= '2021-03-01 00:00:00' && FOO_1_BAR_1 <= '2021-04-01 00:00:00'))";
         
@@ -487,7 +487,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "false");
         extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
+        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
         
         String queryString = "FOO_1_BAR_1 == '2021-03-24T16:00:00.000Z'";
         
@@ -518,7 +518,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "false");
         extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=1,FOO_4=3,FOO_1_BAR_1=4");
+        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=1,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
         logic.setMaxOrExpansionThreshold(1);
         ivaratorConfig();
         
@@ -551,7 +551,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "false");
         extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1");
+        extraParameters.put("limit.fields", "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
         logic.setMaxOrExpansionThreshold(1);
         ivaratorConfig();
         
@@ -571,7 +571,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1");
+        extraParameters.put("limit.fields", "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
         logic.setMaxOrExpansionThreshold(1);
         ivaratorConfig();
         
@@ -602,7 +602,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1");
+        extraParameters.put("limit.fields", "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
         extraParameters.put("matching.field.sets", "FOO_4");
         logic.setMaxOrExpansionThreshold(1);
         ivaratorConfig();
@@ -634,7 +634,136 @@ public abstract class HitsAreAlwaysIncludedTest {
         
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
     }
-    
+
+    @Test
+    public void testGroupedHitsWithMatchingFields() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
+        extraParameters.put("matching.field.sets", "FOO_4=BAR_1");
+        logic.setMaxOrExpansionThreshold(1);
+        ivaratorConfig();
+
+        String queryString = "FOO_3_BAR == 'abcd<cat>'";
+
+        //@formatter:off
+        Set<String> goodResults = Sets.newHashSet(
+                // the hit and associated fields in the same group
+                "FOO_3_BAR.FOO.0:abcd<cat>",
+                "FOO_1.FOO.1.0:yawn",
+                "FOO_4.FOO.4.0:purr",
+                "FOO_3.FOO.3.0:abcd",
+                "FOO_1_BAR.FOO.0:yawn<cat>",
+                "FOO_1_BAR_1.FOO.0:2021-03-24T16:00:00.000Z",
+                // the additional values included per the matching field sets
+                "FOO_1.FOO.1.1:yawn",
+                "FOO_4.FOO.4.1:purr",
+                "FOO_3.FOO.3.1:bcde",
+                "FOO_3_BAR.FOO.1:bcde<cat>",
+                "FOO_1_BAR.FOO.1:yawn<cat>",
+                "FOO_1.FOO.1.2:yawn",
+                "FOO_4.FOO.4.2:purr",
+                "FOO_3.FOO.3.2:cdef",
+                "FOO_3_BAR.FOO.2:cdef<cat>",
+                "FOO_1_BAR.FOO.2:yawn<cat>",
+                "BAR_1.BAR.1.3:purr",
+                "BAR_2.BAR.2.3:tiger",
+                "BAR_3.BAR.3.3:spotted");
+        //@formatter:on
+        Set<String> expectedHits = Sets.newHashSet("FOO_3_BAR.FOO.0:abcd<cat>");
+
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
+    }
+
+    @Test
+    public void testGroupedHitsWithMoreMatchingFields() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
+        extraParameters.put("matching.field.sets", "FOO_4=BAR_1=FOO_1");
+        logic.setMaxOrExpansionThreshold(1);
+        ivaratorConfig();
+
+        String queryString = "FOO_3_BAR == 'abcd<cat>'";
+
+        //@formatter:off
+        Set<String> goodResults = Sets.newHashSet(
+                // the hit and associated fields in the same group
+                "FOO_3_BAR.FOO.0:abcd<cat>",
+                "FOO_1.FOO.1.0:yawn",
+                "FOO_4.FOO.4.0:purr",
+                "FOO_3.FOO.3.0:abcd",
+                "FOO_1_BAR.FOO.0:yawn<cat>",
+                "FOO_1_BAR_1.FOO.0:2021-03-24T16:00:00.000Z",
+                // the additional values included per the matching field sets
+                "FOO_1.FOO.1.1:yawn",
+                "FOO_4.FOO.4.1:purr",
+                "FOO_3.FOO.3.1:bcde",
+                "FOO_3_BAR.FOO.1:bcde<cat>",
+                "FOO_1_BAR.FOO.1:yawn<cat>",
+                "FOO_1.FOO.1.2:yawn",
+                "FOO_4.FOO.4.2:purr",
+                "FOO_3.FOO.3.2:cdef",
+                "FOO_3_BAR.FOO.2:cdef<cat>",
+                "FOO_1_BAR.FOO.2:yawn<cat>",
+                "BAR_1.BAR.1.2:yawn",
+                "BAR_2.BAR.2.2:siberian",
+                "BAR_3.BAR.3.2:pink",
+                "BAR_1.BAR.1.3:purr",
+                "BAR_2.BAR.2.3:tiger",
+                "BAR_3.BAR.3.3:spotted");
+        //@formatter:on
+        Set<String> expectedHits = Sets.newHashSet("FOO_3_BAR.FOO.0:abcd<cat>");
+
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
+    }
+
+    @Test
+    public void testGroupedHitsWithMatchingFieldSets() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
+        extraParameters.put("matching.field.sets", "FOO_4=BAR_1,FOO_1=BAR_1");
+        logic.setMaxOrExpansionThreshold(1);
+        ivaratorConfig();
+
+        String queryString = "FOO_3_BAR == 'abcd<cat>'";
+
+        //@formatter:off
+        Set<String> goodResults = Sets.newHashSet(
+                // the hit and associated fields in the same group
+                "FOO_3_BAR.FOO.0:abcd<cat>",
+                "FOO_1.FOO.1.0:yawn",
+                "FOO_4.FOO.4.0:purr",
+                "FOO_3.FOO.3.0:abcd",
+                "FOO_1_BAR.FOO.0:yawn<cat>",
+                "FOO_1_BAR_1.FOO.0:2021-03-24T16:00:00.000Z",
+                // the additional values included per the matching field sets
+                "FOO_1.FOO.1.1:yawn",
+                "FOO_4.FOO.4.1:purr",
+                "FOO_3.FOO.3.1:bcde",
+                "FOO_3_BAR.FOO.1:bcde<cat>",
+                "FOO_1_BAR.FOO.1:yawn<cat>",
+                "FOO_1.FOO.1.2:yawn",
+                "FOO_4.FOO.4.2:purr",
+                "FOO_3.FOO.3.2:cdef",
+                "FOO_3_BAR.FOO.2:cdef<cat>",
+                "FOO_1_BAR.FOO.2:yawn<cat>",
+                "BAR_1.BAR.1.2:yawn",
+                "BAR_2.BAR.2.2:siberian",
+                "BAR_3.BAR.3.2:pink",
+                "BAR_1.BAR.1.3:purr",
+                "BAR_2.BAR.2.3:tiger",
+                "BAR_3.BAR.3.3:spotted");
+        //@formatter:on
+        Set<String> expectedHits = Sets.newHashSet("FOO_3_BAR.FOO.0:abcd<cat>");
+
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
+    }
+
     protected void ivaratorConfig() throws IOException {
         final URL hdfsConfig = this.getClass().getResource("/testhadoop.config");
         Assert.assertNotNull(hdfsConfig);
