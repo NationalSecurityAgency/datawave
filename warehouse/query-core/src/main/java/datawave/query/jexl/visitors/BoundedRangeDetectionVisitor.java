@@ -51,7 +51,7 @@ public class BoundedRangeDetectionVisitor extends ShortCircuitBaseVisitor {
                     AtomicBoolean hasBounded = (AtomicBoolean) data;
                     hasBounded.set(true);
                 }
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+            } catch (TableNotFoundException e) {
                 throw new DatawaveFatalQueryException("Cannot access metadata", e);
             }
 
@@ -68,7 +68,7 @@ public class BoundedRangeDetectionVisitor extends ShortCircuitBaseVisitor {
                 AtomicBoolean hasBounded = (AtomicBoolean) data;
                 hasBounded.set(true);
             }
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException e) {
             throw new DatawaveFatalQueryException("Cannot access metadata", e);
         }
 

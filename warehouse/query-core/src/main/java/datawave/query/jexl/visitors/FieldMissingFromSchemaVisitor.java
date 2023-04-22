@@ -53,7 +53,7 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
         this.specialFields = specialFields;
         try {
             this.allFieldsForDatatypes = this.helper.getAllFields(datatypeFilter);
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException e) {
             log.error(e);
             throw new RuntimeException("Unable to get metadata", e);
         }

@@ -36,7 +36,7 @@ public class MetadataHelperQueryModelProvider implements QueryModelProvider {
                 queryModel = metadataHelper.getQueryModel(config.getModelTableName(), config.getModelName(), config.getUnevaluatedFields(),
                         config.getDatatypeFilter());
                 config.setQueryModel(queryModel);
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+            } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.QUERY_MODEL_FETCH_ERROR, e);
                 log.error(qe);
                 throw new DatawaveFatalQueryException(qe);

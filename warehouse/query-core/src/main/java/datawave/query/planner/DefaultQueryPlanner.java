@@ -879,7 +879,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 indexedFields = metadataHelper.getIndexedFields(config.getDatatypeFilter());
                 indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
                 nonEventFields = metadataHelper.getNonEventFields(config.getDatatypeFilter());
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception te) {
+            } catch (TableNotFoundException te) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, te);
                 throw new DatawaveFatalQueryException(qe);
             }
@@ -1085,7 +1085,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Set<String> termFrequencyFields;
         try {
             termFrequencyFields = metadataHelper.getTermFrequencyFields(config.getDatatypeFilter());
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException e) {
             stopwatch.stop();
             QueryException qe = new QueryException(DatawaveErrorCode.TERM_FREQUENCY_FIELDS_RETRIEVAL_ERROR, e);
             throw new DatawaveFatalQueryException(qe);
@@ -1336,7 +1336,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.UNFIELDED_QUERY_ZERO_MATCHES, e, MessageFormat.format("Query: ", query));
             log.info(qe);
             throw new NoResultsException(qe);
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
             log.info(qe);
             throw new DatawaveFatalQueryException(qe);
@@ -1366,7 +1366,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Set<String> allFields = null;
         try {
             allFields = metadataHelper.getAllFields(config.getDatatypeFilter());
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException e) {
             throw new DatawaveQueryException("Unable get get data dictionary", e);
         }
 
@@ -1395,7 +1395,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 try {
                     log.trace("current size of fields" + metadataHelper.getAllFields(config.getDatatypeFilter()));
                     log.trace("all fields: " + metadataHelper.getAllFields(config.getDatatypeFilter()));
-                } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+                } catch (TableNotFoundException e) {
                     log.error("table not found when reading metadata", e);
                 }
                 log.trace("QueryModel:" + (null == queryModel ? "null" : queryModel));
@@ -1787,7 +1787,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
                 log.trace("allFields: " + builder);
             }
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.FIELD_FETCH_ERROR, e);
             log.error(qe);
             throw new DatawaveFatalQueryException(qe);
@@ -2143,7 +2143,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             addOption(cfg, QueryOptions.INDEXED_FIELDS, QueryOptions.buildFieldStringFromSet(indexedFields), true);
             addOption(cfg, QueryOptions.INDEX_ONLY_FIELDS, QueryOptions.buildFieldStringFromSet(indexOnlyFields), true);
 
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
             throw new DatawaveQueryException(qe);
         }
@@ -2717,8 +2717,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         try {
             return configureIndexedAndNormalizedFields(fieldToDatatypeMap, metadataHelper.getIndexedFields(null), metadataHelper.getReverseIndexedFields(null),
                     metadataHelper.getAllNormalized(), config, queryTree);
-        } catch (InstantiationException | IllegalAccessException | TableNotFoundException | ExecutionException |
-                 MarkingFunctions.Exception e) {
+        } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
             throw new DatawaveFatalQueryException(e);
         }
 

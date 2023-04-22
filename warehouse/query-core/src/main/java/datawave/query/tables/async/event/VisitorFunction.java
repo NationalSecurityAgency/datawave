@@ -95,7 +95,7 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
         } else {
             try {
                 indexedFields = this.metadataHelper.getIndexedFields(config.getDatatypeFilter());
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+            } catch (TableNotFoundException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -108,7 +108,7 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
 
         try {
             nonEventFields = this.metadataHelper.getNonEventFields(config.getDatatypeFilter());
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
 

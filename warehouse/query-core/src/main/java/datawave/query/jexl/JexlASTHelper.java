@@ -955,7 +955,7 @@ public class JexlASTHelper {
                 if (helper != null && !helper.isIndexed(fieldName1, dataTypeFilter)) {
                     return null;
                 }
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception tnfe) {
+            } catch (TableNotFoundException tnfe) {
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.TABLE_NOT_FOUND, tnfe);
                 throw new DatawaveFatalQueryException(qe);
             }

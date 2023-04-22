@@ -597,7 +597,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                         return true;
                     }
                 }
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+            } catch (TableNotFoundException e) {
                 log.error("Could not determine whether field is indexed", e);
                 throw new RuntimeException(e);
             }

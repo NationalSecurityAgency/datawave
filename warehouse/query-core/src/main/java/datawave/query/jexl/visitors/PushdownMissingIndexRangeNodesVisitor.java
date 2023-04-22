@@ -151,7 +151,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         String field = JexlASTHelper.getIdentifier(node);
         try {
             return (field != null && this.helper.isIndexed(field, this.dataTypeFilter));
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException e) {
             throw new IllegalStateException("Unable to find metadata table", e);
         }
     }

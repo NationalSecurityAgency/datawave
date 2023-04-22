@@ -150,7 +150,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
                         "Fieldname: {0}", fieldName));
                 throw new InvalidFieldIndexQueryFatalQueryException(qe);
             }
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
             throw new DatawaveFatalQueryException(qe);
         }

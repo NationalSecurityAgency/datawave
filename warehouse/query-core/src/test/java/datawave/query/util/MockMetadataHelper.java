@@ -87,7 +87,7 @@ public class MockMetadataHelper extends MetadataHelper {
         this.contentFields.addAll(fields);
     }
 
-    public void addDataTypes(Collection<String> dataTypes) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void addDataTypes(Collection<String> dataTypes) {
         getMetadata().datatypes.addAll(dataTypes);
     }
 
@@ -95,7 +95,7 @@ public class MockMetadataHelper extends MetadataHelper {
         this.expansionFields.addAll(fields);
     }
 
-    public void addField(String field, String dt) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void addField(String field, String dt) {
         getMetadata().allFields.add(field);
         try {
             this.dataTypes.put(field, Class.forName(dt).asSubclass(Type.class).newInstance());
@@ -104,21 +104,21 @@ public class MockMetadataHelper extends MetadataHelper {
         }
     }
 
-    public void addFields(Collection<String> fields) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void addFields(Collection<String> fields) {
         getMetadata().allFields.addAll(fields);
         for (String field : fields) {
             this.dataTypes.put(field, new LcNoDiacriticsType());
         }
     }
 
-    public void addFields(Multimap<String, Type<?>> fields) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void addFields(Multimap<String, Type<?>> fields) {
         getMetadata().allFields.addAll(fields.keys());
         for (Map.Entry<String, Type<?>> field : fields.entries()) {
             this.dataTypes.put(field.getKey(), field.getValue());
         }
     }
 
-    public void addFieldsToDatatypes(Multimap<String, String> fieldsToDatatype) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void addFieldsToDatatypes(Multimap<String, String> fieldsToDatatype) {
         getMetadata().allFields.addAll(fieldsToDatatype.keySet());
         for (Map.Entry<String, String> field : fieldsToDatatype.entries()) {
             try {
@@ -133,23 +133,23 @@ public class MockMetadataHelper extends MetadataHelper {
         this.dataTypes.putAll(field, normalizerSet);
     }
 
-    public void addTermFrequencyFields(Collection<String> fields) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void addTermFrequencyFields(Collection<String> fields) {
         getMetadata().termFrequencyFields.addAll(fields);
     }
 
     @Override
-    public Metadata getMetadata() throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public Metadata getMetadata() {
         return getMetadata(null);
     }
 
     @Override
-    public Metadata getMetadata(Set<String> ingestTypeFilter) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public Metadata getMetadata(Set<String> ingestTypeFilter) {
         // TODO: filter this?
         return metadata;
     }
 
     @Override
-    public Set<String> getAllFields(Set<String> ingestTypeFilter) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public Set<String> getAllFields(Set<String> ingestTypeFilter) {
         Set<String> fields = new HashSet<>();
 
         if (ingestTypeFilter == null) {
@@ -180,7 +180,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public boolean isIndexed(String fieldName, Set<String> ingestTypeFilter) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public boolean isIndexed(String fieldName, Set<String> ingestTypeFilter) {
         // TODO: should try to observe the ingestTypeFilter as well
         return getMetadata().indexedFields.contains(fieldName);
     }
@@ -201,7 +201,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public Set<String> getAllNormalized() throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public Set<String> getAllNormalized() {
         return getMetadata().getNormalizedFields();
     }
 
@@ -211,7 +211,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public Set<Type<?>> getDatatypesForField(String fieldName) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+    public Set<Type<?>> getDatatypesForField(String fieldName) throws InstantiationException, IllegalAccessException {
         return getDatatypesForField(fieldName, null);
     }
 
@@ -228,7 +228,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public TypeMetadata getTypeMetadata(Set<String> ingestTypeFilter) throws TableNotFoundException {
+    public TypeMetadata getTypeMetadata(Set<String> ingestTypeFilter) {
         TypeMetadata typeMetadata = new TypeMetadata();
         for (String fieldName : dataTypes.keySet()) {
             try {
@@ -270,12 +270,12 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public Set<String> getTermFrequencyFields(Set<String> ingestTypeFilter) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public Set<String> getTermFrequencyFields(Set<String> ingestTypeFilter) {
         return getMetadata().getTermFrequencyFields();
     }
 
     @Override
-    public Set<String> getIndexedFields(Set<String> ingestTypeFilter) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public Set<String> getIndexedFields(Set<String> ingestTypeFilter) {
         return getMetadata().getIndexedFields();
     }
 
@@ -295,7 +295,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public Set<String> getDatatypes(Set<String> ingestTypeFilter) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public Set<String> getDatatypes(Set<String> ingestTypeFilter) {
         if (ingestTypeFilter == null) {
             return getMetadata().getDatatypes();
         } else if (!ingestTypeFilter.isEmpty()) {
@@ -384,7 +384,7 @@ public class MockMetadataHelper extends MetadataHelper {
         this.dataTypes = dataTypes;
     }
 
-    public void setIndexedFields(Set<String> indexedFields) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void setIndexedFields(Set<String> indexedFields) {
         getMetadata().indexedFields = indexedFields;
     }
 
@@ -396,7 +396,7 @@ public class MockMetadataHelper extends MetadataHelper {
         this.indexOnlyFields = indexOnlyFields;
     }
 
-    public void setNormalizedFields(Set<String> normalizedFields) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void setNormalizedFields(Set<String> normalizedFields) {
         getMetadata().normalizedFields = normalizedFields;
     }
 

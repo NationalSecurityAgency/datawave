@@ -108,7 +108,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
         if (this.nonEventFields == null) {
             try {
                 this.nonEventFields = this.helper.getNonEventFields(config.getDatatypeFilter());
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+            } catch (TableNotFoundException e) {
                 log.error("Could not determine non-event fields", e);
                 throw new RuntimeException("got exception when using MetadataHelper to get non-event fields", e);
             }

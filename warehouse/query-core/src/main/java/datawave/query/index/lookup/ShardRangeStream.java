@@ -97,7 +97,7 @@ public class ShardRangeStream extends RangeStream {
 
             }
 
-        } catch (TableNotFoundException | DatawaveQueryException | ExecutionException | MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException | DatawaveQueryException e) {
             throw new RuntimeException(e);
         } finally {
             // shut down the executor as all threads have completed

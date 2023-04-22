@@ -94,7 +94,7 @@ public class CostEstimator {
                         if (!helper.isIndexed(fieldName, config.getDatatypeFilter())) {
                             return new Cost(0L, Long.MAX_VALUE);
                         }
-                    } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+                    } catch (TableNotFoundException e) {
                         log.error("Could not find metadata table", e);
                     }
 

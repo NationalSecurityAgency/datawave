@@ -39,7 +39,7 @@ public class RegexPushdownTransformRule implements NodeTransformRule {
                 }
             }
             return node;
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception tnfe) {
+        } catch (TableNotFoundException tnfe) {
             throw new DatawaveFatalQueryException("Failure to apply node transform rule", tnfe);
         }
     }

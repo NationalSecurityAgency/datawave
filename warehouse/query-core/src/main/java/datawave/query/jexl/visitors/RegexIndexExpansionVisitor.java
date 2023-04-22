@@ -89,7 +89,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             try {
                 QueryModel queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName());
                 this.onlyUseThese = queryModel.getForwardQueryMapping().values();
-            } catch (ExecutionException | MarkingFunctions.Exception e) {
+            } catch (ExecutionException e) {
                 this.onlyUseThese = null;
             }
         } else {
@@ -188,7 +188,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             boolean indexOnly;
             try {
                 indexOnly = helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName);
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+            } catch (TableNotFoundException e) {
                 throw new DatawaveFatalQueryException(e);
             }
 
@@ -264,7 +264,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
                     return RebuildingVisitor.copyInto(node, ASTUnsatisfiableERNode.create());
                 }
             }
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException e) {
             throw new DatawaveFatalQueryException(e);
         }
 

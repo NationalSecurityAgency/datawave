@@ -93,7 +93,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 }
 
                 return getIndexQuery(tfFields, indexedFields, contentFields);
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+            } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             }
@@ -196,7 +196,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             try {
                 return fieldsAndTerms(helper.getTermFrequencyFields(datatypeFilter), helper.getIndexedFields(datatypeFilter),
                         helper.getContentFields(datatypeFilter), null)[0];
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+            } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             }
@@ -218,7 +218,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     fieldSets.add(fieldsAndTerms[0]);
                 }
                 return fieldSets;
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+            } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             }

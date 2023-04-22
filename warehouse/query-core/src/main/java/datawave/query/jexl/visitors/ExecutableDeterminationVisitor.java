@@ -848,7 +848,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         if (this.nonEventFields == null) {
             try {
                 this.nonEventFields = helper.getNonEventFields(config.getDatatypeFilter());
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+            } catch (TableNotFoundException e) {
                 log.error("Could not determine whether field is non event", e);
                 throw new RuntimeException("got exception when using MetadataHelper to get non event fields", e);
             }
