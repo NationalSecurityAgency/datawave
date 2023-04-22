@@ -198,7 +198,7 @@ public class SharedCacheCoordinatorTest {
             
             newCount = 42;
             oldCount = counter.getVersionedValue();
-            System.out.println("TRY SET COUNT: " + counter.trySetCount(oldCount, newCount));
+            counter.trySetCount(oldCount, newCount);
             
             for (int i = 0; i < 10; ++i) {
                 if (count[0] == newCount)
