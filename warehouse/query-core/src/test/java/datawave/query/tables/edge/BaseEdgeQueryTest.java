@@ -14,13 +14,14 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.data.normalizer.Normalizer;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.logic.BaseQueryLogic;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
@@ -47,7 +48,7 @@ public abstract class BaseEdgeQueryTest {
     
     protected static SimpleDateFormat simpleFormat;
     
-    protected static Connector connector;
+    protected static AccumuloClient client;
     protected static datawave.query.MockAccumuloRecordWriter recordWriter;
     protected Set<Authorizations> auths = Collections.singleton(new Authorizations("A", "B", "C", "D"));
     protected Set<Authorizations> limitedAuths = Collections.singleton(new Authorizations("A", "B"));
@@ -176,16 +177,16 @@ public abstract class BaseEdgeQueryTest {
         simpleFormat = new SimpleDateFormat("yyyyMMdd");
         
         InMemoryInstance i = new InMemoryInstance(BaseEdgeQueryTest.class.toString());
-        connector = i.getConnector("root", new PasswordToken(""));
+        client = new InMemoryAccumuloClient("root", i);
         
         // Create the CB tables
-        connector.tableOperations().create(EDGE_TABLE_NAME);
-        connector.tableOperations().create(MODEL_TABLE_NAME);
+        client.tableOperations().create(EDGE_TABLE_NAME);
+        client.tableOperations().create(MODEL_TABLE_NAME);
         
         // Create the map of batchwriters to cb tables
         recordWriter = new MockAccumuloRecordWriter();
         BatchWriterConfig bwCfg = new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1000L).setMaxWriteThreads(1);
-        recordWriter.addWriter(new Text(EDGE_TABLE_NAME), connector.createBatchWriter(EDGE_TABLE_NAME, bwCfg));
+        recordWriter.addWriter(new Text(EDGE_TABLE_NAME), client.createBatchWriter(EDGE_TABLE_NAME, bwCfg));
         
         addEdges();
     }

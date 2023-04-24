@@ -3,6 +3,7 @@ package datawave.query.index.lookup;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
@@ -16,6 +17,7 @@ import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -70,16 +72,15 @@ public class RangeStreamTestX {
     // (A || B) && (C || D)
     
     private static InMemoryInstance instance = new InMemoryInstance(RangeStreamTestX.class.toString());
-    private static Connector connector;
+    private static AccumuloClient client;
     private ShardQueryConfiguration config;
     
     @BeforeClass
     public static void setupAccumulo() throws Exception {
-        // Zero byte password, so secure it hurts.
-        connector = instance.getConnector("", new PasswordToken(new byte[0]));
-        connector.tableOperations().create(SHARD_INDEX);
+        client = new InMemoryAccumuloClient("", new InMemoryInstance());
+        client.tableOperations().create(SHARD_INDEX);
         
-        BatchWriter bw = connector.createBatchWriter(SHARD_INDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
+        BatchWriter bw = client.createBatchWriter(SHARD_INDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
                         .setMaxWriteThreads(1));
         
         // Some values
@@ -371,7 +372,6 @@ public class RangeStreamTestX {
     @Before
     public void setupTest() {
         config = new ShardQueryConfiguration();
-        config.setConnector(connector);
         config.setShardsPerDayThreshold(20);
     }
     
@@ -3291,12 +3291,12 @@ public class RangeStreamTestX {
         helper.setIndexedFields(dataTypes.keySet());
         
         // Run a standard limited-scanner range stream.
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
         
         // Run a default range stream.
-        rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(false);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
         

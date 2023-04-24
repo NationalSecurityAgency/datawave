@@ -88,7 +88,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
                     log.warn("Something is screwy, found " + shardId + " on the second try");
                     return assignments.get(shardId);
                 }
-                // <tt>(-(<i>insertion point</i>) - 1)</tt> // insertion point in the index of the key greater
+                // <code>(-(<i>insertion point</i>) - 1)</code> // insertion point in the index of the key greater
                 Text shardString = keys.get(Math.abs(closestAssignment + 1));
                 return assignments.get(shardString);
             default:

@@ -190,7 +190,7 @@ public class GeoWaveUtils {
                                 
                                 // make sure that this condensed hash is within the bounds of the map
                                 byte[] scaledId = createByteArray(curTier, scaledPos, longBuffer);
-                                MultiDimensionalNumericData scaledBounds = GeometryNormalizer.indexStrategy.getRangeForId(null, scaledId);
+                                MultiDimensionalNumericData scaledBounds = GeometryNormalizer.getGeometryIndexStrategy().getRangeForId(null, scaledId);
                                 
                                 // make sure that the scaled id is within the bounds of the map
                                 // note: all cells for tiers 0 and 1 are within the bounds of the map
@@ -647,7 +647,7 @@ public class GeoWaveUtils {
      * @return a Geometry
      */
     public static Geometry positionToGeometry(byte[] byteArray) {
-        MultiDimensionalNumericData bounds = GeometryNormalizer.indexStrategy.getRangeForId(null, byteArray);
+        MultiDimensionalNumericData bounds = GeometryNormalizer.getGeometryIndexStrategy().getRangeForId(null, byteArray);
         return boundsToGeometry(new GeometryFactory(), bounds);
     }
     
@@ -741,7 +741,7 @@ public class GeoWaveUtils {
         
         List<Geometry> geometries = new ArrayList<>(byteArrays.size());
         for (byte[] byteArray : byteArrays) {
-            MultiDimensionalNumericData bounds = GeometryNormalizer.indexStrategy.getRangeForId(null, byteArray);
+            MultiDimensionalNumericData bounds = GeometryNormalizer.getGeometryIndexStrategy().getRangeForId(null, byteArray);
             
             if (decodeTier(byteArray) <= 1 || inBounds(bounds)) {
                 geometries.add(boundsToGeometry(gf, bounds));

@@ -392,13 +392,25 @@ public class JexlASTHelper {
     /**
      * Finds all the functions and returns a map indexed by function context name to the function.
      *
-     * @param query
-     * @return
+     * @param node
+     *            a node in the query
+     * @return a multimap of namespaces to functions
      */
-    public static Multimap<String,Function> getFunctions(JexlNode query) {
-        FunctionReferenceVisitor visitor = new FunctionReferenceVisitor();
-        query.jjtAccept(visitor, null);
-        return visitor.functions();
+    public static Multimap<String,Function> getFunctions(JexlNode node) {
+        return FunctionReferenceVisitor.functions(node);
+    }
+    
+    /**
+     * Finds all the functions and returns a map indexed by function context name to the function.
+     *
+     * @param node
+     *            a node in the query
+     * @param namespaceFilter
+     *            a filter that limits the returned functions
+     * @return a multimap of namespaces to functions
+     */
+    public static Multimap<String,Function> getFunctions(JexlNode node, Set<String> namespaceFilter) {
+        return FunctionReferenceVisitor.functions(node, namespaceFilter);
     }
     
     public static List<ASTIdentifier> getFunctionIdentifiers(ASTFunctionNode node) {

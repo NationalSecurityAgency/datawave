@@ -3,18 +3,16 @@ package datawave.ingest.util;
 import datawave.util.StringUtils;
 import datawave.util.cli.PasswordConverter;
 import datawave.util.time.DateHelper;
+
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.accumulo.server.client.HdfsZooInstance;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.io.Text;
 
@@ -157,25 +155,20 @@ public class GenerateShardSplits {
         
         if (username != null) {
             // Connect to accumulo
-            ClientConfiguration zkConfig = ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zookeepers);
-            Instance instance = (instanceName != null ? new ZooKeeperInstance(zkConfig) : HdfsZooInstance.getInstance());
-            Connector connector = instance.getConnector(username, new PasswordToken(password));
-            
-            // add the splits
-            if (addSplits) {
-                connector.tableOperations().addSplits(tableName, splits);
-            }
-            
-            // add the markers
-            if (!mutations.isEmpty()) {
-                BatchWriter w = connector.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L)
-                                .setMaxWriteThreads(4));
-                try {
-                    w.addMutations(mutations);
-                } finally {
-                    w.close();
+            try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, new PasswordToken(password)).build()) {
+                // add the splits
+                if (addSplits) {
+                    client.tableOperations().addSplits(tableName, splits);
                 }
-            }
+                
+                // add the markers
+                if (!mutations.isEmpty()) {
+                    try (BatchWriter w = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L)
+                                    .setMaxWriteThreads(4))) {
+                        w.addMutations(mutations);
+                    }
+                }
+            } // disconnect from accumulo
         } else {
             if (addSplits) {
                 for (Text t : splits) {

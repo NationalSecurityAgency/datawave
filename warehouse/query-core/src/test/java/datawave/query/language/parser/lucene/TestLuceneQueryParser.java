@@ -283,6 +283,20 @@ public class TestLuceneQueryParser {
     }
     
     @Test
+    public void testANDSpaceAfterColonWithWrappedFields() throws ParseException {
+        LuceneQueryParser luceneParser = new LuceneQueryParser();
+        Assert.assertEquals("[AND,field1:selector1,field1:selector2]", luceneParser.parse("field1: (selector1 AND selector2)").getContents());
+        Assert.assertEquals("[AND,field1:selector1,field1:selector2]", luceneParser.parse("field1:(selector1 AND selector2)").getContents());
+    }
+    
+    @Test
+    public void testORSpaceAfterColonWithWrappedFields() throws ParseException {
+        LuceneQueryParser luceneParser = new LuceneQueryParser();
+        Assert.assertEquals("[OR,field1:selector1,field1:selector2]", luceneParser.parse("field1: (selector1 OR selector2)").getContents());
+        Assert.assertEquals("[OR,field1:selector1,field1:selector2]", luceneParser.parse("field1:(selector1 OR selector2)").getContents());
+    }
+    
+    @Test
     public void testSmartQuoteReplacement() throws ParseException {
         LuceneQueryParser luceneParser = new LuceneQueryParser();
         String s = "\u0093see jane run\u0094";

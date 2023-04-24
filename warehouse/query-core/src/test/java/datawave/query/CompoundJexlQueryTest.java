@@ -42,7 +42,7 @@ public class CompoundJexlQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType((CityEntry.italy), generic));
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     public CompoundJexlQueryTest() {

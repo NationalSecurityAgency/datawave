@@ -6,27 +6,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.planner.QueryPlan;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
-import org.apache.accumulo.core.client.impl.ClientContext;
-import org.apache.accumulo.core.client.impl.Tables;
-import org.apache.accumulo.core.client.impl.TabletLocator;
-import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.data.impl.KeyExtent;
+import org.apache.accumulo.core.clientImpl.ClientContext;
+import org.apache.accumulo.core.clientImpl.TabletLocator;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.master.state.tables.TableState;
-import org.apache.accumulo.core.client.impl.Credentials;
+import org.apache.accumulo.core.dataImpl.KeyExtent;
+import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -66,9 +62,9 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
     protected Set<Integer> queryPlanSet;
     protected Collection<IteratorSetting> customSettings;
     
-    protected String tableId = "0";
+    protected TableId tableId;
     
-    public PushdownFunction(TabletLocator tl, ShardQueryConfiguration config, Collection<IteratorSetting> settings, String tableId) {
+    public PushdownFunction(TabletLocator tl, ShardQueryConfiguration config, Collection<IteratorSetting> settings, TableId tableId) {
         this.tl = tl;
         this.config = config;
         queryPlanSet = Sets.newHashSet();
@@ -143,14 +139,14 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         
         List<Range> ranges = Lists.newArrayList(currentPlan.getRanges());
         if (!ranges.isEmpty()) {
-            Map<String,Map<KeyExtent,List<Range>>> binnedRanges = binRanges(tl, config.getConnector().getInstance(), ranges);
+            Map<String,Map<KeyExtent,List<Range>>> binnedRanges = binRanges(tl, config.getClient(), ranges);
             
             for (String server : binnedRanges.keySet()) {
                 Map<KeyExtent,List<Range>> hostedExtentMap = binnedRanges.get(server);
                 
                 Iterable<Range> rangeIter = Lists.newArrayList();
                 
-                for (Entry<KeyExtent,List<Range>> rangeEntry : hostedExtentMap.entrySet()) {
+                for (Map.Entry<KeyExtent,List<Range>> rangeEntry : hostedExtentMap.entrySet()) {
                     if (log.isTraceEnabled())
                         log.trace("Adding range from " + rangeEntry.getValue());
                     rangeIter = Iterables.concat(rangeIter, rangeEntry.getValue());
@@ -167,7 +163,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         
     }
     
-    protected Map<String,Map<KeyExtent,List<Range>>> binRanges(TabletLocator tl, Instance instance, List<Range> ranges) throws AccumuloException,
+    protected Map<String,Map<KeyExtent,List<Range>>> binRanges(TabletLocator tl, AccumuloClient client, List<Range> ranges) throws AccumuloException,
                     AccumuloSecurityException, TableNotFoundException {
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
         
@@ -176,9 +172,8 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         while (true) {
             
             binnedRanges.clear();
-            AuthenticationToken authToken = new PasswordToken(config.getAccumuloPassword());
-            Credentials creds = new Credentials(config.getConnector().whoami(), authToken);
-            List<Range> failures = tl.binRanges(new ClientContext(instance, creds, AccumuloConfiguration.getDefaultConfiguration()), ranges, binnedRanges);
+            ClientContext ctx = AccumuloConnectionFactory.getClientContext(client);
+            List<Range> failures = tl.binRanges(ctx, ranges, binnedRanges);
             
             if (!failures.isEmpty()) {
                 // tried to only do table state checks when failures.size()
@@ -189,10 +184,10 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                 // deleted table were not cleared... so
                 // need to always do the check when failures occur
                 if (failures.size() >= lastFailureSize)
-                    if (!Tables.exists(instance, tableId))
-                        throw new TableDeletedException(tableId);
-                    else if (Tables.getTableState(instance, tableId) == TableState.OFFLINE)
-                        throw new TableOfflineException(instance, tableId);
+                    if (!ctx.tableNodeExists(tableId))
+                        throw new TableDeletedException(tableId.canonical());
+                    else if (ctx.getTableState(tableId) == TableState.OFFLINE)
+                        throw new TableOfflineException("Table " + tableId + " is offline");
                 
                 lastFailureSize = failures.size();
                 
@@ -214,10 +209,10 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         // needs to be redone when failures occurs and tablets have merged
         // or split
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges2 = new HashMap<>();
-        for (Entry<String,Map<KeyExtent,List<Range>>> entry : binnedRanges.entrySet()) {
+        for (Map.Entry<String,Map<KeyExtent,List<Range>>> entry : binnedRanges.entrySet()) {
             Map<KeyExtent,List<Range>> tabletMap = new HashMap<>();
             binnedRanges2.put(entry.getKey(), tabletMap);
-            for (Entry<KeyExtent,List<Range>> tabletRanges : entry.getValue().entrySet()) {
+            for (Map.Entry<KeyExtent,List<Range>> tabletRanges : entry.getValue().entrySet()) {
                 Range tabletRange = tabletRanges.getKey().toDataRange();
                 List<Range> clippedRanges = new ArrayList<>();
                 tabletMap.put(tabletRanges.getKey(), clippedRanges);

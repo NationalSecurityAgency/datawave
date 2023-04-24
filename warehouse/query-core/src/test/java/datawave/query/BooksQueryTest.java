@@ -61,8 +61,8 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
             dataTypes.add(books);
             
             accumuloSetup.setData(FileType.GROUPING, dataTypes);
-            connector = accumuloSetup.loadTables(log);
-            BooksDataManager mgr = new BooksDataManager(BooksEntry.tech.getDataType(), connector, indexes, cfgData);
+            client = accumuloSetup.loadTables(log);
+            BooksDataManager mgr = new BooksDataManager(BooksEntry.tech.getDataType(), client, indexes, cfgData);
             mgr.loadGroupingData(books.getIngestFile());
             return mgr;
         } catch (Exception e) {
