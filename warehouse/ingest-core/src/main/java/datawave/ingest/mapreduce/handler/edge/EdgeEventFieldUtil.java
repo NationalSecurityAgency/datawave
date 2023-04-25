@@ -7,6 +7,7 @@ import datawave.edge.util.EdgeKey;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.normalizer.SimpleGroupFieldNameParser;
 import datawave.ingest.mapreduce.EventMapper;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDataBundle;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
@@ -32,6 +33,10 @@ public class EdgeEventFieldUtil {
     
     protected Multimap<String,NormalizedContentInterface> normalizedFields;
     protected Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList;
+    
+    SimpleGroupFieldNameParser fieldParser = new SimpleGroupFieldNameParser();
+    public static final String TRIM_FIELD_GROUP = ".trim.field.group";
+    protected boolean trimFieldGroup = false;
     
     public EdgeEventFieldUtil() {
         normalizedFields = HashMultimap.create();
@@ -71,10 +76,15 @@ public class EdgeEventFieldUtil {
         if (value instanceof GroupedNormalizedContentInterface) {
             GroupedNormalizedContentInterface grouped = (GroupedNormalizedContentInterface) value;
             if (grouped.isGrouped() && grouped.getGroup() != null) {
-                if (!grouped.getGroup().isEmpty() && grouped.getGroup().charAt(0) == '.') {
-                    fieldName = fieldName + grouped.getGroup();
-                } else {
-                    fieldName = fieldName + '.' + grouped.getGroup();
+                if (!grouped.getGroup().isEmpty()) {
+                    String group;
+                    if (trimFieldGroup) {
+                        group = fieldParser.getTrimmedGroup(grouped.getGroup());
+                    } else {
+                        group = grouped.getGroup();
+                    }
+                    fieldName = fieldName + '.' + group;
+                    
                 }
             }
         }
@@ -194,7 +204,9 @@ public class EdgeEventFieldUtil {
     }
     
     public EdgeDataBundle setEdgeInfoFromEventFields(EdgeDataBundle bundle, EdgeDefinitionConfigurationHelper edgeDefConfigs, RawRecordContainer event,
-                    EdgeIngestConfiguration edgeConfig, long newFormatStartDate, Configuration conf) {
+                    EdgeIngestConfiguration edgeConfig, long newFormatStartDate, Configuration conf, String typeName) {
+        
+        trimFieldGroup = conf.getBoolean(typeName + TRIM_FIELD_GROUP, false);
         
         // Get the load date of the event from the fields map
         String loadDateStr = getLoadDateString(normalizedFields);

@@ -50,6 +50,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -104,6 +105,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     Map<Key,Set<Metadata>> eventMetadataRegistry;
     EdgeDefinitionConfigurationHelper edgeDefConfigs = null;
+    
+    private static final String NO_GROUP = "";
     
     public enum FailurePolicy {
         CONTINUE, FAIL_JOB
@@ -160,7 +163,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                     throws IOException, InterruptedException {
         
         long edgesCreated = 0;
-        String typeName = event.getDataType().typeName();
+        String typeName = getTypeName(event.getDataType());
+        
+        // get edge definitions for this event type
+        edgeDefConfigs = edgeConfig.getEdges().get(typeName);
+        List<EdgeDefinition> edgeDefs = edgeDefConfigs.getEdges();
         
         if (shortCircuit(event, typeName, edgeConfig.getEdges())) {
             return edgesCreated;
@@ -168,10 +175,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         
         // Track metadata for this event
         eventMetadataRegistry = new HashMap<>();
-        
-        // get edge definitions for this event type
-        edgeDefConfigs = edgeConfig.getEdges().get(typeName);
-        List<EdgeDefinition> edgeDefs = edgeDefConfigs.getEdges();
         
         /**
          * If enabled, set the filtered context from the NormalizedContentInterface and create the script cache
@@ -186,7 +189,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          */
         edgeEventFieldUtil.normalizeAndGroupFields(fields);
         EdgeDataBundle baseEdgeBundle = new EdgeDataBundle(event);
-        edgeEventFieldUtil.setEdgeInfoFromEventFields(baseEdgeBundle, edgeDefConfigs, event, edgeConfig, newFormatStartDate, context.getConfiguration());
+        edgeEventFieldUtil.setEdgeInfoFromEventFields(baseEdgeBundle, edgeDefConfigs, event, edgeConfig, newFormatStartDate, context.getConfiguration(),
+                        typeName);
         
         // Is this an edge to delete?
         baseEdgeBundle.setIsDeleting(this.getHelper(event.getDataType()).getDeleteMode());
@@ -203,6 +207,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         /*
          * Create Edge Values from Edge Definitions
          */
+        
         for (EdgeDefinition edgeDef : edgeDefs) {
             edgeConfig.clearArithmeticMatchingGroups();
             Map<String,Set<String>> matchingGroups = new HashMap<>();
@@ -212,6 +217,14 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             
             // don't bother checking the preconditions if we don't even have the necessary fields in the event
             if (null == mSource || null == mSink || mSource.isEmpty() || mSink.isEmpty()) {
+                continue;
+            }
+            
+            // bail if the event doesn't contain any values for the source or sink field
+            if (null == mSource || null == mSink) {
+                continue;
+            }
+            if (mSource.isEmpty() || mSink.isEmpty()) {
                 continue;
             }
             
@@ -255,8 +268,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 }
             }
             
-            String sourceGroup = getGroup(edgeDef.getSourceFieldName());
-            String sinkGroup = getGroup(edgeDef.getSinkFieldName());
+            String sourceGroup = getEdgeDefGroup(edgeDef.getSourceFieldName());
+            String sinkGroup = getEdgeDefGroup(edgeDef.getSinkFieldName());
             
             EdgeSourceSinkInfo edgeInfo = new EdgeSourceSinkInfo(mSource, mSink, sourceGroup, sinkGroup);
             
@@ -410,6 +423,15 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         return edgesCreated;
     }
     
+    private String getTypeName(Type dataType) {
+        String typeName = dataType.typeName();
+        String outputName = dataType.outputName();
+        
+        typeName = edgeConfig.getEdges().containsKey(outputName) ? outputName : typeName;
+        
+        return typeName;
+    }
+    
     private void setupPreconditionEvaluation(Multimap<String,NormalizedContentInterface> fields) {
         long start = System.currentTimeMillis();
         edgeConfig.getPreconditionContext().setFilteredContextForNormalizedContentInterface(fields);
@@ -477,7 +499,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             // then ensure we use the correct subgroup, otherwise we will enrich with the first value found
             Collection<NormalizedContentInterface> ifaceEnrichs = fieldUtil.normalizedFields.get(edgeDef.getEnrichmentField());
             if (null != ifaceEnrichs && !ifaceEnrichs.isEmpty()) {
-                String enrichGroup = getGroup(edgeDef.getEnrichmentField());
+                String enrichGroup = getEdgeDefGroup(edgeDef.getEnrichmentField());
                 if (enrichGroup != NO_GROUP) {
                     if (enrichGroup.equals(sourceGroup)) {
                         ifaceEnrichs = fieldUtil.depthFirstList.get(edgeDef.getEnrichmentField()).get(sourceSubGroup);
@@ -579,10 +601,17 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         }
     }
     
-    private static final String NO_GROUP = "";
+    // this just avoids ugly copy pasta
+    private NormalizedContentInterface getNullKeyedNCI(String fieldValue, Multimap<String,NormalizedContentInterface> fields) {
+        Iterator<NormalizedContentInterface> nciIter = fields.get(fieldValue).iterator();
+        if (nciIter.hasNext()) {
+            return nciIter.next();
+        }
+        return null;
+    }
     
-    protected String getGroup(String groupedFieldName) {
-        int index = groupedFieldName.lastIndexOf('.');
+    protected String getEdgeDefGroup(String groupedFieldName) {
+        int index = groupedFieldName.indexOf('.');
         if (index >= 0) {
             return groupedFieldName.substring(index + 1);
         } else {
