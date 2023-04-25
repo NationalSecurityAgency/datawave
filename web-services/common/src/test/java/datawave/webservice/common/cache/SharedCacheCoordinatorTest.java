@@ -38,10 +38,10 @@ public class SharedCacheCoordinatorTest {
         cacheCoordinator = new SharedCacheCoordinator("CredentialsCacheBeanTest", spec.getConnectString(), 30, 300, 10);
         // Previously, sessionTimeoutMS was set to 100 here. For whatever reason, after dependency bumps on ZK and Curator
         // to 3.7.0 and 5.2.0 respectively, that relatively short timeout led to a race condition here that resulted in
-        // somewhat consistent test failure. Hence, the increased sessionTimeoutMs to mitigate the issue. I note also that
-        // the ZK client logged a WARN here previously due to sessionTimeoutMs (100) being less than connectionTimeoutMs (200)
+        // somewhat consistent test failure. Hence, we are now just using the curator defaults for connection timeout
+        // (15000ms) and session timeout (60000ms).
         curatorClient = CuratorFrameworkFactory.builder().namespace("CredentialsCacheBeanTest").retryPolicy(new BoundedExponentialBackoffRetry(100, 200, 3))
-                        .connectionTimeoutMs(200).sessionTimeoutMs(1800).connectString(spec.getConnectString()).build();
+                        .connectString(spec.getConnectString()).build();
         Whitebox.setInternalState(cacheCoordinator, CuratorFramework.class, curatorClient);
         
         cacheCoordinator.start();
