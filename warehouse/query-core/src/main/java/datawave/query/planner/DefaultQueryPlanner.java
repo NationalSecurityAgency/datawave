@@ -1017,9 +1017,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
             }
 
-        } catch (InstantiationException | IllegalAccessException | AccumuloException | AccumuloSecurityException |
-                 TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
-            throw new DatawaveFatalQueryException(e);
+        } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (InstantiationException | IllegalAccessException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (ExecutionException | MarkingFunctions.Exception e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
         } finally {
             stopwatch.stop();
         }

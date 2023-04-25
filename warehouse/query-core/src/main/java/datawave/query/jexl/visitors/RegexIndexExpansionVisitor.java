@@ -22,6 +22,8 @@ import datawave.query.planner.pushdown.Cost;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
@@ -216,10 +218,18 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
                 }
                 return ASTDelayedPredicate.create(node); // wrap in a delayed predicate to avoid using in RangeStream
             }
-        } catch (TableNotFoundException | JavaRegexAnalyzer.JavaRegexParseException | ExecutionException |
-                 MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (ExecutionException | MarkingFunctions.Exception e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (JavaRegexAnalyzer.JavaRegexParseException e) {
             throw new DatawaveFatalQueryException(e);
         }
+
 
         // Given the structure of the tree, we don't *have* to expand this regex node
         if (config.getMaxIndexScanTimeMillis() == Long.MAX_VALUE && (!config.isExpandAllTerms() && !shouldProcessRegexFromStructure(node, markedParents))) {

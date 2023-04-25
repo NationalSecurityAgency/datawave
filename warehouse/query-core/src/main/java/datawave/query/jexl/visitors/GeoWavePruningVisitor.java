@@ -7,6 +7,7 @@ import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.GeoType;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
@@ -15,6 +16,8 @@ import datawave.query.util.GeoUtils;
 import datawave.query.util.GeoWaveUtils;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -76,19 +79,21 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
                         if (isPrunable(geoWaveDesc)) {
                             Geometry geom = GeometryNormalizer.parseGeometry(geoWaveDesc.getWkt());
                             Set<String> fields = null;
-                            try {
-                                fields = geoWaveDesc.fields(metadataHelper, null);
-                            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
-                                log.debug("Could not load datatypes from metadata table");
-                            }
+                            fields = geoWaveDesc.fields(metadataHelper, null);
                             if (fields != null) {
                                 for (String field : fields) {
                                     fieldToGeometryMap.put(field, geom);
                                 }
                             }
                         }
-                    } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
-                        log.debug("Could not load datatypes from metadata table");
+                    } catch (TableNotFoundException e) {
+                        QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                        log.error(qe);
+                        throw new DatawaveFatalQueryException(qe);
+                    } catch (ExecutionException | MarkingFunctions.Exception e) {
+                        QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
+                        log.error(qe);
+                        throw new DatawaveFatalQueryException(qe);
                     }
                 }
             }

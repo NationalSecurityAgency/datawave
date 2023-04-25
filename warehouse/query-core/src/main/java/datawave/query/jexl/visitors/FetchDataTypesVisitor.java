@@ -189,40 +189,35 @@ public class FetchDataTypesVisitor extends BaseVisitor {
         try {
             for (String field : desc.fields(this.helper, this.datatypeFilter)) {
                 final String fieldName = JexlASTHelper.deconstructIdentifier(field);
-                try {
-
-                    Set<Type<?>> dataTypesForField = Collections.emptySet();
-
-                    if (useCache) {
-
-                        Tuple2<String, Set<String>> cacheKey = new Tuple2<>(fieldName, datatypeFilter);
-                        Set<Type<?>> types = typeCache.getIfPresent(cacheKey);
-                        if (null == types) {
-                            dataTypesForField = this.helper.getDatatypesForField(fieldName, datatypeFilter);
-                            typeCache.put(cacheKey, dataTypesForField);
-                        } else {
-                            if (log.isDebugEnabled()) {
-                                log.debug("using cached types for " + fieldName + " " + datatypeFilter);
-                            }
-                            dataTypesForField = types;
-                        }
-                    } else
+                Set<Type<?>> dataTypesForField;
+                if (useCache) {
+                    Tuple2<String, Set<String>> cacheKey = new Tuple2<>(fieldName, datatypeFilter);
+                    Set<Type<?>> types = typeCache.getIfPresent(cacheKey);
+                    if (null == types) {
                         dataTypesForField = this.helper.getDatatypesForField(fieldName, datatypeFilter);
-
-                    mm.putAll(field, dataTypesForField);
-                } catch (TableNotFoundException e) {
-                    QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                    log.error(qe);
-                    throw new DatawaveFatalQueryException(qe);
-                } catch (InstantiationException | IllegalAccessException e) {
-                    QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
-                    log.error(qe);
-                    throw new DatawaveFatalQueryException(qe);
-                }
+                        typeCache.put(cacheKey, dataTypesForField);
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("using cached types for " + fieldName + " " + datatypeFilter);
+                        }
+                        dataTypesForField = types;
+                    }
+                } else
+                    dataTypesForField = this.helper.getDatatypesForField(fieldName, datatypeFilter);
+                mm.putAll(field, dataTypesForField);
             }
-        } catch (TableNotFoundException | InstantiationException | IllegalAccessException | ExecutionException |
-                 MarkingFunctions.Exception e) {
-            throw new RuntimeException(e);
+        } catch (TableNotFoundException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (InstantiationException | IllegalAccessException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (ExecutionException | MarkingFunctions.Exception e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
         }
         return data;
     }

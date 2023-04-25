@@ -2,9 +2,12 @@ package datawave.query.jexl.visitors;
 
 import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
@@ -67,9 +70,18 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
         Set<String> fields = null;
         try {
             fields = desc.fields(helper, config.getDatatypeFilter());
-        } catch (TableNotFoundException | InstantiationException | IllegalAccessException | ExecutionException |
-                 MarkingFunctions.Exception e) {
-            LOGGER.debug("Unable to retrieve data types for field " + fields);
+        } catch (TableNotFoundException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+            LOGGER.error(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (InstantiationException | IllegalAccessException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
+            LOGGER.error(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (ExecutionException | MarkingFunctions.Exception e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
+            LOGGER.error(qe);
+            throw new DatawaveFatalQueryException(qe);
         }
 
         return super.visit(node, fields);

@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
@@ -23,6 +24,8 @@ import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
@@ -289,9 +292,18 @@ public class WhindexVisitor extends RebuildingVisitor {
         Multimap<String, JexlNode> leafNodes = null;
         try {
             leafNodes = getLeafNodes(node, nonLeafNodes);
-        } catch (TableNotFoundException | InstantiationException | IllegalAccessException | ExecutionException |
-                 MarkingFunctions.Exception e) {
-            throw new RuntimeException(e);
+        } catch (TableNotFoundException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (InstantiationException | IllegalAccessException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (ExecutionException | MarkingFunctions.Exception e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
         }
 
         // if any of the non-leaf nodes is an OR with a marker node, distribute all of the sibling nodes into those OR nodes

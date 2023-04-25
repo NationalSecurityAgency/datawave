@@ -138,9 +138,14 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     public Object visit(ASTFunctionNode node, Object data) {
         try {
             return FunctionNormalizationRebuildingVisitor.normalize(node, config.getQueryFieldsDatatypes(), helper, config.getDatatypeFilter());
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
-            log.debug("Unable to load data from metadata table");
-            throw new RuntimeException(e);
+        } catch (TableNotFoundException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (ExecutionException | MarkingFunctions.Exception e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
         }
     }
 

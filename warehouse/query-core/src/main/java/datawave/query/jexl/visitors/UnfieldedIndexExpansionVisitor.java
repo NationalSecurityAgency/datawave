@@ -14,6 +14,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
+import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -214,8 +215,14 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             // Using the datatype filter when expanding this term isn't really
             // necessary
             return ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, config, scannerFactory, expansionFields, allTypes, helper, executor);
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
-            throw new DatawaveFatalQueryException(e);
+        } catch (TableNotFoundException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (ExecutionException | MarkingFunctions.Exception e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
+            log.error(qe);
+            throw new DatawaveFatalQueryException(qe);
         }
     }
 }

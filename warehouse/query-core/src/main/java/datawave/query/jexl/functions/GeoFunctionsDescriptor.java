@@ -85,11 +85,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
             // return the true node if unable to parse arguments
             JexlNode returnNode = TRUE_NODE;
-            Set<String> allFields = null;
-
-            if (helper != null) {
-                allFields = helper.getAllFields(datatypeFilter);
-            }
+            Set<String> allFields = (helper != null) ? helper.getAllFields(datatypeFilter) : null;
 
             if (name.equals(WITHIN_BOUNDING_BOX)) {
                 GeoNormalizer geoNormalizer = ((GeoNormalizer) Normalizer.GEO_NORMALIZER);
@@ -289,10 +285,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
 
         @Override
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
-            Set<String> allFields = null;
-            if (helper != null) {
-                allFields = helper.getAllFields(datatypeFilter);
-            }
+            Set<String> allFields = (helper != null) ? helper.getAllFields(datatypeFilter) : null;
             if (name.equals(WITHIN_BOUNDING_BOX) && args.size() == 6) {
                 Set<String> fields = new HashSet<>();
                 if (datatypeFilter != null) {
