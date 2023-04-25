@@ -24,7 +24,7 @@ public class JsonIngestHelper extends ContentBaseIngestHelper {
     
     protected JsonDataTypeHelper helper = null;
     protected JsonObjectFlattener flattener = null;
-    protected SimpleGroupFieldNameParser groupNormalizer = new SimpleGroupFieldNameParser(true);
+    protected SimpleGroupFieldNameParser groupNormalizer = new SimpleGroupFieldNameParser();
     
     @Override
     public void setup(Configuration config) {
