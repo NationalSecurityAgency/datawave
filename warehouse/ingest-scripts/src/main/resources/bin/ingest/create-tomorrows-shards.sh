@@ -30,19 +30,19 @@ if [[ -n "$3" ]]; then
 fi
 
 if [[ "$4" == "" ]]; then
-  declare -i shardTableShards=5
+  declare -i shardTableShards=$NUM_SHARDS
 else
   declare -i shardTableShards=$4
 fi
 
 if [[ "$5" == "" ]]; then
-  declare -i errorTableShards=5
+  declare -i errorTableShards=$NUM_SHARDS
 else
   declare -i errorTableShards=$5
 fi
 
 if [[ "$6" == "" ]]; then
-  declare -i queryMetricShards=5
+  declare -i queryMetricShards=$NUM_SHARDS
 else
   declare -i queryMetricShards=$6
 fi
