@@ -10,7 +10,6 @@ cd $THIS_DIR
 
 . ./ingest-libs.sh
 
-declare -i numshards=$NUM_SHARDS
 if [[ "$1" == "" ]]; then
   declare -i numerator=1
 else
@@ -22,11 +21,30 @@ if [[ "$2" == "" ]]; then
 else
   declare -i divisor=$2
 fi
+
 numshards=$((numshards * numerator / divisor))
 
 shardsPerSplit=1
 if [[ -n "$3" ]]; then
     shardsPerSplit=$3
+fi
+
+if [[ "$4" == "" ]]; then
+  declare -i shardTableShards=5
+else
+  declare -i shardTableShards=$4
+fi
+
+if [[ "$5" == "" ]]; then
+  declare -i errorTableShards=5
+else
+  declare -i errorTableShards=$5
+fi
+
+if [[ "$6" == "" ]]; then
+  declare -i queryMetricShards=5
+else
+  declare -i queryMetricShards=$6
 fi
 
 DATE=`date -d tomorrow +%Y%m%d`
@@ -37,8 +55,8 @@ TYPES=${BULK_INGEST_DATA_TYPES},${LIVE_INGEST_DATA_TYPES},${COMPOSITE_DATA_TYPES
 
 ADDJARS=$THIS_DIR/$DATAWAVE_INGEST_CORE_JAR:$THIS_DIR/$COMMON_UTIL_JAR:$THIS_DIR/$DATAWAVE_CORE_JAR:$THIS_DIR/$DATAWAVE_COMMON_UTILS_JAR:$THIS_DIR/$COMMONS_LANG_JAR
 
-CLASSPATH=$ADDJARS $WAREHOUSE_ACCUMULO_HOME/bin/accumulo datawave.ingest.util.GenerateShardSplits $DATE 1 ${numshards} ${shardsPerSplit} -addShardMarkers -addDataTypeMarkers $TYPES $USERNAME $PASSWORD ${SHARD_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
+CLASSPATH=$ADDJARS $WAREHOUSE_ACCUMULO_HOME/bin/accumulo datawave.ingest.util.GenerateShardSplits $DATE 1 ${shardTableShards} ${shardsPerSplit} -addShardMarkers -addDataTypeMarkers $TYPES $USERNAME $PASSWORD ${SHARD_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
 
-CLASSPATH=$ADDJARS $WAREHOUSE_ACCUMULO_HOME/bin/accumulo datawave.ingest.util.GenerateShardSplits $DATE 1 ${numshards} ${shardsPerSplit} -addShardMarkers -addDataTypeMarkers $TYPES $USERNAME $PASSWORD ${ERROR_SHARD_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
+CLASSPATH=$ADDJARS $WAREHOUSE_ACCUMULO_HOME/bin/accumulo datawave.ingest.util.GenerateShardSplits $DATE 1 ${errorTableShards} ${shardsPerSplit} -addShardMarkers -addDataTypeMarkers $TYPES $USERNAME $PASSWORD ${ERROR_SHARD_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
 
-CLASSPATH=$ADDJARS $WAREHOUSE_ACCUMULO_HOME/bin/accumulo datawave.ingest.util.GenerateShardSplits $DATE 1 ${numshards} ${shardsPerSplit} -addShardMarkers $USERNAME $PASSWORD ${QUERYMETRICS_SHARD_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
+CLASSPATH=$ADDJARS $WAREHOUSE_ACCUMULO_HOME/bin/accumulo datawave.ingest.util.GenerateShardSplits $DATE 1 ${queryMetricShards} ${shardsPerSplit} -addShardMarkers $USERNAME $PASSWORD ${QUERYMETRICS_SHARD_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
