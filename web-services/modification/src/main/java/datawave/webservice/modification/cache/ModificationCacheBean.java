@@ -8,8 +8,8 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.configuration.ModificationConfiguration;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.results.modification.MutableFieldListResponse;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -103,16 +103,16 @@ public class ModificationCacheBean {
         this.clearCache();
         log.trace("cleared cache");
         final VoidResponse resp = new VoidResponse();
-        Connector con = null;
+        AccumuloClient client = null;
         BatchScanner s = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             log.trace("getting mutable list from table " + this.modificationConfiguration.getTableName());
             log.trace("modificationConfiguration.getPoolName() = " + modificationConfiguration.getPoolName());
-            con = connectionFactory.getConnection(modificationConfiguration.getPoolName(), Priority.ADMIN, trackingMap);
+            client = connectionFactory.getClient(modificationConfiguration.getPoolName(), Priority.ADMIN, trackingMap);
             log.trace("got connection");
-            s = ScannerHelper.createBatchScanner(con, this.modificationConfiguration.getTableName(),
-                            Collections.singleton(con.securityOperations().getUserAuthorizations(con.whoami())), 8);
+            s = ScannerHelper.createBatchScanner(client, this.modificationConfiguration.getTableName(),
+                            Collections.singleton(client.securityOperations().getUserAuthorizations(client.whoami())), 8);
             s.setRanges(Collections.singleton(new Range()));
             s.fetchColumnFamily(MODIFICATION_COLUMN);
             for (Entry<Key,Value> e : s) {
@@ -136,7 +136,7 @@ public class ModificationCacheBean {
             if (null != s)
                 s.close();
             try {
-                connectionFactory.returnConnection(con);
+                connectionFactory.returnClient(client);
             } catch (Exception e) {
                 log.error("Error returning connection to pool", e);
             }
@@ -153,6 +153,7 @@ public class ModificationCacheBean {
      * Check to see if field for specified datatype is mutable
      *
      * @param datatype
+     *            a datatype
      * @param field
      *            name of field
      * @return true if field is mutable for the given datatype

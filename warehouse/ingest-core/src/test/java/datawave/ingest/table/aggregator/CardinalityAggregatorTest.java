@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -33,7 +34,7 @@ public class CardinalityAggregatorTest {
     public void testEmptyCardinality() throws IOException {
         agg.reset();
         assertTrue(agg.propogateKey());
-        Value result = agg.reduce(new Key("key"), Iterators.emptyIterator());
+        Value result = agg.reduce(new Key("key"), Collections.emptyIterator());
         assertFalse(agg.propogateKey());
         assertEquals(CardinalityAggregator.EMPTY_VALUE, result);
     }

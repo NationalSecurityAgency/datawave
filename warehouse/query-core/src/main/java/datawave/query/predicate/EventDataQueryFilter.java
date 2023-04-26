@@ -51,33 +51,6 @@ public interface EventDataQueryFilter extends PeekingPredicate<Map.Entry<Key,Str
     boolean keep(Key k);
     
     /**
-     * Define the start key given the from condition.
-     *
-     * @param from
-     *            a key
-     * @return the start key
-     */
-    Key getStartKey(Key from);
-    
-    /**
-     * Define the end key given the from condition.
-     *
-     * @param from
-     *            a key
-     * @return the stop key
-     */
-    Key getStopKey(Key from);
-    
-    /**
-     * Get the key range that covers the complete document specified by the input key range
-     *
-     * @param from
-     *            the input key range
-     * @return the key range that covers the complete document
-     */
-    Range getKeyRange(Map.Entry<Key,Document> from);
-    
-    /**
      * Clone the underlying EventDataQueryFilter
      * 
      * @return cloned EventDataQueryFilter

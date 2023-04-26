@@ -192,18 +192,6 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
     
     /**
-     * Define the end key given the from condition.
-     * 
-     * @param from
-     *            the from key
-     * @return the stop key
-     */
-    @Override
-    public Key getStopKey(Key from) {
-        return new Key(from.getRow().toString(), from.getColumnFamily().toString() + '\uffff');
-    }
-    
-    /**
      * Determine if a Key should be kept. If a Key is a part of the TLD it will always be kept as long as we have not exceeded the key count limit for that
      * field if limits are enabled. Otherwise all TLD Key's will be kept. For a non-TLD the Key will only be kept if it is a nonEvent field which will be used
      * for query evaluation (apply()==true)

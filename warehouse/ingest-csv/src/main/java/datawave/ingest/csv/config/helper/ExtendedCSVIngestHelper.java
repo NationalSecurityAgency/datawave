@@ -27,7 +27,7 @@ public class ExtendedCSVIngestHelper extends CSVIngestHelper {
     
     protected ExtendedCSVHelper helper = null;
     private EventFieldNormalizerHelper eventFieldNormalizerHelper = null;
-    private SimpleGroupFieldNameParser groupNormalizer = new SimpleGroupFieldNameParser(true);
+    private SimpleGroupFieldNameParser groupNormalizer = new SimpleGroupFieldNameParser();
     
     @Override
     public void setup(Configuration config) {

@@ -1,5 +1,6 @@
 package datawave.query;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.ingest.mapreduce.handler.facet.FacetHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.table.config.FacetTableConfigHelper;
@@ -8,16 +9,15 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.util.TableName;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -47,13 +47,13 @@ public final class QueryTestTableHelper {
     
     private static final BatchWriterConfig bwCfg = new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1000L).setMaxWriteThreads(1);
     
-    public final Connector connector;
+    public final AccumuloClient client;
     private final Logger log; // passed in for context when debugging
     
-    public QueryTestTableHelper(Connector connector, Logger log) throws AccumuloSecurityException, AccumuloException, TableExistsException,
+    public QueryTestTableHelper(AccumuloClient client, Logger log) throws AccumuloSecurityException, AccumuloException, TableExistsException,
                     TableNotFoundException {
         // create mock instance and connector
-        this.connector = connector;
+        this.client = client;
         this.log = log;
         createTables();
     }
@@ -67,7 +67,7 @@ public final class QueryTestTableHelper {
                     throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException {
         // create mock instance and connector
         InMemoryInstance i = new InMemoryInstance(instanceName);
-        this.connector = RebuildingScannerTestHelper.getConnector(i, "root", new PasswordToken(""), teardown, interrupt);
+        this.client = new InMemoryAccumuloClient("root", i);
         this.log = log;
         
         createTables();
@@ -96,8 +96,8 @@ public final class QueryTestTableHelper {
     }
     
     public void dumpTable(String table, Authorizations auths) throws TableNotFoundException {
-        TableOperations tops = connector.tableOperations();
-        Scanner scanner = connector.createScanner(table, auths);
+        TableOperations tops = client.tableOperations();
+        Scanner scanner = client.createScanner(table, auths);
         Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
         System.out.println("*************** " + table + " ********************");
         while (iterator.hasNext()) {
@@ -108,7 +108,7 @@ public final class QueryTestTableHelper {
     }
     
     private void createTables() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
-        TableOperations tops = connector.tableOperations();
+        TableOperations tops = client.tableOperations();
         deleteAndCreateTable(tops, METADATA_TABLE_NAME);
         deleteAndCreateTable(tops, TableName.DATE_INDEX);
         deleteAndCreateTable(tops, TableName.LOAD_DATES);
@@ -166,16 +166,16 @@ public final class QueryTestTableHelper {
         Configuration tableConfig = new Configuration();
         tableConfig.set(keyForTableName, tableName);
         helper.setup(tableName, tableConfig, log);
-        helper.configure(connector.tableOperations());
-        writer.addWriter(new Text(tableName), connector.createBatchWriter(tableName, bwCfg));
+        helper.configure(client.tableOperations());
+        writer.addWriter(new Text(tableName), client.createBatchWriter(tableName, bwCfg));
     }
     
     public void overrideUidAggregator() throws AccumuloSecurityException, AccumuloException {
         for (IteratorUtil.IteratorScope scope : IteratorUtil.IteratorScope.values()) {
             String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scope.name(), "UIDAggregator");
             // Override the UidAggregator with a mock aggregator to lower the UID.List MAX uid limit.
-            connector.tableOperations().setProperty(TableName.SHARD_INDEX, stem + ".opt.*", "datawave.query.util.InMemoryGlobalIndexUidAggregator");
-            connector.tableOperations().setProperty(TableName.SHARD_RINDEX, stem + ".opt.*", "datawave.query.util.InMemoryGlobalIndexUidAggregator");
+            client.tableOperations().setProperty(TableName.SHARD_INDEX, stem + ".opt.*", "datawave.query.util.InMemoryGlobalIndexUidAggregator");
+            client.tableOperations().setProperty(TableName.SHARD_RINDEX, stem + ".opt.*", "datawave.query.util.InMemoryGlobalIndexUidAggregator");
         }
     }
     

@@ -31,7 +31,8 @@ import java.util.Collection;
  * A {@link DatawaveUserService} that retrieves {@link DatawaveUser} objects from a SQL database. This login module expects the supplied {@link DataSource} to
  * contain two tables: users (name is customizable by setting the dw.databaseUsersService.usersTableName property) and roleToAuthMapping (name is customizable
  * by setting the dw.databaseUsersService.mappingTableName property). The expected structure of the users table is:
- * <table border="1" summary="">
+ * <table border="1">
+ * <caption></caption>
  * <tr>
  * <th>Column Name</th>
  * <th>Column Type</th>
@@ -66,7 +67,8 @@ import java.util.Collection;
  * <p>
  * The roleToAuthMapping table contains the mappings of roles seen in the roles column of the users table into Accumulo auths that appear in the auths column of
  * the users table. The expected structure of this table is:
- * <table border="1" summary="">
+ * <table border="1">
+ * <caption></caption>
  * <tr>
  * <th>Column Name</th>
  * <th>Column Type</th>

@@ -8,7 +8,7 @@ import datawave.mr.bulk.BulkInputFormat;
 import datawave.mr.bulk.MultiRfileInputformat;
 import datawave.query.Constants;
 import datawave.util.StringUtils;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.data.Key;
@@ -124,9 +124,11 @@ public class StatsJob extends IngestJob {
         BulkInputFormat.addIterator(conf, cfg);
         
         // get authorizations
-        Connector conn = cbHelper.getConnector();
-        SecurityOperations secOps = conn.securityOperations();
-        Authorizations auths = secOps.getUserAuthorizations(cbHelper.getUsername());
+        Authorizations auths;
+        try (AccumuloClient client = cbHelper.newClient()) {
+            SecurityOperations secOps = client.securityOperations();
+            auths = secOps.getUserAuthorizations(cbHelper.getUsername());
+        }
         
         BulkInputFormat.setInputInfo(job, cbHelper.getUsername(), cbHelper.getPassword(), this.inputTableName, auths);
         final Set<Range> scanShards = calculateRanges(conf);

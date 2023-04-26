@@ -9,16 +9,12 @@ import datawave.util.StringUtils;
 import datawave.metrics.config.MetricsConfig;
 
 import datawave.util.time.DateHelper;
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -32,56 +28,67 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
     
     private static final Logger log = Logger.getLogger(ProcessingErrorsReducer.class);
     
+    protected AccumuloClient client;
+    
     protected BatchWriter writer;
+    
+    protected AccumuloClient warehouseClient;
     
     protected BatchWriter warehouseWriter;
     
     protected void cleanup(Reducer.Context context) {
-        if (writer != null)
+        if (writer != null) {
             try {
                 writer.close();
             } catch (MutationsRejectedException e) {
                 log.error("Problem adding mutations: {}", e);
             }
-        if (warehouseWriter != null)
+        }
+        if (client != null) {
+            client.close();
+        }
+        if (warehouseWriter != null) {
             try {
                 warehouseWriter.close();
             } catch (MutationsRejectedException e) {
                 log.error("Problem adding mutations: {}", e);
             }
+        }
+        if (warehouseClient != null) {
+            warehouseClient.close();
+        }
     }
     
     protected void setup(Reducer<Text,Text,Text,Mutation>.Context context) {
         Configuration conf = context.getConfiguration();
         
+        String instance = conf.get(MetricsConfig.INSTANCE);
         String zooKeepers = conf.get(MetricsConfig.ZOOKEEPERS);
-        ClientConfiguration zkConfig = ClientConfiguration.loadDefault().withInstance(conf.get(MetricsConfig.INSTANCE)).withZkHosts(zooKeepers);
-        ZooKeeperInstance instance = new ZooKeeperInstance(zkConfig);
+        String user = conf.get(MetricsConfig.USER);
+        String pass = conf.get(MetricsConfig.PASS);
+        client = Accumulo.newClient().to(instance, zooKeepers).as(user, pass).build();
         try {
-            Connector connector = instance.getConnector(conf.get(MetricsConfig.USER), new PasswordToken(conf.get(MetricsConfig.PASS).getBytes()));
-            
-            writer = connector.createBatchWriter(conf.get(MetricsConfig.METRICS_TABLE, MetricsConfig.DEFAULT_METRICS_TABLE), new BatchWriterConfig()
+            writer = client.createBatchWriter(conf.get(MetricsConfig.METRICS_TABLE, MetricsConfig.DEFAULT_METRICS_TABLE), new BatchWriterConfig()
                             .setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(128L * 1024L).setMaxWriteThreads(11));
-        } catch (AccumuloException | TableNotFoundException | AccumuloSecurityException e) {
+        } catch (TableNotFoundException e) {
             writer = null;
         }
         
+        instance = conf.get(MetricsConfig.WAREHOUSE_INSTANCE);
+        zooKeepers = conf.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS);
+        user = conf.get(MetricsConfig.WAREHOUSE_USERNAME);
+        pass = conf.get(MetricsConfig.WAREHOUSE_PASSWORD);
+        warehouseClient = Accumulo.newClient().to(instance, zooKeepers).as(user, pass).build();
         try {
             
-            zooKeepers = conf.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS);
-            zkConfig = ClientConfiguration.loadDefault().withInstance(conf.get(MetricsConfig.WAREHOUSE_INSTANCE)).withZkHosts(zooKeepers);
-            instance = new ZooKeeperInstance(zkConfig);
-            Connector connector = instance.getConnector(conf.get(MetricsConfig.WAREHOUSE_USERNAME), new PasswordToken(conf
-                            .get(MetricsConfig.WAREHOUSE_PASSWORD).getBytes()));
-            
-            warehouseWriter = connector.createBatchWriter(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE), new BatchWriterConfig()
+            warehouseWriter = client.createBatchWriter(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE), new BatchWriterConfig()
                             .setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(128L * 1024L * 1024L).setMaxWriteThreads(11));
-        } catch (AccumuloException | TableNotFoundException | AccumuloSecurityException e) {
+        } catch (TableNotFoundException e) {
             warehouseWriter = null;
         }
     }
     
-    public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+    public void reduce(Text key, Iterable<Text> values, Context context) throws IOException {
         
         String[] keySplit = StringUtils.split(key.toString(), "\0");
         log.info("key is " + key);
@@ -109,7 +116,7 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
             log.error("Problem adding mutations: {}", e);
         }
         
-        for (Text value : values) {
+        for (Text ignored : values) {
             count++;
         }
         
@@ -120,9 +127,9 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
         
         String jobTime = StringUtils.split(jobNameSplit[1], '.')[0];
         
-        Date date = null;
+        Date date;
         
-        String timeString = "";
+        String timeString;
         try {
             date = DateHelper.parseTimeExactToSeconds(jobTime);
             timeString = Long.toString(date.getTime());
