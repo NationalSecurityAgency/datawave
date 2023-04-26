@@ -823,7 +823,7 @@ public class JexlASTHelper {
     /**
      * Iterate through provided node and its children, then return a list of nodes matching the provided class. The provided class must extend JexlNode.
      * 
-     * @see org.apache.commons.jexl2.parser.JexlNode;
+     * @see org.apache.commons.jexl2.parser.JexlNode
      *
      * @param node
      * @param typeKey
@@ -840,7 +840,7 @@ public class JexlASTHelper {
     /**
      * Check if the provided node is an instance of the provided class. If yes, then add the node to the provided list. The provided class must extend JexlNode.
      * 
-     * @see org.apache.commons.jexl2.parser.JexlNode;
+     * @see org.apache.commons.jexl2.parser.JexlNode
      *
      * @param node
      * @param nodes
@@ -1325,7 +1325,7 @@ public class JexlASTHelper {
     /**
      * Iterate through provided node's ancestors and return true if any are an instance of the provided class. The provided class must extend JexlNode.
      * 
-     * @see org.apache.commons.jexl2.parser.JexlNode;
+     * @see org.apache.commons.jexl2.parser.JexlNode
      *
      * @param node
      * @param typeKey
@@ -1349,7 +1349,7 @@ public class JexlASTHelper {
      * Iterate through all descendants of the provided node and return true if any are an instance of the provided class. The provided class must extend
      * JexlNode.
      * 
-     * @see org.apache.commons.jexl2.parser.JexlNode;
+     * @see org.apache.commons.jexl2.parser.JexlNode
      *
      * @param node
      * @param typeKey
