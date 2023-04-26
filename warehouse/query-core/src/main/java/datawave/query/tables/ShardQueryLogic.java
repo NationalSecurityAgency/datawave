@@ -1030,7 +1030,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
      * @throws ExecutionException     for execution exceptions
      */
     protected void loadQueryModel(MetadataHelper helper, ShardQueryConfiguration config) throws InstantiationException, IllegalAccessException,
-            TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+            TableNotFoundException, ExecutionException {
         TraceStopwatch modelWatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Loading the query model");
 
         int cacheKeyCode = new HashCodeBuilder().append(config.getDatatypeFilter()).append(config.getModelName()).hashCode();

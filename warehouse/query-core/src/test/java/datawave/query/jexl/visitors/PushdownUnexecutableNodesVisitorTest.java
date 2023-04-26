@@ -210,13 +210,13 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
     }
 
     // for parameterized set
-    private String baseQuery;
-    private ExecutableDeterminationVisitor.STATE expectedPreGlobalState;
-    private ExecutableDeterminationVisitor.STATE expectedPostGlobalState;
-    private String expectedGlobalIndexPushdown;
-    private ExecutableDeterminationVisitor.STATE expectedPreFieldState;
-    private ExecutableDeterminationVisitor.STATE expectedPostFieldState;
-    private String expectedFieldIndexPushdown;
+    private final String baseQuery;
+    private final ExecutableDeterminationVisitor.STATE expectedPreGlobalState;
+    private final ExecutableDeterminationVisitor.STATE expectedPostGlobalState;
+    private final String expectedGlobalIndexPushdown;
+    private final ExecutableDeterminationVisitor.STATE expectedPreFieldState;
+    private final ExecutableDeterminationVisitor.STATE expectedPostFieldState;
+    private final String expectedFieldIndexPushdown;
 
     // internal
     private HashSet<String> indexedFields;
@@ -243,7 +243,7 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
 
         EasyMock.expect(config.getDatatypeFilter()).andReturn(null).anyTimes();
 
-        indexedFields = new HashSet();
+        indexedFields = new HashSet<>();
         indexedFields.add("INDEX_ONLY_FIELD");
         indexedFields.add("INDEXED_FIELD");
         indexedFields.add("TF_FIELD");

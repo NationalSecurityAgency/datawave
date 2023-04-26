@@ -1,13 +1,11 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.collect.Sets;
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -15,7 +13,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 public class AllTermsIndexedVisitorTest {
 
@@ -24,7 +21,7 @@ public class AllTermsIndexedVisitorTest {
     private static ShardQueryConfiguration config;
 
     @BeforeClass
-    public static void beforeClass() throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public static void beforeClass() {
         helper = new MockMetadataHelper();
         helper.setIndexedFields(indexedFields);
         config = new ShardQueryConfiguration();

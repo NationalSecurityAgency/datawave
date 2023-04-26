@@ -11,7 +11,6 @@ import datawave.data.type.NumberType;
 import datawave.data.type.StringType;
 import datawave.data.type.TrimLeadingZerosType;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
@@ -20,7 +19,6 @@ import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -31,7 +29,6 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class ExpandMultiNormalizedTermsTest {
 
@@ -52,7 +49,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testSimpleCase() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testSimpleCase() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
 
@@ -68,7 +65,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testNumber() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testNumber() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("MULTI", Sets.newHashSet(new LcNoDiacriticsType(), new NumberType()));
         dataTypes.put("NUM", new NumberType());
@@ -89,7 +86,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testNoOp() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testNoOp() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NOOP", new NoOpType());
 
@@ -105,7 +102,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testMixedCase() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testMixedCase() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("NAME", Sets.newHashSet(new LcNoDiacriticsType(), new NoOpType()));
 
@@ -129,7 +126,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testMixedCaseWithNumber() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testMixedCaseWithNumber() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NUM", new NumberType());
         dataTypes.putAll("NAME", Sets.newHashSet(new LcNoDiacriticsType(), new NoOpType()));
@@ -146,7 +143,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testIpAddressCase() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testIpAddressCase() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
         dataTypes.putAll("IP", Sets.newHashSet(new LcNoDiacriticsType(), new IpAddressType()));
@@ -163,7 +160,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testNullTermCase() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testNullTermCase() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
 
@@ -179,7 +176,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testNormalizedBoundsCase() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testNormalizedBoundsCase() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new NumberType()));
 
@@ -195,7 +192,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testBoundedNormalizedBoundsCase() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testBoundedNormalizedBoundsCase() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new NumberType()));
 
@@ -211,7 +208,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testMultiNormalizedBounds() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testMultiNormalizedBounds() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new LcNoDiacriticsType()));
 
@@ -227,7 +224,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testBoundedMultiNormalizedBounds() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testBoundedMultiNormalizedBounds() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new LcNoDiacriticsType()));
 
@@ -243,7 +240,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testBoundedMultiNormalizedBounds2() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testBoundedMultiNormalizedBounds2() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new TrimLeadingZerosType(), new StringType()));
 
@@ -259,7 +256,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testBoundedMultiNormalizedBounds3() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testBoundedMultiNormalizedBounds3() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new LcNoDiacriticsType(), new TrimLeadingZerosType()));
 
@@ -275,7 +272,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testUnNormalizedBoundsCase() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testUnNormalizedBoundsCase() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NEW", new LcNoDiacriticsType());
 
@@ -288,7 +285,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testBoundedUnNormalizedBoundsCase() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testBoundedUnNormalizedBoundsCase() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NEW", new LcNoDiacriticsType());
 
@@ -325,7 +322,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testMultiNormalizedFieldOpField() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testMultiNormalizedFieldOpField() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
 
@@ -348,7 +345,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testNormalizedFunctions() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testNormalizedFunctions() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
 
@@ -364,7 +361,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testNormalizedFunctionsWithField() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testNormalizedFunctionsWithField() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
 
@@ -379,7 +376,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testWeirdlyNormalizedFunction() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testWeirdlyNormalizedFunction() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NUM", new NumberType());
 
@@ -394,7 +391,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testFilterFunctionNormalization() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testFilterFunctionNormalization() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("IP", new IpAddressType());
 
@@ -410,7 +407,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testFilterFunctionNormalizationWithMultipleNormalizers() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testFilterFunctionNormalizationWithMultipleNormalizers() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("IP", Sets.newHashSet(new IpAddressType(), new LcNoDiacriticsType()));
 
@@ -426,7 +423,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testFilterFunctionNormalizationWithNoPattern() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testFilterFunctionNormalizationWithNoPattern() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("IP", Sets.newHashSet(new IpAddressType(), new LcNoDiacriticsType()));
 
@@ -499,7 +496,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testDelayedPredicates() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testDelayedPredicates() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
 
@@ -526,7 +523,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testFailedRegexNormalizersAndNRNodes() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testFailedRegexNormalizersAndNRNodes() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType()));
 
@@ -547,7 +544,7 @@ public class ExpandMultiNormalizedTermsTest {
     }
 
     @Test
-    public void testNENodes() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testNENodes() throws ParseException {
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType()));
 

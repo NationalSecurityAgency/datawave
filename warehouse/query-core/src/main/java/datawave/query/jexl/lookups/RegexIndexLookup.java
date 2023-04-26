@@ -6,7 +6,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -121,7 +120,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                 } catch (IllegalArgumentException | JavaRegexParseException e) {
                     log.debug("Ignoring pattern that was not capable of being looked up in the index: " + pattern, e);
                     continue;
-                } catch (TableNotFoundException | MarkingFunctions.Exception e) {
+                } catch (TableNotFoundException e) {
                     log.error(e);
                     throw new DatawaveFatalQueryException(e);
                 } catch (ExecutionException e) {

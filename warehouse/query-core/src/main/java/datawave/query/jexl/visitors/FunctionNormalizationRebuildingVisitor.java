@@ -5,13 +5,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.MetadataHelper;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -28,7 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
@@ -61,8 +58,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         this.datatypeFilter = datatypeFilter;
     }
 
-    public static JexlNode normalize(ASTFunctionNode function, Multimap<String, Type<?>> allNormalizers, MetadataHelper helper, Set<String> datatypeFilter)
-            throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public static JexlNode normalize(ASTFunctionNode function, Multimap<String, Type<?>> allNormalizers, MetadataHelper helper, Set<String> datatypeFilter) {
         Preconditions.checkNotNull(function);
         Preconditions.checkNotNull(allNormalizers);
         Preconditions.checkNotNull(helper);
@@ -168,7 +164,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
      * @return the list of normalizer lists
      */
     private static List<List<Type<?>>> getNormalizerListsForArgs(ASTFunctionNode function, Multimap<String, Type<?>> allNormalizers,
-                                                                 JexlArgumentDescriptor descriptor, MetadataHelper helper, Set<String> datatypeFilter) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+                                                                 JexlArgumentDescriptor descriptor, MetadataHelper helper, Set<String> datatypeFilter) {
         List<List<Type<?>>> lists = new ArrayList<>();
 
         lists.add(new ArrayList<>(Arrays.asList(new Type<?>[function.jjtGetNumChildren()])));

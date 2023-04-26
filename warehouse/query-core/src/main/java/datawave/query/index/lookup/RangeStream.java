@@ -6,7 +6,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
@@ -86,7 +85,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -437,9 +435,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not indexed.");
                     return ScannerStream.unindexed(node);
                 }
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
-                log.error(e);
-                throw new RuntimeException(e);
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                log.error(qe);
+                throw new DatawaveFatalQueryException(qe);
             }
             log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not an observed field.");
             return ScannerStream.unknownField(node);
@@ -861,7 +860,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         return this;
     }
 
-    protected Set<String> getAllFieldsFromHelper() throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    protected Set<String> getAllFieldsFromHelper() throws TableNotFoundException {
         if (this.helperAllFieldsCache.isEmpty()) {
             this.helperAllFieldsCache = this.metadataHelper.getAllFields(this.config.getDatatypeFilter());
         }

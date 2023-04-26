@@ -10,13 +10,11 @@ import datawave.data.type.BaseType;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.GeometryType;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
@@ -31,7 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class ExpandCompositeTermsTest {
@@ -1214,11 +1211,11 @@ public class ExpandCompositeTermsTest {
         runTestQuery(query, expected);
     }
 
-    void runTestQuery(String query, String expected) throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    void runTestQuery(String query, String expected) throws ParseException {
         runTestQuery(query, expected, INDEX_FIELDS, conf);
     }
 
-    void runTestQuery(String query, String expected, Set<String> indexedFields, ShardQueryConfiguration conf) throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    void runTestQuery(String query, String expected, Set<String> indexedFields, ShardQueryConfiguration conf) throws ParseException {
         ASTJexlScript original = JexlASTHelper.parseJexlQuery(query);
 
         MockMetadataHelper helper = new MockMetadataHelper();

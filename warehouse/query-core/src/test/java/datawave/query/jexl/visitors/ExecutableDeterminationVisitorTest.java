@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -26,7 +25,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     private ShardQueryConfiguration config;
@@ -684,7 +682,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     }
 
     @Test
-    public void testEvaluationOnlyReferenceNode() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testEvaluationOnlyReferenceNode() throws ParseException, TableNotFoundException {
         EasyMock.expect(helper.getNonEventFields(null)).andReturn(Collections.emptySet());
 
         LinkedList<String> output = new LinkedList<>();

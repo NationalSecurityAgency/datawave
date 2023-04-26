@@ -34,7 +34,7 @@ public class GeoWavePruningVisitorTest {
     }
 
     @Test
-    public void testNonIntersectingTermIsPruned() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testNonIntersectingTermIsPruned() throws ParseException {
         String function = "geowave:intersects(GEO_FIELD, 'POLYGON((10 10, 20 10, 20 20, 10 20, 10 10))')";
         // Get the expanded geowave terms.
         String indexQuery = convertFunctionToIndexQuery(function, new ShardQueryConfiguration(), metadataHelper);
@@ -50,7 +50,7 @@ public class GeoWavePruningVisitorTest {
     }
 
     @Test
-    public void testPrunedWrappedTermDoesNotLeaveEmptyWrappedTerm() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testPrunedWrappedTermDoesNotLeaveEmptyWrappedTerm() throws ParseException {
         String function = "geowave:intersects(GEO_FIELD, 'POLYGON((10 10, 20 10, 20 20, 10 20, 10 10))')";
         // Get the expanded geowave terms.
         String indexQuery = convertFunctionToIndexQuery(function, new ShardQueryConfiguration(), metadataHelper);
@@ -66,7 +66,7 @@ public class GeoWavePruningVisitorTest {
     }
 
     @Test
-    public void testNonGeometryTermsNotPruned() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testNonGeometryTermsNotPruned() throws ParseException {
         String function = "geowave:intersects(LEGACY_GEO_FIELD, 'POLYGON((10 10, 20 10, 20 20, 10 20, 10 10))')";
         // Get the expanded geowave terms.
         String indexQuery = convertFunctionToIndexQuery(function, new ShardQueryConfiguration(), metadataHelper);
@@ -80,7 +80,7 @@ public class GeoWavePruningVisitorTest {
     }
 
     @Test
-    public void testIgnoreImproperlyFormattedTerms() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testIgnoreImproperlyFormattedTerms() throws ParseException {
         String function = "geowave:intersects(GEO_FIELD, 'POLYGON((10 10, 20 10, 20 20, 10 20, 10 10))')";
         // Get the expanded geowave terms.
         String indexQuery = convertFunctionToIndexQuery(function, new ShardQueryConfiguration(), metadataHelper);

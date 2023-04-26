@@ -6,9 +6,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
@@ -24,9 +22,6 @@ import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -57,7 +52,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -289,22 +283,7 @@ public class WhindexVisitor extends RebuildingVisitor {
         // first, find all leaf nodes
         // note: an 'and' node defining a range over a single term is considered a leaf node for our purposes
         List<JexlNode> nonLeafNodes = new ArrayList<>();
-        Multimap<String, JexlNode> leafNodes = null;
-        try {
-            leafNodes = getLeafNodes(node, nonLeafNodes);
-        } catch (TableNotFoundException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (InstantiationException | IllegalAccessException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (ExecutionException | MarkingFunctions.Exception e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
-        }
+        Multimap<String, JexlNode> leafNodes = getLeafNodes(node, nonLeafNodes);
 
         // if any of the non-leaf nodes is an OR with a marker node, distribute all of the sibling nodes into those OR nodes
         List<JexlNode> orNodesWithMarkers = nonLeafNodes.stream().filter(this::isFieldValueMatchOrNode).collect(Collectors.toList());
@@ -856,8 +835,7 @@ public class WhindexVisitor extends RebuildingVisitor {
      * @param otherNodes Non-leaf child nodes of the root node
      * @return A multimap of field name to leaf node
      */
-    private Multimap<String, JexlNode> getLeafNodes(JexlNode rootNode, Collection<JexlNode> otherNodes) throws TableNotFoundException, InstantiationException,
-            IllegalAccessException, ExecutionException, MarkingFunctions.Exception {
+    private Multimap<String, JexlNode> getLeafNodes(JexlNode rootNode, Collection<JexlNode> otherNodes) {
         Multimap<String, JexlNode> childrenLeafNodes = ArrayListMultimap.create();
 
         if (rootNode instanceof ASTAndNode) {

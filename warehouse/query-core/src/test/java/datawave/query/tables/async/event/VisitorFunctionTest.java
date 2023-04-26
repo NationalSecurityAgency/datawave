@@ -47,7 +47,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         helper = createMock(MetadataHelper.class);
     }
 
-    private void setupExpects() throws TableNotFoundException, IOException, URISyntaxException, ExecutionException, MarkingFunctions.Exception {
+    private void setupExpects() throws TableNotFoundException, IOException, URISyntaxException {
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("FIELD1");
         indexedFields.add("FIELD2");
@@ -110,7 +110,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
     }
 
     @Test
-    public void overTermThresholdTest() throws IOException, TableNotFoundException, URISyntaxException, ExecutionException, MarkingFunctions.Exception {
+    public void overTermThresholdTest() throws IOException, TableNotFoundException, URISyntaxException {
         setupExpects();
 
         config.setCleanupShardsAndDaysQueryHints(false);
@@ -155,7 +155,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
     }
 
     @Test(expected = DatawaveFatalQueryException.class)
-    public void overTermThresholdCantReduceTest() throws IOException, TableNotFoundException, URISyntaxException, ExecutionException, MarkingFunctions.Exception {
+    public void overTermThresholdCantReduceTest() throws IOException, TableNotFoundException, URISyntaxException {
         setupExpects();
 
         config.setCleanupShardsAndDaysQueryHints(false);
@@ -201,7 +201,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
     }
 
     @Test
-    public void overTermThresholdAfterFirstReductionOverrideSecondTest() throws IOException, TableNotFoundException, URISyntaxException, ExecutionException, MarkingFunctions.Exception {
+    public void overTermThresholdAfterFirstReductionOverrideSecondTest() throws IOException, TableNotFoundException, URISyntaxException {
         setupExpects();
 
         config.setCleanupShardsAndDaysQueryHints(false);
@@ -249,7 +249,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
     }
 
     @Test
-    public void rangeOverTermThresholdTest() throws IOException, TableNotFoundException, URISyntaxException, ExecutionException, MarkingFunctions.Exception {
+    public void rangeOverTermThresholdTest() throws IOException, TableNotFoundException, URISyntaxException {
         setupExpects();
 
         config.setCleanupShardsAndDaysQueryHints(false);

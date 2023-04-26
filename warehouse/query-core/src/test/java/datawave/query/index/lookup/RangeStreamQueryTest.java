@@ -9,7 +9,6 @@ import datawave.common.test.integration.IntegrationTest;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
-import datawave.marking.MarkingFunctions;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -21,7 +20,6 @@ import datawave.query.util.MockMetadataHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -37,7 +35,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.ANCHOR;
@@ -140,7 +137,7 @@ public class RangeStreamQueryTest {
     }
 
     @Before
-    public void setupTest() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void setupTest() throws ParseException {
         helper = new MockMetadataHelper();
         helper.setIndexedFields(Sets.newHashSet("FOO", "FOO2", "FOO3"));
 

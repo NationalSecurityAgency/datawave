@@ -3,7 +3,6 @@ package datawave.query.jexl.visitors;
 import com.google.common.collect.Sets;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.DateIndexHelper;
@@ -16,7 +15,6 @@ import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -26,7 +24,6 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.concurrent.ExecutionException;
 
 public class FunctionIndexQueryExpansionVisitorTest {
 
@@ -44,7 +41,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
 
     @Test
-    public void expandContentPhraseFunctionIntoSingleField() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentPhraseFunctionIntoSingleField() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO");
 
         // Configure the mock metadata helper.
@@ -64,7 +61,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
 
     @Test
-    public void expandContentPhraseFunctionIntoMultipleFields() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentPhraseFunctionIntoMultipleFields() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
 
         // Configure the mock metadata helper.
@@ -84,7 +81,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
 
     @Test
-    public void expandContentPhraseFunctionWithRepeatedTermIntoSingleField() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentPhraseFunctionWithRepeatedTermIntoSingleField() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO");
 
         // Configure the mock metadata helper.
@@ -104,7 +101,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
 
     @Test
-    public void expandContentPhraseFunctionWithRepeatedTermIntoMultipleFields() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentPhraseFunctionWithRepeatedTermIntoMultipleFields() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
 
         // Configure the mock metadata helper.
@@ -124,7 +121,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
 
     @Test
-    public void expandContentFunctionWithRepeatedValues() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentFunctionWithRepeatedValues() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO");
 
         // Configure the mock metadata helper.
@@ -141,7 +138,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
 
     @Test
-    public void expandContentAdjacentFunctionIntoSingleField() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentAdjacentFunctionIntoSingleField() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
         Set<String> tfFields = Sets.newHashSet("FOO");
 
@@ -162,7 +159,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
 
     @Test
-    public void expandContentAdjacentFunctionIntoMultipleFields() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentAdjacentFunctionIntoMultipleFields() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
         Set<String> tfFields = Sets.newHashSet("FOO", "BAR");
 
@@ -183,7 +180,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
 
     @Test
-    public void expandContentWithinFunctionIntoSingleField() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentWithinFunctionIntoSingleField() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
         Set<String> tfFields = Sets.newHashSet("FOO");
 
@@ -204,7 +201,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
 
     @Test
-    public void expandContentWithinFunctionIntoMultipleFields() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentWithinFunctionIntoMultipleFields() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
         Set<String> tfFields = Sets.newHashSet("FOO", "BAR");
 
@@ -225,7 +222,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
 
     @Test
-    public void expandContentScoredPhraseFunctionIntoSingleField() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentScoredPhraseFunctionIntoSingleField() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
         Set<String> tfFields = Sets.newHashSet("FOO");
 
@@ -246,7 +243,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
 
     @Test
-    public void expandContentScoredPhraseFunctionIntoMultipleFields() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentScoredPhraseFunctionIntoMultipleFields() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
         Set<String> tfFields = Sets.newHashSet("FOO", "BAR");
 
@@ -264,7 +261,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
 
     // scored phrase does not support 'scoredPhrase(Iterable, ...)'
     @Test(expected = IllegalArgumentException.class)
-    public void expandContentScoredPhraseFunctionIntoMultipleFields_exception() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentScoredPhraseFunctionIntoMultipleFields_exception() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
         Set<String> tfFields = Sets.newHashSet("FOO", "BAR");
 
@@ -281,7 +278,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
 
     // no expansion function also applies to index query expansion
     @Test
-    public void expandContentPhraseFunctionIntoMultipleFieldsWithNoExpansion() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentPhraseFunctionIntoMultipleFieldsWithNoExpansion() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
         Set<String> tfFields = Sets.newHashSet("FOO", "BAR");
 
@@ -300,7 +297,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
 
     @Test
-    public void expandContentPhraseFunctionIntoSingleFieldWithNoExpansion() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void expandContentPhraseFunctionIntoSingleFieldWithNoExpansion() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
         Set<String> tfFields = Sets.newHashSet("FOO");
 

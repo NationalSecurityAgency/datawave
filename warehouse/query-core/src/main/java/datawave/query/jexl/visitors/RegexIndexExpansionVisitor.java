@@ -3,7 +3,6 @@ package datawave.query.jexl.visitors;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -74,13 +73,13 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected RegexIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Map<String, IndexLookup> lookupMap)
-            throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+            throws TableNotFoundException {
         this(config, scannerFactory, helper, lookupMap, "RegexIndexExpansion");
     }
 
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected RegexIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                                         Map<String, IndexLookup> lookupMap, String threadName) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+                                         Map<String, IndexLookup> lookupMap, String threadName) throws TableNotFoundException {
         super(config, scannerFactory, helper, lookupMap, threadName);
 
         this.expandUnfieldedNegations = config.isExpandUnfieldedNegations();
@@ -111,7 +110,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      * @throws TableNotFoundException if we fail to retrieve fields from the metadata helper
      */
     public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                                                     Map<String, IndexLookup> lookupMap, T script) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+                                                     Map<String, IndexLookup> lookupMap, T script) throws TableNotFoundException {
         RegexIndexExpansionVisitor visitor = new RegexIndexExpansionVisitor(config, scannerFactory, helper, lookupMap);
         return ensureTreeNotEmpty(visitor.expand(script));
     }
@@ -136,7 +135,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      * @throws TableNotFoundException if we fail to retrieve fields from the metadata helper
      */
     public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
-            throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+            throws TableNotFoundException {
         return expandRegex(config, scannerFactory, helper, null, script);
     }
 
@@ -217,7 +216,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
                 return ASTDelayedPredicate.create(node); // wrap in a delayed predicate to avoid using in RangeStream
             }
         } catch (TableNotFoundException | JavaRegexAnalyzer.JavaRegexParseException e) {
-            throw new RuntimeException(e);
+            throw new DatawaveFatalQueryException(e);
         }
 
 

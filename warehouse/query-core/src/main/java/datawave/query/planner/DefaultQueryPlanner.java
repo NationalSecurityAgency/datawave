@@ -13,7 +13,6 @@ import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
-import datawave.marking.MarkingFunctions;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
@@ -960,7 +959,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 config.setQueryTree(timedAddDelayedPredicates(timers, "Add Delayed Predicates", config.getQueryTree(), config, metadataHelper, indexedFields,
                         indexOnlyFields, nonEventFields, debugOutput));
 
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+            } catch (TableNotFoundException e) {
                 stopwatch.stop();
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
@@ -1329,7 +1328,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             return visitorManager.timedVisit(timers, "Expand ANYFIELD Regex Nodes", () -> {
                 try {
                     return UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
-                } catch (InstantiationException | IllegalAccessException | TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+                } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
                     //  rethrow as a datawave query exception because method contracts
                     throw new DatawaveQueryException(e);
                 }
@@ -1518,7 +1517,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return visitorManager.timedVisit(timers, stage, () -> {
             try {
                 return RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, indexLookupMap, script);
-            } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+            } catch (TableNotFoundException e) {
                 throw new DatawaveQueryException("Failed to Expand Ranges", e);
             }
         });
@@ -1570,7 +1569,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected ASTJexlScript timedRemoveDelayedPredicates(QueryStopwatch timers, String stage, ASTJexlScript script, ShardQueryConfiguration config,
                                                          MetadataHelper metadataHelper, Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields,
                                                          Map<String, IndexLookup> indexLookupMap, ScannerFactory scannerFactory, MetadataHelper helper, List<String> debugOutput)
-            throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+            throws TableNotFoundException {
 
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
 
@@ -1663,7 +1662,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * @throws AccumuloException         for issues with accumulo
      * @throws AccumuloSecurityException for accumulo authentication issues
      * @throws TableNotFoundException    if the table is not found
-     * @throws ExecutionException        for execuition errors
      * @throws InstantiationException    for issues with instantiation
      * @throws IllegalAccessException    for issues with access
      */

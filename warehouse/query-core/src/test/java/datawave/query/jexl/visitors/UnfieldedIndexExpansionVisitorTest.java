@@ -178,7 +178,7 @@ public class UnfieldedIndexExpansionVisitorTest {
         return config;
     }
 
-    private MyMockMetadataHelper createMetadataHelper() throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    private MyMockMetadataHelper createMetadataHelper() {
         MyMockMetadataHelper metadataHelper = new MyMockMetadataHelper();
         metadataHelper.setIndexedFields(indexedFields);
         metadataHelper.setReverseIndexFields(reverseFields);

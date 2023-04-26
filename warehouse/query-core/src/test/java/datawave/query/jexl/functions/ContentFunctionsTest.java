@@ -4,7 +4,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 import datawave.ingest.protobuf.TermWeightPosition;
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.JexlASTHelper;
@@ -14,7 +13,6 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.Expression;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
@@ -41,7 +39,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.fail;
 
@@ -1454,7 +1451,7 @@ public class ContentFunctionsTest {
     }
 
     @Test
-    public void testJexlFunctionArgumentDescriptor() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testJexlFunctionArgumentDescriptor() throws ParseException {
         String query = "content:within('BODY', 5, termOffsetMap, 'hello', 'world')";
         String expected = "(BODY == 'hello' && BODY == 'world')";
 
@@ -1462,7 +1459,7 @@ public class ContentFunctionsTest {
     }
 
     @Test
-    public void testJexlFunctionArgumentDescriptor2() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testJexlFunctionArgumentDescriptor2() throws ParseException {
         String query = "content:within(5, termOffsetMap, 'hello', 'world')";
         String expected = "((META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world'))";
 
@@ -1470,7 +1467,7 @@ public class ContentFunctionsTest {
     }
 
     @Test
-    public void testJexlFunctionArgumentDescriptor3() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testJexlFunctionArgumentDescriptor3() throws ParseException {
         String query = "content:adjacent('BODY', termOffsetMap, 'hello', 'world')";
         String expected = "(BODY == 'hello' and BODY == 'world')";
 
@@ -1478,7 +1475,7 @@ public class ContentFunctionsTest {
     }
 
     @Test
-    public void testJexlFunctionArgumentDescriptor4() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testJexlFunctionArgumentDescriptor4() throws ParseException {
         String query = "content:adjacent(termOffsetMap, 'hello', 'world')";
         String expected = "((META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world'))";
 
@@ -1486,7 +1483,7 @@ public class ContentFunctionsTest {
     }
 
     @Test
-    public void testJexlFunctionArgumentDescriptor5() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testJexlFunctionArgumentDescriptor5() throws ParseException {
         String query = "content:" + phraseFunction + "('BODY', termOffsetMap, 'hello', 'world')";
         String expected = "(BODY == 'hello' and BODY == 'world')";
 
@@ -1494,7 +1491,7 @@ public class ContentFunctionsTest {
     }
 
     @Test
-    public void testJexlFunctionArgumentDescriptor6() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testJexlFunctionArgumentDescriptor6() throws ParseException {
         String query = "content:" + phraseFunction + "(termOffsetMap, 'hello', 'world')";
         String expected = "((META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world'))";
 
@@ -1502,37 +1499,37 @@ public class ContentFunctionsTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testJexlFunctionArgumentDescriptor7() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testJexlFunctionArgumentDescriptor7() throws ParseException {
         String query = "content:" + phraseFunction + "('termOffsetMap', 'hello', 'world')";
         testJexlFunctionArgumentDescriptors(query, "");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testJexlFunctionArgumentDescriptor8() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testJexlFunctionArgumentDescriptor8() throws ParseException {
         String query = "content:within(3, 'hello', 'world')";
         testJexlFunctionArgumentDescriptors(query, "");
     }
 
     @Test
-    public void testJexlFunctionArgumentDescriptor9() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testJexlFunctionArgumentDescriptor9() throws ParseException {
         String query = "content:" + phraseFunction + "(termOffsetMap, 'hello', 'world')";
         String expected = "(BODY == 'hello' and BODY == 'world')";
         testJexlFunctionArgumentDescriptors(query, expected, Sets.newHashSet("BODY"));
     }
 
     @Test
-    public void testJexlFunctionArgumentDescriptor10() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testJexlFunctionArgumentDescriptor10() throws ParseException {
         String query = "content:" + scoredPhraseFunction + "(-1.1, termOffsetMap, 'hello', 'world')";
         String expected = "((META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world'))";
 
         testJexlFunctionArgumentDescriptors(query, expected);
     }
 
-    private void testJexlFunctionArgumentDescriptors(String query, String expected) throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    private void testJexlFunctionArgumentDescriptors(String query, String expected) throws ParseException {
         testJexlFunctionArgumentDescriptors(query, expected, null);
     }
 
-    private void testJexlFunctionArgumentDescriptors(String query, String expected, Set<String> contentFields) throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    private void testJexlFunctionArgumentDescriptors(String query, String expected, Set<String> contentFields) throws ParseException {
         MockMetadataHelper metadataHelper = new MockMetadataHelper();
         metadataHelper.addTermFrequencyFields(Arrays.asList("BODY", "META"));
         metadataHelper.setIndexedFields(Sets.newHashSet("BODY", "META"));

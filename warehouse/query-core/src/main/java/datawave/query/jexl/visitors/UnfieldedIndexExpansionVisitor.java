@@ -1,7 +1,6 @@
 package datawave.query.jexl.visitors;
 
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
@@ -35,7 +34,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Visits a Jexl tree, looks for unfielded terms, and replaces them with fielded terms from the index
@@ -48,7 +46,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
 
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected UnfieldedIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
-            throws TableNotFoundException, IllegalAccessException, InstantiationException, ExecutionException, MarkingFunctions.Exception {
+            throws TableNotFoundException, IllegalAccessException, InstantiationException {
         super(config, scannerFactory, helper, null, "FieldNameIndexExpansion");
 
         this.expansionFields = helper.getExpansionFields(config.getDatatypeFilter());
@@ -67,13 +65,13 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
      * @param helper         the metadata helper, not null
      * @param script         the Jexl script to expand, not null
      * @param <T>            the Jexl node type
-     * @return a rebuilt Jexl tree with it's unfielded terms expanded
+     * @return a rebuilt Jexl tree with its unfielded terms expanded
      * @throws IllegalAccessException if we fail to retrieve all data types from the metadata helper
      * @throws TableNotFoundException if we fail to retrieve fields from the metadata helper
      * @throws InstantiationException if we fail to retrieve all data types from the metadata helper
      */
     public static <T extends JexlNode> T expandUnfielded(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
-            throws IllegalAccessException, TableNotFoundException, InstantiationException, ExecutionException, MarkingFunctions.Exception {
+            throws IllegalAccessException, TableNotFoundException, InstantiationException {
         // if not expanding fields or values, then this is a noop
         if (config.isExpandFields() || config.isExpandValues()) {
             UnfieldedIndexExpansionVisitor visitor = new UnfieldedIndexExpansionVisitor(config, scannerFactory, helper);

@@ -7,7 +7,6 @@ import datawave.core.iterators.filter.GlobalIndexDataTypeFilter;
 import datawave.core.iterators.filter.GlobalIndexDateRangeFilter;
 import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -574,8 +573,7 @@ public class ShardIndexQueryTableStaticMethods {
      * @throws java.util.concurrent.ExecutionException                         for problems with threading execution
      */
     public static RefactoredRangeDescription getRegexRange(String fieldName, String normalizedQueryTerm, boolean fullTableScanEnabled,
-                                                           MetadataHelper metadataHelper, ShardQueryConfiguration config) throws JavaRegexAnalyzer.JavaRegexParseException, TableNotFoundException,
-            ExecutionException, MarkingFunctions.Exception {
+                                                           MetadataHelper metadataHelper, ShardQueryConfiguration config) throws JavaRegexAnalyzer.JavaRegexParseException, TableNotFoundException, ExecutionException {
         if (log.isDebugEnabled()) {
             log.debug("getRegexRange: " + normalizedQueryTerm);
         }
@@ -677,7 +675,7 @@ public class ShardIndexQueryTableStaticMethods {
     }
 
     public static RefactoredRangeDescription getRegexRange(Map.Entry<String, String> entry, boolean fullTableScanEnabled, MetadataHelper metadataHelper,
-                                                           ShardQueryConfiguration config) throws JavaRegexAnalyzer.JavaRegexParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+                                                           ShardQueryConfiguration config) throws JavaRegexAnalyzer.JavaRegexParseException, TableNotFoundException, ExecutionException {
         return getRegexRange(entry.getKey(), entry.getValue(), fullTableScanEnabled, metadataHelper, config);
     }
 
@@ -690,10 +688,9 @@ public class ShardIndexQueryTableStaticMethods {
      * @param config         the query config
      * @return if the regex should run against reverse index
      * @throws TableNotFoundException if the table is not found
-     * @throws ExecutionException     for issues with execution
      */
     public static boolean shouldUseReverseIndex(JavaRegexAnalyzer analyzer, String fieldName, MetadataHelper metadataHelper, ShardQueryConfiguration config)
-            throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+            throws TableNotFoundException {
 
         String leadingLiteral = analyzer.getLeadingLiteral();
         String trailingLiteral = analyzer.getTrailingLiteral();
@@ -701,8 +698,8 @@ public class ShardIndexQueryTableStaticMethods {
         Set<String> datatypeFilter = config.getDatatypeFilter();
 
         // TODO Magical handling of a "null" fieldName
-        boolean isForwardIndexed = (null != fieldName) ? indexedInDatatype(fieldName, datatypeFilter, metadataHelper) : true;
-        boolean isReverseIndexed = (null != fieldName) ? reverseIndexedInDatatype(fieldName, datatypeFilter, metadataHelper) : true;
+        boolean isForwardIndexed = null == fieldName || indexedInDatatype(fieldName, datatypeFilter, metadataHelper);
+        boolean isReverseIndexed = null == fieldName || reverseIndexedInDatatype(fieldName, datatypeFilter, metadataHelper);
 
         // if not indexed at all, then error
         if (!isForwardIndexed && !isReverseIndexed) {
@@ -765,7 +762,7 @@ public class ShardIndexQueryTableStaticMethods {
         return range;
     }
 
-    public static boolean indexedInDatatype(String fieldName, Set<String> datatypeFilter, MetadataHelper helper) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public static boolean indexedInDatatype(String fieldName, Set<String> datatypeFilter, MetadataHelper helper) throws TableNotFoundException {
         return helper.isIndexed(fieldName, datatypeFilter);
     }
 

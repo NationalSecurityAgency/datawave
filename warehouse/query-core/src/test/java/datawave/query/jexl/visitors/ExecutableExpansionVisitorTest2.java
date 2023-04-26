@@ -1,19 +1,16 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.collect.Sets;
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -30,7 +27,7 @@ public class ExecutableExpansionVisitorTest2 {
     private MockMetadataHelper metadataHelper;
 
     @Before
-    public void beforeEach() throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void beforeEach() {
         config = new ShardQueryConfiguration();
         config.setIndexedFields(indexedFields);
 

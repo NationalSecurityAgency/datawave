@@ -1,17 +1,14 @@
 package datawave.query.jexl.visitors;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
-import java.util.concurrent.ExecutionException;
 
 import static datawave.query.jexl.JexlASTHelper.parseJexlQuery;
 
@@ -21,7 +18,7 @@ public class CaseSensitivityVisitorTest {
     private final ShardQueryConfiguration config = new ShardQueryConfiguration();
 
     @Before
-    public void beforeTest() throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void beforeTest() {
         helper.addTermFrequencyFields(Collections.singletonList("FOO"));
         helper.setIndexedFields(Collections.singleton("FOO"));
     }

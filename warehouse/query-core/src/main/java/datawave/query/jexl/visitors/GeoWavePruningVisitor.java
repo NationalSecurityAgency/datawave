@@ -6,8 +6,6 @@ import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.GeoType;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
@@ -16,9 +14,6 @@ import datawave.query.util.GeoUtils;
 import datawave.query.util.GeoWaveUtils;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFalseNode;
@@ -34,7 +29,6 @@ import org.locationtech.jts.geom.Geometry;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
@@ -75,24 +69,14 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
                 JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor((ASTFunctionNode) child);
                 if (desc instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
                     GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor geoWaveDesc = (GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) desc;
-                    try {
-                        if (isPrunable(geoWaveDesc)) {
-                            Geometry geom = GeometryNormalizer.parseGeometry(geoWaveDesc.getWkt());
-                            Set<String> fields = geoWaveDesc.fields(metadataHelper, null);
-                            if (fields != null) {
-                                for (String field : fields) {
-                                    fieldToGeometryMap.put(field, geom);
-                                }
+                    if (isPrunable(geoWaveDesc)) {
+                        Geometry geom = GeometryNormalizer.parseGeometry(geoWaveDesc.getWkt());
+                        Set<String> fields = geoWaveDesc.fields(metadataHelper, null);
+                        if (fields != null) {
+                            for (String field : fields) {
+                                fieldToGeometryMap.put(field, geom);
                             }
                         }
-                    } catch (TableNotFoundException e) {
-                        QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                        log.error(qe);
-                        throw new DatawaveFatalQueryException(qe);
-                    } catch (ExecutionException | MarkingFunctions.Exception e) {
-                        QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
-                        log.error(qe);
-                        throw new DatawaveFatalQueryException(qe);
                     }
                 }
             }
@@ -100,7 +84,7 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
         return super.visit(node, (fieldToGeometryMap.isEmpty() ? null : fieldToGeometryMap));
     }
 
-    private boolean isPrunable(GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor geoWaveDesc) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    private boolean isPrunable(GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor geoWaveDesc) {
         Set<String> fields = geoWaveDesc.fields(metadataHelper, null);
         // @formatter:off
         return fields.stream().anyMatch(

@@ -9,7 +9,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.discovery.FindLiteralsAndPatternsVisitor.QueryValues;
@@ -250,7 +249,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         // The begin date from the query may be down to the second, for doing lookups in the index we want to use the day because
         // the times in the index table have been truncated to the day.
         Date begin = DateUtils.truncate(config.getBeginDate(), Calendar.DAY_OF_MONTH);
-        // we don't need to bump up the end date any more because it's not apart of the range set on the scanner
+        // we don't need to bump up the end date any more because it's not a part of the range set on the scanner
         Date end = config.getEndDate();
 
         LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
@@ -389,7 +388,6 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                 forwardRanges.add(ShardIndexQueryTableStaticMethods.getBoundedRangeRange(range));
             } catch (IllegalRangeArgumentException e) {
                 log.error("Error using range [" + range + "]", e);
-                continue;
             }
         }
         Set<Range> reverseRanges = new HashSet<>();
@@ -403,7 +401,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                     familiesToSeek.add(new Text(field));
                 }
                 description = ShardIndexQueryTableStaticMethods.getRegexRange(field, pattern, false, metadataHelper, config);
-            } catch (JavaRegexParseException | MarkingFunctions.Exception e) {
+            } catch (JavaRegexParseException e) {
                 log.error("Error parsing pattern [" + pattern + "]", e);
                 continue;
             }

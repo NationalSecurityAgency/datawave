@@ -1,14 +1,12 @@
 package datawave.query.jexl.functions;
 
 import datawave.data.normalizer.AbstractGeometryNormalizer;
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -24,7 +22,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 public class GeoWaveFunctionsDescriptorTest {
@@ -104,8 +101,7 @@ public class GeoWaveFunctionsDescriptorTest {
         }
     }
 
-    public static String convertFunctionToIndexQuery(String queryStr, ShardQueryConfiguration config, MetadataHelper metadataHelper) throws ParseException,
-            TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public static String convertFunctionToIndexQuery(String queryStr, ShardQueryConfiguration config, MetadataHelper metadataHelper) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryStr);
         ASTFunctionNode func = find(script);
         JexlArgumentDescriptor desc = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(func);

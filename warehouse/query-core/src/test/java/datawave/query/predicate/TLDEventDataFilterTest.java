@@ -3,7 +3,6 @@ package datawave.query.predicate;
 import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -12,7 +11,6 @@ import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -28,7 +26,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
@@ -468,7 +465,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
     }
 
     @Test
-    public void functional_ContentExpansionTest() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void functional_ContentExpansionTest() throws ParseException {
         Set<String> contentFields = new HashSet<>();
         contentFields.add("FOO");
         contentFields.add("BAR");
@@ -487,7 +484,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
     }
 
     @Test
-    public void functional_IncludesExpansionTest() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void functional_IncludesExpansionTest() throws ParseException {
         Set<String> contentFields = new HashSet<>();
         contentFields.add("FOO");
         contentFields.add("BAR");
@@ -505,7 +502,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
     }
 
     @Test
-    public void functionalIncludesExpansionTest() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void functionalIncludesExpansionTest() throws ParseException {
         Set<String> contentFields = new HashSet<>();
         contentFields.add("FOO");
         contentFields.add("BAR");
@@ -523,7 +520,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
     }
 
     @Test
-    public void functionalOccurrenceExpansionTest() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void functionalOccurrenceExpansionTest() throws ParseException {
         Set<String> contentFields = new HashSet<>();
         contentFields.add("FOO");
         contentFields.add("BAR");

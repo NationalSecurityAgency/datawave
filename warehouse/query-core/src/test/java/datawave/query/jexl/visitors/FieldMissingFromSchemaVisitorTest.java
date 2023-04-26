@@ -3,10 +3,8 @@ package datawave.query.jexl.visitors;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import datawave.marking.MarkingFunctions;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
@@ -14,7 +12,6 @@ import org.junit.Test;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static datawave.query.Constants.ANY_FIELD;
 import static datawave.query.Constants.NO_FIELD;
@@ -36,7 +33,7 @@ public class FieldMissingFromSchemaVisitorTest {
      * Test query with two field:datatype pairs that both exist in the metadata helper.
      */
     @Test
-    public void testWithFieldsThatExist() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testWithFieldsThatExist() throws ParseException {
         String query = "FOO == 'bar' && FOO2 == 'bar'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
@@ -66,7 +63,7 @@ public class FieldMissingFromSchemaVisitorTest {
      * Test query with two field:datatype pairs, none of which exist in the metadata helper.
      */
     @Test
-    public void testMissingFields() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testMissingFields() throws ParseException {
         String query = "FOO3 == 'bar' && FOO4 == 'bar'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
@@ -98,7 +95,7 @@ public class FieldMissingFromSchemaVisitorTest {
      * Test query with two field:datatype pairs, one of which does not exist in the metadata helper.
      */
     @Test
-    public void testOneMissingField() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testOneMissingField() throws ParseException {
         String query = "FOO == 'bar' && FOO2 == 'bar'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
@@ -128,7 +125,7 @@ public class FieldMissingFromSchemaVisitorTest {
      * Test query with two field:datatype pairs, one of which is in the datatype filter.
      */
     @Test
-    public void testOneMissingFieldBecauseOfDatatypeFilter() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testOneMissingFieldBecauseOfDatatypeFilter() throws ParseException {
         String query = "FOO == 'bar' && FOO2 == 'bar'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
@@ -159,7 +156,7 @@ public class FieldMissingFromSchemaVisitorTest {
      * Test query with function for a field that exists in the schema.
      */
     @Test
-    public void testRegexFunctionWithKnownField() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testRegexFunctionWithKnownField() throws ParseException {
         String query = "filter:includeRegex(FOO, 'bar.*')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
@@ -188,7 +185,7 @@ public class FieldMissingFromSchemaVisitorTest {
      * Test query with function for a field that does not exist in the schema.
      */
     @Test
-    public void testRegexFunctionWithUnknownField() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testRegexFunctionWithUnknownField() throws ParseException {
         String query = "filter:includeRegex(FOO, 'bar.*')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
@@ -213,7 +210,7 @@ public class FieldMissingFromSchemaVisitorTest {
      * Test query with function for a field that does not exist in the schema under the provided datatype filter.
      */
     @Test
-    public void testRegexFunctionWithUnknownFieldBecauseOfDatatypeFilter() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testRegexFunctionWithUnknownFieldBecauseOfDatatypeFilter() throws ParseException {
         String query = "filter:includeRegex(FOO, 'bar.*')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
@@ -242,7 +239,7 @@ public class FieldMissingFromSchemaVisitorTest {
      * Test query with content function.
      */
     @Test
-    public void testContentFunction() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testContentFunction() throws ParseException {
         String query = "content:phrase(termOffsetMap, 'hello', 'world')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
@@ -276,7 +273,7 @@ public class FieldMissingFromSchemaVisitorTest {
      * Test query with content function.
      */
     @Test
-    public void testContentFunctionWithOtherTerm() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testContentFunctionWithOtherTerm() throws ParseException {
         String query = "content:phrase(termOffsetMap, 'hello', 'world') && FOO == 'abc'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
