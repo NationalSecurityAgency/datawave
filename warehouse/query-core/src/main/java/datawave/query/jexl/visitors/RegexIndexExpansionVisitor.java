@@ -22,8 +22,6 @@ import datawave.query.planner.pushdown.Cost;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
@@ -206,28 +204,20 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         }
 
         // determine whether we have the tools to expand this in the first place
-        try {
-            // check special case NO_FIELD
-            if (fieldName.equals(Constants.NO_FIELD)) {
-                return node;
-            }
+        // check special case NO_FIELD
+        if (fieldName.equals(Constants.NO_FIELD)) {
+            return node;
+        }
 
+        try {
             if (!isExpandable(node)) {
                 if (mustExpand(node)) {
                     throw new DatawaveFatalQueryException("We must expand but yet cannot expand a regex: " + PrintingVisitor.formattedQueryString(node));
                 }
                 return ASTDelayedPredicate.create(node); // wrap in a delayed predicate to avoid using in RangeStream
             }
-        } catch (TableNotFoundException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (ExecutionException | MarkingFunctions.Exception e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (JavaRegexAnalyzer.JavaRegexParseException e) {
-            throw new DatawaveFatalQueryException(e);
+        } catch (TableNotFoundException | JavaRegexAnalyzer.JavaRegexParseException e) {
+            throw new RuntimeException(e);
         }
 
 
@@ -580,7 +570,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      * @throws TableNotFoundException                                          if table is not found
      * @throws datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException for parse exceptions
      */
-    public boolean isExpandable(ASTERNode node) throws TableNotFoundException, JavaRegexAnalyzer.JavaRegexParseException, ExecutionException, MarkingFunctions.Exception {
+    public boolean isExpandable(ASTERNode node) throws TableNotFoundException, JavaRegexAnalyzer.JavaRegexParseException {
         // if full table scan enabled, then we can expand anything
         if (config.getFullTableScanEnabled()) {
             return true;
@@ -610,7 +600,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      * @return whether the node must be expanded
      * @throws TableNotFoundException if table is not found
      */
-    public boolean mustExpand(ASTERNode node) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public boolean mustExpand(ASTERNode node) throws TableNotFoundException {
         String fieldName = JexlASTHelper.getIdentifier(node);
 
         // if the identifier is a non-event field, then we must expand it

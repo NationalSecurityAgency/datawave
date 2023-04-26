@@ -8,15 +8,11 @@ import datawave.query.attributes.AttributeBag;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.data.parsers.DatawaveKey;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.predicate.PeekingPredicate;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -429,18 +425,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-        
-        try {
-            desc.addFilters(attributeFactory, filterMap);
-        } catch (TableNotFoundException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (InstantiationException | IllegalAccessException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
-        }
+
+        desc.addFilters(attributeFactory, filterMap);
 
         return null;
     }
@@ -452,7 +438,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
             // handle the simple case: FIELD == literal, FIELD != literal
             generateValueFilter(iol, false, !isExact);
         } else {
-            // handing non trivial cases: FIELD = FIELD, (FIELD || FIELD) == literal, FIELD - FIELD == literal, FIELD < FIELD...
+            // handing non-trivial cases: FIELD = FIELD, (FIELD || FIELD) == literal, FIELD - FIELD == literal, FIELD < FIELD...
             List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
             for (ASTIdentifier identifier : identifiers) {
                 generateValueFilter(new JexlASTHelper.IdentifierOpLiteral(identifier, null, null), false, true);

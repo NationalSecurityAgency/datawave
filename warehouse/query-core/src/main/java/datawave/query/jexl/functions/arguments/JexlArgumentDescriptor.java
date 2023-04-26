@@ -1,14 +1,12 @@
 package datawave.query.jexl.functions.arguments;
 
 import datawave.core.iterators.DatawaveFieldIndexFilterIteratorJexl;
-import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 
@@ -16,7 +14,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 /**
  * This interface will describe the arguments for a jexl function that has implemented (@see JexlArgumentDescriptor). The initial use of this is to determine
@@ -32,8 +29,7 @@ public interface JexlArgumentDescriptor {
      * @param settings        the config settings
      * @return The query which will be used against the global index
      */
-    JexlNode getIndexQuery(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter)
-            throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception;
+    JexlNode getIndexQuery(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter);
 
     /**
      * Get the expression filters for this function. NOTE NOTE NOTE: This only needs to add expression filters IF the getIndexQuery does not add appropriate
@@ -43,8 +39,7 @@ public interface JexlArgumentDescriptor {
      * @param attributeFactory the attribute factory
      * @param filterMap        the filter map
      */
-    void addFilters(AttributeFactory attributeFactory, Map<String, EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) throws TableNotFoundException,
-            InstantiationException, IllegalAccessException;
+    void addFilters(AttributeFactory attributeFactory, Map<String, EventDataQueryExpressionVisitor.ExpressionFilter> filterMap);
 
     /**
      * Get the entire set of fields that are referenced by this function. If you need subsets of fields required to satisfy the function, then use fieldSets()
@@ -53,7 +48,7 @@ public interface JexlArgumentDescriptor {
      * @param datatypeFilter the datatype filter
      * @return the set of fields
      */
-    Set<String> fields(MetadataHelper metadata, Set<String> datatypeFilter) throws TableNotFoundException, InstantiationException, IllegalAccessException, ExecutionException, MarkingFunctions.Exception;
+    Set<String> fields(MetadataHelper metadata, Set<String> datatypeFilter);
 
     /**
      * Get the fields separated into sets that are required to satisfy this function. So if one of the identifiers is actually an "OR" expression, then each of
@@ -63,8 +58,7 @@ public interface JexlArgumentDescriptor {
      * @param datatypeFilter the datatype filter
      * @return the set of fields
      */
-    Set<Set<String>> fieldSets(MetadataHelper metadata, Set<String> datatypeFilter) throws TableNotFoundException, InstantiationException,
-            IllegalAccessException, ExecutionException, MarkingFunctions.Exception;
+    Set<Set<String>> fieldSets(MetadataHelper metadata, Set<String> datatypeFilter);
 
     /**
      * Get the fields that are referenced by the specified argument in this function. Argument 0 is the first argument to the function (child node 3 of the
@@ -76,7 +70,7 @@ public interface JexlArgumentDescriptor {
      * @param arg            the node argument
      * @return the set of fields referenced by the specified arg
      */
-    Set<String> fieldsForNormalization(MetadataHelper metadata, Set<String> datatypeFilter, int arg) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception;
+    Set<String> fieldsForNormalization(MetadataHelper metadata, Set<String> datatypeFilter, int arg);
 
     /**
      * Should expansions (e.g. from a model) use ORs or ANDs. For example isNull should use ANDs, but includeRegex should use ORs.

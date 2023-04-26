@@ -1,8 +1,5 @@
 package datawave.query.jexl.visitors.whindex;
 
-import com.beust.jcommander.internal.Sets;
-import datawave.marking.MarkingFunctions;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 import datawave.query.jexl.functions.GeoFunctionsDescriptor;
@@ -11,9 +8,6 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
@@ -22,13 +16,12 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 /**
  * This is a visitor which is used to break up geowave functions which have multiple fields into separate geowave functions.
  */
 class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
-    private MetadataHelper metadataHelper;
+    private final MetadataHelper metadataHelper;
 
     private static final Logger LOGGER = Logger.getLogger(SplitGeoWaveFunctionVisitor.class);
 
@@ -45,23 +38,9 @@ class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-        Set<String> fields = Sets.newHashSet();
+        Set<String> fields;
         if (descriptor instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
-            try {
-                fields = descriptor.fields(metadataHelper, null);
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                LOGGER.error(qe);
-                throw new DatawaveFatalQueryException(qe);
-            } catch (InstantiationException | IllegalAccessException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
-                LOGGER.error(qe);
-                throw new DatawaveFatalQueryException(qe);
-            } catch (ExecutionException | MarkingFunctions.Exception e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
-                LOGGER.error(qe);
-                throw new DatawaveFatalQueryException(qe);
-            }
+            fields = descriptor.fields(metadataHelper, null);
             if (fields.size() > 1) {
                 List<JexlNode> functionNodes = new ArrayList<>();
 
@@ -84,21 +63,7 @@ class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
                 return JexlNodeFactory.createUnwrappedOrNode(functionNodes);
             }
         } else if (descriptor instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
-            try {
-                fields = descriptor.fields(metadataHelper, null);
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                LOGGER.error(qe);
-                throw new DatawaveFatalQueryException(qe);
-            } catch (InstantiationException | IllegalAccessException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
-                LOGGER.error(qe);
-                throw new DatawaveFatalQueryException(qe);
-            } catch (ExecutionException | MarkingFunctions.Exception e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
-                LOGGER.error(qe);
-                throw new DatawaveFatalQueryException(qe);
-            }
+            fields = descriptor.fields(metadataHelper, null);
             if (fields.size() > 1) {
                 List<JexlNode> functionNodes = new ArrayList<>();
 

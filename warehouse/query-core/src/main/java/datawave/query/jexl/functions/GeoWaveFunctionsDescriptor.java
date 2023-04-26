@@ -10,9 +10,9 @@ import datawave.data.type.GeoType;
 import datawave.data.type.GeometryType;
 import datawave.data.type.PointType;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -22,6 +22,8 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.GeoWaveUtils;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -48,7 +50,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -260,21 +261,32 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         }
 
         @Override
-        public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
-            Set<String> allFields = helper.getAllFields(datatypeFilter);
-            return datatypeFilter == null ? JexlASTHelper.getIdentifierNames(args.get(0)) : filterSet(allFields, JexlASTHelper.getIdentifierNames(args.get(0)));
+        public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
+            try {
+                Set<String> allFields = helper.getAllFields(datatypeFilter);
+                return datatypeFilter == null ? JexlASTHelper.getIdentifierNames(args.get(0)) : filterSet(allFields, JexlASTHelper.getIdentifierNames(args.get(0)));
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                LOGGER.error(qe);
+                throw new DatawaveFatalQueryException(qe);
+            }
         }
 
         @Override
-        public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
-            Set<String> allFields = helper.getAllFields(datatypeFilter);
-            Set<Set<String>> filteredSets = Sets.newHashSet(Sets.newHashSet());
+        public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
+            try {
+                Set<String> allFields = helper.getAllFields(datatypeFilter);
+                Set<Set<String>> filteredSets = Sets.newHashSet(Sets.newHashSet());
 
-            for (Set<String> aFieldSet : Fields.product(args.get(0))) {
-                filteredSets.add(filterSet(allFields, aFieldSet));
+                for (Set<String> aFieldSet : Fields.product(args.get(0))) {
+                    filteredSets.add(filterSet(allFields, aFieldSet));
+                }
+                return filteredSets;
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                LOGGER.error(qe);
+                throw new DatawaveFatalQueryException(qe);
             }
-
-            return filteredSets;
         }
 
         /**

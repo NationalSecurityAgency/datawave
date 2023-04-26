@@ -8,7 +8,6 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
@@ -33,7 +32,6 @@ import org.apache.log4j.Logger;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -212,10 +210,6 @@ public class FetchDataTypesVisitor extends BaseVisitor {
             throw new DatawaveFatalQueryException(qe);
         } catch (InstantiationException | IllegalAccessException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (ExecutionException | MarkingFunctions.Exception e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
             log.error(qe);
             throw new DatawaveFatalQueryException(qe);
         }

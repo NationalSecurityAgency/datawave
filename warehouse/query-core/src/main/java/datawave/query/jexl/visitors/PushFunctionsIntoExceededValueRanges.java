@@ -3,8 +3,6 @@ package datawave.query.jexl.visitors;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import datawave.marking.MarkingFunctions;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
@@ -12,9 +10,6 @@ import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -31,7 +26,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
@@ -87,29 +81,15 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         List<JexlNode> children = new ArrayList<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
-            try {
-                if (isSingleFieldFunctionNode(child)) {
-                    functionNodes.add(child);
-                    for (String field : getFunctionFields(child)) {
-                        functionNodesByField.put(field, child);
-                    }
-                } else if (isExceededValueRangeNode(child)) {
-                    exceededValueRangeNodes.put(getRangeField(child), child);
-                } else {
-                    children.add(child);
+            if (isSingleFieldFunctionNode(child)) {
+                functionNodes.add(child);
+                for (String field : getFunctionFields(child)) {
+                    functionNodesByField.put(field, child);
                 }
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                log.error(qe);
-                throw new DatawaveFatalQueryException(qe);
-            } catch (InstantiationException | IllegalAccessException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
-                log.error(qe);
-                throw new DatawaveFatalQueryException(qe);
-            } catch (ExecutionException | MarkingFunctions.Exception e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
-                log.error(qe);
-                throw new DatawaveFatalQueryException(qe);
+            } else if (isExceededValueRangeNode(child)) {
+                exceededValueRangeNodes.put(getRangeField(child), child);
+            } else {
+                children.add(child);
             }
         }
 
@@ -118,7 +98,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         if (fields.isEmpty()) {
             return node;
         } else {
-            // we have a cross section, so for each of those fields, push the functions into the exceeded value threshold along side of the range
+            // we have a cross-section, so for each of those fields, push the functions into the exceeded value threshold along side of the range
             ASTAndNode newNode = newInstanceOfType(node);
             newNode.image = node.image;
             for (String field : fields) {
@@ -156,7 +136,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         }
     }
 
-    private boolean isSingleFieldFunctionNode(JexlNode child) throws TableNotFoundException, InstantiationException, IllegalAccessException, ExecutionException, MarkingFunctions.Exception {
+    private boolean isSingleFieldFunctionNode(JexlNode child) {
         child = JexlASTHelper.dereference(child);
         if (child instanceof ASTFunctionNode) {
             Set<Set<String>> fieldSets = JexlASTHelper.getFieldNameSets((ASTFunctionNode) child, helper, datatypeFilter);
@@ -173,7 +153,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         return false;
     }
 
-    private Set<String> getFunctionFields(JexlNode child) throws TableNotFoundException, InstantiationException, IllegalAccessException, ExecutionException, MarkingFunctions.Exception {
+    private Set<String> getFunctionFields(JexlNode child) {
         child = JexlASTHelper.dereference(child);
         if (child instanceof ASTFunctionNode) {
             return JexlASTHelper.getFieldNames((ASTFunctionNode) child, helper, datatypeFilter);

@@ -1,8 +1,6 @@
 package datawave.query.jexl.visitors;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
@@ -11,9 +9,6 @@ import datawave.query.jexl.functions.arguments.RebuildingJexlArgumentDescriptor;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
@@ -29,7 +24,6 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
 
 import static datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJexlArgumentDescriptor.distributeFunctionIntoIndexQuery;
 
@@ -117,18 +111,7 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
         }
 
         if (!evaluationOnly && desc != null) {
-            JexlNode indexQuery = null;
-            try {
-                indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                LOGGER.error(qe);
-                throw new DatawaveFatalQueryException(qe);
-            } catch (ExecutionException | MarkingFunctions.Exception e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
-                LOGGER.error(qe);
-                throw new DatawaveFatalQueryException(qe);
-            }
+            JexlNode indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
             if (indexQuery != null && !(indexQuery instanceof ASTTrueNode)) {
                 if (desc instanceof ContentFunctionsDescriptor.ContentJexlArgumentDescriptor) {
                     return distributeFunctionIntoIndexQuery(node, indexQuery);

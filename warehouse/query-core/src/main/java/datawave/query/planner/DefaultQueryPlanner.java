@@ -1025,10 +1025,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
             log.error(qe);
             throw new DatawaveFatalQueryException(qe);
-        } catch (ExecutionException | MarkingFunctions.Exception e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
         } finally {
             stopwatch.stop();
         }
@@ -1534,7 +1530,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         TraceStopwatch innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
         try {
             config.setQueryTree(BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree()));
-        } catch (TableNotFoundException | ExecutionException | MarkingFunctions.Exception e) {
+        } catch (TableNotFoundException e) {
             throw new DatawaveQueryException("Failed to Expand Ranges", e);
         }
 
@@ -1672,8 +1668,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * @throws IllegalAccessException    for issues with access
      */
     private void loadDataTypeMetadata(Multimap<String, Type<?>> fieldToDatatypeMap, Set<String> indexedFields, Set<String> reverseIndexedFields,
-                                      Set<String> normalizedFields, boolean reload) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
-            ExecutionException, InstantiationException, IllegalAccessException, MarkingFunctions.Exception {
+                                      Set<String> normalizedFields, boolean reload) throws AccumuloException, AccumuloSecurityException, TableNotFoundException
+            , InstantiationException, IllegalAccessException {
         synchronized (dataTypeMap) {
             if (!reload && (null != cachedIndexedFields && null != indexedFields) && (null != cachedNormalizedFields && null != normalizedFields)
                     && (null != cachedReverseIndexedFields && null != reverseIndexedFields)) {

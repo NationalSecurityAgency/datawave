@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.lookups.AsyncIndexLookup;
@@ -20,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -52,13 +50,13 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     protected List<FutureJexlNode> futureJexlNodes;
 
     protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName)
-            throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+            throws TableNotFoundException {
         this(config, scannerFactory, helper, null, threadName);
     }
 
     // The constructor should not be made public so that we can ensure that the executor is set up and shutdown correctly
     protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                                        Map<String, IndexLookup> lookupMap, String threadName) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+                                        Map<String, IndexLookup> lookupMap, String threadName) throws TableNotFoundException {
         this.config = config;
         this.scannerFactory = scannerFactory;
         this.helper = helper;

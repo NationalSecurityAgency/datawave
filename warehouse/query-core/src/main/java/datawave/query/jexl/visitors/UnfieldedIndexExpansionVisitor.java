@@ -211,16 +211,12 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
 
     @Override
     protected IndexLookup createLookup(JexlNode node) {
+        // Using the datatype filter when expanding this term isn't really
+        // necessary
         try {
-            // Using the datatype filter when expanding this term isn't really
-            // necessary
             return ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, config, scannerFactory, expansionFields, allTypes, helper, executor);
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (ExecutionException | MarkingFunctions.Exception e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
             log.error(qe);
             throw new DatawaveFatalQueryException(qe);
         }

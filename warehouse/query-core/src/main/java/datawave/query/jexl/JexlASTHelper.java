@@ -8,7 +8,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -80,7 +79,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -687,15 +685,13 @@ public class JexlASTHelper {
         return fieldName.indexOf(GROUPING_CHARACTER_SEPARATOR) != -1;
     }
 
-    public static Set<String> getFieldNames(ASTFunctionNode function, MetadataHelper metadata, Set<String> datatypeFilter) throws TableNotFoundException,
-            InstantiationException, IllegalAccessException, ExecutionException, MarkingFunctions.Exception {
+    public static Set<String> getFieldNames(ASTFunctionNode function, MetadataHelper metadata, Set<String> datatypeFilter) {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
 
         return desc.fields(metadata, datatypeFilter);
     }
 
-    public static Set<Set<String>> getFieldNameSets(ASTFunctionNode function, MetadataHelper metadata, Set<String> datatypeFilter)
-            throws TableNotFoundException, InstantiationException, IllegalAccessException, ExecutionException, MarkingFunctions.Exception {
+    public static Set<Set<String>> getFieldNameSets(ASTFunctionNode function, MetadataHelper metadata, Set<String> datatypeFilter) {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
 
         return desc.fieldSets(metadata, datatypeFilter);

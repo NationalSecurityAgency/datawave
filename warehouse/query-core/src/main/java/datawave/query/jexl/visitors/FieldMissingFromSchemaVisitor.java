@@ -1,13 +1,9 @@
 package datawave.query.jexl.visitors;
 
-import datawave.marking.MarkingFunctions;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -31,7 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Class to check that each query node contains a field which exists in the schema.
@@ -150,31 +145,16 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         @SuppressWarnings("unchecked")
         Set<String> nonExistentFieldNames = (null == data) ? new HashSet<>() : (Set<String>) data;
-
-        try {
-            Set<String> fields = desc.fields(this.helper, this.datatypeFilter);
-            if (!fields.isEmpty()) {
-                for (String fieldName : fields) {
-                    // deconstruct the identifier
-                    final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
-                    // changed to allow _ANYFIELD_ in functions
-                    addField(testFieldName, fieldName, nonExistentFieldNames);
-                }
-            } else {
-                genericVisit(node, data);
+        Set<String> fields = desc.fields(this.helper, this.datatypeFilter);
+        if (!fields.isEmpty()) {
+            for (String fieldName : fields) {
+                // deconstruct the identifier
+                final String testFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
+                // changed to allow _ANYFIELD_ in functions
+                addField(testFieldName, fieldName, nonExistentFieldNames);
             }
-        } catch (TableNotFoundException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (InstantiationException | IllegalAccessException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (ExecutionException | MarkingFunctions.Exception e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNKNOWN_SERVER_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
+        } else {
+            genericVisit(node, data);
         }
 
         return nonExistentFieldNames;

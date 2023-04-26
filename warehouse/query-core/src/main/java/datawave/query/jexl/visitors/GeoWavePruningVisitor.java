@@ -78,8 +78,7 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
                     try {
                         if (isPrunable(geoWaveDesc)) {
                             Geometry geom = GeometryNormalizer.parseGeometry(geoWaveDesc.getWkt());
-                            Set<String> fields = null;
-                            fields = geoWaveDesc.fields(metadataHelper, null);
+                            Set<String> fields = geoWaveDesc.fields(metadataHelper, null);
                             if (fields != null) {
                                 for (String field : fields) {
                                     fieldToGeometryMap.put(field, geom);
