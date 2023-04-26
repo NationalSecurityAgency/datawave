@@ -15,11 +15,14 @@ import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
 
 public class TermOffsetFunction implements com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> {
-    
+    private static final Logger log = Logger.getLogger(TermOffsetFunction.class);
     private TermOffsetPopulator tfPopulator;
     private Set<String> tfIndexOnlyFields;
+    private int aggregationThreshold;
+    private long aggregationStart;
     
     public TermOffsetFunction(TermOffsetPopulator tfPopulator, Set<String> tfIndexOnlyFields) {
         this.tfPopulator = tfPopulator;
@@ -52,7 +55,10 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
         
         Set<String> fields = getFieldsToRemove(from.second(), tfPopulator.getTermFrequencyFieldValues());
         
+        logStart();
         map.putAll(tfPopulator.getContextMap(from.first(), docKeys, fields));
+        logStop(docKeys.iterator().next());
+
         merged.putAll(tfPopulator.document(), false);
         return Tuples.tuple(from.first(), merged, map);
     }
@@ -69,5 +75,24 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
             }
         }
         return fieldsToRemove;
+    }
+
+    private void logStart(){
+        aggregationStart = System.currentTimeMillis();
+    }
+
+    private void logStop(Key k){
+        if (aggregationThreshold == -1) {
+            return;
+        }
+
+        long elapsed = System.currentTimeMillis() - aggregationStart;
+        if (elapsed > aggregationThreshold) {
+            log.warn("time to aggregate offsets " + k.getRow() + " " + k.getColumnFamily().toString().replace("\0", "0x00") + " was " + elapsed);
+        }
+    }
+
+    public void setAggregationThreshold(int aggregationThreshold){
+        this.aggregationThreshold = aggregationThreshold;
     }
 }

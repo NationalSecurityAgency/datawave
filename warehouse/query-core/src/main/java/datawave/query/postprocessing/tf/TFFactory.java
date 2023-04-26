@@ -63,7 +63,9 @@ public class TFFactory {
         } else {
             TermOffsetPopulator offsetPopulator = new TermOffsetPopulator(termFrequencyFieldValues, config.getContentExpansionFields(),
                             config.getEvaluationFilter(), config.getSource());
-            return new TermOffsetFunction(offsetPopulator, config.getTfFields());
+            TermOffsetFunction function = new TermOffsetFunction(offsetPopulator, config.getTfFields());
+            function.setAggregationThreshold(config.getTfAggregationThreshold());
+            return function;
         }
     }
 }
