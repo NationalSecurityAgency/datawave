@@ -17,6 +17,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.query.data.parsers.TermFrequencyKey;
 import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.Constants;
@@ -147,34 +148,33 @@ public class TermOffsetPopulator {
         if (evaluationFilter != null) {
             evaluationFilter.startNewDocument(docKey);
         }
-        
+
+        Key key;
+        Content attr;
+        TermFrequencyKey parser = new TermFrequencyKey();
+        TermWeight.Info twInfo;
+        TermFrequencyList.Zone twZone;
+        TermWeightPosition.Builder position = new TermWeightPosition.Builder();
         Map<String,TermFrequencyList> termOffsetMap = Maps.newHashMap();
-        
+
         while (tfSource.hasTop()) {
-            Key key = tfSource.getTopKey();
-            FieldValue fv = FieldValue.getFieldValue(key);
+            key = tfSource.getTopKey();
+            parser.parse(key);
             
-            // add the zone and term to our internal document
-            Content attr = new Content(fv.getValue(), source.getTopKey(), evaluationFilter == null || evaluationFilter.keep(key));
-            
-            // no need to apply the evaluation filter here as the TermFrequencyIterator above is already doing more filtering than we can do here.
-            // So this filter is simply extraneous. However if the an EventDataQueryFilter implementation gets smarter somehow, then it can be added back in
-            // here.
-            // For example the AncestorQueryLogic may require this....
-            // if (evaluationFilter == null || evaluationFilter.apply(Maps.immutableEntry(key, StringUtils.EMPTY_STRING))) {
-            
-            this.document.put(fv.getField(), attr);
+            // add the zone and term to our internal document.
+            // TODO: lift the keep logic from the filter
+            attr = new Content(parser.getValue(), source.getTopKey(), evaluationFilter == null || evaluationFilter.keep(key));
+
+            this.document.put(parser.getField(), attr);
             
             TreeMultimap<TermFrequencyList.Zone,TermWeightPosition> offsets = TreeMultimap.create();
             try {
-                TermWeight.Info twInfo = TermWeight.Info.parseFrom(tfSource.getTopValue().get());
+                twInfo = TermWeight.Info.parseFrom(tfSource.getTopValue().get());
                 
                 // if no content expansion fields then assume every field is permitted for unfielded content functions
-                TermFrequencyList.Zone twZone = new TermFrequencyList.Zone(fv.getField(),
-                                (contentExpansionFields == null || contentExpansionFields.isEmpty() || contentExpansionFields.contains(fv.getField())),
-                                TermFrequencyList.getEventId(key));
-                
-                TermWeightPosition.Builder position = new TermWeightPosition.Builder();
+                boolean b = contentExpansionFields == null || contentExpansionFields.isEmpty() || contentExpansionFields.contains(parser.getField());
+                twZone = new TermFrequencyList.Zone(parser.getField(), b, TermFrequencyList.getEventId(key));
+
                 for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
                     position.setTermWeightOffsetInfo(twInfo, i);
                     offsets.put(twZone, position.build());
@@ -183,14 +183,13 @@ public class TermOffsetPopulator {
                 
             } catch (InvalidProtocolBufferException e) {
                 log.error("Could not deserialize TermWeight protocol buffer for: " + source.getTopKey());
-                
-                return null;
+                return Collections.emptyMap();
             }
             
             // First time looking up this term in a field
-            TermFrequencyList tfl = termOffsetMap.get(fv.getValue());
+            TermFrequencyList tfl = termOffsetMap.get(parser.getValue());
             if (null == tfl) {
-                termOffsetMap.put(fv.getValue(), new TermFrequencyList(offsets));
+                termOffsetMap.put(parser.getValue(), new TermFrequencyList(offsets));
             } else {
                 // Merge in the offsets for the current field+term with all previous
                 // offsets from other fields in the same term
@@ -208,7 +207,6 @@ public class TermOffsetPopulator {
         // Load the actual map into map that will be put into the JexlContext
         Map<String,Object> map = new HashMap<>();
         map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(termOffsetMap));
-        
         return map;
     }
     
