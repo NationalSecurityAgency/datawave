@@ -16,6 +16,8 @@ public abstract class EdgeQueryResponseBase extends BaseQueryResponse implements
     protected Map<String,String> markings;
     
     public abstract void addEdge(EdgeBase edge);
+
+    public abstract void setEdges(List<EdgeBase> edges);
     
     public abstract List<? extends EdgeBase> getEdges();
     
