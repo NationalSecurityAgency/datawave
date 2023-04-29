@@ -1464,7 +1464,7 @@ public class QueryOptions implements OptionDescriber {
             String matchingFieldSets = options.get(MATCHING_FIELD_SETS);
             for (String fieldSet : Splitter.on(',').omitEmptyStrings().trimResults().split(matchingFieldSets)) {
                 String[] fields = Iterables.toArray(Splitter.on('=').omitEmptyStrings().trimResults().split(fieldSet), String.class);
-                if (fields != null) {
+                if (fields.length != 0) {
                     this.getMatchingFieldSets().add(new HashSet(Arrays.asList(fields)));
                 }
             }

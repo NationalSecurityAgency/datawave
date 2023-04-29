@@ -1304,7 +1304,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             projection.setIncludes(this.whiteListedFields);
             return projection;
         } else if (this.useBlackListedFields) {
-            // make sure we including any fields being matched in the limit fields mechanism
+            // make sure we are not excluding any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
                 this.blackListedFields.removeAll(this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList()));
             }
