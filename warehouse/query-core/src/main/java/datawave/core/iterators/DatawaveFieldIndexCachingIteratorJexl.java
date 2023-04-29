@@ -651,6 +651,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             // now lets find the top key
             if (this.fiRow != null) {
                 findTop();
+            } else {
+                cleanup();
             }
 
             if (log.isTraceEnabled()) {
