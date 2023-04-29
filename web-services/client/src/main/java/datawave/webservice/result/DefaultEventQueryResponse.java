@@ -121,7 +121,7 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
      */
     @Override
     public void setEvents(List<EventBase> entries) {
-        if (entries == null) {
+        if (entries == null || entries.isEmpty()) {
             this.events = null;
         } else {
             List<DefaultEvent> events = new ArrayList<>(entries.size());
