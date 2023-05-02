@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import com.google.common.collect.Multimap;
 import datawave.query.attributes.Attribute;
@@ -16,6 +17,7 @@ import datawave.query.util.Tuples;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
+import org.apache.accumulo.core.data.PartialKey;
 
 public class TermOffsetFunction implements com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> {
     private static final Logger log = Logger.getLogger(TermOffsetFunction.class);
@@ -23,20 +25,36 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
     private Set<String> tfIndexOnlyFields;
     private int aggregationThreshold;
     private long aggregationStart;
+    private DocumentKeysFunction docKeyFunction;
     
     public TermOffsetFunction(TermOffsetPopulator tfPopulator, Set<String> tfIndexOnlyFields) {
+        this(tfPopulator, tfIndexOnlyFields, null);
+    }
+    
+    public TermOffsetFunction(TermOffsetPopulator tfPopulator, Set<String> tfIndexOnlyFields, DocumentKeysFunction docKeyFunction) {
         this.tfPopulator = tfPopulator;
         this.tfIndexOnlyFields = tfIndexOnlyFields;
+        this.docKeyFunction = docKeyFunction;
     }
     
     @Override
     public Tuple3<Key,Document,Map<String,Object>> apply(Tuple2<Key,Document> from) {
-        Document merged = from.second();
-        Map<String,Object> map = new HashMap<>();
-        Attribute<?> docKeyAttr = merged.get(Document.DOCKEY_FIELD_NAME);
         
-        // gather the set of doc keys
-        Set<Key> docKeys = new HashSet<>();
+        Set<Key> docKeys = getDocumentKeys(from);
+        Set<String> fields = getFieldsToRemove(from.second(), tfPopulator.getTermFrequencyFieldValues());
+
+        logStart();
+        Map<String,Object> map = new HashMap<>(tfPopulator.getContextMap(from.first(), docKeys, fields));
+        logStop(docKeys.iterator().next());
+        
+        Document merged = from.second();
+        merged.putAll(tfPopulator.document(), false);
+        return Tuples.tuple(from.first(), merged, map);
+    }
+    
+    private Set<Key> getDocumentKeys(Tuple2<Key,Document> from) {
+        Attribute<?> docKeyAttr = from.second().get(Document.DOCKEY_FIELD_NAME);
+        Set<Key> docKeys = new TreeSet<>((left, right) -> left.compareTo(right, PartialKey.ROW_COLFAM));
         if (docKeyAttr == null) {
             docKeys.add(from.first());
         } else if (docKeyAttr instanceof DocumentKey) {
@@ -53,14 +71,11 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
             throw new IllegalStateException("Unexpected Attribute type for " + Document.DOCKEY_FIELD_NAME + ": " + docKeys.getClass());
         }
         
-        Set<String> fields = getFieldsToRemove(from.second(), tfPopulator.getTermFrequencyFieldValues());
-        
-        logStart();
-        map.putAll(tfPopulator.getContextMap(from.first(), docKeys, fields));
-        logStop(docKeys.iterator().next());
+        if (docKeyFunction != null) {
+            docKeys = docKeyFunction.getDocKeys(from.second(), docKeys);
+        }
 
-        merged.putAll(tfPopulator.document(), false);
-        return Tuples.tuple(from.first(), merged, map);
+        return docKeys;
     }
     
     private Set<String> getFieldsToRemove(Document doc, Multimap<String,String> tfFVs) {
