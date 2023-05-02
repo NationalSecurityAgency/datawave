@@ -164,13 +164,13 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     }
 
     public enum GroupbyFunction {
-        UNIQUE_BY_DAY(GroupbyFunction.GROUP_BY_DAY_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_DAY), UNIQUE_BY_HOUR(
-                GroupbyFunction.GROUP_BY_HOUR_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_HOUR), UNIQUE_BY_MILLISECOND(
-                GroupbyFunction.GROUP_BY_MILLISECOND_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND), UNIQUE_BY_MINUTE(
-                GroupbyFunction.GROUP_BY_MINUTE_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_MINUTE), UNIQUE_BY_MONTH(
-                GroupbyFunction.GROUP_BY_MONTH_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_MONTH), UNIQUE_BY_SECOND(
-                GroupbyFunction.GROUP_BY_SECOND_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_SECOND), UNIQUE_BY_TENTH_OF_HOUR(
-                GroupbyFunction.GROUP_BY_TENTH_OF_HOUR_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR), UNIQUE_BY_YEAR(
+        GROUP_BY_DAY(GroupbyFunction.GROUP_BY_DAY_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_DAY), GROUP_BY_HOUR(
+                GroupbyFunction.GROUP_BY_HOUR_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_HOUR), GROUP_BY_MILLISECOND(
+                GroupbyFunction.GROUP_BY_MILLISECOND_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND), GROUP_BY_MINUTE(
+                GroupbyFunction.GROUP_BY_MINUTE_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_MINUTE), GROUP_BY_MONTH(
+                GroupbyFunction.GROUP_BY_MONTH_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_MONTH), GROUP_BY_SECOND(
+                GroupbyFunction.GROUP_BY_SECOND_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_SECOND), GROUP_BY_TENTH_OF_HOUR(
+                GroupbyFunction.GROUP_BY_TENTH_OF_HOUR_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR), GROUP_BY_YEAR(
                 GroupbyFunction.GROUP_BY_YEAR_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_YEAR);
 
         public static final String GROUP_BY_DAY_FUNCTION = "group_by_day";

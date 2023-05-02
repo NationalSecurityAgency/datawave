@@ -611,6 +611,21 @@ public class TestLuceneToJexlQueryParser {
         assertTrue(exception.getMessage().contains(
                         "unique_by_minute does not support the advanced unique syntax, only a simple comma-delimited list of fields is allowed"));
     }
+
+    @Test
+    public void testGroupbyFunctions() throws ParseException {
+        assertEquals("f:groupby('field1','field2','field3')", parser.parse("#groupby(field1,field2,field3)").getOriginalQuery());
+        assertEquals("f:groupby('field1[ALL','DAY]','field2')", parser.parse("#groupby(field1[ALL,DAY],field2)").getOriginalQuery());
+        assertEquals("f:groupby('field1[ALL','DAY]','field2[MINUTE]','field3[HOUR]')", parser.parse("#groupby(field1[ALL,DAY],field2[MINUTE],field3[HOUR])")
+                .getOriginalQuery());
+        assertEquals("f:groupby('field1[MONTH]','field2[MONTH]','field3[MONTH]')", parser.parse("#groupby(field1[MONTH],field2[MONTH],field3[MONTH])")
+                .getOriginalQuery());
+
+        assertEquals("f:group_by_day('field1','field2','field3')", parser.parse("#group_by_day(field1,field2,field3)").getOriginalQuery());
+        assertEquals("f:group_by_hour('field1','field2','field3')", parser.parse("#group_by_hour(field1,field2,field3)").getOriginalQuery());
+        assertEquals("f:group_by_minute('field1','field2','field3')", parser.parse("#group_by_minute(field1,field2,field3)").getOriginalQuery());
+        assertEquals("f:group_by_month('field1','field2','field3')", parser.parse("#group_by_month(field1,field2,field3)").getOriginalQuery());
+    }
     
     private static class TestQueryNodeProcessorFactory extends QueryNodeProcessorFactory {
         @Override
