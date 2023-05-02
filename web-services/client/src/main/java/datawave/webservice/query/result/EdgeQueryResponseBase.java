@@ -17,6 +17,8 @@ public abstract class EdgeQueryResponseBase extends BaseQueryResponse implements
     
     public abstract void addEdge(EdgeBase edge);
     
+    public abstract void setEdges(List<EdgeBase> edges);
+    
     public abstract List<? extends EdgeBase> getEdges();
     
     public abstract void setTotalResults(long totalResults);

@@ -50,6 +50,11 @@
     </property>
 
     <property>
+        <name>myjson.event.data.type.values</name>
+        <value>tvmaze</value>
+    </property>
+
+    <property>
         <name>myjson.ingest.helper.class</name>
         <value>datawave.ingest.json.config.helper.JsonIngestHelper</value>
     </property>
@@ -90,6 +95,12 @@
         <value>true</value>
         <description>If true, "extra" fields within the json tree (ie, those outside the defined "header") should be
             processed. Otherwise, everything outside the header will be ignored unless explicitly whitelisted</description>
+    </property>
+
+    <property>
+        <name>tvmaze.trim.field.group</name>
+        <value>true</value>
+        <description>If true, nested field groups will be trimmed to remove parent offsets, e.g. PARENT1_1.PARENT2_1 becomes PARENT1_PARENT2</description>
     </property>
 
     <property>

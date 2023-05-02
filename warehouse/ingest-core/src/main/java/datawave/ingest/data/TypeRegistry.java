@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.DataTypeOverrideHelper;
 import datawave.ingest.data.config.filter.KeyValueFilter;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
@@ -241,6 +242,15 @@ public class TypeRegistry extends HashMap<String,Type> {
                     Type t = new Type(typeName, outputName, helperClass, readerClass, handlerClassNames, filterPriority, filterClassNames);
                     log.debug("Registered type " + t);
                     this.put(typeName, t);
+                    
+                    if (null != config.get(typeName + DataTypeOverrideHelper.Properties.DATA_TYPE_VALUES)) {
+                        for (String type : config.getStrings(typeName + DataTypeOverrideHelper.Properties.DATA_TYPE_VALUES)) {
+                            outputName = config.get(type + OUTPUT_NAME, outputName);
+                            t = new Type(type, outputName, helperClass, readerClass, handlerClassNames, filterPriority, filterClassNames);
+                            log.debug("Registered child type:" + type);
+                            this.put(type, t);
+                        }
+                    }
                 }
                 
             } catch (ClassNotFoundException cnfe) {

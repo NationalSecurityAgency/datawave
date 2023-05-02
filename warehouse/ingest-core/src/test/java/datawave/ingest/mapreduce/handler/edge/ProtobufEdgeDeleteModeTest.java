@@ -1,7 +1,6 @@
 package datawave.ingest.mapreduce.handler.edge;
 
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import datawave.data.hash.UID;
 import datawave.data.normalizer.DateNormalizer;
@@ -15,18 +14,13 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.FakeIngestHelper;
 import datawave.ingest.mapreduce.SimpleDataTypeHandler;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDataBundle;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.ingest.test.StandaloneStatusReporter;
-import datawave.ingest.test.StandaloneTaskAttemptContext;
 import datawave.ingest.time.Now;
 import datawave.metadata.protobuf.EdgeMetadata;
-import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -39,7 +33,6 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -59,7 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.TreeSet;
 
 public class ProtobufEdgeDeleteModeTest {
     
@@ -338,8 +330,8 @@ public class ProtobufEdgeDeleteModeTest {
                 Multimap<String,NormalizedContentInterface> mSource = null;
                 Multimap<String,NormalizedContentInterface> mSink = null;
                 
-                String sourceGroup = getGroup(edgeDef.getSourceFieldName());
-                String sinkGroup = getGroup(edgeDef.getSinkFieldName());
+                String sourceGroup = getEdgeDefGroup(edgeDef.getSourceFieldName());
+                String sinkGroup = getEdgeDefGroup(edgeDef.getSinkFieldName());
                 
                 if (depthFirstList.containsKey(edgeDef.getSourceFieldName()) && depthFirstList.containsKey(edgeDef.getSinkFieldName())) {
                     mSource = depthFirstList.get(edgeDef.getSourceFieldName());

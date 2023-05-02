@@ -121,6 +121,11 @@ public class CompositeQueryLogicTest {
         }
         
         @Override
+        public void setEdges(List<EdgeBase> edges) {
+            this.edges = new ArrayList<>(edges);
+        }
+        
+        @Override
         public List<? extends EdgeBase> getEdges() {
             return Collections.unmodifiableList(edges);
         }

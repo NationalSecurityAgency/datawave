@@ -9,6 +9,7 @@ import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.table.aggregator.CombinerConfiguration;
 import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
+import datawave.ingest.table.aggregator.KeepCountOnlyNoUidAggregator;
 import datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator;
 import datawave.ingest.table.balancer.ShardedTableTabletBalancer;
 import datawave.ingest.table.bloomfilter.ShardKeyFunctor;
@@ -32,6 +33,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     protected static final String SHARDED_TABLET_BALANCER_CLASS = ShardedTableTabletBalancer.class.getName();
     
     public static final String KEEP_COUNT_ONLY_INDEX_ENTRIES = "index.tables.keep.count.only.entries";
+    
+    public static final String KEEP_COUNT_ONLY_INDEX_NO_UIDS = "index.tables.keep.count.only.no.uids";
     
     public static final String SHARD_TABLE_BALANCER_CONFIG = "shard.table.balancer.class";
     protected String shardTableBalancerClass = SHARDED_TABLET_BALANCER_CLASS;
@@ -204,6 +207,10 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
                 aggClass = KeepCountOnlyUidAggregator.class.getName();
             }
             
+            if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_NO_UIDS, false)) {
+                aggClass = KeepCountOnlyNoUidAggregator.class.getName();
+            }
+            
             setPropertyIfNecessary(tableName, stem + "*", aggClass, tops, log);
             
             if (markingsSetupIteratorEnabled) {
@@ -231,6 +238,10 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             String aggClass = GlobalIndexUidAggregator.class.getName();
             if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_ENTRIES, false)) {
                 aggClass = KeepCountOnlyUidAggregator.class.getName();
+            }
+            
+            if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_NO_UIDS, false)) {
+                aggClass = KeepCountOnlyNoUidAggregator.class.getName();
             }
             
             setPropertyIfNecessary(tableName, stem + "*", aggClass, tops, log);
