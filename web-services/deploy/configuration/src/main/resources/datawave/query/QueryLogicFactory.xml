@@ -41,6 +41,13 @@
         <bean class="datawave.query.language.functions.jexl.Options"/>
         <bean class="datawave.query.language.functions.jexl.Unique"/>
         <bean class="datawave.query.language.functions.jexl.GroupBy"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByDay"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByHour"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByMinute"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByMonth"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByYear"/>
+        <bean class="datawave.query.language.functions.jexl.GroupBySecond"/>
+        <bean class="datawave.query.language.functions.jexl.GroupByTenthOfHour"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByHour"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByMinute"/>

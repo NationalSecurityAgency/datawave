@@ -38,9 +38,10 @@ public class QueryOptionsFromQueryVisitorTest {
         // Verify that an empty groupby functions results in an empty parameter value.
         assertResult("f:groupby()", "");
         assertOption(QueryParameters.GROUP_FIELDS, "");
-        
-        assertResult("f:groupby('field1','field2','field3')", "");
-        assertOption(QueryParameters.GROUP_FIELDS, "field1,field2,field3");
+
+        // Verify fields are added with the DAY granularity.
+        assertResult("f:group_by_day('field1','field2','field3')", "");
+        assertOption(QueryParameters.GROUP_FIELDS, "field1[DAY],field2[DAY],field3[DAY]");
     }
     
     @Test

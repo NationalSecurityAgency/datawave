@@ -3,6 +3,8 @@ package datawave.query.jexl.visitors;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.GroupByFields;
+import datawave.query.attributes.GroupbyGranularity;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
 import datawave.query.jexl.functions.QueryFunctions;
@@ -51,7 +53,9 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     QueryFunctions.UNIQUE_FUNCTION, UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueFunction.UNIQUE_BY_HOUR_FUNCTION,
                     UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MONTH_FUNCTION,
                     UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
-                    QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION);
+                    QueryFunctions.GROUPBY_FUNCTION, GroupbyFunction.GROUP_BY_DAY_FUNCTION, GroupbyFunction.GROUP_BY_HOUR_FUNCTION, GroupbyFunction.GROUP_BY_MILLISECOND_FUNCTION,
+                    GroupbyFunction.GROUP_BY_MONTH_FUNCTION, GroupbyFunction.GROUP_BY_MINUTE_FUNCTION, GroupbyFunction.GROUP_BY_SECOND_FUNCTION, GroupbyFunction.GROUP_BY_YEAR_FUNCTION,
+                    GroupbyFunction.GROUP_BY_TENTH_OF_HOUR_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION);
     
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T collect(T node, Object data) {
@@ -158,10 +162,51 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
             return UniqueFunction.valueOf(name.toUpperCase());
         }
     }
+
+    public enum GroupbyFunction {
+        UNIQUE_BY_DAY(GroupbyFunction.GROUP_BY_DAY_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_DAY), UNIQUE_BY_HOUR(
+                GroupbyFunction.GROUP_BY_HOUR_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_HOUR), UNIQUE_BY_MILLISECOND(
+                GroupbyFunction.GROUP_BY_MILLISECOND_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND), UNIQUE_BY_MINUTE(
+                GroupbyFunction.GROUP_BY_MINUTE_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_MINUTE), UNIQUE_BY_MONTH(
+                GroupbyFunction.GROUP_BY_MONTH_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_MONTH), UNIQUE_BY_SECOND(
+                GroupbyFunction.GROUP_BY_SECOND_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_SECOND), UNIQUE_BY_TENTH_OF_HOUR(
+                GroupbyFunction.GROUP_BY_TENTH_OF_HOUR_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR), UNIQUE_BY_YEAR(
+                GroupbyFunction.GROUP_BY_YEAR_FUNCTION, GroupbyGranularity.TRUNCATE_TEMPORAL_TO_YEAR);
+
+        public static final String GROUP_BY_DAY_FUNCTION = "group_by_day";
+        public static final String GROUP_BY_HOUR_FUNCTION = "group_by_hour";
+        public static final String GROUP_BY_MINUTE_FUNCTION = "group_by_minute";
+        public static final String GROUP_BY_TENTH_OF_HOUR_FUNCTION = "group_by_tenth_of_hour";
+        public static final String GROUP_BY_MONTH_FUNCTION = "group_by_month";
+        public static final String GROUP_BY_SECOND_FUNCTION = "group_by_second";
+        public static final String GROUP_BY_MILLISECOND_FUNCTION = "group_by_millisecond";
+        public static final String GROUP_BY_YEAR_FUNCTION = "group_by_year";
+
+        public final String name;
+        public final GroupbyGranularity granularity;
+
+        GroupbyFunction(String name, GroupbyGranularity granularity) {
+            this.name = name;
+            this.granularity = granularity;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public static GroupbyFunction findByName(String name) {
+            return GroupbyFunction.valueOf(name.toUpperCase());
+        }
+    }
     
     private void updateUniqueFields(ASTFunctionNode node, UniqueFields uniqueFields, Map<String,String> optionsMap, UniqueFunction uniqueFunction) {
         putFieldsFromChildren(node, uniqueFields, uniqueFunction.granularity);
         updateUniqueFieldsOption(optionsMap, uniqueFields);
+    }
+
+    private void updateGroupbyFields(ASTFunctionNode node, GroupByFields groupByFields, Map<String,String> optionsMap, GroupbyFunction groupbyFunction) {
+        putGroupFieldsFromChildren(node, groupByFields, groupbyFunction.granularity);
+        updateGroupbyFieldsOption(optionsMap, groupByFields);
     }
     
     /**
@@ -218,6 +263,18 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     optionsMap.put(QueryParameters.GROUP_FIELDS, JOINER.join(optionsList));
                     return null;
                 }
+                case GroupbyFunction.GROUP_BY_DAY_FUNCTION:
+                case GroupbyFunction.GROUP_BY_HOUR_FUNCTION:
+                case GroupbyFunction.GROUP_BY_MINUTE_FUNCTION:
+                case GroupbyFunction.GROUP_BY_MONTH_FUNCTION:
+                case GroupbyFunction.GROUP_BY_YEAR_FUNCTION:
+                case GroupbyFunction.GROUP_BY_MILLISECOND_FUNCTION:
+                case GroupbyFunction.GROUP_BY_SECOND_FUNCTION:
+                case GroupbyFunction.GROUP_BY_TENTH_OF_HOUR_FUNCTION: {
+                    GroupByFields groupByFields = new GroupByFields();
+                    updateGroupbyFields(node, groupByFields, optionsMap, GroupbyFunction.findByName(node.jjtGetChild(1).image));
+                    return null;
+                }
                 case QueryFunctions.EXCERPT_FIELDS_FUNCTION: {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);
@@ -235,6 +292,13 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         this.visit(node, fields);
         fields.forEach((field) -> uniqueFields.put(field, transformer));
     }
+
+    // Find all unique fields declared in the provided node and add them to the provided {@link UniqueFields} with the specified transformer.
+    private void putGroupFieldsFromChildren(JexlNode node, GroupByFields groupByFields, GroupbyGranularity transformer) {
+        List<String> fields = new ArrayList<>();
+        this.visit(node, fields);
+        fields.forEach((field) -> groupByFields.put(field, transformer));
+    }
     
     // Update the {@value QueryParameters#UNIQUE_FIELDS} option to include the given unique fields.
     private void updateUniqueFieldsOption(Map<String,String> optionsMap, UniqueFields uniqueFields) {
@@ -244,6 +308,15 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
             uniqueFields.putAll(existingFields.getFieldMap());
         }
         optionsMap.put(QueryParameters.UNIQUE_FIELDS, uniqueFields.toString());
+    }
+
+    private void updateGroupbyFieldsOption(Map<String,String> optionsMap, GroupByFields groupByFields) {
+        // Combine with any previously found unique fields.
+        if (optionsMap.containsKey(QueryParameters.GROUP_FIELDS)) {
+            GroupByFields existingFields = GroupByFields.from(optionsMap.get(QueryParameters.GROUP_FIELDS));
+            groupByFields.putAll(existingFields.getFieldMap());
+        }
+        optionsMap.put(QueryParameters.GROUP_FIELDS, groupByFields.toString());
     }
     
     /**
