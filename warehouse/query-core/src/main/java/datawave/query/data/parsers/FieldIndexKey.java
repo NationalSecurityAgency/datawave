@@ -159,4 +159,14 @@ public class FieldIndexKey implements KeyParser {
         }
         return rootUid;
     }
+    
+    /**
+     * Get the key
+     *
+     * @return the key
+     */
+    @Override
+    public Key getKey() {
+        return key;
+    }
 }

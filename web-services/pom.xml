@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>3.42.0-SNAPSHOT</version>
+        <version>5.4.0-SNAPSHOT</version>
     </parent>
     <groupId>gov.nsa.datawave.webservices</groupId>
     <artifactId>datawave-ws-parent</artifactId>
@@ -466,33 +466,9 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>ch.qos.reload4j</groupId>
-                <artifactId>reload4j</artifactId>
-                <version>${version.reload4j}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>javax.jms</groupId>
                 <artifactId>jms</artifactId>
                 <version>${version.jms}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>apache-log4j-extras</artifactId>
-                <version>${version.log4j-extras}</version>
                 <scope>provided</scope>
                 <exclusions>
                     <exclusion>
@@ -529,16 +505,6 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-common-test</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
     <build>
@@ -560,7 +526,8 @@
                         <threadCountClasses>0</threadCountClasses>
                         <threadCountMethods>1</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
-                        <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
+                        <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=
+                            --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <runOrder>random</runOrder>
                         <!-- write temporary files to the target directory.
@@ -568,6 +535,7 @@
                              when running on a multi user system where /tmp/server.lock could
                              be written to by multiple users -->
                         <systemPropertyVariables>
+                            <log4j1.compatibility>true</log4j1.compatibility>
                             <log4j.configuration>file:${project.build.testOutputDirectory}/log4j.properties</log4j.configuration>
                             <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         </systemPropertyVariables>
@@ -644,7 +612,8 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration combine.children="append">
                     <reuseForks>false</reuseForks>
-                    <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
+                    <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=
+                        --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED</argLine>
                     <groups>datawave.common.test.integration.IntegrationTest</groups>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>${runOrder}</runOrder>

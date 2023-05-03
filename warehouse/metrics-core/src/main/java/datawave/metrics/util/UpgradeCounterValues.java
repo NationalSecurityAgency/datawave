@@ -3,16 +3,14 @@ package datawave.metrics.util;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -56,52 +54,51 @@ public class UpgradeCounterValues {
     protected void run(String[] args) throws ParseException, AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
         parseConfig(args);
         
-        ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zookeepers));
-        Connector connector = instance.getConnector(username, new PasswordToken(password));
-        Authorizations auths = connector.securityOperations().getUserAuthorizations(connector.whoami());
-        
-        try (BatchWriter writer = connector.createBatchWriter(tableName, new BatchWriterConfig().setMaxWriteThreads(bwThreads).setMaxMemory(bwMemory)
-                        .setMaxLatency(60, TimeUnit.SECONDS));
-                        BatchScanner scanner = connector.createBatchScanner(tableName, auths, bsThreads)) {
-            scanner.setRanges(ranges);
-            
-            for (Entry<Key,Value> entry : scanner) {
-                Key key = entry.getKey();
+        try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, password).build()) {
+            Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
+            try (BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxWriteThreads(bwThreads).setMaxMemory(bwMemory)
+                            .setMaxLatency(60, TimeUnit.SECONDS));
+                            BatchScanner scanner = client.createBatchScanner(tableName, auths, bsThreads)) {
+                scanner.setRanges(ranges);
                 
-                ByteArrayDataInput in = ByteStreams.newDataInput(entry.getValue().get());
-                Counters counters = new Counters();
-                try {
-                    counters.readFields(in);
-                } catch (IOException e) {
-                    // The IO exception means the counters are in the wrong format. We *assume* that they are in
-                    // the old (CDH3) format, and de-serialize according to that, and re-write the key with the new value.
-                    in = ByteStreams.newDataInput(entry.getValue().get());
-                    int numGroups = in.readInt();
-                    while (numGroups-- > 0) {
-                        String groupName = Text.readString(in);
-                        String groupDisplayName = Text.readString(in);
-                        CounterGroup group = counters.addGroup(groupName, groupDisplayName);
-                        
-                        int groupSize = WritableUtils.readVInt(in);
-                        for (int i = 0; i < groupSize; i++) {
-                            String counterName = Text.readString(in);
-                            String counterDisplayName = counterName;
-                            if (in.readBoolean())
-                                counterDisplayName = Text.readString(in);
-                            long value = WritableUtils.readVLong(in);
-                            group.addCounter(counterName, counterDisplayName, value);
-                        }
-                    }
+                for (Entry<Key,Value> entry : scanner) {
+                    Key key = entry.getKey();
                     
-                    ByteArrayDataOutput out = ByteStreams.newDataOutput();
-                    counters.write(out);
-                    Mutation m = new Mutation(key.getRow());
-                    m.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp() + 1,
-                                    new Value(out.toByteArray()));
-                    writer.addMutation(m);
+                    ByteArrayDataInput in = ByteStreams.newDataInput(entry.getValue().get());
+                    Counters counters = new Counters();
+                    try {
+                        counters.readFields(in);
+                    } catch (IOException e) {
+                        // The IO exception means the counters are in the wrong format. We *assume* that they are in
+                        // the old (CDH3) format, and de-serialize according to that, and re-write the key with the new value.
+                        in = ByteStreams.newDataInput(entry.getValue().get());
+                        int numGroups = in.readInt();
+                        while (numGroups-- > 0) {
+                            String groupName = Text.readString(in);
+                            String groupDisplayName = Text.readString(in);
+                            CounterGroup group = counters.addGroup(groupName, groupDisplayName);
+                            
+                            int groupSize = WritableUtils.readVInt(in);
+                            for (int i = 0; i < groupSize; i++) {
+                                String counterName = Text.readString(in);
+                                String counterDisplayName = counterName;
+                                if (in.readBoolean())
+                                    counterDisplayName = Text.readString(in);
+                                long value = WritableUtils.readVLong(in);
+                                group.addCounter(counterName, counterDisplayName, value);
+                            }
+                        }
+                        
+                        ByteArrayDataOutput out = ByteStreams.newDataOutput();
+                        counters.write(out);
+                        Mutation m = new Mutation(key.getRow());
+                        m.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp() + 1,
+                                        new Value(out.toByteArray()));
+                        writer.addMutation(m);
+                    }
                 }
+                
             }
-            
         }
     }
     

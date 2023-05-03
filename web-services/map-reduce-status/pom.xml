@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>3.42.0-SNAPSHOT</version>
+        <version>5.4.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-map-reduce-status</artifactId>
     <packaging>ejb</packaging>
@@ -18,11 +18,6 @@
         <dependency>
             <groupId>javax.enterprise</groupId>
             <artifactId>cdi-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.reload4j</groupId>
-            <artifactId>reload4j</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
@@ -40,11 +35,6 @@
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-map-reduce</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>apache-log4j-extras</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

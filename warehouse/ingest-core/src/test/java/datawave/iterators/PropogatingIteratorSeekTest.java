@@ -1,11 +1,11 @@
 package datawave.iterators;
 
 import datawave.ingest.table.aggregator.PropogatingCombiner;
-import org.apache.accumulo.core.client.impl.BaseIteratorEnvironment;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.data.*;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.SortedMapIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.hadoop.io.Text;
 import org.junit.Assert;
 import org.junit.Before;
@@ -123,7 +123,7 @@ public class PropogatingIteratorSeekTest {
         }
     }
     
-    public static class TestIteratorEnvironment extends BaseIteratorEnvironment {
+    public static class TestIteratorEnvironment implements IteratorEnvironment {
         public boolean isSamplingEnabled() {
             return false;
         }

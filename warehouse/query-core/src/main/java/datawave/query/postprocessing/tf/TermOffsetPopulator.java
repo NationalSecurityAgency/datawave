@@ -1,30 +1,22 @@
 package datawave.query.postprocessing.tf;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedSet;
-
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
+import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.core.iterators.TermFrequencyIterator;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
-import datawave.query.jexl.functions.TermFrequencyList;
-import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.Constants;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.query.jexl.functions.ContentFunctions;
+import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.jexl.visitors.LiteralNodeSubsetVisitor;
-
+import datawave.query.predicate.EventDataQueryFilter;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -37,15 +29,24 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.Sets;
-import com.google.common.collect.TreeMultimap;
-import com.google.protobuf.InvalidProtocolBufferException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedSet;
 
 import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NAMESPACE;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME;
 
 public class TermOffsetPopulator {
     private static final Logger log = Logger.getLogger(TermOffsetPopulator.class);
@@ -54,10 +55,10 @@ public class TermOffsetPopulator {
     
     static {
         Set<String> _phraseFunctions = Sets.newHashSet();
-        _phraseFunctions.add(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME);
-        _phraseFunctions.add(ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME);
-        _phraseFunctions.add(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME);
-        _phraseFunctions.add(ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME);
+        _phraseFunctions.add(CONTENT_WITHIN_FUNCTION_NAME);
+        _phraseFunctions.add(CONTENT_ADJACENT_FUNCTION_NAME);
+        _phraseFunctions.add(CONTENT_PHRASE_FUNCTION_NAME);
+        _phraseFunctions.add(CONTENT_SCORED_PHRASE_FUNCTION_NAME);
         phraseFunctions = Collections.unmodifiableSet(_phraseFunctions);
     }
     
@@ -67,12 +68,14 @@ public class TermOffsetPopulator {
     private Document document;
     private Set<String> contentExpansionFields;
     
-    public TermOffsetPopulator(Multimap<String,String> termFrequencyFieldValues, Set<String> contentExpansionFields, EventDataQueryFilter evaluationFilter,
-                    SortedKeyValueIterator<Key,Value> source) {
+    private final TermFrequencyConfig config;
+    
+    public TermOffsetPopulator(Multimap<String,String> termFrequencyFieldValues, TermFrequencyConfig config) {
         this.termFrequencyFieldValues = termFrequencyFieldValues;
-        this.contentExpansionFields = contentExpansionFields;
-        this.source = source;
-        this.evaluationFilter = evaluationFilter;
+        this.config = config;
+        this.contentExpansionFields = this.config.getContentExpansionFields();
+        this.source = this.config.getSource();
+        this.evaluationFilter = this.config.getEvaluationFilter();
     }
     
     public Document document() {
@@ -115,6 +118,11 @@ public class TermOffsetPopulator {
      * @return TermOffset map
      */
     public Map<String,Object> getContextMap(Key docKey, Set<Key> keys, Set<String> fields) {
+
+        if (keys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
         document = new Document();
         
         TermFrequencyIterator tfSource;
@@ -131,11 +139,12 @@ public class TermOffsetPopulator {
                 log.error("Created a TFIter with no field values. Orig fields: " + termFrequencyFieldValues.keySet() + " fields to remove: " + fields);
             }
         }
+
         
         Range range = getRange(keys);
         try {
             tfSource.init(source, null, null);
-            tfSource.seek(getRange(keys), null, false);
+            tfSource.seek(range, null, false);
         } catch (IOException e) {
             log.error("Seek to the range failed: " + range, e);
         }
@@ -231,17 +240,12 @@ public class TermOffsetPopulator {
     /**
      * Finds all the content functions and returns a map indexed by function name to the function.
      * 
-     * @param query
-     *            the query node
+     * @param node
+     *            a JexlNode
      * @return a map indexed by function name to the function
      */
-    public static Multimap<String,Function> getContentFunctions(JexlNode query) {
-        FunctionReferenceVisitor visitor = new FunctionReferenceVisitor();
-        query.jjtAccept(visitor, null);
-        
-        Multimap<String,Function> functionsInNamespace = Multimaps.index(visitor.functions().get(ContentFunctions.CONTENT_FUNCTION_NAMESPACE), Function::name);
-        
-        return Multimaps.filterKeys(functionsInNamespace, TermOffsetPopulator::isContentFunctionTerm);
+    public static Multimap<String,Function> getContentFunctions(JexlNode node) {
+        return FunctionReferenceVisitor.functions(node, Collections.singleton(CONTENT_FUNCTION_NAMESPACE));
     }
     
     /**

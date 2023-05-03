@@ -75,7 +75,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
         accumuloSetup.setAuthorizations(CitiesDataType.getTestAuths());
-        connector = accumuloSetup.loadTables(log, TEARDOWN.EVERY_OTHER, INTERRUPT.NEVER);
+        client = accumuloSetup.loadTables(log, TEARDOWN.EVERY_OTHER, INTERRUPT.NEVER);
     }
     
     @Before

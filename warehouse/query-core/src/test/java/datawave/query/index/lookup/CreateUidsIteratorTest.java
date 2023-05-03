@@ -5,7 +5,7 @@ import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedMapIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.junit.Test;
 
