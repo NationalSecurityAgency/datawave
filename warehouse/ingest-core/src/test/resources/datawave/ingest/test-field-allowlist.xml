@@ -1,9 +1,11 @@
 <?xml version="1.0"?>
 <fieldConfig>
     <!-- fields not listed here are not indexed or tokenized. By default fields listed here are indexed
-         (forward and reverse) but >not< tokenized unless explicitly stated as such. This is a whitelist -->
-    <default stored="true" indexed="true" reverseIndexed="true" tokenized="false" reverseTokenized="false" indexType="datawave.data.type.LcNoDiacriticsType"/>
-    <nomatch stored="false" indexed="false" reverseIndexed="false" tokenized="false"  reverseTokenized="false" indexType="datawave.data.type.HexStringType"/>
+         (forward and reverse) but >not< tokenized unless explicitly stated as such. This is an allowlist -->
+    <default stored="true" indexed="true" reverseIndexed="true" tokenized="false" reverseTokenized="false"
+             indexType="datawave.data.type.LcNoDiacriticsType"/>
+    <nomatch stored="false" indexed="false" reverseIndexed="false" tokenized="false" reverseTokenized="false"
+             indexType="datawave.data.type.HexStringType"/>
     <fieldPattern pattern="*J" indexed="true" indexType="datawave.data.type.MacAddressType"/>
     <fieldPattern pattern="*K" indexed="false"/>
     <field name="A" indexed="false"/>

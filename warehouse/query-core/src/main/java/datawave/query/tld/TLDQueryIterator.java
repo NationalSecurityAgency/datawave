@@ -47,45 +47,46 @@ import java.util.Map;
  */
 public class TLDQueryIterator extends QueryIterator {
     private static final Logger log = Logger.getLogger(TLDQueryIterator.class);
-    
+
     protected int maxFieldHitsBeforeSeek = -1;
     protected int maxKeysBeforeSeek = -1;
-    
-    public TLDQueryIterator() {}
-    
+
+    public TLDQueryIterator() {
+    }
+
     public TLDQueryIterator(TLDQueryIterator other, IteratorEnvironment env) {
         super(other, env);
     }
-    
+
     @Override
     public TLDQueryIterator deepCopy(IteratorEnvironment env) {
         return new TLDQueryIterator(this, env);
     }
-    
+
     @Override
-    public boolean validateOptions(Map<String,String> options) {
+    public boolean validateOptions(Map<String, String> options) {
         boolean success = super.validateOptions(options);
         super.getDocumentKey = GetStartKeyForRoot.instance();
         return success;
     }
-    
+
     @Override
-    public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
+    public void init(SortedKeyValueIterator<Key, Value> source, Map<String, String> options, IteratorEnvironment env) throws IOException {
         if (log.isTraceEnabled()) {
             log.trace("TLDQueryIterator init()");
         }
-        
+
         // extract SeekingQueryPlanner fields if available
         if (options.get(SeekingQueryPlanner.MAX_FIELD_HITS_BEFORE_SEEK) != null) {
             maxFieldHitsBeforeSeek = Integer.parseInt(options.get(SeekingQueryPlanner.MAX_FIELD_HITS_BEFORE_SEEK));
         }
-        
+
         if (options.get(SeekingQueryPlanner.MAX_KEYS_BEFORE_SEEK) != null) {
             maxKeysBeforeSeek = Integer.parseInt(options.get(SeekingQueryPlanner.MAX_KEYS_BEFORE_SEEK));
         }
-        
+
         super.init(source, options, env);
-        
+
         // Replace the fieldIndexKeyDataTypeFilter with a chain of "anded" index-filtering predicates.
         // If no other predicates are configured via the indexfiltering.classes property, the method
         // simply returns the existing fieldIndexKeyDataTypeFilter value. Otherwise, the returned value
@@ -93,10 +94,10 @@ public class TLDQueryIterator extends QueryIterator {
         // fieldIndexKeyDataTypeFilter value (assuming it is defined with something other than the default
         // "ALWAYS_TRUE" KeyIdentity.Function).
         fieldIndexKeyDataTypeFilter = parseIndexFilteringChain(new SourcedOptions<>(source, env, options));
-        
+
         disableIndexOnlyDocuments = false;
     }
-    
+
     /**
      * Get a FieldIndexAggregator for the {@link TLDQueryIterator}
      *
@@ -109,10 +110,10 @@ public class TLDQueryIterator extends QueryIterator {
         }
         return fiAggregator;
     }
-    
+
     /**
      * Distinct from getEvaluation filter as the FI filter is used to prevent FI hits on nonEventFields that are not indexOnly fields
-     * 
+     *
      * @return an {@link EventDataQueryFilter}
      */
     protected EventDataQueryFilter getFIEvaluationFilter() {
@@ -123,28 +124,28 @@ public class TLDQueryIterator extends QueryIterator {
         filterChain.addFilter(new TLDFieldIndexQueryFilter(getIndexOnlyFields()));
         return filterChain;
     }
-    
+
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
         if (this.evaluationFilter == null && script != null) {
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), typeMetadata, useWhiteListedFields ? whiteListedFields : null,
-                            useBlackListedFields ? blackListedFields : null, getEventFieldSeek(), getEventNextSeek(),
-                            limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
+            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), typeMetadata, useAllowListedFields ? allowListedFields : null,
+                    useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(), getEventNextSeek(),
+                    limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
         }
         return this.evaluationFilter != null ? evaluationFilter.clone() : null;
     }
-    
+
     @Override
-    protected NestedIterator<Key> getEventDataNestedIterator(SortedKeyValueIterator<Key,Value> source) {
+    protected NestedIterator<Key> getEventDataNestedIterator(SortedKeyValueIterator<Key, Value> source) {
         return new TLDEventDataScanNestedIterator(source, getEventEntryKeyDataTypeFilter());
     }
-    
+
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private Predicate<Key> parseIndexFilteringChain(final Map<String,String> options) {
+    private Predicate<Key> parseIndexFilteringChain(final Map<String, String> options) {
         // Create a list to gather up the predicates
         List<Predicate<Key>> predicates = Collections.emptyList();
-        
+
         final String functions = (null != options) ? options.get(IndexIterator.INDEX_FILTERING_CLASSES) : StringUtils.EMPTY_STRING;
         if ((null != functions) && !functions.isEmpty()) {
             try {
@@ -153,7 +154,7 @@ public class TLDQueryIterator extends QueryIterator {
                     if (log.isTraceEnabled()) {
                         log.trace("Configuring index-filtering class: " + fClassName);
                     }
-                    
+
                     final Class<?> fClass = Class.forName(fClassName);
                     if (Predicate.class.isAssignableFrom(fClass)) {
                         // Create and configure the predicate
@@ -161,7 +162,7 @@ public class TLDQueryIterator extends QueryIterator {
                         if (p instanceof ConfiguredPredicate) {
                             ((ConfiguredPredicate) p).configure(options);
                         }
-                        
+
                         // Initialize a mutable List instance and add the default filter, if defined
                         if (predicates.isEmpty()) {
                             predicates = new LinkedList<>();
@@ -170,7 +171,7 @@ public class TLDQueryIterator extends QueryIterator {
                                 predicates.add(existingPredicate);
                             }
                         }
-                        
+
                         // Add the newly instantiated predicate
                         predicates.add(p);
                     } else {
@@ -182,7 +183,7 @@ public class TLDQueryIterator extends QueryIterator {
                 log.error("Could not instantiate postprocessing chain!", e);
             }
         }
-        
+
         // Assign the return value
         final Predicate<Key> predicate;
         if (!predicates.isEmpty()) {
@@ -194,10 +195,10 @@ public class TLDQueryIterator extends QueryIterator {
         } else {
             predicate = fieldIndexKeyDataTypeFilter;
         }
-        
+
         return predicate;
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         // when we are torn down and rebuilt, ensure the range is for the next top level document
@@ -209,23 +210,23 @@ public class TLDQueryIterator extends QueryIterator {
                 range = new Range(startKey, false, endKey, endKeyInclusive);
             }
         }
-        
+
         super.seek(range, columnFamilies, inclusive);
     }
-    
+
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
+            throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
         return createIteratorBuildingVisitor(TLDIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs).setIteratorBuilder(
-                        TLDIndexIteratorBuilder.class);
+                TLDIndexIteratorBuilder.class);
     }
-    
+
     @Override
-    protected Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
+    protected Function<Tuple2<Key, Document>, Tuple3<Key, Document, Map<String, Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
         tfConfig.setTld(true);
         return TFFactory.getFunction(tfConfig);
     }
-    
+
     /**
      * Get a {@link TLDRangeProvider}
      *
@@ -238,7 +239,7 @@ public class TLDQueryIterator extends QueryIterator {
         }
         return rangeProvider;
     }
-    
+
     /**
      * Get a {@link TLDEquality} implementation of an {@link Equality}
      *
