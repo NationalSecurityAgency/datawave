@@ -19,6 +19,7 @@ import org.apache.hadoop.mapreduce.Counters;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.Map;
 
@@ -44,8 +45,8 @@ public class JsonCountersIterator extends WrappingIterator implements OptionDesc
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         JsonCountersIterator copy;
         try {
-            copy = getClass().newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            copy = getClass().getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             // Shouldn't happen so just throw as a runtime exception
             throw new RuntimeException(e);
         }
