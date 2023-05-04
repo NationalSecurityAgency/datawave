@@ -379,7 +379,7 @@ public class ParentQueryIteratorTest {
 
         while (qi.hasTop()) {
             Key tk = qi.getTopKey();
-            assertFalse("Could not remove " + tk + " from " + expectation, expectation.remove(tk));
+            assertTrue("Could not remove " + tk + " from " + expectation, expectation.remove(tk));
             qi.next();
         }
 
