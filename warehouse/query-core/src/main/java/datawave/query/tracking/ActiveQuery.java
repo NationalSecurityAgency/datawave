@@ -130,13 +130,13 @@ public class ActiveQuery {
     synchronized private void setInCall(CallType type, boolean inCall) {
         Integer numCalls = this.inCallMap.get(type);
         if (numCalls == null) {
-            numCalls = new Integer(0);
+            numCalls = 0;
         }
         int newNumCalls;
         if (inCall) {
-            newNumCalls = numCalls.intValue() + 1;
+            newNumCalls = numCalls + 1;
         } else {
-            newNumCalls = numCalls.intValue() - 1;
+            newNumCalls = numCalls - 1;
         }
         if (newNumCalls < 0) {
             log.warn(activeQueryLogName + ": inCall count for callType:" + type.toString() + "=" + newNumCalls + ", resetting to 0");

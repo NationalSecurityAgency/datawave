@@ -60,13 +60,13 @@ public class ObjectSizeOfTest {
     @Test
     public void testNumbers() {
         assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(Boolean.TRUE));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Byte((byte) 1)));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Character((char) 1)));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Short((short) 1)));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Integer(1)));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Float(1)));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Long(1)));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Double(1)));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(Byte.valueOf((byte) 1)));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(Character.valueOf((char) 1)));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(Short.valueOf((short) 1)));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(Integer.valueOf(1)));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(Float.valueOf(1)));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(Long.valueOf(1)));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(Double.valueOf(1)));
     }
     
     @Test

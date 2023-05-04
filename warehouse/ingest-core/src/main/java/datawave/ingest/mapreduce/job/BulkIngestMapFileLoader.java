@@ -919,7 +919,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 
                 // import the directory
                 log.info("Bringing Map Files online for " + tableName);
-                accumuloClient.tableOperations().importDirectory(tableName, tableDir.toString(), failuresDir, false);
+                accumuloClient.tableOperations().importDirectory(tableDir.getName()).to(tableName).tableTime(false);
                 log.info("Completed bringing map files online for " + tableName);
                 validateComplete();
             } catch (Exception e) {

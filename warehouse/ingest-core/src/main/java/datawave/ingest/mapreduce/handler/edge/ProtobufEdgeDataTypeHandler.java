@@ -243,7 +243,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             throw e;
         }
         
-        Assert.notNull(ctx);
+        Assert.notNull(ctx, "Context must not be null");
         
         registry.put(EDGE_DEFAULT_DATA_TYPE, null);
         
