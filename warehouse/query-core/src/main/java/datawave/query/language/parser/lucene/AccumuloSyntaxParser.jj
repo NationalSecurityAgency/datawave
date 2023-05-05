@@ -7,7 +7,6 @@ options {
   JAVA_UNICODE_ESCAPE=true;
   USER_CHAR_STREAM=true;
   IGNORE_CASE=true;
-  JDK_VERSION="1.5";
 }
 
 PARSER_BEGIN(AccumuloSyntaxParser)
@@ -55,7 +54,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QuotedFieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
 import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.RegexpQueryNode;
-import org.apache.lucene.queryparser.flexible.core.util.UnescapedCharSequence;
+import org.apache.lucene.queryparser.flexible.core.util.UnescapedCharSequence;import org.apache.lucene.search.FuzzyQuery;
 
 @SuppressWarnings("all")
 public class AccumuloSyntaxParser implements SyntaxParser {
@@ -64,7 +63,7 @@ public class AccumuloSyntaxParser implements SyntaxParser {
 	private static final int CONJ_AND =2;
 	private static final int CONJ_OR =2;
 
- 
+
    // syntax parser constructor
    public AccumuloSyntaxParser() {
      this(new FastCharStream(new StringReader("")));
@@ -93,6 +92,8 @@ public class AccumuloSyntaxParser implements SyntaxParser {
             throw e;
       }
     }
+
+}}
    
 }
 
@@ -366,7 +367,7 @@ QueryNode Term(CharSequence field) : {
   boolean endInc=false;
   QueryNode q =null; 
   FieldQueryNode qLower, qUpper;
-  float defaultMinSimilarity = org.apache.lucene.search.FuzzyQuery.defaultMinSimilarity;
+  float defaultMinSimilarity = FuzzyQuery.defaultMaxEdits;
 }
 {
   (

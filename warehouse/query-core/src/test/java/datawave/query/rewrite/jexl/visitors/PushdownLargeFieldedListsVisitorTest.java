@@ -98,7 +98,7 @@ public class PushdownLargeFieldedListsVisitorTest {
 
     @Test
     public void testPushdownFst() throws Throwable {
-        setupFst("FOO == 'BAR' || FOO == 'FOO' ||  FOO == 'FOOBAR'", "((_List_ = true) && ((id = '", "') && (field = 'FOO') && (params = '{\"fstURI\":\"");
+        setupFst("FOO == 'BAR' || FOO == 'FOO' ||  FOO == 'FOOBAR'", "((_List_ = true) && ((id = '", "') && (field = 'FOO')" /* fst param appended later */);
     }
 
     private void testSimple(String query, String expected) throws Throwable {
@@ -130,7 +130,11 @@ public class PushdownLargeFieldedListsVisitorTest {
         String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
                         TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query)), fileSystem, hdfsCacheURI.toString()));
         String id = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
-        assertEquals(left + id + right + hdfsCacheURI + "/PushdownLargeFileFst.1.fst\"}')))", rewritten);
+
+        String expectedFstParam = " && (params = '{\"fstInfo\":{" + "\"fstMetaUri\":\"" + hdfsCacheURI + "/PushdownLargeFileFst.1.fstmeta\","
+                        + "\"fstDataUri\":\"" + hdfsCacheURI + "/PushdownLargeFileFst.1.fstdata\"" + "}}')))";
+
+        assertEquals(left + id + right + expectedFstParam, rewritten);
     }
 
     private void setupFst(String query, String left, String right) throws Throwable {

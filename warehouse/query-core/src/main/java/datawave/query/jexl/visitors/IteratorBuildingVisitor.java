@@ -1140,16 +1140,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                     // cache these values for use during Jexl Evaluation
                     if (exceededOrEvaluationCache != null)
                         exceededOrEvaluationCache.put(exceededOr.getId(), values);
-                } else if (exceededOr.getParams().getFstURI() != null) {
-                    URI fstUri = new URI(exceededOr.getParams().getFstURI());
-                    FST fst;
+                } else if (exceededOr.getParams().getFstInfo() != null) {
                     // only recompute this if not already set since this is potentially expensive
-                    if (exceededOrEvaluationCache.containsKey(exceededOr.getId())) {
-                        fst = (FST) exceededOrEvaluationCache.get(exceededOr.getId());
-                    } else {
-                        fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstUri), hdfsFileCompressionCodec,
-                                        hdfsFileSystem.getFileSystem(fstUri));
-                    }
+                    final FST<?> fst = exceededOrEvaluationCache.containsKey(exceededOr.getId()) ? (FST<?>) exceededOrEvaluationCache.get(exceededOr.getId())
+                                    : DatawaveFieldIndexListIteratorJexl.FSTManager.get(exceededOr.getParams().getFstInfo(), hdfsFileCompressionCodec,
+                                                    hdfsFileSystem);
                     listIterBuilder.setFst(fst);
 
                     // cache this fst for use during JexlEvaluation.
@@ -1162,7 +1157,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             }
 
             builder.setField(JexlASTHelper.deconstructIdentifier(exceededOr.getField()));
-        } catch (IOException | URISyntaxException | NullPointerException e) {
+        } catch (IOException | NullPointerException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, e, MessageFormat.format("Marker Type: {0}", EXCEEDED_OR));
             throw new DatawaveFatalQueryException(qe);
         }

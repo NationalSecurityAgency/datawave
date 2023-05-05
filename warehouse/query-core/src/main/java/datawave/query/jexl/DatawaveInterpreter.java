@@ -574,12 +574,11 @@ public class DatawaveInterpreter extends Interpreter {
                         context.set(exceededOr.getId(), exceededOr.getParams().getSortedAccumuloRanges());
                     } else if (exceededOr.getParams().getValues() != null && !exceededOr.getParams().getValues().isEmpty()) {
                         context.set(exceededOr.getId(), exceededOr.getParams().getValues());
-                    } else if (exceededOr.getParams().getFstURI() != null) {
-                        context.set(exceededOr.getId(),
-                                        DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(new URI(exceededOr.getParams().getFstURI()))));
+                    } else if (exceededOr.getParams().getFstInfo() != null) {
+                        context.set(exceededOr.getId(), DatawaveFieldIndexListIteratorJexl.FSTManager.get(exceededOr.getParams().getFstInfo()));
                     }
                 }
-            } catch (IOException | URISyntaxException e) {
+            } catch (IOException e) {
                 log.warn("Unable to load ExceededOrThreshold Parameters during evaluation", e);
             }
         }

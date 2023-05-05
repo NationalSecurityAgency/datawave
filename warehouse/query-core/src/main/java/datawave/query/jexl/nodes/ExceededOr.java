@@ -1,6 +1,5 @@
 package datawave.query.jexl.nodes;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,6 +24,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
+import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor.FstInfo;
 
 public class ExceededOr {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ExceededOr.class);
@@ -47,8 +48,8 @@ public class ExceededOr {
         this.jexlNode = jexlNode;
     }
 
-    public ExceededOr(String field, URI fstPath) throws JsonProcessingException {
-        this(field, new ExceededOrParams(fstPath.toString()));
+    public ExceededOr(String field, FstInfo fstPath) throws JsonProcessingException {
+        this(field, new ExceededOrParams(fstPath));
     }
 
     public ExceededOr(String field, SortedSet<String> values) throws JsonProcessingException {
@@ -149,7 +150,7 @@ public class ExceededOr {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ExceededOrParams {
-        private String fstURI;
+        private FstInfo fstInfo;
         private Set<String> values;
         private Collection<String[]> ranges;
 
@@ -157,8 +158,8 @@ public class ExceededOr {
         @SuppressWarnings("unused")
         private ExceededOrParams() {}
 
-        ExceededOrParams(String fstURI) {
-            this.fstURI = fstURI;
+        ExceededOrParams(FstInfo fstInfo) {
+            this.fstInfo = fstInfo;
         }
 
         ExceededOrParams(Set<String> values, Collection<Range> ranges) {
@@ -213,8 +214,8 @@ public class ExceededOr {
             return upperBound.length() > 1 && (upperBound.charAt(upperBound.length() - 1) == ']' || upperBound.charAt(upperBound.length() - 1) == ')');
         }
 
-        public String getFstURI() {
-            return fstURI;
+        public FstInfo getFstInfo() {
+            return fstInfo;
         }
 
         public Collection<String> getValues() {

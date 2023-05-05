@@ -12,10 +12,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
@@ -165,8 +167,8 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                 try {
                     // if we have an hdfs cache directory and if past the fst/list threshold, then create the fst/list and replace the list with an assignment
                     if (fstHdfsUri != null && (eqNodes.size() >= config.getMaxOrExpansionFstThreshold())) {
-                        URI fstPath = createFst(values);
-                        markers.add(QueryPropertyMarker.create(new ExceededOr(field, fstPath).getJexlNode(), EXCEEDED_OR));
+                        FstInfo fstInfo = createFst(values);
+                        markers.add(QueryPropertyMarker.create(new ExceededOr(field, fstInfo).getJexlNode(), EXCEEDED_OR));
                         eqNodes = null;
                     } else if (eqNodes.size() >= config.getMaxOrExpansionThreshold()) {
                         markers.add(QueryPropertyMarker.create(new ExceededOr(field, values).getJexlNode(), EXCEEDED_OR));
@@ -332,7 +334,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         }
     }
 
-    protected URI createFst(SortedSet<String> values) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException,
+    protected FstInfo createFst(SortedSet<String> values) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException,
                     NoSuchMethodException, InvocationTargetException {
         FST fst = DatawaveFieldIndexListIteratorJexl.getFST(values);
 
@@ -349,18 +351,76 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             extension = codec.getDefaultExtension();
         }
         int fstCount = config.getFstCount().incrementAndGet();
-        Path fstFile = new Path(fstHdfsUri, "PushdownLargeFileFst." + fstCount + ".fst" + extension);
 
-        OutputStream fstFileOut = new BufferedOutputStream(fs.create(fstFile, false));
+        Path fstMetaFile = new Path(fstHdfsUri, "PushdownLargeFileFst." + fstCount + ".fstmeta" + extension);
+        OutputStream fstMetaOut = new BufferedOutputStream(fs.create(fstMetaFile, false));
         if (codec != null) {
-            fstFileOut = codec.createOutputStream(fstFileOut);
+            fstMetaOut = codec.createOutputStream(fstMetaOut);
         }
 
-        OutputStreamDataOutput outStream = new OutputStreamDataOutput(fstFileOut);
-        fst.save(outStream);
-        outStream.close();
+        Path fstDataFile = new Path(fstHdfsUri, "PushdownLargeFileFst." + fstCount + ".fstdata" + extension);
+        OutputStream fstDataOut = new BufferedOutputStream(fs.create(fstDataFile, false));
+        if (codec != null) {
+            fstDataOut = codec.createOutputStream(fstDataOut);
+        }
 
-        return fstFile.toUri();
+        OutputStreamDataOutput fstMetaStream = new OutputStreamDataOutput(fstMetaOut);
+        OutputStreamDataOutput fstDataStream = new OutputStreamDataOutput(fstDataOut);
+
+        fst.save(fstMetaStream, fstDataStream);
+        fstMetaStream.close();
+        fstDataStream.close();
+
+        return new FstInfo(fstMetaFile.toUri(), fstDataFile.toUri());
     }
 
+    public static class FstInfo {
+        // private static final String sep = "%%";
+        URI fstMetaUri;
+        URI fstDataUri;
+
+        public FstInfo() {}
+
+        public FstInfo(URI fstMetaUri, URI fstDataUri) {
+            this.fstMetaUri = fstMetaUri;
+            this.fstDataUri = fstDataUri;
+        }
+
+        /*
+         * TODO: remove this block of comment /* public FstInfo(String fstParamValue) throws IllegalArgumentException { int pos = fstParamValue.indexOf(sep); if
+         * (pos < 0) { throw new IllegalArgumentException("Could not find delimiter in fstParamValue: " + fstParamValue); }
+         *
+         * try { final String fstMetaUriString = fstParamValue.substring(0, pos); final String fstDataUriString = fstParamValue.substring(pos + sep.length());
+         * fstMetaUri = new URI(fstMetaUriString); fstDataUri = new URI(fstDataUriString); } catch (URISyntaxException e) { throw new
+         * IllegalArgumentException("Could not parse URIs from fstParamValue: " + fstParamValue, e); } }
+         */
+
+        public URI getFstMetaUri() {
+            return fstMetaUri;
+        }
+
+        public URI getFstDataUri() {
+            return fstDataUri;
+        }
+
+        @Override
+        public String toString() {
+            return "FstInfo{" + "fstMetaUri=" + fstMetaUri + ", fstDataUri=" + fstDataUri + '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            FstInfo fstInfo = (FstInfo) o;
+            return Objects.equals(fstMetaUri, fstInfo.fstMetaUri) && Objects.equals(fstDataUri, fstInfo.fstDataUri);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(fstMetaUri, fstDataUri);
+        }
+    }
 }
