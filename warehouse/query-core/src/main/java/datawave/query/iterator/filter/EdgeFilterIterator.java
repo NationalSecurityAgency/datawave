@@ -29,7 +29,7 @@ import java.util.Set;
  * EdgeQuery by itself will configure ranges, and regex filters that will return ALL keys that could satisfy the supplied JEXL query. This filter is intended to
  * pair the returned values from that iterator stack down to only those that actually do adhere to the full JEXL expression.
  * <p>
- * Prefiltering is an optional component that can determine quickly if a key will fail using a whitelist of accepted values parsed from the jexl
+ * Prefiltering is an optional component that can determine quickly if a key will fail using an allowlist of accepted values parsed from the jexl
  */
 public class EdgeFilterIterator extends Filter {
     public static final Logger log = Logger.getLogger(EdgeFilterIterator.class);
@@ -173,15 +173,15 @@ public class EdgeFilterIterator extends Filter {
                 preFilterValues = (HashMultimap<String, String>) o;
             } catch (IOException ex) {
                 // we can work without it
-                log.error("Invalid whitelist value supplied to iterator.");
+                log.error("Invalid allowlist value supplied to iterator.");
             } catch (ClassNotFoundException ex) {
-                log.error("Class not found for whitelies value.");
+                log.error("Class not found for allowlies value.");
             }
         }
     }
 
     /**
-     * Method to perform prefilter against a whitelist to see if we can quickly ignore the key
+     * Method to perform prefilter against a allowlist to see if we can quickly ignore the key
      *
      * @param keyComponents mapping of key components
      * @return if we can ignore the key
@@ -196,8 +196,8 @@ public class EdgeFilterIterator extends Filter {
                     // if we encountered a regex, we'll just let the jexl engine handle it, or filter it by a different field
                     continue;
                 }
-                // assuming we have no regex to match on this field, then if the whitelist exists
-                // and the value for this key isn't in that whitelist, we just give it the boot.
+                // assuming we have no regex to match on this field, then if the allowlist exists
+                // and the value for this key isn't in that allowlist, we just give it the boot.
                 if (!preFilterValues.get(fieldName).contains(entry.getValue())) {
                     return false;
                 }
