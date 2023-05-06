@@ -128,7 +128,6 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1412,7 +1411,7 @@ public class CachedResultsBean {
                         Connection connection = ds.getConnection();
                         String logicName = crq.getQueryLogicName();
                         if (logicName != null) {
-                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
                             crq.activate(connection, queryLogic);
                         } else {
                             DbUtils.closeQuietly(connection);
@@ -1519,7 +1518,7 @@ public class CachedResultsBean {
                         if (crq.getShouldAutoActivate()) {
                             Connection connection = ds.getConnection();
                             String logicName = crq.getQueryLogicName();
-                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
                             crq.activate(connection, queryLogic);
                         } else {
                             throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_FOR_RESOURCES);
@@ -1633,7 +1632,7 @@ public class CachedResultsBean {
                     
                     Connection connection = ds.getConnection();
                     String logicName = crq.getQueryLogicName();
-                    QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                    QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
                     crq.activate(connection, queryLogic);
                     
                     response.setQueryId(crq.getQueryId());
@@ -1730,7 +1729,7 @@ public class CachedResultsBean {
                         if (crq.getShouldAutoActivate()) {
                             Connection connection = ds.getConnection();
                             String logicName = crq.getQueryLogicName();
-                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
                             crq.activate(connection, queryLogic);
                         } else {
                             throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_FOR_RESOURCES);
@@ -1873,7 +1872,7 @@ public class CachedResultsBean {
                     if (crq.isActivated() == false) {
                         Connection connection = ds.getConnection();
                         String logicName = crq.getQueryLogicName();
-                        QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                        QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
                         crq.activate(connection, queryLogic);
                     }
                     
@@ -2143,7 +2142,7 @@ public class CachedResultsBean {
                 Query q = queries.get(0);
                 
                 // will throw IllegalArgumentException if not defined
-                QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), p);
+                QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), (DatawavePrincipal) p);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
                                 new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);

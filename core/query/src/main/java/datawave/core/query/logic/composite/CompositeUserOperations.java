@@ -1,7 +1,6 @@
 package datawave.core.query.logic.composite;
 
 import com.google.common.collect.Sets;
-import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
@@ -113,11 +112,7 @@ public class CompositeUserOperations implements UserOperations {
             userDetails.add(ops.getRemoteUser(currentUser));
         }
         
-        if (currentUser instanceof DatawaveUserDetails) {
-            return AuthorizationsUtil.mergeProxiedUserDetails(DatawaveUserDetails::new, userDetails.toArray(new ProxiedUserDetails[0]));
-        } else {
-            return AuthorizationsUtil.mergeProxiedUserDetails(DatawavePrincipal::new, userDetails.toArray(new ProxiedUserDetails[0]));
-        }
+        return AuthorizationsUtil.mergeProxiedUserDetails(currentUser::newInstance, userDetails.toArray(new ProxiedUserDetails[0]));
     }
     
     public static Exception getException(QueryExceptionType qet) {

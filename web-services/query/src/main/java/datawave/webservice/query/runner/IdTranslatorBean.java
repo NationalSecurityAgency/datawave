@@ -271,7 +271,7 @@ public class IdTranslatorBean {
     private String getAuths(String logicName, Principal principal) {
         String userAuths;
         try {
-            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, (DatawavePrincipal) principal);
             // the query principal is our local principal unless the query logic has a different user operations
             DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((logic.getUserOperations() == null) ? principal
                             : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal));

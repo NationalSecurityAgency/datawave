@@ -346,7 +346,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             }
             
             // will throw IllegalArgumentException if not defined
-            logic = queryFactory.getQueryLogic(q.getQueryLogicName(), principal);
+            logic = queryFactory.getQueryLogic(q.getQueryLogicName(), (DatawavePrincipal) principal);
             
             // Get an accumulo connection
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());

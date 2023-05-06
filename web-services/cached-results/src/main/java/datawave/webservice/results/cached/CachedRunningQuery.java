@@ -9,6 +9,7 @@ import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.cachedresults.CachedResultsQueryParameters;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
@@ -1230,7 +1231,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                     }
                     if (crq.queryLogicName != null) {
                         try {
-                            crq.queryLogic = queryFactory.getQueryLogic(crq.queryLogicName, principal);
+                            crq.queryLogic = queryFactory.getQueryLogic(crq.queryLogicName, (DatawavePrincipal) principal);
                         } catch (IllegalArgumentException | CloneNotSupportedException e) {
                             log.error(e.getMessage(), e);
                         }

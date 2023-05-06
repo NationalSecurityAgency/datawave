@@ -3,8 +3,7 @@ package datawave.query.tables.edge;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
-import datawave.microservice.authorization.user.DatawaveUserDetails;
-import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -23,7 +22,6 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 
 import javax.inject.Inject;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -531,15 +529,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     public class TestQueryLogicFactory implements QueryLogicFactory {
         
         @Override
-        public QueryLogic<?> getQueryLogic(String name, Principal principal) throws QueryException {
-            Set<String> userRoles = new HashSet<>();
-            if (principal instanceof DatawavePrincipal) {
-                userRoles.addAll(((DatawavePrincipal) principal).getPrimaryUser().getRoles());
-            }
-            return getQueryLogic(name, userRoles, true);
-        }
-        
-        public QueryLogic<?> getQueryLogic(String name, DatawaveUserDetails currentUser) throws QueryException {
+        public QueryLogic<?> getQueryLogic(String name, ProxiedUserDetails currentUser) throws QueryException {
             Set<String> userRoles = new HashSet<>(currentUser.getPrimaryUser().getRoles());
             return getQueryLogic(name, userRoles, true);
         }

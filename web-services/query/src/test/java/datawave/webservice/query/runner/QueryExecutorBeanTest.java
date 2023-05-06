@@ -87,7 +87,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URISyntaxException;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -524,7 +523,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         EasyMock.replay(logic);
         
-        EasyMock.expect(queryLogicFactory.getQueryLogic(logicName, (Principal) null)).andReturn(logic).times(2);
+        EasyMock.expect(queryLogicFactory.getQueryLogic(logicName, null)).andReturn(logic).times(2);
         EasyMock.replay(queryLogicFactory);
         
         // setup test

@@ -54,6 +54,13 @@ spring:
       issuers-required: true
       # Allow users with Administrator or JBossAdministrator roles to access the sensitive actuator endpoints.
       manager-roles: Administrator,JBossAdministrator
+      # A single role that must not be present in the proxy chain, or else access will be denied for the user.
+      # deniedAccessRole: DeniedRole
+      # List of required roles, of which each entity in the proxy chain must have at least one of, or else these roles will be removed from the primary user.
+      requiredRoles: 
+        - "AuthorizedUser"
+        - "AuthorizedServer"
+        - "AuthorizedQueryServer"
   rabbitmq:
     host: ${MESSAGING_SERVER_HOSTNAME:localhost}
     publisher-confirm-type: simple

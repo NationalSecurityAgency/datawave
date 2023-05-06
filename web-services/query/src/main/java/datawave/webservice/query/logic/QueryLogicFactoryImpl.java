@@ -1,21 +1,17 @@
 package datawave.webservice.query.logic;
 
 import datawave.configuration.spring.SpringBean;
-import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
-import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.system.ServerPrincipal;
 import datawave.webservice.common.exception.UnauthorizedException;
-import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 
 import javax.inject.Inject;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,14 +38,8 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
     private DatawavePrincipal serverPrincipal;
     
     @Override
-    public QueryLogic<?> getQueryLogic(String name, Principal principal) throws IllegalArgumentException, CloneNotSupportedException {
-        return getQueryLogic(name, principal, true);
-    }
-    
-    @Override
-    public QueryLogic<?> getQueryLogic(String name, DatawaveUserDetails currentUser)
-                    throws QueryException, IllegalArgumentException, CloneNotSupportedException {
-        throw new UnsupportedOperationException("Using proxied user details to create a query logic is not supported for wildfly deployments");
+    public QueryLogic<?> getQueryLogic(String name, ProxiedUserDetails currentUser) throws IllegalArgumentException, CloneNotSupportedException {
+        return getQueryLogic(name, currentUser, true);
     }
     
     @Override
@@ -57,7 +47,8 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
         return getQueryLogic(name, null, false);
     }
     
-    public QueryLogic<?> getQueryLogic(String queryLogic, Principal principal, boolean checkRoles) throws IllegalArgumentException, CloneNotSupportedException {
+    public QueryLogic<?> getQueryLogic(String queryLogic, ProxiedUserDetails currentUser, boolean checkRoles)
+                    throws IllegalArgumentException, CloneNotSupportedException {
         
         String beanName = queryLogic;
         if (queryLogicFactoryConfiguration.hasLogicMap()) {
@@ -70,9 +61,7 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
         QueryLogic<?> logic;
         try {
             logic = (QueryLogic<?>) applicationContext.getBean(beanName);
-            if (principal instanceof ProxiedUserDetails) {
-                logic.setCurrentUser((ProxiedUserDetails) principal);
-            }
+            logic.setCurrentUser(currentUser);
         } catch (ClassCastException | NoSuchBeanDefinitionException cce) {
             if (beanName.equals(queryLogic)) {
                 throw new IllegalArgumentException("Logic name '" + queryLogic + "' does not exist in the configuration");
@@ -81,11 +70,7 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
             }
         }
         
-        Set<String> userRoles = new HashSet<>();
-        if (principal instanceof DatawavePrincipal) {
-            userRoles.addAll(((DatawavePrincipal) principal).getPrimaryUser().getRoles());
-        }
-        
+        Set<String> userRoles = new HashSet<>(currentUser.getPrimaryUser().getRoles());
         if (checkRoles && !logic.canRunQuery(userRoles)) {
             throw new UnauthorizedException(new IllegalAccessException("User does not have required role(s): " + logic.getRequiredRoles()), new VoidResponse());
         }
@@ -98,12 +83,8 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
             logic.setPageByteTrigger(queryLogicFactoryConfiguration.getPageByteTrigger());
         }
         
-        if (logic instanceof BaseQueryLogic) {
-            if (principal instanceof DatawavePrincipal) {
-                ((BaseQueryLogic<?>) logic).setCurrentUser((DatawavePrincipal) principal);
-            }
-            ((BaseQueryLogic<?>) logic).setServerUser(serverPrincipal);
-        }
+        logic.setCurrentUser(currentUser);
+        logic.setServerUser(serverPrincipal);
         
         return logic;
     }

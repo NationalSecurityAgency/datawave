@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
-import com.google.common.base.Throwables;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.CountingOutputStream;
@@ -524,7 +523,7 @@ public class QueryExecutorBean implements QueryExecutor {
         // will throw IllegalArgumentException if not defined
         try {
             Principal principal = ctx.getCallerPrincipal();
-            qd.logic = queryLogicFactory.getQueryLogic(queryLogicName, principal);
+            qd.logic = queryLogicFactory.getQueryLogic(queryLogicName, (DatawavePrincipal) principal);
         } catch (Exception e) {
             log.error("Failed to get query logic for " + queryLogicName, e);
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.QUERY_LOGIC_ERROR, e);
@@ -1080,7 +1079,7 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             
             // will throw IllegalArgumentException if not defined
-            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), p);
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), (DatawavePrincipal) p);
             AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
             RunningQuery query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
                             new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
@@ -1117,7 +1116,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 Query q = queries.get(0);
                 
                 // will throw IllegalArgumentException if not defined
-                QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), principal);
+                QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), (DatawavePrincipal) principal);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), principal,
                                 new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean,
@@ -1153,7 +1152,7 @@ public class QueryExecutorBean implements QueryExecutor {
             
             // will throw IllegalArgumentException if not defined
             Principal principal = ctx.getCallerPrincipal();
-            final QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), principal);
+            final QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), (DatawavePrincipal) principal);
             final AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
             query = RunningQuery.createQueryWithAuthorizations(metrics, null, priority, logic, q, auths,
                             new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.metricFactory);
@@ -2711,7 +2710,7 @@ public class QueryExecutorBean implements QueryExecutor {
             // maybe set variables instead of stuffing in query
             if (newQueryLogicName != null) {
                 Principal principal = ctx.getCallerPrincipal();
-                q.setQueryLogicName(queryLogicFactory.getQueryLogic(newQueryLogicName, principal).getLogicName());
+                q.setQueryLogicName(queryLogicFactory.getQueryLogic(newQueryLogicName, (DatawavePrincipal) principal).getLogicName());
             }
             if (newQuery != null) {
                 q.setQuery(newQuery);
@@ -2932,7 +2931,7 @@ public class QueryExecutorBean implements QueryExecutor {
         Principal p = ctx.getCallerPrincipal();
         // TODO: add validation for all these sets
         if (queryLogicName != null) {
-            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(queryLogicName, p);
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(queryLogicName, (DatawavePrincipal) p);
             q.setQueryLogicName(logic.getLogicName());
         }
         if (query != null) {
@@ -3268,7 +3267,7 @@ public class QueryExecutorBean implements QueryExecutor {
         // Find the response class
         Class<?> responseClass;
         try {
-            QueryLogic<?> l = queryLogicFactory.getQueryLogic(logicName, p);
+            QueryLogic<?> l = queryLogicFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
             QueryLogicTransformer t = l.getEnrichedTransformer(q);
             BaseResponse refResponse = t.createResponse(emptyList);
             responseClass = refResponse.getClass();

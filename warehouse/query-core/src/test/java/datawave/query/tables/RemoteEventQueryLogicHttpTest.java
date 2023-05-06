@@ -6,7 +6,6 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
-import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.query.QueryParameters;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.DnUtils;
