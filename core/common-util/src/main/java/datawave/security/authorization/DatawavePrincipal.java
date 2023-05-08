@@ -202,7 +202,8 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
     }
     
     @Override
-    public ProxiedUserDetails newInstance(List<DatawaveUser> proxiedUsers) {
-        return new DatawavePrincipal(proxiedUsers);
+    @SuppressWarnings("unchecked")
+    public <T extends ProxiedUserDetails> T newInstance(List<DatawaveUser> proxiedUsers) {
+        return (T) new DatawavePrincipal(proxiedUsers);
     }
 }

@@ -112,7 +112,7 @@ public class CompositeUserOperations implements UserOperations {
             userDetails.add(ops.getRemoteUser(currentUser));
         }
         
-        return AuthorizationsUtil.mergeProxiedUserDetails(currentUser::newInstance, userDetails.toArray(new ProxiedUserDetails[0]));
+        return AuthorizationsUtil.mergeProxiedUserDetails(userDetails.toArray(new ProxiedUserDetails[0]));
     }
     
     public static Exception getException(QueryExceptionType qet) {
