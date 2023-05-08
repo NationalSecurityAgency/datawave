@@ -2661,4 +2661,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setPruneQueryOptions(boolean pruneQueryOptions) {
         getConfig().setPruneQueryOptions(pruneQueryOptions);
     }
+
+    public boolean getUseNewFiAggregators() {
+        return getConfig().getUseNewFiAggregators();
+    }
+
+    public void setUseNewFiAggregators(boolean useNewFiAggregators) {
+        getConfig().setUseNewFiAggregators(useNewFiAggregators);
+    }
 }

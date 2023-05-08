@@ -35,6 +35,7 @@ import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
+import datawave.query.jexl.functions.TLDFiAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
@@ -101,7 +102,16 @@ public class TLDQueryIterator extends QueryIterator {
     @Override
     public FieldIndexAggregator getFiAggregator() {
         if (fiAggregator == null) {
-            fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getFIEvaluationFilter(), getFiNextSeek());
+            if (getUseNewAggregators()) {
+                //  @formatter:off
+                fiAggregator = new TLDFiAggregator()
+                                .withFieldsToKeep(getNonEventFields())
+                                .withQueryFilter(getFIEvaluationFilter())
+                                .withMaxNextCount(getFiNextSeek());
+                //  @formatter:on
+            } else {
+                fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getFIEvaluationFilter(), getFiNextSeek());
+            }
         }
         return fiAggregator;
     }

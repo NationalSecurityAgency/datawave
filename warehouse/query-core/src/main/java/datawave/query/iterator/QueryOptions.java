@@ -271,6 +271,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String DOC_AGGREGATION_THRESHOLD_MS = "doc.agg.threshold";
 
     public static final String TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS = "tf.agg.threshold";
+    public static final String USE_NEW_AGGREGATORS = "use.new.agg";
 
     protected Map<String,String> options;
 
@@ -433,6 +434,7 @@ public class QueryOptions implements OptionDescriber {
     // aggregation thresholds
     private int docAggregationThresholdMs = -1;
     private int tfAggregationThresholdMs = -1;
+    private boolean useNewAggregators;
 
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
@@ -1213,6 +1215,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(TF_NEXT_SEEK, "The number of next calls made by a Term Frequency data filter or aggregator before a seek is issued");
         options.put(DOC_AGGREGATION_THRESHOLD_MS, "Document aggregations that exceed this threshold are logged as a warning");
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
+        options.put(USE_NEW_AGGREGATORS, "Use alternate implementations of the field index aggregator");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 
@@ -1408,6 +1411,10 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS)) {
             this.tfAggregationThresholdMs = Integer.parseInt(options.get(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS));
+        }
+
+        if (options.containsKey(USE_NEW_AGGREGATORS)) {
+            this.useNewAggregators = Boolean.parseBoolean(options.getOrDefault(USE_NEW_AGGREGATORS, Boolean.FALSE.toString()));
         }
 
         if (options.containsKey(DATATYPE_FILTER)) {
@@ -2190,6 +2197,14 @@ public class QueryOptions implements OptionDescriber {
 
     public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
+    }
+
+    public boolean getUseNewAggregators() {
+        return useNewAggregators;
+    }
+
+    public void setUseNewAggregators(boolean useNewAggregators) {
+        this.useNewAggregators = useNewAggregators;
     }
 
     /**

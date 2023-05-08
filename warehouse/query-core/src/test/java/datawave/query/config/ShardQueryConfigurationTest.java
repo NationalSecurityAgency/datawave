@@ -47,7 +47,7 @@ import datawave.webservice.query.QueryImpl;
 
 public class ShardQueryConfigurationTest {
 
-    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<Class<?>,Class<?>>();
+    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<>();
     static {
         primitiveMap.put(Boolean.class, boolean.class);
         primitiveMap.put(Byte.class, byte.class);
@@ -82,7 +82,7 @@ public class ShardQueryConfigurationTest {
 
     @Before
     public void setUp() throws Exception {
-        // The set of default values (optionally as predicates,
+        // The set of default values (optionally as predicates),
         // alternate values (to test the setters/getters),
         // and optional alternate predicates for testing equality.
         defaultValues.put("authorizations", Collections.singleton(Authorizations.EMPTY));
@@ -444,6 +444,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("pruneQueryOptions", true);
         defaultValues.put("pruneQueryByIngestTypes", false);
         updatedValues.put("pruneQueryByIngestTypes", true);
+        defaultValues.put("useNewFiAggregators", false);
+        updatedValues.put("useNewFiAggregators", true);
         defaultValues.put("numIndexLookupThreads", 8);
         updatedValues.put("numIndexLookupThreads", 18);
         defaultValues.put("expansionLimitedToModelContents", false);

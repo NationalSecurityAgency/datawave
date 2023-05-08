@@ -103,6 +103,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
+import datawave.query.jexl.functions.FiAggregator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.KeyAdjudicator;
@@ -1696,7 +1697,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     @Override
     public FieldIndexAggregator getFiAggregator() {
         if (fiAggregator == null) {
-            fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEventNextSeek());
+            if (getUseNewAggregators()) {
+                //  @formatter:off
+                fiAggregator = new FiAggregator()
+                                .withFieldsToKeep(getAllIndexOnlyFields())
+                                .withQueryFilter(getEvaluationFilter())
+                                .withMaxNextCount(getEventNextSeek());
+                //  @formatter:on
+            } else {
+                fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEventNextSeek());
+            }
         }
         return fiAggregator;
     }

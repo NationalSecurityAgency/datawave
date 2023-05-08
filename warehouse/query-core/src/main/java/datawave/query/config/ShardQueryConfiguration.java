@@ -423,6 +423,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int eventNextSeek = -1;
     private int tfFieldSeek = -1;
     private int tfNextSeek = -1;
+    private boolean useNewFiAggregators = false;
 
     /**
      * The maximum weight for entries in the visitor function cache. The weight is calculated as the total number of characters for each key and value in the
@@ -656,6 +657,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
         this.setPruneQueryOptions(other.getPruneQueryOptions());
+        this.setUseNewFiAggregators(other.getUseNewFiAggregators());
     }
 
     /**
@@ -2526,5 +2528,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setPruneQueryOptions(boolean pruneQueryOptions) {
         this.pruneQueryOptions = pruneQueryOptions;
+    }
+
+    public boolean getUseNewFiAggregators() {
+        return useNewFiAggregators;
+    }
+
+    public void setUseNewFiAggregators(boolean useNewFiAggregators) {
+        this.useNewFiAggregators = useNewFiAggregators;
     }
 }
