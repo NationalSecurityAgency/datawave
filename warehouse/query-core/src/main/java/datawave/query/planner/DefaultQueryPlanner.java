@@ -2320,10 +2320,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             addOption(cfg, QueryOptions.PROJECTION_FIELDS, config.getProjectFieldsAsString(), false);
         } else if (null != config.getDisallowlistedFields() && !config.getDisallowlistedFields().isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug("Setting scan option: " + QueryOptions.BLACKLISTED_FIELDS + " to " + config.getDisallowlistedFieldsAsString());
+                log.debug("Setting scan option: " + QueryOptions.DISALLOWLISTED_FIELDS + " to " + config.getDisallowlistedFieldsAsString());
             }
 
-            addOption(cfg, QueryOptions.BLACKLISTED_FIELDS, config.getDisallowlistedFieldsAsString(), false);
+            addOption(cfg, QueryOptions.DISALLOWLISTED_FIELDS, config.getDisallowlistedFieldsAsString(), false);
         }
 
         // We don't need to do any expansion of the start or end date/time

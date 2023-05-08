@@ -122,7 +122,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String FULL_TABLE_SCAN_ONLY = "full.table.scan.only";
 
     public static final String PROJECTION_FIELDS = "projection.fields";
-    public static final String BLACKLISTED_FIELDS = "blacklisted.fields";
+    public static final String DISALLOWLISTED_FIELDS = "disallowlisted.fields";
     public static final String INDEX_ONLY_FIELDS = "index.only.fields";
     public static final String INDEXED_FIELDS = "indexed.fields";
     public static final String COMPOSITE_FIELDS = "composite.fields";
@@ -1101,7 +1101,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(Constants.RETURN_TYPE, "The method to use to serialize data for return to the client");
         options.put(FULL_TABLE_SCAN_ONLY, "If true, do not perform boolean logic, just scan the documents");
         options.put(PROJECTION_FIELDS, "Attributes to return to the client");
-        options.put(BLACKLISTED_FIELDS, "Attributes to *not* return to the client");
+        options.put(DISALLOWLISTED_FIELDS, "Attributes to *not* return to the client");
         options.put(FILTER_MASKED_VALUES, "Filter the masked values when both the masked and unmasked variants are in the result set.");
         options.put(INCLUDE_DATATYPE, "Include the data type as a field in the document.");
         options.put(INCLUDE_RECORD_ID, "Include the record id as a field in the document.");
@@ -1296,16 +1296,16 @@ public class QueryOptions implements OptionDescriber {
             }
         }
 
-        if (options.containsKey(BLACKLISTED_FIELDS)) {
+        if (options.containsKey(DISALLOWLISTED_FIELDS)) {
             if (this.projectResults) {
-                log.error("QueryOptions.PROJECTION_FIELDS and QueryOptions.BLACKLISTED_FIELDS are mutually exclusive");
+                log.error("QueryOptions.PROJECTION_FIELDS and QueryOptions.DISALLOWLISTED_FIELDS are mutually exclusive");
                 return false;
             }
 
             this.projectResults = true;
             this.useDisallowListedFields = true;
 
-            String fieldList = options.get(BLACKLISTED_FIELDS);
+            String fieldList = options.get(DISALLOWLISTED_FIELDS);
             if (fieldList != null && !fieldList.trim().equals("")) {
                 this.disallowListedFields = new HashSet<>();
                 Collections.addAll(this.disallowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));

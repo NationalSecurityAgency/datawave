@@ -346,21 +346,21 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     // ============================================
     // private methods
 
-    private void runTest(final String query, final String expectQuery, final boolean Allowlist, final boolean hitList) throws Exception {
+    private void runTest(final String query, final String expectQuery, final boolean allowlist, final boolean hitList) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
-        final Set<String> fields = CityField.getRandomReturnFields(Allowlist);
-        runTest(query, expectQuery, startEndDate[0], startEndDate[1], Allowlist, hitList, fields);
+        final Set<String> fields = CityField.getRandomReturnFields(allowlist);
+        runTest(query, expectQuery, startEndDate[0], startEndDate[1], allowlist, hitList, fields);
     }
 
-    private void runTest(final String query, final boolean Allowlist, final boolean hitList) throws Exception {
+    private void runTest(final String query, final boolean allowlist, final boolean hitList) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
-        final Set<String> fields = CityField.getRandomReturnFields(Allowlist);
-        runTest(query, query, startEndDate[0], startEndDate[1], Allowlist, hitList, fields);
+        final Set<String> fields = CityField.getRandomReturnFields(allowlist);
+        runTest(query, query, startEndDate[0], startEndDate[1], allowlist, hitList, fields);
     }
 
-    private void runTest(final String query, final boolean Allowlist, final boolean hitList, Set<String> fields) throws Exception {
+    private void runTest(final String query, final boolean allowlist, final boolean hitList, Set<String> fields) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
-        runTest(query, query, startEndDate[0], startEndDate[1], Allowlist, hitList, fields);
+        runTest(query, query, startEndDate[0], startEndDate[1], allowlist, hitList, fields);
     }
 
     /**
@@ -391,7 +391,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         if (fields.isEmpty()) {
             queryChecker.add(new ResponseFieldChecker(otherFields, fields));
         } else if (Allowlist) {
-            // NOTE CityField.EVENT_ID MUST be included in Allowlisted fields
+            // NOTE CityField.EVENT_ID MUST be included in allowlisted fields
             options.put(QueryParameters.RETURN_FIELDS, queryFields);
             queryChecker.add(new ResponseFieldChecker(fields, otherFields));
         } else {

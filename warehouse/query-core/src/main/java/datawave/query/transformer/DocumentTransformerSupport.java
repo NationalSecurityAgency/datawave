@@ -181,7 +181,7 @@ public abstract class DocumentTransformerSupport<I, O> extends EventQueryTransfo
             if (!projectFields.isEmpty()) {
                 suppressFields = cardinalityConfiguration.getStoredProjectFieldsToAdd(getQm(), projectFields);
             } else if (!blacklistedFields.isEmpty()) {
-                suppressFields = cardinalityConfiguration.getStoredBlacklistedFieldsToRemove(getQm(), blacklistedFields);
+                suppressFields = cardinalityConfiguration.getStoredDisallowlistedFieldsToRemove(getQm(), blacklistedFields);
             }
         }
 

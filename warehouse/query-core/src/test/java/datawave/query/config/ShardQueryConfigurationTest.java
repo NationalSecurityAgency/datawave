@@ -172,7 +172,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertTrue(config.getIvaratorCacheDirConfigs().isEmpty());
         Assert.assertEquals(2, config.getIvaratorNumRetries());
         Assert.assertEquals(100, config.getIvaratorPersistVerifyCount());
-        Assert.assertEquals(true, config.isIvaratorPersistVerify());
+        Assert.assertTrue(config.isIvaratorPersistVerify());
         Assert.assertNull(config.getIvaratorFstHdfsBaseURIs());
         Assert.assertEquals(10000, config.getIvaratorCacheBufferSize());
         Assert.assertEquals(100000, config.getIvaratorCacheScanPersistThreshold());
@@ -237,7 +237,7 @@ public class ShardQueryConfigurationTest {
         IndexHole indexHole = new IndexHole(new String[]{"0", "1"}, new String[]{"2", "3"});
         List<IndexHole> indexHoles = Lists.newArrayList(indexHole);
         Set<String> projectFields = Sets.newHashSet("projectFieldA");
-        Set<String> blacklistedFields = Sets.newHashSet("blacklistedFieldA");
+        Set<String> disallowlistedFields = Sets.newHashSet("disallowlistedFieldA");
         Set<String> indexedFields = Sets.newHashSet("indexedFieldA");
         Set<String> normalizedFields = Sets.newHashSet("normalizedFieldA");
         Multimap<String, Type<?>> dataTypes = HashMultimap.create();
@@ -281,7 +281,7 @@ public class ShardQueryConfigurationTest {
         other.setDatatypeFilter(dataTypeFilter);
         other.setIndexHoles(indexHoles);
         other.setProjectFields(projectFields);
-        other.setDisallowlistedFields(blacklistedFields);
+        other.setDisallowlistedFields(disallowlistedFields);
         other.setIndexedFields(indexedFields);
         other.setNormalizedFields(normalizedFields);
         other.setDataTypes(dataTypes);
@@ -328,7 +328,7 @@ public class ShardQueryConfigurationTest {
         IndexHole otherIndexHole = new IndexHole(new String[]{"4", "5"}, new String[]{"6", "7"});
         indexHoles.add(otherIndexHole);
         projectFields.add("projectFieldB");
-        blacklistedFields.add("blacklistedFieldB");
+        disallowlistedFields.add("disallowlistedFieldB");
         indexedFields.add("indexedFieldB");
         normalizedFields.add("normalizedFieldB");
         dataTypes.put("K2", new NoOpType("V2"));
@@ -358,7 +358,7 @@ public class ShardQueryConfigurationTest {
         IndexHole expectedIndexHole = new IndexHole(new String[]{"0", "1"}, new String[]{"2", "3"});
         Assert.assertEquals(Lists.newArrayList(expectedIndexHole), config.getIndexHoles());
         Assert.assertEquals(Sets.newHashSet("projectFieldA"), config.getProjectFields());
-        Assert.assertEquals(Sets.newHashSet("blacklistedFieldA"), config.getDisallowlistedFields());
+        Assert.assertEquals(Sets.newHashSet("disallowlistedFieldA"), config.getDisallowlistedFields());
         Assert.assertEquals(Sets.newHashSet("indexedFieldA"), config.getIndexedFields());
         // This assert is different from the setter as setNormalizedFieldsAsDatatypes will overwrite the normalizedFields with
         // a new keyset.
@@ -451,10 +451,10 @@ public class ShardQueryConfigurationTest {
     }
 
     @Test
-    public void testGetSetBlacklistedFields() {
-        String expected = "blacklistA,blacklistB";
-        Set<String> blacklistedFields = Sets.newHashSet("blacklistA", "blacklistB");
-        config.setDisallowlistedFields(blacklistedFields);
+    public void testGetSetDisallowlistedFields() {
+        String expected = "disallowlistA,disallowlistB";
+        Set<String> disallowlistedFields = Sets.newHashSet("disallowlistA", "disallowlistB");
+        config.setDisallowlistedFields(disallowlistedFields);
         Assert.assertEquals(expected, config.getDisallowlistedFieldsAsString());
     }
 

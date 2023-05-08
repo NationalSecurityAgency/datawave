@@ -43,7 +43,7 @@ public class QueryParameters {
     /**
      * ??
      */
-    public static final String DISALLOWLISTED_FIELDS = "blacklisted.fields";
+    public static final String DISALLOWLISTED_FIELDS = "disallowlisted.fields";
     
     /**
      * The list of fields to return

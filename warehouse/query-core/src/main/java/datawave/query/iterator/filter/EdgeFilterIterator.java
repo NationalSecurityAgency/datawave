@@ -175,7 +175,7 @@ public class EdgeFilterIterator extends Filter {
                 // we can work without it
                 log.error("Invalid allowlist value supplied to iterator.");
             } catch (ClassNotFoundException ex) {
-                log.error("Class not found for allowlies value.");
+                log.error("Class not found for allowlist value.");
             }
         }
     }

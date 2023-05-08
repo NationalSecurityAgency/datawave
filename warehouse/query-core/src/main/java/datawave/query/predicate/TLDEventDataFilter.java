@@ -388,7 +388,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         }
 
         final String fieldName = lastParseInfo.getField();
-        // first handle seek due to a field limit, then use the allow/block lists if necessary
+        // first handle seek due to a field limit, then use the allow/disallow lists if necessary
         if (isFieldLimit(fieldName)) {
             range = getFieldSeek(current, fieldName, endKey, endKeyInclusive);
         }
