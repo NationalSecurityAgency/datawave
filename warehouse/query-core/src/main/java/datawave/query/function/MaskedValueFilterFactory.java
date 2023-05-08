@@ -72,7 +72,11 @@ public class MaskedValueFilterFactory {
     public static MaskedValueFilterInterface get(boolean includeGroupingContext, boolean reducedResponse) {
         int index = 2 * (includeGroupingContext ? 1 : 0) + (reducedResponse ? 1 : 0);
         if (null == maskedValueFilters) {
-            initializeCache();
+            synchronized (maskedValueFilters) {
+                if (null == maskedValueFilters) {
+                    initializeCache();
+                }
+            }
         }
         return maskedValueFilters[index];
     }
