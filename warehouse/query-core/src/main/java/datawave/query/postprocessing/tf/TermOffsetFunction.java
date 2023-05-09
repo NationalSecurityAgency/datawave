@@ -16,12 +16,15 @@ import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
 import org.apache.accumulo.core.data.PartialKey;
 
 public class TermOffsetFunction implements com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> {
-    
+    private static final Logger log = Logger.getLogger(TermOffsetFunction.class);
     private TermOffsetPopulator tfPopulator;
     private Set<String> tfIndexOnlyFields;
+    private int aggregationThreshold;
+    private long aggregationStart;
     private DocumentKeysFunction docKeyFunction;
     
     public TermOffsetFunction(TermOffsetPopulator tfPopulator, Set<String> tfIndexOnlyFields) {
@@ -40,7 +43,9 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
         Set<Key> docKeys = getDocumentKeys(from);
         Set<String> fields = getFieldsToRemove(from.second(), tfPopulator.getTermFrequencyFieldValues());
         
+        logStart();
         Map<String,Object> map = new HashMap<>(tfPopulator.getContextMap(from.first(), docKeys, fields));
+        logStop(docKeys.iterator().next());
         
         Document merged = from.second();
         merged.putAll(tfPopulator.document(), false);
@@ -85,5 +90,24 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
             }
         }
         return fieldsToRemove;
+    }
+    
+    private void logStart() {
+        aggregationStart = System.currentTimeMillis();
+    }
+    
+    private void logStop(Key k) {
+        if (aggregationThreshold == -1) {
+            return;
+        }
+        
+        long elapsed = System.currentTimeMillis() - aggregationStart;
+        if (elapsed > aggregationThreshold) {
+            log.warn("time to aggregate offsets " + k.getRow() + " " + k.getColumnFamily().toString().replace("\0", "0x00") + " was " + elapsed);
+        }
+    }
+    
+    public void setAggregationThreshold(int aggregationThreshold) {
+        this.aggregationThreshold = aggregationThreshold;
     }
 }

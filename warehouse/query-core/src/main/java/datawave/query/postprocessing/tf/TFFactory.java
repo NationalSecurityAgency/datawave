@@ -69,7 +69,10 @@ public class TFFactory {
             }
             
             TermOffsetPopulator offsetPopulator = new TermOffsetPopulator(termFrequencyFieldValues, config);
-            return new TermOffsetFunction(offsetPopulator, config.getTfFields(), docKeyFunction);
+            
+            TermOffsetFunction function = new TermOffsetFunction(offsetPopulator, config.getTfFields(), docKeyFunction);
+            function.setAggregationThreshold(config.getTfAggregationThreshold());
+            return function;
         }
     }
 }

@@ -26,6 +26,8 @@ public class TermFrequencyConfig {
     private EventDataQueryFilter evaluationFilter;
     private boolean isTld;
     
+    private int tfAggregationThreshold;
+    
     public ASTJexlScript getScript() {
         return script;
     }
@@ -102,5 +104,13 @@ public class TermFrequencyConfig {
     
     public void setTld(boolean tld) {
         isTld = tld;
+    }
+    
+    public int getTfAggregationThreshold() {
+        return tfAggregationThreshold;
+    }
+    
+    public void setTfAggregationThreshold(int tfAggregationThreshold) {
+        this.tfAggregationThreshold = tfAggregationThreshold;
     }
 }

@@ -264,6 +264,10 @@ public class QueryOptions implements OptionDescriber {
     public static final String TF_FIELD_SEEK = "tf.field.seek";
     public static final String TF_NEXT_SEEK = "tf.next.seek";
     
+    public static final String DOC_AGGREGATION_THRESHOLD_MS = "doc.agg.threshold";
+    
+    public static final String TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS = "tf.agg.threshold";
+    
     protected Map<String,String> options;
     
     protected String scanId;
@@ -421,6 +425,10 @@ public class QueryOptions implements OptionDescriber {
     private int tfFieldSeek = -1;
     private int tfNextSeek = -1;
     
+    // aggregation thresholds
+    private int docAggregationThresholdMs = -1;
+    private int tfAggregationThresholdMs = -1;
+    
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -527,6 +535,9 @@ public class QueryOptions implements OptionDescriber {
         this.eventNextSeek = other.eventNextSeek;
         this.tfFieldSeek = other.tfFieldSeek;
         this.tfNextSeek = other.tfNextSeek;
+        
+        this.docAggregationThresholdMs = other.docAggregationThresholdMs;
+        this.tfAggregationThresholdMs = other.tfAggregationThresholdMs;
     }
     
     public String getQuery() {
@@ -1181,6 +1192,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(EVENT_NEXT_SEEK, "The number of next calls made by an Event data filter or aggregator before a seek is issued");
         options.put(TF_FIELD_SEEK, "The number of fields traversed by a Term Frequency data filter or aggregator before a seek is issued");
         options.put(TF_NEXT_SEEK, "The number of next calls made by a Term Frequency data filter or aggregator before a seek is issued");
+        options.put(DOC_AGGREGATION_THRESHOLD_MS, "Document aggregations that exceed this threshold are logged as a warning");
+        options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
     
@@ -1368,6 +1381,14 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(TF_NEXT_SEEK)) {
             this.tfNextSeek = Integer.parseInt(options.get(TF_NEXT_SEEK));
+        }
+        
+        if (options.containsKey(DOC_AGGREGATION_THRESHOLD_MS)) {
+            this.docAggregationThresholdMs = Integer.parseInt(options.get(DOC_AGGREGATION_THRESHOLD_MS));
+        }
+        
+        if (options.containsKey(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS)) {
+            this.tfAggregationThresholdMs = Integer.parseInt(options.get(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS));
         }
         
         if (options.containsKey(DATATYPE_FILTER)) {
@@ -2127,6 +2148,22 @@ public class QueryOptions implements OptionDescriber {
     
     public void setTfNextSeek(int tfNextSeek) {
         this.tfNextSeek = tfNextSeek;
+    }
+    
+    public int getDocAggregationThresholdMs() {
+        return docAggregationThresholdMs;
+    }
+    
+    public void setDocAggregationThresholdMs(int docAggregationThresholdMs) {
+        this.docAggregationThresholdMs = docAggregationThresholdMs;
+    }
+    
+    public int getTfAggregationThresholdMs() {
+        return tfAggregationThresholdMs;
+    }
+    
+    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
+        this.tfAggregationThresholdMs = tfAggregationThresholdMs;
     }
     
     /**
