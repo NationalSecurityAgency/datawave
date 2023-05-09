@@ -122,7 +122,7 @@ public class QueryCacheBeanTest {
         
         expect(logic.getCollectQueryMetrics()).andReturn(false);
         expect(logic.isLongRunningQuery()).andReturn(false);
-        expect(logic.getResultLimit(q.getDnList())).andReturn(-1L);
+        expect(logic.getResultLimit(q)).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
         expect(logic.getUserOperations()).andReturn(null);
         
