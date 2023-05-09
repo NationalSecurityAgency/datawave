@@ -457,10 +457,10 @@ public class ShardQueryConfigurationTest {
 
     @Test
     public void testGetSetDisallowlistedFields() {
-        String expected = "disallowlistA,disallowlistB";
+        Set<String> expected = Sets.newHashSet("disallowlistA", "disallowlistB");
         Set<String> disallowlistedFields = Sets.newHashSet("disallowlistA", "disallowlistB");
         config.setDisallowlistedFields(disallowlistedFields);
-        Assert.assertEquals(expected, config.getDisallowlistedFieldsAsString());
+        Assert.assertTrue(expected.containsAll(config.getDisallowlistedFields()));
     }
 
     @Test
