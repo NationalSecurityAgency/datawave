@@ -41,6 +41,9 @@ import java.util.Set;
 
 import static datawave.query.Constants.EMPTY_VALUE;
 
+/**
+ * This class aggregates all event data for a given 'document key'.
+ */
 public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<DocumentData,Document>> {
     
     private static final Logger log = Logger.getLogger(KeyToDocumentData.class);
@@ -49,19 +52,25 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     
     private static final ByteSequence EMPTY_BYTE_SEQUENCE = new ArrayByteSequence(new byte[] {});
     
-    protected static final Collection<ByteSequence> columnFamilies = Lists.<ByteSequence> newArrayList(new ArrayByteSequence("tf"), new ArrayByteSequence("d"));
+    protected static final Collection<ByteSequence> columnFamilies = Lists.newArrayList(new ArrayByteSequence("tf"), new ArrayByteSequence("d"));
     protected static final boolean inclusive = false;
     
     private final DescendantCountFunction countFunction;
     
     protected Equality equality;
     
-    private EventDataQueryFilter filter;
+    private final EventDataQueryFilter filter;
     
     // default implementation
     protected RangeProvider rangeProvider = new DocumentRangeProvider();
     
     private boolean includeParent = false;
+
+    //  track aggregation threshold and the time
+    private long aggregationStart;
+    private long aggregationStop;
+    private int aggregationThreshold;
+
     
     public KeyToDocumentData(SortedKeyValueIterator<Key,Value> source) {
         this(source, new PrefixEquality(PartialKey.ROW_COLFAM), false, false);
@@ -111,6 +120,16 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         this.rangeProvider = rangeProvider;
         return this;
     }
+
+    /**
+     * Builder-style method for setting the aggregation threshold
+     * @param aggregationThreshold a time in milliseconds
+     * @return this object
+     */
+    public KeyToDocumentData withAggregationThreshold(int aggregationThreshold){
+        this.aggregationThreshold = aggregationThreshold;
+        return this;
+    }
     
     /**
      * Append hierarchy fields, including parent and descendant counts, based on the specified range and key
@@ -132,12 +151,14 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     @Override
     public Entry<DocumentData,Document> apply(Entry<Key,Document> from) {
         // We want to ensure that we have a non-empty colqual
-        if (null == from || null == from.getKey() || null == from.getValue())
+        if (null == from || null == from.getKey() || null == from.getValue()) {
             return null;
+        }
+
         Range keyRange = rangeProvider.getRange(from.getKey());
         
         try {
-            
+            logStart();
             source.seek(keyRange, columnFamilies, inclusive);
             
             if (log.isDebugEnabled())
@@ -152,24 +173,24 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
             } else {
                 attrs = Collections.emptyList();
             }
-            
+
+            logStop(keyRange.getStartKey());
             return Maps.immutableEntry(new DocumentData(from.getKey(), docKeys, attrs, false), from.getValue());
         } catch (IOException e) {
             log.error("Unable to collection document attributes for evaluation: " + keyRange, e);
             QueryException qe = new QueryException(DatawaveErrorCode.DOCUMENT_EVALUATION_ERROR, e);
             throw new DatawaveFatalQueryException(qe);
         }
-        
     }
     
     /**
-     * Given a Key pointing to the start of an document to aggregate, construct a list of attributes, adding the names of the attributes to the specified set of
+     * Given a Key pointing to the start of a document to aggregate, construct a list of attributes, adding the names of the attributes to the specified set of
      * "docKeys".
      *
      * @param documentStartKey
      *            A Key of the form "bucket type\x00uid: "
      * @param docKeys
-     *            the names of generated generated attributes
+     *            the names of generated attributes
      * @param keyRange
      *            the Range used to initialize source with seek()
      * @return list of entries
@@ -203,7 +224,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     private static List<Entry<Key,Value>> collectAttributesForDocumentKey(Key documentStartKey, SortedKeyValueIterator<Key,Value> source, Equality equality,
                     EventDataQueryFilter filter, Set<Key> docKeys, Range keyRange) throws IOException {
         
-        // setup the document key we are filtering for on the EventDataQueryFilter
+        // set up the document key we are filtering for on the EventDataQueryFilter
         if (filter != null) {
             filter.startNewDocument(documentStartKey);
         }
@@ -224,7 +245,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                     
                     if (filter == null || filter.apply(Maps.immutableEntry(docAttrKey.get(), StringUtils.EMPTY))) {
                         documentAttributes.add(Maps.immutableEntry(docAttrKey.get(), source.getTopValue()));
-                    } else if (filter != null) {
+                    } else {
                         Key limitKey = filter.transform(docAttrKey.get());
                         if (limitKey != null) {
                             documentAttributes.add(Maps.immutableEntry(limitKey, EMPTY_VALUE));
@@ -259,14 +280,14 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     
     // map the key to the dockey (only shard, datatype, uid)
     public static Key getDocKey(Key key) {
-        final ByteSequence row = key.getRowData(), cf = key.getColumnFamilyData(), cv = key.getColumnVisibilityData();
-        return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(),
-                        EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(), cv.offset(),
-                        cv.length(), key.getTimestamp());
+        final ByteSequence row = key.getRowData();
+        final ByteSequence cf = key.getColumnFamilyData();
+        final ByteSequence cv = key.getColumnVisibilityData();
+        return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(), cv.offset(), cv.length(), key.getTimestamp());
     }
     
     private static List<Entry<Key,Value>> appendHierarchyFields(List<Entry<Key,Value>> documentAttributes, Key key, Range seekRange,
-                    DescendantCountFunction function, boolean includeParent) throws IOException {
+                    DescendantCountFunction function, boolean includeParent) {
         if ((null != function) || includeParent) {
             
             // get the minimal timestamp and majority visibility from the
@@ -304,13 +325,11 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
             applyDescendantCounts(function, seekRange, key, documentAttributes, visibility, minTimestamp);
             
             // include the parent uid
-            if (includeParent) {
-                if (uid.getExtra() != null && !uid.getExtra().equals("")) {
-                    String parentUid = uidString.substring(0, uidString.lastIndexOf(UIDConstants.DEFAULT_SEPARATOR));
-                    Key parentUidKey = new Key(key.getRow(), key.getColumnFamily(), new Text(QueryOptions.DEFAULT_PARENT_UID_FIELDNAME + '\0' + parentUid),
-                                    new ColumnVisibility(visibility), minTimestamp);
-                    documentAttributes.add(Maps.immutableEntry(parentUidKey, EMPTY_VALUE));
-                }
+            if (includeParent && uid.getExtra() != null && !uid.getExtra().equals("")) {
+                String parentUid = uidString.substring(0, uidString.lastIndexOf(UIDConstants.DEFAULT_SEPARATOR));
+                Key parentUidKey = new Key(key.getRow(), key.getColumnFamily(), new Text(QueryOptions.DEFAULT_PARENT_UID_FIELDNAME + '\0' + parentUid),
+                                new ColumnVisibility(visibility), minTimestamp);
+                documentAttributes.add(Maps.immutableEntry(parentUidKey, EMPTY_VALUE));
             }
         }
         
@@ -351,7 +370,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                         if ((null == visibility) || visibility.isEmpty()) {
                             childCountKey.getColumnVisibility(appliedVis);
                         }
-                        if (!(timestamp > 0)) {
+                        if (timestamp <= 0) {
                             timestamp = childCountKey.getTimestamp();
                         }
                         
@@ -363,5 +382,34 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         }
         
         return basicChildCount;
+    }
+
+    /**
+     * Mark the aggregation start time.
+     */
+    private void logStart() {
+        if (aggregationThreshold == -1) {
+            return;
+        }
+        aggregationStart = System.currentTimeMillis();
+    }
+
+    /**
+     * Mark the aggregation stop time.
+     * <p>
+     * Logs the total aggregation time if the {@link #aggregationThreshold} is exceeded.
+     *
+     * @param k the aggregation range's start key
+     */
+    private void logStop(Key k) {
+        if (aggregationThreshold == -1) {
+            return;
+        }
+
+        aggregationStop = System.currentTimeMillis();
+
+        if (aggregationThreshold > 0 && (aggregationStop - aggregationStart) > aggregationThreshold) {
+            log.warn("time to aggregate document " + k.getRow() + " " + k.getColumnFamily().toString().replace("\0", "0x00") + " was " + (aggregationStop - aggregationStart));
+        }
     }
 }

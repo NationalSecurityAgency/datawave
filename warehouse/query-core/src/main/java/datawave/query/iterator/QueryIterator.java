@@ -850,7 +850,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             };
         } else {
             docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEvaluationFilter(),
-                    this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
+                            this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider()).withAggregationThreshold(getDocAggregationThresholdMs());
         }
 
         Iterator<Entry<DocumentData, Document>> sourceIterator = Iterators.transform(documentSpecificSource, from -> {
@@ -1026,9 +1026,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 tfConfig.setTypeMetadata(getTypeMetadata());
                 tfConfig.setEquality(getEquality());
                 tfConfig.setEvaluationFilter(getEvaluationFilter());
-
-                Function<Tuple2<Key, Document>, Tuple3<Key, Document, Map<String, Object>>> tfFunction = buildTfFunction(tfConfig);
-
+                tfConfig.setTfAggregationThreshold(getTfAggregationThresholdMs());
+                
+                Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction = buildTfFunction(tfConfig);
                 itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             } else {
                 itrWithContext = Iterators.transform(tupleItr, new EmptyContext<>());
@@ -1166,16 +1166,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         if (fieldIndexSatisfiesQuery) {
             final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(),
-                    getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider());
-
-            Iterator<Tuple2<Key, Document>> mappedDocuments = Iterators.transform(
-                    documents,
-                    new GetDocument(docMapper, new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata, this
-                            .isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(), getEvaluationFilter(),
-                            isTrackSizes())));
-
-            Iterator<Entry<Key, Document>> retDocuments = Iterators.transform(mappedDocuments, new TupleToEntry<>());
-
+                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider()).withAggregationThreshold(getDocAggregationThresholdMs());
+            
+            Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(
+                            documents,
+                            new GetDocument(docMapper, new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata, this
+                                            .isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(), getEvaluationFilter(),
+                                            isTrackSizes())));
+            
+            Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(mappedDocuments, new TupleToEntry<>());
+            
             // Inject the document permutations if required
             if (!this.getDocumentPermutations().isEmpty()) {
                 if (gatherTimingDetails()) {
