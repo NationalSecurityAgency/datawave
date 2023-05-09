@@ -1,5 +1,36 @@
 package datawave.security.login;
 
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.spring.BeanProvider;
+import datawave.security.auth.DatawaveCredential;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUserService;
+import datawave.security.authorization.JWTTokenHandler;
+import datawave.util.StringUtils;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.jboss.logging.Logger;
+import org.jboss.security.JSSESecurityDomain;
+import org.jboss.security.SimpleGroup;
+import org.jboss.security.SimplePrincipal;
+import org.jboss.security.auth.callback.ObjectCallback;
+import org.jboss.security.auth.certs.X509CertificateVerifier;
+import org.jboss.security.auth.spi.AbstractServerLoginModule;
+import org.picketbox.util.StringUtil;
+
+import javax.inject.Inject;
+import javax.net.ssl.X509KeyManager;
+import javax.security.auth.Subject;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.AccountLockedException;
+import javax.security.auth.login.FailedLoginException;
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.security.Key;
 import java.security.KeyStore;
@@ -17,82 +48,50 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Inject;
-import javax.net.ssl.X509KeyManager;
-import javax.security.auth.Subject;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.auth.login.AccountLockedException;
-import javax.security.auth.login.FailedLoginException;
-import javax.security.auth.login.LoginException;
-
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
-import datawave.security.authorization.DatawaveUserService;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.configuration.spring.BeanProvider;
-import datawave.security.auth.DatawaveCredential;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.JWTTokenHandler;
-import datawave.util.StringUtils;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.jboss.logging.Logger;
-import org.jboss.security.JSSESecurityDomain;
-import org.jboss.security.SimpleGroup;
-import org.jboss.security.SimplePrincipal;
-import org.jboss.security.auth.callback.ObjectCallback;
-import org.jboss.security.auth.certs.X509CertificateVerifier;
-import org.jboss.security.auth.spi.AbstractServerLoginModule;
-import org.picketbox.util.StringUtil;
-
 @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
-    
+
     private Principal identity;
     private X509Certificate certificateCredential;
     private DatawaveCredential datawaveCredential;
     private X509CertificateVerifier verifier;
     private boolean datawaveVerifier;
-    
+
     private boolean trustedHeaderLogin;
     private boolean jwtHeaderLogin;
-    
-    private String blacklistUserRole = null;
-    
+
+    private String disallowlistUserRole = null;
+
     /**
      * Required roles are a set of roles such that each entity in a proxy chain must have at least one of the required roles. If that is not the case, then the
      * login module will ensure that none of the required roles are included in the response to getRoleSets.
      */
     private Set<String> requiredRoles = new HashSet<>();
-    
+
     @Inject
     private DatawaveUserService datawaveUserService;
     @Inject
     private JSSESecurityDomain domain;
-    
+
     private JWTTokenHandler jwtTokenHandler;
-    
+
     private boolean trace;
-    
+
     public DatawavePrincipalLoginModule() {
         log = Logger.getLogger(getClass());
     }
-    
+
     @Override
-    public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String,?> sharedState, Map<String,?> options) {
-        
+    public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState, Map<String, ?> options) {
+
         trace = log.isTraceEnabled();
-        
+
         super.initialize(subject, callbackHandler, sharedState, options);
-        
+
         // Have the bean container do injection for us so we don't have to do JNDI lookup.
         performFieldInjection();
-        
+
         String option = (String) options.get("verifier");
         if (option != null) {
             try {
@@ -110,19 +109,19 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                 throw new IllegalArgumentException("Invalid verifier: " + option, e);
             }
         }
-        
+
         option = (String) options.get("trustedHeaderLogin");
         if (option != null)
             trustedHeaderLogin = Boolean.valueOf(option);
-        
+
         option = (String) options.get("jwtHeaderLogin");
         if (option != null)
             jwtHeaderLogin = Boolean.valueOf(option);
-        
-        blacklistUserRole = (String) options.get("blacklistUserRole");
-        if (blacklistUserRole != null && "".equals(blacklistUserRole.trim()))
-            blacklistUserRole = null;
-        
+
+        disallowlistUserRole = (String) options.get("disallowlistUserRole");
+        if (disallowlistUserRole != null && "".equals(disallowlistUserRole.trim()))
+            disallowlistUserRole = null;
+
         option = (String) options.get("requiredRoles");
         if (option != null) {
             requiredRoles.clear();
@@ -132,45 +131,45 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             requiredRoles.add("AuthorizedServer");
             requiredRoles.add("AuthorizedQueryServer");
         }
-        
+
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
             mapper.registerModule(new GuavaModule());
             mapper.registerModule(new JaxbAnnotationModule());
-            
+
             String alias = domain.getKeyStore().aliases().nextElement();
             X509KeyManager keyManager = (X509KeyManager) domain.getKeyManagers()[0];
             X509Certificate[] certs = keyManager.getCertificateChain(alias);
             Key signingKey = keyManager.getPrivateKey(alias);
-            
+
             jwtTokenHandler = new JWTTokenHandler(certs[0], signingKey, 24, TimeUnit.HOURS, JWTTokenHandler.TtlMode.RELATIVE_TO_CURRENT_TIME, mapper);
         } catch (KeyStoreException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
-        
+
         if (trace)
             log.trace("exit: initialize(Subject, CallbackHandler, Map, Map)");
     }
-    
+
     protected void performFieldInjection() {
         if (datawaveUserService == null) {
             BeanProvider.injectFields(this);
         }
     }
-    
+
     @Override
     protected Principal getIdentity() {
         return identity;
     }
-    
+
     protected String getUsername() {
         String username = null;
         if (getIdentity() != null)
             username = getIdentity().getName();
         return username;
     }
-    
+
     @Override
     protected Group[] getRoleSets() throws LoginException {
         Group groups[];
@@ -178,7 +177,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             Set<String> roles = new TreeSet<>();
             String targetUser = getUsername();
             DatawavePrincipal principal = (DatawavePrincipal) getIdentity();
-            
+
             Collection<String> cpRoleSets = principal.getPrimaryUser().getRoles();
             if (cpRoleSets != null) {
                 roles.addAll(cpRoleSets);
@@ -203,7 +202,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                     } catch (Exception e) {
                         log.debug("Failed to create principal for: " + r, e);
                     }
-                
+
                 groups = new Group[2];
                 groups[0] = group;
                 groups[1] = new SimpleGroup("CallerPrincipal");
@@ -220,7 +219,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
         }
         return groups;
     }
-    
+
     @Override
     public boolean commit() throws LoginException {
         // If our login is ok, then remove any principals from the subject principals list that match our type.
@@ -238,7 +237,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                     log.trace("Skipping " + p + "@" + System.identityHashCode(p) + " since [" + p.getName() + "] != [" + p.getName() + "]");
                 }
             }
-            
+
             // There is also a CallerPrincipal group that login modules create and add the identity to. Other login modules will
             // then maybe add a DatawavePrincipal to this group. The identity manager uses the CallerPrincipal group and the
             // principals on the subject to determine the true caller principal, so we need to be sure to remove the previously
@@ -246,14 +245,14 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             Group callerGroup = getCallerPrincipalGroup(subject.getPrincipals());
             if (callerGroup != null) {
                 Set<Principal> principalsToRemove = new HashSet<>();
-                for (Enumeration<? extends Principal> e = callerGroup.members(); e.hasMoreElements();) {
+                for (Enumeration<? extends Principal> e = callerGroup.members(); e.hasMoreElements(); ) {
                     Principal p = e.nextElement();
                     if (p instanceof DatawavePrincipal) {
                         if (dp.getName().equals(p.getName())) {
                             principalsToRemove.add(p);
                         } else {
                             log.trace("Skipping from CallerPrincipal group " + p + "@" + System.identityHashCode(p) + " since [" + p.getName() + "] != ["
-                                            + p.getName() + "]");
+                                    + p.getName() + "]");
                         }
                     }
                 }
@@ -268,7 +267,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             subject.getPublicCredentials().add(certificateCredential);
         return ok;
     }
-    
+
     @Override
     public boolean login() throws LoginException {
         try {
@@ -317,25 +316,25 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                     log.debug("exit: login()");
                 }
             }
-            
-            if (blacklistUserRole != null && loginOk && identity != null) {
+
+            if (disallowlistUserRole != null && loginOk && identity != null) {
                 DatawavePrincipal principal = (DatawavePrincipal) getIdentity();
-                
-                if (principal.getProxiedUsers().stream().anyMatch(u -> u.getRoles().contains(blacklistUserRole))) {
+
+                if (principal.getProxiedUsers().stream().anyMatch(u -> u.getRoles().contains(disallowlistUserRole))) {
                     loginOk = false; // this is critical as it is what the parent class uses to actually deny login
-                    String message = "Login denied for " + principal.getUserDN() + " due to membership in the deny-access group " + blacklistUserRole;
+                    String message = "Login denied for " + principal.getUserDN() + " due to membership in the deny-access group " + disallowlistUserRole;
                     log.debug(message);
                     throw new AccountLockedException(message);
                 }
             }
         } catch (RuntimeException e) {
-            
+
             log.warn("Login failed due to exception: " + e.getMessage(), e);
             throw new FailedLoginException(e.getMessage());
         }
         return true;
     }
-    
+
     protected DatawaveCredential getDatawaveCredential() throws LoginException {
         if (trace)
             log.trace("enter: getDatawaveCredential()");
@@ -348,7 +347,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
         Callback callbacks[] = {nc, oc};
         try {
             callbackHandler.handle(callbacks);
-            
+
             // We use a custom authentication mechanism to convert the certificate into a DatawaveCredential.
             // The custom authentication mechanism checks the request for the X-ProxiedEntitiesChain/X-ProxiedIssuersChain
             // headers and uses them along with either the certificate subject and issuer DNs or trusted headers
@@ -373,14 +372,14 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                 log.trace("exit: getDatawaveCredential()");
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     protected boolean validateCredential(DatawaveCredential credential) throws LoginException {
         if (trace)
             log.trace("enter: validateCredential");
-        
+
         datawaveCredential = credential;
-        
+
         String alias = credential.getUserName();
         if (trace)
             log.trace("alias = " + alias);
@@ -391,14 +390,14 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
         if (trace)
             log.trace("identity = " + identity);
         if (identity == null) {
-            
+
             if (credential.getCertificate() != null || (!trustedHeaderLogin && !jwtHeaderLogin)) {
                 if (!validateCertificateCredential(credential)) {
                     log.debug("Bad credential for alias=" + credential.getUserName());
                     throw new FailedLoginException("Supplied Credential did not match existing credential for " + credential.getUserName());
                 }
             }
-            
+
             if (!jwtHeaderLogin || credential.getJwtToken() == null) {
                 try {
                     identity = new DatawavePrincipal(datawaveUserService.lookup(credential.getEntities()));
@@ -423,7 +422,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             log.trace("exit: validateCredential");
         return true;
     }
-    
+
     protected boolean validateCertificateCredential(DatawaveCredential credential) {
         if (trace)
             log.trace("enter: validateCertificateCredential(DatawaveCredential)[" + verifier + "]");

@@ -210,8 +210,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testBlackListMultiValueIncluded() throws Exception {
-        log.info("------  testBlackListMultiValueIncluded  ------");
+    public void testDisallowListMultiValueIncluded() throws Exception {
+        log.info("------  testDisallowListMultiValueIncluded  ------");
 
         String cont = "'europe'";
         String state = "'mississippi'";
@@ -228,8 +228,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testBlackListMultiValueExcluded() throws Exception {
-        log.info("------  testBlackListMultiValueExcluded  ------");
+    public void testDisallowListMultiValueExcluded() throws Exception {
+        log.info("------  testDisallowListMultiValueExcluded  ------");
 
         String cont = "'europe'";
         String state = "'mississippi'";
@@ -246,8 +246,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testEqCityAndEqContinentBlackList() throws Exception {
-        log.info("------  testEqCityAndEqContinentBlackList  ------");
+    public void testEqCityAndEqContinentDisallowList() throws Exception {
+        log.info("------  testEqCityAndEqContinentDisallowList  ------");
 
         String state = "'ohio'";
         String mizzu = "'missouri'";
@@ -287,8 +287,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testEqCityAndEqContinentBlackListWithHitList() throws Exception {
-        log.info("------  testEqCityAndEqContinentBlackListWithHitList  ------");
+    public void testEqCityAndEqContinentDisallowListWithHitList() throws Exception {
+        log.info("------  testEqCityAndEqContinentDisallowListWithHitList  ------");
 
         String cont = "'europe'";
         String state = "'missouri'";

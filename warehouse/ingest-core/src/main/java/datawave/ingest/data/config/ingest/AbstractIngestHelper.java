@@ -25,8 +25,8 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     /* Map of field names to normalizers, null key is the default normalizer */
     protected MaskedFieldHelper mfHelper = null;
     protected Set<String> shardExclusions = new HashSet<>();
-    protected boolean hasIndexBlacklist = false;
-    protected boolean hasReverseIndexBlacklist = false;
+    protected boolean hasIndexDisallowlist = false;
+    protected boolean hasReverseIndexDisallowlist = false;
 
     public boolean getReplaceMalformedUTF8() {
         return replaceMalformedUTF8;
@@ -120,20 +120,20 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
         return shardExclusions.contains(fieldName);
     }
 
-    protected void setHasIndexDisallowlist(boolean hasIndexBlacklist) {
-        this.hasIndexBlacklist = hasIndexBlacklist;
+    protected void setHasIndexDisallowlist(boolean hasIndexDisallowlist) {
+        this.hasIndexDisallowlist = hasIndexDisallowlist;
     }
 
     protected boolean hasIndexDisallowlist() {
-        return this.hasIndexBlacklist;
+        return this.hasIndexDisallowlist;
     }
 
     protected boolean hasReverseIndexDisallowlist() {
-        return this.hasReverseIndexBlacklist;
+        return this.hasReverseIndexDisallowlist;
     }
 
-    protected void setHasReverseIndexDisallowlist(boolean hasReverseIndexBlacklist) {
-        this.hasReverseIndexBlacklist = hasReverseIndexBlacklist;
+    protected void setHasReverseIndexDisallowlist(boolean hasReverseIndexDisallowlist) {
+        this.hasReverseIndexDisallowlist = hasReverseIndexDisallowlist;
     }
 
     public void upperCaseSetEntries(Set<String> input, String warnMessage) {

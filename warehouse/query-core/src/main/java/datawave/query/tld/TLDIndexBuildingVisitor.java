@@ -33,7 +33,7 @@ import java.util.Set;
 
 public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     private static final Logger log = Logger.getLogger(TLDIndexBuildingVisitor.class);
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         // We have no parent already defined
@@ -50,7 +50,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setTimeFilter(timeFilter);
         builder.setNode(node);
         node.childrenAccept(this, builder);
-        
+
         // A EQNode may be of the form FIELD == null. The evaluation can
         // handle this, so we should just not build an IndexIterator for it.
         if (null == builder.getValue()) {
@@ -59,69 +59,69 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             }
             return null;
         }
-        
+
         AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
         // Add the negated IndexIteratorBuilder to the parent as an *exclude*
         if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
-                        && !excludeReferences.contains(builder.getField())) {
+                && !excludeReferences.contains(builder.getField())) {
             iterators.addExclude(builder.build());
         } else {
             if (isQueryFullySatisfied == true) {
                 throw new RuntimeException("Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
             }
         }
-        
+
         return null;
     }
-    
+
     @Override
-    protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key,Value> kvIter, ASTEQNode node) throws IOException {
+    protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key, Value> kvIter, ASTEQNode node) throws IOException {
         if (null != rangeLimiter && limitLookup) {
-            
+
             Key newStartKey = getKey(node);
-            
+
             kvIter.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.emptyList(), false);
-            
+
         }
     }
-    
+
     @Override
-    protected SortedKeyValueIterator<Key,Value> createIndexOnlyKey(ASTEQNode node) throws IOException {
+    protected SortedKeyValueIterator<Key, Value> createIndexOnlyKey(ASTEQNode node) throws IOException {
         Key newStartKey = getKey(node);
-        
+
         IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
         if (null == op || null == op.getLiteralValue()) {
             // deep copy since this is likely a null literal
             return source.deepCopy(env);
         }
-        
+
         String fn = op.deconstructIdentifier();
         String literal = String.valueOf(op.getLiteralValue());
-        
+
         if (log.isTraceEnabled()) {
             log.trace("createIndexOnlyKey for " + fn + " " + literal + " " + newStartKey);
         }
-        List<Entry<Key,Value>> kv = Lists.newArrayList();
+        List<Entry<Key, Value>> kv = Lists.newArrayList();
         if (null != limitedMap.get(Maps.immutableEntry(fn, literal))) {
             kv.add(limitedMap.get(Maps.immutableEntry(fn, literal)));
         } else {
-            
-            SortedKeyValueIterator<Key,Value> mySource = limitedSource;
+
+            SortedKeyValueIterator<Key, Value> mySource = limitedSource;
             // if source size > 0, we are free to use up to that number for this query
             if (source.getSourceSize() > 0)
                 mySource = source.deepCopy(env);
-            
+
             mySource.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.emptyList(), false);
-            
+
             if (mySource.hasTop()) {
                 kv.add(Maps.immutableEntry(mySource.getTopKey(), Constants.NULL_VALUE));
-                
+
             }
         }
-        
+
         return new IteratorToSortedKeyValueIterator(kv.iterator());
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         TLDIndexIteratorBuilder builder = new TLDIndexIteratorBuilder();
@@ -139,7 +139,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
         builder.setNode(node);
         node.childrenAccept(this, builder);
-        
+
         // A EQNode may be of the form FIELD == null. The evaluation can
         // handle this, so we should just not build an IndexIterator for it.
         if (null == builder.getValue()) {
@@ -148,15 +148,15 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             }
             return null;
         }
-        
+
         // We have no parent already defined
         if (data == null) {
             // Make this EQNode the root
             if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
-                throw new IllegalStateException(builder.getField() + " is a blacklisted reference.");
+                throw new IllegalStateException(builder.getField() + " is a disallowlisted reference.");
             } else {
                 root = builder.build();
-                
+
                 if (log.isTraceEnabled()) {
                     log.trace("Build IndexIterator: " + root);
                 }
@@ -165,74 +165,70 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
             if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
-                            && !excludeReferences.contains(builder.getField())) {
+                    && !excludeReferences.contains(builder.getField())) {
                 iterators.addInclude(builder.build());
             } else {
                 if (isQueryFullySatisfied == true) {
                     throw new RuntimeException(
-                                    "Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
+                            "Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
                 }
             }
         }
-        
+
         return null;
     }
-    
+
     @Override
     protected EventFieldAggregator getEventFieldAggregator(String field, ChainableEventDataQueryFilter filter) {
         return new TLDEventFieldAggregator(field, filter, eventNextSeek, typeMetadata, NoOpType.class.getName());
     }
-    
+
     /**
      * Use fieldsToAggregate instead of indexOnlyFields because this enables TLDs to return non-event tokens as part of the user document
      *
-     * @param identifier
-     *            the field to be aggregated
-     * @param filter
-     *            a {@link ChainableEventDataQueryFilter}
-     * @param maxNextCount
-     *            the maximum number of next calls before a seek is issued
+     * @param identifier   the field to be aggregated
+     * @param filter       a {@link ChainableEventDataQueryFilter}
+     * @param maxNextCount the maximum number of next calls before a seek is issued
      * @return a {@link TermFrequencyAggregator} loaded with the provided filter
      */
     @Override
     protected TermFrequencyAggregator buildTermFrequencyAggregator(String identifier, ChainableEventDataQueryFilter filter, int maxNextCount) {
-        
+
         filter.addFilter(new TLDTermFrequencyEventDataQueryFilter(indexOnlyFields, attrFilter));
-        
+
         Set<String> toAggregate = fieldsToAggregate.contains(identifier) ? Collections.singleton(identifier) : Collections.emptySet();
-        
+
         return new TLDTermFrequencyAggregator(toAggregate, filter, tfNextSeek);
     }
-    
+
     /**
      * Range should be build to encompass the entire TLD
-     * 
-     * @param range
-     *            non-null literal range to generate an FI range from
+     *
+     * @param range non-null literal range to generate an FI range from
      * @return a range
      */
     @Override
     protected Range getFiRangeForTF(LiteralRange<?> range) {
         Key startKey = rangeLimiter.getStartKey();
-        
+
         StringBuilder strBuilder = new StringBuilder("fi");
         strBuilder.append(NULL_DELIMETER).append(range.getFieldName());
         Text cf = new Text(strBuilder.toString());
-        
+
         strBuilder = new StringBuilder(range.getLower().toString());
-        
+
         strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
         Text cq = new Text(strBuilder.toString());
-        
+
         Key seekBeginKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
-        
+
         strBuilder = new StringBuilder(range.getUpper().toString());
-        
+
         strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily() + Constants.MAX_UNICODE_STRING);
         cq = new Text(strBuilder.toString());
-        
+
         Key seekEndKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
-        
+
         return new Range(seekBeginKey, true, seekEndKey, true);
     }
 }

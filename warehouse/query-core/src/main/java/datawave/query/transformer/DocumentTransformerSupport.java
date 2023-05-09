@@ -79,7 +79,7 @@ public abstract class DocumentTransformerSupport<I, O> extends EventQueryTransfo
     private int objectsTransformed = 0;
     private long logicCreated = System.currentTimeMillis();
     private Set<String> projectFields = Collections.emptySet();
-    private Set<String> blacklistedFields = Collections.emptySet();
+    private Set<String> disallowlistedFields = Collections.emptySet();
 
     protected List<DocumentTransform> transforms = new ArrayList<>();
 
@@ -174,14 +174,14 @@ public abstract class DocumentTransformerSupport<I, O> extends EventQueryTransfo
     protected Collection<FieldBase<?>> buildDocumentFields(Key documentKey, String documentName, Document document, ColumnVisibility topLevelColumnVisibility,
                                                            MarkingFunctions markingFunctions) {
 
-        // Whether the fields were added to projectFields or removed from blacklistedFields, they user does not want them returned
-        // If neither a projection nor a blacklist was used then the suppressFields set should remain empty
+        // Whether the fields were added to projectFields or removed from disallowlistedFields, they user does not want them returned
+        // If neither a projection nor a disallowlist was used then the suppressFields set should remain empty
         Set<String> suppressFields = Collections.emptySet();
         if (cardinalityConfiguration != null) {
             if (!projectFields.isEmpty()) {
                 suppressFields = cardinalityConfiguration.getStoredProjectFieldsToAdd(getQm(), projectFields);
-            } else if (!blacklistedFields.isEmpty()) {
-                suppressFields = cardinalityConfiguration.getStoredDisallowlistedFieldsToRemove(getQm(), blacklistedFields);
+            } else if (!disallowlistedFields.isEmpty()) {
+                suppressFields = cardinalityConfiguration.getStoredDisallowlistedFieldsToRemove(getQm(), disallowlistedFields);
             }
         }
 
@@ -198,7 +198,7 @@ public abstract class DocumentTransformerSupport<I, O> extends EventQueryTransfo
             }
             fn = (documentName == null) ? data.getKey() : documentName;
 
-            // Some fields were added by the queryPlanner. This will ensure that the original projectFields and blacklistFields are honored
+            // Some fields were added by the queryPlanner. This will ensure that the original projectFields and disallowlistFields are honored
             // remove any grouping context (only return the field up until the first dot)
             if (!suppressFields.contains(JexlASTHelper.removeGroupingContext(fn))) {
                 // Apply the reverse mapping to make the field name human-readable again
@@ -574,8 +574,8 @@ public abstract class DocumentTransformerSupport<I, O> extends EventQueryTransfo
         this.projectFields = projectFields;
     }
 
-    public void setDisallowlistedFields(Set<String> blacklistedFields) {
-        this.blacklistedFields = blacklistedFields;
+    public void setDisallowlistedFields(Set<String> disallowlistedFields) {
+        this.disallowlistedFields = disallowlistedFields;
     }
 
     public void setPrimaryToSecondaryFieldMap(Map<String, List<String>> primaryToSecondaryFieldMap) {

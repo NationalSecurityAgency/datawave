@@ -11,26 +11,23 @@ import java.util.Set;
  * Logic checker for the return fields in a {@link Document}.
  */
 public class ResponseFieldChecker implements QueryLogicTestHarness.DocumentChecker {
-    
+
     private final Set<String> fields;
     private final Set<String> missing;
-    
+
     /**
-     * @param respFields
-     *            list of fields that should be in the response document
-     * @param missingFields
-     *            fields that should not be included in the response
+     * @param respFields    list of fields that should be in the response document
+     * @param missingFields fields that should not be included in the response
      */
     public ResponseFieldChecker(final Set<String> respFields, final Set<String> missingFields) {
         this.fields = respFields;
         this.missing = missingFields;
     }
-    
+
     /**
      * Verifies the query response document contains all of the return fields.
      *
-     * @param doc
-     *            query response document
+     * @param doc query response document
      */
     @Override
     public void assertValid(final Document doc) {
@@ -46,10 +43,10 @@ public class ResponseFieldChecker implements QueryLogicTestHarness.DocumentCheck
                 Assert.assertNotNull("missing metadata for field(" + field + ") from " + doc, val.getMetadata());
             }
         }
-        
+
         for (final String field : this.missing) {
             final Attribute val = doc.get(field);
-            Assert.assertNull("blacklisted return field(" + field + ") from " + doc, val);
+            Assert.assertNull("disallowlisted return field(" + field + ") from " + doc, val);
         }
     }
 }
