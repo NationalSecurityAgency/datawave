@@ -91,9 +91,7 @@
 
     <property>
         <name>mycsv.data.header</name>
-        <value>
-            PROCESSING_DATE,EVENT_ID,LANGUAGE,ORIGINAL_SIZE,PROCESSED_SIZE,FILE_TYPE,MD5,SHA1,SHA256,EVENT_DATE,SECURITY_MARKING
-        </value>
+        <value>PROCESSING_DATE,EVENT_ID,LANGUAGE,ORIGINAL_SIZE,PROCESSED_SIZE,FILE_TYPE,MD5,SHA1,SHA256,EVENT_DATE,SECURITY_MARKING</value>
         <description>These are the fields in the raw data (delimited by separator).</description>
     </property>
 
