@@ -55,18 +55,18 @@ public class QueryIteratorTest {
 
         map.put(new Key("20121126_0", "foobar\0" + preId + 23, "FOO\0bar1", ts), new Value(new byte[0]));
         map.put(new Key("20121126_0", "foobar\0" + preId + 23, "BAR\0foo1", ts2), new Value(new byte[0]));
-        map.put(new Key("20121126_0", "foobar\0" + preId + 24, "FOO\0bar1", ts), new Value(new byte[0]));
-        map.put(new Key("20121126_0", "foobar\0" + preId + 24, "BAR\0foo1", ts2), new Value(new byte[0]));
-        map.put(new Key("20121126_0", "foobar\0" + preId + 25, "FOO\0bar1", ts), new Value(new byte[0]));
-        map.put(new Key("20121126_0", "foobar\0" + preId + 25, "BAR\0foo1", ts2), new Value(new byte[0]));
+        map.put(new Key("20121126_0", "foobar\0" + preId + 24, "FOO\0bar2", ts), new Value(new byte[0]));
+        map.put(new Key("20121126_0", "foobar\0" + preId + 24, "BAR\0foo2", ts2), new Value(new byte[0]));
+        map.put(new Key("20121126_0", "foobar\0" + preId + 25, "FOO\0bar3", ts), new Value(new byte[0]));
+        map.put(new Key("20121126_0", "foobar\0" + preId + 25, "BAR\0foo3", ts2), new Value(new byte[0]));
 
         map.put(new Key("20121126_1", "fi\0" + "FOO", "bar\0" + "foobar\0" + preId + 4, ts), new Value(new byte[0]));
         map.put(new Key("20121126_1", "fi\0" + "FOO", "bar\0" + "foobar\0" + preId + 5, ts), new Value(new byte[0]));
         map.put(new Key("20121126_1", "fi\0" + "FOO", "bar\0" + "foobar\0" + preId + 6, ts), new Value(new byte[0]));
         map.put(new Key("20121126_1", "foobar\0" + preId + 4, "FOO\0bar", ts), new Value(new byte[0]));
         map.put(new Key("20121126_1", "foobar\0" + preId + 5, "FOO\0bar", ts), new Value(new byte[0]));
-        map.put(new Key("20121126_1", "foobar\0" + preId + 5, "FOO\0foo", ts2), new Value(new byte[0]));
-        map.put(new Key("20121126_1", "foobar\0" + preId + 6, "BAR\0bar", ts), new Value(new byte[0]));
+        map.put(new Key("20121126_1", "foobar\0" + preId + 5, "BAR\0foo", ts2), new Value(new byte[0]));
+        map.put(new Key("20121126_1", "foobar\0" + preId + 6, "FOO\0bar", ts), new Value(new byte[0]));
 
         map.put(new Key("20121126_2", "fi\0" + "FOO", "bar\0" + "foobar\0" + preId + 7, ts), new Value(new byte[0]));
         map.put(new Key("20121126_2", "fi\0" + "FOO", "bar\0" + "foobar\0" + preId + 8, ts), new Value(new byte[0]));

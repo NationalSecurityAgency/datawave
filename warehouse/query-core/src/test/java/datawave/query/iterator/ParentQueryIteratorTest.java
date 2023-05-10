@@ -154,11 +154,11 @@ public class ParentQueryIteratorTest {
         map.put(new Key("20121126_2", "fi\0" + "FOO", "bar\0" + "foobar\0" + ID_PREFIX + "idpart33." + 7, ts), new Value(new byte[0]));
         map.put(new Key("20121126_2", "fi\0" + "FOO", "bar\0" + "foobar\0" + ID_PREFIX + "idpart33." + 8, ts), new Value(new byte[0]));
         map.put(new Key("20121126_2", "fi\0" + "FOO", "bar\0" + "foobar\0" + ID_PREFIX + "idpart33." + 9, ts), new Value(new byte[0]));
-        map.put(new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart33." + 7, "FOO\0bars", ts), new Value(new byte[0]));
+        map.put(new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart33." + 7, "FOO\0bar", ts), new Value(new byte[0]));
         map.put(new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart33." + 7, "BAR\0foo", ts3), new Value(new byte[0]));
-        map.put(new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart33." + 8, "FOO\0bars", ts), new Value(new byte[0]));
+        map.put(new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart33." + 8, "FOO\0bar", ts), new Value(new byte[0]));
         map.put(new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart33." + 8, "BAR\0foo", ts3), new Value(new byte[0]));
-        map.put(new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart33." + 9, "FOO\0bars", ts), new Value(new byte[0]));
+        map.put(new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart33." + 9, "FOO\0bar", ts), new Value(new byte[0]));
         map.put(new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart33." + 9, "BAR\0foo", ts3), new Value(new byte[0]));
     }
 
