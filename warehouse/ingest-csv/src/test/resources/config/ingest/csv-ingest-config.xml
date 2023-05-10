@@ -187,17 +187,13 @@
 
     <property>
         <name>mycsv.data.category.index.tokenize.disallowlist</name>
-        <value>
-            FIELDNAME1_WE_DONT_WANT_INDEXED,FIELDNAME1_NOT_TO_TOKENIZE,UUID,PARENT_UUID,SECURITY_MARKING,EVENT_DATE,PROCESSING_DATE,EVENT_ID
-        </value>
+        <value>FIELDNAME1_WE_DONT_WANT_INDEXED,FIELDNAME1_NOT_TO_TOKENIZE,UUID,PARENT_UUID,SECURITY_MARKING,EVENT_DATE,PROCESSING_DATE,EVENT_ID</value>
         <description>These are the fields to *not* tokenize and index.</description>
     </property>
 
     <property>
         <name>mycsv.data.category.index.reverse.tokenize.disallowlist</name>
-        <value>
-            FIELDNAME1_WE_DONT_WANT_INDEXED,FIELDNAME1_NOT_TO_TOKENIZE,UUID,PARENT_UUID,SECURITY_MARKING,EVENT_DATE,PROCESSING_DATE,EVENT_ID
-        </value>
+        <value>FIELDNAME1_WE_DONT_WANT_INDEXED,FIELDNAME1_NOT_TO_TOKENIZE,UUID,PARENT_UUID,SECURITY_MARKING,EVENT_DATE,PROCESSING_DATE,EVENT_ID</value>
         <description>These are the fields to *not* tokenize and index. Contains the same fields from
             *.index.disallowlist and date, time, numeric, or hash-based fields
         </description>
