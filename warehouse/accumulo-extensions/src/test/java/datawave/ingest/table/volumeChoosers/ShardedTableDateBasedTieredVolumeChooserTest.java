@@ -1,9 +1,10 @@
 package datawave.ingest.table.volumeChoosers;
 
 import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
+import org.apache.accumulo.core.spi.fs.VolumeChooserEnvironment;
 import org.apache.accumulo.server.fs.VolumeChooser;
-import org.apache.accumulo.server.fs.VolumeChooserEnvironment;
 import org.apache.hadoop.io.Text;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
@@ -14,14 +15,24 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
 @RunWith(EasyMockRunner.class)
 public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSupport {
-    
+    Set<String> options = new HashSet<>();
+    {
+        options.add("newData1");
+        options.add("newData2");
+        options.add("newData3");
+        options.add("oldData1");
+        options.add("oldData2");
+    }
     @Mock
     VolumeChooserEnvironment env;
     
@@ -31,15 +42,11 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
     ServiceEnvironment serviceEnvironment;
     @Mock
     ServiceEnvironment.Configuration configuration;
-    
+
+
+
     @Test
     public void testAllValidInputOldData() {
-        String[] options = new String[5];
-        options[0] = "newData1";
-        options[1] = "newData2";
-        options[2] = "newData3";
-        options[3] = "oldData1";
-        options[4] = "oldData2";
         
         String newVolumes = "newData1,newData2,newData3";
         String oldVolumes = "oldData1,oldData2";
@@ -58,12 +65,6 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
     
     @Test
     public void testAllValidInputNewData() {
-        String[] options = new String[5];
-        options[0] = "newData1";
-        options[1] = "newData2";
-        options[2] = "newData3";
-        options[3] = "oldData1";
-        options[4] = "oldData2";
         
         String newVolumes = "newData1,newData2,newData3";
         String oldVolumes = "oldData1,oldData2";
@@ -82,9 +83,9 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
     
     @Test
     public void testNewVolumesNotInOptionsForNewData() {
-        String[] options = new String[2];
-        options[0] = "oldData1";
-        options[1] = "oldData2";
+        Set<String> oldOnlyOptions = new HashSet<>();
+        oldOnlyOptions.add("oldData1");
+        oldOnlyOptions.add("oldData2");
         
         String newVolumes = "newData1,newData2,newData3";
         String oldVolumes = "oldData1,oldData2";
@@ -97,17 +98,17 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         String shardId = "30000202_123";
         setupMock(tiers, shardId);
         ShardedTableDateBasedTieredVolumeChooser chooser = new ShardedTableDateBasedTieredVolumeChooser();
-        String choice = chooser.choose(env, options);
+        String choice = chooser.choose(env, oldOnlyOptions);
         assertTrue(choice.contains("newData"));
         
     }
     
     @Test
     public void testOldVolumesNotInOptionsForOldData() {
-        String[] options = new String[3];
-        options[0] = "newData1";
-        options[1] = "newData2";
-        options[2] = "newData3";
+        Set<String> newOnlyOptions = new HashSet<>();
+        newOnlyOptions.add("newData1");
+        newOnlyOptions.add("newData2");
+        newOnlyOptions.add("newData3");
         
         String newVolumes = "newData1,newData2,newData3";
         String oldVolumes = "oldData1,oldData2";
@@ -125,13 +126,6 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
     
     @Test
     public void testShardIdDoesntMatchDatePattern() {
-        String[] options = new String[5];
-        options[0] = "newData1";
-        options[1] = "newData2";
-        options[2] = "newData3";
-        options[3] = "oldData1";
-        options[4] = "oldData2";
-        
         String newVolumes = "newData1,newData2,newData3";
         String oldVolumes = "oldData1,oldData2";
         long daysBack = 125L;
@@ -144,19 +138,12 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         setupMock(tiers, shardId);
         ShardedTableDateBasedTieredVolumeChooser chooser = new ShardedTableDateBasedTieredVolumeChooser();
         String choice = chooser.choose(env, options);
-        assertTrue(Arrays.asList(options).contains(choice));
+        assertTrue(options.contains(choice));
         
     }
     
     @Test(expected = VolumeChooser.VolumeChooserException.class)
     public void testNegativeDaysBack() {
-        String[] options = new String[5];
-        options[0] = "newData1";
-        options[1] = "newData2";
-        options[2] = "newData3";
-        options[3] = "oldData1";
-        options[4] = "oldData2";
-        
         String newVolumes = "newData1,newData2,newData3";
         String oldVolumes = "oldData1,oldData2";
         long daysBack = -125L;
@@ -169,19 +156,12 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         setupMock(tiers, shardId);
         ShardedTableDateBasedTieredVolumeChooser chooser = new ShardedTableDateBasedTieredVolumeChooser();
         String choice = chooser.choose(env, options);
-        assertTrue(Arrays.asList(options).contains(choice));
+        assertTrue(options.contains(choice));
         
     }
     
     @Test
     public void testZeroBack() {
-        String[] options = new String[5];
-        options[0] = "newData1";
-        options[1] = "newData2";
-        options[2] = "newData3";
-        options[3] = "oldData1";
-        options[4] = "oldData2";
-        
         String newVolumes = "newData1,newData2,newData3";
         String oldVolumes = "oldData1,oldData2";
         long daysBack = 0;
@@ -200,13 +180,6 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
     
     @Test
     public void testVeryLargeDaysBack() {
-        String[] options = new String[5];
-        options[0] = "newData1";
-        options[1] = "newData2";
-        options[2] = "newData3";
-        options[3] = "oldData1";
-        options[4] = "oldData2";
-        
         String newVolumes = "newData1,newData2,newData3";
         String oldVolumes = "oldData1,oldData2";
         long daysBack = 999999999999L;
@@ -225,13 +198,6 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
     
     @Test
     public void testMalformedNewVolumes() {
-        String[] options = new String[5];
-        options[0] = "newData1";
-        options[1] = "newData2";
-        options[2] = "newData3";
-        options[3] = "oldData1";
-        options[4] = "oldData2";
-        
         String newVolumes = ",newData1,newData2,newData3,,";
         String oldVolumes = "oldData1,oldData2";
         long daysBack = 100L;
@@ -250,13 +216,6 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
     
     @Test
     public void testMalformedOldVolumes() {
-        String[] options = new String[5];
-        options[0] = "newData1";
-        options[1] = "newData2";
-        options[2] = "newData3";
-        options[3] = "oldData1";
-        options[4] = "oldData2";
-        
         String newVolumes = ",newData1,newData2,newData3,,";
         String oldVolumes = ",oldData1,,,oldData2,,,";
         long daysBack = 100L;
@@ -275,15 +234,8 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
     
     @Test
     public void testEmptyEndRow() {
-        String[] options = new String[5];
-        options[0] = "newData1";
-        options[1] = "newData2";
-        options[2] = "newData3";
-        options[3] = "oldData1";
-        options[4] = "oldData2";
-        
         String newVolumes = "newData1,newData2,newData3";
-        String oldVolumes = ",oldData1,,,oldData2,,,";
+        String oldVolumes = "oldData1,oldData2";
         long daysBack = 100L;
         
         Map<Long,String> tiers = new HashMap<>();
@@ -291,21 +243,21 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         tiers.put(Long.MAX_VALUE, oldVolumes);
         
         String shardId = "";
-        // setupMock(newVolumes, oldVolumes, daysBack, shardId);
+        setupMock(tiers,shardId);
         ShardedTableDateBasedTieredVolumeChooser chooser = new ShardedTableDateBasedTieredVolumeChooser();
         String choice = chooser.choose(env, options);
-        assertTrue(Arrays.asList(options).contains(choice));
+        assertTrue(options.contains(choice));
         
     }
     
     @Test
     public void testValidPattern_NewData_optionsDoNotIncludeVolume() {
-        String[] options = new String[5];
-        options[0] = "a";
-        options[1] = "b";
-        options[2] = "c";
-        options[3] = "d";
-        options[4] = "e";
+        Set<String> letterOptions = new HashSet<>();
+        letterOptions.add("a");
+        letterOptions.add("b");
+        letterOptions.add("c");
+        letterOptions.add("d");
+        letterOptions.add("e");
         
         String newVolumes = "newData1,newData2,newData3";
         String oldVolumes = "oldData1,oldData2";
@@ -323,9 +275,10 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
     
     private void setupMock(Map<Long,String> tiers, String shardId) {
         resetAll();
-        EasyMock.expect(env.hasTableId()).andReturn(true).once();
-        EasyMock.expect(env.getScope()).andReturn(VolumeChooserEnvironment.ChooserScope.TABLE).times(1);
-        EasyMock.expect(env.getTableId()).andReturn(tableId).anyTimes();
+        Optional<TableId> tableOptional = Optional.of(tableId);
+        EasyMock.expect(env.getTable()).andReturn(tableOptional).once();
+        EasyMock.expect(env.getChooserScope()).andReturn(VolumeChooserEnvironment.Scope.TABLE).times(1);
+        EasyMock.expect(env.getTable()).andReturn(tableOptional).anyTimes();
         EasyMock.expect(env.getServiceEnv()).andReturn(serviceEnvironment).anyTimes();
         EasyMock.expect(serviceEnvironment.getConfiguration(tableId)).andReturn(configuration).anyTimes();
         EasyMock.expect(configuration.getTableCustom("volume.tier.names"))
