@@ -142,7 +142,7 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         
     }
     
-    @Test(expected = VolumeChooser.VolumeChooserException.class)
+    @Test(expected = IllegalStateException.class)
     public void testNegativeDaysBack() {
         String newVolumes = "newData1,newData2,newData3";
         String oldVolumes = "oldData1,oldData2";

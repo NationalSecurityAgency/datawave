@@ -5,7 +5,6 @@ import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.accumulo.core.spi.fs.RandomVolumeChooser;
 import org.apache.accumulo.core.spi.fs.VolumeChooserEnvironment;
-import org.apache.accumulo.server.fs.VolumeChooser;
 import org.apache.hadoop.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,12 +67,12 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
                             .getTableCustom(PROPERTY_PREFIX + tier + DAYS_BACK_SUFFIX));
             if (daysBackForCurrentTier >= 0) {
                 if (volumesForCurrentTier.size() < 1) {
-                    throw new VolumeChooser.VolumeChooserException("Volumes list empty for tier " + tier + ". Ensure property " + Property.TABLE_ARBITRARY_PROP_PREFIX
+                    throw new IllegalStateException("Volumes list empty for tier " + tier + ". Ensure property " + Property.TABLE_ARBITRARY_PROP_PREFIX
                                     + PROPERTY_PREFIX + tier + VOLUME_SUFFIX + " is set");
                 }
                 daysToVolumes.put(daysBackForCurrentTier, volumesForCurrentTier);
             } else
-                throw new VolumeChooser.VolumeChooserException("Invalid days back for " + tier + ". Must be >= 0");
+                throw new IllegalStateException("Invalid days back for " + tier + ". Must be >= 0");
         }
         return daysToVolumes;
     }
