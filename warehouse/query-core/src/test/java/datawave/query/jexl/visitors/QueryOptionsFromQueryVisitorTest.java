@@ -235,11 +235,11 @@ public class QueryOptionsFromQueryVisitorTest {
         
         // Verify that AND nodes are cleaned up.
         assertResult("(FOO == 'bar' OR (BAR == 'foo' AND f:groupby('field1','field2')))", "(FOO == 'bar' OR (BAR == 'foo'))");
-        assertOption(QueryParameters.GROUP_FIELDS, "field1,field2");
+        assertOption(QueryParameters.GROUP_FIELDS, "field1[ALL],field2[ALL]");
         
         // Verify that OR nodes are cleaned up.
         assertResult("(FOO == 'bar' AND (BAR == 'foo' OR f:groupby('field1','field2')))", "(FOO == 'bar' AND (BAR == 'foo'))");
-        assertOption(QueryParameters.GROUP_FIELDS, "field1,field2");
+        assertOption(QueryParameters.GROUP_FIELDS, "field1[ALL],field2[ALL]");
     }
     
     private void assertOption(String option, String value) {
