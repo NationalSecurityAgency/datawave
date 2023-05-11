@@ -52,7 +52,7 @@ public class QueryOptionsFromQueryVisitorTest {
         assertOption(QueryParameters.GROUP_FIELDS, "field1[MINUTE],field2[MINUTE],field3[MINUTE]");
 
         // Verify that fields from multiple unique functions are merged together.
-        assertResult("f:groupby('field1','field2') AND f:unique('field2[DAY]','field3[DAY]') AND f:groupby('field4')", "");
+        assertResult("f:groupby('field1','field2') AND f:groupby('field2[DAY]','field3[DAY]') AND f:groupby('field4')", "");
         assertOption(QueryParameters.GROUP_FIELDS, "field1[ALL],field2[ALL,DAY],field3[DAY],field4[ALL]");
 
         // Verify more complex fields with multiple granularity levels are merged together.

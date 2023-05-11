@@ -260,7 +260,10 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 case QueryFunctions.GROUPBY_FUNCTION: {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);
-                    optionsMap.put(QueryParameters.GROUP_FIELDS, JOINER.join(optionsList));
+                    String fieldString = JOINER.join(optionsList);
+
+                    GroupByFields groupFields = GroupByFields.from(fieldString);
+                    updateGroupbyFieldsOption(optionsMap, groupFields);
                     return null;
                 }
                 case GroupbyFunction.GROUP_BY_DAY_FUNCTION:
