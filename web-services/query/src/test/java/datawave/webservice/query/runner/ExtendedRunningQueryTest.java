@@ -161,7 +161,6 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getQueryAuthorizations()).andReturn(methodAuths).times(2);
         expect(this.query.getColumnVisibility()).andReturn(columnVisibility);
         expect(this.query.getUserDN()).andReturn(userDN).times(3);
-        expect(this.query.getDnList()).andReturn(dnList);
         expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
@@ -178,7 +177,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
-        expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
+        expect(this.queryLogic.getResultLimit(eq(this.query))).andReturn(maxResults);
         expect(this.queryLogic.getUserOperations()).andReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
         
@@ -248,12 +247,11 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getQueryAuthorizations()).andReturn(methodAuths).times(2);
         expect(this.query.getUserDN()).andReturn(userDN).times(3);
         expect(this.query.getColumnVisibility()).andReturn(columnVisibility);
-        expect(this.query.getDnList()).andReturn(dnList);
         expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
-        expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
+        expect(this.queryLogic.getResultLimit(eq(this.query))).andReturn(maxResults);
         
         Iterator<Object> iterator = resultObjects.iterator();
         int count = 0;
@@ -320,7 +318,6 @@ public class ExtendedRunningQueryTest {
         expect(this.exceptionHandler.getThrowable()).andReturn(null).times(3);
         expect(this.query.getId()).andReturn(queryId).times(3);
         expect(this.query.getUserDN()).andReturn(userDN).times(3);
-        expect(this.query.getDnList()).andReturn(dnList);
         expect(this.query.getOwner()).andReturn(userSid);
         expect(this.query.getQuery()).andReturn(query);
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName);
@@ -338,7 +335,7 @@ public class ExtendedRunningQueryTest {
         expect(this.transformIterator.hasNext()).andReturn(true).times(0, 1);
         expect(this.genericConfiguration.getQueryString()).andReturn("query").once();
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
-        expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
+        expect(this.queryLogic.getResultLimit(eq(this.query))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
         expect(this.queryLogic.getUserOperations()).andReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
@@ -380,7 +377,6 @@ public class ExtendedRunningQueryTest {
         expect(this.exceptionHandler.getThrowable()).andReturn(null);
         expect(this.query.getId()).andReturn(queryId).times(3);
         expect(this.query.getUserDN()).andReturn(userDN).times(3);
-        expect(this.query.getDnList()).andReturn(dnList);
         expect(this.query.getOwner()).andReturn(null);
         expect(this.query.getQuery()).andReturn(null);
         expect(this.query.getQueryLogicName()).andReturn(null);
@@ -393,7 +389,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         expect(this.genericConfiguration.getQueryString()).andReturn("query").once();
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
-        expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
+        expect(this.queryLogic.getResultLimit(eq(this.query))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
         expect(this.queryLogic.getUserOperations()).andReturn(null);
         this.queryLogic.setupQuery(this.genericConfiguration);
@@ -459,12 +455,11 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getQueryAuthorizations()).andReturn(methodAuths).times(2);
         expect(this.query.getUserDN()).andReturn(userDN).times(4);
         expect(this.query.getColumnVisibility()).andReturn(columnVisibility);
-        expect(this.query.getDnList()).andReturn(dnList);
         expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
-        expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(dnResultLimit);
+        expect(this.queryLogic.getResultLimit(eq(this.query))).andReturn(dnResultLimit);
         
         Iterator<Object> iterator = resultObjects.iterator();
         int count = 0;

@@ -31,6 +31,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private String logicDescription = "Not configured";
     private AuditType auditType = null;
     private Map<String,Long> dnResultLimits = null;
+    private Map<String,Long> systemFromResultLimits = null;
     protected long maxResults = -1L;
     protected int maxConcurrentTasks = -1;
     protected ScannerBase scanner;
@@ -393,6 +394,16 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     @Override
     public Map<String,Long> getDnResultLimits() {
         return dnResultLimits;
+    }
+    
+    @Override
+    public void setSystemFromResultLimits(Map<String,Long> systemFromLimits) {
+        this.systemFromResultLimits = systemFromLimits;
+    }
+    
+    @Override
+    public Map<String,Long> getSystemFromResultLimits() {
+        return systemFromResultLimits;
     }
     
     @Override

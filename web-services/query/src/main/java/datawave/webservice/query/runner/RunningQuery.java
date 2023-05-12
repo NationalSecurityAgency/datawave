@@ -17,6 +17,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -35,6 +36,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -144,7 +146,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         if (null != client) {
             setClient(client);
         }
-        this.maxResults = this.logic.getResultLimit(this.settings.getDnList());
+        
+        this.maxResults = this.logic.getResultLimit(this.settings);
         if (this.maxResults != this.logic.getMaxResults()) {
             log.info("Maximum results set to " + this.maxResults + " instead of default " + this.logic.getMaxResults() + ", user " + this.settings.getUserDN()
                             + " has a DN configured with a different limit");

@@ -299,8 +299,18 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     }
     
     @Override
-    public long getResultLimit(Collection<String> dns) {
-        return delegate.getResultLimit(dns);
+    public void setSystemFromResultLimits(Map<String,Long> systemFromResultLimits) {
+        delegate.setSystemFromResultLimits(systemFromResultLimits);
+    }
+    
+    @Override
+    public Map<String,Long> getSystemFromResultLimits() {
+        return delegate.getSystemFromResultLimits();
+    }
+    
+    @Override
+    public long getResultLimit(Query settings) {
+        return delegate.getResultLimit(settings);
     }
     
     @Override

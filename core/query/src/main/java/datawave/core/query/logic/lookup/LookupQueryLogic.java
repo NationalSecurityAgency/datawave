@@ -13,7 +13,6 @@ import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.springframework.beans.factory.annotation.Required;
@@ -302,8 +301,8 @@ public abstract class LookupQueryLogic<T> extends BaseQueryLogic<T> implements C
     }
     
     @Override
-    public long getResultLimit(Collection<String> dns) {
-        return delegateQueryLogic.getResultLimit(dns);
+    public long getResultLimit(Query settings) {
+        return delegateQueryLogic.getResultLimit(settings);
     }
     
     @Override
