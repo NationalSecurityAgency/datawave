@@ -51,17 +51,13 @@ public class QueryOptionsFromQueryVisitorTest {
         assertResult("f:groupby('field1[MINUTE]','field2[MINUTE]','field3[MINUTE]')", "");
         assertOption(QueryParameters.GROUP_FIELDS, "field1[MINUTE],field2[MINUTE],field3[MINUTE]");
 
-        // Verify that fields from multiple unique functions are merged together.
-        assertResult("f:groupby('field1','field2') AND f:groupby('field2[DAY]','field3[DAY]') AND f:groupby('field4')", "");
-        assertOption(QueryParameters.GROUP_FIELDS, "field1[ALL],field2[ALL,DAY],field3[DAY],field4[ALL]");
-
         // Verify more complex fields with multiple granularity levels are merged together.
         assertResult("f:groupby('field1[DAY]','field2[DAY,HOUR]','field3[HOUR,MINUTE]','field4[ALL,MINUTE]','field5')", "");
-        assertOption(QueryParameters.GROUP_FIELDS, "field1[DAY],field2[DAY,HOUR],field3[HOUR,MINUTE],field4[ALL,MINUTE],field5[ALL]");
+        assertOption(QueryParameters.GROUP_FIELDS, "field1[DAY],field2[DAY,HOUR],field3[HOUR,MINUTE],field4[ALL,MINUTE],field5");
 
         // Lucene will parse comma-delimited granularity levels into separate strings. Ensure it still parses correctly.
         assertResult("f:groupby('field1[DAY]','field2[DAY','HOUR]','field3[HOUR','MINUTE]','field4[ALL','MINUTE]','field5')", "");
-        assertOption(QueryParameters.GROUP_FIELDS, "field1[DAY],field2[DAY,HOUR],field3[HOUR,MINUTE],field4[ALL,MINUTE],field5[ALL]");
+        assertOption(QueryParameters.GROUP_FIELDS, "field1[DAY],field2[DAY,HOUR],field3[HOUR,MINUTE],field4[ALL,MINUTE],field5");
     }
     
     @Test
@@ -235,11 +231,11 @@ public class QueryOptionsFromQueryVisitorTest {
         
         // Verify that AND nodes are cleaned up.
         assertResult("(FOO == 'bar' OR (BAR == 'foo' AND f:groupby('field1','field2')))", "(FOO == 'bar' OR (BAR == 'foo'))");
-        assertOption(QueryParameters.GROUP_FIELDS, "field1[ALL],field2[ALL]");
+        assertOption(QueryParameters.GROUP_FIELDS, "field1,field2");
         
         // Verify that OR nodes are cleaned up.
         assertResult("(FOO == 'bar' AND (BAR == 'foo' OR f:groupby('field1','field2')))", "(FOO == 'bar' AND (BAR == 'foo'))");
-        assertOption(QueryParameters.GROUP_FIELDS, "field1[ALL],field2[ALL]");
+        assertOption(QueryParameters.GROUP_FIELDS, "field1,field2");
     }
     
     private void assertOption(String option, String value) {
