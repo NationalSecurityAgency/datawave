@@ -373,7 +373,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
                 scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, listenerService);
                 
                 scan.setVisitors(visitorFunctions);
-                
+
                 Scan childScan = new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, BatchResource.class,
                                 ((SpeculativeScan) scan).getQueue(), listenerService);
                 
@@ -459,7 +459,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         ListenableFuture<Scan> future = (ListenableFuture<Scan>) service.submit(scan);
         if (increment)
             runnableCount.incrementAndGet();
-        Futures.addCallback(future, this, service);
+        Futures.addCallback(future, this, MoreExecutors.newDirectExecutorService());
     }
     
     /**
