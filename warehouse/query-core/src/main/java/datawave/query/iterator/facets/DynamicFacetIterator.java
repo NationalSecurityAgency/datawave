@@ -175,7 +175,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         if (!configuration.hasFieldLimits() || projection != null) {
             keyToDoc = new KeyToDocumentData(source.deepCopy(myEnvironment), getEquality(), projection, this.includeHierarchyFields,
-                            this.includeHierarchyFields).withRangeProvider(getRangeProvider());
+                            this.includeHierarchyFields).withRangeProvider(getRangeProvider()).withAggregationThreshold(getDocAggregationThresholdMs());
         }
         
         AccumuloTreeIterable<Key,DocumentData> doc = null;

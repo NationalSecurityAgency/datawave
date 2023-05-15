@@ -306,6 +306,9 @@
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
         <property name="evaluationOnlyFields" value="${evaluation.only.fields}" />
         <property name="lazySetMechanismEnabled" value="false" />
+        <!--    control when to log warnings for long aggregations    -->
+        <property name="docAggregationThresholdMs" value="-1" />
+        <property name="tfAggregationThresholdMs" value="-1" />
     </bean>
 
     <util:list id="IvaratorCacheDirConfigs">
