@@ -61,9 +61,18 @@ public class TFFactory {
         if (termFrequencyFieldValues.isEmpty()) {
             return new EmptyTermFrequencyFunction();
         } else {
-            TermOffsetPopulator offsetPopulator = new TermOffsetPopulator(termFrequencyFieldValues, config.getContentExpansionFields(),
-                            config.getEvaluationFilter(), config.getSource());
-            return new TermOffsetFunction(offsetPopulator, config.getTfFields());
+            
+            DocumentKeysFunction docKeyFunction = null;
+
+            if (config.isTld()) {
+                docKeyFunction = new DocumentKeysFunction(config);
+            }
+            
+            TermOffsetPopulator offsetPopulator = new TermOffsetPopulator(termFrequencyFieldValues, config);
+
+            TermOffsetFunction function = new TermOffsetFunction(offsetPopulator, config.getTfFields(), docKeyFunction);
+            function.setAggregationThreshold(config.getTfAggregationThreshold());
+            return function;
         }
     }
 }
