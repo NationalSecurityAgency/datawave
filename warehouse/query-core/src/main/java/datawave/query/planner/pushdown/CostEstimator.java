@@ -1,6 +1,5 @@
 package datawave.query.planner.pushdown;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -14,7 +13,6 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.util.NoSuchElementException;
-import java.util.concurrent.ExecutionException;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 import static org.apache.commons.jexl2.parser.JexlNodes.id;

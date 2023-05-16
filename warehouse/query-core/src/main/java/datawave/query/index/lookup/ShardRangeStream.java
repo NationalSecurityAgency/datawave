@@ -2,7 +2,6 @@ package datawave.query.index.lookup;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
-import datawave.marking.MarkingFunctions;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveQueryException;
@@ -30,7 +29,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutionException;
 
 public class ShardRangeStream extends RangeStream {
 

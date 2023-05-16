@@ -1,7 +1,6 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.base.Preconditions;
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -32,7 +31,6 @@ import org.apache.log4j.Logger;
 
 import java.text.MessageFormat;
 import java.util.NoSuchElementException;
-import java.util.concurrent.ExecutionException;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.promote;
 

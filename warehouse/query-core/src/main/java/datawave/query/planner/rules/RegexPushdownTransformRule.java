@@ -1,6 +1,5 @@
 package datawave.query.planner.rules;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -14,7 +13,6 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 

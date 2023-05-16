@@ -6,12 +6,10 @@ import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTReference;
@@ -25,7 +23,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -364,7 +361,7 @@ public class QueryModelVisitorTest {
     }
 
     @Test
-    public void testAppliedModelWithNullNoFail() throws ParseException, TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void testAppliedModelWithNullNoFail() throws ParseException {
         model.addTermToModel("FOO1", "BAR1");
         model.addTermToModel("OTHER", "9_2");
 

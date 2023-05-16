@@ -5,7 +5,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
@@ -37,7 +36,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertTrue;
@@ -161,7 +159,7 @@ public class UnfieldedIndexExpansionVisitorTest {
     }
 
     @Before
-    public void setupTest() throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void setupTest() {
         config = createConfig();
         metadataHelper = createMetadataHelper();
     }

@@ -4,7 +4,6 @@ import com.google.common.base.Function;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import datawave.core.iterators.filesystem.FileSystemCache;
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -58,7 +57,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Purpose: Perform intermediate transformations on ScannerChunks as they are before being sent to the tablet server.

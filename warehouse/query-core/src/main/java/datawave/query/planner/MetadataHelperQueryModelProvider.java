@@ -1,6 +1,5 @@
 package datawave.query.planner;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.model.QueryModel;
@@ -10,8 +9,6 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.log4j.Logger;
-
-import java.util.concurrent.ExecutionException;
 
 /**
  * Uses the ShardQueryConfiguration or the MetadataHelper to fetch a QueryModel

@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
@@ -63,7 +62,6 @@ import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.findNegatedParent;
 import static org.apache.commons.jexl2.parser.JexlNodes.makeRef;

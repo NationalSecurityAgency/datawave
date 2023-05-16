@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
@@ -62,7 +61,6 @@ import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Visitor meant to 'push down' predicates for expressions that are only partially executable. Essentially if we have an AND node in which some of the nodes are

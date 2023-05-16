@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MetadataHelper;
@@ -19,7 +18,6 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.concurrent.ExecutionException;
 
 @RunWith(Parameterized.class)
 public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
@@ -237,7 +235,7 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
     }
 
     @Before
-    public void setup() throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void setup() throws TableNotFoundException {
         config = createMock(ShardQueryConfiguration.class);
         helper = createMock(MetadataHelper.class);
 

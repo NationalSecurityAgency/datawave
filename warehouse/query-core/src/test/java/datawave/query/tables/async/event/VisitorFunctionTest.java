@@ -1,6 +1,5 @@
 package datawave.query.tables.async.event;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.QueryIterator;
@@ -33,7 +32,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 public class VisitorFunctionTest extends EasyMockSupport {
     private VisitorFunction function;
@@ -78,7 +76,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
     }
 
     @Test
-    public void underTermThresholdTest() throws IOException, TableNotFoundException, URISyntaxException, ExecutionException, MarkingFunctions.Exception {
+    public void underTermThresholdTest() throws IOException, TableNotFoundException, URISyntaxException {
         setupExpects();
 
         // test specific expects

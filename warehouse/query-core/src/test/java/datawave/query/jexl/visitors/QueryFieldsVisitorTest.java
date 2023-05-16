@@ -2,10 +2,8 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
-import datawave.marking.MarkingFunctions;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.BeforeClass;
@@ -13,7 +11,6 @@ import org.junit.Test;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -22,7 +19,7 @@ public class QueryFieldsVisitorTest {
     private static final MockMetadataHelper helper = new MockMetadataHelper();
 
     @BeforeClass
-    public static void setup() throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public static void setup() {
         helper.addNormalizers("FOO", Collections.singleton(new LcNoDiacriticsType()));
         helper.addNormalizers("FOO2", Collections.singleton(new LcNoDiacriticsType()));
         helper.addNormalizers("FOO3", Collections.singleton(new LcNoDiacriticsType()));

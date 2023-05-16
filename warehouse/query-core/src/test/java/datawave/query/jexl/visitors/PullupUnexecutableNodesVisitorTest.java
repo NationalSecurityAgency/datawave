@@ -1,20 +1,17 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.collect.Sets;
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.util.MockMetadataHelper;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -32,7 +29,7 @@ public class PullupUnexecutableNodesVisitorTest {
     private final ASTValidator validator = new ASTValidator();
 
     @Before
-    public void setup() throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public void setup() {
         indexedFields = Sets.newHashSet("FOO");
         indexOnlyFields = Sets.newHashSet("IO_FOO");
         nonEventFields = Sets.newHashSet("NE_FOO");

@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.IndexHole;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -25,7 +24,6 @@ import java.text.SimpleDateFormat;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Visitor meant to 'push down' predicates for expressions that are not executable against the index because of missing data in the global index.

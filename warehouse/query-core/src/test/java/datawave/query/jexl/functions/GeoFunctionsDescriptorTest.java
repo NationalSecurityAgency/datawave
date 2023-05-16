@@ -5,15 +5,13 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class GeoFunctionsDescriptorTest {
-    
+
     @Test
     public void testMultiFieldGeoFunction() throws Exception {
         String query = "geo:within_circle(FIELD_1 || FIELD_2, '0_0', '10')";
@@ -35,28 +33,28 @@ public class GeoFunctionsDescriptorTest {
                         JexlStringBuildingVisitor.buildQuery(queryNode));
         // @formatter:on
     }
-    
+
     @Test
     public void testGeoToGeoWaveFunction() throws Exception {
         String query = "geo:within_bounding_box(GEO_FIELD, \"-12.74,16.30\", \"-3.31,26.16\")";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         GeoFunctionsDescriptor.GeoJexlArgumentDescriptor argDesc = (GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) new GeoFunctionsDescriptor()
-                        .getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0).jjtGetChild(0));
+                .getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0).jjtGetChild(0));
         JexlNode queryNode = argDesc.toGeoWaveFunction(Sets.newHashSet("GEO_FIELD"));
         Assert.assertEquals("geowave:intersects(GEO_FIELD, 'POLYGON ((16.3 -12.74, 26.16 -12.74, 26.16 -3.31, 16.3 -3.31, 16.3 -12.74))')",
-                        JexlStringBuildingVisitor.buildQuery(queryNode));
+                JexlStringBuildingVisitor.buildQuery(queryNode));
     }
-    
+
     @Test
     public void testGeoLatLonToGeoWaveFunction() throws Exception {
         String query = "geo:within_bounding_box(LON_FIELD, LAT_FIELD, 16.30, 26.16, -12.74, -3.31)";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         GeoFunctionsDescriptor.GeoJexlArgumentDescriptor argDesc = (GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) new GeoFunctionsDescriptor()
-                        .getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0).jjtGetChild(0));
+                .getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0).jjtGetChild(0));
         JexlNode queryNode = argDesc.toGeoWaveFunction(Sets.newHashSet("LON_FIELD", "LAT_FIELD"));
         Assert.assertNull(queryNode);
     }
-    
+
     @Test
     public void antiMeridianTest1() throws Exception {
         String query = "geo:within_bounding_box(GEO_FIELD, '40_170', '50_-170')";
@@ -75,7 +73,7 @@ public class GeoFunctionsDescriptorTest {
                         JexlStringBuildingVisitor.buildQuery(queryNode));
         // @formatter:on
     }
-    
+
     @Test
     public void antiMeridianTest2() throws Exception {
         String query = "geo:within_bounding_box(LON_FIELD, LAT_FIELD, '170', '40', '-170', '50')";
@@ -83,10 +81,10 @@ public class GeoFunctionsDescriptorTest {
         JexlArgumentDescriptor argDesc = new GeoFunctionsDescriptor().getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0).jjtGetChild(0));
         JexlNode queryNode = argDesc.getIndexQuery(null, null, null, null);
         Assert.assertEquals(
-                        "((((_Bounded_ = true) && (LON_FIELD >= '170.0' && LON_FIELD <= '180')) && ((_Bounded_ = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))) || (((_Bounded_ = true) && (LON_FIELD >= '-180' && LON_FIELD <= '-170.0')) && ((_Bounded_ = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))))",
-                        JexlStringBuildingVisitor.buildQuery(queryNode));
+                "((((_Bounded_ = true) && (LON_FIELD >= '170.0' && LON_FIELD <= '180')) && ((_Bounded_ = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))) || (((_Bounded_ = true) && (LON_FIELD >= '-180' && LON_FIELD <= '-170.0')) && ((_Bounded_ = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))))",
+                JexlStringBuildingVisitor.buildQuery(queryNode));
     }
-    
+
     @Test
     public void antiMeridianTest3() throws Exception {
         Assert.assertTrue(GeoFunctions.within_bounding_box("-175", "0", "170", "-10", "-170", "10"));
@@ -96,7 +94,7 @@ public class GeoFunctionsDescriptorTest {
         Assert.assertFalse(GeoFunctions.within_bounding_box("1", "6", "-2", "-2", "2", "2"));
         Assert.assertFalse(GeoFunctions.within_bounding_box("6_1", "-2_-2", "2_2"));
     }
-    
+
     @Test
     public void optimizedBoundingBoxGeoRangesTest() throws Exception {
         String query = "geo:within_bounding_box(GEO_FIELD, '38.71123_-77.33276', '39.07464_-76.79443')";
@@ -142,7 +140,7 @@ public class GeoFunctionsDescriptorTest {
                         JexlStringBuildingVisitor.buildQuery(queryNode));
         // @formatter:on
     }
-    
+
     @Test
     public void optimizedPointRadiusGeoRangesTest() throws Exception {
         String query = "geo:within_circle(GEO_FIELD, '38.89798026699526_-77.03441619873048', '1.0')";

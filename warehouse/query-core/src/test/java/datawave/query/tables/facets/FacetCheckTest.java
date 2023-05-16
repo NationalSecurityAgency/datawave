@@ -3,7 +3,6 @@ package datawave.query.tables.facets;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -20,7 +19,6 @@ import org.junit.Test;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.anyString;
@@ -36,7 +34,7 @@ public class FacetCheckTest {
     private FacetCheck facetCheck;
 
     @Before
-    public void before() throws TableNotFoundException, IllegalAccessException, InstantiationException, ExecutionException, MarkingFunctions.Exception {
+    public void before() throws TableNotFoundException, IllegalAccessException, InstantiationException {
         Multimap<String, String> facets = HashMultimap.create();
         facets.put("FACET1", "VALUE");
         facets.put("FACET2", "VALUE");

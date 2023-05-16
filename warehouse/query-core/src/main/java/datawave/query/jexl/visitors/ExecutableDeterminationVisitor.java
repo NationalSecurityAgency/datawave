@@ -2,7 +2,6 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -78,7 +77,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**

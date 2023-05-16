@@ -13,7 +13,6 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.MetadataCardinalityCounts;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.model.QueryModel;
 import datawave.util.TableName;
@@ -35,7 +34,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 public class MockMetadataHelper extends MetadataHelper {

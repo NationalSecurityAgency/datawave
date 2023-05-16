@@ -2,12 +2,10 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import datawave.marking.MarkingFunctions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
@@ -15,8 +13,6 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.concurrent.ExecutionException;
 
 import static datawave.query.jexl.functions.GeoWaveFunctionsDescriptorTest.convertFunctionToIndexQuery;
 import static org.junit.Assert.assertEquals;
@@ -27,7 +23,7 @@ public class GeoWavePruningVisitorTest {
     private static MockMetadataHelper metadataHelper;
 
     @BeforeClass
-    public static void setup() throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public static void setup() {
         metadataHelper = new MockMetadataHelper();
         metadataHelper.addField("GEO_FIELD", "datawave.data.type.GeometryType");
         metadataHelper.addField("LEGACY_GEO_FIELD", "datawave.data.type.GeoType");
