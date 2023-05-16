@@ -43,7 +43,22 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
     @Mock
     ServiceEnvironment.Configuration configuration;
 
+    @Test
+    public void testDefaultTablet() {
 
+        String newVolumes = "newData1,newData2,newData3";
+        String oldVolumes = "oldData1,oldData2";
+        long daysBack = 125L;
+
+        Map<Long,String> tiers = new HashMap<>();
+        tiers.put(daysBack, newVolumes);
+        tiers.put(Long.MAX_VALUE, oldVolumes);
+
+        setupMock(tiers, null);
+        ShardedTableDateBasedTieredVolumeChooser chooser = new ShardedTableDateBasedTieredVolumeChooser();
+        String choice = chooser.choose(env, options);
+        assertTrue(newVolumes.contains(choice));
+    }
 
     @Test
     public void testAllValidInputOldData() {
@@ -53,9 +68,10 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         long daysBack = 125L;
         
         Map<Long,String> tiers = new HashMap<>();
-        tiers.put(daysBack, newVolumes);
-        tiers.put(Long.MAX_VALUE, oldVolumes);
-        
+        tiers.put(0L, newVolumes);
+        tiers.put(daysBack, oldVolumes);
+
+
         String shardId = "20000202_123";
         setupMock(tiers, shardId);
         ShardedTableDateBasedTieredVolumeChooser chooser = new ShardedTableDateBasedTieredVolumeChooser();
@@ -92,14 +108,14 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         long daysBack = 125L;
         
         Map<Long,String> tiers = new HashMap<>();
-        tiers.put(daysBack, newVolumes);
-        tiers.put(Long.MAX_VALUE, oldVolumes);
+        tiers.put(0L, newVolumes);
+        tiers.put(daysBack, oldVolumes);
         
         String shardId = "30000202_123";
         setupMock(tiers, shardId);
         ShardedTableDateBasedTieredVolumeChooser chooser = new ShardedTableDateBasedTieredVolumeChooser();
         String choice = chooser.choose(env, oldOnlyOptions);
-        assertTrue(choice.contains("newData"));
+        assertTrue(newVolumes.contains(choice));
         
     }
     
@@ -115,13 +131,14 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         long daysBack = 125L;
         
         Map<Long,String> tiers = new HashMap<>();
-        tiers.put(daysBack, newVolumes);
-        tiers.put(Long.MAX_VALUE, oldVolumes);
+        tiers.put(0L, newVolumes);
+        tiers.put(daysBack, oldVolumes);
         
         String shardId = "20000202_123";
         setupMock(tiers, shardId);
         ShardedTableDateBasedTieredVolumeChooser chooser = new ShardedTableDateBasedTieredVolumeChooser();
-        chooser.choose(env, options);
+        String choice = chooser.choose(env, newOnlyOptions);
+        assertTrue(oldVolumes.contains(choice));
     }
     
     @Test
@@ -131,8 +148,8 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         long daysBack = 125L;
         
         Map<Long,String> tiers = new HashMap<>();
-        tiers.put(daysBack, newVolumes);
-        tiers.put(Long.MAX_VALUE, oldVolumes);
+        tiers.put(0L, newVolumes);
+        tiers.put(daysBack, oldVolumes);
         
         String shardId = "HeyThatsNotADate";
         setupMock(tiers, shardId);
@@ -149,15 +166,14 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         long daysBack = -125L;
         
         Map<Long,String> tiers = new HashMap<>();
-        tiers.put(daysBack, newVolumes);
-        tiers.put(Long.MAX_VALUE, oldVolumes);
+        tiers.put(0L, newVolumes);
+        tiers.put(daysBack, oldVolumes);
         
         String shardId = "20200101_123";
         setupMock(tiers, shardId);
         ShardedTableDateBasedTieredVolumeChooser chooser = new ShardedTableDateBasedTieredVolumeChooser();
-        String choice = chooser.choose(env, options);
-        assertTrue(options.contains(choice));
-        
+        chooser.choose(env, options);
+
     }
     
     @Test
@@ -167,8 +183,8 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         long daysBack = 0;
         
         Map<Long,String> tiers = new HashMap<>();
-        tiers.put(daysBack, newVolumes);
-        tiers.put(Long.MAX_VALUE, oldVolumes);
+        tiers.put(0L, newVolumes);
+        tiers.put(daysBack, oldVolumes);
         
         String shardId = "20000202_123";
         setupMock(tiers, shardId);
@@ -185,8 +201,8 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         long daysBack = 999999999999L;
         
         Map<Long,String> tiers = new HashMap<>();
-        tiers.put(daysBack, newVolumes);
-        tiers.put(Long.MAX_VALUE, oldVolumes);
+        tiers.put(0L, newVolumes);
+        tiers.put(daysBack, oldVolumes);
         
         String shardId = "20000202_123";
         setupMock(tiers, shardId);
@@ -203,8 +219,8 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         long daysBack = 100L;
         
         Map<Long,String> tiers = new HashMap<>();
-        tiers.put(daysBack, newVolumes);
-        tiers.put(Long.MAX_VALUE, oldVolumes);
+        tiers.put(0L, newVolumes);
+        tiers.put(daysBack, oldVolumes);
         
         String shardId = "30000202_123";
         setupMock(tiers, shardId);
@@ -221,8 +237,8 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         long daysBack = 100L;
         
         Map<Long,String> tiers = new HashMap<>();
-        tiers.put(daysBack, newVolumes);
-        tiers.put(Long.MAX_VALUE, oldVolumes);
+        tiers.put(0L, newVolumes);
+        tiers.put(daysBack, oldVolumes);
         
         String shardId = "20000202_123";
         setupMock(tiers, shardId);
@@ -239,8 +255,8 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         long daysBack = 100L;
         
         Map<Long,String> tiers = new HashMap<>();
-        tiers.put(daysBack, newVolumes);
-        tiers.put(Long.MAX_VALUE, oldVolumes);
+        tiers.put(0L, newVolumes);
+        tiers.put(daysBack, oldVolumes);
         
         String shardId = "";
         setupMock(tiers,shardId);
@@ -264,13 +280,14 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         long daysBack = 125L;
         
         Map<Long,String> tiers = new HashMap<>();
-        tiers.put(daysBack, newVolumes);
-        tiers.put(Long.MAX_VALUE, oldVolumes);
+        tiers.put(0L, newVolumes);
+        tiers.put(daysBack, oldVolumes);
         
         String shardId = "30000202_123";
         setupMock(tiers, shardId);
         ShardedTableDateBasedTieredVolumeChooser chooser = new ShardedTableDateBasedTieredVolumeChooser();
         String choice = chooser.choose(env, options);
+        assertTrue(choice.contains("newData"));
     }
     
     private void setupMock(Map<Long,String> tiers, String shardId) {
@@ -288,7 +305,12 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
             EasyMock.expect(configuration.getTableCustom("volume.tiered.tier" + tier.getKey() + ".days.back")).andReturn(String.valueOf(tier.getKey()))
                             .anyTimes();
         }
-        EasyMock.expect(env.getEndRow()).andReturn(new Text(shardId)).once();
+        if(shardId != null) {
+            EasyMock.expect(env.getEndRow()).andReturn(new Text(shardId)).once();
+        } else {
+            EasyMock.expect(env.getEndRow()).andReturn(null).once();
+
+        }
         replayAll();
     }
 }
