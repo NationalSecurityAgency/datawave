@@ -414,6 +414,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * If true, the LAZY_SET mechanism will be enabled for non-event and index-only fields.
      */
     private boolean lazySetMechanismEnabled = false;
+    /**
+     * Document aggregations that exceed this threshold in milliseconds are logged as a warning
+     */
+    private int docAggregationThresholdMs = -1;
+    /**
+     * Term Frequency aggregations that exceed this threshold in milliseconds are logged as a warning
+     */
+    private int tfAggregationThresholdMs = -1;
     
     /**
      * Default constructor
@@ -612,6 +620,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
         this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
+        this.setDocAggregationThresholdMs(other.getDocAggregationThresholdMs());
+        this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
     }
     
     /**
@@ -2393,5 +2403,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
         this.lazySetMechanismEnabled = lazySetMechanismEnabled;
+    }
+
+    public int getDocAggregationThresholdMs(){
+        return docAggregationThresholdMs;
+    }
+
+    public void setDocAggregationThresholdMs(int docAggregationThresholdMs){
+        this.docAggregationThresholdMs = docAggregationThresholdMs;
+    }
+
+    public int getTfAggregationThresholdMs(){
+        return tfAggregationThresholdMs;
+    }
+
+    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs){
+        this.tfAggregationThresholdMs = tfAggregationThresholdMs;
     }
 }

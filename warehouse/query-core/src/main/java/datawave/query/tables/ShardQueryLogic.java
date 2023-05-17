@@ -2537,4 +2537,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setVisitorFunctionMaxWeight(long visitorFunctionMaxWeight) {
         getConfig().setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
     }
+
+    public int getDocAggregationThresholdMs(){
+        return getConfig().getDocAggregationThresholdMs();
+    }
+
+    public void setDocAggregationThresholdMs(int docAggregationThresholdMs){
+        getConfig().setDocAggregationThresholdMs(docAggregationThresholdMs);
+    }
+
+    public int getTfAggregationThresholdMs(){
+        return getConfig().getTfAggregationThresholdMs();
+    }
+
+    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs){
+        getConfig().setTfAggregationThresholdMs(tfAggregationThresholdMs);
+    }
 }

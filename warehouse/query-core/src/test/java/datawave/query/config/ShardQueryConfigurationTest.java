@@ -214,6 +214,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(-1, config.getEventNextSeek());
         Assert.assertEquals(-1, config.getTfFieldSeek());
         Assert.assertEquals(-1, config.getTfNextSeek());
+        Assert.assertEquals(-1, config.getDocAggregationThresholdMs());
     }
     
     /**
@@ -305,6 +306,8 @@ public class ShardQueryConfigurationTest {
         other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
         other.setAccumuloPassword("ChangeIt");
         other.setReduceQueryFields(true);
+        other.setDocAggregationThresholdMs(15000);
+        other.setTfAggregationThresholdMs(10000);
         // seeks
         other.setFiFieldSeek(12);
         other.setFiNextSeek(13);
@@ -408,7 +411,9 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(expectedUniqueFields, config.getUniqueFields());
         Assert.assertEquals(Lists.newArrayList("fieldA"), config.getContentFieldNames());
         Assert.assertEquals(Sets.newHashSet("NoExpansionFieldA"), config.getNoExpansionFields());
-        
+        Assert.assertEquals(15000, config.getDocAggregationThresholdMs());
+        Assert.assertEquals(10000, config.getTfAggregationThresholdMs());
+
         // assert seeks
         Assert.assertEquals(12, other.getFiFieldSeek());
         Assert.assertEquals(13, other.getFiNextSeek());
