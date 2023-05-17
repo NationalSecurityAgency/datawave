@@ -3,17 +3,11 @@ package datawave.query.function;
 import java.util.HashSet;
 import java.util.Set;
 
-public class MatchingFieldGroup {
-    private final Set<String> matchingFieldSet;
+public class MatchingFieldHits {
     private final Set<String> hitTermValues;
     
-    public MatchingFieldGroup(Set<String> matchingFieldSet) {
-        this.matchingFieldSet = matchingFieldSet;
+    public MatchingFieldHits() {
         this.hitTermValues = new HashSet<>();
-    }
-    
-    public boolean containsField(String fieldNoGrouping) {
-        return matchingFieldSet.contains(fieldNoGrouping);
     }
     
     public void addHitTermValue(String value) {

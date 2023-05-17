@@ -3,7 +3,6 @@ package datawave.query.iterator;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -121,7 +120,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
@@ -1292,6 +1290,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             debugBooleanLogicIterator(child, prefix + "  ");
         }
     }
+
     
     protected DocumentProjection getProjection() {
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
@@ -1299,14 +1298,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (this.useWhiteListedFields) {
             // make sure we include any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
-                this.whiteListedFields.addAll(this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList()));
+                this.whiteListedFields.addAll(getMatchingFieldList());
             }
             projection.setIncludes(this.whiteListedFields);
             return projection;
         } else if (this.useBlackListedFields) {
             // make sure we are not excluding any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
-                this.blackListedFields.removeAll(this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList()));
+                this.blackListedFields.removeAll(getMatchingFieldList());
             }
             projection.setExcludes(this.blackListedFields);
             return projection;
@@ -1331,7 +1330,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         // make sure we include any fields being matched in the limit fields mechanism
         if (!this.matchingFieldSets.isEmpty()) {
-            composites.removeAll(this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList()));
+            composites.removeAll(getMatchingFieldList());
         }
         projection.setExcludes(composites);
         return projection;

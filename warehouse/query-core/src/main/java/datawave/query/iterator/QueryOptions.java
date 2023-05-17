@@ -993,6 +993,10 @@ public class QueryOptions implements OptionDescriber {
     public Set<Set<String>> getMatchingFieldSets() {
         return matchingFieldSets;
     }
+
+    public List<String> getMatchingFieldList() {
+        return this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList());
+    }
     
     public void setMatchingFieldSets(Set<Set<String>> matchingFieldSets) {
         this.matchingFieldSets = matchingFieldSets;

@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class MatchingFieldGroups {
     
-    private final Multimap<String,MatchingFieldGroup> matchingFieldGroups;
+    private final Multimap<String, MatchingFieldHits> matchingFieldGroups;
     private final Set<String> matchingGroups;
     private final Multimap<String,String[]> potentialMatches;
     
@@ -20,7 +20,7 @@ public class MatchingFieldGroups {
         matchingFieldGroups = HashMultimap.create();
         if (matchingFieldSets != null) {
             for (Set<String> matchingFieldSet : matchingFieldSets) {
-                MatchingFieldGroup matchingFieldGroup = new MatchingFieldGroup(matchingFieldSet);
+                MatchingFieldHits matchingFieldGroup = new MatchingFieldHits();
                 for (String field : matchingFieldSet) {
                     matchingFieldGroups.put(field, matchingFieldGroup);
                 }
@@ -32,7 +32,7 @@ public class MatchingFieldGroups {
     
     public void addHit(String keyNoGrouping, Attribute attr) {
         if (matchingFieldGroups.containsKey(keyNoGrouping)) {
-            for (MatchingFieldGroup matchingFieldGroup : matchingFieldGroups.get(keyNoGrouping)) {
+            for (MatchingFieldHits matchingFieldGroup : matchingFieldGroups.get(keyNoGrouping)) {
                 matchingFieldGroup.addHitTermValue(getStringValue(attr));
             }
         }
@@ -53,7 +53,7 @@ public class MatchingFieldGroups {
             String group = potentialEntry.getValue()[0];
             String value = potentialEntry.getValue()[1];
             if (!matchingGroups.contains(group)) {
-                for (MatchingFieldGroup matchingFieldGroup : matchingFieldGroups.get(keyNoGrouping)) {
+                for (MatchingFieldHits matchingFieldGroup : matchingFieldGroups.get(keyNoGrouping)) {
                     if (matchingFieldGroup.containsHitTermValue(value)) {
                         matchingGroups.add(group);
                         break;
