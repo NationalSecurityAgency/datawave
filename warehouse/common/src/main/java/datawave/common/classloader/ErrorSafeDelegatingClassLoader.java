@@ -11,12 +11,8 @@ public class ErrorSafeDelegatingClassLoader extends ClassLoader {
     private final ClassLoader delegate;
 
     public ErrorSafeDelegatingClassLoader(ClassLoader delegate) {
+        super("ErrorSafeDelegatingClassLoader(" + delegate.getName() + ")", delegate);
         this.delegate = delegate;
-    }
-
-    @Override
-    public String getName() {
-        return delegate.getName();
     }
 
     @Override
