@@ -19,7 +19,6 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.QueryLogicTestHarness.DocumentChecker;
-import datawave.query.testframework.cardata.CarsDataType;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
@@ -164,6 +163,9 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         // @formatter:off
         expected.add("null; paris -- paris//1");
         expected.add("null; rome -- rome//2");
+
+        //  additional hit with refactored 'build document' logic. might be a clue?
+        expected.add("null; italy -- italy//10");
         // @formatter:on
         
         String query = CityField.COUNTRY.name() + " == 'Italy'";

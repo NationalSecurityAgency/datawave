@@ -103,13 +103,8 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
                 rangeIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexRangeIteratorJexl: " + rangeIterator);
                 
-                boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
-                if (forceDocumentBuild) {
-                    canBuildDocument = true;
-                }
-                
                 // Add an iterator to aggregate documents. This is needed for index only fields.
-                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(canBuildDocument, this.typeMetadata, keyTform);
+                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(this.buildDocument, this.typeMetadata, keyTform);
                 aggregatingIterator.init(rangeIterator, null, null);
                 
                 docIterator = aggregatingIterator;
@@ -124,7 +119,6 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
             timeFilter = null;
             datatypeFilter = null;
             keyTform = null;
-            timeFilter = null;
             ivaratorCacheDirs = null;
             node = null;
             field = null;

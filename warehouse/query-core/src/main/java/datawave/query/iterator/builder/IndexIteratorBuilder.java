@@ -13,8 +13,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-import java.util.Set;
-
 /**
  * A convenience class that aggregates a field, value, source iterator, normalizer mappings, index only fields, data type filter and key transformer when
  * traversing a subtree in a query. This allows arbitrary ordering of the arguments.
@@ -27,7 +25,6 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
     protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
     protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
     protected FieldIndexAggregator keyTform;
-    protected Set<String> fieldsToAggregate;
     
     public void setSource(final SortedKeyValueIterator<Key,Value> source) {
         this.source = source;
@@ -39,14 +36,6 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
     
     public void setTypeMetadata(TypeMetadata typeMetadata) {
         this.typeMetadata = typeMetadata;
-    }
-    
-    public Set<String> getFieldsToAggregate() {
-        return fieldsToAggregate;
-    }
-    
-    public void setFieldsToAggregate(Set<String> fields) {
-        fieldsToAggregate = fields;
     }
     
     public Predicate<Key> getDatatypeFilter() {
@@ -82,13 +71,9 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
     @SuppressWarnings("unchecked")
     public NestedIterator<Key> build() {
         if (notNull(field, value, source, datatypeFilter, keyTform, timeFilter, getField(), getNode())) {
-            
-            boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
-            if (forceDocumentBuild) {
-                canBuildDocument = true;
-            }
+
             IndexIteratorBridge itr = new IndexIteratorBridge(newIndexIterator(new Text(field), new Text(value), source, this.timeFilter, this.typeMetadata,
-                            canBuildDocument, this.datatypeFilter, this.keyTform), getNode(), getField());
+                            this.buildDocument, this.datatypeFilter, this.keyTform), getNode(), getField());
             field = null;
             value = null;
             source = null;
