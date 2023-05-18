@@ -172,7 +172,7 @@ public class TermOffsetPopulator {
                 TermWeight.Info twInfo = TermWeight.Info.parseFrom(tfSource.getTopValue().get());
                 
                 // if no content expansion fields then assume every field is permitted for unfielded content functions
-                boolean isContentExpansionField = contentExpansionFields == null || contentExpansionFields.contains(parser.getField());
+                boolean isContentExpansionField = contentExpansionFields == null || contentExpansionFields.isEmpty() || contentExpansionFields.contains(parser.getField());
                 TermFrequencyList.Zone twZone = new TermFrequencyList.Zone(parser.getField(), isContentExpansionField, TermFrequencyList.getEventId(key));
 
                 for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
