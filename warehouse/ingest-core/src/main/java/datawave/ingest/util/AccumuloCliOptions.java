@@ -3,7 +3,7 @@ package datawave.ingest.util;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.cli.PasswordConverter;
 
-import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
@@ -68,7 +68,7 @@ public class AccumuloCliOptions {
     
     public boolean parseOptions(String[] args) {
         try {
-            cl = new BasicParser().parse(options, args);
+            cl = new DefaultParser().parse(options, args);
         } catch (ParseException ex) {
             log.error("Could not parse accumulo options", ex);
             return false;
