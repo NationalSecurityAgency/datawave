@@ -69,6 +69,11 @@
     </property>
 
     <property>
+        <name>shard.index.create.uids</name>
+        <value>${SHARD_INDEX_CREATE_UIDS}</value>
+    </property>
+
+    <property>
         <name>myjson.data.category.uuid.fields</name>
         <value>ID,EXTERNALS_THETVDB,EXTERNALS_TVRAGE,EXTERNALS_IMDB</value>
         <description>List of known fields that contain UUIDs</description>

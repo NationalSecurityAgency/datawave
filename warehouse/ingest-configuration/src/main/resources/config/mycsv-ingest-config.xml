@@ -85,6 +85,11 @@
     </property>
 
     <property>
+        <name>shard.index.create.uids</name>
+        <value>${SHARD_INDEX_CREATE_UIDS}</value>
+    </property>
+
+    <property>
         <name>mycsv.data.category.uuid.fields</name>
         <value>UUID,PARENT_UUID</value>
         <description>List of fields that contain UUIDs</description>
