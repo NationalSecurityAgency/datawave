@@ -96,7 +96,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             for (RuleConfig ruleConfig : mergedRuleConfigs) {
                 
                 try {
-                    FilterRule filter = (FilterRule) Class.forName(ruleConfig.filterClassName).newInstance();
+                    FilterRule filter = (FilterRule) Class.forName(ruleConfig.filterClassName).getDeclaredConstructor().newInstance();
                     
                     FilterOptions option = new FilterOptions();
                     

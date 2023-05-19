@@ -100,6 +100,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -561,13 +562,14 @@ public class IngestJob implements Tool {
             if (handlers != null) {
                 for (String handler : handlers) {
                     try {
-                        Object o = Class.forName(handler).newInstance();
+                        Object o = Class.forName(handler).getDeclaredConstructor().newInstance();
                         if (o instanceof JobSetupHandler) {
                             JobSetupHandler setupHandler = (JobSetupHandler) o;
                             conf.set(DataTypeHelper.Properties.DATA_NAME, t.typeName());
                             setupHandler.setup(conf);
                         }
-                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+                             NoSuchMethodException | InvocationTargetException e) {
                         log.warn("Could not setup handler: " + handler, e);
                     }
                 }
@@ -1374,7 +1376,7 @@ public class IngestJob implements Tool {
             try {
                 @SuppressWarnings("unchecked")
                 Class<? extends Runnable> daemonClass = (Class<? extends Runnable>) Class.forName(className.trim());
-                Runnable daemon = daemonClass.newInstance();
+                Runnable daemon = daemonClass.getDeclaredConstructor().newInstance();
                 if (daemon instanceof Configurable) {
                     Configurable configurable = (Configurable) daemon;
                     configurable.setConf(configuration);
@@ -1382,7 +1384,8 @@ public class IngestJob implements Tool {
                 Thread daemonThread = new Thread(daemon);
                 daemonThread.setDaemon(true);
                 daemonThread.start();
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException |
+                     InvocationTargetException e) {
                 throw new IllegalArgumentException(e);
             }
         }
