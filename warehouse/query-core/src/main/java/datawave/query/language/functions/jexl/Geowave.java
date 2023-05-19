@@ -47,7 +47,7 @@ public abstract class Geowave extends JexlQueryFunction {
     public QueryFunction duplicate() {
         QueryFunction queryFunction = null;
         try {
-            queryFunction = this.getClass().newInstance();
+            queryFunction = this.getClass().getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             log.error("Unable to duplicate Geowave query function: [" + this.getClass().getName() + "]");
         }

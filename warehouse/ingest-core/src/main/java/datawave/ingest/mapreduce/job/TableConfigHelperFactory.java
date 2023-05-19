@@ -28,7 +28,7 @@ public class TableConfigHelperFactory {
         if (className != null) {
             try {
                 Class<? extends TableConfigHelper> tableHelperClass = (Class<? extends TableConfigHelper>) Class.forName(className.trim());
-                tableHelper = tableHelperClass.newInstance();
+                tableHelper = tableHelperClass.getDeclaredConstructor().newInstance();
                 
                 String prefix = conf.get(table + TableConfigHelper.TABLE_CONFIG_PREFIX);
                 

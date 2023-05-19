@@ -345,7 +345,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
      */
     private Object createAggregator(String className) {
         try {
-            return this.getClass().getClassLoader().loadClass(className).newInstance();
+            return this.getClass().getClassLoader().loadClass(className).getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             throw new IllegalArgumentException("Exception while attempting to create : " + className, e);
         }
