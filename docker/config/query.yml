@@ -35,6 +35,9 @@ datawave:
     expiration:
       callTimeout: 1
       callTimeUnit: HOURS
+    monitor:
+      monitorInterval: 30
+      monitorIntervalTimeUnit: SECONDS
   doc:
     menu:
       extras: '<li><a href="http://localhost:9995">Accumulo</a></li>'

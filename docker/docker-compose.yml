@@ -76,35 +76,22 @@ services:
       consul:
         condition: service_started
 
-  zookeeper:
-    image: bitnami/zookeeper:3.6.3
-    ports:
-      - "3181"
-    networks:
-      - demo
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-      - ZOO_PORT_NUMBER=3181
-
+  # When auto.create.topics.enable is true, this causes deleted topics to be recreated at random.  So, leave it disabled.
   kafka:
-    image: bitnami/kafka:2
+    image: bitnami/kafka:3.2.3
     ports:
-      - "9093:9093"
+      - "9094:9094"
     networks:
       - demo
     environment:
       - KAFKA_BROKER_ID=1
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:3181
       - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
-      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://${DW_HOSTNAME}:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://${DW_HOSTNAME}:9094
       - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
-      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=false
       - KAFKA_CFG_DELETE_TOPICS_ENABLE=true
-    depends_on:
-      zookeeper:
-        condition: service_started
 
   kafdrop:
     profiles:
@@ -116,7 +103,7 @@ services:
     networks:
       - demo
     environment:
-      - "KAFKA_BROKERCONNECT=${DW_HOSTNAME}:9093"
+      - "KAFKA_BROKERCONNECT=${DW_HOSTNAME}:9094"
     # This mapping is required to enable kafdrop to communicate with
     # the external, host-bound port for kafka
     extra_hosts:

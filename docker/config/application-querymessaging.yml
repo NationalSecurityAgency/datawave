@@ -7,3 +7,5 @@ datawave:
       backend: ${messaging.backend}
       rabbitmq:
         maxMessageSizeBytes: ${messaging.maxMessageSizeBytes}
+      kafka:
+        partitions: 2

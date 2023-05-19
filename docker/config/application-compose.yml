@@ -22,9 +22,10 @@ spring:
   kafka:
     bootstrap-servers: kafka:9092
     consumer:
-      group-id: KafkaQueryQueueManager
       autoOffsetReset: earliest
       enableAutoCommit: false
+      properties:
+        allow.auto.create.topics: false
 
 # This is the accumulo configuration we use in services.  These don't map directly to a properties class, but 
 # they are here to be used as a reference for other properties.
