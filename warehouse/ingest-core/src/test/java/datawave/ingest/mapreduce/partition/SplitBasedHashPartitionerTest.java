@@ -13,6 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 
 public class SplitBasedHashPartitionerTest {
     private static final String TEST_FILE_LOCATION = "datawave/ingest/mapreduce/job/full_splits.txt";
@@ -27,7 +28,7 @@ public class SplitBasedHashPartitionerTest {
     }
     
     @Test
-    public void testMultiplier() throws IllegalAccessException, InstantiationException {
+    public void testMultiplier() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
         int multiplier = 3;
         int numReducers = 1000;
         
@@ -37,7 +38,7 @@ public class SplitBasedHashPartitionerTest {
     }
     
     @Test
-    public void testConfOverrideForTable() throws IllegalAccessException, InstantiationException {
+    public void testConfOverrideForTable() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
         int multiplier = 3;
         int numReducers = 1000;
         
@@ -49,7 +50,7 @@ public class SplitBasedHashPartitionerTest {
     }
     
     @Test
-    public void testDefaultMultiplier() throws IllegalAccessException, InstantiationException {
+    public void testDefaultMultiplier() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
         int multiplier = 2;
         int numReducers = 1000;
         
@@ -58,7 +59,7 @@ public class SplitBasedHashPartitionerTest {
     }
     
     @Test
-    public void testMultiplierWrapping() throws IllegalAccessException, InstantiationException {
+    public void testMultiplierWrapping() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
         int multiplier = 2;
         int numReducers = 6;
         Configuration conf = new Configuration();
@@ -76,7 +77,7 @@ public class SplitBasedHashPartitionerTest {
     }
     
     @Test
-    public void testMultiplierWrappingTableOverride() throws IllegalAccessException, InstantiationException {
+    public void testMultiplierWrappingTableOverride() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
         int multiplier = 2;
         int numReducers = 6;
         Configuration conf = new Configuration();
@@ -102,8 +103,9 @@ public class SplitBasedHashPartitionerTest {
         }
     }
     
-    private SplitBasedHashPartitioner createPartitioner(Configuration conf) throws InstantiationException, IllegalAccessException {
-        SplitBasedHashPartitioner partitioner = SplitBasedHashPartitioner.class.newInstance();
+    private SplitBasedHashPartitioner createPartitioner(Configuration conf)
+                    throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        SplitBasedHashPartitioner partitioner = SplitBasedHashPartitioner.class.getDeclaredConstructor().newInstance();
         partitioner.setConf(conf);
         partitioner.configureWithPrefix(TABLE_NAME);
         return partitioner;

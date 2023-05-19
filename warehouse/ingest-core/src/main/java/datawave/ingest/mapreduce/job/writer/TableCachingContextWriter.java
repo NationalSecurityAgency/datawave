@@ -85,7 +85,7 @@ public class TableCachingContextWriter extends AbstractContextWriter<BulkIngestK
             contextWriterClass = (Class<ContextWriter<BulkIngestKey,Value>>) conf.getClass(CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
         }
         try {
-            contextWriter = contextWriterClass.newInstance();
+            contextWriter = contextWriterClass.getDeclaredConstructor().newInstance();
             contextWriter.setup(conf, outputTableCounters);
         } catch (Exception e) {
             throw new IOException("Failed to initialized " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);

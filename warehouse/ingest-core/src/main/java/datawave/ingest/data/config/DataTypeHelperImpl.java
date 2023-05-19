@@ -1,5 +1,6 @@
 package datawave.ingest.data.config;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -49,8 +50,8 @@ public class DataTypeHelperImpl implements DataTypeHelper {
         }
         
         try {
-            ingestPolicyEnforcer = (IngestPolicyEnforcer) Class.forName(policyEnforcerClass).newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            ingestPolicyEnforcer = (IngestPolicyEnforcer) Class.forName(policyEnforcerClass).getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             logger.error(e.getLocalizedMessage());
             throw new RuntimeException(e.getLocalizedMessage());
         }

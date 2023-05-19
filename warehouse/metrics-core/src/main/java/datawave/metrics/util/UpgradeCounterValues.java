@@ -16,7 +16,7 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -103,7 +103,7 @@ public class UpgradeCounterValues {
     }
     
     private void parseConfig(String[] args) throws ParseException {
-        CommandLine cl = new BasicParser().parse(options, args);
+        CommandLine cl = new DefaultParser().parse(options, args);
         instanceName = cl.getOptionValue(instanceNameOpt.getOpt());
         zookeepers = cl.getOptionValue(zookeeperOpt.getOpt());
         username = cl.getOptionValue(usernameOpt.getOpt());

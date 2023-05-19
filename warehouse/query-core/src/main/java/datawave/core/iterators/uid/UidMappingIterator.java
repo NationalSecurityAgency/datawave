@@ -1,6 +1,7 @@
 package datawave.core.iterators.uid;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -69,8 +70,8 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
                 throw new IllegalArgumentException(UidMappingIterator.UID_MAPPER + " option does not implement " + UidMapper.class + ": " + uidMapperClass);
             }
             try {
-                this.uidMapper = (UidMapper) (uidMapperClass.newInstance());
-            } catch (InstantiationException e) {
+                this.uidMapper = (UidMapper) (uidMapperClass.getDeclaredConstructor().newInstance());
+            } catch (InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                 throw new IllegalArgumentException("Cannot instantiate class for " + UidMappingIterator.UID_MAPPER + " option: " + uidMapperClass, e);
             } catch (IllegalAccessException e) {
                 throw new IllegalArgumentException("Cannot access constructor for " + UidMappingIterator.UID_MAPPER + " option: " + uidMapperClass, e);

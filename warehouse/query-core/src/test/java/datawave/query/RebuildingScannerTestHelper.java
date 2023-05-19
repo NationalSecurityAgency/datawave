@@ -79,7 +79,7 @@ public class RebuildingScannerTestHelper {
         
         public TeardownListener instance() {
             try {
-                return tclass.newInstance();
+                return tclass.getDeclaredConstructor().newInstance();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

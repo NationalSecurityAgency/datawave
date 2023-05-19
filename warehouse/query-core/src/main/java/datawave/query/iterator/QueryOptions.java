@@ -1951,7 +1951,7 @@ public class QueryOptions implements OptionDescriber {
                     }
                     Class<?> fClass = Class.forName(fClassName);
                     if (Function.class.isAssignableFrom(fClass)) {
-                        Function f = (Function) fClass.newInstance();
+                        Function f = (Function) fClass.getDeclaredConstructor().newInstance();
                         
                         if (f instanceof ConfiguredFunction) {
                             ((ConfiguredFunction) f).configure(options);
@@ -1959,7 +1959,7 @@ public class QueryOptions implements OptionDescriber {
                         
                         tforms = Iterators.transform(tforms, f);
                     } else if (Predicate.class.isAssignableFrom(fClass)) {
-                        Predicate p = (Predicate) fClass.newInstance();
+                        Predicate p = (Predicate) fClass.getDeclaredConstructor().newInstance();
                         
                         if (p instanceof ConfiguredPredicate) {
                             ((ConfiguredPredicate) p).configure(options);
@@ -1972,7 +1972,7 @@ public class QueryOptions implements OptionDescriber {
                     }
                 }
                 return tforms;
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                 log.error("Could not instantiate postprocessing chain!", e);
                 throw new RuntimeException("Could not instantiate postprocessing chain!", e);
             }

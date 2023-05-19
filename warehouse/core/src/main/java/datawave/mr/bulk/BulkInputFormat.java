@@ -2,6 +2,7 @@ package datawave.mr.bulk;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -1044,8 +1045,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         try {
             Class<? extends SplitStrategy> clazz = Class.forName(conf.get(RANGESPLITSTRATEGY, DefaultSplitStrategy.class.getCanonicalName()))
                             .asSubclass(SplitStrategy.class);
-            return clazz.newInstance();
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             log.error(e);
         }
         return new DefaultSplitStrategy();

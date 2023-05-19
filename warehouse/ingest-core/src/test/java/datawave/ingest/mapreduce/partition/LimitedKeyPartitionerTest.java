@@ -8,6 +8,8 @@ import org.apache.hadoop.io.Text;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.lang.reflect.InvocationTargetException;
+
 public class LimitedKeyPartitionerTest {
     private static final int NUM_REDUCERS = 1000;
     
@@ -23,12 +25,13 @@ public class LimitedKeyPartitionerTest {
     }
     
     @Test
-    public void testLimitedRangeSetViaTableSpecificConfig() throws IllegalAccessException, InstantiationException {
+    public void testLimitedRangeSetViaTableSpecificConfig()
+                    throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         Configuration conf = new Configuration();
         String tableName = "tableX";
         conf.setInt(tableName + "." + PartitionLimiter.MAX_PARTITIONS_PROPERTY, 6);
         
-        LimitedKeyPartitioner partitioner = LimitedKeyPartitioner.class.newInstance();
+        LimitedKeyPartitioner partitioner = LimitedKeyPartitioner.class.getDeclaredConstructor().newInstance();
         partitioner.setConf(conf);
         partitioner.configureWithPrefix(tableName);
         

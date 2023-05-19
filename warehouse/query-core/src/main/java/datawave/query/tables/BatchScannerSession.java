@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 
+ *
  */
 public class BatchScannerSession extends ScannerSession implements Iterator<Result>, FutureCallback<Scan>, SessionArbiter, UncaughtExceptionHandler {
     
@@ -517,9 +517,9 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         ListenableFuture<Scan> future = (ListenableFuture<Scan>) service.submit(scan);
         if (increment) {
             runnableCount.incrementAndGet();
-            runningQueries.add((QueryData) (scan.getScannerChunk().getContext()));
+            runningQueries.add((scan.getScannerChunk().getContext()));
         }
-        Futures.addCallback(future, this, MoreExecutors.directExecutor());
+        Futures.addCallback(future, this, MoreExecutors.newDirectExecutorService());
     }
     
     /**

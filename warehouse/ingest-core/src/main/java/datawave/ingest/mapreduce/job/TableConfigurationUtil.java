@@ -33,6 +33,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -163,10 +164,10 @@ public class TableConfigurationUtil {
                     }
                     KeyValueFilter<?,?> filter;
                     try {
-                        filter = filterClass.newInstance();
-                    } catch (InstantiationException e) {
+                        filter = filterClass.getDeclaredConstructor().newInstance();
+                    } catch (InstantiationException | InvocationTargetException e) {
                         throw new IllegalArgumentException("Unable to instantiate " + filterClassNames, e);
-                    } catch (IllegalAccessException e) {
+                    } catch (IllegalAccessException | NoSuchMethodException e) {
                         throw new IllegalArgumentException("Unable to access default constructor for " + filterClassNames, e);
                     }
                     String[] filterTableNames = filter.getTableNames(conf);
@@ -387,10 +388,10 @@ public class TableConfigurationUtil {
                     }
                     KeyValueFilter<?,?> filter;
                     try {
-                        filter = filterClass.newInstance();
+                        filter = filterClass.getDeclaredConstructor().newInstance();
                     } catch (InstantiationException e) {
                         throw new IllegalArgumentException("Unable to instantiate " + filterClassNames, e);
-                    } catch (IllegalAccessException e) {
+                    } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                         throw new IllegalArgumentException("Unable to access default constructor for " + filterClassNames, e);
                     }
                     String[] filterTableNames = filter.getTableNames(conf);

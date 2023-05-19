@@ -84,6 +84,7 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -756,11 +757,11 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             if (className != null) {
                 try {
                     Class<? extends TableConfigHelper> tableHelperClass = (Class<? extends TableConfigHelper>) Class.forName(className.trim());
-                    tableHelper = tableHelperClass.newInstance();
+                    tableHelper = tableHelperClass.getDeclaredConstructor().newInstance();
                     
                     if (tableHelper != null)
                         tableHelper.setup(table, conf, log);
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                     throw new IllegalArgumentException(e);
                 }
             }

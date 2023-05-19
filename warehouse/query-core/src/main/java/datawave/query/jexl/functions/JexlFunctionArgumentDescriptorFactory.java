@@ -54,7 +54,7 @@ public interface JexlFunctionArgumentDescriptorFactory {
                         Class<? extends JexlFunctionArgumentDescriptorFactory> factoryClass = (Class<? extends JexlFunctionArgumentDescriptorFactory>) (funcClass
                                         .getClassLoader().loadClass(factoryClassName));
                         // get the factory
-                        JexlFunctionArgumentDescriptorFactory factory = factoryClass.newInstance();
+                        JexlFunctionArgumentDescriptorFactory factory = factoryClass.getDeclaredConstructor().newInstance();
                         // get the descriptor
                         return factory.getArgumentDescriptor(node);
                     } catch (Exception e) {

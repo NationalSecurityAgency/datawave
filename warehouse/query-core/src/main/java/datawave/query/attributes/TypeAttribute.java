@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Set;
 
@@ -72,7 +73,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     public void readFields(DataInput in) throws IOException {
         try {
             setDatawaveType(WritableUtils.readString(in));
-        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException ex) {
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException ex) {
             log.error("Could not create the datawaveType " + ex);
         }
         readMetadata(in);
@@ -145,7 +146,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     public void read(Kryo kryo, Input input) {
         try {
             setDatawaveType(input.readString());
-        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
             log.warn("could not read datawateType from input: " + e);
         }
         super.readMetadata(kryo, input);
@@ -164,8 +165,9 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         this.toKeep = input.readBoolean();
     }
     
-    private void setDatawaveType(String datawaveTypeString) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-        this.datawaveType = (Type<T>) Class.forName(datawaveTypeString).newInstance();
+    private void setDatawaveType(String datawaveTypeString)
+                    throws InstantiationException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
+        this.datawaveType = (Type<T>) Class.forName(datawaveTypeString).getDeclaredConstructor().newInstance();
     }
     
     /*

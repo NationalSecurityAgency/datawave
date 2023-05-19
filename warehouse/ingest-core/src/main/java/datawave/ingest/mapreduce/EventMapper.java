@@ -53,6 +53,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -211,7 +212,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                     firstFilter = filterClass;
                 }
                 if (lastFilter != null) {
-                    KeyValueFilter<K2,V2> filter = lastFilter.newInstance();
+                    KeyValueFilter<K2,V2> filter = lastFilter.getDeclaredConstructor().newInstance();
                     filter.configureChainedContextWriter(filterConf, filterClass);
                 }
                 lastFilter = filterClass;
@@ -240,7 +241,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             contextWriterClass = firstFilter;
         }
         try {
-            contextWriter = contextWriterClass.newInstance();
+            contextWriter = contextWriterClass.getDeclaredConstructor().newInstance();
             contextWriter.setup(filterConf, filterConf.getBoolean(CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, false));
         } catch (Exception e) {
             throw new IOException("Failed to initialized " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
@@ -333,7 +334,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                         try {
                             @SuppressWarnings("unchecked")
                             Class<? extends DataTypeHandler<K1>> clazz = (Class<? extends DataTypeHandler<K1>>) Class.forName(handlerClassName);
-                            DataTypeHandler<K1> h = clazz.newInstance();
+                            DataTypeHandler<K1> h = clazz.getDeclaredConstructor().newInstance();
                             // Create a counter initialized to zero for all handler types.
                             getCounter(context, IngestOutput.ROWS_CREATED.name(), h.getClass().getSimpleName()).increment(0);
                             // Trick here. Set the data.name parameter to type T, then call setup on the DataTypeHandler
@@ -349,7 +350,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                             typeMap.get(typeStr).add(h);
                         } catch (ClassNotFoundException e) {
                             log.error("Error finding DataTypeHandler " + handlerClassName, e);
-                        } catch (InstantiationException | IllegalAccessException e) {
+                        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                             log.error("Error creating DataTypeHandler " + handlerClassName, e);
                         }
                     }

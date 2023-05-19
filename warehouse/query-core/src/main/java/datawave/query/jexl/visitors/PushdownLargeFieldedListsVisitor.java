@@ -34,6 +34,7 @@ import org.apache.lucene.util.fst.FST;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -185,7 +186,8 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                             }
                         }
                     }
-                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IOException e) {
+                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IOException | NoSuchMethodException
+                                | InvocationTargetException e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.LARGE_FIELDED_LIST_ERROR, e);
                     throw new DatawaveFatalQueryException(qe);
                 }
@@ -324,7 +326,8 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         }
     }
     
-    protected URI createFst(SortedSet<String> values) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    protected URI createFst(SortedSet<String> values) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException,
+                    NoSuchMethodException, InvocationTargetException {
         FST fst = DatawaveFieldIndexListIteratorJexl.getFST(values);
         
         // now serialize to our file system
@@ -336,7 +339,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                 classLoader = this.getClass().getClassLoader();
             }
             Class<? extends CompressionCodec> clazz = Class.forName(config.getHdfsFileCompressionCodec(), true, classLoader).asSubclass(CompressionCodec.class);
-            codec = clazz.newInstance();
+            codec = clazz.getDeclaredConstructor().newInstance();
             extension = codec.getDefaultExtension();
         }
         int fstCount = config.getFstCount().incrementAndGet();
