@@ -1,7 +1,5 @@
 package datawave.query.function;
 
-import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
@@ -29,40 +27,44 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
- * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
- * the field that hit on the query
+ * Tests the {@code limit.fields} feature to ensure that hit terms are always included and that associated fields at the same grouping context are included
+ * along with the field that hit on the query
  * 
+ * @see LimitFields
  */
 public abstract class HitsAreAlwaysIncludedTest {
+    
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     @RunWith(Arquillian.class)
     public static class ShardRange extends HitsAreAlwaysIncludedTest {
@@ -114,21 +116,31 @@ public abstract class HitsAreAlwaysIncludedTest {
     
     private static final Logger log = Logger.getLogger(HitsAreAlwaysIncludedTest.class);
     
-    protected Authorizations auths = new Authorizations("ALL");
-    
-    protected Set<Authorizations> authSet = Collections.singleton(auths);
-    
     @Inject
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
     
-    protected KryoDocumentDeserializer deserializer;
-    
+    private final Authorizations auths = new Authorizations("ALL");
+    private final Set<Authorizations> authSet = Collections.singleton(auths);
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
+    private KryoDocumentDeserializer deserializer;
+    
+    private String query;
+    private Date startDate;
+    private Date endDate;
+    private final Map<String,String> queryParameters = new HashMap<>();
+    private final Collection<String> expectedHits = new HashSet<>();
+    private final Collection<String> expectedResults = new HashSet<>();
+    
+    /**
+     * This should be implemented by {@link ShardRange} and {@link DocumentRange}.
+     * 
+     * @return the connector to use when running tests
+     */
+    public abstract Connector getConnector();
     
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
-        
         return ShrinkWrap
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
@@ -148,32 +160,247 @@ public abstract class HitsAreAlwaysIncludedTest {
     }
     
     @Before
-    public void setup() {
+    public void setup() throws ParseException {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
         logic.setFullTableScanEnabled(true);
         deserializer = new KryoDocumentDeserializer();
+        startDate = format.parse("20091231");
+        endDate = format.parse("20150101");
     }
     
-    protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> expectedHits,
-                    Collection<String> goodResults) throws Exception;
+    @After
+    public void tearDown() {
+        query = null;
+        startDate = null;
+        endDate = null;
+        queryParameters.clear();
+        expectedResults.clear();
+        expectedHits.clear();
+    }
     
-    protected void runTestQuery(AccumuloClient client, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Collection<String> expectedHits, Collection<String> goodResults) throws Exception {
+    @Test
+    public void testHitForIndexedQueryTerm() throws Exception {
+        givenQuery("FOO_3_BAR == 'defg<cat>'");
         
+        givenQueryParameter("include.grouping.context", "true");
+        givenQueryParameter("hit.list", "true");
+        givenQueryParameter("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
+        
+        givenExpectedResult("FOO_1_BAR.FOO.3:good<cat>");
+        givenExpectedResult("FOO_3_BAR.FOO.3:defg<cat>");
+        givenExpectedResult("FOO_3.FOO.3.3:defg");
+        givenExpectedResult("FOO_4.FOO.4.3:yes");
+        givenExpectedResult("FOO_1.FOO.1.3:good");
+        
+        givenExpectedHit("FOO_3_BAR.FOO.3:defg<cat>");
+        
+        runTest();
+    }
+    
+    @Test
+    public void testHitForIndexedQueryTermWithOptionsInQueryFunction() throws Exception {
+        givenQuery("FOO_3_BAR == 'defg<cat>' and f:options('include.grouping.context', 'true', 'hit.list', 'true', "
+                        + "'limit.fields', 'FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4')");
+        
+        givenExpectedResult("FOO_1_BAR.FOO.3:good<cat>");
+        givenExpectedResult("FOO_3_BAR.FOO.3:defg<cat>");
+        givenExpectedResult("FOO_3.FOO.3.3:defg");
+        givenExpectedResult("FOO_4.FOO.4.3:yes");
+        givenExpectedResult("FOO_1.FOO.1.3:good");
+        
+        givenExpectedHit("FOO_3_BAR.FOO.3:defg<cat>");
+        
+        runTest();
+    }
+    
+    @Test
+    public void testHitForIndexedQueryOnUnrealmed() throws Exception {
+        givenQuery("FOO_3 == 'defg'");
+        
+        givenQueryParameter("hit.list", "true");
+        givenQueryParameter("include.grouping.context", "true");
+        givenQueryParameter("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
+        
+        givenExpectedResult("FOO_1_BAR.FOO.3:good<cat>");
+        givenExpectedResult("FOO_3_BAR.FOO.3:defg<cat>");
+        givenExpectedResult("FOO_3.FOO.3.3:defg");
+        givenExpectedResult("FOO_4.FOO.4.3:yes");
+        givenExpectedResult("FOO_1.FOO.1.3:good");
+        
+        givenExpectedHit("FOO_3.FOO.3.3:defg");
+        
+        runTest();
+    }
+    
+    @Test
+    public void testHitForIndexedQueryAndAnyfieldLimit() throws Exception {
+        givenQuery("FOO_3_BAR == 'defg<cat>'");
+        
+        givenQueryParameter("include.grouping.context", "true");
+        givenQueryParameter("hit.list", "true");
+        givenQueryParameter("limit.fields", "_ANYFIELD_=2");
+        
+        givenExpectedResult("FOO_1_BAR.FOO.3:good<cat>");
+        givenExpectedResult("FOO_3_BAR.FOO.3:defg<cat>");
+        givenExpectedResult("FOO_3.FOO.3.3:defg");
+        givenExpectedResult("FOO_4.FOO.4.3:yes");
+        givenExpectedResult("FOO_1.FOO.1.3:good");
+        
+        givenExpectedHit("FOO_3_BAR.FOO.3:defg<cat>");
+        
+        runTest();
+    }
+    
+    @Test
+    public void testHitForIndexedAndUnindexedQueryAndAnyfieldLimit() throws Exception {
+        givenQuery("FOO_3_BAR == 'defg<cat>' and FOO_1 == 'good'");
+        
+        givenQueryParameter("include.grouping.context", "true");
+        givenQueryParameter("hit.list", "true");
+        givenQueryParameter("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
+        
+        givenExpectedResult("FOO_1_BAR.FOO.3:good<cat>");
+        givenExpectedResult("FOO_3_BAR.FOO.3:defg<cat>");
+        givenExpectedResult("FOO_3.FOO.3.3:defg");
+        givenExpectedResult("FOO_4.FOO.4.3:yes");
+        givenExpectedResult("FOO_1.FOO.1.3:good");
+        
+        givenExpectedHit("FOO_3_BAR.FOO.3:defg<cat>");
+        givenExpectedHit("FOO_1.FOO.1.3:good");
+        
+        runTest();
+    }
+    
+    @Test
+    public void testHitWithoutGroupingContext() throws Exception {
+        givenQuery("FOO_3_BAR == 'defg<cat>'");
+        
+        givenQueryParameter("include.grouping.context", "false");
+        givenQueryParameter("hit.list", "true");
+        givenQueryParameter("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
+        
+        // There is no grouping context, expect only the original term, not the related ones (in the same group).
+        givenExpectedResult("FOO_3_BAR:defg<cat>");
+        
+        givenExpectedHit("FOO_3_BAR:defg<cat>");
+        
+        runTest();
+    }
+    
+    @Test
+    public void testHitWithRange() throws Exception {
+        givenQuery("((_Bounded_ = true) && (FOO_1_BAR_1 >= '2021-03-01 00:00:00' && FOO_1_BAR_1 <= '2021-04-01 00:00:00'))");
+        
+        givenQueryParameter("include.grouping.context", "false");
+        givenQueryParameter("hit.list", "true");
+        givenQueryParameter("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
+        
+        // There is no grouping context, expect only the original term, not the related ones (in the same group).
+        givenExpectedResult("FOO_1_BAR_1:2021-03-24T16:00:00.000Z");
+        
+        givenExpectedHit("FOO_1_BAR_1:Wed Mar 24 16:00:00 GMT 2021");
+        
+        runTest();
+    }
+    
+    @Test
+    public void testHitWithDate() throws Exception {
+        givenQuery("FOO_1_BAR_1 == '2021-03-24T16:00:00.000Z'");
+        
+        givenQueryParameter("include.grouping.context", "false");
+        givenQueryParameter("hit.list", "true");
+        givenQueryParameter("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
+        
+        // There is no grouping context, expect only the original term, not the related ones (in the same group).
+        givenExpectedHit("FOO_1_BAR_1:Wed Mar 24 16:00:00 GMT 2021");
+        
+        givenExpectedResult("FOO_1_BAR_1:2021-03-24T16:00:00.000Z");
+        
+        runTest();
+    }
+    
+    @Test
+    public void testHitWithExceededOrThreshold() throws Exception {
+        givenQuery("FOO_3_BAR == 'defg<cat>' || FOO_3_BAR == 'abcd<cat>'");
+        
+        givenQueryParameter("include.grouping.context", "false");
+        givenQueryParameter("hit.list", "true");
+        givenQueryParameter("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=4,FOO_4=3,FOO_1_BAR_1=4");
+        
+        logic.setMaxOrExpansionThreshold(1);
+        configIvarator();
+        
+        // There is no grouping context, expect only the original term, not the related ones (in the same group).
+        givenExpectedResult("FOO_3_BAR:defg<cat>");
+        givenExpectedResult("FOO_3_BAR:abcd<cat>");
+        
+        givenExpectedHit("FOO_3_BAR:defg<cat>");
+        givenExpectedHit("FOO_3_BAR:abcd<cat>");
+        
+        runTest();
+    }
+    
+    @Test
+    public void testHitWithFunction() throws Exception {
+        givenQuery("FOO_3_BAR == 'defg<cat>' || FOO_3_BAR == 'abcd<cat>'");
+        
+        givenQueryParameter("include.grouping.context", "false");
+        givenQueryParameter("hit.list", "true");
+        givenQueryParameter("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=4,FOO_4=3,FOO_1_BAR_1=4");
+        
+        logic.setMaxOrExpansionThreshold(1);
+        configIvarator();
+        
+        // There is no grouping context, expect only the original term, not the related ones (in the same group).
+        givenExpectedResult("FOO_3_BAR:defg<cat>");
+        givenExpectedResult("FOO_3_BAR:abcd<cat>");
+        
+        givenExpectedHit("FOO_3_BAR:defg<cat>");
+        givenExpectedHit("FOO_3_BAR:abcd<cat>");
+        
+        runTest();
+    }
+    
+    protected void configIvarator() throws IOException {
+        URL hdfsConfig = this.getClass().getResource("/testhadoop.config");
+        Assert.assertNotNull(hdfsConfig);
+        this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
+        File tmpDir = temporaryFolder.newFolder();
+        log.info("hdfs dirs(" + tmpDir.toURI() + ")");
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
+        this.logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
+    }
+    
+    private void givenQuery(String query) {
+        this.query = query;
+    }
+    
+    private void givenQueryParameter(String key, String value) {
+        this.queryParameters.put(key, value);
+    }
+    
+    private void givenExpectedHit(String expectedHit) {
+        this.expectedHits.add(expectedHit);
+    }
+    
+    private void givenExpectedResult(String expectedResult) {
+        this.expectedResults.add(expectedResult);
+    }
+    
+    private void runTest() throws Exception {
         QueryImpl settings = new QueryImpl();
         settings.setBeginDate(startDate);
         settings.setEndDate(endDate);
         settings.setPagesize(Integer.MAX_VALUE);
         settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(queryString);
-        settings.setParameters(extraParms);
+        settings.setQuery(query);
+        settings.setParameters(queryParameters);
         settings.setId(UUID.randomUUID());
         
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
         
-        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
+        GenericQueryConfiguration config = logic.initialize(getConnector(), settings, authSet);
         logic.setupQuery(config);
         
         Set<Document> docs = new HashSet<>();
@@ -182,11 +409,11 @@ public abstract class HitsAreAlwaysIncludedTest {
             log.trace(entry.getKey() + " => " + d);
             docs.add(d);
             
-            Attribute hitAttribute = d.get(JexlEvaluation.HIT_TERM_FIELD);
+            Attribute<?> hitAttribute = d.get(JexlEvaluation.HIT_TERM_FIELD);
             
             if (hitAttribute instanceof Attributes) {
                 Attributes attributes = (Attributes) hitAttribute;
-                for (Attribute attr : attributes.getAttributes()) {
+                for (Attribute<?> attr : attributes.getAttributes()) {
                     if (attr instanceof Content) {
                         Content content = (Content) attr;
                         Assert.assertTrue(expectedHits.remove(content.getContent()));
@@ -202,16 +429,16 @@ public abstract class HitsAreAlwaysIncludedTest {
             Assert.assertTrue(expectedHits + " expected hits was not empty", expectedHits.isEmpty());
             
             // remove from goodResults as we find the expected return fields
-            log.debug("goodResults: " + goodResults);
+            log.debug("goodResults: " + expectedResults);
             Map<String,Attribute<? extends Comparable<?>>> dictionary = d.getDictionary();
             log.debug("dictionary:" + dictionary);
             for (Entry<String,Attribute<? extends Comparable<?>>> dictionaryEntry : dictionary.entrySet()) {
                 
                 Attribute<? extends Comparable<?>> attribute = dictionaryEntry.getValue();
                 if (attribute instanceof Attributes) {
-                    for (Attribute attr : ((Attributes) attribute).getAttributes()) {
+                    for (Attribute<?> attr : ((Attributes) attribute).getAttributes()) {
                         String toFind = dictionaryEntry.getKey() + ":" + attr;
-                        boolean found = goodResults.remove(toFind);
+                        boolean found = expectedResults.remove(toFind);
                         if (found)
                             log.debug("removed " + toFind);
                         else
@@ -221,7 +448,7 @@ public abstract class HitsAreAlwaysIncludedTest {
                     
                     String toFind = dictionaryEntry.getKey() + ":" + dictionaryEntry.getValue();
                     
-                    boolean found = goodResults.remove(toFind);
+                    boolean found = expectedResults.remove(toFind);
                     if (found)
                         log.debug("removed " + toFind);
                     else
@@ -230,200 +457,8 @@ public abstract class HitsAreAlwaysIncludedTest {
                 
             }
             
-            Assert.assertTrue(goodResults + " good results was not empty", goodResults.isEmpty());
+            Assert.assertTrue(expectedHits + " good results was not empty", expectedResults.isEmpty());
         }
-        Assert.assertTrue("No docs were returned!", !docs.isEmpty());
+        Assert.assertFalse("No docs were returned!", docs.isEmpty());
     }
-    
-    @Test
-    public void checkThePattern() {
-        String[] tokens = LimitFields.getCommonalityAndGroupingContext("FOO_3.FOO.3.3");
-        Assert.assertEquals(2, tokens.length);
-        Assert.assertEquals(tokens[0], "FOO");
-        Assert.assertEquals(tokens[1], "3");
-        
-        tokens = LimitFields.getCommonalityAndGroupingContext("FOO_3");
-        Assert.assertNull(tokens);
-        
-        tokens = LimitFields.getCommonalityAndGroupingContext("FOO_3_BAR.FOO.3");
-        Assert.assertEquals(2, tokens.length);
-        Assert.assertEquals(tokens[0], "FOO");
-        Assert.assertEquals(tokens[1], "3");
-    }
-    
-    @Test
-    public void testHitForIndexedQueryTerm() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
-        
-        String queryString = "FOO_3_BAR == 'defg<cat>'";
-        
-        Set<String> goodResults = Sets.newHashSet("FOO_1_BAR.FOO.3:good<cat>", "FOO_3_BAR.FOO.3:defg<cat>", "FOO_3.FOO.3.3:defg", "FOO_4.FOO.4.3:yes",
-                        "FOO_1.FOO.1.3:good");
-        Set<String> expectedHits = Sets.newHashSet("FOO_3_BAR.FOO.3:defg<cat>");
-        
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
-    }
-    
-    @Test
-    public void testHitForIndexedQueryTermWithOptionsInQueryFunction() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        
-        String queryString = "FOO_3_BAR == 'defg<cat>' and f:options('include.grouping.context', 'true', "
-                        + "'hit.list', 'true', 'limit.fields', 'FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4')";
-        
-        Set<String> goodResults = Sets.newHashSet("FOO_1_BAR.FOO.3:good<cat>", "FOO_3_BAR.FOO.3:defg<cat>", "FOO_3.FOO.3.3:defg", "FOO_4.FOO.4.3:yes",
-                        "FOO_1.FOO.1.3:good");
-        Set<String> expectedHits = Sets.newHashSet("FOO_3_BAR.FOO.3:defg<cat>");
-        
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
-    }
-    
-    @Test
-    public void testHitForIndexedQueryOnUnrealmed() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
-        
-        String queryString = "FOO_3 == 'defg'";
-        
-        Set<String> goodResults = Sets.newHashSet("FOO_1_BAR.FOO.3:good<cat>", "FOO_3_BAR.FOO.3:defg<cat>", "FOO_3.FOO.3.3:defg", "FOO_4.FOO.4.3:yes",
-                        "FOO_1.FOO.1.3:good");
-        Set<String> expectedHits = Sets.newHashSet("FOO_3.FOO.3.3:defg");
-        
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
-    }
-    
-    @Test
-    public void testHitForIndexedQueryAndAnyfieldLimit() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "_ANYFIELD_=2");
-        
-        String queryString = "FOO_3_BAR == 'defg<cat>'";
-        
-        Set<String> goodResults = Sets.newHashSet("FOO_1_BAR.FOO.3:good<cat>", "FOO_3_BAR.FOO.3:defg<cat>", "FOO_3.FOO.3.3:defg", "FOO_4.FOO.4.3:yes",
-                        "FOO_1.FOO.1.3:good");
-        Set<String> expectedHits = Sets.newHashSet("FOO_3_BAR.FOO.3:defg<cat>");
-        
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
-    }
-    
-    @Test
-    public void testHitForIndexedAndUnindexedQueryAndAnyfieldLimit() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
-        
-        String queryString = "FOO_3_BAR == 'defg<cat>' and FOO_1 == 'good'";
-        
-        Set<String> goodResults = Sets.newHashSet("FOO_1_BAR.FOO.3:good<cat>", "FOO_3_BAR.FOO.3:defg<cat>", "FOO_3.FOO.3.3:defg", "FOO_4.FOO.4.3:yes",
-                        "FOO_1.FOO.1.3:good");
-        Set<String> expectedHits = Sets.newHashSet("FOO_3_BAR.FOO.3:defg<cat>", "FOO_1.FOO.1.3:good");
-        
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
-    }
-    
-    @Test
-    public void testHitWithoutGroupingContext() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "false");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
-        
-        String queryString = "FOO_3_BAR == 'defg<cat>'";
-        
-        // there is no grouping context so i can expect only the original term, not the related ones (in the same group)
-        Set<String> goodResults = Sets.newHashSet("FOO_3_BAR:defg<cat>");
-        
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, new HashSet<>(goodResults), goodResults);
-    }
-    
-    @Test
-    public void testHitWithRange() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "false");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
-        
-        String queryString = "((_Bounded_ = true) && (FOO_1_BAR_1 >= '2021-03-01 00:00:00' && FOO_1_BAR_1 <= '2021-04-01 00:00:00'))";
-        
-        // there is no grouping context so i can expect only the original term, not the related ones (in the same group)
-        Set<String> expectedHits = Sets.newHashSet("FOO_1_BAR_1:Wed Mar 24 16:00:00 GMT 2021");
-        Set<String> goodResults = Sets.newHashSet("FOO_1_BAR_1:2021-03-24T16:00:00.000Z");
-        
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
-    }
-    
-    @Test
-    public void testHitWithDate() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "false");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4");
-        
-        String queryString = "FOO_1_BAR_1 == '2021-03-24T16:00:00.000Z'";
-        
-        // there is no grouping context so i can expect only the original term, not the related ones (in the same group)
-        Set<String> expectedHits = Sets.newHashSet("FOO_1_BAR_1:Wed Mar 24 16:00:00 GMT 2021");
-        Set<String> goodResults = Sets.newHashSet("FOO_1_BAR_1:2021-03-24T16:00:00.000Z");
-        
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
-    }
-    
-    @Test
-    public void testHitWithExceededOrThreshold() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "false");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=4,FOO_4=3,FOO_1_BAR_1=4");
-        logic.setMaxOrExpansionThreshold(1);
-        ivaratorConfig();
-        
-        String queryString = "FOO_3_BAR == 'defg<cat>' || FOO_3_BAR == 'abcd<cat>'";
-        
-        // there is no grouping context so i can expect only the original term, not the related ones (in the same group)
-        Set<String> goodResults = Sets.newHashSet("FOO_3_BAR:defg<cat>", "FOO_3_BAR:abcd<cat>");
-        Set<String> expectedHits = Sets.newHashSet("FOO_3_BAR:defg<cat>", "FOO_3_BAR:abcd<cat>");
-        
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
-    }
-    
-    @Test
-    public void testHitWithFunction() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "false");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=4,FOO_4=3,FOO_1_BAR_1=4");
-        logic.setMaxOrExpansionThreshold(1);
-        ivaratorConfig();
-        
-        String queryString = "FOO_3_BAR == 'defg<cat>' || FOO_3_BAR == 'abcd<cat>'";
-        
-        // there is no grouping context so i can expect only the original term, not the related ones (in the same group)
-        Set<String> goodResults = Sets.newHashSet("FOO_3_BAR:defg<cat>", "FOO_3_BAR:abcd<cat>");
-        Set<String> expectedHits = Sets.newHashSet("FOO_3_BAR:defg<cat>", "FOO_3_BAR:abcd<cat>");
-        
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
-    }
-    
-    protected void ivaratorConfig() throws IOException {
-        final URL hdfsConfig = this.getClass().getResource("/testhadoop.config");
-        Assert.assertNotNull(hdfsConfig);
-        this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
-        
-        final List<String> dirs = new ArrayList<>();
-        final List<String> fstDirs = new ArrayList<>();
-        Path ivCache = Paths.get(Files.createTempDir().toURI());
-        dirs.add(ivCache.toUri().toString());
-        String uriList = String.join(",", dirs);
-        log.info("hdfs dirs(" + uriList + ")");
-        this.logic.setIvaratorCacheDirConfigs(dirs.stream().map(IvaratorCacheDirConfig::new).collect(Collectors.toList()));
-    }
-    
 }
