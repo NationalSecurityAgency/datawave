@@ -53,6 +53,7 @@ import datawave.microservice.querymetric.QueryMetricListResponse;
 import datawave.microservice.querymetric.QueryMetricsDetailListResponse;
 import datawave.microservice.querymetric.QueryMetricsSubplanResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
+import datawave.query.QueryParameters;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
@@ -549,6 +550,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setOwner(datawavePrincipal.getShortName());
             query.setId(UUID.randomUUID());
             query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
+            query.setParameters(ImmutableMap.of(QueryParameters.BLACKLISTED_FIELDS, "subplans")); // might be subplan without s
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
             
             response.setResult(queryMetrics);
@@ -569,24 +571,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             enableLogs(false);
             
             Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
-            Date end = new Date();
-            Date begin = DateUtils.setYears(end, 2000);
             
             QueryImpl query = new QueryImpl();
-            query.setBeginDate(begin);
-            query.setEndDate(end);
-            query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
-            // QueryMetricQueryLogic now enforces that you must be a QueryMetricsAdministrator to query metrics that do not belong to you
-            query.setQuery("QUERY_ID == '" + queryId + "'");
-            query.setQueryName(QUERY_METRICS_LOGIC_NAME);
-            query.setColumnVisibility(visibilityString);
-            query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
-            query.setExpirationDate(DateUtils.addDays(new Date(), 1));
-            query.setPagesize(1000);
-            query.setUserDN(datawavePrincipal.getShortName());
-            query.setOwner(datawavePrincipal.getShortName());
-            query.setId(UUID.randomUUID());
-            query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
+            query.setParameters(ImmutableMap.of(QueryParameters.RETURN_FIELDS, "subplans"));
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
             
             response.setResult(queryMetrics);
