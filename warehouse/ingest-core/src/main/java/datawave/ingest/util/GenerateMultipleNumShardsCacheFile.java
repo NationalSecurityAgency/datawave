@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
@@ -36,7 +36,7 @@ public class GenerateMultipleNumShardsCacheFile {
         String configDirectory = null;
         String configSuffix;
         try {
-            cl = new BasicParser().parse(options, args);
+            cl = new DefaultParser().parse(options, args);
             if (cl.hasOption(CONFIG_DIRECTORY_LOCATION_OVERRIDE)) {
                 configDirectory = cl.getOptionValue(CONFIG_DIRECTORY_LOCATION_OVERRIDE);
             } else {
