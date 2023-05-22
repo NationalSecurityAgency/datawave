@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
-        <module>balancers</module>
+        <module>accumulo-extensions</module>
         <module>common</module>
         <module>core</module>
         <module>edge-dictionary-core</module>
@@ -89,7 +89,7 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
-                <artifactId>datawave-balancers</artifactId>
+                <artifactId>datawave-accumulo-extensions</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
