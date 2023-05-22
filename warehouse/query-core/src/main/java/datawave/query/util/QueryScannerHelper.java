@@ -1,9 +1,7 @@
 package datawave.query.util;
 
 import datawave.query.iterator.QueryInformationIterator;
-import datawave.query.tables.BatchScannerImpl;
 import datawave.security.iterator.ConfigurableVisibilityFilter;
-import datawave.security.util.AuthorizationsMinimizer;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.connection.ScannerBaseDelegate;
 import datawave.webservice.query.Query;
@@ -13,9 +11,8 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.security.Authorizations;
+
 import java.util.Collection;
 import java.util.Iterator;
 

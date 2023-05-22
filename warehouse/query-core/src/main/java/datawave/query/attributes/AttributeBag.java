@@ -20,7 +20,7 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
     protected boolean validMetadata = false;
     
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
-
+    
     protected static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
     
     public MarkingFunctions getMarkingFunctions() {

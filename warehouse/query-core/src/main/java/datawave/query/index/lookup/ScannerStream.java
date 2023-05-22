@@ -15,6 +15,7 @@ import java.util.Iterator;
  * Note that certain delayed terms may create a ScannerStream without an underlying RangeStreamScanner.
  */
 public class ScannerStream extends BaseIndexStream {
+    
     private ScannerStream(RangeStreamScanner scanSession, EntryParser entryParser, StreamContext ctx, JexlNode currNode, IndexStream debugDelegate) {
         super(scanSession, entryParser, currNode, ctx, debugDelegate);
     }
@@ -156,6 +157,7 @@ public class ScannerStream extends BaseIndexStream {
      * @return the top shard after seeking
      */
     public String seekByNext(String seekShard) {
+        
         String target = extractDayFromShard(seekShard);
         
         // First advance by day.

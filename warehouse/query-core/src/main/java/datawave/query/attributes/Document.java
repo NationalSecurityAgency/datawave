@@ -114,7 +114,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     private TreeMap<String,Attribute<? extends Comparable<?>>> _getDictionary() {
         return dict;
     }
-
+    
     public Set<Entry<String,Attribute<? extends Comparable<?>>>> entrySet() {
         return getDictionary().entrySet();
     }
@@ -500,7 +500,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public int size() {
         return _count;
     }
-
+    
     @Override
     public long sizeInBytes() {
         if (trackSizes) {

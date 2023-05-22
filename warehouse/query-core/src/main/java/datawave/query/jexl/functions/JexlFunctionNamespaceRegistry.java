@@ -13,22 +13,22 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  * Until vfs-classloader supports dependency injection from a resource we need to statically define our jexl function namespaces
  */
 public class JexlFunctionNamespaceRegistry {
-    
+
     private static final Logger log = Logger.getLogger(JexlFunctionNamespaceRegistry.class);
-    
+
     public static final String JEXL_FUNCTION_NAMESPACE_CONTEXT = "classpath*:/JexlFunctionNamespaceRegistryContext.xml";
     public static final String JEXL_FUNCTION_NAMESPACE_BEAN_REF = "jexlEngineFunctionMap";
     public static final String JEXL_FUNCTION_NAMESPACE_PROPERTY = "jexl.function.namespace.registry";
-    
+
     public static final Map<String,Object> registeredFunctions = new HashMap<>();
-    
+
     static {
         registeredFunctions.put(ContentFunctions.CONTENT_FUNCTION_NAMESPACE, ContentFunctions.class);
         registeredFunctions.put(NormalizationFunctions.NORMALIZATION_FUNCTION_NAMESPACE, NormalizationFunctions.class);
         registeredFunctions.put(EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE, EvaluationPhaseFilterFunctions.class);
         registeredFunctions.put(GroupingRequiredFilterFunctions.GROUPING_REQUIRED_FUNCTION_NAMESPACE, GroupingRequiredFilterFunctions.class);
     }
-    
+
     public static Map<String,Object> getConfiguredFunctions() {
         ClassLoader thisClassLoader = JexlFunctionNamespaceRegistry.class.getClassLoader();
         if (thisClassLoader instanceof VFSClassLoader) {
@@ -51,18 +51,18 @@ public class JexlFunctionNamespaceRegistry {
             // If the vfs classloader works with Spring resource dependency injection, we can pull the configured map
             // from the application context
             Map<String,String> functionDefs = context.getBean(JEXL_FUNCTION_NAMESPACE_BEAN_REF, java.util.Map.class); // setRegisteredFunctions gets called with
-                                                                                                                      // String,String map
+            // String,String map
             Map<String,Object> funcs = new HashMap<>();
             for (Map.Entry<String,String> entry : functionDefs.entrySet()) {
                 try {
-                    
+
                     Class clazz = Class.forName(entry.getValue());
                     funcs.put(entry.getKey(), clazz);
                 } catch (ClassNotFoundException e) {
                     log.error(JexlFunctionNamespaceRegistry.class.getName() + " could not load function. " + e);
                 }
             }
-            
+
             return funcs;
         } catch (Throwable t) {
             log.error(t);
@@ -73,9 +73,8 @@ public class JexlFunctionNamespaceRegistry {
             if (className != null) {
                 try {
                     JexlFunctionNamespaceRegistry base = (JexlFunctionNamespaceRegistry) Class.forName(className).newInstance();
-                    context = null;
                     return base.getRegisteredFunctions();
-                    
+
                 } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
                     log.warn("unable to create " + className + " with property " + JEXL_FUNCTION_NAMESPACE_PROPERTY, e);
                     throw new RuntimeException("Could not create Jexl Function Registry object");
@@ -85,14 +84,12 @@ public class JexlFunctionNamespaceRegistry {
                 throw new RuntimeException("Could not create Jexl Function Registry object");
             }
         } finally {
-            if (context != null) {
-                context.close();
-            }
+            context.close();
         }
     }
-    
+
     public Map<String,Object> getRegisteredFunctions() {
         return Collections.unmodifiableMap(registeredFunctions);
     }
-    
+
 }

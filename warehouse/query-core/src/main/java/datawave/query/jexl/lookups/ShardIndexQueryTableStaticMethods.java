@@ -20,19 +20,15 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
 import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -55,7 +51,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
@@ -470,7 +465,6 @@ public class ShardIndexQueryTableStaticMethods {
         
         return bs;
     }
-
     
     public static ScannerSession configureLimitedDiscovery(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
@@ -482,7 +476,9 @@ public class ShardIndexQueryTableStaticMethods {
         }
         
         ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery());
+        
         bs.setRanges(ranges);
+        
         SessionOptions options = new SessionOptions();
         options.addScanIterator(configureDateRangeIterator(config));
         IteratorSetting setting = configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter());
@@ -493,8 +489,9 @@ public class ShardIndexQueryTableStaticMethods {
         if (setting != null) {
             options.addScanIterator(setting);
         }
-
+        
         bs.setOptions(options);
+        
         return bs;
     }
     
@@ -518,6 +515,7 @@ public class ShardIndexQueryTableStaticMethods {
         cfg.addOption(Constants.END_DATE, Long.toString(dateRange.getMaximumLong()));
         return cfg;
     }
+    
     public static final IteratorSetting configureDateRangeIterator(ShardQueryConfiguration config) throws IOException {
         // Setup the GlobalIndexDateRangeFilter
         if (log.isTraceEnabled()) {
