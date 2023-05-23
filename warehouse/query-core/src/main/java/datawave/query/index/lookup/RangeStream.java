@@ -90,7 +90,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
 import static com.google.common.collect.Iterators.concat;
 import static com.google.common.collect.Iterators.filter;
 import static com.google.common.collect.Iterators.transform;
@@ -462,8 +461,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             
             if (limitScanners) {
                 // Setup the CreateUidsIterator
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                                config.getShardsPerDayThreshold());
+                scannerSession = scanners.newRangeScanner(config.getIndexTableName(),config);
                 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
@@ -471,8 +469,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 
             } else {
                 // Setup so this is a pass-through
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                                config.getShardsPerDayThreshold());
+                scannerSession = scanners.newRangeScanner(config.getIndexTableName(),config);
                 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(false).toString());

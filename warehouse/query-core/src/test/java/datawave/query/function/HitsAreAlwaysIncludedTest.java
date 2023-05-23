@@ -179,7 +179,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Set<Document> docs = new HashSet<>();
         for (Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
-            log.trace(entry.getKey() + " => " + d);
+            log.info(entry.getKey() + " => " + d);
             docs.add(d);
             
             Attribute hitAttribute = d.get(JexlEvaluation.HIT_TERM_FIELD);

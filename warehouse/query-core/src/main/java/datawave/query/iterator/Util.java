@@ -123,6 +123,12 @@ public class Util {
         bytes[bytes.length - 1] = suffix;
         return new Text(bytes);
     }
+
+    public static Text removeLastByte(Text root) {
+        byte[] bytes = new byte[root.getLength() -1 ];
+        System.arraycopy(root.getBytes(), 0, bytes, 0, root.getLength()-1);
+        return new Text(bytes);
+    }
     
     public static int prefixDiff(Text prefix, Text text) {
         int textEnd = (prefix.getLength() > text.getLength()) ? text.getLength() : prefix.getLength();

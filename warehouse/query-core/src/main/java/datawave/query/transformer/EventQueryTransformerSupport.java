@@ -41,7 +41,7 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
     
     protected Query settings = null;
     
-    protected BaseQueryLogic<Entry<Key,Value>> logic = null;
+    protected BaseQueryLogic<?> logic = null;
     
     protected Authorizations auths = null;
     
@@ -63,7 +63,7 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         this.responseObjectFactory = responseObjectFactory;
     }
     
-    public EventQueryTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    public EventQueryTransformerSupport(BaseQueryLogic<?> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         this(logic.getTableName(), settings, markingFunctions, responseObjectFactory);
         this.logic = logic;

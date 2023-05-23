@@ -2,7 +2,6 @@ package datawave.query.jexl.functions;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
@@ -30,10 +29,11 @@ import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.testframework.MockStatusReporter;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.testframework.MockStatusReporter;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
@@ -87,14 +87,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static datawave.query.QueryParameters.DATE_RANGE_TYPE;
-import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
-import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
-import static datawave.webservice.query.QueryParameters.QUERY_END;
-import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
-import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
-import static datawave.webservice.query.QueryParameters.QUERY_NAME;
-import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
-import static datawave.webservice.query.QueryParameters.QUERY_STRING;
+import static datawave.webservice.query.QueryParameters.*;
 
 @RunWith(Arquillian.class)
 public class ContentFunctionQueryTest {
@@ -240,7 +233,7 @@ public class ContentFunctionQueryTest {
     @Test
     public void withinTest() throws Exception {
         String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','cat')";
-        
+
         final List<String> expected = Arrays.asList("dog", "cat");
         final List<DefaultEvent> events = getQueryResults(query, true, null);
         Assert.assertEquals(1, events.size());
@@ -287,6 +280,16 @@ public class ContentFunctionQueryTest {
         final List<String> expected = Arrays.asList("dog", "gap");
         evaluateEvents(events, expected);
     }
+
+    @Test
+    public void phraseWithSkipTestNoAnchor() throws Exception {
+        String query = "BODY:\"dog gap\" BODY:\"dog gap\"";
+
+        final List<DefaultEvent> events = getQueryResults(query, true, null, true);
+        Assert.assertEquals(1, events.size());
+        final List<String> expected = Arrays.asList("dog", "gap");
+        evaluateEvents(events, expected);
+    }
     
     @Test
     public void phraseScoreTest() throws Exception {
@@ -319,9 +322,13 @@ public class ContentFunctionQueryTest {
             Assert.assertTrue("Missing values {" + expected + "} != {" + fields + "}", fields.containsAll(expected));
         }
     }
-    
+
     private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator, MultiValueMap<String,String> optionalParams) throws Exception {
-        ShardQueryLogic logic = getShardQueryLogic(useIvarator);
+        return getQueryResults(queryString,useIvarator,optionalParams,false);
+    }
+    
+    private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator, MultiValueMap<String,String> optionalParams, boolean isLucene) throws Exception {
+        ShardQueryLogic logic = getShardQueryLogic(useIvarator, isLucene);
         
         Iterator iter = getResultsIterator(queryString, logic, optionalParams);
         List<DefaultEvent> events = new ArrayList<>();
@@ -359,9 +366,10 @@ public class ContentFunctionQueryTest {
         return logic.getTransformIterator(query);
     }
     
-    private ShardQueryLogic getShardQueryLogic(boolean useIvarator) {
+    private ShardQueryLogic getShardQueryLogic(boolean useIvarator, boolean isLucene) {
         ShardQueryLogic logic = new ShardQueryLogic(this.logic);
-        
+        if (isLucene)
+            logic.setParser(new LuceneToJexlQueryParser());
         // increase the depth threshold
         logic.setMaxDepthThreshold(20);
         

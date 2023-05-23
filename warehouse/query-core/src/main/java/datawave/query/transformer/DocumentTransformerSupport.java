@@ -478,7 +478,6 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         }
         return attribute;
     }
-    
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         EventQueryResponseBase response = this.responseObjectFactory.getEventQueryResponse();

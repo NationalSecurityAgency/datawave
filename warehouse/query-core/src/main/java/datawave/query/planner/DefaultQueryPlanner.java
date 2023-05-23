@@ -2,9 +2,11 @@ package datawave.query.planner;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -110,6 +112,7 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
 import datawave.query.util.Tuple2;
+import datawave.query.util.TypeMetadata;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
@@ -166,6 +169,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
@@ -524,8 +528,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             return null;
         }
     }
-    
-    private void configureIterator(ShardQueryConfiguration config, IteratorSetting cfg, String newQueryString, boolean isFullTable)
+
+    protected void configureIterator(ShardQueryConfiguration config, IteratorSetting cfg, String newQueryString, boolean isFullTable)
                     throws DatawaveQueryException {
         
         // Load enrichers, filters, unevaluatedExpressions, and projection
@@ -2066,10 +2070,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return builderThread.submit(() -> {
             // VersioningIterator is typically set at 20 on the table
                         IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 40, "query", getQueryIteratorClass());
-                        
+
                         addOption(cfg, Constants.RETURN_TYPE, config.getReturnType().toString(), false);
                         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
-                        
+
                         if (sourceLimit > 0) {
                             addOption(cfg, QueryOptions.LIMIT_SOURCES, Long.toString(sourceLimit), false);
                         }
@@ -2091,7 +2095,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         }
                         if (config.getIvaratorCacheDirConfigs() != null && !config.getIvaratorCacheDirConfigs().isEmpty()) {
                             addOption(cfg, QueryOptions.IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(getShuffledIvaratoCacheDirConfigs(config)),
-                                            false);
+                                    false);
                         }
                         addOption(cfg, QueryOptions.IVARATOR_CACHE_BUFFER_SIZE, Integer.toString(config.getIvaratorCacheBufferSize()), false);
                         addOption(cfg, QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD, Long.toString(config.getIvaratorCacheScanPersistThreshold()), false);
@@ -2106,19 +2110,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         addOption(cfg, QueryOptions.MAX_EVALUATION_PIPELINES, Integer.toString(config.getMaxEvaluationPipelines()), false);
                         addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);
-                        
+
                         if (config.getYieldThresholdMs() != Long.MAX_VALUE && config.getYieldThresholdMs() > 0) {
                             addOption(cfg, QueryOptions.YIELD_THRESHOLD_MS, Long.toString(config.getYieldThresholdMs()), false);
                         }
-                        
+
                         addOption(cfg, QueryOptions.SORTED_UIDS, Boolean.toString(config.isSortedUIDs()), false);
-                        
+
                         configureTypeMappings(config, cfg, metadataHelper, compressMappings);
                         configureAdditionalOptions(config, cfg);
-                        
+
                         loadFields(cfg, config, isPreload);
                         configureSeekingOptions(cfg, config);
-                        
+
                         try {
                             CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
                             if (compositeMetadata != null && !compositeMetadata.isEmpty()) {
@@ -2129,31 +2133,31 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                             QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITE_METADATA_CONFIG_ERROR, e);
                             throw new DatawaveQueryException(qe);
                         }
-                        
+
                         String datatypeFilter = config.getDatatypeFilterAsString();
-                        
+
                         addOption(cfg, QueryOptions.DATATYPE_FILTER, datatypeFilter, false);
-                        
+
                         try {
                             addOption(cfg, QueryOptions.CONTENT_EXPANSION_FIELDS,
-                                            Joiner.on(',').join(metadataHelper.getContentFields(config.getDatatypeFilter())), false);
+                                    Joiner.on(',').join(metadataHelper.getContentFields(config.getDatatypeFilter())), false);
                         } catch (TableNotFoundException e) {
                             QueryException qe = new QueryException(DatawaveErrorCode.CONTENT_FIELDS_RETRIEVAL_ERROR, e);
                             throw new DatawaveQueryException(qe);
                         }
-                        
+
                         if (config.isDebugMultithreadedSources()) {
                             addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, Boolean.toString(config.isDebugMultithreadedSources()), false);
                         }
-                        
+
                         if (config.isLimitFieldsPreQueryEvaluation()) {
                             addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, Boolean.toString(config.isLimitFieldsPreQueryEvaluation()), false);
                         }
-                        
+
                         if (config.getLimitFieldsField() != null) {
                             addOption(cfg, QueryOptions.LIMIT_FIELDS_FIELD, config.getLimitFieldsField(), false);
                         }
-                        
+
                         return cfg;
                     });
     }
@@ -2289,9 +2293,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // indexed
             Multimap<String,Type<?>> nonIndexedQueryFieldsDatatypes = HashMultimap.create(config.getQueryFieldsDatatypes());
             nonIndexedQueryFieldsDatatypes.keySet().removeAll(config.getIndexedFields());
+
+            TypeMetadata metadata = metadataHelper.getTypeMetadata(config.getDatatypeFilter());
             
             String nonIndexedTypes = QueryOptions.buildFieldNormalizerString(nonIndexedQueryFieldsDatatypes);
-            String typeMetadataString = metadataHelper.getTypeMetadata(config.getDatatypeFilter()).toString();
+            String typeMetadataString = metadata.toString();
             String requiredAuthsString = metadataHelper.getUsersMetadataAuthorizationSubset();
             
             if (compressMappings) {
@@ -2404,6 +2410,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         // Include the option to filter masked values
         addOption(cfg, QueryOptions.FILTER_MASKED_VALUES, Boolean.toString(config.getFilterMaskedValues()), false);
+
+        addOption(cfg, QueryOptions.SET_TYPE_STRING, Boolean.toString(true), false);
         
         // Include the EVENT_DATATYPE as a field
         if (config.getIncludeDataTypeAsField()) {
@@ -2557,7 +2565,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("DefaultQueryPlanner - Begin stream of ranges from inverted index");
             
             RangeStream stream = initializeRangeStream(config, scannerFactory, metadataHelper);
-            
+
+            config.setTransformedQuery(JexlStringBuildingVisitor.buildQuery(queryTree));
             ranges = stream.streamPlans(queryTree);
             
             if (log.isTraceEnabled()) {
@@ -2971,5 +2980,103 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (null != builderThread) {
             builderThread.shutdown();
         }
+    }
+    // added functionality
+
+    private static String[] parse(String in, char c) {
+        List<String> list = Lists.newArrayList();
+        boolean inside = false;
+        int start = 0;
+        for (int i = 0; i < in.length(); i++) {
+            if (in.charAt(i) == '[')
+                inside = true;
+            if (in.charAt(i) == ']')
+                inside = false;
+            if (in.charAt(i) == c && !inside) {
+                list.add(in.substring(start, i));
+                start = i + 1;
+            }
+        }
+        list.add(in.substring(start));
+        return Iterables.toArray(list, String.class);
+    }
+
+    public static String forceTypes(String allowedTypesStr, TypeMetadata metadata){
+        String original = metadata.toString();
+        HashSet<String> fieldNames = Sets.newHashSet();
+        String[] entries = parse(original, ';');
+        Set<String> ingestTypes = Sets.newHashSet();
+        Map<String,Multimap<String,String>> typeMetadata = new HashMap<>();
+        Collection<String> allowedTypes = StreamSupport.stream(Splitter.on(",").trimResults().split(allowedTypesStr).spliterator(),false).collect(Collectors.toList());
+        for (String entry : entries) {
+            String[] entrySplits = parse(entry, ':');
+            if (2 != entrySplits.length) {
+                // Do nothing
+            } else {
+                // entrySplits[1] looks like this:
+                // [type1:a,b;type2:b] - split it on the ';'
+                // get rid of the leading and trailing brackets:
+                entrySplits[1] = entrySplits[1].substring(1, entrySplits[1].length() - 1);
+                String[] values = parse(entrySplits[1], ';');
+
+                for (String value : values) {
+
+                    String[] vs = Iterables.toArray(Splitter.on(':').omitEmptyStrings().trimResults().split(value), String.class);
+
+                    Multimap<String,String> mm = typeMetadata.get(vs[0]);
+                    if (null == mm) {
+                        mm = HashMultimap.create();
+                        typeMetadata.put(vs[0], mm);
+                    }
+
+                    String[] rhs = Iterables.toArray(Splitter.on(',').omitEmptyStrings().trimResults().split(vs[1]), String.class);
+                    ingestTypes.add(vs[0]);
+                    for (String r : rhs) {
+                        if (r.equals("datawave.data.type.LcType") || allowedTypes.contains(r)){
+                            mm.put(entrySplits[0], r);
+                        }
+                        else {
+                            mm.put(entrySplits[0], "datawave.data.type.LcType");
+                        }
+                    }
+                }
+                fieldNames.add(entrySplits[0]);
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+
+        Set<String> toFieldNames = Sets.newHashSet();
+        for (String ingestType : typeMetadata.keySet()) {
+            toFieldNames.addAll(typeMetadata.get(ingestType).keySet());
+        }
+
+        for (String fieldName : toFieldNames) {
+            if (sb.length() > 0) {
+                sb.append(';');
+            }
+
+            sb.append(fieldName).append(':');
+            sb.append('[');
+            boolean firstField = true;
+            for (String ingestType : typeMetadata.keySet()) {
+                if (!typeMetadata.get(ingestType).containsKey(fieldName))
+                    continue;
+                if (!firstField)
+                    sb.append(';');
+                firstField = false;
+                sb.append(ingestType);
+                sb.append(':');
+                boolean first = true;
+                for (String type : typeMetadata.get(ingestType).get(fieldName)) {
+                    if (!first)
+                        sb.append(',');
+                    sb.append(type);
+                    first = false;
+                }
+            }
+            sb.append(']');
+        }
+
+        return sb.toString();
     }
 }

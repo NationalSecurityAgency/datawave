@@ -147,7 +147,7 @@
 	<property name="responseObjectFactory" ref="ResponseObjectFactory" />
     </bean>
     
-    <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ShardQueryLogic" abstract="true">
+    <bean id="ShardedBaseQueryLogic" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ShardedBaseQueryLogic" abstract="true">
         <property name="tableName" value="shard" />
         <property name="dateIndexTableName" value="dateIndex" />
         <property name="defaultDateTypeName" value="EVENT"/>
@@ -240,6 +240,20 @@
         <property name="tfNextSeek" value="-1" />
     </bean>
 
+    <bean id="BaseEventQuery" parent="ShardedBaseQueryLogic" class="datawave.query.tables.ShardQueryLogic" abstract="true" />
+
+    <bean id="DocumentQuery" parent="ShardedBaseQueryLogic" scope="prototype" class="datawave.query.tables.document.batch.DocumentLogic" >
+        <property name="serializeQueryIterator" value="true" />
+        <property name="queryPlanner" ref="DocumentQueryPlanner" />
+        <property name="forceAllTypes" value="true" />
+        <property name="allowedTypes" value="datawave.data.type.NoOpType" />
+        <property name="queueCapacity" value="50000" />
+        <property name="numRangesToBuffer" value="50000" />
+        <property name="maxScannerBatchSize" value="50000" />
+        <!-- @TODO should we allow query metrics for a baseline ?
+        <property name="collectQueryMetrics" value="false" /> -->
+    </bean>
+
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
         <property name="collapseUids" value="false"/>
         <property name="indexFilteringClassNames">
@@ -326,6 +340,27 @@
         <property name="validateReferenceExpressions" value="true"/>
         <property name="validateQueryPropertyMarkers" value="true"/>
     </bean>
+    <bean id="DocumentQueryPlanner" scope="prototype" class="datawave.query.planner.document.batch.DocumentQueryPlanner" >
+        <property name="compressOptionMappings" value="true" />
+        <property name="queryModelProviderFactory" ref="queryModelProviderFactory" />
+        <property name="maxRangeWaitMillis" value="10" />
+        <property name="sourceLimit" value="1000" />
+        <!-- the first integer arg is to define the number of ranges per batch -->
+        <constructor-arg>
+            <value>2611</value>
+        </constructor-arg>
+        <!-- the second boolean arg is to turn on/off the limiting of the batch scanners -->
+        <constructor-arg>
+            <value>true</value>
+        </constructor-arg>
+        <!--<lookup-method name="getQueryModelProvider" bean="metadataHelperQueryModelProvider" />-->
+    </bean>
+
+    <bean id="queryModelProviderFactory" class="datawave.query.planner.QueryModelProvider.Factory" >
+        <lookup-method name="createQueryModelProvider" bean="metadataHelperQueryModelProvider" />
+    </bean>
+
+    <bean id="metadataHelperQueryModelProvider" scope="prototype" class="datawave.query.planner.MetadataHelperQueryModelProvider" />
 
     <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
     

@@ -1,5 +1,23 @@
 package datawave.query.tables;
 
+import com.google.common.base.Preconditions;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.mr.bulk.BulkInputFormat;
+import datawave.mr.bulk.MultiRfileInputformat;
+import datawave.mr.bulk.RfileScanner;
+import datawave.query.config.DocumentQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.tables.stats.ScanSessionStats;
+import datawave.query.util.QueryScannerHelper;
+import datawave.webservice.common.connection.WrappedConnector;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.*;
+import org.apache.accumulo.core.conf.ClientProperty;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -7,39 +25,17 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.mr.bulk.BulkInputFormat;
-import datawave.mr.bulk.MultiRfileInputformat;
-import datawave.mr.bulk.RfileScanner;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.tables.stats.ScanSessionStats;
-import datawave.query.util.QueryScannerHelper;
-import datawave.webservice.common.connection.WrappedConnector;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.conf.ClientProperty;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
-
-import com.google.common.base.Preconditions;
-
 public class ScannerFactory {
     
     protected int maxQueue = 1000;
     protected HashSet<ScannerBase> instances = new HashSet<>();
-    protected HashSet<ScannerSession> sessionInstances = new HashSet<>();
+    protected HashSet<BaseScannerSession<?>> sessionInstances = new HashSet<>();
     protected AccumuloClient cxn;
     protected boolean open = true;
     protected boolean accrueStats = false;
     protected Query settings;
-    protected ResourceQueue scanQueue = null;
+    protected ResourceQueue<AccumuloResource> scanQueue = null;
+    protected ResourceQueue<DocumentResource> documentScanQueue = null;
     ShardQueryConfiguration config = null;
     
     private static final Logger log = Logger.getLogger(ScannerFactory.class);
@@ -59,7 +55,8 @@ public class ScannerFactory {
             maxQueue = ((ShardQueryConfiguration) queryConfiguration).getMaxScannerBatchSize();
             this.settings = ((ShardQueryConfiguration) queryConfiguration).getQuery();
             try {
-                scanQueue = new ResourceQueue(((ShardQueryConfiguration) queryConfiguration).getNumQueryThreads(), this.cxn);
+                scanQueue = new ResourceQueue(((ShardQueryConfiguration) queryConfiguration).getNumQueryThreads(), this.cxn, new AccumuloResource.AccumuloResourceFactory(this.cxn));
+                documentScanQueue = new ResourceQueue(((ShardQueryConfiguration) queryConfiguration).getNumQueryThreads(), this.cxn, new DocumentResource.DocumentResourceFactory(this.cxn));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -74,7 +71,7 @@ public class ScannerFactory {
     public ScannerFactory(AccumuloClient client, int queueSize) {
         try {
             this.cxn = client;
-            scanQueue = new ResourceQueue(queueSize, client);
+            scanQueue = new ResourceQueue(queueSize, client,new AccumuloResource.AccumuloResourceFactory(client));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -111,7 +108,7 @@ public class ScannerFactory {
     public synchronized BatchScanner newScanner(String tableName, Set<Authorizations> auths, int threads, Query query, boolean reportErrors)
                     throws TableNotFoundException {
         if (open) {
-            BatchScanner bs = QueryScannerHelper.createBatchScanner(cxn, tableName, auths, threads, query, reportErrors);
+            BatchScanner bs = QueryScannerHelper.createBatchScanner(cxn, tableName, auths, threads, query, reportErrors, false);
             log.debug("Created scanner " + System.identityHashCode(bs));
             if (log.isTraceEnabled()) {
                 log.trace("Adding instance " + bs.hashCode());
@@ -122,7 +119,7 @@ public class ScannerFactory {
             throw new IllegalStateException("Factory has been locked. No new scanners can be created.");
         }
     }
-    
+
     public BatchScanner newScanner(String tableName, Set<Authorizations> auths, Query query) throws TableNotFoundException {
         return newScanner(tableName, auths, 1, query);
     }
@@ -149,7 +146,11 @@ public class ScannerFactory {
         
         return newLimitedScanner(BatchScannerSession.class, tableName, auths, settings).setThreads(scanQueue.getCapacity());
     }
-    
+
+    public synchronized DocumentBatchScannerSession newDocumentQueryScanner(DocumentQueryConfiguration config, final String tableName, final Set<Authorizations> auths, Query settings) throws Exception {
+
+        return newLimitedScanner(config, DocumentBatchScannerSession.class, tableName, auths, settings).setThreads(scanQueue.getCapacity());
+    }
     /**
      * Builds a new scanner session using a finalized table name and set of authorizations using the previously defined queue. Note that the number of entries
      * is hardcoded, below, to 1000, but can be changed
@@ -169,12 +170,12 @@ public class ScannerFactory {
      *             if there are issues
      *
      */
-    public synchronized <T extends ScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths,
+    public synchronized <T extends BaseScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths,
                     final Query settings) throws Exception {
         Preconditions.checkNotNull(scanQueue);
         Preconditions.checkNotNull(wrapper);
         Preconditions.checkArgument(open, "Factory has been locked. No New scanners can be created");
-        
+
         log.debug("Creating limited scanner whose max threads is is " + scanQueue.getCapacity() + " and max capacity is " + maxQueue);
         
         ScanSessionStats stats = null;
@@ -186,8 +187,10 @@ public class ScannerFactory {
         if (wrapper == ScannerSession.class) {
             session = (T) new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats);
         } else {
-            session = wrapper.getConstructor(ScannerSession.class).newInstance(
-                            new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats));
+
+                session = wrapper.getConstructor(ScannerSession.class).newInstance(
+                        new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats));
+
         }
         
         log.debug("Created session " + System.identityHashCode(session));
@@ -198,29 +201,69 @@ public class ScannerFactory {
         
         return session;
     }
-    
+
     /**
      * Builds a new scanner session using a finalized table name and set of authorizations using the previously defined queue. Note that the number of entries
      * is hardcoded, below, to 1000, but can be changed
      *
      * @param tableName
-     *            the table string
      * @param auths
-     *            a set of auths
-     * @param settings
-     *            query settings
+     * @return
+     * @throws Exception
+     */
+    public synchronized <T extends BaseScannerSession> T newLimitedScanner(DocumentQueryConfiguration config, Class<T> wrapper, final String tableName, final Set<Authorizations> auths,
+                                                                           final Query settings) throws Exception {
+        Preconditions.checkNotNull(scanQueue);
+        Preconditions.checkNotNull(wrapper);
+        Preconditions.checkArgument(open, "Factory has been locked. No New scanners can be created");
+
+        log.debug("Creating limited scanner whose max threads is is " + scanQueue.getCapacity() + " and max capacity is " + maxQueue);
+
+        ScanSessionStats stats = null;
+        if (accrueStats) {
+            stats = new ScanSessionStats();
+        }
+
+        T session = null;
+        if (wrapper == ScannerSession.class) {
+            session = (T) new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats);
+        } else {
+
+            session = wrapper.getConstructor(DocumentScannerSession.class).newInstance(
+                    new DocumentScannerSession(config, tableName, auths, documentScanQueue, maxQueue, settings).applyStats(stats));
+
+        }
+
+        log.debug("Created session " + System.identityHashCode(session));
+        if (log.isTraceEnabled()) {
+            log.trace("Adding instance " + session.hashCode());
+        }
+        sessionInstances.add(session);
+
+        return session;
+    }
+    
+    /**
+     * Builds a new scanner session using a finalized table name and set of authorizations using the previously defined queue. Note that the number of entries
+     * is hardcoded, below, to 1000, but can be changed
+     *
+     * @param configuration
+     *            Query configuration object.
      * @return a new scanner session
      * @throws Exception
      *             if there are issues
      */
-    public synchronized RangeStreamScanner newRangeScanner(final String tableName, final Set<Authorizations> auths, final Query settings) throws Exception {
-        return newRangeScanner(tableName, auths, settings, Integer.MAX_VALUE);
+    public RangeStreamScanner newRangeScanner(String tableName, final ShardQueryConfiguration configuration) throws Exception {
+        Class<? extends RangeStreamScanner> clazz = RangeStreamScanner.class;
+
+        return newLimitedScanner(clazz, tableName, configuration.getAuthorizations(), configuration.getQuery()).setShardsPerDayThreshold(configuration.getShardsPerDayThreshold()).setScannerFactory(this);
     }
-    
+
+
     public RangeStreamScanner newRangeScanner(String tableName, Set<Authorizations> auths, Query query, int shardsPerDayThreshold) throws Exception {
-        return newLimitedScanner(RangeStreamScanner.class, tableName, auths, settings).setShardsPerDayThreshold(shardsPerDayThreshold).setScannerFactory(this);
+        return newLimitedScanner(RangeStreamScanner.class, tableName, auths, query).setShardsPerDayThreshold(shardsPerDayThreshold).setScannerFactory(this);
     }
-    
+
     public synchronized boolean close(ScannerBase bs) {
         boolean removed = instances.remove(bs);
         if (removed) {
@@ -247,8 +290,8 @@ public class ScannerFactory {
      * 
      * @return a NEW collection of scanner session instances
      */
-    public synchronized Collection<ScannerSession> currentSessions() {
-        return new ArrayList<>(sessionInstances);
+    public synchronized Collection<BaseScannerSession<?>> currentSessions() {
+        return Collections.unmodifiableSet(sessionInstances);
     }
     
     public synchronized boolean lockdown() {
@@ -261,7 +304,10 @@ public class ScannerFactory {
         return open;
     }
     
-    public synchronized void close(ScannerSession bs) {
+    /**
+     * @param bs
+     */
+    public void close(BaseScannerSession bs) {
         try {
             log.debug("Closed session " + System.identityHashCode(bs));
             sessionInstances.remove(bs);

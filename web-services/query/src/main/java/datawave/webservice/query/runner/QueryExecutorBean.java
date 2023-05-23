@@ -67,6 +67,7 @@ import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.logic.deser.JsonResultsPage;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
@@ -1364,7 +1365,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
 
     }
-    
+
     /**
      *
      * @param uuid
@@ -2062,6 +2063,228 @@ public class QueryExecutorBean implements QueryExecutor {
             response = this.lookupUUIDUtil.lookupContentByNextResponse(criteria, response);
         }
         
+        return response;
+    }
+
+    @GET
+    @Path("/{id}/raw/next")
+    @Produces({ "application/json"})
+    @GZIP
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    @Timed(name = "dw.query.next", absolute = true)
+    public String directNext(@Required("id") @PathParam("id") String id) {
+        return this.directNext(id, true);
+    }
+
+
+    private String _directNext(RunningQuery query, String queryId, Collection<String> proxyServers) throws Exception {
+        // If we're tracing this query, then continue the trace for the next call.
+
+        ResultsPage resultList;
+        try {
+            resultList = query.next();
+        } catch (RejectedExecutionException e) {
+            // - race condition, query expired while user called next
+            throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_OR_SERVER_ERROR, e, MessageFormat.format("id = {0}", queryId));
+        }
+        query.getMetric().setProxyServers(proxyServers);
+
+        testForUncaughtException(query.getSettings(), resultList);
+
+        if (resultList.getResults().isEmpty()) {
+            NoResultsQueryException qe = new NoResultsQueryException(DatawaveErrorCode.NO_QUERY_RESULTS_FOUND, MessageFormat.format("{0}", queryId));
+            // response.addException(qe);
+            throw new NoResultsException(qe);
+        } else {
+            final JsonResultsPage page = new JsonResultsPage(resultList,query.getLastPageNumber());
+
+            final String response = JsonResultsPage.serialize(page);
+
+            return response;
+        }
+
+    }
+
+    private String directNext(final String id, boolean checkForContentLookup) {
+        // in case we don't make it to creating the response from the QueryLogic
+        String response="";
+
+        Collection<String> proxyServers = null;
+        Principal p = ctx.getCallerPrincipal();
+        String userid = p.getName();
+        if (p instanceof DatawavePrincipal) {
+            DatawavePrincipal dp = (DatawavePrincipal) p;
+            userid = dp.getShortName();
+            proxyServers = dp.getProxyServers();
+        }
+
+//        TraceScope span = null;
+        RunningQuery query = null;
+        Query contentLookupSettings = null;
+        try {
+
+            ctx.getUserTransaction().begin();
+
+            // Not calling getQueryById() here. We don't want to pull the persisted definition.
+            query = queryCache.get(id);
+
+            // Lock this so that this query cannot be used concurrently.
+            // The lock should be released at the end of the method call.
+            if (!queryCache.lock(id)) {
+                throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR);
+            }
+
+            // When we pulled the query from the cache, we told it not to allocate a connection.
+            // So if the connection is null here, then either the query wasn't in the cache
+            // at all, or it was but only because of a call to list. In either case, it's
+            // an error.
+            if (null == query || null == query.getClient()) {
+                // If the query just wasn't in the cache, then check the persister to see if the
+                // ID exists at all. If it doesn't, then we need to return a 404 rather than 412
+                // status code.
+                if (null == query) {
+                    List<Query> queries = persister.findById(id);
+                    if (queries == null || queries.size() != 1) {
+                        throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, MessageFormat.format("{0}", id));
+                    }
+                }
+
+                throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_OR_SERVER_ERROR, MessageFormat.format("id = {0}", id));
+            } else {
+                // Validate the query belongs to the caller
+                if (!query.getSettings().getOwner().equals(userid)) {
+                    throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", userid, query.getSettings()
+                            .getOwner()));
+                }
+
+                // Set the active call and get next
+                query.setActiveCall(true);
+
+                response = _directNext(query, id, proxyServers);
+
+                // Conditionally swap the standard response with content
+                if (checkForContentLookup) {
+                    final Query settings = query.getSettings();
+                    final Parameter contentLookupParam = settings.findParameter(LookupUUIDUtil.PARAM_CONTENT_LOOKUP);
+                    if ((null != contentLookupParam) && Boolean.parseBoolean(contentLookupParam.getParameterValue())) {
+                        contentLookupSettings = settings;
+                    }
+                }
+
+                // Unset the active call and return
+                query.setActiveCall(false);
+            }
+        } catch (NoResultsException e) {
+            if (query != null) {
+                query.setActiveCall(false);
+                if (query.getLogic().getCollectQueryMetrics()) {
+                    try {
+                        // do not set the error message here - zero results is not an error that should be added to metrics
+                        metrics.updateMetric(query.getMetric());
+                    } catch (Exception e1) {
+                        log.error(e1.getMessage());
+                    }
+                }
+            }
+            try {
+                ctx.getUserTransaction().setRollbackOnly();
+            } catch (Exception ex) {
+                log.error("Error marking transaction for roll back", ex);
+            }
+            close(id); // close the query, as there were no results and we are done here
+            closedQueryCache.add(id); // remember that we auto-closed this query
+            throw e;
+        } catch (DatawaveWebApplicationException e) {
+            if (query != null) {
+                query.setActiveCall(false);
+                if (query.getLogic().getCollectQueryMetrics()) {
+                    query.getMetric().setError(e);
+                    try {
+                        metrics.updateMetric(query.getMetric());
+                    } catch (Exception e1) {
+                        log.error("Error updating query metrics", e1);
+                    }
+                }
+            }
+            try {
+                ctx.getUserTransaction().setRollbackOnly();
+            } catch (Exception ex) {
+                log.error("Error marking transaction for roll back", ex);
+            }
+            if (e.getCause() instanceof NoResultsException) {
+                close(id);
+                closedQueryCache.add(id); // remember that we auto-closed this query
+            }
+            throw e;
+        } catch (Exception e) {
+            log.error("Query Failed", e);
+            if (query != null) {
+                query.setActiveCall(false);
+                if (query.getLogic().getCollectQueryMetrics() == true) {
+                    query.getMetric().setError(e);
+                    try {
+                        metrics.updateMetric(query.getMetric());
+                    } catch (Exception e1) {
+                        log.error("Error updating query metrics", e1);
+                    }
+                }
+            }
+            try {
+                ctx.getUserTransaction().setRollbackOnly();
+            } catch (Exception ex) {
+                log.error("Error marking transaction for roll back", ex);
+            }
+
+            QueryException qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, MessageFormat.format("query id: {0}", id));
+            if (e.getCause() instanceof NoResultsException) {
+                log.debug("Got a nested NoResultsException", e);
+                close(id);
+                closedQueryCache.add(id); // remember that we auto-closed this query
+            } else {
+                try {
+                    close(id);
+                } catch (Exception ce) {
+                    log.error(qe, ce);
+                }
+                log.error(qe, e);
+                //response.addException(qe.getBottomQueryException());
+            }
+            int statusCode = qe.getBottomQueryException().getStatusCode();
+            throw new DatawaveWebApplicationException(qe, null, statusCode);
+        } finally {
+            queryCache.unlock(id);
+            try {
+                if (ctx.getUserTransaction().getStatus() == Status.STATUS_MARKED_ROLLBACK) {
+                    ctx.getUserTransaction().rollback();
+                } else if (ctx.getUserTransaction().getStatus() != Status.STATUS_NO_TRANSACTION) {
+                    // no reason to commit if transaction not started, ie Query not found exception
+                    ctx.getUserTransaction().commit();
+                }
+            } catch (IllegalStateException e) {
+                log.error("Error committing transaction: thread not associated with transaction", e);
+            } catch (RollbackException e) {
+                log.error("Error committing transaction: marked for rollback due to error", e);
+            } catch (HeuristicMixedException e) {
+                log.error("Error committing transaction: partial commit of resources", e);
+            } catch (HeuristicRollbackException e) {
+                log.error("Error committing transaction: resources rolled back transaction", e);
+            } catch (Exception e) {
+                log.error("Error committing transaction: Unknown error", e);
+            } finally {
+                // Stop timing on this trace, if any
+//               if (span != null) {
+//                    span.close();
+//                }
+            }
+        }
+
+        // If applicable, perform a paged content lookup (i.e., not streamed), replacing its results in the returned response
+        /*
+        if (null != contentLookupSettings) {
+            final NextContentCriteria criteria = new NextContentCriteria(id, contentLookupSettings);
+            response = this.lookupUUIDUtil.lookupContentByNextResponse(criteria, response);
+        }*/
+
         return response;
     }
     

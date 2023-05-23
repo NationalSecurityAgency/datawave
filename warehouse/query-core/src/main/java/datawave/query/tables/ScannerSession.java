@@ -1,129 +1,38 @@
 package datawave.query.tables;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import datawave.query.tables.AccumuloResource.ResourceFactory;
-import datawave.query.tables.stats.ScanSessionStats;
-import datawave.query.tables.stats.StatsListener;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 import datawave.webservice.query.Query;
-
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Queues;
-import com.google.common.util.concurrent.AbstractExecutionThreadService;
-import com.google.common.util.concurrent.MoreExecutors;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This will handles running a scan against a set of ranges. The actual scan is performed in a separate thread which places the results in a result queue. The
  * result queue is polled in the actual next() and hasNext() calls. Note that the uncaughtExceptionHandler from the Query is used to pass exceptions up which
  * will also fail the overall query if something happens. If this is not desired then a local handler should be set.
  */
-public class ScannerSession extends AbstractExecutionThreadService implements Iterator<Entry<Key,Value>> {
-    
-    /**
-     * last seen key, used for moving across the sliding window of ranges.
-     */
-    protected Key lastSeenKey;
-    
-    /**
-     * Stack of ranges for us to progress through within this scanner queue.
-     */
-    protected ConcurrentLinkedQueue<Range> ranges;
-    
-    /**
-     * Result queue, providing us objects
-     */
-    protected ArrayBlockingQueue<Entry<Key,Value>> resultQueue;
-    
-    /**
-     * Current entry to return. this will be popped from the result queue.
-     */
-    protected Entry<Key,Value> currentEntry;
-    
-    /**
-     * Delegates scanners to us, blocking if none are available or used by other sources.
-     */
-    protected ResourceQueue sessionDelegator;
-    
-    /**
-     * Last range in our sorted list of ranges.
-     */
-    protected Range lastRange;
-    
-    /**
-     * Current range that we are using.
-     */
-    protected Range currentRange;
-    
-    protected volatile boolean forceClose = false;
-    
-    /**
-     * 
-     * 
-     * Scanner specific configuration items.
-     * 
-     * 
-     */
-    
-    /**
-     * Table to which this scanner will connect.
-     */
-    protected String tableName;
-    
-    /**
-     * Authorization set
-     */
-    protected Set<Authorizations> auths;
-    
-    /**
-     * Max results to return at any given time.
-     */
-    protected int maxResults;
-    
-    protected Class<? extends AccumuloResource> delegatedResourceInitializer;
-    
-    /**
-     * Scanner options.
-     */
-    protected SessionOptions options = null;
-    
-    protected Query settings;
-    
+public class ScannerSession extends  BaseScannerSession<Entry<Key,Value>> {
+
     private static final Logger log = Logger.getLogger(ScannerSession.class);
-    
-    protected ScanSessionStats stats = null;
-    
-    protected ExecutorService statsListener = null;
-    
-    protected boolean accrueStats;
-    
-    protected AccumuloResource delegatedResource = null;
-    
-    protected boolean isFair = true;
-    
-    protected QueryUncaughtExceptionHandler uncaughtExceptionHandler = null;
+
+
+    protected Key lastSeenKey;
+
     
     /**
      * Constructor
@@ -145,110 +54,16 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     
     public ScannerSession(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, SessionOptions options,
                     Collection<Range> ranges) {
-        
-        Preconditions.checkNotNull(options);
-        Preconditions.checkNotNull(delegator);
-        
-        this.options = options;
-        
-        // build a stack of ranges
-        this.ranges = new ConcurrentLinkedQueue<>();
-        
-        this.tableName = tableName;
-        this.auths = auths;
-        
-        if (null != ranges && !ranges.isEmpty()) {
-            List<Range> rangeList = Lists.newArrayList(ranges);
-            Collections.sort(rangeList);
-            
-            this.ranges.addAll(ranges);
-            lastRange = Iterables.getLast(rangeList);
-            
-        }
-        
-        resultQueue = Queues.newArrayBlockingQueue(maxResults);
-        
-        sessionDelegator = delegator;
-        
-        currentEntry = null;
-        
-        this.maxResults = maxResults;
-        
-        this.settings = settings;
-        
-        if (this.settings != null) {
-            this.uncaughtExceptionHandler = this.settings.getUncaughtExceptionHandler();
-        }
-        
-        // ensure we have an exception handler
-        if (this.uncaughtExceptionHandler == null) {
-            this.uncaughtExceptionHandler = new QueryUncaughtExceptionHandler();
-        }
-        
-        delegatedResourceInitializer = RunningResource.class;
-        
+
+        super(tableName,auths,delegator,maxResults,settings,options,ranges);
     }
-    
-    /**
-     * overridden in order to set the UncaughtExceptionHandler on the Thread that is created to run the ScannerSession
-     */
+
     @Override
-    protected Executor executor() {
-        return command -> {
-            String name = serviceName();
-            Preconditions.checkNotNull(name);
-            Preconditions.checkNotNull(command);
-            Thread result = MoreExecutors.platformThreadFactory().newThread(command);
-            try {
-                result.setName(name);
-                result.setUncaughtExceptionHandler(uncaughtExceptionHandler);
-            } catch (SecurityException e) {
-                // OK if we can't set the name in this environment.
-            }
-            result.start();
-        };
+    protected Class<? extends Resource<Entry<Key, Value>>> getRunningResourceClass() {
+        return RunningResource.class;
     }
-    
-    /**
-     * Sets the ranges for the given scannersession.
-     * 
-     * @param ranges
-     *            the ranges
-     * @return the current scannersession
-     */
-    public ScannerSession setRanges(Collection<Range> ranges) {
-        Preconditions.checkNotNull(ranges);
-        // ensure that we are not already running
-        Preconditions.checkArgument(!isRunning());
-        List<Range> rangeList = Lists.newArrayList(ranges);
-        Collections.sort(rangeList);
-        this.ranges.clear();
-        this.ranges.addAll(rangeList);
-        lastRange = Iterables.getLast(rangeList);
-        return this;
-        
-    }
-    
-    /**
-     * Sets the ranges for the given scannersession.
-     *
-     * @param ranges
-     *            the ranges
-     * @return the current scannersession
-     */
-    public ScannerSession setRanges(Iterable<Range> ranges) {
-        Preconditions.checkNotNull(ranges);
-        // ensure that we are not already running
-        Preconditions.checkArgument(!isRunning());
-        List<Range> rangeList = Lists.newArrayList(ranges);
-        Collections.sort(rangeList);
-        this.ranges.clear();
-        this.ranges.addAll(rangeList);
-        lastRange = Iterables.getLast(rangeList);
-        return this;
-        
-    }
-    
+
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ScannerSession) {
@@ -302,23 +117,27 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         }
         
         // isFlushNeeded is only in the case of when we are finished
-        boolean isFlushNeeded = false;
-        log.trace("hasNext" + isRunning());
-        
+        boolean isFlushNeeded = flushNeeded();
+        if ( log.isTraceEnabled())
+            log.trace("hasNext" + isRunning());
+
         try {
             
             if (null != stats)
                 stats.getTimer(TIMERS.HASNEXT).resume();
-            
-            while (null == currentEntry && (isRunning() || !resultQueue.isEmpty() || ((isFlushNeeded = flushNeeded()) == true))) {
-                
-                log.trace("hasNext" + isRunning());
+
+            long max_backoff=100;
+            long backoff =getPollTime();
+            while (null == currentEntry && (isRunning() || !resultQueue.isEmpty() || isFlushNeeded)) {
+
+                if ( log.isTraceEnabled())
+                    log.trace("hasNext" + isRunning());
                 
                 try {
                     /**
                      * Poll for one second. We're in a do/while loop that will break iff we are no longer running or there is a current entry available.
                      */
-                    currentEntry = resultQueue.poll(getPollTime(), TimeUnit.MILLISECONDS);
+                    currentEntry = resultQueue.poll(backoff > max_backoff ? max_backoff : backoff, TimeUnit.MILLISECONDS);
                     
                 } catch (InterruptedException e) {
                     log.trace("hasNext" + isRunning() + " interrupted");
@@ -327,11 +146,16 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 }
                 // if we pulled no data and we are not running, and there is no data in the queue
                 // we can flush if needed and retry
-                
-                log.trace("hasNext" + isRunning() + " " + flushNeeded());
-                if (currentEntry == null && (!isRunning() && resultQueue.isEmpty()))
-                    isFlushNeeded = flushNeeded();
+                if ( log.isTraceEnabled())
+                 log.trace("hasNext " + isRunning() + " " + flushNeeded());
+
+                if (currentEntry == null){
+                    if (!isRunning() && resultQueue.isEmpty())
+                        isFlushNeeded = flushNeeded();
+                    backoff++;
+                }
             }
+
         } finally {
             if (null != stats) {
                 try {
@@ -345,63 +169,12 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 throw new RuntimeException(uncaughtExceptionHandler.getThrowable());
             }
         }
-        
+
         return (null != currentEntry);
     }
     
-    protected long getPollTime() {
-        return 1;
-    }
-    
-    /**
-     * Place all timers in a suspended state.
-     */
-    protected void initializeTimers() {
-        stats.getTimer(TIMERS.HASNEXT).start();
-        stats.getTimer(TIMERS.HASNEXT).suspend();
-        
-        stats.getTimer(TIMERS.SCANNER_ITERATE).start();
-        stats.getTimer(TIMERS.SCANNER_ITERATE).suspend();
-        
-        stats.getTimer(TIMERS.SCANNER_START).start();
-        stats.getTimer(TIMERS.SCANNER_START).suspend();
-        
-    }
-    
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.util.Iterator#next()
-     * 
-     * Note that this method needs to check the uncaught exception handler and propogate any set throwables.
-     */
-    @Override
-    public Entry<Key,Value> next() {
-        try {
-            Entry<Key,Value> retVal = currentEntry;
-            currentEntry = null;
-            return retVal;
-        } finally {
-            if (uncaughtExceptionHandler.getThrowable() != null) {
-                log.error("Exception discovered on next call", uncaughtExceptionHandler.getThrowable());
-                throw new RuntimeException(uncaughtExceptionHandler.getThrowable());
-            }
-        }
-    }
-    
-    /**
-     * Override this for your specific implementation.
-     * 
-     * @param lastKey
-     *            the last key
-     * @param previousRange
-     *            the previous range
-     * @return a new range
-     */
-    public Range buildNextRange(final Key lastKey, final Range previousRange) {
-        return new Range(lastKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME), true, previousRange.getEndKey(), previousRange.isEndKeyInclusive());
-    }
-    
+
+
     /**
      * set the resource class.
      * 
@@ -413,12 +186,12 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     }
     
     /**
-     * FindTop -- Follows the logic outlined in the comments, below. Effectively, we continue
-     * 
+     *
      * @throws Exception
      *             if there are issues
      * 
      */
+    @Override
     protected void findTop() throws Exception {
         if (ranges.isEmpty() && lastSeenKey == null) {
             
@@ -467,7 +240,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 log.trace(lastSeenKey + ", using current range of " + currentRange);
             }
             
-            delegatedResource = ResourceFactory.initializeResource(delegatedResourceInitializer, delegatedResource, tableName, auths, currentRange).setOptions(
+            delegatedResource = ResourceFactory.initializeResource(delegatedResourceInitializer, (AccumuloResource) delegatedResource, tableName, auths, currentRange).setOptions(
                             options);
             
             Iterator<Entry<Key,Value>> iter = delegatedResource.iterator();
@@ -533,7 +306,8 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             
         }
     }
-    
+
+    @Override
     protected int scannerInvariant(final Iterator<Entry<Key,Value>> iter) {
         int retrievalCount = 0;
         
@@ -551,7 +325,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             boolean accepted = false;
             while (!accepted) {
                 try {
-                    accepted = resultQueue.offer(myEntry, 200, TimeUnit.MILLISECONDS);
+                    accepted = resultQueue.offer(myEntry, 10, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     // keep trying
                 }
@@ -564,118 +338,19 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         
         return retrievalCount;
     }
-    
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.util.Iterator#remove()
-     */
+
     @Override
-    public void remove() {
-        // do nothing.
-        
-    }
-    
-    /*
-     * (non-Javadoc)
-     * 
-     * @see com.google.common.util.concurrent.AbstractExecutionThreadService#run()
-     * 
-     * Note that this method must set exceptions on the uncaughtExceptionHandler, otherwise any failures will be completed ignored/dropped.
-     */
-    @Override
-    protected void run() throws Exception {
-        try {
-            while (isRunning()) {
-                
-                findTop();
-            }
-            
-            flush();
-        } catch (Exception e) {
-            uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), e);
-            throw new RuntimeException(e);
-        }
-    }
-    
-    /**
-     * Set the scanner options
-     * 
-     * @param options
-     *            options to set
-     * @return scanner options
-     */
-    public ScannerSession setOptions(SessionOptions options) {
-        Preconditions.checkNotNull(options);
-        this.options = options;
-        return this;
-        
-    }
-    
-    /**
-     * Return scanner options.
-     * 
-     * @return scanner options
-     */
-    public SessionOptions getOptions() {
-        return this.options;
-    }
-    
-    protected void waitUntilCapacity() throws InterruptedException {
-        while (resultQueue.remainingCapacity() > 0) {
-            Thread.sleep(500);
-        }
-    }
-    
-    protected Range getCurrentRange() {
-        return currentRange;
-    }
-    
-    protected void flush() {
-        
-    }
-    
-    protected boolean flushNeeded() {
-        return false;
-    }
-    
-    /**
-     * Get last Range.
-     * 
-     * @return last Range
-     */
-    protected Range getLastRange() {
-        return lastRange;
-    }
-    
-    /**
-     * Get last key.
-     * 
-     * @return last key
-     */
     protected Key getLastKey() {
         return lastSeenKey;
     }
-    
-    public ScanSessionStats getStatistics() {
-        return stats;
-    }
-    
+
+
     public void setDelegatedInitializer(Class<? extends AccumuloResource> delegatedResourceInitializer) {
         this.delegatedResourceInitializer = delegatedResourceInitializer;
     }
-    
-    public ScannerSession applyStats(ScanSessionStats stats) {
-        if (null != stats) {
-            Preconditions.checkArgument(this.stats == null);
-            this.stats = stats;
-            statsListener = Executors.newFixedThreadPool(1);
-            addListener(new StatsListener(stats, statsListener), statsListener);
-        }
-        
-        return this;
-    }
-    
+
+
+    @Override
     public void close() {
         forceClose = true;
         stopAsync();
@@ -690,15 +365,6 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             }
         }
     }
-    
-    public void setFairness(boolean fairness) {
-        isFair = fairness;
-        
-    }
-    
-    public void setMaxResults(int maxResults) {
-        this.maxResults = maxResults;
-        
-    }
+
     
 }
