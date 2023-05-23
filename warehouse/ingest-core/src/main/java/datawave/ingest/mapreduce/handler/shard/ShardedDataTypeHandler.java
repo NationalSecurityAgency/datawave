@@ -1169,20 +1169,18 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             uidBuilder.setIGNORE(false);
             uidBuilder.setCOUNT(-1);
             uidBuilder.addUID(uid);
-            return uidBuilder.build();
-        }
-
-        //  if uid creation is disabled
-        if (!getShardIndexCreateUids()) {
+        } else if (!getShardIndexCreateUids()) {
+            //  uid not created
             uidBuilder.setIGNORE(true);
             uidBuilder.setCOUNT(1);
             return uidBuilder.build();
+        } else {
+            //  uid created
+            uidBuilder.setIGNORE(false);
+            uidBuilder.setCOUNT(1);
+            uidBuilder.addUID(uid);
         }
 
-        //  else create a uid
-        uidBuilder.setIGNORE(false);
-        uidBuilder.setCOUNT(1);
-        uidBuilder.addUID(uid);
         return uidBuilder.build();
     }
     
