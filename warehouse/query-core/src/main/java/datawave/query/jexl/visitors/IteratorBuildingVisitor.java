@@ -730,7 +730,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             return true;
         }
 
-        //  only aggregate documents the provided field is in the set of fields to aggregate
+        //  only aggregate documents if the provided field is in the set of fields to aggregate
         return fieldsToAggregate != null && this.fieldsToAggregate.contains(field);
     }
     
