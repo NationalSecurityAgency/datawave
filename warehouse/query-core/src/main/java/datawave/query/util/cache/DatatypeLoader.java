@@ -1,5 +1,6 @@
 package datawave.query.util.cache;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
@@ -106,7 +107,7 @@ public class DatatypeLoader extends AccumuloLoader<String,Multimap<String,Type<?
                         entryCache.put("DATA_TYPES", dataNormalizer);
                     }
                     
-                    dataNormalizer.put(type, LcNoDiacriticsType.class.newInstance());
+                    dataNormalizer.put(type, LcNoDiacriticsType.class.getDeclaredConstructor().newInstance());
                     
                     if (!dataTypeFilters.isEmpty() && !dataTypeFilters.contains(type)) {
                         if (log.isTraceEnabled())
@@ -153,7 +154,8 @@ public class DatatypeLoader extends AccumuloLoader<String,Multimap<String,Type<?
                     
                     return true;
                     
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
+                         NoSuchMethodException | InvocationTargetException e) {
                     log.error("Unable to find normalizer on class path: " + colq.substring(idx + 1), e);
                 }
                 
