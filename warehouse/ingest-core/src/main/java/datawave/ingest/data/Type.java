@@ -1,5 +1,6 @@
 package datawave.ingest.data;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 
 import datawave.ingest.data.config.DataTypeHelper;
@@ -121,8 +122,8 @@ public class Type implements Comparable<Type> {
         IngestHelperInterface helper = null;
         if (helperClass != null) {
             try {
-                helper = helperClass.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
+                helper = helperClass.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                 // ignore for now
             }
         }
