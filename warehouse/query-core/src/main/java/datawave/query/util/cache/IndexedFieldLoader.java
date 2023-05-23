@@ -1,5 +1,6 @@
 package datawave.query.util.cache;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
@@ -142,7 +143,7 @@ public class IndexedFieldLoader extends AccumuloLoader<String,Set<String>> {
                     @SuppressWarnings("unchecked")
                     Class<? extends Type<?>> clazz = (Class<? extends Type<?>>) Class.forName(colq.substring(idx + 1));
                     
-                    Type<?> normalizer = clazz.newInstance();
+                    Type<?> normalizer = clazz.getDeclaredConstructor().newInstance();
                     
                     typedNormalizers.add(type);
                     
@@ -166,7 +167,8 @@ public class IndexedFieldLoader extends AccumuloLoader<String,Set<String>> {
                     
                     return true;
                     
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
+                         NoSuchMethodException | InvocationTargetException e) {
                     log.error("Unable to find normalizer on class path: " + colq.substring(idx + 1), e);
                 }
                 

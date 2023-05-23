@@ -1,6 +1,7 @@
 package datawave.core.iterators;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -103,7 +104,7 @@ public class EnrichingIterator implements SortedKeyValueIterator<Key,Value>, Opt
                     continue;
                 }
                 
-                DataEnricher enricher = (DataEnricher) clz.newInstance();
+                DataEnricher enricher = (DataEnricher) clz.getDeclaredConstructor().newInstance();
                 try {
                     enricher.init(source.deepCopy(env), enricherOptions, env);
                 } catch (ParseException e) {
@@ -115,7 +116,7 @@ public class EnrichingIterator implements SortedKeyValueIterator<Key,Value>, Opt
             } catch (ClassNotFoundException e) {
                 log.error("ClassNotFoundException when trying to instantiate the enrichers.", e);
                 log.error("Ignoring provided enricher class name: " + className);
-            } catch (InstantiationException e) {
+            } catch (InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                 log.error("InstantiationException when trying to instantiate the enrichers.", e);
                 log.error("Ignoring provided enricher class name: " + className);
             } catch (IllegalAccessException e) {
