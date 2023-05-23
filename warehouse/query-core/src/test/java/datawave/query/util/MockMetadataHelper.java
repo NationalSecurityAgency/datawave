@@ -24,6 +24,7 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collection;
@@ -96,8 +97,9 @@ public class MockMetadataHelper extends MetadataHelper {
     public void addField(String field, String dt) {
         getMetadata().allFields.add(field);
         try {
-            this.dataTypes.put(field, Class.forName(dt).asSubclass(Type.class).newInstance());
-        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+            this.dataTypes.put(field, Class.forName(dt).asSubclass(Type.class).getDeclaredConstructor().newInstance());
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException |
+                 InvocationTargetException e) {
             log.error(e);
         }
     }
