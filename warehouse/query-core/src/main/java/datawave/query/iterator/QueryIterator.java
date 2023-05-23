@@ -1689,7 +1689,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 if (excerptTransform == null) {
                     try {
                         excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
-                                        excerptIterator.newInstance());
+                                        excerptIterator.getDeclaredConstructor().newInstance());
                     } catch (Exception e) {
                         throw new RuntimeException("Could not create excerpt transform", e);
                     }

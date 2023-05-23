@@ -47,6 +47,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -107,7 +108,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private ExecutorService executor;
     private JobObservable jobObservable;
     
-    public static void main(String[] args) throws AccumuloSecurityException, IOException {
+    public static void main(String[] args) throws AccumuloSecurityException, IOException, NoSuchMethodException {
         
         URI seqFileHdfs = null;
         URI srcHdfs = null;
@@ -290,10 +291,11 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         for (String jobObserverClass : classes) {
                             log.info("Adding job observer: " + jobObserverClass);
                             Class clazz = Class.forName(jobObserverClass);
-                            Observer o = (Observer) clazz.newInstance();
+                            Observer o = (Observer) clazz.getDeclaredConstructor().newInstance();
                             jobObservers.add(o);
                         }
-                    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
+                             InvocationTargetException e) {
                         log.error("cannot instantiate job observer class '" + jobObserverClasses + "'", e);
                         System.exit(-2);
                     } catch (ClassCastException e) {
