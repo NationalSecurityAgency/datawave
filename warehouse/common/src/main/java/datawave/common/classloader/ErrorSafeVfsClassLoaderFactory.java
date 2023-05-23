@@ -14,7 +14,7 @@ public class ErrorSafeVfsClassLoaderFactory implements ContextClassLoaderFactory
     }
 
     /**
-     * TODO: Update this to setEnvironment(ContextClassLoaderEnvironment env) once accumulo PR #3400 is merged
+     * TODO: Update this to init(ContextClassLoaderEnvironment env) once accumulo PR #3400 is merged
      */
     public void setConfiguration(final AccumuloConfiguration conf) {
         delegate = new DefaultContextClassLoaderFactory(conf);
