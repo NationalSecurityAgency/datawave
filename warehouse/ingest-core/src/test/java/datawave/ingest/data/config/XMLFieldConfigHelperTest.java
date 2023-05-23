@@ -82,7 +82,7 @@ public class XMLFieldConfigHelperTest {
     }
     
     private String readFile(String path) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         
         InputStream istream = getClass().getClassLoader().getResourceAsStream(path);
         try (Scanner scanner = new Scanner(istream)) {
