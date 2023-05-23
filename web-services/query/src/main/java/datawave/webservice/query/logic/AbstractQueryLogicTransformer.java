@@ -1,6 +1,5 @@
 package datawave.webservice.query.logic;
 
-import com.google.common.base.Joiner;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.result.BaseQueryResponse;
 
@@ -11,7 +10,7 @@ public abstract class AbstractQueryLogicTransformer<I,O> implements QueryLogicTr
     public static final String PARTIAL_RESULTS = "Partial/incomplete page of results returned probably due to memory constraints";
     
     public abstract BaseQueryResponse createResponse(List<Object> resultList);
-
+    
     protected long queryExecutionForCurrentPageStartTime;
     
     protected ResponseEnricher enricher;
@@ -39,7 +38,5 @@ public abstract class AbstractQueryLogicTransformer<I,O> implements QueryLogicTr
     @Override
     public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
         this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
-
     }
-
 }

@@ -83,7 +83,7 @@ public class TLD {
         final int startFn = nulls.get(0) + 1, stopFn = cf.length();
         
         nulls = lastInstancesOf(0, cq, 2);
-        final int startFv = 0, stopFv = nulls.get(nulls.size()-1);
+        final int startFv = 0, stopFv = nulls.get(1);
         
         byte[] fnFv = new byte[stopFn - startFn + 1 + stopFv - startFv];
         

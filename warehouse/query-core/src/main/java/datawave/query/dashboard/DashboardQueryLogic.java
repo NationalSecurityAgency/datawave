@@ -74,7 +74,7 @@ public class DashboardQueryLogic extends ShardQueryLogic implements QueryLogicTr
             return response;
         }
     }
-
+    
     @Override
     public Object transform(Object input) {
         return input;

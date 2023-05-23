@@ -1366,7 +1366,6 @@ public class QueryExecutorBean implements QueryExecutor {
 
     }
 
-
     /**
      *
      * @param uuid
@@ -2066,7 +2065,6 @@ public class QueryExecutorBean implements QueryExecutor {
         
         return response;
     }
-
 
     @GET
     @Path("/{id}/raw/next")
