@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>5.5.0-SNAPSHOT</version>
+        <version>5.6.0-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
     <packaging>pom</packaging>
@@ -29,7 +29,7 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-balancers</artifactId>
+            <artifactId>datawave-accumulo-extensions</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
@@ -573,7 +573,7 @@
                                             <include>org.apache.commons:commons-collections4</include>
                                             <include>org.apache.commons:commons-jexl</include>
                                             <include>${project.groupId}:datawave-core</include>
-                                            <include>${project.groupId}:datawave-balancers</include>
+                                            <include>${project.groupId}:datawave-accumulo-extensions</include>
                                             <include>${project.groupId}:datawave-ingest-csv</include>
                                             <include>${project.groupId}:datawave-ingest-core</include>
                                             <include>${project.groupId}:datawave-ingest-configuration</include>
