@@ -17,7 +17,7 @@ public class LocalityGroupPartitionerTest {
         String tableName = "tableX";
         conf.set(tableName + "." + LocalityGroupPartitioner.COLUMN_FAMILIES, "CITY,STATE");
         
-        LocalityGroupPartitioner partitioner = LocalityGroupPartitioner.class.newInstance();
+        LocalityGroupPartitioner partitioner = LocalityGroupPartitioner.class.getDeclaredConstructor().newInstance();
         partitioner.setConf(conf);
         partitioner.configureWithPrefix(tableName);
         
