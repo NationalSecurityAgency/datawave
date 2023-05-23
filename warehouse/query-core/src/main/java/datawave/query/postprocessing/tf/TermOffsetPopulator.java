@@ -30,6 +30,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -323,8 +324,8 @@ public class TermOffsetPopulator {
                 // If we don't have an instance of the dataType, make one and put it
                 // in the cache
                 try {
-                    dataTypeInstance = dataTypeClass.newInstance();
-                } catch (InstantiationException e) {
+                    dataTypeInstance = dataTypeClass.getDeclaredConstructor().newInstance();
+                } catch (InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                     log.error("Could not instantiate dataType class: " + dataTypeClass);
                     continue;
                 } catch (IllegalAccessException e) {
