@@ -235,7 +235,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         return false;
     }
     
-    public static String[] getCommonalityAndGroupingContext(String in) {
+    static String[] getCommonalityAndGroupingContext(String in) {
         String[] splits = StringUtils.split(in, '.');
         if (splits.length >= 3) {
             // return the first group and last group (a.k.a the instance in the first group)

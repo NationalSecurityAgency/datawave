@@ -14,7 +14,6 @@ import java.util.zip.InflaterInputStream;
 import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.function.deserializer.DocumentJsonDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.function.deserializer.StringDeserializer;
 import datawave.query.function.deserializer.WritableDocumentDeserializer;
 import datawave.query.function.serializer.JsonDocumentSerializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
@@ -74,8 +73,6 @@ public class DocumentSerialization {
             return new DocumentJsonDeserializer();
         } else if (ReturnType.writable.equals(rt)) {
             return new WritableDocumentDeserializer();
-        } else if (ReturnType.tostring.equals(rt)) {
-            return new StringDeserializer();
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.DESERIALIZER_CREATE_ERROR);
             throw new NoSuchDeserializerException(qe);
