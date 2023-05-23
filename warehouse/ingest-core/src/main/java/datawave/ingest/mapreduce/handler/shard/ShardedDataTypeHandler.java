@@ -1173,7 +1173,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             //  uid not created
             uidBuilder.setIGNORE(true);
             uidBuilder.setCOUNT(1);
-            return uidBuilder.build();
         } else {
             //  uid created
             uidBuilder.setIGNORE(false);
