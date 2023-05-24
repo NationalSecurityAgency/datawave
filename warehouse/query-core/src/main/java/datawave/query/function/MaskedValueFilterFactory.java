@@ -1,5 +1,6 @@
 package datawave.query.function;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 
 import org.apache.commons.vfs2.impl.VFSClassLoader;
@@ -50,8 +51,9 @@ public class MaskedValueFilterFactory {
             if (className != null) {
                 log.warn("Attempting to instantiate masked value filter from -D{}={}", MASKED_VALUE_FILTER_CLASSNAME, className);
                 try {
-                    instance = (MaskedValueFilterInterface) Class.forName(className).newInstance();
-                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                    instance = (MaskedValueFilterInterface) Class.forName(className).getDeclaredConstructor().newInstance();
+                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
+                         NoSuchMethodException | InvocationTargetException e) {
                     log.warn("Failed to create MaskedValueFilterInterface from {}", e);
                     throw new RuntimeException("Could not create MaskedValueFilterInterface object");
                 }

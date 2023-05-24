@@ -8,6 +8,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * Description: Identifies an applied rule.
  * 
@@ -96,14 +98,14 @@ public abstract class AppliedRule implements FilterRule {
     public FilterRule deepCopy(AgeOffPeriod period) {
         AppliedRule newFilter;
         try {
-            newFilter = (AppliedRule) super.getClass().newInstance();
+            newFilter = (AppliedRule) super.getClass().getDeclaredConstructor().newInstance();
             newFilter.iterEnv = iterEnv;
             newFilter.deepCopyInit(currentOptions, this);
             // for some reason this needs to come after deep copy init
             newFilter.ageOffPeriod = new AgeOffPeriod(period.getCutOffMilliseconds());
             log.trace("Age off is " + newFilter.ageOffPeriod.getCutOffMilliseconds());
             return newFilter;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             log.error(e);
         }
         return null;
