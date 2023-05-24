@@ -1277,7 +1277,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (this.useAllowListedFields) {
             // make sure we include any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
-                this.useAllowListedFields.addAll(getMatchingFieldList());
+                this.allowListedFields.addAll(getMatchingFieldList());
             }
             projection.setIncludes(this.allowListedFields);
             return projection;
