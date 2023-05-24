@@ -20,8 +20,6 @@ public class WSAuthorizationsUtil extends AuthorizationsUtil {
      * @return The merge principal
      */
     public static DatawavePrincipal mergePrincipals(DatawavePrincipal... principals) {
-        return datawave.microservice.authorization.util.AuthorizationsUtil.mergeProxiedUserDetails(
-                DatawavePrincipal::new,
-                principals);
+        return datawave.microservice.authorization.util.AuthorizationsUtil.mergeProxiedUserDetails(principals);
     }
 }

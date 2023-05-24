@@ -193,5 +193,10 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
     public static DatawavePrincipal anonymousPrincipal() {
         return new DatawavePrincipal("ANONYMOUS");
     }
-    
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T extends ProxiedUserDetails> T newInstance(List<DatawaveUser> proxiedUsers) {
+        return (T) new DatawavePrincipal(proxiedUsers);
+    }
 }
