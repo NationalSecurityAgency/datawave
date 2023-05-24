@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+http://www.springframework.org/schema/context
+http://www.springframework.org/schema/context/spring-context-4.0.xsd
+http://www.springframework.org/schema/util
+http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
     <!--
        This spring context demonstrates setting up edge definitions for the various data types that
@@ -28,7 +34,7 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
           scope="prototype">
         <property name="edgeAttribute2" value="NAME"/>
         <property name="edgeAttribute3" value="ID"/>
-        <property name="activityDateField" value="PREMIERED"/>
+        <property name="activityDateField" value = "PREMIERED"/>
         <property name="edges">
             <list>
 
@@ -49,212 +55,177 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                                a TV show cast will not exceed 35 members. Any in excess of 35 will not be in the graph
                              -->
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_0.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_0.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_1.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_1.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_2.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_2.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_3.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_3.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_4.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_4.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_5.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_5.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_6.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_6.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_7.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_7.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_8.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_8.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_9.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_9.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_10.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_10.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_11.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_11.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_12.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_12.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_13.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_13.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_14.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_14.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_15.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_15.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_16.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_16.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_17.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_17.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_18.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_18.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_19.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_19.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_20.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_20.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_21.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_21.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_22.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_22.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_23.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_23.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_24.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_24.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_25.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_25.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_26.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_26.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_27.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_27.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_28.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_28.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_29.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_29.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_30.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_30.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_31.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_31.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_32.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_32.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_33.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_33.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_34.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_34.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -294,212 +265,177 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                             <property name="group2">
                                 <list>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_0.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_0.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_1.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_1.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_2.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_2.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_3.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_3.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_4.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_4.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_5.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_5.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_6.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_6.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_7.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_7.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_8.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_8.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_9.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_9.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_10.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_10.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_11.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_11.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_12.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_12.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_13.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_13.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_14.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_14.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_15.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_15.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_16.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_16.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_17.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_17.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_18.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_18.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_19.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_19.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_20.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_20.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_21.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_21.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_22.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_22.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_23.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_23.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_24.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_24.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_25.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_25.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_26.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_26.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_27.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_27.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_28.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_28.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_29.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_29.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_30.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_30.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_31.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_31.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_32.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_32.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_33.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_33.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector"
-                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_34.PERSON_0.NAME_0"/>
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_34.PERSON_0.NAME_0"/>
                                         <property name="relationship" value="PERSON"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
@@ -517,14 +453,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_0.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_0.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_0.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_0.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -537,14 +471,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_1.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_1.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_1.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_1.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -557,14 +489,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_2.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_2.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_2.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_2.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -577,14 +507,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_3.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_3.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_3.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_3.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -597,14 +525,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_4.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_4.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_4.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_4.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -617,14 +543,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_5.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_5.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_5.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_5.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -637,14 +561,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_6.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_6.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_6.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_6.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -657,14 +579,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_7.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_7.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_7.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_7.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -677,14 +597,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_8.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_8.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_8.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_8.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -697,14 +615,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_9.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_9.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_9.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_9.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -717,14 +633,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_10.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_10.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_10.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_10.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -737,14 +651,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_11.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_11.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_11.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_11.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -757,14 +669,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_12.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_12.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_12.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_12.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -777,14 +687,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_13.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_13.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_13.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_13.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -797,14 +705,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_14.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_14.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_14.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_14.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -817,14 +723,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_15.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_15.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_15.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_15.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -837,14 +741,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_16.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_16.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_16.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_16.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -857,14 +759,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_17.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_17.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_17.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_17.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -877,14 +777,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_18.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_18.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_18.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_18.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -897,14 +795,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_19.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_19.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_19.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_19.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -917,14 +813,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_20.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_20.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_20.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_20.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -937,14 +831,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_21.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_21.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_21.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_21.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -957,14 +849,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_22.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_22.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_22.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_22.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -977,14 +867,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_23.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_23.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_23.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_23.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -997,14 +885,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_24.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_24.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_24.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_24.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -1017,14 +903,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_25.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_25.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_25.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_25.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -1037,14 +921,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_26.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_26.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_26.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_26.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -1057,14 +939,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_27.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_27.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_27.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_27.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -1077,14 +957,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_28.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_28.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_28.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_28.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -1097,14 +975,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_29.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_29.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_29.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_29.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -1117,14 +993,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_30.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_30.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_30.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_30.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -1137,14 +1011,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_31.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_31.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_31.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_31.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -1157,14 +1029,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_32.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_32.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_32.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_32.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -1177,14 +1047,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_33.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_33.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_33.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_33.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -1197,14 +1065,12 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_34.PERSON_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_34.PERSON_0.NAME_0"/>
                                 <property name="relationship" value="PERSON"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <property name="selector"
-                                          value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_34.CHARACTER_0.NAME_0"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_34.CHARACTER_0.NAME_0"/>
                                 <property name="relationship" value="CHARACTER"/>
                                 <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
@@ -1217,11 +1083,10 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
 
     <!-- 'wikipedia' edge definitions -->
 
-    <bean id="wikipedia" class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper"
-          scope="prototype">
+    <bean id="wikipedia" class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper" scope="prototype">
         <property name="edgeAttribute2" value="REVISION_MODEL"/>
         <property name="edgeAttribute3" value="REVISION_TEXT_SPACE"/>
-        <property name="activityDateField" value="null"/>
+        <property name="activityDateField" value ="null"/>
         <property name="edges">
             <list>
                 <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
@@ -1355,16 +1220,15 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
 
     </bean>
 
-    <bean id="default.protobufedge.table.disallowlist.values"
-          class="org.springframework.beans.factory.config.SetFactoryBean">
+    <bean id="default.protobufedge.table.disallowlist.values" class="org.springframework.beans.factory.config.SetFactoryBean">
         <property name="targetSetClass" value="java.util.HashSet"/>
         <property name="sourceSet">
             <set>
                 <value>.</value>
                 <value>..</value>
                 <value>,</value>
-                <value></value>
-                <value></value>
+                <value> </value>
+                <value>  </value>
                 <value>;</value>
                 <value>:</value>
                 <value>"</value>
@@ -1372,8 +1236,8 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
         </property>
     </bean>
 
-    <!-- Define the set of valid 'relationship' values -->
-    <bean id="protobufedge.table.relationships" class="org.springframework.beans.factory.config.SetFactoryBean">
+   <!-- Define the set of valid 'relationship' values -->
+   <bean id="protobufedge.table.relationships" class="org.springframework.beans.factory.config.SetFactoryBean">
         <property name="targetSetClass" value="java.util.HashSet"/>
         <property name="sourceSet">
             <set>

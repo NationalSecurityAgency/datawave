@@ -11,10 +11,8 @@
     <property>
         <name>data.name</name>
         <value>mycsv</value>
-        <description>This is the name of the datatype, which distinguishes it from other types for the purposes of
-            ingest
-            processing and perhaps even for dataflow/transport concerns. As such, this can be used to denote a subtype
-            of
+        <description>This is the name of the datatype, which distinguishes it from other types for the purposes of ingest
+            processing and perhaps even for dataflow/transport concerns. As such, this can be used to denote a subtype of
             some common data format, like CSV files for example, which could originate from any number of sources
         </description>
     </property>
@@ -61,8 +59,8 @@
         <name>mycsv.ingest.fatal.errors</name>
         <value>MISSING_DATA_ERROR,INVALID_DATA_ERROR</value>
         <description>This is the list of comma delimited additional RawDataError enumerations that we consider fatal.
-            MISSING_DATA_ERROR: Missing required fields
-            INVALID_DATA_ERROR: Found a value in a range of invalid values
+               MISSING_DATA_ERROR: Missing required fields
+               INVALID_DATA_ERROR: Found a value in a range of invalid values
         </description>
     </property>
 
@@ -73,13 +71,13 @@
 
     <property>
         <name>mycsv.ingest.ignorable.fatal.errors</name>
-        <!--    <value>MISSING_DATA_ERROR,INVALID_DATA_ERROR</value> -->
-        <!--
-             Note: The sample file, ingest-csv/src/test/resources/input/my.csv, is designed to generate
-             a 'MISSING_DATA_ERROR' in order to demonstrate population of the error* data tables. Note that the 3rd record
-             in that file is *missing* the SECURITY_MARKING field in the header, which is detected and flagged by the configured
-             IngestPolicyEnforcer implementation
-        -->
+<!--    <value>MISSING_DATA_ERROR,INVALID_DATA_ERROR</value> -->
+<!--  
+     Note: The sample file, ingest-csv/src/test/resources/input/my.csv, is designed to generate
+     a 'MISSING_DATA_ERROR' in order to demonstrate population of the error* data tables. Note that the 3rd record
+     in that file is *missing* the SECURITY_MARKING field in the header, which is detected and flagged by the configured 
+     IngestPolicyEnforcer implementation
+-->
         <value>INVALID_DATA_ERROR</value>
         <description>This is the list of comma delimited RawDataError values that result in dropping the event
             instead of redirecting to the error* tables. Used by the IgnorableFatalErrorHelper.
@@ -95,8 +93,7 @@
     <property>
         <name>mycsv.data.separator</name>
         <value>,</value>
-        <description>This is the separator to use for delimited text, and between configuration file parameters with
-            multiple values.
+        <description>This is the separator to use for delimited text, and between configuration file parameters with multiple values.
         </description>
     </property>
 
@@ -114,35 +111,32 @@
 
     <property>
         <name>mycsv.data.header</name>
-        <value>
-            PROCESSING_DATE,EVENT_ID,LANGUAGE,ORIGINAL_SIZE,PROCESSED_SIZE,FILE_TYPE,MD5,SHA1,SHA256,EVENT_DATE,SECURITY_MARKING
-        </value>
+        <value>PROCESSING_DATE,EVENT_ID,LANGUAGE,ORIGINAL_SIZE,PROCESSED_SIZE,FILE_TYPE,MD5,SHA1,SHA256,EVENT_DATE,SECURITY_MARKING</value>
         <description>These are the fields in the raw data (delimited by separator).</description>
     </property>
-
-    <!--     <property> -->
-    <!--         <name>mycsv.data.category.marking.default</name> -->
-    <!--         <value>PRIVATE</value> -->
-    <!--         <description>Default ColumnVisibility to be applied to fields/records if none provided in the data</description> -->
-    <!--     </property> -->
-
+    
+<!--     <property> -->
+<!--         <name>mycsv.data.category.marking.default</name> -->
+<!--         <value>PRIVATE</value> -->
+<!--         <description>Default ColumnVisibility to be applied to fields/records if none provided in the data</description> -->
+<!--     </property> -->
+        
     <property>
         <name>mycsv.data.category.security.field.names</name>
         <value>SECURITY_MARKING</value>
         <description>These are the fields in the raw data that contain the event's security markings.
-            Item N in this comma-delimited list must have a corresponding item N in the
-            *.data.category.security.field.domains list
+        Item N in this comma-delimited list must have a corresponding item N in the *.data.category.security.field.domains list
         </description>
     </property>
-
+    
     <property>
         <name>mycsv.data.category.security.field.domains</name>
         <value>columnVisibility</value>
-        <description>Marking domain N in this comma-delimited list corresponds to the security marking
-            field N configured in the *.data.category.security.field.names list
+        <description>Marking domain N in this comma-delimited list corresponds to the security marking 
+           field N configured in the *.data.category.security.field.names list 
         </description>
     </property>
-
+    
     <property>
         <name>mycsv.data.process.extra.fields</name>
         <value>true</value>
@@ -150,11 +144,11 @@
     </property>
 
     <property>
-        <name>mycsv.data.field.drop</name>
+        <name>mycsv.data.field.drop</name> 
         <value></value>
     </property>
-
-    <!-- default is to treat all fields as multivalued, this is the disallowlist -->
+ 
+	<!-- default is to treat all fields as multivalued, this is the disallowlist -->
     <property>
         <name>mycsv.data.fields.multivalued.disallowlist</name>
         <value>RAW_TEXT_BLOB</value>
@@ -203,35 +197,27 @@
     <property>
         <name>mycsv.data.category.index.reverse.disallowlist</name>
         <value>FIELDNAME1_WE_DONT_WANT_INDEXED,SECURITY_MARKING,EVENT_DATE,PROCESSING_DATE</value>
-        <description>These are the fields to *not* reverse index. Contains the same fields from *.index.disallowlist and
-            date, time, numeric, or hash-based fields
-        </description>
+        <description>These are the fields to *not* reverse index. Contains the same fields from *.index.disallowlist and date, time, numeric, or hash-based fields</description>
     </property>
 
     <property>
         <name>mycsv.data.category.index.tokenize.disallowlist</name>
-        <value>
-            FIELDNAME1_WE_DONT_WANT_INDEXED,FIELDNAME1_NOT_TO_TOKENIZE,UUID,PARENT_UUID,SECURITY_MARKING,EVENT_DATE,PROCESSING_DATE,EVENT_ID
-        </value>
+        <value>FIELDNAME1_WE_DONT_WANT_INDEXED,FIELDNAME1_NOT_TO_TOKENIZE,UUID,PARENT_UUID,SECURITY_MARKING,EVENT_DATE,PROCESSING_DATE,EVENT_ID</value>
         <description>These are the fields to *not* tokenize and index.</description>
     </property>
-
+    
     <property>
         <name>mycsv.data.category.index.reverse.tokenize.disallowlist</name>
-        <value>
-            FIELDNAME1_WE_DONT_WANT_INDEXED,FIELDNAME1_NOT_TO_TOKENIZE,UUID,PARENT_UUID,SECURITY_MARKING,EVENT_DATE,PROCESSING_DATE,EVENT_ID
-        </value>
-        <description>These are the fields to *not* tokenize and index. Contains the same fields from
-            *.index.disallowlist and date, time, numeric, or hash-based fields
-        </description>
+        <value>FIELDNAME1_WE_DONT_WANT_INDEXED,FIELDNAME1_NOT_TO_TOKENIZE,UUID,PARENT_UUID,SECURITY_MARKING,EVENT_DATE,PROCESSING_DATE,EVENT_ID</value>
+        <description>These are the fields to *not* tokenize and index. Contains the same fields from *.index.disallowlist and date, time, numeric, or hash-based fields</description>
     </property>
-
+    
     <property>
         <name>mycsv.stopword.list.file</name>
         <value></value>
         <description>The stopword file to use. Default stop words will be used if none specified here</description>
     </property>
-
+    
     <property>
         <name>mycsv.data.category.token.fieldname.designator.enabled</name>
         <value>false</value>
@@ -279,9 +265,7 @@
     <property>
         <name>mycsv.tokenizer.time.warn.threshold.msec</name>
         <value>150000</value>
-        <description>If a single document's tokenization exceeds this threshold, a warning will be logged (2.5*60*1000 =
-            150000 msec, 2.5 minutes)
-        </description>
+        <description>If a single document's tokenization exceeds this threshold, a warning will be logged (2.5*60*1000 = 150000 msec, 2.5 minutes)</description>
     </property>
 
     <property>
@@ -314,12 +298,12 @@
         <description>Default type</description>
     </property>
 
-    <property>
+   <property>
         <name>mycsv.data.default.type.class</name>
         <value>datawave.data.type.LcNoDiacriticsType</value>
         <description>Default type</description>
     </property>
-
+    
     <property>
         <name>mycsv.data.category.date</name>
         <value>EVENT_DATE</value>
@@ -334,21 +318,21 @@
         <name>mycsv.data.id.parser.EVENT_ID.1</name>
         <value>datawave.ingest.metadata.id.DateIdParser("....\\.[a-zA-Z]([0-9]{7}).*", "yyyyDDD")</value>
     </property>
-
+    
     <property>
         <name>mycsv.data.type.field.name</name>
         <value>DATA_TYPE</value>
         <description>where to look for a data type override value</description>
     </property>
-
+    
     <property>
         <name>mycsv.MY_DATE.data.field.type.class</name>
         <value>datawave.data.type.DateType</value>
     </property>
-
+    
     <property>
         <name>mycsv.date.index.type.to.field.map</name>
         <value>MY_DATE_TYPE=MY_DATE</value>
     </property>
-
+    
 </configuration>
