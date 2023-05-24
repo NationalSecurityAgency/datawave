@@ -215,11 +215,12 @@ public class GeoSortedQueryDataTest {
     }
     
     public static void resolveEnvVariables(Configuration conf) {
+        StringBuilder sb = new StringBuilder();
         Pattern p = Pattern.compile("\\$\\{(\\w+)\\}|\\$(\\w+)");
         for (Map.Entry<String,String> entry : conf) {
             boolean reset = false;
             Matcher m = p.matcher(entry.getKey());
-            StringBuffer sb = new StringBuffer();
+            
             while (m.find()) {
                 String envVarName = null == m.group(1) ? m.group(2) : m.group(1);
                 String envVarValue = System.getProperty(envVarName);
@@ -230,7 +231,7 @@ public class GeoSortedQueryDataTest {
             String key = sb.toString();
             
             m = p.matcher(entry.getValue());
-            sb = new StringBuffer();
+            sb.setLength(0);
             while (m.find()) {
                 String envVarName = null == m.group(1) ? m.group(2) : m.group(1);
                 String envVarValue = System.getProperty(envVarName);
@@ -239,6 +240,7 @@ public class GeoSortedQueryDataTest {
             }
             m.appendTail(sb);
             String value = sb.toString();
+            sb.setLength(0);
             
             if (reset) {
                 conf.unset(entry.getKey());

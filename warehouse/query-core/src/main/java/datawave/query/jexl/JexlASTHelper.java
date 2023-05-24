@@ -772,6 +772,12 @@ public class JexlASTHelper {
         }
     }
     
+    /**
+     * Iterate through provided node and its children, then return a list of nodes that are an instance of ASTEQNode.
+     *
+     * @param node
+     * @return List of ASTEQNode nodes.
+     */
     public static List<ASTEQNode> getEQNodes(JexlNode node) {
         List<ASTEQNode> eqNodes = Lists.newArrayList();
         
@@ -780,6 +786,12 @@ public class JexlASTHelper {
         return eqNodes;
     }
     
+    /**
+     * Check if the provided node is an instance of ASTEQNode. If yes, then add the node to the provided list.
+     *
+     * @param node
+     * @param eqNodes
+     */
     private static void getEQNodes(JexlNode node, List<ASTEQNode> eqNodes) {
         if (node instanceof ASTEQNode) {
             eqNodes.add((ASTEQNode) node);
@@ -790,6 +802,12 @@ public class JexlASTHelper {
         }
     }
     
+    /**
+     * Iterate through provided node and its children, then return a list of nodes that are an instance of ASTERNode.
+     *
+     * @param node
+     * @return List of ASTERNode nodes.
+     */
     public static List<ASTERNode> getERNodes(JexlNode node) {
         List<ASTERNode> erNodes = Lists.newArrayList();
         
@@ -798,12 +816,55 @@ public class JexlASTHelper {
         return erNodes;
     }
     
+    /**
+     * Check if the provided node is an instance of ASTERNode. If yes, then add the node to the provided list.
+     *
+     * @param node
+     * @param erNodes
+     */
     private static void getERNodes(JexlNode node, List<ASTERNode> erNodes) {
         if (node instanceof ASTERNode) {
             erNodes.add((ASTERNode) node);
         } else {
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 getERNodes(node.jjtGetChild(i), erNodes);
+            }
+        }
+    }
+    
+    /**
+     * Iterate through provided node and its children, then return a list of nodes matching the provided class. The provided class must extend JexlNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.JexlNode
+     *
+     * @param node
+     * @param typeKey
+     * @return List of nodes matching provided class.
+     */
+    public static <T extends JexlNode> List<T> getNodesOfType(JexlNode node, Class<T> typeKey) {
+        List<T> nodes = Lists.newArrayList();
+        
+        getNodesOfType(node, nodes, typeKey);
+        
+        return nodes;
+    }
+    
+    /**
+     * Check if the provided node is an instance of the provided class. If yes, then add the node to the provided list. The provided class must extend JexlNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.JexlNode
+     *
+     * @param node
+     * @param nodes
+     * @param typeKey
+     */
+    @SuppressWarnings("unchecked")
+    private static <T extends JexlNode> void getNodesOfType(JexlNode node, List<T> nodes, Class<T> typeKey) {
+        if (typeKey.isInstance(node)) {
+            nodes.add((T) node);
+        } else {
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                getNodesOfType(node.jjtGetChild(i), nodes, typeKey);
             }
         }
     }
@@ -1207,7 +1268,15 @@ public class JexlASTHelper {
         return range;
     }
     
-    public static boolean isWithinOr(JexlNode node) {
+    /**
+     * Iterate through provided node's ancestors and return true if any are an instance of ASTOrNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.ASTOrNode
+     *
+     * @param node
+     * @return True if any ancestor is an instance of ASTOrNode. If not, then False.
+     */
+    public static boolean isDescendantOfOr(JexlNode node) {
         if (null != node && null != node.jjtGetParent()) {
             JexlNode parent = node.jjtGetParent();
             
@@ -1215,35 +1284,100 @@ public class JexlASTHelper {
                 return true;
             }
             
-            return isWithinOr(parent);
+            return isDescendantOfOr(parent);
         }
         
         return false;
     }
     
-    public static boolean isWithinNot(JexlNode node) {
-        while (null != node && null != node.jjtGetParent()) {
+    /**
+     * Iterate through provided node's ancestors and return true if any are an instance of ASTNotNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.ASTNotNode
+     *
+     * @param node
+     * @return True if any ancestor is an instance of ASTNotNode. If not, then False.
+     */
+    public static boolean isDescendantOfNot(JexlNode node) {
+        if (null != node && null != node.jjtGetParent()) {
             JexlNode parent = node.jjtGetParent();
             
             if (parent instanceof ASTNotNode) {
                 return true;
             }
             
-            return isWithinNot(parent);
+            return isDescendantOfNot(parent);
         }
         
         return false;
     }
     
-    public static boolean isWithinAnd(JexlNode node) {
-        while (null != node && null != node.jjtGetParent()) {
+    /**
+     * Iterate through provided node's ancestors and return true if any are an instance of ASTAndNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.ASTAndNode
+     *
+     * @param node
+     * @return True if any ancestor is an instance of ASTAndNode. If not, then False.
+     */
+    public static boolean isDescendantOfAnd(JexlNode node) {
+        if (null != node && null != node.jjtGetParent()) {
             JexlNode parent = node.jjtGetParent();
             
             if (parent instanceof ASTAndNode) {
                 return true;
             }
             
-            return isWithinAnd(parent);
+            return isDescendantOfAnd(parent);
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Iterate through provided node's ancestors and return true if any are an instance of the provided class. The provided class must extend JexlNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.JexlNode
+     *
+     * @param node
+     * @param typeKey
+     * @return True if any ancestor is an instance of the provided class. If not, then False.
+     */
+    public static <T extends JexlNode> boolean isDescendantOfNodeType(JexlNode node, Class<T> typeKey) {
+        if (null != node && null != node.jjtGetParent()) {
+            JexlNode parent = node.jjtGetParent();
+            
+            if (typeKey.isInstance(parent)) {
+                return true;
+            }
+            
+            return isDescendantOfNodeType(parent, typeKey);
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Iterate through all descendants of the provided node and return true if any are an instance of the provided class. The provided class must extend
+     * JexlNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.JexlNode
+     *
+     * @param node
+     * @param typeKey
+     * @return True if any descendant is an instance of the provided class. If not, then False.
+     */
+    public static <T extends JexlNode> boolean descendantsContainNodeType(JexlNode node, Class<T> typeKey) {
+        if (node != null) {
+            int numChildren = node.jjtGetNumChildren();
+            
+            for (int i = 0; i < numChildren; i++) {
+                JexlNode child = node.jjtGetChild(i);
+                
+                if (typeKey.isInstance(child) || descendantsContainNodeType(child, typeKey)) {
+                    return true;
+                }
+            }
         }
         
         return false;

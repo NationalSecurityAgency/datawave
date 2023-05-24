@@ -29,7 +29,7 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-balancers</artifactId>
+            <artifactId>datawave-accumulo-extensions</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
@@ -574,7 +574,7 @@
                                             <include>org.apache.commons:commons-jexl</include>
                                             <include>org.apache.curator:curator-client</include>
                                             <include>${project.groupId}:datawave-core</include>
-                                            <include>${project.groupId}:datawave-balancers</include>
+                                            <include>${project.groupId}:datawave-accumulo-extensions</include>
                                             <include>${project.groupId}:datawave-ingest-csv</include>
                                             <include>${project.groupId}:datawave-ingest-core</include>
                                             <include>${project.groupId}:datawave-ingest-configuration</include>
