@@ -9,6 +9,8 @@ import org.junit.Test;
 
 import org.apache.accumulo.core.data.Key;
 
+import java.lang.reflect.InvocationTargetException;
+
 public class RowHashingPartitionerTest {
     
     /*
@@ -53,12 +55,12 @@ public class RowHashingPartitionerTest {
     }
     
     @Test
-    public void testConfigureByTable() throws IllegalAccessException, InstantiationException {
+    public void testConfigureByTable() throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         Configuration conf = new Configuration();
         String tableName = "tableX";
         conf.setInt(tableName + "." + RowHashingPartitioner.COLUMN_FAMILIES, 6);
         
-        RowHashingPartitioner partitioner = RowHashingPartitioner.class.newInstance();
+        RowHashingPartitioner partitioner = RowHashingPartitioner.class.getDeclaredConstructor().newInstance();
         partitioner.setConf(conf);
         partitioner.configureWithPrefix(tableName);
         
