@@ -248,6 +248,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean termFrequenciesRequired = false;
     // Limit count of returned values for arbitrary fields.
     private Set<String> limitFields = Collections.emptySet();
+    private Set<String> matchingFieldSets = Collections.emptySet();
     /**
      * should limit fields be applied early
      */
@@ -523,6 +524,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setQueryTermFrequencyFields(null == other.getQueryTermFrequencyFields() ? null : Sets.newHashSet(other.getQueryTermFrequencyFields()));
         this.setTermFrequenciesRequired(other.isTermFrequenciesRequired());
         this.setLimitFields(null == other.getLimitFields() ? null : Sets.newHashSet(other.getLimitFields()));
+        this.setMatchingFieldSets(null == other.getMatchingFieldSets() ? null : Sets.newHashSet(other.getMatchingFieldSets()));
         this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
         this.setLimitFieldsField(other.getLimitFieldsField());
         this.setHitList(other.isHitList());
@@ -1554,7 +1556,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public String getLimitFieldsAsString() {
         return StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
     }
-
+    
+    public Set<String> getMatchingFieldSets() {
+        return matchingFieldSets;
+    }
+    
+    public void setMatchingFieldSets(Set<String> matchingFieldSets) {
+        this.matchingFieldSets = matchingFieldSets;
+    }
+    
+    public String getMatchingFieldSetsAsString() {
+        return StringUtils.join(this.getMatchingFieldSets(), Constants.PARAM_VALUE_SEP);
+    }
+    
     public boolean isLimitFieldsPreQueryEvaluation() {
         return limitFieldsPreQueryEvaluation;
     }

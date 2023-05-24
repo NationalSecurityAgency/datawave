@@ -1,7 +1,7 @@
 package datawave.ingest.util;
 
 import datawave.ingest.mapreduce.job.TableSplitsCache;
-import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
@@ -29,7 +29,7 @@ public class GenerateSplitsFile {
         String configDirectory = null;
         String configSuffix;
         try {
-            cl = new BasicParser().parse(options, args);
+            cl = new DefaultParser().parse(options, args);
             if (cl.hasOption("cd")) {
                 configDirectory = cl.getOptionValue("cd");
                 log.info("Set configDirectory to " + configDirectory);

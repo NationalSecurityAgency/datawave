@@ -961,10 +961,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // note that we have already reduced the document to those attributes to keep. This will reduce the attributes further
             // base on those fields we are limiting.
             if (gatherTimingDetails()) {
-                documents = Iterators.transform(documents,
-                        new EvaluationTrackingFunction<>(QuerySpan.Stage.LimitFields, trackingSpan, new LimitFields(this.getLimitFieldsMap())));
+                documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.LimitFields, trackingSpan, getLimitFields()));
             } else {
-                documents = Iterators.transform(documents, new LimitFields(this.getLimitFieldsMap()));
+                documents = Iterators.transform(documents, getLimitFields());
             }
         }
 
@@ -1132,7 +1131,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
         return jexlEvaluationFunction;
     }
-
+    
+    protected LimitFields getLimitFields() {
+        return new LimitFields(this.getLimitFieldsMap(), this.getMatchingFieldSets());
+    }
+    
     @Override
     public JexlArithmetic getArithmetic() {
         JexlArithmetic myArithmetic = this.arithmetic;
@@ -1270,11 +1273,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     protected DocumentProjection getProjection() {
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
-
+        
         if (this.useAllowListedFields) {
+            // make sure we include any fields being matched in the limit fields mechanism
+            if (!this.matchingFieldSets.isEmpty()) {
+                this.useAllowListedFields.addAll(getMatchingFieldList());
+            }
             projection.setIncludes(this.allowListedFields);
             return projection;
-        } else if (this.useDisallowListedFields) {
+        } else if (this.disallowListedFields) {
+            // make sure we are not excluding any fields being matched in the limit fields mechanism
+            if (!this.matchingFieldSets.isEmpty()) {
+                this.disallowListedFields.removeAll(getMatchingFieldList());
+            }
             projection.setExcludes(this.disallowListedFields);
             return projection;
         } else {
@@ -1295,6 +1306,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     }
                 }
             }
+        }
+        // make sure we include any fields being matched in the limit fields mechanism
+        if (!this.matchingFieldSets.isEmpty()) {
+            composites.removeAll(getMatchingFieldList());
         }
         projection.setExcludes(composites);
         return projection;
@@ -1664,7 +1679,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 if (excerptTransform == null) {
                     try {
                         excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
-                                excerptIterator.newInstance());
+                                        excerptIterator.getDeclaredConstructor().newInstance());
                     } catch (Exception e) {
                         throw new RuntimeException("Could not create excerpt transform", e);
                     }

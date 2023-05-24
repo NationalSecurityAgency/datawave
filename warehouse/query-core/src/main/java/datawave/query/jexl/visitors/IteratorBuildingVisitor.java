@@ -99,6 +99,7 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
@@ -578,8 +579,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
         IndexIteratorBuilder builder = null;
         try {
-            builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
         builder.setQueryId(queryId);
@@ -897,8 +898,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected NestedIterator<Key> createExceededCheck(String identifier, LiteralRange<?> range, JexlNode rootNode) {
         IndexIteratorBuilder builder = null;
         try {
-            builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
 
