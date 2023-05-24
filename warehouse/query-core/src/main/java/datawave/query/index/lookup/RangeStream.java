@@ -379,7 +379,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         } else if (builder.size() == 0) {
             return ScannerStream.unindexed(node);
         } else {
-            Intersection build = builder.build(executor);
+            Intersection build = builder.build(executor, config);
             switch (build.context()) {
                 case ABSENT:
                     return ScannerStream.noData(build.currentNode(), build);
@@ -462,8 +462,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             
             if (limitScanners) {
                 // Setup the CreateUidsIterator
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                                config.getShardsPerDayThreshold());
+                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config);
                 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
@@ -471,8 +470,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 
             } else {
                 // Setup so this is a pass-through
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                                config.getShardsPerDayThreshold());
+                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config);
                 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(false).toString());

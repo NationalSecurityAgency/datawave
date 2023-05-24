@@ -62,6 +62,7 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.service.ServiceConfiguration;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -2516,5 +2517,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setVisitorFunctionMaxWeight(long visitorFunctionMaxWeight) {
         getConfig().setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
+    }
+
+
+    // ServiceConfiguration methods
+    public ServiceConfiguration getServiceConfiguration(){
+        return getConfig().getServiceConfiguration();
+    }
+
+    public void setServiceConfiguration(ServiceConfiguration config){
+        getConfig().setServiceConfiguration(config);
     }
 }

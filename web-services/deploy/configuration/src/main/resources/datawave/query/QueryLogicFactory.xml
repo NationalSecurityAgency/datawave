@@ -187,6 +187,33 @@
         <property name="userOperations" ref="MyRemoteUserOps" />
     </bean>
 
+    <bean id="IndexingConfiguration" class="datawave.webservice.query.service.config.IndexingConfiguration">
+        <property name="enableIndexInfoUidToDayIntersectionBypass" value="false" />
+        <property name="enableRangeScannerLimitDays" value="true" />
+    </bean>
+
+    <bean id="DocQueryServiceConfig" class="datawave.webservice.query.service.ServiceConfiguration">
+        <property name="indexingConfiguration" ref="IndexingConfiguration" />
+    </bean>
+
+    <bean id="IndexingConfigurationv2" class="datawave.webservice.query.service.config.IndexingConfiguration">
+        <property name="enableIndexInfoUidToDayIntersectionBypass" value="true" />
+        <property name="enableRangeScannerLimitDays" value="true" />
+    </bean>
+
+    <bean id="DocQueryServiceConfigv2" class="datawave.webservice.query.service.ServiceConfiguration">
+        <property name="indexingConfiguration" ref="IndexingConfigurationv2" />
+    </bean>
+
+    <bean id="DocumentIndexConfigv1" scope="prototype"  class="datawave.query.config.DocumentLookupProfile">
+        <property name="serviceConfiguration" ref="DocQueryServiceConfig" />
+    </bean>
+
+    <bean id="DocumentIndexConfigv2" scope="prototype"  class="datawave.query.config.DocumentLookupProfile">
+        <property name="serviceConfiguration" ref="DocQueryServiceConfigv2" />
+    </bean>
+
+
     <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.tables.ShardQueryLogic" abstract="true">
         <property name="accumuloPassword" value="${accumulo.user.password}" />
         <property name="tableName" value="${shard.table.name}" />
@@ -362,7 +389,7 @@
         <property name="pageByteTrigger" value="${query.page.byte.trigger}" />
 
     </bean>
-    
+
     <!-- Query Logic which performs a count on fieldIndex keys -->
     <bean id="FieldIndexCountQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.shard.FieldIndexCountQueryLogic">
         <property name="tableName" value="${shard.table.name}" />
@@ -501,8 +528,24 @@
         <property name="auditType" value="NONE" />
     </bean>
 
+
     <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
         <property name="logicDescription" value="Query the sharded event/document schema, leveraging the global index tables as needed" />
+
+    </bean>
+
+    <bean id="EventQueryV0.1" scope="prototype"  parent="BaseEventQuery">
+        <property name="logicDescription" value="Query the sharded event/document schema, leveraging the global index tables as needed" />
+        <property name="configuredProfiles" >
+            <map>
+                <entry key="documentindexconfigv1" value-ref="DocumentIndexConfigv1" />
+                <entry key="documentindexconfigv2" value-ref="DocumentIndexConfigv2" />
+            </map>
+        </property>
+        <property name="numRangesToBuffer" value="50000" />
+        <property name="maxScannerBatchSize" value="50000" />
+        <property name="collectQueryMetrics" value="false" />
+        <property name="rangeBufferPollMillis" value="25" />
     </bean>
 
     <bean id="CountQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.CountingShardQueryLogic">

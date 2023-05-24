@@ -20,8 +20,6 @@ import datawave.query.util.MockMetadataHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -71,9 +69,9 @@ public class RangeStreamTestX {
     // (A && B) || (C && D)
     // (A || B) && (C || D)
     
-    private static InMemoryInstance instance = new InMemoryInstance(RangeStreamTestX.class.toString());
-    private static AccumuloClient client;
-    private ShardQueryConfiguration config;
+    static InMemoryInstance instance = new InMemoryInstance(RangeStreamTestX.class.toString());
+    static AccumuloClient client;
+    ShardQueryConfiguration config;
     
     @BeforeClass
     public static void setupAccumulo() throws Exception {
@@ -3286,6 +3284,7 @@ public class RangeStreamTestX {
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);
         config.setShardsPerDayThreshold(2);
+        config.getServiceConfiguration().getIndexingConfiguration().setEnableIndexInfoUidToDayIntersectionBypass(true);
         
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());

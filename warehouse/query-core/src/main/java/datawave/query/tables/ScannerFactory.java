@@ -205,20 +205,20 @@ public class ScannerFactory {
      *
      * @param tableName
      *            the table string
-     * @param auths
-     *            a set of auths
-     * @param settings
-     *            query settings
+     * @param configuration
+     *            Shard Query Configuration object
      * @return a new scanner session
      * @throws Exception
      *             if there are issues
      */
-    public synchronized RangeStreamScanner newRangeScanner(final String tableName, final Set<Authorizations> auths, final Query settings) throws Exception {
-        return newRangeScanner(tableName, auths, settings, Integer.MAX_VALUE);
-    }
-    
-    public RangeStreamScanner newRangeScanner(String tableName, Set<Authorizations> auths, Query query, int shardsPerDayThreshold) throws Exception {
-        return newLimitedScanner(RangeStreamScanner.class, tableName, auths, settings).setShardsPerDayThreshold(shardsPerDayThreshold).setScannerFactory(this);
+    public RangeStreamScanner newRangeScanner(String tableName, final ShardQueryConfiguration configuration) throws Exception {
+        Class<? extends RangeStreamScanner> clazz = RangeStreamScanner.class;
+
+        if (configuration.getServiceConfiguration().getIndexingConfiguration().isEnableRangeScannerLimitDays()){
+            clazz = RangeStreamScannerLimitDays.class;
+        }
+
+        return newLimitedScanner(clazz, tableName, configuration.getAuthorizations(), configuration.getQuery()).setShardsPerDayThreshold(configuration.getShardsPerDayThreshold()).setScannerFactory(this);
     }
     
     public synchronized boolean close(ScannerBase bs) {

@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.concurrent.ExecutorService;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -27,6 +28,7 @@ import datawave.query.util.Tuples;
 import datawave.util.StringUtils;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.service.ServiceConfiguration;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
@@ -92,13 +94,19 @@ public class Intersection extends BaseIndexStream {
     
     protected UidIntersector uidIntersector;
     private static final IndexStreamComparator streamComparator = new IndexStreamComparator();
-    
+
+    private ServiceConfiguration serviceConfiguration = ServiceConfiguration.getDefaultInstance();
+
     private static final Logger log = Logger.getLogger(Intersection.class);
-    
+
     public Intersection(Collection<? extends IndexStream> streams, UidIntersector uidIntersector) {
+        this(streams,uidIntersector,ServiceConfiguration.getDefaultInstance());
+    }
+    public Intersection(Collection<? extends IndexStream> streams, UidIntersector uidIntersector, ServiceConfiguration serviceConfiguration) {
         this.children = TreeMultimap.create(Ordering.natural(), streamComparator);
         this.uidIntersector = uidIntersector;
-        
+        this.serviceConfiguration=serviceConfiguration;
+
         if (log.isTraceEnabled()) {
             log.trace("Constructor -- has children? " + streams.isEmpty());
         }
@@ -318,7 +326,7 @@ public class Intersection extends BaseIndexStream {
             IndexInfo next = infos.next();
             
             nodeSet.add(next.getNode());
-            merged = merged.intersect(next, Collections.emptyList(), uidIntersector);
+            merged = merged.intersect(next, Collections.emptyList(), uidIntersector, serviceConfiguration);
             childrenAdded = true;
         }
         
@@ -617,8 +625,8 @@ public class Intersection extends BaseIndexStream {
         public ArrayList<BaseIndexStream> children() {
             return Lists.newArrayList(children.keySet());
         }
-        
-        public Intersection build(ExecutorService service) {
+
+        public Intersection build(ExecutorService service, ShardQueryConfiguration queryConfiguration) {
             
             if (!todo.isEmpty()) {
                 if (log.isTraceEnabled())
@@ -630,7 +638,7 @@ public class Intersection extends BaseIndexStream {
             }
             todo.clear();
             built = true;
-            return new Intersection(children.keySet(), uidIntersector);
+            return new Intersection(children.keySet(), uidIntersector, queryConfiguration.getServiceConfiguration());
         }
         
         public void addChildren(List<ConcurrentScannerInitializer> todo) {
