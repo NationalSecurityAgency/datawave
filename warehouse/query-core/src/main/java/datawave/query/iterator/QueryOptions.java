@@ -136,6 +136,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String TERM_FREQUENCIES_REQUIRED = "term.frequencies.are.required";
     public static final String CONTENT_EXPANSION_FIELDS = "content.expansion.fields";
     public static final String LIMIT_FIELDS = "limit.fields";
+    public static final String MATCHING_FIELD_SETS = "matching.field.sets";
     public static final String LIMIT_FIELDS_PRE_QUERY_EVALUATION = "limit.fields.pre.query.evaluation";
     public static final String LIMIT_FIELDS_FIELD = "limit.fields.field";
     public static final String GROUP_FIELDS = "group.fields";
@@ -292,6 +293,7 @@ public class QueryOptions implements OptionDescriber {
     protected boolean useBlackListedFields = false;
     protected Set<String> blackListedFields = new HashSet<>();
     protected Map<String,Integer> limitFieldsMap = new HashMap<>();
+    protected Set<Set<String>> matchingFieldSets = new HashSet<>();
     protected boolean limitFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
     
@@ -501,6 +503,7 @@ public class QueryOptions implements OptionDescriber {
         
         this.compressResults = other.compressResults;
         this.limitFieldsMap = other.limitFieldsMap;
+        this.matchingFieldSets = other.matchingFieldSets;
         this.limitFieldsPreQueryEvaluation = other.limitFieldsPreQueryEvaluation;
         this.limitFieldsField = other.limitFieldsField;
         this.groupFields = other.groupFields;
@@ -998,6 +1001,18 @@ public class QueryOptions implements OptionDescriber {
         this.limitFieldsMap = limitFieldsMap;
     }
     
+    public Set<Set<String>> getMatchingFieldSets() {
+        return matchingFieldSets;
+    }
+
+    public List<String> getMatchingFieldList() {
+        return this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList());
+    }
+    
+    public void setMatchingFieldSets(Set<Set<String>> matchingFieldSets) {
+        this.matchingFieldSets = matchingFieldSets;
+    }
+    
     public boolean isLimitFieldsPreQueryEvaluation() {
         return limitFieldsPreQueryEvaluation;
     }
@@ -1134,6 +1149,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(DOCUMENT_PERMUTATION_CLASSES,
                         "Classes implementing DocumentPermutation which can transform the document prior to evaluation (e.g. expand/mutate fields).");
         options.put(LIMIT_FIELDS, "limit fields");
+        options.put(MATCHING_FIELD_SETS, "matching field sets (used along with limit fields)");
         options.put(GROUP_FIELDS, "group fields");
         options.put(GROUP_FIELDS_BATCH_SIZE, "group fields.batch.size");
         options.put(UNIQUE_FIELDS, "unique fields");
@@ -1465,6 +1481,16 @@ public class QueryOptions implements OptionDescriber {
                 String[] keyAndValue = Iterables.toArray(Splitter.on('=').omitEmptyStrings().trimResults().split(paramGroup), String.class);
                 if (keyAndValue != null && keyAndValue.length > 1) {
                     this.getLimitFieldsMap().put(keyAndValue[0], Integer.parseInt(keyAndValue[1]));
+                }
+            }
+        }
+        
+        if (options.containsKey(MATCHING_FIELD_SETS)) {
+            String matchingFieldSets = options.get(MATCHING_FIELD_SETS);
+            for (String fieldSet : Splitter.on(',').omitEmptyStrings().trimResults().split(matchingFieldSets)) {
+                String[] fields = Iterables.toArray(Splitter.on('=').omitEmptyStrings().trimResults().split(fieldSet), String.class);
+                if (fields.length != 0) {
+                    this.getMatchingFieldSets().add(new HashSet(Arrays.asList(fields)));
                 }
             }
         }

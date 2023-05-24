@@ -3,7 +3,6 @@ package datawave.query.iterator;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -980,10 +979,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // note that we have already reduced the document to those attributes to keep. This will reduce the attributes further
             // base on those fields we are limiting.
             if (gatherTimingDetails()) {
-                documents = Iterators.transform(documents,
-                                new EvaluationTrackingFunction<>(QuerySpan.Stage.LimitFields, trackingSpan, new LimitFields(this.getLimitFieldsMap())));
+                documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.LimitFields, trackingSpan, getLimitFields()));
             } else {
-                documents = Iterators.transform(documents, new LimitFields(this.getLimitFieldsMap()));
+                documents = Iterators.transform(documents, getLimitFields());
             }
         }
         
@@ -1154,6 +1152,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return jexlEvaluationFunction;
     }
     
+    protected LimitFields getLimitFields() {
+        return new LimitFields(this.getLimitFieldsMap(), this.getMatchingFieldSets());
+    }
+    
     @Override
     public JexlArithmetic getArithmetic() {
         JexlArithmetic myArithmetic = this.arithmetic;
@@ -1288,14 +1290,23 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             debugBooleanLogicIterator(child, prefix + "  ");
         }
     }
+
     
     protected DocumentProjection getProjection() {
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         
         if (this.useWhiteListedFields) {
+            // make sure we include any fields being matched in the limit fields mechanism
+            if (!this.matchingFieldSets.isEmpty()) {
+                this.whiteListedFields.addAll(getMatchingFieldList());
+            }
             projection.setIncludes(this.whiteListedFields);
             return projection;
         } else if (this.useBlackListedFields) {
+            // make sure we are not excluding any fields being matched in the limit fields mechanism
+            if (!this.matchingFieldSets.isEmpty()) {
+                this.blackListedFields.removeAll(getMatchingFieldList());
+            }
             projection.setExcludes(this.blackListedFields);
             return projection;
         } else {
@@ -1316,6 +1327,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     }
                 }
             }
+        }
+        // make sure we include any fields being matched in the limit fields mechanism
+        if (!this.matchingFieldSets.isEmpty()) {
+            composites.removeAll(getMatchingFieldList());
         }
         projection.setExcludes(composites);
         return projection;
