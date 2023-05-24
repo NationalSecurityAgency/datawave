@@ -3,10 +3,8 @@
     <!-- fields not listed here are indexed. By default fields listed here are not indexed but are tokenized in order
          to validate this case for testing. This is overridden for specific fields by setting their attributes. As
           this is tesing disallowlist behavior, anything not listed here is indexed and tokenized. -->
-    <default stored="false" indexed="false" reverseIndexed="false" tokenized="true" reverseTokenized="true"
-             indexType="datawave.data.type.LcNoDiacriticsType"/>
-    <nomatch stored="true" indexed="true" reverseIndexed="true" tokenized="true" reverseTokenized="true"
-             indexType="datawave.data.type.HexStringType"/>
+    <default stored="false" indexed="false" reverseIndexed="false" tokenized="true" reverseTokenized="true" indexType="datawave.data.type.LcNoDiacriticsType"/>
+    <nomatch stored="true" indexed="true" reverseIndexed="true" tokenized="true" reverseTokenized="true" indexType="datawave.data.type.HexStringType"/>
     <fieldPattern pattern="*J" indexed="true" indexType="datawave.data.type.MacAddressType"/>
     <fieldPattern pattern="*K" indexed="false"/>
     <field name="A" indexed="true"/>
