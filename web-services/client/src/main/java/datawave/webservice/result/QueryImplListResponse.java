@@ -140,7 +140,7 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
                                 throw new RuntimeException("Error finding class: " + queryClass, e);
                             }
                             try {
-                                schema = ((Message) clazz.newInstance()).cachedSchema();
+                                schema = ((Message) clazz.getDeclaredConstructor().newInstance()).cachedSchema();
                             } catch (Exception e) {
                                 throw new RuntimeException("Error creating class: " + queryClass, e);
                             }

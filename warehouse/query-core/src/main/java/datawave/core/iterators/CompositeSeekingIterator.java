@@ -72,7 +72,7 @@ public class CompositeSeekingIterator extends WrappingIterator {
             String typeClass = options.get(fieldName + DISCRETE_INDEX_TYPE);
             if (typeClass != null) {
                 try {
-                    type = Class.forName(typeClass).asSubclass(DiscreteIndexType.class).newInstance();
+                    type = Class.forName(typeClass).asSubclass(DiscreteIndexType.class).getDeclaredConstructor().newInstance();
                 } catch (Exception e) {
                     log.warn("Unable to create DiscreteIndexType for class name: " + typeClass);
                 }

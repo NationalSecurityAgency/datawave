@@ -98,7 +98,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             try {
                 ClassLoader loader = Thread.currentThread().getContextClassLoader();
                 Class<?> verifierClass = loader.loadClass(option);
-                verifier = (X509CertificateVerifier) verifierClass.newInstance();
+                verifier = (X509CertificateVerifier) verifierClass.getDeclaredConstructor().newInstance();
                 if (verifier instanceof DatawaveCertVerifier) {
                     ((DatawaveCertVerifier) verifier).setLogger(log);
                     ((DatawaveCertVerifier) verifier).setOcspLevel((String) options.get("ocspLevel"));
