@@ -137,6 +137,10 @@ public class QueryParameters {
      * Used to limit the number of values returned for specific fields
      */
     public static final String LIMIT_FIELDS = "limit.fields";
+    /**
+     * Used to tie field groups together such that if a field in one group is not being limited the fields in matching groups will not be limited.
+     */
+    public static final String MATCHING_FIELD_SETS = "matching.field.sets";
     
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
