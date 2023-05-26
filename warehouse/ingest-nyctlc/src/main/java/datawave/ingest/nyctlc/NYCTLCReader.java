@@ -53,27 +53,30 @@ public class NYCTLCReader extends CSVReaderBase {
         // followed by a blank line, followed by our entries
         // This is here to account for that
         boolean hasNext, completeRecord;
+        StringBuilder sb = new StringBuilder();
         do {
             hasNext = super.nextKeyValue();
             
             if (this.value != null && !this.value.toString().isEmpty() && !this.value.toString().equals(rawHeader)) {
                 // update value to be list of field/value pairings
-                StringBuffer fvBuf = new StringBuffer();
                 String[] values = this.value.toString().split(((NYCTLCHelper) helper).getSeparator());
-                if (values.length > ((NYCTLCHelper) helper).getParsedHeader().length)
+                if (values.length > ((NYCTLCHelper) helper).getParsedHeader().length) {
                     log.debug("More values present than expected.");
-                
+                }
                 int numFields = Math.min(values.length, ((NYCTLCHelper) helper).getParsedHeader().length);
                 
                 completeRecord = true;
                 for (int fieldIdx = 0; fieldIdx < numFields; fieldIdx++) {
-                    fvBuf.append(((NYCTLCHelper) helper).getParsedHeader()[fieldIdx] + "=" + values[fieldIdx]);
-                    if ((fieldIdx + 1) < numFields)
-                        fvBuf.append(((NYCTLCHelper) helper).getSeparator());
+                    sb.append(((NYCTLCHelper) helper).getParsedHeader()[fieldIdx] + "=" + values[fieldIdx]);
+                    if ((fieldIdx + 1) < numFields) {
+                        sb.append(((NYCTLCHelper) helper).getSeparator());
+                    }
                 }
-                this.value = new Text(fvBuf.toString());
-            } else
+                this.value = new Text(sb.toString());
+                sb.setLength(0);
+            } else {
                 completeRecord = false;
+            }
         } while (hasNext && !completeRecord);
         
         return hasNext;
